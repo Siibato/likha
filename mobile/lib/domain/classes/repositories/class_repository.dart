@@ -1,0 +1,27 @@
+import 'package:likha/core/utils/typedef.dart';
+import 'package:likha/domain/auth/entities/user.dart';
+import 'package:likha/domain/classes/entities/class_detail.dart';
+import 'package:likha/domain/classes/entities/class_entity.dart';
+
+abstract class ClassRepository {
+  ResultFuture<ClassEntity> createClass({
+    required String title,
+    String? description,
+  });
+
+  ResultFuture<List<ClassEntity>> getMyClasses();
+
+  ResultFuture<ClassDetail> getClassDetail({required String classId});
+
+  ResultFuture<Enrollment> addStudent({
+    required String classId,
+    required String studentId,
+  });
+
+  ResultVoid removeStudent({
+    required String classId,
+    required String studentId,
+  });
+
+  ResultFuture<List<User>> searchStudents({String? query});
+}

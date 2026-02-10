@@ -1,0 +1,30 @@
+/target
+**/*.rs.bk
+*.pdb
+
+# Environment
+.env
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+/data/*
+!/data/.gitkeep
+
+# Storage
+/storage/materials/*
+/storage/submissions/*
+/storage/exports/*
+!storage/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

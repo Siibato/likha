@@ -1,0 +1,58 @@
+pub mod activity_logs;
+pub mod assessment_questions;
+pub mod assessment_submissions;
+pub mod assessments;
+pub mod assignment_submissions;
+pub mod assignments_hw;
+pub mod class_enrollments;
+pub mod classes;
+pub mod enumeration_item_answers;
+pub mod enumeration_items;
+pub mod question_choices;
+pub mod question_correct_answers;
+pub mod refresh_tokens;
+pub mod submission_answer_choices;
+pub mod submission_answers;
+pub mod submission_enumeration_answers;
+pub mod submission_files;
+pub mod users;
+
+pub use activity_logs::Entity as ActivityLogs;
+pub use assessment_questions::Entity as AssessmentQuestions;
+pub use assessment_submissions::Entity as AssessmentSubmissions;
+pub use assessments::Entity as Assessments;
+pub use assignment_submissions::Entity as AssignmentSubmissions;
+pub use assignments_hw::Entity as AssignmentsHw;
+pub use class_enrollments::Entity as ClassEnrollments;
+pub use classes::Entity as Classes;
+pub use enumeration_item_answers::Entity as EnumerationItemAnswers;
+pub use enumeration_items::Entity as EnumerationItems;
+pub use question_choices::Entity as QuestionChoices;
+pub use question_correct_answers::Entity as QuestionCorrectAnswers;
+pub use refresh_tokens::Entity as RefreshTokens;
+pub use submission_answer_choices::Entity as SubmissionAnswerChoices;
+pub use submission_answers::Entity as SubmissionAnswers;
+pub use submission_enumeration_answers::Entity as SubmissionEnumerationAnswers;
+pub use submission_files::Entity as SubmissionFiles;
+pub use users::Entity as Users;
+
+pub mod prelude {
+    pub use super::activity_logs::{self, Entity as ActivityLogs};
+    pub use super::assessment_questions::{self, Entity as AssessmentQuestions};
+    pub use super::assessment_submissions::{self, Entity as AssessmentSubmissions};
+    pub use super::assessments::{self, Entity as Assessments};
+    pub use super::assignment_submissions::{self, Entity as AssignmentSubmissions};
+    pub use super::assignments_hw::{self, Entity as AssignmentsHw};
+    pub use super::class_enrollments::{self, Entity as ClassEnrollments};
+    pub use super::classes::{self, Entity as Classes};
+    pub use super::enumeration_item_answers::{self, Entity as EnumerationItemAnswers};
+    pub use super::enumeration_items::{self, Entity as EnumerationItems};
+    pub use super::question_choices::{self, Entity as QuestionChoices};
+    pub use super::question_correct_answers::{self, Entity as QuestionCorrectAnswers};
+    pub use super::refresh_tokens::{self, Entity as RefreshTokens};
+    pub use super::submission_answer_choices::{self, Entity as SubmissionAnswerChoices};
+    pub use super::submission_answers::{self, Entity as SubmissionAnswers};
+    pub use super::submission_enumeration_answers::{self, Entity as SubmissionEnumerationAnswers};
+    pub use super::submission_files::{self, Entity as SubmissionFiles};
+    pub use super::users::{self, Entity as Users};
+}
