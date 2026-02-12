@@ -10,6 +10,7 @@ import 'package:likha/presentation/pages/student/widgets/assignment_text_input_c
 import 'package:likha/presentation/pages/student/widgets/assignment_files_card.dart';
 import 'package:likha/presentation/pages/student/widgets/assignment_submit_button.dart';
 import 'package:likha/presentation/pages/student/widgets/assignment_submitted_banner.dart';
+import 'package:likha/presentation/pages/student/widgets/assignment_graded_banner.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 
 class SubmitAssignmentPage extends ConsumerStatefulWidget {
@@ -117,7 +118,7 @@ class _SubmitAssignmentPageState extends ConsumerState<SubmitAssignmentPage> {
             backgroundColor: const Color(0xFFEA4335),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
         );
@@ -174,7 +175,7 @@ class _SubmitAssignmentPageState extends ConsumerState<SubmitAssignmentPage> {
             backgroundColor: const Color(0xFF34A853),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
         );
@@ -190,7 +191,7 @@ class _SubmitAssignmentPageState extends ConsumerState<SubmitAssignmentPage> {
             backgroundColor: const Color(0xFFEA4335),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
         );
@@ -209,7 +210,10 @@ class _SubmitAssignmentPageState extends ConsumerState<SubmitAssignmentPage> {
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
-              child: StudentHeader(title: widget.assignmentTitle),
+              child: StudentHeader(
+                title: widget.assignmentTitle,
+                showBackButton: true,
+              ),
             ),
             SliverPadding(
               padding: const EdgeInsets.all(24),
@@ -224,6 +228,14 @@ class _SubmitAssignmentPageState extends ConsumerState<SubmitAssignmentPage> {
                       submission.feedback != null) ...[
                     const SizedBox(height: 16),
                     AssignmentReturnedBanner(feedback: submission.feedback!),
+                  ],
+                  if (isGraded && submission.score != null) ...[
+                    const SizedBox(height: 16),
+                    AssignmentGradedBanner(
+                      score: submission.score!,
+                      totalPoints: widget.totalPoints,
+                      feedback: submission.feedback,
+                    ),
                   ],
                   if (_canSubmitText) ...[
                     const SizedBox(height: 16),
@@ -250,7 +262,7 @@ class _SubmitAssignmentPageState extends ConsumerState<SubmitAssignmentPage> {
                       onPressed: _handleSubmit,
                     ),
                   ],
-                  if (isSubmitted) ...[
+                  if (isSubmitted && !isGraded) ...[
                     const SizedBox(height: 16),
                     const AssignmentSubmittedBanner(),
                   ],

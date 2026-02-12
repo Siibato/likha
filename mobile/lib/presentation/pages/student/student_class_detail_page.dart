@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/presentation/pages/student/assessment_list_page.dart';
+import 'package:likha/presentation/pages/student/take_assessment_page.dart';
+import 'package:likha/presentation/pages/student/assessment_results_page.dart';
 import 'package:likha/presentation/pages/student/submit_assignment_page.dart';
 import 'package:likha/presentation/pages/student/widgets/assessment_card.dart';
 import 'package:likha/presentation/pages/student/widgets/assignment_card.dart';
@@ -126,6 +127,34 @@ class _AssessmentTab extends ConsumerWidget {
     return AssessmentStatus.available;
   }
 
+  void _onAssessmentTap(BuildContext context, WidgetRef ref, Assessment assessment) {
+    final status = _getStatus(assessment);
+    
+    if (status == AssessmentStatus.available) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => TakeAssessmentPage(
+            assessmentId: assessment.id,
+            timeLimitMinutes: assessment.timeLimitMinutes,
+          ),
+        ),
+      ).then((_) {
+        ref
+            .read(assessmentProvider.notifier)
+            .loadAssessments(classId);
+      });
+    } else if (status == AssessmentStatus.submitted &&
+        (assessment.resultsReleased || assessment.showResultsImmediately)) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AssessmentResultsPage(assessmentId: assessment.id),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(assessmentProvider);
@@ -153,13 +182,7 @@ class _AssessmentTab extends ConsumerWidget {
                     return AssessmentCard(
                       assessment: assessment,
                       status: status,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              AssessmentListPage(classId: classId),
-                        ),
-                      ),
+                      onTap: () => _onAssessmentTap(context, ref, assessment),
                     );
                   },
                 ),
