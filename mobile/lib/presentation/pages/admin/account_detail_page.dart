@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/domain/auth/entities/user.dart';
+import 'package:likha/presentation/pages/admin/widgets/info_card.dart';
+import 'package:likha/presentation/pages/admin/widgets/action_buttons.dart';
+import 'package:likha/presentation/pages/admin/widgets/activity_log_list.dart';
+import 'package:likha/presentation/pages/admin/widgets/edit_dialog.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
 
 class AccountDetailPage extends ConsumerStatefulWidget {
@@ -34,18 +38,25 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.successMessage!),
-            backgroundColor: Colors.green,
+            backgroundColor: const Color(0xFF28A745),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
         ref.read(adminProvider.notifier).clearMessages();
-        // Reload activity logs after changes
         ref.read(adminProvider.notifier).loadActivityLogs(widget.user.id);
       }
       if (next.error != null && prev?.error != next.error) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.error!),
-            backgroundColor: Colors.red,
+            backgroundColor: const Color(0xFFDC3545),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
         ref.read(adminProvider.notifier).clearMessages();
@@ -53,133 +64,95 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
     });
 
     return Scaffold(
-      appBar: AppBar(title: Text(user.fullName)),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: Color(0xFF404040),
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          user.fullName,
+          style: const TextStyle(
+            color: Color(0xFF202020),
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+            letterSpacing: -0.4,
+          ),
+        ),
+      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _EditableInfoRow(
-                      label: 'Username',
-                      value: user.username,
-                      onEdit: adminState.isLoading
-                          ? null
-                          : () => _showEditDialog(
-                                context,
-                                title: 'Edit Username',
-                                currentValue: user.username,
-                                onSave: (value) {
-                                  ref
-                                      .read(adminProvider.notifier)
-                                      .updateAccount(
-                                        userId: user.id,
-                                        username: value,
-                                      );
-                                },
-                              ),
-                    ),
-                    _EditableInfoRow(
-                      label: 'Full Name',
-                      value: user.fullName,
-                      onEdit: adminState.isLoading
-                          ? null
-                          : () => _showEditDialog(
-                                context,
-                                title: 'Edit Full Name',
-                                currentValue: user.fullName,
-                                onSave: (value) {
-                                  ref
-                                      .read(adminProvider.notifier)
-                                      .updateAccount(
-                                        userId: user.id,
-                                        fullName: value,
-                                      );
-                                },
-                              ),
-                    ),
-                    _InfoRow(label: 'Role', value: user.role),
-                    _InfoRow(label: 'Status', value: user.accountStatus),
-                    _InfoRow(
-                      label: 'Created',
-                      value: user.createdAt.toString().split('.')[0],
-                    ),
-                    if (user.activatedAt != null)
-                      _InfoRow(
-                        label: 'Activated',
-                        value: user.activatedAt.toString().split('.')[0],
-                      ),
-                  ],
-                ),
+            UserInfoCard(
+              user: user,
+              isLoading: adminState.isLoading,
+              onEditUsername: () => _showEditDialog(
+                context,
+                title: 'Edit Username',
+                currentValue: user.username,
+                onSave: (value) {
+                  ref.read(adminProvider.notifier).updateAccount(
+                        userId: user.id,
+                        username: value,
+                      );
+                },
+              ),
+              onEditFullName: () => _showEditDialog(
+                context,
+                title: 'Edit Full Name',
+                currentValue: user.fullName,
+                onSave: (value) {
+                  ref.read(adminProvider.notifier).updateAccount(
+                        userId: user.id,
+                        fullName: value,
+                      );
+                },
               ),
             ),
-            const SizedBox(height: 16),
-            Text('Actions',
-                style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                if (user.accountStatus != 'locked')
-                  ElevatedButton.icon(
-                    onPressed: adminState.isLoading
-                        ? null
-                        : () => ref
-                            .read(adminProvider.notifier)
-                            .lockAccount(user.id, true),
-                    icon: const Icon(Icons.lock),
-                    label: const Text('Lock Account'),
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red[100]),
-                  ),
-                if (user.accountStatus == 'locked')
-                  ElevatedButton.icon(
-                    onPressed: adminState.isLoading
-                        ? null
-                        : () => ref
-                            .read(adminProvider.notifier)
-                            .lockAccount(user.id, false),
-                    icon: const Icon(Icons.lock_open),
-                    label: const Text('Unlock Account'),
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green[100]),
-                  ),
-                ElevatedButton.icon(
-                  onPressed: adminState.isLoading
-                      ? null
-                      : () => _confirmReset(context, user),
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Reset Password'),
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange[100]),
-                ),
-              ],
-            ),
             const SizedBox(height: 24),
-            Text('Activity Log',
-                style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            if (adminState.isLoading && adminState.activityLogs.isEmpty)
-              const Center(child: CircularProgressIndicator())
-            else if (adminState.activityLogs.isEmpty)
-              const Text('No activity logs')
-            else
-              ...adminState.activityLogs.map((log) => Card(
-                    child: ListTile(
-                      leading: Icon(_actionIcon(log.action)),
-                      title: Text(log.action.replaceAll('_', ' ')),
-                      subtitle: Text(
-                        '${log.createdAt.toString().split('.')[0]}'
-                        '${log.details != null ? '\n${log.details}' : ''}',
-                      ),
-                    ),
-                  )),
+            const Text(
+              'Actions',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF202020),
+                letterSpacing: -0.4,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ActionButtons(
+              user: user,
+              isLoading: adminState.isLoading,
+              onLock: () => ref
+                  .read(adminProvider.notifier)
+                  .lockAccount(user.id, true),
+              onUnlock: () => ref
+                  .read(adminProvider.notifier)
+                  .lockAccount(user.id, false),
+              onResetPassword: () => _confirmReset(context, user),
+            ),
+            const SizedBox(height: 32),
+            const Text(
+              'Activity Log',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF202020),
+                letterSpacing: -0.4,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ActivityLogList(
+              logs: adminState.activityLogs,
+              isLoading: adminState.isLoading,
+            ),
           ],
         ),
       ),
@@ -192,36 +165,12 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
     required String currentValue,
     required void Function(String) onSave,
   }) {
-    final controller = TextEditingController(text: currentValue);
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              final value = controller.text.trim();
-              if (value.isNotEmpty && value != currentValue) {
-                Navigator.pop(ctx);
-                onSave(value);
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
+      builder: (ctx) => EditDialog(
+        title: title,
+        currentValue: currentValue,
+        onSave: onSave,
       ),
     );
   }
@@ -230,110 +179,47 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Reset Password'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text(
+          'Reset Password',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF202020),
+          ),
+        ),
         content: Text(
-            'This will clear ${user.fullName}\'s password and set the account back to pending activation. Continue?'),
+          'This will clear ${user.fullName}\'s password and set the account back to pending activation. Continue?',
+          style: const TextStyle(
+            fontSize: 15,
+            color: Color(0xFF404040),
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF999999),
+            ),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               ref.read(adminProvider.notifier).resetAccount(user.id);
             },
-            child: const Text('Reset'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  IconData _actionIcon(String action) {
-    switch (action) {
-      case 'account_created':
-        return Icons.person_add;
-      case 'account_activated':
-        return Icons.check_circle;
-      case 'account_updated':
-        return Icons.edit;
-      case 'password_reset':
-        return Icons.refresh;
-      case 'account_locked':
-        return Icons.lock;
-      case 'account_unlocked':
-        return Icons.lock_open;
-      case 'login':
-        return Icons.login;
-      default:
-        return Icons.info;
-    }
-  }
-}
-
-class _EditableInfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final VoidCallback? onEdit;
-
-  const _EditableInfoRow({
-    required this.label,
-    required this.value,
-    this.onEdit,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold, color: Colors.grey),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFDC3545),
+            ),
+            child: const Text(
+              'Reset',
+              style: TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
-          Expanded(child: Text(value)),
-          if (onEdit != null)
-            IconButton(
-              icon: const Icon(Icons.edit, size: 18),
-              onPressed: onEdit,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _InfoRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold, color: Colors.grey),
-            ),
-          ),
-          Expanded(child: Text(value)),
         ],
       ),
     );

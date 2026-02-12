@@ -42,18 +42,24 @@ class AssignmentTextInputCard extends StatelessWidget {
               controller: controller,
               maxLines: 10,
               readOnly: isReadOnly,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
-                color: Color(0xFF2B2B2B),
+                color: isReadOnly
+                    ? const Color(0xFF666666)
+                    : const Color(0xFF2B2B2B),
               ),
               decoration: InputDecoration(
-                hintText: 'Type your response here...',
+                hintText: isReadOnly
+                    ? 'No response provided'
+                    : 'Type your response here...',
                 hintStyle: const TextStyle(
                   color: Color(0xFFCCCCCC),
                   fontSize: 15,
                 ),
                 filled: true,
-                fillColor: const Color(0xFFFAFAFA),
+                fillColor: isReadOnly
+                    ? const Color(0xFFF5F5F5)
+                    : const Color(0xFFFAFAFA),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(
@@ -68,9 +74,11 @@ class AssignmentTextInputCard extends StatelessWidget {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: Color(0xFFFFBD59),
-                    width: 2,
+                  borderSide: BorderSide(
+                    color: isReadOnly
+                        ? const Color(0xFFE0E0E0)
+                        : const Color(0xFFFFBD59),
+                    width: isReadOnly ? 1 : 2,
                   ),
                 ),
               ),

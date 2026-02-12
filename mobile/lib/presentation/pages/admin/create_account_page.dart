@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/presentation/pages/admin/widgets/styled_text_field.dart';
+import 'package:likha/presentation/pages/admin/widgets/styled_dropdown.dart';
+import 'package:likha/presentation/pages/admin/widgets/styled_button.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
 
 class CreateAccountPage extends ConsumerStatefulWidget {
@@ -37,7 +40,11 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(state.successMessage!),
-            backgroundColor: Colors.green,
+            backgroundColor: const Color(0xFF28A745),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
         Navigator.pop(context);
@@ -45,7 +52,11 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(state.error!),
-            backgroundColor: Colors.red,
+            backgroundColor: const Color(0xFFDC3545),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
@@ -57,23 +68,40 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
     final adminState = ref.watch(adminProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Account')),
-      body: Padding(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: Color(0xFF404040),
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Create Account',
+          style: TextStyle(
+            color: Color(0xFF202020),
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+            letterSpacing: -0.4,
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextFormField(
+              const SizedBox(height: 8),
+              StyledTextField(
                 controller: _usernameController,
-                decoration: InputDecoration(
-                  labelText: 'Username',
-                  prefixIcon: const Icon(Icons.person_outline),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
+                label: 'Username',
+                icon: Icons.person_outline_rounded,
+                enabled: !adminState.isLoading,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Username is required';
@@ -83,66 +111,42 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                   }
                   return null;
                 },
-                enabled: !adminState.isLoading,
               ),
               const SizedBox(height: 16),
-              TextFormField(
+              StyledTextField(
                 controller: _fullNameController,
-                decoration: InputDecoration(
-                  labelText: 'Full Name',
-                  prefixIcon: const Icon(Icons.badge_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
+                label: 'Full Name',
+                icon: Icons.badge_outlined,
+                enabled: !adminState.isLoading,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Full name is required';
                   }
                   return null;
                 },
-                enabled: !adminState.isLoading,
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                initialValue: _selectedRole,
-                decoration: InputDecoration(
-                  labelText: 'Role',
-                  prefixIcon: const Icon(Icons.work_outline),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
+              StyledDropdown(
+                value: _selectedRole,
+                label: 'Role',
+                icon: Icons.work_outline_rounded,
+                enabled: !adminState.isLoading,
                 items: const [
                   DropdownMenuItem(value: 'student', child: Text('Student')),
                   DropdownMenuItem(value: 'teacher', child: Text('Teacher')),
                   DropdownMenuItem(value: 'admin', child: Text('Admin')),
                 ],
-                onChanged: adminState.isLoading
-                    ? null
-                    : (value) {
-                        if (value != null) {
-                          setState(() => _selectedRole = value);
-                        }
-                      },
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => _selectedRole = value);
+                  }
+                },
               ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: adminState.isLoading ? null : _handleCreate,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: adminState.isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Create Account',
-                        style: TextStyle(fontSize: 16)),
+              const SizedBox(height: 32),
+              StyledButton(
+                text: 'Create Account',
+                isLoading: adminState.isLoading,
+                onPressed: _handleCreate,
               ),
             ],
           ),

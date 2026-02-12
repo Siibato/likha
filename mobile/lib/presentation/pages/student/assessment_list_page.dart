@@ -40,22 +40,24 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
     return AssessmentStatus.available;
   }
 
-  String _formatTimeLimit(int minutes) {
-    if (minutes >= 60) {
-      final hours = minutes ~/ 60;
-      final remaining = minutes % 60;
-      if (remaining == 0) {
-        return '$hours hr${hours > 1 ? 's' : ''}';
-      }
-      return '$hours hr${hours > 1 ? 's' : ''} $remaining min';
-    }
-    return '$minutes min';
-  }
-
   void _onAssessmentTap(Assessment assessment) {
     final status = _getStatus(assessment);
+    
     if (status == AssessmentStatus.available) {
-      _confirmStartAssessment(assessment);
+      // Start assessment directly
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => TakeAssessmentPage(
+            assessmentId: assessment.id,
+            timeLimitMinutes: assessment.timeLimitMinutes,
+          ),
+        ),
+      ).then((_) {
+        ref
+            .read(assessmentProvider.notifier)
+            .loadAssessments(widget.classId);
+      });
     } else if (status == AssessmentStatus.submitted &&
         (assessment.resultsReleased || assessment.showResultsImmediately)) {
       Navigator.push(
@@ -65,109 +67,6 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
         ),
       );
     }
-  }
-
-  void _confirmStartAssessment(Assessment assessment) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Start Assessment',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 20,
-            letterSpacing: -0.4,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Are you ready to start "${assessment.title}"?',
-              style: const TextStyle(fontSize: 15, height: 1.4),
-            ),
-            const SizedBox(height: 16),
-            _DialogInfoRow(
-              label: 'Time Limit',
-              value: _formatTimeLimit(assessment.timeLimitMinutes),
-            ),
-            const SizedBox(height: 8),
-            _DialogInfoRow(
-              label: 'Total Points',
-              value: '${assessment.totalPoints}',
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF8ED),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: const Color(0xFFFFBD59).withOpacity(0.3),
-                ),
-              ),
-              child: const Row(
-                children: [
-                  Icon(
-                    Icons.info_outline_rounded,
-                    size: 18,
-                    color: Color(0xFFFFBD59),
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Timer starts immediately and cannot be paused',
-                      style: TextStyle(
-                        color: Color(0xFF2B2B2B),
-                        fontSize: 13,
-                        height: 1.3,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF666666),
-            ),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => TakeAssessmentPage(
-                    assessmentId: assessment.id,
-                    timeLimitMinutes: assessment.timeLimitMinutes,
-                  ),
-                ),
-              ).then((_) {
-                ref
-                    .read(assessmentProvider.notifier)
-                    .loadAssessments(widget.classId);
-              });
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF2B2B2B),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('Start'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -182,7 +81,7 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
             backgroundColor: const Color(0xFFEA4335),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
         );
@@ -208,7 +107,10 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
                 child: CustomScrollView(
                   slivers: [
                     const SliverToBoxAdapter(
-                      child: StudentHeader(title: 'Assessments'),
+                      child: StudentHeader(
+                        title: 'Assessments',
+                        showBackButton: true,
+                      ),
                     ),
                     state.assessments.isEmpty
                         ? const SliverFillRemaining(
@@ -241,39 +143,6 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
                 ),
               ),
       ),
-    );
-  }
-}
-
-class _DialogInfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _DialogInfoRow({
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: Color(0xFF666666),
-            fontSize: 14,
-          ),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
-        ),
-      ],
     );
   }
 }

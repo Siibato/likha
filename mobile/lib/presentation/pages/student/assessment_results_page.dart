@@ -64,7 +64,7 @@ class _AssessmentResultsPageState
             backgroundColor: const Color(0xFFEA4335),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
         );
@@ -131,7 +131,10 @@ class _AssessmentResultsPageState
             : CustomScrollView(
                 slivers: [
                   const SliverToBoxAdapter(
-                    child: StudentHeader(title: 'Results'),
+                    child: StudentHeader(
+                      title: 'Results',
+                      showBackButton: true,
+                    ),
                   ),
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(

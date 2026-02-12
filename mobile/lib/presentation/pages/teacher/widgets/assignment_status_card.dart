@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class AssignmentStatusCard extends StatelessWidget {
   final bool isPublished;
@@ -20,18 +21,18 @@ class AssignmentStatusCard extends StatelessWidget {
     String? actionHint;
 
     if (!isPublished) {
-      statusColor = const Color(0xFFFFA726);
+      statusColor = AppColors.foregroundPrimary;
       statusText = 'Draft';
       statusIcon = Icons.edit_note_rounded;
       actionHint = 'Tap to publish';
     } else {
       final now = DateTime.now();
       if (now.isBefore(dueAt)) {
-        statusColor = const Color(0xFF4CAF50);
+        statusColor = AppColors.foregroundSecondary;
         statusText = 'Published - Open';
         statusIcon = Icons.public_rounded;
       } else {
-        statusColor = const Color(0xFF42A5F5);
+        statusColor = AppColors.foregroundTertiary;
         statusText = 'Published - Past Due';
         statusIcon = Icons.event_busy_rounded;
       }
@@ -72,7 +73,7 @@ class AssignmentStatusCard extends StatelessWidget {
                       actionHint,
                       style: const TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF666666),
+                        color: AppColors.foregroundSecondary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),

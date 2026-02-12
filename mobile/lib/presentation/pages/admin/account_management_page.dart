@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/presentation/pages/admin/account_detail_page.dart';
+import 'package:likha/presentation/pages/admin/widgets/account_tile.dart';
+import 'package:likha/presentation/pages/admin/widgets/search_bar.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
 
 class AccountManagementPage extends ConsumerStatefulWidget {
@@ -24,32 +25,6 @@ class _AccountManagementPageState
     });
   }
 
-  Color _statusColor(String status) {
-    switch (status) {
-      case 'activated':
-        return Colors.green;
-      case 'pending_activation':
-        return Colors.orange;
-      case 'locked':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  String _statusLabel(String status) {
-    switch (status) {
-      case 'activated':
-        return 'Active';
-      case 'pending_activation':
-        return 'Pending';
-      case 'locked':
-        return 'Locked';
-      default:
-        return status;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final adminState = ref.watch(adminProvider);
@@ -64,46 +39,73 @@ class _AccountManagementPageState
     }).toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Account Management')),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: Color(0xFF404040),
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Account Management',
+          style: TextStyle(
+            color: Color(0xFF202020),
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+            letterSpacing: -0.4,
+          ),
+        ),
+      ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Search accounts...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onChanged: (value) => setState(() => _searchQuery = value),
-            ),
+          AdminSearchBar(
+            onChanged: (value) => setState(() => _searchQuery = value),
           ),
           Expanded(
             child: adminState.isLoading && adminState.accounts.isEmpty
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF2B2B2B),
+                      strokeWidth: 2.5,
+                    ),
+                  )
                 : filteredAccounts.isEmpty
-                    ? const Center(child: Text('No accounts found'))
+                    ? const Center(
+                        child: Text(
+                          'No accounts found',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF999999),
+                          ),
+                        ),
+                      )
                     : RefreshIndicator(
+                        color: const Color(0xFF2B2B2B),
                         onRefresh: () =>
                             ref.read(adminProvider.notifier).loadAccounts(),
                         child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 8,
+                          ),
                           itemCount: filteredAccounts.length,
                           itemBuilder: (context, index) {
                             final user = filteredAccounts[index];
-                            return _AccountTile(
+                            return AccountTile(
                               user: user,
-                              statusColor: _statusColor(user.accountStatus),
-                              statusLabel: _statusLabel(user.accountStatus),
                               onTap: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) =>
-                                      AccountDetailPage(user: user),
+                                  builder: (_) => AccountDetailPage(user: user),
                                 ),
-                              ).then((_) =>
-                                  ref.read(adminProvider.notifier).loadAccounts()),
+                              ).then((_) => ref
+                                  .read(adminProvider.notifier)
+                                  .loadAccounts()),
                             );
                           },
                         ),
@@ -111,39 +113,6 @@ class _AccountManagementPageState
           ),
         ],
       ),
-    );
-  }
-}
-
-class _AccountTile extends StatelessWidget {
-  final User user;
-  final Color statusColor;
-  final String statusLabel;
-  final VoidCallback onTap;
-
-  const _AccountTile({
-    required this.user,
-    required this.statusColor,
-    required this.statusLabel,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: CircleAvatar(
-        child: Text(user.fullName[0].toUpperCase()),
-      ),
-      title: Text(user.fullName),
-      subtitle: Text('${user.username} - ${user.role}'),
-      trailing: Chip(
-        label: Text(
-          statusLabel,
-          style: const TextStyle(color: Colors.white, fontSize: 12),
-        ),
-        backgroundColor: statusColor,
-      ),
-      onTap: onTap,
     );
   }
 }
