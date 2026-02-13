@@ -63,6 +63,19 @@ import 'package:likha/domain/classes/usecases/get_class_detail.dart';
 import 'package:likha/domain/classes/usecases/get_my_classes.dart';
 import 'package:likha/domain/classes/usecases/remove_student.dart';
 import 'package:likha/domain/classes/usecases/search_students.dart';
+import 'package:likha/domain/classes/usecases/update_class.dart';
+import 'package:likha/domain/learning_materials/data/datasources/learning_material_remote_datasource.dart';
+import 'package:likha/domain/learning_materials/data/repositories/learning_material_repository_impl.dart';
+import 'package:likha/domain/learning_materials/repositories/learning_material_repository.dart';
+import 'package:likha/domain/learning_materials/usecases/create_material.dart';
+import 'package:likha/domain/learning_materials/usecases/delete_file.dart' as material;
+import 'package:likha/domain/learning_materials/usecases/delete_material.dart';
+import 'package:likha/domain/learning_materials/usecases/download_file.dart' as material;
+import 'package:likha/domain/learning_materials/usecases/get_material_detail.dart';
+import 'package:likha/domain/learning_materials/usecases/get_materials.dart';
+import 'package:likha/domain/learning_materials/usecases/reorder_material.dart';
+import 'package:likha/domain/learning_materials/usecases/update_material.dart';
+import 'package:likha/domain/learning_materials/usecases/upload_file.dart' as material;
 import 'package:likha/services/storage_service.dart';
 
 final sl = GetIt.instance;
@@ -93,6 +106,9 @@ Future<void> init() async {
   sl.registerLazySingleton<AssignmentRemoteDataSource>(
     () => AssignmentRemoteDataSourceImpl(sl()),
   );
+  sl.registerLazySingleton<LearningMaterialRemoteDataSource>(
+    () => LearningMaterialRemoteDataSourceImpl(sl()),
+  );
 
   // Repositories
   sl.registerLazySingleton<AuthRepository>(
@@ -106,6 +122,9 @@ Future<void> init() async {
   );
   sl.registerLazySingleton<AssignmentRepository>(
     () => AssignmentRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton<LearningMaterialRepository>(
+    () => LearningMaterialRepositoryImpl(sl()),
   );
 
   // Auth use cases
@@ -125,6 +144,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => CreateClass(sl()));
   sl.registerLazySingleton(() => GetMyClasses(sl()));
   sl.registerLazySingleton(() => GetClassDetail(sl()));
+  sl.registerLazySingleton(() => UpdateClass(sl()));
   sl.registerLazySingleton(() => AddStudent(sl()));
   sl.registerLazySingleton(() => RemoveStudent(sl()));
   sl.registerLazySingleton(() => SearchStudents(sl()));
@@ -165,4 +185,15 @@ Future<void> init() async {
   sl.registerLazySingleton(() => DeleteFile(sl()));
   sl.registerLazySingleton(() => SubmitAssignment(sl()));
   sl.registerLazySingleton(() => DownloadFile(sl()));
+
+  // Learning Material use cases
+  sl.registerLazySingleton(() => CreateMaterial(sl()));
+  sl.registerLazySingleton(() => GetMaterials(sl()));
+  sl.registerLazySingleton(() => GetMaterialDetail(sl()));
+  sl.registerLazySingleton(() => UpdateMaterial(sl()));
+  sl.registerLazySingleton(() => DeleteMaterial(sl()));
+  sl.registerLazySingleton(() => ReorderMaterial(sl()));
+  sl.registerLazySingleton(() => material.UploadFile(sl()));
+  sl.registerLazySingleton(() => material.DeleteFile(sl()));
+  sl.registerLazySingleton(() => material.DownloadFile(sl()));
 }

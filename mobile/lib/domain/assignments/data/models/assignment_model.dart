@@ -18,6 +18,9 @@ class AssignmentModel extends Assignment {
     required super.isPublished,
     required super.submissionCount,
     required super.gradedCount,
+    super.submissionStatus,
+    super.submissionId,
+    super.score,
     required super.createdAt,
     required super.updatedAt,
   });
@@ -25,9 +28,9 @@ class AssignmentModel extends Assignment {
   factory AssignmentModel.fromJson(Map<String, dynamic> json) {
     return AssignmentModel(
       id: json['id'] as String,
-      classId: json['class_id'] as String,
+      classId: json['class_id'] as String? ?? json['assignment_id'] as String,
       title: json['title'] as String,
-      instructions: json['instructions'] as String,
+      instructions: json['instructions'] as String? ?? '',
       totalPoints: json['total_points'] as int,
       submissionType: json['submission_type'] as String,
       allowedFileTypes: json['allowed_file_types'] as String?,
@@ -36,8 +39,11 @@ class AssignmentModel extends Assignment {
       isPublished: json['is_published'] as bool,
       submissionCount: json['submission_count'] as int? ?? 0,
       gradedCount: json['graded_count'] as int? ?? 0,
-      createdAt: _parseUtc(json['created_at'] as String),
-      updatedAt: _parseUtc(json['updated_at'] as String),
+      submissionStatus: json['submission_status'] as String?,
+      submissionId: json['submission_id'] as String?,
+      score: json['score'] as int?,
+      createdAt: json['created_at'] != null ? _parseUtc(json['created_at'] as String) : DateTime.now(),
+      updatedAt: json['updated_at'] != null ? _parseUtc(json['updated_at'] as String) : DateTime.now(),
     );
   }
 }

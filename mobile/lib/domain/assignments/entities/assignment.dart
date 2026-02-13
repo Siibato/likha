@@ -13,6 +13,9 @@ class Assignment extends Equatable {
   final bool isPublished;
   final int submissionCount;
   final int gradedCount;
+  final String? submissionStatus; // Student's own submission status
+  final String? submissionId; // Student's own submission ID
+  final int? score; // Student's own score
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -29,6 +32,9 @@ class Assignment extends Equatable {
     required this.isPublished,
     required this.submissionCount,
     required this.gradedCount,
+    this.submissionStatus,
+    this.submissionId,
+    this.score,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -47,6 +53,9 @@ class Assignment extends Equatable {
         isPublished,
         submissionCount,
         gradedCount,
+        submissionStatus,
+        submissionId,
+        score,
         createdAt,
         updatedAt,
       ];

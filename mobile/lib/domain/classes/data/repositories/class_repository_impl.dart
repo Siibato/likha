@@ -63,6 +63,28 @@ class ClassRepositoryImpl implements ClassRepository {
   }
 
   @override
+  ResultFuture<ClassEntity> updateClass({
+    required String classId,
+    String? title,
+    String? description,
+  }) async {
+    try {
+      final result = await _remoteDataSource.updateClass(
+        classId: classId,
+        title: title,
+        description: description,
+      );
+      return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   ResultFuture<Enrollment> addStudent({
     required String classId,
     required String studentId,

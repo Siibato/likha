@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/teacher/widgets/question_draft.dart';
 
 class AssessmentReviewStep extends StatelessWidget {
@@ -64,13 +65,13 @@ class AssessmentReviewStep extends StatelessWidget {
   Color _questionTypeColor(String type) {
     switch (type) {
       case 'multiple_choice':
-        return const Color(0xFF42A5F5);
+        return AppColors.foregroundPrimary;
       case 'identification':
-        return const Color(0xFF9C27B0);
+        return AppColors.foregroundSecondary;
       case 'enumeration':
-        return const Color(0xFF26A69A);
+        return AppColors.foregroundTertiary;
       default:
-        return const Color(0xFF999999);
+        return AppColors.foregroundTertiary;
     }
   }
 
@@ -243,7 +244,7 @@ class _InfoRow extends StatelessWidget {
         Icon(
           icon,
           size: 18,
-          color: const Color(0xFF666666),
+          color: AppColors.foregroundSecondary,
         ),
         const SizedBox(width: 10),
         Expanded(

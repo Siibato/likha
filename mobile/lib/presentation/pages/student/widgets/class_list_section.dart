@@ -22,8 +22,7 @@ class ClassListSection extends StatelessWidget {
             final cls = classes[index];
             return ClassCard(
               title: cls.title,
-              // Keep your teacher logic here
-              teacher: 'Prof. Elena Petrova', 
+              teacher: cls.teacherFullName,
               onTap: () => onClassTap(cls),
             );
           },

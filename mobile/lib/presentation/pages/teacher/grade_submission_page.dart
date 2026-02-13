@@ -35,6 +35,16 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
     });
   }
 
+  void _prefillFormIfGraded() {
+    final submission = ref.read(assignmentProvider).currentSubmission;
+    if (submission?.score != null && _scoreController.text.isEmpty) {
+      _scoreController.text = submission!.score.toString();
+    }
+    if (submission?.feedback != null && _feedbackController.text.isEmpty) {
+      _feedbackController.text = submission!.feedback!;
+    }
+  }
+
   @override
   void dispose() {
     _scoreController.dispose();
@@ -123,6 +133,11 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(assignmentProvider);
     final submission = state.currentSubmission;
+
+    // Prefill form if submission is already graded
+    if (submission != null) {
+      _prefillFormIfGraded();
+    }
 
     ref.listen<AssignmentState>(assignmentProvider, (prev, next) {
       if (next.successMessage != null &&
@@ -252,12 +267,15 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
                           ),
                         ],
                         if (submission.status == 'submitted' ||
-                            submission.status == 'returned') ...[
+                            submission.status == 'returned' ||
+                            submission.status == 'graded') ...[
                           const SizedBox(height: 24),
                           const Divider(),
                           const SizedBox(height: 16),
                           Text(
-                            'Grade Submission',
+                            submission.status == 'graded'
+                                ? 'Edit Grade'
+                                : 'Grade Submission',
                             style: Theme.of(context)
                                 .textTheme
                                 .titleMedium
@@ -333,7 +351,9 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
                                               CircularProgressIndicator(
                                                   strokeWidth: 2),
                                         )
-                                      : const Text('Grade'),
+                                      : Text(submission.status == 'graded'
+                                          ? 'Update Grade'
+                                          : 'Grade'),
                                 ),
                               ),
                             ],

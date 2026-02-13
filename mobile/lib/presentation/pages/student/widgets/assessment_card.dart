@@ -233,7 +233,7 @@ class AssessmentCard extends StatelessWidget {
                 : 'Tap to start',
             style: const TextStyle(
               fontSize: 13,
-              color: Color(0xFFFFBD59),
+              color: Color(0xFF666666),
               fontWeight: FontWeight.w600,
               letterSpacing: -0.2,
             ),
@@ -242,7 +242,7 @@ class AssessmentCard extends StatelessWidget {
           const Icon(
             Icons.arrow_forward_rounded,
             size: 16,
-            color: Color(0xFFFFBD59),
+            color: Color(0xFF666666),
           ),
         ],
       ),

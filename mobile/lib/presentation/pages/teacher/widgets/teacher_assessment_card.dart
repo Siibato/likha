@@ -50,15 +50,15 @@ class TeacherAssessmentCard extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: assessment.isPublished
-            ? const Color(0xFFE8F5E9)
-            : const Color(0xFFFFF3E0),
+            ? const Color(0xFFE0E0E0)
+            : const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Icon(
         assessment.isPublished ? Icons.public_rounded : Icons.edit_note_rounded,
         color: assessment.isPublished
-            ? const Color(0xFF4CAF50)
-            : const Color(0xFFFFA726),
+            ? const Color(0xFF2B2B2B)
+            : const Color(0xFF999999),
         size: 20,
       ),
     );

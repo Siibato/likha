@@ -8,7 +8,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::schema::auth_schema::MessageResponse;
-use crate::schema::class_schema::{AddStudentRequest, CreateClassRequest, SearchStudentsQuery};
+use crate::schema::class_schema::{AddStudentRequest, CreateClassRequest, SearchStudentsQuery, UpdateClassRequest};
 use crate::schema::common::ApiResponse;
 use crate::services::auth_service::AuthService;
 use crate::services::class_service::ClassService;
@@ -27,6 +27,25 @@ pub async fn create_class(
     match class_service.create_class(request, auth_user.user_id).await {
         Ok(response) => (
             StatusCode::CREATED,
+            Json(ApiResponse::success(response)),
+        ).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+pub async fn update_class(
+    State(class_service): State<Arc<ClassService>>,
+    auth_user: AuthUser,
+    Path(class_id): Path<Uuid>,
+    Json(request): Json<UpdateClassRequest>,
+) -> impl IntoResponse {
+    if auth_user.role != "teacher" {
+        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    }
+
+    match class_service.update_class(class_id, request, auth_user.user_id).await {
+        Ok(response) => (
+            StatusCode::OK,
             Json(ApiResponse::success(response)),
         ).into_response(),
         Err(e) => e.into_response(),
