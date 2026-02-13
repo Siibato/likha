@@ -50,6 +50,24 @@ pub async fn get_assignments(
     }
 }
 
+pub async fn get_student_assignments(
+    State(service): State<Arc<AssignmentService>>,
+    auth_user: AuthUser,
+    Path(class_id): Path<Uuid>,
+) -> impl IntoResponse {
+    if auth_user.role != "student" {
+        return AppError::Forbidden("Student access required".to_string()).into_response();
+    }
+
+    match service
+        .get_student_assignments(class_id, auth_user.user_id)
+        .await
+    {
+        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
 pub async fn get_assignment_detail(
     State(service): State<Arc<AssignmentService>>,
     auth_user: AuthUser,

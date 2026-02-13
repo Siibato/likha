@@ -15,6 +15,12 @@ abstract class ClassRemoteDataSource {
 
   Future<ClassDetailModel> getClassDetail({required String classId});
 
+  Future<ClassModel> updateClass({
+    required String classId,
+    String? title,
+    String? description,
+  });
+
   Future<EnrollmentModel> addStudent({
     required String classId,
     required String studentId,
@@ -77,6 +83,28 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
 
       final responseData = response.data['data'] ?? response.data;
       return ClassDetailModel.fromJson(responseData);
+    } on DioException catch (e) {
+      throw _dioClient.handleError(e);
+    }
+  }
+
+  @override
+  Future<ClassModel> updateClass({
+    required String classId,
+    String? title,
+    String? description,
+  }) async {
+    try {
+      final response = await _dioClient.dio.put(
+        ApiConstants.classDetail(classId),
+        data: {
+          if (title != null) 'title': title,
+          if (description != null) 'description': description,
+        },
+      );
+
+      final responseData = response.data['data'] ?? response.data;
+      return ClassModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }

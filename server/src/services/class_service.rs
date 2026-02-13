@@ -5,7 +5,7 @@ use crate::db::repositories::class_repository::ClassRepository;
 use crate::db::repositories::user_repository::UserRepository;
 use crate::schema::auth_schema::UserResponse;
 use crate::schema::class_schema::{
-    ClassDetailResponse, ClassListResponse, ClassResponse, CreateClassRequest, EnrollmentResponse,
+    ClassDetailResponse, ClassListResponse, ClassResponse, CreateClassRequest, EnrollmentResponse, UpdateClassRequest,
 };
 use crate::utils::error::{AppError, AppResult};
 
@@ -31,6 +31,12 @@ impl ClassService {
             return Err(AppError::BadRequest("Class title is required".to_string()));
         }
 
+        let teacher = self
+            .user_repo
+            .find_by_id(teacher_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Teacher not found".to_string()))?;
+
         let class = self
             .class_repo
             .create_class(request.title.trim().to_string(), request.description, teacher_id)
@@ -41,6 +47,8 @@ impl ClassService {
             title: class.title,
             description: class.description,
             teacher_id: class.teacher_id,
+            teacher_username: teacher.username,
+            teacher_full_name: teacher.full_name,
             is_archived: class.is_archived,
             student_count: 0,
             created_at: class.created_at.to_string(),
@@ -48,7 +56,80 @@ impl ClassService {
         })
     }
 
+    pub async fn update_class(
+        &self,
+        class_id: Uuid,
+        request: UpdateClassRequest,
+        teacher_id: Uuid,
+    ) -> AppResult<ClassResponse> {
+        // Verify class exists and belongs to the teacher
+        let class = self
+            .class_repo
+            .find_by_id(class_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
+
+        if class.teacher_id != teacher_id {
+            return Err(AppError::Forbidden(
+                "You can only update your own classes".to_string(),
+            ));
+        }
+
+        // Validate title if provided
+        if let Some(ref title) = request.title {
+            if title.trim().is_empty() {
+                return Err(AppError::BadRequest("Class title cannot be empty".to_string()));
+            }
+        }
+
+        // Handle description: if provided, convert to Option<Option<String>>
+        let description = request.description.map(|d| {
+            let trimmed = d.trim();
+            if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed.to_string())
+            }
+        });
+
+        let updated_class = self
+            .class_repo
+            .update_class(
+                class_id,
+                request.title.map(|t| t.trim().to_string()),
+                description,
+            )
+            .await?;
+
+        let teacher = self
+            .user_repo
+            .find_by_id(updated_class.teacher_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Teacher not found".to_string()))?;
+
+        let student_count = self.class_repo.count_students_in_class(class_id).await?;
+
+        Ok(ClassResponse {
+            id: updated_class.id,
+            title: updated_class.title,
+            description: updated_class.description,
+            teacher_id: updated_class.teacher_id,
+            teacher_username: teacher.username,
+            teacher_full_name: teacher.full_name,
+            is_archived: updated_class.is_archived,
+            student_count,
+            created_at: updated_class.created_at.to_string(),
+            updated_at: updated_class.updated_at.to_string(),
+        })
+    }
+
     pub async fn get_teacher_classes(&self, teacher_id: Uuid) -> AppResult<ClassListResponse> {
+        let teacher = self
+            .user_repo
+            .find_by_id(teacher_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Teacher not found".to_string()))?;
+
         let classes = self.class_repo.find_by_teacher_id(teacher_id).await?;
 
         let mut class_responses = Vec::new();
@@ -59,6 +140,8 @@ impl ClassService {
                 title: class.title,
                 description: class.description,
                 teacher_id: class.teacher_id,
+                teacher_username: teacher.username.clone(),
+                teacher_full_name: teacher.full_name.clone(),
                 is_archived: class.is_archived,
                 student_count,
                 created_at: class.created_at.to_string(),
@@ -208,12 +291,20 @@ impl ClassService {
 
         let mut class_responses = Vec::new();
         for class in classes {
+            let teacher = self
+                .user_repo
+                .find_by_id(class.teacher_id)
+                .await?
+                .ok_or_else(|| AppError::NotFound("Teacher not found".to_string()))?;
+
             let student_count = self.class_repo.count_students_in_class(class.id).await?;
             class_responses.push(ClassResponse {
                 id: class.id,
                 title: class.title,
                 description: class.description,
                 teacher_id: class.teacher_id,
+                teacher_username: teacher.username,
+                teacher_full_name: teacher.full_name,
                 is_archived: class.is_archived,
                 student_count,
                 created_at: class.created_at.to_string(),

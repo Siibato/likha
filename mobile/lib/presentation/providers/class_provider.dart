@@ -8,6 +8,7 @@ import 'package:likha/domain/classes/usecases/get_class_detail.dart';
 import 'package:likha/domain/classes/usecases/get_my_classes.dart';
 import 'package:likha/domain/classes/usecases/remove_student.dart';
 import 'package:likha/domain/classes/usecases/search_students.dart';
+import 'package:likha/domain/classes/usecases/update_class.dart';
 import 'package:likha/injection_container.dart';
 
 class ClassState {
@@ -56,6 +57,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
   final CreateClass _createClass;
   final GetMyClasses _getMyClasses;
   final GetClassDetail _getClassDetail;
+  final UpdateClass _updateClass;
   final AddStudent _addStudent;
   final RemoveStudent _removeStudent;
   final SearchStudents _searchStudents;
@@ -64,6 +66,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
     this._createClass,
     this._getMyClasses,
     this._getClassDetail,
+    this._updateClass,
     this._addStudent,
     this._removeStudent,
     this._searchStudents,
@@ -126,6 +129,44 @@ class ClassNotifier extends StateNotifier<ClassState> {
         isLoading: false,
         currentClassDetail: detail,
       ),
+    );
+  }
+
+  Future<void> updateClass({
+    required String classId,
+    String? title,
+    String? description,
+  }) async {
+    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+
+    final result = await _updateClass(UpdateClassParams(
+      classId: classId,
+      title: title,
+      description: description,
+    ));
+
+    result.fold(
+      (failure) => state = state.copyWith(
+        isLoading: false,
+        error: failure.message,
+      ),
+      (updatedClass) {
+        // Update the class in the classes list
+        final updatedClasses = state.classes.map((c) {
+          if (c.id == classId) {
+            return updatedClass;
+          }
+          return c;
+        }).toList();
+
+        state = state.copyWith(
+          isLoading: false,
+          classes: updatedClasses,
+          successMessage: 'Class updated successfully',
+        );
+        // Reload class detail to get updated info
+        loadClassDetail(classId);
+      },
     );
   }
 
@@ -213,6 +254,7 @@ final classProvider = StateNotifierProvider<ClassNotifier, ClassState>((ref) {
     sl<CreateClass>(),
     sl<GetMyClasses>(),
     sl<GetClassDetail>(),
+    sl<UpdateClass>(),
     sl<AddStudent>(),
     sl<RemoveStudent>(),
     sl<SearchStudents>(),

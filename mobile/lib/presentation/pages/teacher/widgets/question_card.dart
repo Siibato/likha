@@ -34,11 +34,11 @@ class QuestionCard extends StatelessWidget {
   Color _questionTypeColor(String type) {
     switch (type) {
       case 'multiple_choice':
-        return const Color(0xFF42A5F5);
+        return const Color(0xFF2B2B2B);
       case 'identification':
-        return const Color(0xFF9C27B0);
+        return const Color(0xFF666666);
       case 'enumeration':
-        return const Color(0xFF26A69A);
+        return const Color(0xFF999999);
       default:
         return const Color(0xFF999999);
     }

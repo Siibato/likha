@@ -53,6 +53,35 @@ impl ClassRepository {
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
     }
 
+    pub async fn update_class(
+        &self,
+        id: Uuid,
+        title: Option<String>,
+        description: Option<Option<String>>,
+    ) -> AppResult<classes::Model> {
+        let class = classes::Entity::find_by_id(id)
+            .one(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
+            .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
+
+        let mut active_class: classes::ActiveModel = class.into();
+        active_class.updated_at = Set(Utc::now().naive_utc());
+
+        if let Some(title) = title {
+            active_class.title = Set(title);
+        }
+
+        if let Some(description) = description {
+            active_class.description = Set(description);
+        }
+
+        active_class
+            .update(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to update class: {}", e)))
+    }
+
     pub async fn add_student(
         &self,
         class_id: Uuid,

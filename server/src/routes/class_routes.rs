@@ -1,5 +1,5 @@
 use axum::{
-    routing::{delete, get, post},
+    routing::{delete, get, post, put},
     Router,
 };
 use std::sync::Arc;
@@ -13,6 +13,7 @@ pub fn routes(class_service: Arc<ClassService>, auth_service: Arc<AuthService>) 
         .route("/classes", post(class_handler::create_class))
         .route("/classes", get(class_handler::get_classes))
         .route("/classes/{id}", get(class_handler::get_class_detail))
+        .route("/classes/{id}", put(class_handler::update_class))
         .route(
             "/classes/{id}/students",
             post(class_handler::add_student),

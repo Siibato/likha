@@ -65,6 +65,8 @@ class ApiConstants {
   // Assignment endpoints
   static String classAssignments(String classId) =>
       '/api/v1/classes/$classId/assignments';
+  static String classStudentAssignments(String classId) =>
+      '/api/v1/classes/$classId/student-assignments';
   static String assignmentDetail(String assignmentId) =>
       '/api/v1/assignments/$assignmentId';
   static String assignmentPublish(String assignmentId) =>
@@ -87,6 +89,20 @@ class ApiConstants {
       '/api/v1/submission-files/$fileId';
   static String submissionFileDownload(String fileId) =>
       '/api/v1/submission-files/$fileId/download';
+
+  // Learning Material endpoints
+  static String classMaterials(String classId) =>
+      '/api/v1/classes/$classId/materials';
+  static String materialDetail(String materialId) =>
+      '/api/v1/materials/$materialId';
+  static String materialReorder(String materialId) =>
+      '/api/v1/materials/$materialId/reorder';
+  static String materialUploadFile(String materialId) =>
+      '/api/v1/materials/$materialId/files';
+  static String materialFileDelete(String fileId) =>
+      '/api/v1/material-files/$fileId';
+  static String materialFileDownload(String fileId) =>
+      '/api/v1/material-files/$fileId/download';
 
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);

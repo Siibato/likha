@@ -52,6 +52,9 @@ pub struct AssignmentResponse {
     pub is_published: bool,
     pub submission_count: usize,
     pub graded_count: usize,
+    pub submission_status: Option<String>,
+    pub submission_id: Option<Uuid>,
+    pub score: Option<i32>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -70,6 +73,7 @@ pub struct StudentAssignmentListItem {
     pub due_at: String,
     pub is_published: bool,
     pub submission_status: Option<String>,
+    pub submission_id: Option<Uuid>,
     pub score: Option<i32>,
 }
 

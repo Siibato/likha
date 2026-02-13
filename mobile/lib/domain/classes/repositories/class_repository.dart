@@ -13,6 +13,12 @@ abstract class ClassRepository {
 
   ResultFuture<ClassDetail> getClassDetail({required String classId});
 
+  ResultFuture<ClassEntity> updateClass({
+    required String classId,
+    String? title,
+    String? description,
+  });
+
   ResultFuture<Enrollment> addStudent({
     required String classId,
     required String studentId,

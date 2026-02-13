@@ -81,10 +81,10 @@ class ScoreSummaryCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF8ED),
+                color: const Color(0xFFF8F9FA),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: const Color(0xFFFFBD59).withOpacity(0.3),
+                  color: const Color(0xFFE0E0E0),
                 ),
               ),
               child: Text(
@@ -92,7 +92,7 @@ class ScoreSummaryCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFFFFBD59),
+                  color: Color(0xFF2B2B2B),
                   letterSpacing: -0.3,
                 ),
               ),
@@ -106,7 +106,7 @@ class ScoreSummaryCard extends StatelessWidget {
                     : 0,
                 minHeight: 10,
                 backgroundColor: const Color(0xFFF0F0F0),
-                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFFBD59)),
+                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF2B2B2B)),
               ),
             ),
             if (result.submittedAt != null) ...[

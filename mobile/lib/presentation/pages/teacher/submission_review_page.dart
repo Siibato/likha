@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:likha/domain/assessments/usecases/override_answer.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
@@ -100,14 +101,14 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.successMessage!),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.semanticSuccess,
           ),
         );
         ref.read(assessmentProvider.notifier).clearMessages();
       }
       if (next.error != null && prev?.error != next.error) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.error!), backgroundColor: Colors.red),
+          SnackBar(content: Text(next.error!), backgroundColor: AppColors.semanticError),
         );
         ref.read(assessmentProvider.notifier).clearMessages();
       }
@@ -171,10 +172,8 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
                       ),
                       Text(
                         detail.isSubmitted ? 'Submitted' : 'In Progress',
-                        style: TextStyle(
-                          color: detail.isSubmitted
-                              ? Colors.green
-                              : Colors.orange,
+                        style: const TextStyle(
+                          color: AppColors.foregroundSecondary,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -190,12 +189,12 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
                 _scoreColumn(
                   'Auto Score',
                   detail.autoScore,
-                  Colors.blue,
+                  AppColors.foregroundSecondary,
                 ),
                 _scoreColumn(
                   'Final Score',
                   detail.finalScore,
-                  Colors.green,
+                  AppColors.foregroundPrimary,
                 ),
               ],
             ),
@@ -203,7 +202,7 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
               const Divider(height: 24),
               Text(
                 'Submitted: ${_formatDateTime(detail.submittedAt!)}',
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                style: const TextStyle(fontSize: 13, color: AppColors.foregroundTertiary),
               ),
             ],
           ],
@@ -215,7 +214,7 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
   Widget _scoreColumn(String label, double score, Color color) {
     return Column(
       children: [
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.foregroundTertiary)),
         const SizedBox(height: 4),
         Text(
           score % 1 == 0 ? score.toInt().toString() : score.toStringAsFixed(1),
@@ -239,13 +238,13 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
     Color statusColor;
     IconData statusIcon;
     if (effectiveCorrect) {
-      statusColor = Colors.green;
+      statusColor = AppColors.foregroundPrimary;
       statusIcon = Icons.check_circle;
     } else if (isPartial) {
-      statusColor = Colors.orange;
+      statusColor = AppColors.foregroundSecondary;
       statusIcon = Icons.remove_circle;
     } else {
-      statusColor = Colors.red;
+      statusColor = AppColors.foregroundTertiary;
       statusIcon = Icons.cancel;
     }
 
@@ -273,7 +272,7 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
                       const SizedBox(height: 2),
                       Text(
                         '${_questionTypeLabel(answer.questionType)} - ${answer.points} pt${answer.points != 1 ? 's' : ''}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                        style: const TextStyle(fontSize: 12, color: AppColors.foregroundTertiary),
                       ),
                     ],
                   ),
@@ -303,14 +302,14 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.amber.withValues(alpha: 0.1),
+                  color: AppColors.foregroundSecondary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: const Text(
                   'Grade overridden',
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.amber,
+                    color: AppColors.foregroundSecondary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -324,14 +323,14 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
                   onPressed: () => _confirmOverride(answer, true),
                   icon: const Icon(Icons.check, size: 18),
                   label: const Text('Mark Correct'),
-                  style: TextButton.styleFrom(foregroundColor: Colors.green),
+                  style: TextButton.styleFrom(foregroundColor: AppColors.foregroundPrimary),
                 ),
                 const SizedBox(width: 8),
                 TextButton.icon(
                   onPressed: () => _confirmOverride(answer, false),
                   icon: const Icon(Icons.close, size: 18),
                   label: const Text('Mark Incorrect'),
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  style: TextButton.styleFrom(foregroundColor: AppColors.foregroundTertiary),
                 ),
               ],
             ),

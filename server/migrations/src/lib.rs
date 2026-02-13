@@ -7,6 +7,7 @@ mod create_class_enrollments_table;
 mod create_activity_logs_table;
 mod create_assessment_tables;
 mod create_assignment_tables;
+mod create_learning_materials_tables;
 
 pub struct Migrator;
 
@@ -21,6 +22,7 @@ impl MigratorTrait for Migrator {
             Box::new(create_activity_logs_table::Migration),
             Box::new(create_assessment_tables::Migration),
             Box::new(create_assignment_tables::Migration),
+            Box::new(create_learning_materials_tables::Migration),
         ]
     }
 }

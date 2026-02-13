@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class AssessmentSubmissionCard extends StatelessWidget {
   final String studentName;
@@ -53,11 +54,11 @@ class AssessmentSubmissionCard extends StatelessWidget {
           child: Row(
             children: [
               CircleAvatar(
-                backgroundColor: const Color(0xFFF8F9FA),
+                backgroundColor: AppColors.backgroundTertiary,
                 child: Text(
                   studentName.isNotEmpty ? studentName[0].toUpperCase() : '?',
                   style: const TextStyle(
-                    color: Color(0xFF404040),
+                    color: AppColors.foregroundPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -80,7 +81,7 @@ class AssessmentSubmissionCard extends StatelessWidget {
                       studentUsername,
                       style: const TextStyle(
                         fontSize: 13,
-                        color: Color(0xFF999999),
+                        color: AppColors.foregroundTertiary,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -90,7 +91,7 @@ class AssessmentSubmissionCard extends StatelessWidget {
                           : 'Started: ${_formatDateTime(startedAt)}',
                       style: const TextStyle(
                         fontSize: 11,
-                        color: Color(0xFF999999),
+                        color: AppColors.foregroundTertiary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -106,19 +107,33 @@ class AssessmentSubmissionCard extends StatelessWidget {
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: isSubmitted
-                          ? const Color(0xFF4CAF50).withValues(alpha: 0.15)
-                          : const Color(0xFFFFA726).withValues(alpha: 0.15),
+                      color: AppColors.foregroundSecondary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Text(
-                      isSubmitted ? 'Submitted' : 'In Progress',
+                    child: const Text(
+                      'Submitted',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: isSubmitted
-                            ? const Color(0xFF4CAF50)
-                            : const Color(0xFFFFA726),
+                        color: AppColors.foregroundSecondary,
+                      ),
+                    ),
+                  ) if (isSubmitted) else
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.foregroundTertiary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'In Progress',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.foregroundTertiary,
                       ),
                     ),
                   ),
@@ -129,7 +144,7 @@ class AssessmentSubmissionCard extends StatelessWidget {
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.foregroundPrimary,
                       ),
                     ),
                   ],
@@ -138,7 +153,7 @@ class AssessmentSubmissionCard extends StatelessWidget {
               const SizedBox(width: 8),
               const Icon(
                 Icons.chevron_right_rounded,
-                color: Color(0xFFCCCCCC),
+                color: AppColors.borderLight,
                 size: 22,
               ),
             ],

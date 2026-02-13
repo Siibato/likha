@@ -132,6 +132,9 @@ impl AssignmentService {
             is_published: assignment.is_published,
             submission_count: 0,
             graded_count: 0,
+            submission_status: None,
+            submission_id: None,
+            score: None,
             created_at: assignment.created_at.to_string(),
             updated_at: assignment.updated_at.to_string(),
         })
@@ -168,6 +171,21 @@ impl AssignmentService {
                 .count_graded_by_assignment(a.id)
                 .await?;
 
+            // For students, include their submission status
+            let (submission_status, submission_id, score) = if role == "student" {
+                let submission = self
+                    .assignment_repo
+                    .find_student_submission(a.id, user_id)
+                    .await?;
+                (
+                    submission.as_ref().map(|s| s.status.clone()),
+                    submission.as_ref().map(|s| s.id),
+                    submission.and_then(|s| s.score),
+                )
+            } else {
+                (None, None, None)
+            };
+
             responses.push(AssignmentResponse {
                 id: a.id,
                 class_id: a.class_id,
@@ -181,6 +199,9 @@ impl AssignmentService {
                 is_published: a.is_published,
                 submission_count,
                 graded_count,
+                submission_status,
+                submission_id,
+                score,
                 created_at: a.created_at.to_string(),
                 updated_at: a.updated_at.to_string(),
             });
@@ -216,6 +237,7 @@ impl AssignmentService {
                 due_at: a.due_at.to_string(),
                 is_published: a.is_published,
                 submission_status: submission.as_ref().map(|s| s.status.clone()),
+                submission_id: submission.as_ref().map(|s| s.id),
                 score: submission.and_then(|s| s.score),
             });
         }
@@ -271,6 +293,9 @@ impl AssignmentService {
             is_published: assignment.is_published,
             submission_count,
             graded_count,
+            submission_status: None,
+            submission_id: None,
+            score: None,
             created_at: assignment.created_at.to_string(),
             updated_at: assignment.updated_at.to_string(),
         })
@@ -390,6 +415,9 @@ impl AssignmentService {
             is_published: updated.is_published,
             submission_count,
             graded_count,
+            submission_status: None,
+            submission_id: None,
+            score: None,
             created_at: updated.created_at.to_string(),
             updated_at: updated.updated_at.to_string(),
         })
@@ -498,6 +526,9 @@ impl AssignmentService {
             is_published: published.is_published,
             submission_count: 0,
             graded_count: 0,
+            submission_status: None,
+            submission_id: None,
+            score: None,
             created_at: published.created_at.to_string(),
             updated_at: published.updated_at.to_string(),
         })
@@ -877,7 +908,7 @@ impl AssignmentService {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
-        if submission.status != "submitted" && submission.status != "returned" {
+        if submission.status != "submitted" && submission.status != "returned" && submission.status != "graded" {
             return Err(AppError::BadRequest(format!(
                 "Cannot grade a submission with status '{}'",
                 submission.status

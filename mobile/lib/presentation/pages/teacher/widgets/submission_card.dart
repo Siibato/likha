@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class SubmissionCard extends StatelessWidget {
   final String studentName;
@@ -23,15 +24,15 @@ class SubmissionCard extends StatelessWidget {
   Color _statusColor(String status) {
     switch (status) {
       case 'draft':
-        return const Color(0xFF999999);
+        return AppColors.foregroundTertiary;
       case 'submitted':
-        return const Color(0xFF42A5F5);
+        return AppColors.foregroundSecondary;
       case 'graded':
-        return const Color(0xFF4CAF50);
+        return AppColors.foregroundPrimary;
       case 'returned':
-        return const Color(0xFFFFA726);
+        return AppColors.foregroundSecondary;
       default:
-        return const Color(0xFF999999);
+        return AppColors.foregroundTertiary;
     }
   }
 
@@ -85,11 +86,11 @@ class SubmissionCard extends StatelessWidget {
           child: Row(
             children: [
               CircleAvatar(
-                backgroundColor: const Color(0xFFF8F9FA),
+                backgroundColor: AppColors.backgroundTertiary,
                 child: Text(
                   studentName.isNotEmpty ? studentName[0].toUpperCase() : '?',
                   style: const TextStyle(
-                    color: Color(0xFF404040),
+                    color: AppColors.foregroundPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -139,13 +140,13 @@ class SubmissionCard extends StatelessWidget {
                               vertical: 3,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEF5350).withValues(alpha: 0.15),
+                              color: AppColors.semanticError.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Text(
                               'Late',
                               style: TextStyle(
-                                color: Color(0xFFEF5350),
+                                color: AppColors.semanticError,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -155,7 +156,7 @@ class SubmissionCard extends StatelessWidget {
                           Text(
                             '$score/$totalPoints pts',
                             style: const TextStyle(
-                              color: Color(0xFF666666),
+                              color: AppColors.foregroundSecondary,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
@@ -168,7 +169,7 @@ class SubmissionCard extends StatelessWidget {
                         'Submitted: ${_formatDateTime(submittedAt!)}',
                         style: const TextStyle(
                           fontSize: 11,
-                          color: Color(0xFF999999),
+                          color: AppColors.foregroundTertiary,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -179,7 +180,7 @@ class SubmissionCard extends StatelessWidget {
               const SizedBox(width: 8),
               const Icon(
                 Icons.chevron_right_rounded,
-                color: Color(0xFFCCCCCC),
+                color: AppColors.borderLight,
                 size: 22,
               ),
             ],

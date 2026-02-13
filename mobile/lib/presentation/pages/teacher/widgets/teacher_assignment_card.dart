@@ -50,8 +50,8 @@ class TeacherAssignmentCard extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: assignment.isPublished
-            ? const Color(0xFFE8F5E9)
-            : const Color(0xFFFFF3E0),
+            ? const Color(0xFFE0E0E0)
+            : const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Icon(
@@ -59,8 +59,8 @@ class TeacherAssignmentCard extends StatelessWidget {
             ? Icons.assignment_turned_in_rounded
             : Icons.assignment_outlined,
         color: assignment.isPublished
-            ? const Color(0xFF4CAF50)
-            : const Color(0xFFFFA726),
+            ? const Color(0xFF2B2B2B)
+            : const Color(0xFF999999),
         size: 20,
       ),
     );
