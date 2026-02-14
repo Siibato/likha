@@ -27,7 +27,35 @@ class LearningMaterialModel extends LearningMaterial {
     );
   }
 
+  factory LearningMaterialModel.fromMap(Map<String, dynamic> map) {
+    return LearningMaterialModel(
+      id: map['id'] as String,
+      classId: map['class_id'] as String,
+      title: map['title'] as String,
+      description: map['description'] as String?,
+      contentText: map['content_text'] as String?,
+      orderIndex: map['order_index'] as int,
+      fileCount: map['file_count'] as int? ?? 0,
+      createdAt: DateTime.parse(map['created_at'] as String),
+      updatedAt: DateTime.parse(map['updated_at'] as String),
+    );
+  }
+
   Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'class_id': classId,
+      'title': title,
+      'description': description,
+      'content_text': contentText,
+      'order_index': orderIndex,
+      'file_count': fileCount,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
+
+  Map<String, dynamic> toMap() {
     return {
       'id': id,
       'class_id': classId,

@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/network/connectivity_service.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/admin/entities/activity_log.dart';
+import 'package:likha/domain/auth/data/datasources/auth_local_datasource.dart';
 import 'package:likha/domain/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:likha/domain/auth/entities/check_username_result.dart';
 import 'package:likha/domain/auth/entities/user.dart';
@@ -11,9 +15,16 @@ import 'package:likha/services/storage_service.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource _remoteDataSource;
+  final AuthLocalDataSource _localDataSource;
+  final ConnectivityService _connectivityService;
   final StorageService _storageService;
 
-  AuthRepositoryImpl(this._remoteDataSource, this._storageService);
+  AuthRepositoryImpl(
+    this._remoteDataSource,
+    this._localDataSource,
+    this._connectivityService,
+    this._storageService,
+  );
 
   @override
   ResultFuture<CheckUsernameResult> checkUsername(
@@ -106,15 +117,30 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   ResultFuture<User> getCurrentUser() async {
+    // Online-first routing with fallback to offline cache
+    if (_connectivityService.isOnline) {
+      try {
+        final user = await _remoteDataSource.getCurrentUser();
+        // Fire-and-forget cache update
+        unawaited(_localDataSource.cacheCurrentUser(user));
+        return Right(user);
+      } on ServerException catch (e) {
+        return Left(ServerFailure(e.message));
+      } on NetworkException catch (_) {
+        // Flaky connection - fall through to cache
+      } on UnauthorizedException catch (e) {
+        return Left(UnauthorizedFailure(e.message));
+      } catch (e) {
+        return Left(ServerFailure(e.toString()));
+      }
+    }
+
+    // Offline or network failure - use cached data
     try {
-      final user = await _remoteDataSource.getCurrentUser();
-      return Right(user);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
-    } on UnauthorizedException catch (e) {
-      return Left(UnauthorizedFailure(e.message));
+      final cachedUser = await _localDataSource.getCachedCurrentUser();
+      return Right(cachedUser);
+    } on CacheException catch (e) {
+      return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -168,13 +194,28 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   ResultFuture<List<User>> getAllAccounts() async {
+    // Online-first routing with fallback to offline cache for admin reads
+    if (_connectivityService.isOnline) {
+      try {
+        final result = await _remoteDataSource.getAllAccounts();
+        // Fire-and-forget cache update
+        unawaited(_localDataSource.cacheAccounts(result));
+        return Right(result);
+      } on ServerException catch (e) {
+        return Left(ServerFailure(e.message));
+      } on NetworkException catch (_) {
+        // Flaky connection - fall through to cache
+      } catch (e) {
+        return Left(ServerFailure(e.toString()));
+      }
+    }
+
+    // Offline or network failure - use cached data
     try {
-      final result = await _remoteDataSource.getAllAccounts();
-      return Right(result);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
+      final cachedAccounts = await _localDataSource.getCachedAccounts();
+      return Right(cachedAccounts);
+    } on CacheException catch (e) {
+      return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
