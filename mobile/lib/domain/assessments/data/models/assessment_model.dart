@@ -38,4 +38,44 @@ class AssessmentModel extends Assessment {
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
   }
+
+  factory AssessmentModel.fromMap(Map<String, dynamic> map) {
+    return AssessmentModel(
+      id: map['id'] as String,
+      classId: map['class_id'] as String,
+      title: map['title'] as String,
+      description: map['description'] as String?,
+      timeLimitMinutes: map['time_limit_minutes'] as int,
+      openAt: DateTime.parse(map['open_at'] as String),
+      closeAt: DateTime.parse(map['close_at'] as String),
+      showResultsImmediately: (map['show_results_immediately'] as int?) == 1,
+      resultsReleased: (map['results_released'] as int?) == 1,
+      isPublished: (map['is_published'] as int?) == 1,
+      totalPoints: map['total_points'] as int,
+      questionCount: map['question_count'] as int? ?? 0,
+      submissionCount: map['submission_count'] as int? ?? 0,
+      createdAt: DateTime.parse(map['created_at'] as String),
+      updatedAt: DateTime.parse(map['updated_at'] as String),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'class_id': classId,
+      'title': title,
+      'description': description,
+      'time_limit_minutes': timeLimitMinutes,
+      'open_at': openAt.toIso8601String(),
+      'close_at': closeAt.toIso8601String(),
+      'show_results_immediately': showResultsImmediately ? 1 : 0,
+      'results_released': resultsReleased ? 1 : 0,
+      'is_published': isPublished ? 1 : 0,
+      'total_points': totalPoints,
+      'question_count': questionCount,
+      'submission_count': submissionCount,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
 }

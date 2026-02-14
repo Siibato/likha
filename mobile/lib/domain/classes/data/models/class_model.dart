@@ -28,4 +28,34 @@ class ClassModel extends ClassEntity {
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
   }
+
+  factory ClassModel.fromMap(Map<String, dynamic> map) {
+    return ClassModel(
+      id: map['id'] as String,
+      title: map['title'] as String,
+      description: map['description'] as String?,
+      teacherId: map['teacher_id'] as String,
+      teacherUsername: map['teacher_username'] as String,
+      teacherFullName: map['teacher_full_name'] as String,
+      isArchived: (map['is_archived'] as int?) == 1,
+      studentCount: map['student_count'] as int? ?? 0,
+      createdAt: DateTime.parse(map['created_at'] as String),
+      updatedAt: DateTime.parse(map['updated_at'] as String),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'teacher_id': teacherId,
+      'teacher_username': teacherUsername,
+      'teacher_full_name': teacherFullName,
+      'is_archived': isArchived ? 1 : 0,
+      'student_count': studentCount,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
 }

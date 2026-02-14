@@ -100,6 +100,29 @@ flutter run -d <device_id>
 - If `emulator` command not found, ensure `$ANDROID_HOME/emulator` is in your PATH
 - For physical devices, ensure USB debugging is enabled and the device is authorized
 
+### 4. Building an APK
+
+To build an APK for distribution or testing:
+
+```bash
+cd mobile
+flutter build apk --release
+```
+
+The APK will be available at `build/app/outputs/apk/release/app-release.apk`
+
+For debug builds (for testing only):
+
+```bash
+flutter build apk --debug
+```
+
+For split APKs by architecture (smaller file sizes):
+
+```bash
+flutter build apk --release --split-per-abi
+```
+
 ## Database
 
 This project uses **SQLite** for simplicity and true offline capability:

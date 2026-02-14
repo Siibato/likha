@@ -22,6 +22,7 @@ use crate::services::assignment_service::AssignmentService;
 use crate::services::auth_service::AuthService;
 use crate::services::class_service::ClassService;
 use crate::services::learning_material_service::LearningMaterialService;
+use crate::services::sync_service::SyncService;
 
 #[tokio::main]
 async fn main() {
@@ -133,7 +134,24 @@ async fn main() {
     let assignment_service = Arc::new(AssignmentService::new(db.clone()));
     let material_service = Arc::new(LearningMaterialService::new(db.clone()));
 
-    let app = create_app(auth_service, class_service, assessment_service, assignment_service, material_service);
+    // Initialize sync service
+    let sync_service = Arc::new(SyncService::new(
+        db.clone(),
+        auth_service.clone(),
+        class_service.clone(),
+        assessment_service.clone(),
+        assignment_service.clone(),
+        material_service.clone(),
+    ));
+
+    let app = create_app(
+        auth_service,
+        class_service,
+        assessment_service,
+        assignment_service,
+        material_service,
+        sync_service,
+    );
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
 
@@ -154,6 +172,7 @@ fn create_app(
     assessment_service: Arc<AssessmentService>,
     assignment_service: Arc<AssignmentService>,
     material_service: Arc<LearningMaterialService>,
+    sync_service: Arc<SyncService>,
 ) -> Router {
     let cors = CorsLayer::new()
         .allow_origin(Any)
@@ -163,7 +182,14 @@ fn create_app(
     Router::new()
         .nest(
             "/api/v1",
-            routes::api_routes(auth_service, class_service, assessment_service, assignment_service, material_service),
+            routes::api_routes(
+                auth_service,
+                class_service,
+                assessment_service,
+                assignment_service,
+                material_service,
+                sync_service,
+            ),
         )
         .layer(cors)
         .layer(middleware::logging_middleware())

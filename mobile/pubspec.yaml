@@ -27,6 +27,9 @@ dependencies:
   # Value equality
   equatable: ^2.0.5
 
+  # UUID generation
+  uuid: ^4.0.0
+
   # Environment configuration
   flutter_dotenv: ^5.1.0
   file_picker: ^10.3.10
