@@ -11,7 +11,7 @@ use uuid::Uuid;
 use crate::middleware::auth_middleware::AuthUser;
 use crate::schema::assignment_schema::*;
 use crate::schema::auth_schema::MessageResponse;
-use crate::schema::common::ApiResponse;
+use crate::schema::common::success_response;
 use crate::services::assignment_service::AssignmentService;
 use crate::utils::error::AppError;
 
@@ -31,7 +31,7 @@ pub async fn create_assignment(
         .create_assignment(class_id, request, auth_user.user_id)
         .await
     {
-        Ok(response) => (StatusCode::CREATED, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -45,7 +45,7 @@ pub async fn get_assignments(
         .get_assignments(class_id, auth_user.user_id, &auth_user.role)
         .await
     {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -63,7 +63,7 @@ pub async fn get_student_assignments(
         .get_student_assignments(class_id, auth_user.user_id)
         .await
     {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -77,7 +77,7 @@ pub async fn get_assignment_detail(
         .get_assignment_detail(id, auth_user.user_id, &auth_user.role)
         .await
     {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -96,7 +96,7 @@ pub async fn update_assignment(
         .update_assignment(id, request, auth_user.user_id)
         .await
     {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -111,13 +111,9 @@ pub async fn delete_assignment(
     }
 
     match service.delete_assignment(id, auth_user.user_id).await {
-        Ok(()) => (
-            StatusCode::OK,
-            Json(ApiResponse::success(MessageResponse {
-                message: "Assignment deleted".to_string(),
-            })),
-        )
-            .into_response(),
+        Ok(()) => success_response(MessageResponse {
+            message: "Assignment deleted".to_string(),
+        }, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -132,7 +128,7 @@ pub async fn publish_assignment(
     }
 
     match service.publish_assignment(id, auth_user.user_id).await {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -147,7 +143,7 @@ pub async fn get_submissions(
     }
 
     match service.get_submissions(id, auth_user.user_id).await {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -161,7 +157,7 @@ pub async fn get_submission_detail(
         .get_submission_detail(id, auth_user.user_id, &auth_user.role)
         .await
     {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -180,7 +176,7 @@ pub async fn grade_submission(
         .grade_submission(id, request, auth_user.user_id)
         .await
     {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -195,7 +191,7 @@ pub async fn return_submission(
     }
 
     match service.return_submission(id, auth_user.user_id).await {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -216,7 +212,7 @@ pub async fn create_submission(
         .create_or_get_submission(id, auth_user.user_id, request.text_content)
         .await
     {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -255,8 +251,7 @@ pub async fn upload_file(
             .await
         {
             Ok(response) => {
-                return (StatusCode::CREATED, Json(ApiResponse::success(response)))
-                    .into_response();
+                return success_response(response, StatusCode::CREATED).into_response();
             }
             Err(e) => return e.into_response(),
         }
@@ -275,13 +270,9 @@ pub async fn delete_submission_file(
     }
 
     match service.delete_file(id, auth_user.user_id).await {
-        Ok(()) => (
-            StatusCode::OK,
-            Json(ApiResponse::success(MessageResponse {
-                message: "File deleted".to_string(),
-            })),
-        )
-            .into_response(),
+        Ok(()) => success_response(MessageResponse {
+            message: "File deleted".to_string(),
+        }, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -296,7 +287,7 @@ pub async fn submit_assignment(
     }
 
     match service.submit_assignment(id, auth_user.user_id).await {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }

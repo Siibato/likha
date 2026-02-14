@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
-import 'package:likha/core/constants/api_constants.dart';
+import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/domain/learning_materials/data/models/learning_material_model.dart';
 import 'package:likha/domain/learning_materials/data/models/material_detail_model.dart';
@@ -49,28 +49,24 @@ class LearningMaterialRemoteDataSourceImpl implements LearningMaterialRemoteData
     required String classId,
     required Map<String, dynamic> data,
   }) async {
-    final response = await _dioClient.dio.post(
-      ApiConstants.classMaterials(classId),
+    return await _dioClient.postTyped(
+      ApiEndpoints.classMaterials(classId),
       data: data,
     );
-    return LearningMaterialModel.fromJson(response.data['data']);
   }
 
   @override
   Future<List<LearningMaterialModel>> getMaterials({required String classId}) async {
-    final response = await _dioClient.dio.get(
-      ApiConstants.classMaterials(classId),
+    return await _dioClient.getTyped(
+      ApiEndpoints.classMaterialsList(classId),
     );
-    final materialsJson = response.data['data']['materials'] as List;
-    return materialsJson.map((json) => LearningMaterialModel.fromJson(json)).toList();
   }
 
   @override
   Future<MaterialDetailModel> getMaterialDetail({required String materialId}) async {
-    final response = await _dioClient.dio.get(
-      ApiConstants.materialDetail(materialId),
+    return await _dioClient.getTyped(
+      ApiEndpoints.materialDetail(materialId),
     );
-    return MaterialDetailModel.fromJson(response.data['data']);
   }
 
   @override
@@ -78,17 +74,16 @@ class LearningMaterialRemoteDataSourceImpl implements LearningMaterialRemoteData
     required String materialId,
     required Map<String, dynamic> data,
   }) async {
-    final response = await _dioClient.dio.put(
-      ApiConstants.materialDetail(materialId),
+    return await _dioClient.putTyped(
+      ApiEndpoints.materialUpdate(materialId),
       data: data,
     );
-    return LearningMaterialModel.fromJson(response.data['data']);
   }
 
   @override
   Future<void> deleteMaterial({required String materialId}) async {
-    await _dioClient.dio.delete(
-      ApiConstants.materialDetail(materialId),
+    await _dioClient.deleteTyped(
+      ApiEndpoints.materialDetail(materialId),
     );
   }
 
@@ -97,11 +92,10 @@ class LearningMaterialRemoteDataSourceImpl implements LearningMaterialRemoteData
     required String materialId,
     required int newOrderIndex,
   }) async {
-    final response = await _dioClient.dio.post(
-      ApiConstants.materialReorder(materialId),
+    return await _dioClient.postTyped(
+      ApiEndpoints.materialReorder(materialId),
       data: {'new_order_index': newOrderIndex},
     );
-    return LearningMaterialModel.fromJson(response.data['data']);
   }
 
   @override
@@ -119,7 +113,7 @@ class LearningMaterialRemoteDataSourceImpl implements LearningMaterialRemoteData
     });
 
     final response = await _dioClient.dio.post(
-      ApiConstants.materialUploadFile(materialId),
+      ApiEndpoints.materialUploadFile(materialId).path,
       data: formData,
     );
     return MaterialFileModel.fromJson(response.data['data']);
@@ -127,15 +121,15 @@ class LearningMaterialRemoteDataSourceImpl implements LearningMaterialRemoteData
 
   @override
   Future<void> deleteFile({required String fileId}) async {
-    await _dioClient.dio.delete(
-      ApiConstants.materialFileDelete(fileId),
+    await _dioClient.deleteTyped(
+      ApiEndpoints.materialFileDelete(fileId),
     );
   }
 
   @override
   Future<List<int>> downloadFile({required String fileId}) async {
     final response = await _dioClient.dio.get(
-      ApiConstants.materialFileDownload(fileId),
+      ApiEndpoints.materialFileDownload(fileId).path,
       options: Options(responseType: ResponseType.bytes),
     );
     return response.data as List<int>;

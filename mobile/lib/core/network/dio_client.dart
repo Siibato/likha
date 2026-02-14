@@ -2,7 +2,10 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:likha/core/constants/api_constants.dart';
+import 'package:likha/core/constants/api_endpoint.dart';
+import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/errors/exceptions.dart';
+import 'package:likha/core/network/api_response.dart';
 import 'package:likha/services/storage_service.dart';
 
 class DioClient {
@@ -36,16 +39,75 @@ class DioClient {
 
   Dio get dio => _dio;
 
+  /// Typed GET request that validates the server's ApiResponse<T> envelope.
+  /// Throws [ServerException] if success is false.
+  Future<T> getTyped<T>(ApiEndpoint<T> endpoint,
+      {Map<String, dynamic>? queryParameters}) async {
+    try {
+      final response = await _dio.get(
+        endpoint.path,
+        queryParameters: queryParameters,
+      );
+      return ApiResponse.fromJson(response.data, endpoint.fromJson).unwrap();
+    } on DioException catch (e) {
+      throw handleError(e);
+    }
+  }
+
+  /// Typed POST request that validates the server's ApiResponse<T> envelope.
+  /// Throws [ServerException] if success is false.
+  Future<T> postTyped<T>(ApiEndpoint<T> endpoint, {dynamic data}) async {
+    try {
+      final response = await _dio.post(
+        endpoint.path,
+        data: data,
+      );
+      return ApiResponse.fromJson(response.data, endpoint.fromJson).unwrap();
+    } on DioException catch (e) {
+      throw handleError(e);
+    }
+  }
+
+  /// Typed PUT request that validates the server's ApiResponse<T> envelope.
+  /// Throws [ServerException] if success is false.
+  Future<T> putTyped<T>(ApiEndpoint<T> endpoint, {dynamic data}) async {
+    try {
+      final response = await _dio.put(
+        endpoint.path,
+        data: data,
+      );
+      return ApiResponse.fromJson(response.data, endpoint.fromJson).unwrap();
+    } on DioException catch (e) {
+      throw handleError(e);
+    }
+  }
+
+  /// Typed DELETE request that validates the server's ApiResponse envelope.
+  /// For void responses, we check the success flag but don't deserialize data.
+  /// Throws [ServerException] if success is false.
+  Future<void> deleteTyped(ApiEndpoint<void> endpoint) async {
+    try {
+      final response = await _dio.delete(endpoint.path);
+      // Deserialize the envelope but ignore the data (it's void)
+      final apiResponse = ApiResponse.fromJson(response.data, (_) {});
+      if (!apiResponse.success) {
+        throw ServerException(apiResponse.error ?? 'Delete failed');
+      }
+    } on DioException catch (e) {
+      throw handleError(e);
+    }
+  }
+
   // Auth Interceptor - Attach token to requests
   Interceptor _authInterceptor() {
     return InterceptorsWrapper(
       onRequest: (options, handler) async {
         // Skip token for auth endpoints
         final publicEndpoints = [
-          ApiConstants.checkUsername,
-          ApiConstants.activate,
-          ApiConstants.login,
-          ApiConstants.refresh,
+          ApiEndpoints.checkUsername.path,
+          ApiEndpoints.activate.path,
+          ApiEndpoints.login.path,
+          ApiEndpoints.refresh.path,
         ];
 
         if (!publicEndpoints.contains(options.path)) {
@@ -66,7 +128,7 @@ class DioClient {
       onError: (error, handler) async {
         // Only attempt refresh for non-auth endpoints
         if (error.response?.statusCode == 401 &&
-            error.requestOptions.path != ApiConstants.refresh) {
+            error.requestOptions.path != ApiEndpoints.refresh.path) {
           final refreshed = await _tryRefresh();
 
           if (refreshed) {
@@ -124,21 +186,23 @@ class DioClient {
       if (refreshToken == null) return false;
 
       final response = await _dio.post(
-        ApiConstants.refresh,
+        ApiEndpoints.refresh.path,
         data: {'refresh_token': refreshToken},
       );
 
-      if (response.statusCode == 200) {
-        final data = response.data['data'];
-        await _storageService.saveAuthData(
-          accessToken: data['access_token'],
-          refreshToken: data['refresh_token'],
-          userId: data['user']['id'],
-        );
-        return true;
+      // Validate the ApiResponse envelope structure
+      final apiResponse = ApiResponse.fromJson(response.data, (json) => json);
+      if (!apiResponse.success || apiResponse.data == null) {
+        return false;
       }
 
-      return false;
+      final data = apiResponse.data as Map<String, dynamic>;
+      await _storageService.saveAuthData(
+        accessToken: data['access_token'] as String,
+        refreshToken: data['refresh_token'] as String,
+        userId: data['user']['id'] as String,
+      );
+      return true;
     } catch (e) {
       return false;
     }

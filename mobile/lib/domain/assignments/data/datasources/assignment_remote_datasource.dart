@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:likha/core/constants/api_constants.dart';
+import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/domain/assignments/data/models/assignment_model.dart';
 import 'package:likha/domain/assignments/data/models/assignment_submission_model.dart';
@@ -73,12 +73,10 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
     required Map<String, dynamic> data,
   }) async {
     try {
-      final response = await _dioClient.dio.post(
-        ApiConstants.classAssignments(classId),
+      return await _dioClient.postTyped(
+        ApiEndpoints.classAssignments(classId),
         data: data,
       );
-      final responseData = response.data['data'] ?? response.data;
-      return AssignmentModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -89,14 +87,9 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
     required String classId,
   }) async {
     try {
-      final response = await _dioClient.dio.get(
-        ApiConstants.classAssignments(classId),
+      return await _dioClient.getTyped(
+        ApiEndpoints.classAssignmentsList(classId),
       );
-      final responseData = response.data['data'] ?? response.data;
-      final assignments = (responseData['assignments'] as List<dynamic>)
-          .map((e) => AssignmentModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-      return assignments;
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -107,11 +100,9 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
     required String assignmentId,
   }) async {
     try {
-      final response = await _dioClient.dio.get(
-        ApiConstants.assignmentDetail(assignmentId),
+      return await _dioClient.getTyped(
+        ApiEndpoints.assignmentDetail(assignmentId),
       );
-      final responseData = response.data['data'] ?? response.data;
-      return AssignmentModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -123,12 +114,10 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
     required Map<String, dynamic> data,
   }) async {
     try {
-      final response = await _dioClient.dio.put(
-        ApiConstants.assignmentDetail(assignmentId),
+      return await _dioClient.putTyped(
+        ApiEndpoints.assignmentDetail(assignmentId),
         data: data,
       );
-      final responseData = response.data['data'] ?? response.data;
-      return AssignmentModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -137,8 +126,8 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
   @override
   Future<void> deleteAssignment({required String assignmentId}) async {
     try {
-      await _dioClient.dio.delete(
-        ApiConstants.assignmentDetail(assignmentId),
+      await _dioClient.deleteTyped(
+        ApiEndpoints.assignmentDetail(assignmentId),
       );
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
@@ -150,11 +139,9 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
     required String assignmentId,
   }) async {
     try {
-      final response = await _dioClient.dio.post(
-        ApiConstants.assignmentPublish(assignmentId),
+      return await _dioClient.postTyped(
+        ApiEndpoints.assignmentPublish(assignmentId),
       );
-      final responseData = response.data['data'] ?? response.data;
-      return AssignmentModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -165,15 +152,9 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
     required String assignmentId,
   }) async {
     try {
-      final response = await _dioClient.dio.get(
-        ApiConstants.assignmentSubmissions(assignmentId),
+      return await _dioClient.getTyped(
+        ApiEndpoints.assignmentSubmissions(assignmentId),
       );
-      final responseData = response.data['data'] ?? response.data;
-      final submissions = (responseData['submissions'] as List<dynamic>)
-          .map((e) =>
-              SubmissionListItemModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-      return submissions;
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -184,11 +165,9 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
     required String submissionId,
   }) async {
     try {
-      final response = await _dioClient.dio.get(
-        ApiConstants.assignmentSubmissionDetail(submissionId),
+      return await _dioClient.getTyped(
+        ApiEndpoints.assignmentSubmissionDetail(submissionId),
       );
-      final responseData = response.data['data'] ?? response.data;
-      return AssignmentSubmissionModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -200,12 +179,10 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
     required Map<String, dynamic> data,
   }) async {
     try {
-      final response = await _dioClient.dio.post(
-        ApiConstants.assignmentSubmissionGrade(submissionId),
+      return await _dioClient.postTyped(
+        ApiEndpoints.assignmentSubmissionGrade(submissionId),
         data: data,
       );
-      final responseData = response.data['data'] ?? response.data;
-      return AssignmentSubmissionModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -216,11 +193,9 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
     required String submissionId,
   }) async {
     try {
-      final response = await _dioClient.dio.post(
-        ApiConstants.assignmentSubmissionReturn(submissionId),
+      return await _dioClient.postTyped(
+        ApiEndpoints.assignmentSubmissionReturn(submissionId),
       );
-      final responseData = response.data['data'] ?? response.data;
-      return AssignmentSubmissionModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -232,12 +207,10 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
     String? textContent,
   }) async {
     try {
-      final response = await _dioClient.dio.post(
-        ApiConstants.assignmentSubmit(assignmentId),
+      return await _dioClient.postTyped(
+        ApiEndpoints.assignmentSubmit(assignmentId),
         data: {'text_content': textContent},
       );
-      final responseData = response.data['data'] ?? response.data;
-      return AssignmentSubmissionModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -254,7 +227,7 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
         'file': await MultipartFile.fromFile(filePath, filename: fileName),
       });
       final response = await _dioClient.dio.post(
-        ApiConstants.assignmentSubmissionUpload(submissionId),
+        ApiEndpoints.assignmentSubmissionUpload(submissionId).path,
         data: formData,
       );
       final responseData = response.data['data'] ?? response.data;
@@ -267,8 +240,8 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
   @override
   Future<void> deleteFile({required String fileId}) async {
     try {
-      await _dioClient.dio.delete(
-        ApiConstants.submissionFileDelete(fileId),
+      await _dioClient.deleteTyped(
+        ApiEndpoints.submissionFileDelete(fileId),
       );
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
@@ -280,11 +253,9 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
     required String submissionId,
   }) async {
     try {
-      final response = await _dioClient.dio.post(
-        ApiConstants.assignmentSubmissionSubmit(submissionId),
+      return await _dioClient.postTyped(
+        ApiEndpoints.assignmentSubmissionSubmit(submissionId),
       );
-      final responseData = response.data['data'] ?? response.data;
-      return AssignmentSubmissionModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -294,7 +265,7 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
   Future<List<int>> downloadFile({required String fileId}) async {
     try {
       final response = await _dioClient.dio.get(
-        ApiConstants.submissionFileDownload(fileId),
+        ApiEndpoints.submissionFileDownload(fileId).path,
         options: Options(responseType: ResponseType.bytes),
       );
       return response.data;

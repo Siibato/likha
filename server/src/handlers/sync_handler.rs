@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use crate::middleware::auth_middleware::AuthUser;
 use crate::schema::sync_schema::*;
-use crate::schema::common::ApiResponse;
+use crate::schema::common::success_response;
 use crate::services::sync_service::SyncService;
 use crate::utils::error::AppError;
 
@@ -26,10 +26,7 @@ pub async fn sync(
         .sync(auth_user.user_id.to_string(), request)
         .await
     {
-        Ok(response) => (
-            StatusCode::OK,
-            Json(ApiResponse::success(response)),
-        ).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => {
             tracing::error!("Sync error: {}", e);
             AppError::InternalServerError(format!("Sync failed: {}", e)).into_response()
@@ -50,10 +47,7 @@ pub async fn full_sync(
         .full_sync(auth_user.user_id.to_string(), request)
         .await
     {
-        Ok(response) => (
-            StatusCode::OK,
-            Json(ApiResponse::success(response)),
-        ).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => {
             tracing::error!("Full sync error: {}", e);
             AppError::InternalServerError(format!("Full sync failed: {}", e)).into_response()
@@ -67,10 +61,7 @@ pub async fn health(
     State(sync_service): State<Arc<SyncService>>,
 ) -> impl IntoResponse {
     match sync_service.health_check().await {
-        Ok(response) => (
-            StatusCode::OK,
-            Json(ApiResponse::success(response)),
-        ).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => {
             tracing::error!("Health check error: {}", e);
             AppError::InternalServerError(format!("Health check failed: {}", e)).into_response()
@@ -97,10 +88,7 @@ pub async fn resolve_conflict(
         .resolve_conflict(&auth_user.user_id.to_string(), request)
         .await
     {
-        Ok(response) => (
-            StatusCode::OK,
-            Json(ApiResponse::success(response)),
-        ).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => {
             tracing::error!("Conflict resolution error: {}", e);
             AppError::InternalServerError(format!("Conflict resolution failed: {}", e)).into_response()
@@ -120,5 +108,5 @@ pub async fn statistics(
     }
 
     let stats = sync_service.get_statistics();
-    (StatusCode::OK, Json(ApiResponse::success(stats))).into_response()
+    success_response(stats, StatusCode::OK).into_response()
 }

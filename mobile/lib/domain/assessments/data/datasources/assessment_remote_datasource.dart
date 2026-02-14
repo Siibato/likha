@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:likha/core/constants/api_constants.dart';
+import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/domain/assessments/data/models/assessment_model.dart';
 import 'package:likha/domain/assessments/data/models/question_model.dart';
@@ -94,12 +94,10 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
     required Map<String, dynamic> data,
   }) async {
     try {
-      final response = await _dioClient.dio.post(
-        ApiConstants.classAssessments(classId),
+      return await _dioClient.postTyped(
+        ApiEndpoints.classAssessments(classId),
         data: data,
       );
-      final responseData = response.data['data'] ?? response.data;
-      return AssessmentModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -110,14 +108,9 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
     required String classId,
   }) async {
     try {
-      final response = await _dioClient.dio.get(
-        ApiConstants.classAssessments(classId),
+      return await _dioClient.getTyped(
+        ApiEndpoints.classAssessmentsList(classId),
       );
-      final responseData = response.data['data'] ?? response.data;
-      final assessments = (responseData['assessments'] as List<dynamic>)
-          .map((e) => AssessmentModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-      return assessments;
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -129,7 +122,7 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
   }) async {
     try {
       final response = await _dioClient.dio.get(
-        ApiConstants.assessmentDetail(assessmentId),
+        ApiEndpoints.assessmentDetail(assessmentId).path,
       );
       final responseData = response.data['data'] ?? response.data;
       final assessment = AssessmentModel.fromJson(responseData);
@@ -149,12 +142,10 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
     required Map<String, dynamic> data,
   }) async {
     try {
-      final response = await _dioClient.dio.put(
-        ApiConstants.assessmentDetail(assessmentId),
+      return await _dioClient.putTyped(
+        ApiEndpoints.assessmentDetail(assessmentId),
         data: data,
       );
-      final responseData = response.data['data'] ?? response.data;
-      return AssessmentModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -163,8 +154,8 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
   @override
   Future<void> deleteAssessment({required String assessmentId}) async {
     try {
-      await _dioClient.dio.delete(
-        ApiConstants.assessmentDetail(assessmentId),
+      await _dioClient.deleteTyped(
+        ApiEndpoints.assessmentDetail(assessmentId),
       );
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
@@ -176,11 +167,9 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
     required String assessmentId,
   }) async {
     try {
-      final response = await _dioClient.dio.post(
-        ApiConstants.assessmentPublish(assessmentId),
+      return await _dioClient.postTyped(
+        ApiEndpoints.assessmentPublish(assessmentId),
       );
-      final responseData = response.data['data'] ?? response.data;
-      return AssessmentModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -191,11 +180,9 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
     required String assessmentId,
   }) async {
     try {
-      final response = await _dioClient.dio.post(
-        ApiConstants.assessmentReleaseResults(assessmentId),
+      return await _dioClient.postTyped(
+        ApiEndpoints.assessmentReleaseResults(assessmentId),
       );
-      final responseData = response.data['data'] ?? response.data;
-      return AssessmentModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -207,14 +194,10 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
     required List<Map<String, dynamic>> questions,
   }) async {
     try {
-      final response = await _dioClient.dio.post(
-        ApiConstants.assessmentQuestions(assessmentId),
+      return await _dioClient.postTyped(
+        ApiEndpoints.assessmentQuestions(assessmentId),
         data: {'questions': questions},
       );
-      final responseData = response.data['data'] ?? response.data;
-      return (responseData as List<dynamic>)
-          .map((e) => QuestionModel.fromJson(e as Map<String, dynamic>))
-          .toList();
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -226,12 +209,10 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
     required Map<String, dynamic> data,
   }) async {
     try {
-      final response = await _dioClient.dio.put(
-        ApiConstants.questionDetail(questionId),
+      return await _dioClient.putTyped(
+        ApiEndpoints.questionDetail(questionId),
         data: data,
       );
-      final responseData = response.data['data'] ?? response.data;
-      return QuestionModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -240,7 +221,7 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
   @override
   Future<void> deleteQuestion({required String questionId}) async {
     try {
-      await _dioClient.dio.delete(ApiConstants.questionDetail(questionId));
+      await _dioClient.deleteTyped(ApiEndpoints.questionDetail(questionId));
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -251,14 +232,9 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
     required String assessmentId,
   }) async {
     try {
-      final response = await _dioClient.dio.get(
-        ApiConstants.assessmentSubmissions(assessmentId),
+      return await _dioClient.getTyped(
+        ApiEndpoints.assessmentSubmissions(assessmentId),
       );
-      final responseData = response.data['data'] ?? response.data;
-      return (responseData['submissions'] as List<dynamic>)
-          .map((e) =>
-              SubmissionSummaryModel.fromJson(e as Map<String, dynamic>))
-          .toList();
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -269,11 +245,9 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
     required String submissionId,
   }) async {
     try {
-      final response = await _dioClient.dio.get(
-        ApiConstants.submissionDetail(submissionId),
+      return await _dioClient.getTyped(
+        ApiEndpoints.submissionDetail(submissionId),
       );
-      final responseData = response.data['data'] ?? response.data;
-      return SubmissionDetailModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -285,12 +259,10 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
     required bool isCorrect,
   }) async {
     try {
-      final response = await _dioClient.dio.put(
-        ApiConstants.submissionAnswerOverride(answerId),
+      return await _dioClient.putTyped(
+        ApiEndpoints.submissionAnswerOverride(answerId),
         data: {'is_correct': isCorrect},
       );
-      final responseData = response.data['data'] ?? response.data;
-      return SubmissionAnswerModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -301,11 +273,9 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
     required String assessmentId,
   }) async {
     try {
-      final response = await _dioClient.dio.get(
-        ApiConstants.assessmentStatistics(assessmentId),
+      return await _dioClient.getTyped(
+        ApiEndpoints.assessmentStatistics(assessmentId),
       );
-      final responseData = response.data['data'] ?? response.data;
-      return AssessmentStatisticsModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -316,11 +286,9 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
     required String assessmentId,
   }) async {
     try {
-      final response = await _dioClient.dio.post(
-        ApiConstants.assessmentStart(assessmentId),
+      return await _dioClient.postTyped(
+        ApiEndpoints.assessmentStart(assessmentId),
       );
-      final responseData = response.data['data'] ?? response.data;
-      return StartSubmissionResultModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -332,8 +300,8 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
     required List<Map<String, dynamic>> answers,
   }) async {
     try {
-      await _dioClient.dio.put(
-        ApiConstants.submissionAnswers(submissionId),
+      await _dioClient.putTyped(
+        ApiEndpoints.submissionAnswers(submissionId),
         data: {'answers': answers},
       );
     } on DioException catch (e) {
@@ -346,11 +314,9 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
     required String submissionId,
   }) async {
     try {
-      final response = await _dioClient.dio.post(
-        ApiConstants.submissionSubmit(submissionId),
+      return await _dioClient.postTyped(
+        ApiEndpoints.submissionSubmit(submissionId),
       );
-      final responseData = response.data['data'] ?? response.data;
-      return SubmissionSummaryModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -361,11 +327,9 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
     required String submissionId,
   }) async {
     try {
-      final response = await _dioClient.dio.get(
-        ApiConstants.submissionResults(submissionId),
+      return await _dioClient.getTyped(
+        ApiEndpoints.submissionResults(submissionId),
       );
-      final responseData = response.data['data'] ?? response.data;
-      return StudentResultModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
