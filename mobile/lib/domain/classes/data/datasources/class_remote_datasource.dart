@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:likha/core/constants/api_constants.dart';
+import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/domain/auth/data/models/user_model.dart';
 import 'package:likha/domain/classes/data/models/class_detail_model.dart';
@@ -45,16 +45,13 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
     String? description,
   }) async {
     try {
-      final response = await _dioClient.dio.post(
-        ApiConstants.classes,
+      return await _dioClient.postTyped(
+        ApiEndpoints.classCreate(title),
         data: {
           'title': title,
           if (description != null) 'description': description,
         },
       );
-
-      final responseData = response.data['data'] ?? response.data;
-      return ClassModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -63,13 +60,7 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
   @override
   Future<List<ClassModel>> getMyClasses() async {
     try {
-      final response = await _dioClient.dio.get(ApiConstants.classes);
-
-      final responseData = response.data['data'] ?? response.data;
-      final classes = (responseData['classes'] as List<dynamic>)
-          .map((e) => ClassModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-      return classes;
+      return await _dioClient.getTyped(ApiEndpoints.classes);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -78,11 +69,7 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
   @override
   Future<ClassDetailModel> getClassDetail({required String classId}) async {
     try {
-      final response =
-          await _dioClient.dio.get(ApiConstants.classDetail(classId));
-
-      final responseData = response.data['data'] ?? response.data;
-      return ClassDetailModel.fromJson(responseData);
+      return await _dioClient.getTyped(ApiEndpoints.classDetail(classId));
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -95,16 +82,13 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
     String? description,
   }) async {
     try {
-      final response = await _dioClient.dio.put(
-        ApiConstants.classDetail(classId),
+      return await _dioClient.putTyped(
+        ApiEndpoints.classCreate(classId),
         data: {
           if (title != null) 'title': title,
           if (description != null) 'description': description,
         },
       );
-
-      final responseData = response.data['data'] ?? response.data;
-      return ClassModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -116,13 +100,10 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
     required String studentId,
   }) async {
     try {
-      final response = await _dioClient.dio.post(
-        ApiConstants.classStudents(classId),
+      return await _dioClient.postTyped(
+        ApiEndpoints.classStudents(classId),
         data: {'student_id': studentId},
       );
-
-      final responseData = response.data['data'] ?? response.data;
-      return EnrollmentModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -134,8 +115,8 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
     required String studentId,
   }) async {
     try {
-      await _dioClient.dio.delete(
-        ApiConstants.classStudent(classId, studentId),
+      await _dioClient.deleteTyped(
+        ApiEndpoints.classStudent(classId, studentId),
       );
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
@@ -145,18 +126,12 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
   @override
   Future<List<UserModel>> searchStudents({String? query}) async {
     try {
-      final response = await _dioClient.dio.get(
-        ApiConstants.searchStudents,
+      return await _dioClient.getTyped(
+        ApiEndpoints.searchStudents,
         queryParameters: {
           if (query != null && query.isNotEmpty) 'q': query,
         },
       );
-
-      final responseData = response.data['data'] ?? response.data;
-      final students = (responseData as List<dynamic>)
-          .map((e) => UserModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-      return students;
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }

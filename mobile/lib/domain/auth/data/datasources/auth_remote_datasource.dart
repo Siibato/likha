@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:likha/core/constants/api_constants.dart';
+import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/domain/auth/data/models/activity_log_model.dart';
@@ -61,13 +61,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<CheckUsernameResultModel> checkUsername(
       {required String username}) async {
     try {
-      final response = await _dioClient.dio.post(
-        ApiConstants.checkUsername,
+      return await _dioClient.postTyped(
+        ApiEndpoints.checkUsername,
         data: {'username': username},
       );
-
-      final responseData = response.data['data'] ?? response.data;
-      return CheckUsernameResultModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -80,17 +77,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String confirmPassword,
   }) async {
     try {
-      final response = await _dioClient.dio.post(
-        ApiConstants.activate,
+      final authResponse = await _dioClient.postTyped(
+        ApiEndpoints.activate,
         data: {
           'username': username,
           'password': password,
           'confirm_password': confirmPassword,
         },
       );
-
-      final responseData = response.data['data'] ?? response.data;
-      final authResponse = AuthResponseModel.fromJson(responseData);
 
       await _storageService.saveAuthData(
         accessToken: authResponse.accessToken,
@@ -112,7 +106,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     try {
       final response = await _dioClient.dio.post(
-        ApiConstants.login,
+        ApiEndpoints.login.path,
         data: {
           'username': username,
           'password': password,
@@ -121,7 +115,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       );
 
       final responseData = response.data['data'] ?? response.data;
-      final authResponse = AuthResponseModel.fromJson(responseData);
+      final authResponse = ApiEndpoints.login.fromJson(responseData);
 
       await _storageService.saveAuthData(
         accessToken: authResponse.accessToken,
@@ -145,13 +139,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<AuthResponseModel> refreshToken(String refreshToken) async {
     try {
-      final response = await _dioClient.dio.post(
-        ApiConstants.refresh,
+      final authResponse = await _dioClient.postTyped(
+        ApiEndpoints.refresh,
         data: {'refresh_token': refreshToken},
       );
-
-      final responseData = response.data['data'] ?? response.data;
-      final authResponse = AuthResponseModel.fromJson(responseData);
 
       await _storageService.saveAuthData(
         accessToken: authResponse.accessToken,
@@ -168,10 +159,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<UserModel> getCurrentUser() async {
     try {
-      final response = await _dioClient.dio.get(ApiConstants.me);
-
-      final responseData = response.data['data'] ?? response.data;
-      return UserModel.fromJson(responseData);
+      return await _dioClient.getTyped(ApiEndpoints.me);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -180,8 +168,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> logout(String refreshToken) async {
     try {
-      await _dioClient.dio.post(
-        ApiConstants.logout,
+      await _dioClient.postTyped(
+        ApiEndpoints.logout,
         data: {'refresh_token': refreshToken},
       );
 
@@ -200,17 +188,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String role,
   }) async {
     try {
-      final response = await _dioClient.dio.post(
-        ApiConstants.accounts,
+      return await _dioClient.postTyped(
+        ApiEndpoints.accountsCreate,
         data: {
           'username': username,
           'full_name': fullName,
           'role': role,
         },
       );
-
-      final responseData = response.data['data'] ?? response.data;
-      return UserModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -219,13 +204,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<List<UserModel>> getAllAccounts() async {
     try {
-      final response = await _dioClient.dio.get(ApiConstants.accounts);
-
-      final responseData = response.data['data'] ?? response.data;
-      final accounts = (responseData['accounts'] as List<dynamic>)
-          .map((e) => UserModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-      return accounts;
+      return await _dioClient.getTyped(ApiEndpoints.accountsList);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -234,13 +213,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<UserModel> resetAccount({required String userId}) async {
     try {
-      final response = await _dioClient.dio.post(
-        ApiConstants.accountsReset,
+      return await _dioClient.postTyped(
+        ApiEndpoints.accountsReset,
         data: {'user_id': userId},
       );
-
-      final responseData = response.data['data'] ?? response.data;
-      return UserModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -252,13 +228,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required bool locked,
   }) async {
     try {
-      final response = await _dioClient.dio.post(
-        ApiConstants.accountsLock,
+      return await _dioClient.postTyped(
+        ApiEndpoints.accountsLock,
         data: {'user_id': userId, 'locked': locked},
       );
-
-      final responseData = response.data['data'] ?? response.data;
-      return UserModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -268,14 +241,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<List<ActivityLogModel>> getActivityLogs(
       {required String userId}) async {
     try {
-      final response =
-          await _dioClient.dio.get(ApiConstants.accountLogs(userId));
-
-      final responseData = response.data['data'] ?? response.data;
-      final logs = (responseData['logs'] as List<dynamic>)
-          .map((e) => ActivityLogModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-      return logs;
+      return await _dioClient.getTyped(ApiEndpoints.accountLogs(userId));
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -292,13 +258,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       if (username != null) data['username'] = username;
       if (fullName != null) data['full_name'] = fullName;
 
-      final response = await _dioClient.dio.put(
-        ApiConstants.accountUpdate(userId),
+      return await _dioClient.putTyped(
+        ApiEndpoints.accountUpdate(userId),
         data: data,
       );
-
-      final responseData = response.data['data'] ?? response.data;
-      return UserModel.fromJson(responseData);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }

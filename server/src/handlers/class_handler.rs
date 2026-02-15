@@ -9,7 +9,7 @@ use uuid::Uuid;
 
 use crate::schema::auth_schema::MessageResponse;
 use crate::schema::class_schema::{AddStudentRequest, CreateClassRequest, SearchStudentsQuery, UpdateClassRequest};
-use crate::schema::common::ApiResponse;
+use crate::schema::common::success_response;
 use crate::services::auth_service::AuthService;
 use crate::services::class_service::ClassService;
 use crate::middleware::auth_middleware::AuthUser;
@@ -25,10 +25,7 @@ pub async fn create_class(
     }
 
     match class_service.create_class(request, auth_user.user_id).await {
-        Ok(response) => (
-            StatusCode::CREATED,
-            Json(ApiResponse::success(response)),
-        ).into_response(),
+        Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -44,10 +41,7 @@ pub async fn update_class(
     }
 
     match class_service.update_class(class_id, request, auth_user.user_id).await {
-        Ok(response) => (
-            StatusCode::OK,
-            Json(ApiResponse::success(response)),
-        ).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -63,10 +57,7 @@ pub async fn get_classes(
     };
 
     match result {
-        Ok(response) => (
-            StatusCode::OK,
-            Json(ApiResponse::success(response)),
-        ).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -77,10 +68,7 @@ pub async fn get_class_detail(
     Path(class_id): Path<Uuid>,
 ) -> impl IntoResponse {
     match class_service.get_class_detail(class_id).await {
-        Ok(response) => (
-            StatusCode::OK,
-            Json(ApiResponse::success(response)),
-        ).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -99,10 +87,7 @@ pub async fn add_student(
         .add_student(class_id, request.student_id, auth_user.user_id)
         .await
     {
-        Ok(response) => (
-            StatusCode::CREATED,
-            Json(ApiResponse::success(response)),
-        ).into_response(),
+        Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -120,12 +105,9 @@ pub async fn remove_student(
         .remove_student(class_id, student_id, auth_user.user_id)
         .await
     {
-        Ok(_) => (
-            StatusCode::OK,
-            Json(ApiResponse::success(MessageResponse {
-                message: "Student removed from class".to_string(),
-            })),
-        ).into_response(),
+        Ok(_) => success_response(MessageResponse {
+            message: "Student removed from class".to_string(),
+        }, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -137,10 +119,7 @@ pub async fn search_students(
 ) -> impl IntoResponse {
     let search_query = query.q.unwrap_or_default();
     match auth_service.search_students(&search_query).await {
-        Ok(response) => (
-            StatusCode::OK,
-            Json(ApiResponse::success(response)),
-        ).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }

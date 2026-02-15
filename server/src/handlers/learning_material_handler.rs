@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use crate::middleware::auth_middleware::AuthUser;
 use crate::schema::auth_schema::MessageResponse;
-use crate::schema::common::ApiResponse;
+use crate::schema::common::success_response;
 use crate::schema::learning_material_schema::*;
 use crate::services::learning_material_service::LearningMaterialService;
 use crate::utils::error::AppError;
@@ -31,7 +31,7 @@ pub async fn create_material(
         .create_material(class_id, request, auth_user.user_id)
         .await
     {
-        Ok(response) => (StatusCode::CREATED, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -45,7 +45,7 @@ pub async fn get_materials(
         .get_materials(class_id, auth_user.user_id, &auth_user.role)
         .await
     {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -59,7 +59,7 @@ pub async fn get_material_detail(
         .get_material_detail(id, auth_user.user_id, &auth_user.role)
         .await
     {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -78,7 +78,7 @@ pub async fn update_material(
         .update_material(id, request, auth_user.user_id)
         .await
     {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -93,13 +93,9 @@ pub async fn delete_material(
     }
 
     match service.delete_material(id, auth_user.user_id).await {
-        Ok(()) => (
-            StatusCode::OK,
-            Json(ApiResponse::success(MessageResponse {
-                message: "Material deleted".to_string(),
-            })),
-        )
-            .into_response(),
+        Ok(()) => success_response(MessageResponse {
+            message: "Material deleted".to_string(),
+        }, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -118,7 +114,7 @@ pub async fn reorder_material(
         .reorder_material(id, request, auth_user.user_id)
         .await
     {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -159,8 +155,7 @@ pub async fn upload_file(
             .await
         {
             Ok(response) => {
-                return (StatusCode::CREATED, Json(ApiResponse::success(response)))
-                    .into_response();
+                return success_response(response, StatusCode::CREATED).into_response();
             }
             Err(e) => return e.into_response(),
         }
@@ -179,13 +174,9 @@ pub async fn delete_file(
     }
 
     match service.delete_file(file_id, auth_user.user_id).await {
-        Ok(()) => (
-            StatusCode::OK,
-            Json(ApiResponse::success(MessageResponse {
-                message: "File deleted".to_string(),
-            })),
-        )
-            .into_response(),
+        Ok(()) => success_response(MessageResponse {
+            message: "File deleted".to_string(),
+        }, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
