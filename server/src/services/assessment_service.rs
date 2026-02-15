@@ -4,6 +4,7 @@ use uuid::Uuid;
 use md5;
 
 use crate::db::repositories::assessment_repository::AssessmentRepository;
+use crate::db::repositories::change_log_repository::ChangeLogRepository;
 use crate::db::repositories::class_repository::ClassRepository;
 use crate::db::repositories::submission_repository::SubmissionRepository;
 use crate::db::repositories::user_repository::UserRepository;
@@ -16,6 +17,7 @@ pub struct AssessmentService {
     submission_repo: SubmissionRepository,
     class_repo: ClassRepository,
     user_repo: UserRepository,
+    change_log_repo: ChangeLogRepository,
 }
 
 impl AssessmentService {
@@ -24,7 +26,8 @@ impl AssessmentService {
             assessment_repo: AssessmentRepository::new(db.clone()),
             submission_repo: SubmissionRepository::new(db.clone()),
             class_repo: ClassRepository::new(db.clone()),
-            user_repo: UserRepository::new(db),
+            user_repo: UserRepository::new(db.clone()),
+            change_log_repo: ChangeLogRepository::new(db),
         }
     }
 
@@ -70,6 +73,27 @@ impl AssessmentService {
             close_at,
             request.show_results_immediately.unwrap_or(true),
         ).await?;
+
+        // Log change for sync
+        let _ = self.change_log_repo.log_change(
+            "assessment",
+            assessment.id,
+            "create",
+            teacher_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "id": assessment.id,
+                "class_id": assessment.class_id,
+                "title": assessment.title,
+                "description": assessment.description,
+                "time_limit_minutes": assessment.time_limit_minutes,
+                "open_at": assessment.open_at.to_string(),
+                "close_at": assessment.close_at.to_string(),
+                "show_results_immediately": assessment.show_results_immediately,
+                "is_published": assessment.is_published,
+                "created_at": assessment.created_at.to_string(),
+                "updated_at": assessment.updated_at.to_string(),
+            })).unwrap_or_default()),
+        ).await;
 
         Ok(AssessmentResponse {
             id: assessment.id,
@@ -227,6 +251,17 @@ impl AssessmentService {
         let submission_count = self.submission_repo
             .count_by_assessment_id(assessment_id).await?;
 
+        let _ = self.change_log_repo.log_change(
+            "assessment",
+            assessment_id,
+            "update",
+            teacher_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "title": updated.title,
+                "description": updated.description,
+            })).unwrap_or_default()),
+        ).await;
+
         Ok(AssessmentResponse {
             id: updated.id,
             class_id: updated.class_id,
@@ -266,7 +301,17 @@ impl AssessmentService {
             return Err(AppError::BadRequest("Cannot delete assessment with existing submissions".to_string()));
         }
 
-        self.assessment_repo.delete_assessment(assessment_id).await
+        self.assessment_repo.delete_assessment(assessment_id).await?;
+
+        let _ = self.change_log_repo.log_change(
+            "assessment",
+            assessment_id,
+            "delete",
+            teacher_id,
+            None,
+        ).await;
+
+        Ok(())
     }
 
     pub async fn publish_assessment(
@@ -299,6 +344,16 @@ impl AssessmentService {
 
         let question_count = questions.len();
         let submission_count = self.submission_repo.count_by_assessment_id(assessment_id).await?;
+
+        let _ = self.change_log_repo.log_change(
+            "assessment",
+            assessment_id,
+            "update",
+            teacher_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "is_published": true,
+            })).unwrap_or_default()),
+        ).await;
 
         Ok(AssessmentResponse {
             id: published.id,
@@ -344,6 +399,16 @@ impl AssessmentService {
             .find_questions_by_assessment_id(assessment_id).await?.len();
         let submission_count = self.submission_repo
             .count_by_assessment_id(assessment_id).await?;
+
+        let _ = self.change_log_repo.log_change(
+            "assessment",
+            assessment_id,
+            "update",
+            teacher_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "results_released": true,
+            })).unwrap_or_default()),
+        ).await;
 
         Ok(AssessmentResponse {
             id: released.id,
@@ -400,11 +465,22 @@ impl AssessmentService {
             let question = self.assessment_repo.add_question(
                 assessment_id,
                 q_request.question_type.clone(),
-                q_request.question_text,
+                q_request.question_text.clone(),
                 q_request.points,
                 q_request.order_index,
                 q_request.is_multi_select.unwrap_or(false),
             ).await?;
+
+            let _ = self.change_log_repo.log_change(
+                "question",
+                question.id,
+                "create",
+                teacher_id,
+                Some(serde_json::to_string(&serde_json::json!({
+                    "question_type": q_request.question_type,
+                    "points": q_request.points,
+                })).unwrap_or_default()),
+            ).await;
 
             // Add type-specific data
             match q_request.question_type.as_str() {
@@ -520,6 +596,16 @@ impl AssessmentService {
 
         self.assessment_repo.update_total_points(question.assessment_id).await?;
 
+        let _ = self.change_log_repo.log_change(
+            "question",
+            question_id,
+            "update",
+            teacher_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "points": updated.points,
+            })).unwrap_or_default()),
+        ).await;
+
         let response = self.build_question_response(&updated, "teacher").await?;
         Ok(response)
     }
@@ -548,6 +634,14 @@ impl AssessmentService {
 
         self.assessment_repo.delete_question(question_id).await?;
         self.assessment_repo.update_total_points(question.assessment_id).await?;
+
+        let _ = self.change_log_repo.log_change(
+            "question",
+            question_id,
+            "delete",
+            teacher_id,
+            None,
+        ).await;
 
         Ok(())
     }

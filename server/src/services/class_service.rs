@@ -2,6 +2,7 @@ use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 use md5;
 
+use crate::db::repositories::change_log_repository::ChangeLogRepository;
 use crate::db::repositories::class_repository::ClassRepository;
 use crate::db::repositories::user_repository::UserRepository;
 use crate::schema::auth_schema::UserResponse;
@@ -13,13 +14,15 @@ use crate::utils::error::{AppError, AppResult};
 pub struct ClassService {
     class_repo: ClassRepository,
     user_repo: UserRepository,
+    change_log_repo: ChangeLogRepository,
 }
 
 impl ClassService {
     pub fn new(db: DatabaseConnection) -> Self {
         Self {
             class_repo: ClassRepository::new(db.clone()),
-            user_repo: UserRepository::new(db),
+            user_repo: UserRepository::new(db.clone()),
+            change_log_repo: ChangeLogRepository::new(db),
         }
     }
 
@@ -42,6 +45,23 @@ impl ClassService {
             .class_repo
             .create_class(request.title.trim().to_string(), request.description, teacher_id)
             .await?;
+
+        // Log change for sync
+        let _ = self.change_log_repo.log_change(
+            "class",
+            class.id,
+            "create",
+            teacher_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "id": class.id,
+                "title": class.title,
+                "description": class.description,
+                "teacher_id": class.teacher_id,
+                "is_archived": class.is_archived,
+                "created_at": class.created_at.to_string(),
+                "updated_at": class.updated_at.to_string(),
+            })).unwrap_or_default()),
+        ).await;
 
         Ok(ClassResponse {
             id: class.id,
@@ -109,6 +129,23 @@ impl ClassService {
             .ok_or_else(|| AppError::NotFound("Teacher not found".to_string()))?;
 
         let student_count = self.class_repo.count_students_in_class(class_id).await?;
+
+        // Log change for sync
+        let _ = self.change_log_repo.log_change(
+            "class",
+            updated_class.id,
+            "update",
+            teacher_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "id": updated_class.id,
+                "title": updated_class.title,
+                "description": updated_class.description,
+                "teacher_id": updated_class.teacher_id,
+                "is_archived": updated_class.is_archived,
+                "created_at": updated_class.created_at.to_string(),
+                "updated_at": updated_class.updated_at.to_string(),
+            })).unwrap_or_default()),
+        ).await;
 
         Ok(ClassResponse {
             id: updated_class.id,
@@ -247,6 +284,20 @@ impl ClassService {
             .add_student(class_id, student_id)
             .await?;
 
+        // Log change for sync
+        let _ = self.change_log_repo.log_change(
+            "enrollment",
+            enrollment.id,
+            "create",
+            teacher_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "id": enrollment.id,
+                "class_id": class_id,
+                "student_id": student_id,
+                "enrolled_at": enrollment.enrolled_at.to_string(),
+            })).unwrap_or_default()),
+        ).await;
+
         Ok(EnrollmentResponse {
             id: enrollment.id,
             student: UserResponse {
@@ -281,7 +332,23 @@ impl ClassService {
             ));
         }
 
-        self.class_repo.remove_student(class_id, student_id).await
+        self.class_repo.remove_student(class_id, student_id).await?;
+
+        // Log change for sync (generate a new UUID for the deletion record)
+        // This tracks which student was removed from which class
+        let enrollment_id = Uuid::new_v4();
+        let _ = self.change_log_repo.log_change(
+            "enrollment",
+            enrollment_id,
+            "delete",
+            teacher_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "class_id": class_id,
+                "student_id": student_id,
+            })).unwrap_or_default()),
+        ).await;
+
+        Ok(())
     }
 
     pub async fn get_student_classes(&self, student_id: Uuid) -> AppResult<ClassListResponse> {

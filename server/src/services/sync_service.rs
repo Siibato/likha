@@ -4,6 +4,7 @@ use sea_orm::DatabaseConnection;
 use std::sync::atomic::{AtomicU64, Ordering};
 use uuid::Uuid;
 
+use crate::db::repositories::change_log_repository::ChangeLogRepository;
 use crate::schema::sync_schema::*;
 use crate::services::auth_service::AuthService;
 use crate::services::class_service::ClassService;
@@ -14,6 +15,7 @@ use crate::services::learning_material_service::LearningMaterialService;
 /// Coordinates offline sync operations
 pub struct SyncService {
     db: DatabaseConnection,
+    change_log_repo: ChangeLogRepository,
     auth_service: std::sync::Arc<AuthService>,
     class_service: std::sync::Arc<ClassService>,
     assessment_service: std::sync::Arc<AssessmentService>,
@@ -33,8 +35,10 @@ impl SyncService {
         assignment_service: std::sync::Arc<AssignmentService>,
         material_service: std::sync::Arc<LearningMaterialService>,
     ) -> Self {
+        let change_log_repo = ChangeLogRepository::new(db.clone());
         Self {
             db,
+            change_log_repo,
             auth_service,
             class_service,
             assessment_service,
@@ -330,6 +334,57 @@ impl SyncService {
         }
     }
 
+    /// Get incremental changes since a sequence number
+    pub async fn get_changes(
+        &self,
+        params: ChangesQueryParams,
+    ) -> Result<ChangesResponse, String> {
+        let limit = params.limit.unwrap_or(500);
+
+        let changes = self
+            .change_log_repo
+            .find_since(params.since_sequence, limit)
+            .await
+            .map_err(|e| format!("Failed to fetch changes: {:?}", e))?;
+
+        let has_more = self
+            .change_log_repo
+            .has_more(params.since_sequence, limit)
+            .await
+            .map_err(|e| format!("Failed to check for more changes: {:?}", e))?;
+
+        let latest_sequence = self
+            .change_log_repo
+            .get_latest_sequence()
+            .await
+            .map_err(|e| format!("Failed to get latest sequence: {:?}", e))?;
+
+        let entries = changes
+            .into_iter()
+            .map(|log| {
+                let payload = log.payload
+                    .and_then(|p| serde_json::from_str(&p).ok());
+
+                ChangeLogEntry {
+                    sequence: log.sequence,
+                    entity_type: log.entity_type,
+                    entity_id: log.entity_id,
+                    operation: log.operation,
+                    performed_by: log.performed_by.to_string(),
+                    payload,
+                    created_at: log.created_at.to_string(),
+                }
+            })
+            .collect();
+
+        Ok(ChangesResponse {
+            changes: entries,
+            latest_sequence,
+            has_more,
+            server_time: Utc::now().to_rfc3339(),
+        })
+    }
+
     /// Resolve conflicts between client and server versions
     pub async fn resolve_conflict(
         &self,
@@ -348,6 +403,24 @@ impl SyncService {
                 updated_entity: None,
             }),
             _ => Err(format!("Unknown resolution strategy: {}", request.resolution)),
+        }
+    }
+
+    /// Get the current database ID for cache validation
+    pub async fn get_database_id(&self) -> Result<DatabaseIdResponse, String> {
+        use sea_orm::EntityTrait;
+        use entity::database_metadata;
+
+        match database_metadata::Entity::find()
+            .one(&self.db)
+            .await
+        {
+            Ok(Some(metadata)) => Ok(DatabaseIdResponse {
+                database_id: metadata.database_id,
+                created_at: metadata.created_at.to_string(),
+            }),
+            Ok(None) => Err("Database ID not found".to_string()),
+            Err(e) => Err(format!("Failed to retrieve database ID: {}", e)),
         }
     }
 }

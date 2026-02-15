@@ -78,9 +78,22 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required String assessmentId,
   }) async {
     try {
-      final cached = await _localDataSource.getCachedAssessmentDetail(assessmentId);
-      unawaited(_validationService.validateAndSync('assessments'));
-      return Right(cached);
+      // Always try to fetch fresh assessment details for real-time updates
+      try {
+        final fresh = await _remoteDataSource.getAssessmentDetail(assessmentId: assessmentId);
+        await _localDataSource.cacheAssessmentDetail(fresh.assessment, fresh.questions);
+        return Right((fresh.assessment, fresh.questions));
+      } on NetworkException {
+        // Network unavailable, fall back to cache
+        try {
+          final cached = await _localDataSource.getCachedAssessmentDetail(assessmentId);
+          return Right(cached);
+        } on CacheException catch (e) {
+          return Left(CacheFailure(e.message));
+        }
+      }
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {

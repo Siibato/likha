@@ -26,8 +26,9 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 1,
+      version: 2,
       onCreate: _createTables,
+      onUpgrade: _upgradeDatabase,
       onOpen: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -262,7 +263,8 @@ class LocalDatabase {
           last_modified TEXT NOT NULL,
           record_count INTEGER NOT NULL,
           etag TEXT,
-          validated_at TEXT NOT NULL
+          validated_at TEXT NOT NULL,
+          database_id TEXT
         )
       ''');
 
@@ -282,6 +284,14 @@ class LocalDatabase {
         )
       ''');
 
+      // Sync metadata table (stores last synced sequence)
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS sync_metadata (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL
+        )
+      ''');
+
       // Create indexes for common queries
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_classes_teacher_id ON classes(teacher_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_enrollments_class_id ON class_enrollments(class_id)');
@@ -295,7 +305,33 @@ class LocalDatabase {
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_material_files_material_id ON material_files(material_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_sync_queue_status ON sync_queue(status)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_sync_queue_created_at ON sync_queue(created_at)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_sync_metadata_key ON sync_metadata(key)');
     });
+  }
+
+  Future<void> _upgradeDatabase(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Create validation_metadata table if it doesn't exist
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS validation_metadata (
+          entity_type TEXT PRIMARY KEY,
+          last_modified TEXT NOT NULL,
+          record_count INTEGER NOT NULL,
+          etag TEXT,
+          validated_at TEXT NOT NULL,
+          database_id TEXT
+        )
+      ''');
+
+      // Try to add database_id column in case table already exists from old schema
+      try {
+        await db.execute('''
+          ALTER TABLE validation_metadata ADD COLUMN database_id TEXT
+        ''');
+      } catch (e) {
+        // Column already exists, that's fine
+      }
+    }
   }
 
   Future<void> close() async {

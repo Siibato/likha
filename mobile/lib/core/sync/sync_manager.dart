@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:likha/core/network/connectivity_service.dart';
+import 'package:likha/core/sync/change_log_applier.dart';
+import 'package:likha/core/sync/change_log_remote_datasource.dart';
+import 'package:likha/core/sync/change_log_repository.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/assessments/repositories/assessment_repository.dart';
 import 'package:likha/domain/assignments/repositories/assignment_repository.dart';
@@ -50,6 +53,9 @@ class SyncManager {
   final AssessmentRepository _assessmentRepository;
   final AssignmentRepository _assignmentRepository;
   final LearningMaterialRepository _learningMaterialRepository;
+  final ChangeLogRemoteDataSource _changeLogRemoteDataSource;
+  final ChangeLogRepository _changeLogRepository;
+  final ChangeLogApplier _changeLogApplier;
 
   bool _isSyncing = false;
   StreamSubscription<bool>? _connectivitySubscription;
@@ -71,6 +77,9 @@ class SyncManager {
     this._assessmentRepository,
     this._assignmentRepository,
     this._learningMaterialRepository,
+    this._changeLogRemoteDataSource,
+    this._changeLogRepository,
+    this._changeLogApplier,
   );
 
   void setStateListener(void Function(SyncState) listener) {
@@ -95,7 +104,10 @@ class SyncManager {
     _emitState(_state.copyWith(phase: SyncPhase.syncing));
 
     try {
-      // Get all retryable entries
+      // Step 1: Pull server changes (highest priority - ensures we have latest state)
+      await _pullServerChanges();
+
+      // Step 2: Get all retryable entries (offline writes to flush)
       final entries = await _syncQueue.getAllRetriable();
 
       if (entries.isEmpty) {
@@ -109,8 +121,7 @@ class SyncManager {
         return;
       }
 
-      // Flush pending syncs
-      int failedCount = 0;
+      // Step 3: Flush pending syncs
       for (final entry in entries) {
         try {
           await _syncQueue.incrementRetry(entry.id);
@@ -118,7 +129,6 @@ class SyncManager {
           await _syncQueue.markSucceeded(entry.id);
         } catch (e) {
           await _syncQueue.markFailed(entry.id, e.toString());
-          failedCount++;
         }
       }
 
@@ -153,6 +163,31 @@ class SyncManager {
       ));
     } finally {
       _isSyncing = false;
+    }
+  }
+
+  Future<void> _pullServerChanges() async {
+    try {
+      int cursor = await _changeLogRepository.getLastSyncedSequence();
+      bool hasMore = true;
+
+      while (hasMore) {
+        final response = await _changeLogRemoteDataSource.fetchChangesSince(
+          sinceSequence: cursor,
+          limit: 500,
+        );
+
+        // Apply all changes to local database
+        await _changeLogApplier.applyAll(response.changes);
+
+        // Update the cursor and last synced sequence
+        cursor = response.latestSequence;
+        await _changeLogRepository.saveLastSyncedSequence(cursor);
+
+        hasMore = response.hasMore;
+      }
+    } catch (e) {
+      // Best-effort pull - don't fail the entire sync
     }
   }
 

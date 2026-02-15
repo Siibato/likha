@@ -46,7 +46,7 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
   }) async {
     try {
       return await _dioClient.postTyped(
-        ApiEndpoints.classCreate(title),
+        ApiEndpoints.classCreate,
         data: {
           'title': title,
           if (description != null) 'description': description,
@@ -83,7 +83,7 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
   }) async {
     try {
       return await _dioClient.putTyped(
-        ApiEndpoints.classCreate(classId),
+        ApiEndpoints.classUpdate(classId),
         data: {
           if (title != null) 'title': title,
           if (description != null) 'description': description,

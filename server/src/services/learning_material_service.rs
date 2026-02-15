@@ -3,6 +3,7 @@ use uuid::Uuid;
 use md5;
 
 use crate::db::repositories::activity_log_repository::ActivityLogRepository;
+use crate::db::repositories::change_log_repository::ChangeLogRepository;
 use crate::db::repositories::class_repository::ClassRepository;
 use crate::db::repositories::learning_material_repository::LearningMaterialRepository;
 use crate::schema::learning_material_schema::*;
@@ -15,6 +16,7 @@ pub struct LearningMaterialService {
     material_repo: LearningMaterialRepository,
     class_repo: ClassRepository,
     activity_log_repo: ActivityLogRepository,
+    change_log_repo: ChangeLogRepository,
 }
 
 impl LearningMaterialService {
@@ -22,7 +24,8 @@ impl LearningMaterialService {
         Self {
             material_repo: LearningMaterialRepository::new(db.clone()),
             class_repo: ClassRepository::new(db.clone()),
-            activity_log_repo: ActivityLogRepository::new(db),
+            activity_log_repo: ActivityLogRepository::new(db.clone()),
+            change_log_repo: ChangeLogRepository::new(db),
         }
     }
 
@@ -139,6 +142,16 @@ impl LearningMaterialService {
                 Some(format!("Learning material '{}' created", material.title)),
             )
             .await;
+
+        let _ = self.change_log_repo.log_change(
+            "learning_material",
+            material.id,
+            "create",
+            teacher_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "title": material.title,
+            })).unwrap_or_default()),
+        ).await;
 
         Ok(MaterialResponse {
             id: material.id,
@@ -294,6 +307,16 @@ impl LearningMaterialService {
             )
             .await;
 
+        let _ = self.change_log_repo.log_change(
+            "learning_material",
+            material_id,
+            "update",
+            teacher_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "title": updated.title,
+            })).unwrap_or_default()),
+        ).await;
+
         Ok(MaterialResponse {
             id: updated.id,
             class_id: updated.class_id,
@@ -328,6 +351,14 @@ impl LearningMaterialService {
                 Some(format!("Learning material '{}' deleted", material.title)),
             )
             .await;
+
+        let _ = self.change_log_repo.log_change(
+            "learning_material",
+            material_id,
+            "delete",
+            teacher_id,
+            None,
+        ).await;
 
         Ok(())
     }
@@ -435,6 +466,17 @@ impl LearningMaterialService {
             )
             .await;
 
+        let _ = self.change_log_repo.log_change(
+            "material_file",
+            file.id,
+            "create",
+            teacher_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "file_name": file.file_name,
+                "material_id": material_id,
+            })).unwrap_or_default()),
+        ).await;
+
         Ok(FileMetadataResponse {
             id: file.id,
             file_name: file.file_name,
@@ -471,6 +513,14 @@ impl LearningMaterialService {
                 Some(format!("File '{}' deleted", file.file_name)),
             )
             .await;
+
+        let _ = self.change_log_repo.log_change(
+            "material_file",
+            file_id,
+            "delete",
+            teacher_id,
+            None,
+        ).await;
 
         Ok(())
     }

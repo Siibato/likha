@@ -35,6 +35,7 @@ abstract class LearningMaterialLocalDataSource {
     required int fileSize,
     required String localPath,
   });
+  Future<void> clearAllCache();
 }
 
 class LearningMaterialLocalDataSourceImpl implements LearningMaterialLocalDataSource {
@@ -383,6 +384,17 @@ class LearningMaterialLocalDataSourceImpl implements LearningMaterialLocalDataSo
       );
     } catch (e) {
       throw CacheException('Failed to stage material file for upload: $e');
+    }
+  }
+
+  @override
+  Future<void> clearAllCache() async {
+    try {
+      final db = await _localDatabase.database;
+      await db.delete('learning_materials');
+      await db.delete('material_files');
+    } catch (e) {
+      throw CacheException('Failed to clear learning materials cache: $e');
     }
   }
 }

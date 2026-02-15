@@ -45,35 +45,36 @@ class ValidationService {
     try {
       final result = await _validator.validate(entityType);
 
-      // If data is outdated, fetch and update
+      // If data is outdated, clear cache so repository will refetch fresh data
       if (result.isOutdated) {
-        await _syncEntity(entityType);
+        debugPrint('Data outdated for $entityType - clearing cache to force refetch');
+        await _clearCacheForEntity(entityType);
       }
     } catch (e) {
       debugPrint('Validation error for $entityType: $e');
     }
   }
 
-  /// Fetch fresh data and update SQLite
-  Future<void> _syncEntity(String entityType) async {
-    switch (entityType) {
-      case 'classes':
-        // Note: This needs to be called with proper context from repositories
-        // For now, we cannot get all classes without knowing if teacher or student
-        debugPrint('Classes sync: needs context from repository');
-        break;
-      case 'assessments':
-        // Similar issue - needs class context
-        debugPrint('Assessments sync: needs class context from repository');
-        break;
-      case 'assignments':
-        // Similar issue - needs class context
-        debugPrint('Assignments sync: needs class context from repository');
-        break;
-      case 'learning_materials':
-        // Similar issue - needs class context
-        debugPrint('Learning materials sync: needs class context from repository');
-        break;
+  /// Clear cached data for a specific entity type
+  Future<void> _clearCacheForEntity(String entityType) async {
+    try {
+      switch (entityType) {
+        case 'classes':
+          await _classLocal.clearAllCache();
+          break;
+        case 'assessments':
+          await _assessmentLocal.clearAllCache();
+          break;
+        case 'assignments':
+          await _assignmentLocal.clearAllCache();
+          break;
+        case 'learning_materials':
+          await _materialLocal.clearAllCache();
+          break;
+      }
+      debugPrint('Cleared cache for $entityType');
+    } catch (e) {
+      debugPrint('Error clearing cache for $entityType: $e');
     }
   }
 

@@ -32,6 +32,7 @@ abstract class AssignmentLocalDataSource {
     required String assignmentId,
   });
   Future<AssignmentSubmissionModel?> getCachedSubmission(String submissionId);
+  Future<void> clearAllCache();
 }
 
 class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
@@ -357,6 +358,18 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
       );
     } catch (e) {
       throw CacheException('Failed to get cached submission: $e');
+    }
+  }
+
+  @override
+  Future<void> clearAllCache() async {
+    try {
+      final db = await _localDatabase.database;
+      await db.delete('assignments');
+      await db.delete('assignment_submissions');
+      await db.delete('submission_files');
+    } catch (e) {
+      throw CacheException('Failed to clear assignment cache: $e');
     }
   }
 }

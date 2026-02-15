@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:likha/core/validation/services/data_validator.dart';
 import 'package:likha/core/validation/models/validation_metadata.dart';
 import 'package:likha/core/validation/models/validation_result.dart';
@@ -80,7 +81,24 @@ class TimestampValidator implements DataValidator {
     // No local metadata = always outdated
     if (local == null) return true;
 
+    // CRITICAL: Check if database was reset (database ID changed)
+    // This is the primary cache invalidation mechanism
+    if (local.databaseId != null && server.databaseId != null) {
+      if (local.databaseId != server.databaseId) {
+        debugPrint('Database ID changed! Invalidating all caches.');
+        return true; // Database was reset/recreated, invalidate everything
+      }
+    }
+
     // Compare timestamps
-    return server.lastModified.isAfter(local.lastModified);
+    final timestampOutdated = server.lastModified.isAfter(local.lastModified);
+
+    // Also check if record count changed significantly (catches deletions)
+    // If server has 0 records but local has data, or count mismatch > 10%, refresh
+    final recordCountMismatch = (local.recordCount - server.recordCount).abs() >
+        (local.recordCount * 0.1).toInt() ||
+        (server.recordCount == 0 && local.recordCount > 0);
+
+    return timestampOutdated || recordCountMismatch;
   }
 }

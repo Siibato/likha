@@ -155,3 +155,38 @@ pub struct SyncStatistics {
     pub sync_duration_ms: u64,
     pub timestamp: DateTime<Utc>,
 }
+
+/// Query parameters for GET /api/v1/changes
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChangesQueryParams {
+    pub since_sequence: i64,
+    pub limit: Option<u64>,
+}
+
+/// Individual change log entry in response
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChangeLogEntry {
+    pub sequence: i64,
+    pub entity_type: String,
+    pub entity_id: String,
+    pub operation: String,
+    pub performed_by: String,
+    pub payload: Option<Value>,
+    pub created_at: String,
+}
+
+/// Response from GET /api/v1/changes endpoint
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChangesResponse {
+    pub changes: Vec<ChangeLogEntry>,
+    pub latest_sequence: i64,
+    pub has_more: bool,
+    pub server_time: String,
+}
+
+/// Response with database ID for cache validation
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DatabaseIdResponse {
+    pub database_id: String,
+    pub created_at: String,
+}

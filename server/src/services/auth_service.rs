@@ -3,6 +3,7 @@ use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
 use crate::db::repositories::activity_log_repository::ActivityLogRepository;
+use crate::db::repositories::change_log_repository::ChangeLogRepository;
 use crate::db::repositories::user_repository::UserRepository;
 use crate::schema::admin_schema::{AccountListResponse, ActivityLogListResponse, ActivityLogResponse};
 use crate::schema::auth_schema::{
@@ -18,6 +19,7 @@ use crate::utils::validators::Validator;
 pub struct AuthService {
     user_repo: UserRepository,
     activity_log_repo: ActivityLogRepository,
+    change_log_repo: ChangeLogRepository,
     jwt_service: JwtService,
 }
 
@@ -29,7 +31,8 @@ impl AuthService {
     ) -> Self {
         Self {
             user_repo: UserRepository::new(db.clone()),
-            activity_log_repo: ActivityLogRepository::new(db),
+            activity_log_repo: ActivityLogRepository::new(db.clone()),
+            change_log_repo: ChangeLogRepository::new(db.clone()),
             jwt_service: JwtService::new(jwt_secret, jwt_expiration),
         }
     }
@@ -81,6 +84,17 @@ impl AuthService {
                 Some(format!("Account created with role: {}", user.role)),
             )
             .await?;
+
+        let _ = self.change_log_repo.log_change(
+            "user",
+            user.id,
+            "create",
+            admin_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "username": user.username,
+                "role": user.role,
+            })).unwrap_or_default()),
+        ).await;
 
         Ok(Self::user_to_response(&user))
     }
@@ -320,6 +334,17 @@ impl AuthService {
             )
             .await?;
 
+        let _ = self.change_log_repo.log_change(
+            "user",
+            user_id,
+            "update",
+            admin_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "username": user.username,
+                "full_name": user.full_name,
+            })).unwrap_or_default()),
+        ).await;
+
         Ok(Self::user_to_response(&user))
     }
 
@@ -344,6 +369,16 @@ impl AuthService {
                 Some("Account reset to pending activation".to_string()),
             )
             .await?;
+
+        let _ = self.change_log_repo.log_change(
+            "user",
+            request.user_id,
+            "update",
+            admin_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "account_status": "pending_activation",
+            })).unwrap_or_default()),
+        ).await;
 
         Ok(Self::user_to_response(&user))
     }
@@ -375,6 +410,16 @@ impl AuthService {
         self.activity_log_repo
             .create_log(user.id, action, Some(admin_id), None)
             .await?;
+
+        let _ = self.change_log_repo.log_change(
+            "user",
+            request.user_id,
+            "update",
+            admin_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "account_status": status,
+            })).unwrap_or_default()),
+        ).await;
 
         Ok(Self::user_to_response(&user))
     }

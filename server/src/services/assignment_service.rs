@@ -5,6 +5,7 @@ use md5;
 
 use crate::db::repositories::activity_log_repository::ActivityLogRepository;
 use crate::db::repositories::assignment_repository::AssignmentRepository;
+use crate::db::repositories::change_log_repository::ChangeLogRepository;
 use crate::db::repositories::class_repository::ClassRepository;
 use crate::schema::assignment_schema::*;
 use crate::utils::error::{AppError, AppResult};
@@ -15,6 +16,7 @@ pub struct AssignmentService {
     assignment_repo: AssignmentRepository,
     class_repo: ClassRepository,
     activity_log_repo: ActivityLogRepository,
+    change_log_repo: ChangeLogRepository,
 }
 
 impl AssignmentService {
@@ -22,7 +24,8 @@ impl AssignmentService {
         Self {
             assignment_repo: AssignmentRepository::new(db.clone()),
             class_repo: ClassRepository::new(db.clone()),
-            activity_log_repo: ActivityLogRepository::new(db),
+            activity_log_repo: ActivityLogRepository::new(db.clone()),
+            change_log_repo: ChangeLogRepository::new(db),
         }
     }
 
@@ -119,6 +122,17 @@ impl AssignmentService {
                 Some(format!("Assignment '{}' created", assignment.title)),
             )
             .await;
+
+        let _ = self.change_log_repo.log_change(
+            "assignment",
+            assignment.id,
+            "create",
+            teacher_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "title": assignment.title,
+                "total_points": assignment.total_points,
+            })).unwrap_or_default()),
+        ).await;
 
         Ok(AssignmentResponse {
             id: assignment.id,
@@ -403,6 +417,17 @@ impl AssignmentService {
             .count_graded_by_assignment(assignment_id)
             .await?;
 
+        let _ = self.change_log_repo.log_change(
+            "assignment",
+            assignment_id,
+            "update",
+            teacher_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "title": updated.title,
+                "total_points": updated.total_points,
+            })).unwrap_or_default()),
+        ).await;
+
         Ok(AssignmentResponse {
             id: updated.id,
             class_id: updated.class_id,
@@ -469,6 +494,14 @@ impl AssignmentService {
             )
             .await;
 
+        let _ = self.change_log_repo.log_change(
+            "assignment",
+            assignment_id,
+            "delete",
+            teacher_id,
+            None,
+        ).await;
+
         Ok(())
     }
 
@@ -513,6 +546,16 @@ impl AssignmentService {
                 Some(format!("Assignment '{}' published", published.title)),
             )
             .await;
+
+        let _ = self.change_log_repo.log_change(
+            "assignment",
+            assignment_id,
+            "update",
+            teacher_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "is_published": true,
+            })).unwrap_or_default()),
+        ).await;
 
         Ok(AssignmentResponse {
             id: published.id,
@@ -607,6 +650,17 @@ impl AssignmentService {
                     .assignment_repo
                     .create_submission(assignment_id, student_id)
                     .await?;
+
+                let _ = self.change_log_repo.log_change(
+                    "assignment_submission",
+                    sub.id,
+                    "create",
+                    student_id,
+                    Some(serde_json::to_string(&serde_json::json!({
+                        "assignment_id": assignment_id,
+                    })).unwrap_or_default()),
+                ).await;
+
                 if text_content.is_some() {
                     self.assignment_repo
                         .update_submission_text(sub.id, text_content)
@@ -784,6 +838,17 @@ impl AssignmentService {
             )
             .await;
 
+        let _ = self.change_log_repo.log_change(
+            "assignment_submission",
+            submission_id,
+            "update",
+            student_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "status": "submitted",
+                "is_late": is_late,
+            })).unwrap_or_default()),
+        ).await;
+
         let student_name = self.assignment_repo.find_student_name(student_id).await?;
         let files = self
             .assignment_repo
@@ -949,6 +1014,17 @@ impl AssignmentService {
             )
             .await;
 
+        let _ = self.change_log_repo.log_change(
+            "assignment_submission",
+            submission_id,
+            "update",
+            teacher_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "status": "graded",
+                "score": request.score,
+            })).unwrap_or_default()),
+        ).await;
+
         let student_name = self
             .assignment_repo
             .find_student_name(graded.student_id)
@@ -1011,6 +1087,16 @@ impl AssignmentService {
                 )),
             )
             .await;
+
+        let _ = self.change_log_repo.log_change(
+            "assignment_submission",
+            submission_id,
+            "update",
+            teacher_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "status": "returned",
+            })).unwrap_or_default()),
+        ).await;
 
         let student_name = self
             .assignment_repo

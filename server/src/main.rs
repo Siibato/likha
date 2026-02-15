@@ -66,6 +66,7 @@ async fn main() {
                     .await
                     .expect("Failed to connect to database");
                 run_migrations(&db).await.expect("Failed to run migrations");
+                create_or_update_database_id(&db).await.expect("Failed to create database ID");
                 seed_admin(&db).await.expect("Failed to seed admin account");
                 println!("Database created and migrations applied successfully");
                 return;
@@ -89,6 +90,7 @@ async fn main() {
                     .await
                     .expect("Failed to connect to database");
                 run_migrations(&db).await.expect("Failed to run migrations");
+                create_or_update_database_id(&db).await.expect("Failed to create database ID");
                 seed_admin(&db).await.expect("Failed to seed admin account");
                 println!("Database reset complete");
                 return;
@@ -236,6 +238,29 @@ async fn seed_admin(db: &DatabaseConnection) -> Result<(), sea_orm::DbErr> {
 
     admin.insert(db).await?;
     tracing::info!("Default admin account created (username: admin, status: pending_activation)");
+
+    Ok(())
+}
+
+async fn create_or_update_database_id(db: &DatabaseConnection) -> Result<(), sea_orm::DbErr> {
+    use ::entity::database_metadata;
+
+    // Generate a unique database ID using UUID + timestamp
+    let database_id = format!("{}-{}", Uuid::new_v4(), Utc::now().timestamp());
+
+    // Delete existing metadata (we only keep one record)
+    database_metadata::Entity::delete_many().exec(db).await?;
+
+    // Insert new metadata with fresh database ID
+    let metadata = database_metadata::ActiveModel {
+        id: Set(1),
+        database_id: Set(database_id.clone()),
+        created_at: Set(Utc::now()),
+        updated_at: Set(Utc::now()),
+    };
+
+    metadata.insert(db).await?;
+    tracing::info!("Database ID created: {}", database_id);
 
     Ok(())
 }

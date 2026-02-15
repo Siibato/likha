@@ -4,6 +4,9 @@ import 'package:get_it/get_it.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/connectivity_service.dart';
 import 'package:likha/core/network/dio_client.dart';
+import 'package:likha/core/sync/change_log_applier.dart';
+import 'package:likha/core/sync/change_log_remote_datasource.dart';
+import 'package:likha/core/sync/change_log_repository.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/validation/services/validation_service.dart';
@@ -117,12 +120,21 @@ Future<void> init() async {
 
   // Core - Sync infrastructure
   sl.registerLazySingleton<SyncQueue>(() => SyncQueueImpl(sl()));
+  sl.registerLazySingleton<ChangeLogRepository>(
+    () => ChangeLogRepository(sl()),
+  );
+  sl.registerLazySingleton<ChangeLogApplier>(
+    () => ChangeLogApplier(sl()),
+  );
 
   // Core - General
   sl.registerLazySingleton(() => StorageService(sl()));
   sl.registerLazySingleton(() => DioClient(sl()));
 
   // Remote Data sources
+  sl.registerLazySingleton<ChangeLogRemoteDataSource>(
+    () => ChangeLogRemoteDataSourceImpl(sl()),
+  );
   sl.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSourceImpl(sl(), sl()),
   );
@@ -222,7 +234,18 @@ Future<void> init() async {
 
   // SyncManager (depends on all repositories)
   sl.registerSingleton<SyncManager>(
-    SyncManager(sl(), sl(), sl(), sl(), sl(), sl(), sl()),
+    SyncManager(
+      sl(), // ConnectivityService
+      sl(), // SyncQueue
+      sl(), // AuthRepository
+      sl(), // ClassRepository
+      sl(), // AssessmentRepository
+      sl(), // AssignmentRepository
+      sl(), // LearningMaterialRepository
+      sl(), // ChangeLogRemoteDataSource
+      sl(), // ChangeLogRepository
+      sl(), // ChangeLogApplier
+    ),
   );
 
   // Auth use cases

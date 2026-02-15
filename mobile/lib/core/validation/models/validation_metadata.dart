@@ -4,6 +4,7 @@ class ValidationMetadata {
   final int recordCount;
   final String? etag;
   final DateTime validatedAt;
+  final String? databaseId;
 
   const ValidationMetadata({
     required this.entityType,
@@ -11,6 +12,7 @@ class ValidationMetadata {
     required this.recordCount,
     this.etag,
     required this.validatedAt,
+    this.databaseId,
   });
 
   /// Check if this validation is still fresh (< 5 mins old)
@@ -26,6 +28,7 @@ class ValidationMetadata {
       'record_count': recordCount,
       'etag': etag,
       'validated_at': validatedAt.toIso8601String(),
+      'database_id': databaseId,
     };
   }
 
@@ -37,6 +40,7 @@ class ValidationMetadata {
       recordCount: json['record_count'] as int,
       etag: json['etag'] as String?,
       validatedAt: DateTime.parse(json['validated_at'] as String),
+      databaseId: json['database_id'] as String?,
     );
   }
 }

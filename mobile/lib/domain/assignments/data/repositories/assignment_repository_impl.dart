@@ -78,9 +78,22 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
     required String assignmentId,
   }) async {
     try {
-      final cached = await _localDataSource.getCachedAssignmentDetail(assignmentId);
-      unawaited(_validationService.validateAndSync('assignments'));
-      return Right(cached);
+      // Always try to fetch fresh assignment details for real-time updates
+      try {
+        final fresh = await _remoteDataSource.getAssignmentDetail(assignmentId: assignmentId);
+        await _localDataSource.cacheAssignmentDetail(fresh);
+        return Right(fresh);
+      } on NetworkException {
+        // Network unavailable, fall back to cache
+        try {
+          final cached = await _localDataSource.getCachedAssignmentDetail(assignmentId);
+          return Right(cached);
+        } on CacheException catch (e) {
+          return Left(CacheFailure(e.message));
+        }
+      }
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {

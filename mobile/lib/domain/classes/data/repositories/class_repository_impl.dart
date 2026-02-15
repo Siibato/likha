@@ -34,6 +34,15 @@ class ClassRepositoryImpl implements ClassRepository {
         title: title,
         description: description,
       );
+
+      // After creating a new class, refetch the full list to include it in cache
+      try {
+        final freshClasses = await _remoteDataSource.getMyClasses();
+        await _localDataSource.cacheClasses(freshClasses);
+      } catch (e) {
+        // If refetch fails, that's OK - user will see it on next list refresh
+      }
+
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -47,15 +56,31 @@ class ClassRepositoryImpl implements ClassRepository {
   @override
   ResultFuture<List<ClassEntity>> getMyClasses() async {
     try {
-      // Step 1: Load from SQLite immediately (instant - no wait)
-      final cachedClasses = await _localDataSource.getCachedClasses();
+      // Step 1: Validate and update metadata (this clears cache if outdated)
+      await _validationService.validateAndSync('classes');
 
-      // Step 2: Validate freshness in background (non-blocking)
-      // This runs while UI is displaying cached data
-      unawaited(_validationService.validateAndSync('classes'));
+      // Step 2: Try to load from cache
+      try {
+        final cachedClasses = await _localDataSource.getCachedClasses();
 
-      // Step 3: Return cached data immediately
-      return Right(cachedClasses);
+        // If cache is empty (validation cleared it), refetch
+        if (cachedClasses.isEmpty) {
+          final freshClasses = await _remoteDataSource.getMyClasses();
+          await _localDataSource.cacheClasses(freshClasses);
+          return Right(freshClasses);
+        }
+
+        return Right(cachedClasses);
+      } on CacheException {
+        // Cache empty or error, refetch from server
+        final freshClasses = await _remoteDataSource.getMyClasses();
+        await _localDataSource.cacheClasses(freshClasses);
+        return Right(freshClasses);
+      }
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {
@@ -66,13 +91,22 @@ class ClassRepositoryImpl implements ClassRepository {
   @override
   ResultFuture<ClassDetail> getClassDetail({required String classId}) async {
     try {
-      // Load from SQLite immediately
-      final cached = await _localDataSource.getCachedClassDetail(classId);
-
-      // Validate freshness in background
-      unawaited(_validationService.validateAndSync('classes'));
-
-      return Right(cached);
+      // Always try to fetch fresh class details from server for real-time updates
+      try {
+        final fresh = await _remoteDataSource.getClassDetail(classId: classId);
+        await _localDataSource.cacheClassDetail(fresh);
+        return Right(fresh);
+      } on NetworkException {
+        // Network unavailable, fall back to cache
+        try {
+          final cached = await _localDataSource.getCachedClassDetail(classId);
+          return Right(cached);
+        } on CacheException catch (e) {
+          return Left(CacheFailure(e.message));
+        }
+      }
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {

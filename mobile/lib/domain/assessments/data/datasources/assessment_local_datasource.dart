@@ -30,6 +30,7 @@ abstract class AssessmentLocalDataSource {
   });
   Future<SubmissionDetailModel?> getCachedSubmissionDetail(String submissionId);
   Future<void> cacheSubmissionDetail(SubmissionDetailModel submission);
+  Future<void> clearAllCache();
 }
 
 class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
@@ -387,6 +388,19 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
       );
     } catch (e) {
       throw CacheException('Failed to cache submission detail: $e');
+    }
+  }
+
+  @override
+  Future<void> clearAllCache() async {
+    try {
+      final db = await _localDatabase.database;
+      await db.delete('assessments');
+      await db.delete('assessment_questions');
+      await db.delete('submission_answers');
+      await db.delete('submission_details');
+    } catch (e) {
+      throw CacheException('Failed to clear assessment cache: $e');
     }
   }
 }

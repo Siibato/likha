@@ -33,6 +33,7 @@ abstract class ClassLocalDataSource {
     required String classId,
     required String studentId,
   });
+  Future<void> clearAllCache();
 }
 
 class ClassLocalDataSourceImpl implements ClassLocalDataSource {
@@ -410,6 +411,18 @@ class ClassLocalDataSourceImpl implements ClassLocalDataSource {
       });
     } catch (e) {
       throw CacheException('Failed to remove student locally: $e');
+    }
+  }
+
+  @override
+  Future<void> clearAllCache() async {
+    try {
+      final db = await _localDatabase.database;
+      // Delete all classes and their enrollments
+      await db.delete('enrollments');
+      await db.delete('classes');
+    } catch (e) {
+      throw CacheException('Failed to clear class cache: $e');
     }
   }
 }
