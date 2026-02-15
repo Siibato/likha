@@ -66,3 +66,12 @@ pub struct EnrollmentResponse {
 pub struct ClassListResponse {
     pub classes: Vec<ClassResponse>,
 }
+
+// ===== METADATA SCHEMAS =====
+
+#[derive(Debug, Serialize)]
+pub struct ClassMetadataResponse {
+    pub last_modified: String,
+    pub record_count: usize,
+    pub etag: String,
+}

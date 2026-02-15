@@ -8,6 +8,7 @@ mod create_activity_logs_table;
 mod create_assessment_tables;
 mod create_assignment_tables;
 mod create_learning_materials_tables;
+mod add_last_modified_timestamps;
 
 pub struct Migrator;
 
@@ -23,6 +24,7 @@ impl MigratorTrait for Migrator {
             Box::new(create_assessment_tables::Migration),
             Box::new(create_assignment_tables::Migration),
             Box::new(create_learning_materials_tables::Migration),
+            Box::new(add_last_modified_timestamps::Migration),
         ]
     }
 }

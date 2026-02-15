@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/utils/typedef.dart';
+import 'package:likha/core/validation/services/validation_service.dart';
+import 'package:likha/domain/assignments/data/datasources/assignment_local_datasource.dart';
 import 'package:likha/domain/assignments/data/datasources/assignment_remote_datasource.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
@@ -10,8 +13,16 @@ import 'package:likha/domain/assignments/repositories/assignment_repository.dart
 
 class AssignmentRepositoryImpl implements AssignmentRepository {
   final AssignmentRemoteDataSource _remoteDataSource;
+  final AssignmentLocalDataSource _localDataSource;
+  final ValidationService _validationService;
 
-  AssignmentRepositoryImpl(this._remoteDataSource);
+  AssignmentRepositoryImpl({
+    required AssignmentRemoteDataSource remoteDataSource,
+    required AssignmentLocalDataSource localDataSource,
+    required ValidationService validationService,
+  })  : _remoteDataSource = remoteDataSource,
+        _localDataSource = localDataSource,
+        _validationService = validationService;
 
   @override
   ResultFuture<Assignment> createAssignment({
@@ -52,13 +63,11 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
     required String classId,
   }) async {
     try {
-      final result =
-          await _remoteDataSource.getAssignments(classId: classId);
-      return Right(result);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
+      final cached = await _localDataSource.getCachedAssignments(classId);
+      unawaited(_validationService.syncAssignments(classId));
+      return Right(cached);
+    } on CacheException catch (e) {
+      return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -69,14 +78,11 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
     required String assignmentId,
   }) async {
     try {
-      final result = await _remoteDataSource.getAssignmentDetail(
-        assignmentId: assignmentId,
-      );
-      return Right(result);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
+      final cached = await _localDataSource.getCachedAssignmentDetail(assignmentId);
+      unawaited(_validationService.validateAndSync('assignments'));
+      return Right(cached);
+    } on CacheException catch (e) {
+      return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -156,6 +162,7 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       final result = await _remoteDataSource.getSubmissions(
         assignmentId: assignmentId,
       );
+      unawaited(_validationService.validateAndSync('assignments'));
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -170,6 +177,16 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
   ResultFuture<AssignmentSubmission> getSubmissionDetail({
     required String submissionId,
   }) async {
+    try {
+      final cached = await _localDataSource.getCachedSubmission(submissionId);
+      if (cached != null) {
+        unawaited(_validationService.validateAndSync('assignments'));
+        return Right(cached);
+      }
+    } catch (_) {
+      // No cached data, fall through to network
+    }
+
     try {
       final result = await _remoteDataSource.getSubmissionDetail(
         submissionId: submissionId,

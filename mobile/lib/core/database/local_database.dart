@@ -255,6 +255,17 @@ class LocalDatabase {
         )
       ''');
 
+      // Validation metadata table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS validation_metadata (
+          entity_type TEXT PRIMARY KEY,
+          last_modified TEXT NOT NULL,
+          record_count INTEGER NOT NULL,
+          etag TEXT,
+          validated_at TEXT NOT NULL
+        )
+      ''');
+
       // Sync queue table
       await txn.execute('''
         CREATE TABLE IF NOT EXISTS sync_queue (

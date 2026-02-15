@@ -320,3 +320,12 @@ pub struct QuestionStatistics {
     pub incorrect_count: usize,
     pub correct_percentage: f64,
 }
+
+// ===== METADATA SCHEMAS =====
+
+#[derive(Debug, Serialize)]
+pub struct AssessmentMetadataResponse {
+    pub last_modified: String,
+    pub record_count: usize,
+    pub etag: String,
+}

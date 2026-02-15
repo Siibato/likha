@@ -186,4 +186,11 @@ impl LearningMaterialRepository {
 
         Ok(count as usize)
     }
+
+    pub async fn find_all(&self) -> AppResult<Vec<learning_materials::Model>> {
+        learning_materials::Entity::find()
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+    }
 }

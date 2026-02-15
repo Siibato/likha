@@ -382,4 +382,11 @@ impl AssignmentRepository {
             .ok_or_else(|| AppError::NotFound("User not found".to_string()))?;
         Ok(user.full_name)
     }
+
+    pub async fn find_all(&self) -> AppResult<Vec<assignments_hw::Model>> {
+        assignments_hw::Entity::find()
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+    }
 }

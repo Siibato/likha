@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/utils/typedef.dart';
+import 'package:likha/core/validation/services/validation_service.dart';
 import 'package:likha/domain/auth/entities/user.dart';
+import 'package:likha/domain/classes/data/datasources/class_local_datasource.dart';
 import 'package:likha/domain/classes/data/datasources/class_remote_datasource.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
@@ -10,8 +13,16 @@ import 'package:likha/domain/classes/repositories/class_repository.dart';
 
 class ClassRepositoryImpl implements ClassRepository {
   final ClassRemoteDataSource _remoteDataSource;
+  final ClassLocalDataSource _localDataSource;
+  final ValidationService _validationService;
 
-  ClassRepositoryImpl(this._remoteDataSource);
+  ClassRepositoryImpl({
+    required ClassRemoteDataSource remoteDataSource,
+    required ClassLocalDataSource localDataSource,
+    required ValidationService validationService,
+  })  : _remoteDataSource = remoteDataSource,
+        _localDataSource = localDataSource,
+        _validationService = validationService;
 
   @override
   ResultFuture<ClassEntity> createClass({
@@ -36,12 +47,17 @@ class ClassRepositoryImpl implements ClassRepository {
   @override
   ResultFuture<List<ClassEntity>> getMyClasses() async {
     try {
-      final result = await _remoteDataSource.getMyClasses();
-      return Right(result);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
+      // Step 1: Load from SQLite immediately (instant - no wait)
+      final cachedClasses = await _localDataSource.getCachedClasses();
+
+      // Step 2: Validate freshness in background (non-blocking)
+      // This runs while UI is displaying cached data
+      unawaited(_validationService.validateAndSync('classes'));
+
+      // Step 3: Return cached data immediately
+      return Right(cachedClasses);
+    } on CacheException catch (e) {
+      return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -50,13 +66,15 @@ class ClassRepositoryImpl implements ClassRepository {
   @override
   ResultFuture<ClassDetail> getClassDetail({required String classId}) async {
     try {
-      final result =
-          await _remoteDataSource.getClassDetail(classId: classId);
-      return Right(result);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
+      // Load from SQLite immediately
+      final cached = await _localDataSource.getCachedClassDetail(classId);
+
+      // Validate freshness in background
+      unawaited(_validationService.validateAndSync('classes'));
+
+      return Right(cached);
+    } on CacheException catch (e) {
+      return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

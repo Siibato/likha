@@ -1,11 +1,12 @@
 use sea_orm::DatabaseConnection;
 use uuid::Uuid;
+use md5;
 
 use crate::db::repositories::class_repository::ClassRepository;
 use crate::db::repositories::user_repository::UserRepository;
 use crate::schema::auth_schema::UserResponse;
 use crate::schema::class_schema::{
-    ClassDetailResponse, ClassListResponse, ClassResponse, CreateClassRequest, EnrollmentResponse, UpdateClassRequest,
+    ClassDetailResponse, ClassListResponse, ClassResponse, CreateClassRequest, EnrollmentResponse, UpdateClassRequest, ClassMetadataResponse,
 };
 use crate::utils::error::{AppError, AppResult};
 
@@ -314,6 +315,29 @@ impl ClassService {
 
         Ok(ClassListResponse {
             classes: class_responses,
+        })
+    }
+
+    pub async fn get_classes_metadata(
+        &self,
+        user_id: Uuid,
+        role: &str,
+    ) -> AppResult<ClassMetadataResponse> {
+        let (last_modified, count, etag) = match role {
+            "teacher" => self.class_repo.get_metadata(user_id).await?,
+            "student" => {
+                let enrollments = self.class_repo.find_student_enrollments(user_id).await?;
+                let count = enrollments.len();
+                let etag = format!("{:x}", md5::compute(format!("student-{}-{}", user_id, count).as_bytes()));
+                (chrono::Utc::now().naive_utc(), count, etag)
+            }
+            _ => return Err(AppError::Forbidden("Invalid role".to_string())),
+        };
+
+        Ok(ClassMetadataResponse {
+            last_modified: last_modified.to_string(),
+            record_count: count,
+            etag,
         })
     }
 }

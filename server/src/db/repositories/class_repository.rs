@@ -1,6 +1,7 @@
-use chrono::Utc;
+use chrono::{Utc, NaiveDateTime};
 use sea_orm::*;
 use uuid::Uuid;
+use md5;
 
 use ::entity::{class_enrollments, classes};
 use crate::utils::{AppError, AppResult};
@@ -199,5 +200,40 @@ impl ClassRepository {
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
         Ok(enrollment.is_some())
+    }
+
+    pub async fn get_metadata(&self, teacher_id: Uuid) -> AppResult<(NaiveDateTime, usize, String)> {
+        let classes = classes::Entity::find()
+            .filter(classes::Column::TeacherId.eq(teacher_id))
+            .filter(classes::Column::IsArchived.eq(false))
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        let count = classes.len();
+
+        let last_modified = if count > 0 {
+            classes
+                .iter()
+                .map(|c| c.updated_at)
+                .max()
+                .unwrap_or_else(|| Utc::now().naive_utc())
+        } else {
+            Utc::now().naive_utc()
+        };
+
+        let etag_data = format!("{}-{}", count, last_modified);
+        let etag = format!("{:x}", md5::compute(etag_data.as_bytes()));
+
+        Ok((last_modified, count, etag))
+    }
+
+    pub async fn find_student_enrollments(&self, student_id: Uuid) -> AppResult<Vec<class_enrollments::Model>> {
+        class_enrollments::Entity::find()
+            .filter(class_enrollments::Column::StudentId.eq(student_id))
+            .filter(class_enrollments::Column::RemovedAt.is_null())
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
     }
 }

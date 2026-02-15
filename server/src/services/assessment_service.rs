@@ -1,6 +1,7 @@
 use chrono::NaiveDateTime;
 use sea_orm::DatabaseConnection;
 use uuid::Uuid;
+use md5;
 
 use crate::db::repositories::assessment_repository::AssessmentRepository;
 use crate::db::repositories::class_repository::ClassRepository;
@@ -1206,6 +1207,30 @@ impl AssessmentService {
             choices,
             correct_answers,
             enumeration_items,
+        })
+    }
+
+    pub async fn get_assessments_metadata(&self) -> AppResult<AssessmentMetadataResponse> {
+        let assessments = self.assessment_repo.find_all().await?;
+        let count = assessments.len();
+
+        let last_modified = if count > 0 {
+            assessments
+                .iter()
+                .map(|a| a.updated_at)
+                .max()
+                .unwrap_or_else(|| chrono::Utc::now().naive_utc())
+        } else {
+            chrono::Utc::now().naive_utc()
+        };
+
+        let etag_data = format!("{}-{}", count, last_modified);
+        let etag = format!("{:x}", md5::compute(etag_data.as_bytes()));
+
+        Ok(AssessmentMetadataResponse {
+            last_modified: last_modified.to_string(),
+            record_count: count,
+            etag,
         })
     }
 }

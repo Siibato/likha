@@ -124,3 +124,12 @@ pub struct FileMetadataResponse {
     pub file_size: i64,
     pub uploaded_at: String,
 }
+
+// ===== METADATA SCHEMAS =====
+
+#[derive(Debug, Serialize)]
+pub struct AssignmentMetadataResponse {
+    pub last_modified: String,
+    pub record_count: usize,
+    pub etag: String,
+}

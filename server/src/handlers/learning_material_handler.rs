@@ -205,3 +205,13 @@ pub async fn download_file(
         Err(e) => e.into_response(),
     }
 }
+
+pub async fn get_materials_metadata(
+    State(service): State<Arc<LearningMaterialService>>,
+    _auth_user: AuthUser,
+) -> impl IntoResponse {
+    match service.get_materials_metadata().await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}

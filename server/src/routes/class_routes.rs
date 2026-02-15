@@ -12,6 +12,7 @@ pub fn routes(class_service: Arc<ClassService>, auth_service: Arc<AuthService>) 
     let class_routes = Router::new()
         .route("/classes", post(class_handler::create_class))
         .route("/classes", get(class_handler::get_classes))
+        .route("/classes/metadata", get(class_handler::get_classes_metadata))
         .route("/classes/{id}", get(class_handler::get_class_detail))
         .route("/classes/{id}", put(class_handler::update_class))
         .route(

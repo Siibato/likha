@@ -19,6 +19,10 @@ pub fn routes(assessment_service: Arc<AssessmentService>) -> Router {
             get(assessment_handler::get_assessments),
         )
         .route(
+            "/assessments/metadata",
+            get(assessment_handler::get_assessments_metadata),
+        )
+        .route(
             "/assessments/{id}",
             get(assessment_handler::get_assessment_detail),
         )

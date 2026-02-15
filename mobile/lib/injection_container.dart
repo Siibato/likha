@@ -6,6 +6,11 @@ import 'package:likha/core/network/connectivity_service.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/core/sync/sync_queue.dart';
+import 'package:likha/core/validation/services/validation_service.dart';
+import 'package:likha/core/validation/services/data_validator.dart';
+import 'package:likha/core/validation/services/timestamp_validator.dart';
+import 'package:likha/core/validation/data_sources/validation_remote_datasource.dart';
+import 'package:likha/core/validation/repositories/validation_metadata_repository.dart';
 import 'package:likha/domain/assessments/data/datasources/assessment_local_datasource.dart';
 import 'package:likha/domain/assessments/data/datasources/assessment_remote_datasource.dart';
 import 'package:likha/domain/assessments/data/repositories/assessment_repository_impl.dart';
@@ -151,21 +156,68 @@ Future<void> init() async {
     () => LearningMaterialLocalDataSourceImpl(sl(), sl()),
   );
 
+  // Validation services
+  sl.registerLazySingleton<ValidationRemoteDataSource>(
+    () => ValidationRemoteDataSourceImpl(sl()),
+  );
+
+  sl.registerLazySingleton<ValidationMetadataRepository>(
+    () => ValidationMetadataRepositoryImpl(sl()),
+  );
+
+  sl.registerLazySingleton<DataValidator>(
+    () => TimestampValidator(
+      remoteDataSource: sl(),
+      metadataRepository: sl(),
+      connectivityService: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton<ValidationService>(
+    () => ValidationService(
+      validator: sl(),
+      classLocal: sl(),
+      assessmentLocal: sl(),
+      assignmentLocal: sl(),
+      materialLocal: sl(),
+      classRemote: sl(),
+      assessmentRemote: sl(),
+      assignmentRemote: sl(),
+      materialRemote: sl(),
+    ),
+  );
+
   // Repositories
   sl.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(sl(), sl(), sl(), sl()),
   );
   sl.registerLazySingleton<ClassRepository>(
-    () => ClassRepositoryImpl(sl()),
+    () => ClassRepositoryImpl(
+      remoteDataSource: sl(),
+      localDataSource: sl(),
+      validationService: sl(),
+    ),
   );
   sl.registerLazySingleton<AssessmentRepository>(
-    () => AssessmentRepositoryImpl(sl()),
+    () => AssessmentRepositoryImpl(
+      remoteDataSource: sl(),
+      localDataSource: sl(),
+      validationService: sl(),
+    ),
   );
   sl.registerLazySingleton<AssignmentRepository>(
-    () => AssignmentRepositoryImpl(sl()),
+    () => AssignmentRepositoryImpl(
+      remoteDataSource: sl(),
+      localDataSource: sl(),
+      validationService: sl(),
+    ),
   );
   sl.registerLazySingleton<LearningMaterialRepository>(
-    () => LearningMaterialRepositoryImpl(sl()),
+    () => LearningMaterialRepositoryImpl(
+      remoteDataSource: sl(),
+      localDataSource: sl(),
+      validationService: sl(),
+    ),
   );
 
   // SyncManager (depends on all repositories)

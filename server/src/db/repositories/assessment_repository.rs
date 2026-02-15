@@ -421,4 +421,11 @@ impl AssessmentRepository {
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
     }
+
+    pub async fn find_all(&self) -> AppResult<Vec<assessments::Model>> {
+        assessments::Entity::find()
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+    }
 }

@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/utils/typedef.dart';
+import 'package:likha/core/validation/services/validation_service.dart';
+import 'package:likha/domain/assessments/data/datasources/assessment_local_datasource.dart';
 import 'package:likha/domain/assessments/data/datasources/assessment_remote_datasource.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
@@ -11,8 +14,16 @@ import 'package:likha/domain/assessments/repositories/assessment_repository.dart
 
 class AssessmentRepositoryImpl implements AssessmentRepository {
   final AssessmentRemoteDataSource _remoteDataSource;
+  final AssessmentLocalDataSource _localDataSource;
+  final ValidationService _validationService;
 
-  AssessmentRepositoryImpl(this._remoteDataSource);
+  AssessmentRepositoryImpl({
+    required AssessmentRemoteDataSource remoteDataSource,
+    required AssessmentLocalDataSource localDataSource,
+    required ValidationService validationService,
+  })  : _remoteDataSource = remoteDataSource,
+        _localDataSource = localDataSource,
+        _validationService = validationService;
 
   @override
   ResultFuture<Assessment> createAssessment({
@@ -52,12 +63,11 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required String classId,
   }) async {
     try {
-      final result = await _remoteDataSource.getAssessments(classId: classId);
-      return Right(result);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
+      final cached = await _localDataSource.getCachedAssessments(classId);
+      unawaited(_validationService.syncAssessments(classId));
+      return Right(cached);
+    } on CacheException catch (e) {
+      return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -68,14 +78,11 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required String assessmentId,
   }) async {
     try {
-      final result = await _remoteDataSource.getAssessmentDetail(
-        assessmentId: assessmentId,
-      );
-      return Right((result.assessment, result.questions));
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
+      final cached = await _localDataSource.getCachedAssessmentDetail(assessmentId);
+      unawaited(_validationService.validateAndSync('assessments'));
+      return Right(cached);
+    } on CacheException catch (e) {
+      return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -230,6 +237,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       final result = await _remoteDataSource.getSubmissions(
         assessmentId: assessmentId,
       );
+      unawaited(_validationService.validateAndSync('assessments'));
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -245,9 +253,20 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required String submissionId,
   }) async {
     try {
+      final cached = await _localDataSource.getCachedSubmissionDetail(submissionId);
+      if (cached != null) {
+        unawaited(_validationService.validateAndSync('assessments'));
+        return Right(cached);
+      }
+    } catch (_) {
+      // No cached data, fall through to network
+    }
+
+    try {
       final result = await _remoteDataSource.getSubmissionDetail(
         submissionId: submissionId,
       );
+      unawaited(_localDataSource.cacheSubmissionDetail(result));
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
