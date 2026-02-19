@@ -11,7 +11,6 @@ mod create_learning_materials_tables;
 mod add_last_modified_timestamps;
 mod create_change_log_table;
 mod create_database_metadata_table;
-mod add_last_change_log_id;
 
 pub struct Migrator;
 
@@ -30,7 +29,6 @@ impl MigratorTrait for Migrator {
             Box::new(create_learning_materials_tables::Migration),
             Box::new(add_last_modified_timestamps::Migration),
             Box::new(create_change_log_table::Migration),
-            Box::new(add_last_change_log_id::Migration),
         ]
     }
 }

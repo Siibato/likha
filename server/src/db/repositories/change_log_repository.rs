@@ -80,4 +80,26 @@ impl ChangeLogRepository {
 
         Ok(count > effective_limit as u64)
     }
+
+    /// Find all changes for a specific entity since a given timestamp
+    /// Filters by entity_type and entity_id, ordered by creation time
+    pub async fn find_by_entity_since(
+        &self,
+        entity_type: &str,
+        entity_id: &str,
+        since: chrono::NaiveDateTime,
+        limit: u64,
+    ) -> AppResult<Vec<change_log::Model>> {
+        let effective_limit = std::cmp::min(limit, 1000);
+
+        change_log::Entity::find()
+            .filter(change_log::Column::EntityType.eq(entity_type))
+            .filter(change_log::Column::EntityId.eq(entity_id))
+            .filter(change_log::Column::CreatedAt.gte(since))
+            .order_by_asc(change_log::Column::CreatedAt)
+            .limit(effective_limit)
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+    }
 }

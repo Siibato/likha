@@ -9,6 +9,8 @@ import 'package:likha/core/sync/change_log_remote_datasource.dart';
 import 'package:likha/core/sync/change_log_repository.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/core/sync/sync_queue.dart';
+import 'package:likha/core/sync/entity_sync_helper.dart';
+import 'package:likha/core/sync/sync_queue_manager.dart';
 import 'package:likha/core/validation/services/validation_service.dart';
 import 'package:likha/core/validation/services/data_validator.dart';
 import 'package:likha/core/validation/services/timestamp_validator.dart';
@@ -126,6 +128,16 @@ Future<void> init() async {
   sl.registerLazySingleton<ChangeLogApplier>(
     () => ChangeLogApplier(sl()),
   );
+  sl.registerLazySingleton<SyncQueueManager>(
+    () => SyncQueueManager(sl()),
+  );
+  sl.registerLazySingleton<EntitySyncHelper>(
+    () => EntitySyncHelper(
+      localDatabase: sl(),
+      changeLogRemoteDataSource: sl(),
+      changeLogApplier: sl(),
+    ),
+  );
 
   // Core - General
   sl.registerLazySingleton(() => StorageService(sl()));
@@ -208,6 +220,9 @@ Future<void> init() async {
       remoteDataSource: sl(),
       localDataSource: sl(),
       validationService: sl(),
+      connectivityService: sl(),
+      entitySyncHelper: sl(),
+      syncQueueManager: sl(),
     ),
   );
   sl.registerLazySingleton<AssessmentRepository>(

@@ -190,3 +190,19 @@ pub struct DatabaseIdResponse {
     pub database_id: String,
     pub created_at: String,
 }
+
+/// Query parameters for GET /api/v1/entities/{type}/{id}/changes
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EntityChangesQueryParams {
+    pub since: Option<String>, // ISO8601 timestamp
+    pub limit: Option<u64>,
+}
+
+/// Response from GET /api/v1/entities/{type}/{id}/changes endpoint
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EntityChangesResponse {
+    pub entity_type: String,
+    pub entity_id: String,
+    pub changes: Vec<ChangeLogEntry>,
+    pub server_time: String,
+}

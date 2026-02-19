@@ -18,6 +18,8 @@ pub fn routes(sync_service: Arc<SyncService>) -> Router {
         .route("/sync/full", post(sync_handler::full_sync))
         .route("/sync/conflicts/resolve", post(sync_handler::resolve_conflict))
         .route("/changes", get(sync_handler::get_changes))
+        // Entity-specific changes endpoint (NEW)
+        .route("/entities/:entity_type/:entity_id/changes", get(sync_handler::get_entity_changes))
         // Admin statistics
         .route("/sync/statistics", get(sync_handler::statistics))
         .with_state(sync_service)

@@ -147,3 +147,30 @@ pub async fn get_changes(
         }
     }
 }
+
+/// GET /api/v1/entities/:entity_type/:entity_id/changes
+/// Get all changes for a specific entity since a timestamp
+pub async fn get_entity_changes(
+    State(sync_service): State<Arc<SyncService>>,
+    auth_user: AuthUser,
+    axum::extract::Path((entity_type, entity_id)): axum::extract::Path<(String, String)>,
+    axum::extract::Query(params): axum::extract::Query<EntityChangesQueryParams>,
+) -> impl IntoResponse {
+    tracing::info!(
+        "Get entity changes request from user: {}, entity_type: {}, entity_id: {}",
+        auth_user.user_id,
+        entity_type,
+        entity_id
+    );
+
+    match sync_service
+        .get_entity_changes(&entity_type, &entity_id, params.since, params.limit)
+        .await
+    {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => {
+            tracing::error!("Get entity changes error: {}", e);
+            AppError::InternalServerError(format!("Get entity changes failed: {}", e)).into_response()
+        }
+    }
+}

@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 2,
+      version: 3,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onOpen: (db) async {
@@ -68,7 +68,8 @@ class LocalDatabase {
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           cached_at TEXT NOT NULL,
-          is_dirty INTEGER NOT NULL DEFAULT 0,
+          synced_at TEXT,
+          is_offline_mutation INTEGER NOT NULL DEFAULT 0,
           sync_status TEXT NOT NULL DEFAULT 'synced'
         )
       ''');
@@ -109,7 +110,8 @@ class LocalDatabase {
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           cached_at TEXT NOT NULL,
-          is_dirty INTEGER NOT NULL DEFAULT 0,
+          synced_at TEXT,
+          is_offline_mutation INTEGER NOT NULL DEFAULT 0,
           sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
         )
@@ -149,7 +151,8 @@ class LocalDatabase {
           answers_json TEXT,
           local_start_at TEXT,
           cached_at TEXT NOT NULL,
-          is_dirty INTEGER NOT NULL DEFAULT 0,
+          synced_at TEXT,
+          is_offline_mutation INTEGER NOT NULL DEFAULT 0,
           sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(assessment_id) REFERENCES assessments(id) ON DELETE CASCADE
         )
@@ -176,7 +179,8 @@ class LocalDatabase {
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           cached_at TEXT NOT NULL,
-          is_dirty INTEGER NOT NULL DEFAULT 0,
+          synced_at TEXT,
+          is_offline_mutation INTEGER NOT NULL DEFAULT 0,
           sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
         )
@@ -199,7 +203,8 @@ class LocalDatabase {
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           cached_at TEXT NOT NULL,
-          is_dirty INTEGER NOT NULL DEFAULT 0,
+          synced_at TEXT,
+          is_offline_mutation INTEGER NOT NULL DEFAULT 0,
           sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(assignment_id) REFERENCES assignments(id) ON DELETE CASCADE
         )
@@ -234,7 +239,8 @@ class LocalDatabase {
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           cached_at TEXT NOT NULL,
-          is_dirty INTEGER NOT NULL DEFAULT 0,
+          synced_at TEXT,
+          is_offline_mutation INTEGER NOT NULL DEFAULT 0,
           sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
         )
@@ -330,6 +336,33 @@ class LocalDatabase {
         ''');
       } catch (e) {
         // Column already exists, that's fine
+      }
+    }
+
+    if (oldVersion < 3) {
+      // Add synced_at and is_offline_mutation columns to entity tables
+      final tables = [
+        'classes',
+        'assessments',
+        'assignments',
+        'assessment_submissions',
+        'assignment_submissions',
+        'learning_materials',
+      ];
+
+      for (final table in tables) {
+        try {
+          await db.execute('ALTER TABLE $table ADD COLUMN synced_at TEXT');
+        } catch (e) {
+          // Column might already exist
+        }
+
+        try {
+          await db.execute(
+              'ALTER TABLE $table ADD COLUMN is_offline_mutation INTEGER NOT NULL DEFAULT 0');
+        } catch (e) {
+          // Column might already exist
+        }
       }
     }
   }

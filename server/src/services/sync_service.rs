@@ -423,4 +423,58 @@ impl SyncService {
             Err(e) => Err(format!("Failed to retrieve database ID: {}", e)),
         }
     }
+
+    /// Get all changes for a specific entity since a timestamp
+    /// This endpoint filters changes by entity type and entity_id
+    pub async fn get_entity_changes(
+        &self,
+        entity_type: &str,
+        entity_id: &str,
+        since: Option<String>,
+        limit: Option<u64>,
+    ) -> Result<EntityChangesResponse, String> {
+        let limit = limit.unwrap_or(500).min(1000); // Max 1000
+
+        // Parse timestamp if provided
+        let since_dt = if let Some(since_str) = since {
+            chrono::DateTime::parse_from_rfc3339(&since_str)
+                .ok()
+                .and_then(|dt| dt.with_timezone(&Utc).naive_utc().into())
+                .ok_or_else(|| "Invalid timestamp format".to_string())?
+        } else {
+            chrono::NaiveDateTime::from_timestamp_opt(0, 0)
+                .ok_or_else(|| "Invalid timestamp".to_string())?
+        };
+
+        let changes = self
+            .change_log_repo
+            .find_by_entity_since(entity_type, entity_id, since_dt, limit)
+            .await
+            .map_err(|e| format!("Failed to fetch entity changes: {:?}", e))?;
+
+        let entries = changes
+            .into_iter()
+            .map(|log| {
+                let payload = log.payload
+                    .and_then(|p| serde_json::from_str(&p).ok());
+
+                ChangeLogEntry {
+                    sequence: log.sequence,
+                    entity_type: log.entity_type,
+                    entity_id: log.entity_id,
+                    operation: log.operation,
+                    performed_by: log.performed_by.to_string(),
+                    payload,
+                    created_at: log.created_at.to_string(),
+                }
+            })
+            .collect();
+
+        Ok(EntityChangesResponse {
+            entity_type: entity_type.to_string(),
+            entity_id: entity_id.to_string(),
+            changes: entries,
+            server_time: Utc::now().to_rfc3339(),
+        })
+    }
 }

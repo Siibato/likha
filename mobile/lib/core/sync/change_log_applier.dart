@@ -85,7 +85,8 @@ class ChangeLogApplier {
         'created_at': payload['created_at'] ?? '',
         'updated_at': payload['updated_at'] ?? '',
         'cached_at': DateTime.now().toIso8601String(),
-        'is_dirty': 0,
+        'synced_at': DateTime.now().toIso8601String(),
+        'is_offline_mutation': 0,
         'sync_status': 'synced',
       };
       await db.insert(
@@ -149,7 +150,8 @@ class ChangeLogApplier {
         'created_at': payload['created_at'] ?? '',
         'updated_at': payload['updated_at'] ?? '',
         'cached_at': DateTime.now().toIso8601String(),
-        'is_dirty': 0,
+        'synced_at': DateTime.now().toIso8601String(),
+        'is_offline_mutation': 0,
         'sync_status': 'synced',
       };
       await db.insert(
@@ -208,7 +210,8 @@ class ChangeLogApplier {
         'started_at': payload['started_at'],
         'submitted_at': payload['submitted_at'],
         'cached_at': DateTime.now().toIso8601String(),
-        'is_dirty': 0,
+        'synced_at': DateTime.now().toIso8601String(),
+        'is_offline_mutation': 0,
         'sync_status': 'synced',
       };
       await db.insert(
@@ -239,7 +242,8 @@ class ChangeLogApplier {
         'created_at': payload['created_at'] ?? '',
         'updated_at': payload['updated_at'] ?? '',
         'cached_at': DateTime.now().toIso8601String(),
-        'is_dirty': 0,
+        'synced_at': DateTime.now().toIso8601String(),
+        'is_offline_mutation': 0,
         'sync_status': 'synced',
       };
       await db.insert(
@@ -271,7 +275,8 @@ class ChangeLogApplier {
         'feedback': payload['feedback'],
         'is_late': (payload['is_late'] ?? false) ? 1 : 0,
         'cached_at': DateTime.now().toIso8601String(),
-        'is_dirty': 0,
+        'synced_at': DateTime.now().toIso8601String(),
+        'is_offline_mutation': 0,
         'sync_status': 'synced',
       };
       await db.insert(
@@ -303,7 +308,8 @@ class ChangeLogApplier {
         'created_at': payload['created_at'] ?? '',
         'updated_at': payload['updated_at'] ?? '',
         'cached_at': DateTime.now().toIso8601String(),
-        'is_dirty': 0,
+        'synced_at': DateTime.now().toIso8601String(),
+        'is_offline_mutation': 0,
         'sync_status': 'synced',
       };
       await db.insert(
@@ -361,7 +367,6 @@ class ChangeLogApplier {
         'activated_at': payload['activated_at'],
         'created_at': payload['created_at'] ?? '',
         'cached_at': DateTime.now().toIso8601String(),
-        'is_dirty': 0,
         'sync_status': 'synced',
       };
       await db.insert(
