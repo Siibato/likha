@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:likha/domain/admin/entities/activity_log.dart';
+import 'package:likha/domain/auth/entities/activity_log.dart';
 
 class ActivityLogList extends StatelessWidget {
   final List<ActivityLog> logs;

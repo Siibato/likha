@@ -1,20 +1,20 @@
 import 'package:likha/core/constants/api_endpoint.dart';
 import 'package:likha/core/sync/change_log_model.dart';
-import 'package:likha/domain/auth/data/models/activity_log_model.dart';
-import 'package:likha/domain/auth/data/models/auth_response_model.dart';
-import 'package:likha/domain/auth/data/models/check_username_result_model.dart';
-import 'package:likha/domain/auth/data/models/user_model.dart';
+import 'package:likha/data/models/auth/activity_log_model.dart';
+import 'package:likha/data/models/auth/auth_response_model.dart';
+import 'package:likha/data/models/auth/check_username_result_model.dart';
+import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/domain/assessments/data/models/assessment_model.dart';
 import 'package:likha/domain/assessments/data/models/question_model.dart';
 import 'package:likha/domain/assessments/data/models/statistics_model.dart';
 import 'package:likha/domain/assessments/data/models/submission_model.dart';
-import 'package:likha/domain/assignments/data/models/assignment_model.dart';
-import 'package:likha/domain/assignments/data/models/assignment_submission_model.dart';
-import 'package:likha/domain/assignments/data/models/submission_file_model.dart';
-import 'package:likha/domain/classes/data/models/class_detail_model.dart';
-import 'package:likha/domain/classes/data/models/class_model.dart';
+import 'package:likha/data/models/assignments/assignment_model.dart';
+import 'package:likha/data/models/assignments/assignment_submission_model.dart';
+import 'package:likha/data/models/assignments/submission_file_model.dart';
+import 'package:likha/data/models/classes/class_detail_model.dart';
+import 'package:likha/data/models/classes/class_model.dart';
 import 'package:likha/domain/learning_materials/data/models/learning_material_model.dart';
-import 'package:likha/domain/learning_materials/data/models/material_detail_model.dart';
+import 'package:likha/data/models/learning_materials/material_detail_model.dart';
 import 'package:likha/domain/learning_materials/data/models/material_file_model.dart';
 
 class ApiEndpoints {

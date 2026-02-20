@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/domain/assessments/data/models/question_model.dart';
+import 'package:likha/data/models/assessments/question_model.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/domain/assessments/usecases/save_answers.dart';
 import 'package:likha/presentation/pages/student/widgets/assessment_timer_badge.dart';
