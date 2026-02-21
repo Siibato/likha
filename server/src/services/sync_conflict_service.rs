@@ -52,11 +52,10 @@ impl SyncConflictService {
                     uuid::Uuid::new_v4(), // Would be user_id in real implementation
                     entity_type,
                     uuid::Uuid::parse_str(entity_id).unwrap_or_else(|_| uuid::Uuid::new_v4()),
-                    client_updated_at,
-                    server_updated_at,
-                    client_data,
-                    server_data,
-                    "server_wins", // Default strategy
+                    Some(client_updated_at.naive_utc()),
+                    Some(server_updated_at.naive_utc()),
+                    Some(client_data),
+                    Some(server_data),
                 )
                 .await?;
         }
@@ -119,11 +118,12 @@ impl SyncConflictService {
                     "id": c.id,
                     "entity_type": c.entity_type,
                     "entity_id": c.entity_id.to_string(),
-                    "client_version": c.client_version.to_rfc3339(),
-                    "server_version": c.server_version.to_rfc3339(),
+                    "client_updated_at": c.client_updated_at.map(|dt| dt.to_string()),
+                    "server_updated_at": c.server_updated_at.map(|dt| dt.to_string()),
                     "client_data": c.client_data,
                     "server_data": c.server_data,
-                    "resolution_strategy": c.resolution_strategy,
+                    "resolution": c.resolution.clone(),
+                    "created_at": c.created_at.to_string(),
                 })
             })
             .collect();

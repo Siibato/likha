@@ -160,7 +160,7 @@ Future<void> init() async {
     () => LearningMaterialRemoteDataSourceImpl(sl()),
   );
   sl.registerLazySingleton<SyncRemoteDataSource>(
-    () => SyncRemoteDataSourceImpl(sl()),
+    () => SyncRemoteDataSourceImpl(dio: sl()),
   );
 
   // Local Data sources
@@ -252,14 +252,8 @@ Future<void> init() async {
     SyncManager(
       sl(), // ConnectivityService
       sl(), // SyncQueue
-      sl(), // AuthRepository
-      sl(), // ClassRepository
-      sl(), // AssessmentRepository
-      sl(), // AssignmentRepository
-      sl(), // LearningMaterialRepository
-      sl(), // ChangeLogRemoteDataSource
-      sl(), // ChangeLogRepository
-      sl(), // ChangeLogApplier
+      sl(), // SyncRemoteDataSource
+      sl(), // LocalDatabase
     ),
   );
 

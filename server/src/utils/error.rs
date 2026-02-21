@@ -4,6 +4,7 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ErrorResponse {
@@ -20,6 +21,19 @@ pub enum AppError {
     Unauthorized(String),
     Forbidden(String),
     Conflict(String),
+}
+
+impl fmt::Display for AppError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            AppError::InternalServerError(msg) => write!(f, "Internal Server Error: {}", msg),
+            AppError::BadRequest(msg) => write!(f, "Bad Request: {}", msg),
+            AppError::NotFound(msg) => write!(f, "Not Found: {}", msg),
+            AppError::Unauthorized(msg) => write!(f, "Unauthorized: {}", msg),
+            AppError::Forbidden(msg) => write!(f, "Forbidden: {}", msg),
+            AppError::Conflict(msg) => write!(f, "Conflict: {}", msg),
+        }
+    }
 }
 
 impl IntoResponse for AppError {

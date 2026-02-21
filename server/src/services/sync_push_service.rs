@@ -8,7 +8,10 @@ use crate::services::class_service::ClassService;
 use crate::services::assessment_service::AssessmentService;
 use crate::services::assignment_service::AssignmentService;
 use crate::services::learning_material_service::LearningMaterialService;
-use crate::schema::class_schema::CreateClassRequest;
+use crate::schema::class_schema::{CreateClassRequest, UpdateClassRequest};
+use crate::schema::assessment_schema::{CreateAssessmentRequest, UpdateAssessmentRequest, SaveAnswersRequest};
+use crate::schema::assignment_schema::{CreateAssignmentRequest, UpdateAssignmentRequest};
+use crate::schema::learning_material_schema::{CreateMaterialRequest, UpdateMaterialRequest};
 use crate::utils::AppResult;
 
 /// Incoming sync operation from client
@@ -233,7 +236,9 @@ impl SyncPushService {
                 let title = op.payload.get("title").and_then(|v| v.as_str()).map(|s| s.to_string());
                 let description = op.payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
 
-                match self.class_service.update_class(class_id, user_id, title, description).await {
+                let request = UpdateClassRequest { title, description };
+
+                match self.class_service.update_class(class_id, request, user_id).await {
                     Ok(response) => OperationResult {
                         id: op.id.clone(),
                         entity_type: op.entity_type.clone(),
@@ -358,12 +363,21 @@ impl SyncPushService {
 
                 let description = op.payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
                 let time_limit = op.payload.get("time_limit_minutes").and_then(|v| v.as_i64()).unwrap_or(30) as i32;
+                let open_at = op.payload.get("open_at").and_then(|v| v.as_str()).map(|s| s.to_string()).unwrap_or_else(|| Utc::now().to_rfc3339());
+                let close_at = op.payload.get("close_at").and_then(|v| v.as_str()).map(|s| s.to_string()).unwrap_or_else(|| Utc::now().checked_add_signed(chrono::Duration::hours(1)).unwrap().to_rfc3339());
+
+                let request = CreateAssessmentRequest {
+                    title,
+                    description,
+                    time_limit_minutes: time_limit,
+                    open_at,
+                    close_at,
+                    show_results_immediately: None,
+                };
 
                 match self.assessment_service.create_assessment(
                     class_id,
-                    title,
-                    description,
-                    time_limit,
+                    request,
                     user_id,
                 ).await {
                     Ok(response) => OperationResult {
@@ -405,8 +419,19 @@ impl SyncPushService {
                 let title = op.payload.get("title").and_then(|v| v.as_str()).map(|s| s.to_string());
                 let description = op.payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
                 let time_limit = op.payload.get("time_limit_minutes").and_then(|v| v.as_i64()).map(|v| v as i32);
+                let open_at = op.payload.get("open_at").and_then(|v| v.as_str()).map(|s| s.to_string());
+                let close_at = op.payload.get("close_at").and_then(|v| v.as_str()).map(|s| s.to_string());
 
-                match self.assessment_service.update_assessment(assessment_id, user_id, title, description, time_limit).await {
+                let request = UpdateAssessmentRequest {
+                    title,
+                    description,
+                    time_limit_minutes: time_limit,
+                    open_at,
+                    close_at,
+                    show_results_immediately: None,
+                };
+
+                match self.assessment_service.update_assessment(assessment_id, request, user_id).await {
                     Ok(response) => OperationResult {
                         id: op.id.clone(),
                         entity_type: op.entity_type.clone(),
@@ -515,16 +540,37 @@ impl SyncPushService {
                     }
                 };
 
-                let instructions = op.payload.get("instructions").and_then(|v| v.as_str()).map(|s| s.to_string());
+                let instructions = match op.payload.get("instructions").and_then(|v| v.as_str()) {
+                    Some(i) => i.to_string(),
+                    None => {
+                        return OperationResult {
+                            id: op.id.clone(),
+                            entity_type: op.entity_type.clone(),
+                            operation: op.operation.clone(),
+                            success: false,
+                            server_id: None,
+                            error: Some("Missing instructions field".to_string()),
+                            updated_at: None,
+                        };
+                    }
+                };
                 let total_points = op.payload.get("total_points").and_then(|v| v.as_i64()).unwrap_or(100) as i32;
-                let due_at = op.payload.get("due_at").and_then(|v| v.as_str()).map(|s| s.to_string());
+                let due_at = op.payload.get("due_at").and_then(|v| v.as_str()).map(|s| s.to_string()).unwrap_or_else(|| Utc::now().to_rfc3339());
+                let submission_type = op.payload.get("submission_type").and_then(|v| v.as_str()).map(|s| s.to_string()).unwrap_or_else(|| "text".to_string());
 
-                match self.assignment_service.create_assignment(
-                    class_id,
+                let request = CreateAssignmentRequest {
                     title,
                     instructions,
                     total_points,
+                    submission_type,
+                    allowed_file_types: None,
+                    max_file_size_mb: None,
                     due_at,
+                };
+
+                match self.assignment_service.create_assignment(
+                    class_id,
+                    request,
                     user_id,
                 ).await {
                     Ok(response) => OperationResult {
@@ -567,14 +613,22 @@ impl SyncPushService {
                 let instructions = op.payload.get("instructions").and_then(|v| v.as_str()).map(|s| s.to_string());
                 let total_points = op.payload.get("total_points").and_then(|v| v.as_i64()).map(|v| v as i32);
                 let due_at = op.payload.get("due_at").and_then(|v| v.as_str()).map(|s| s.to_string());
+                let submission_type = op.payload.get("submission_type").and_then(|v| v.as_str()).map(|s| s.to_string());
 
-                match self.assignment_service.update_assignment(
-                    assignment_id,
-                    user_id,
+                let request = UpdateAssignmentRequest {
                     title,
                     instructions,
                     total_points,
+                    submission_type,
+                    allowed_file_types: None,
+                    max_file_size_mb: None,
                     due_at,
+                };
+
+                match self.assignment_service.update_assignment(
+                    assignment_id,
+                    request,
+                    user_id,
                 ).await {
                     Ok(response) => OperationResult {
                         id: op.id.clone(),
@@ -612,7 +666,7 @@ impl SyncPushService {
                     }
                 };
 
-                match self.assignment_service.soft_delete(assignment_id, user_id, user_role).await {
+                match self.assignment_service.soft_delete(assignment_id, user_id).await {
                     Ok(_) => OperationResult {
                         id: op.id.clone(),
                         entity_type: op.entity_type.clone(),
@@ -686,11 +740,15 @@ impl SyncPushService {
                 let description = op.payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
                 let content_text = op.payload.get("content_text").and_then(|v| v.as_str()).map(|s| s.to_string());
 
-                match self.material_service.create_material(
-                    class_id,
+                let request = CreateMaterialRequest {
                     title,
                     description,
                     content_text,
+                };
+
+                match self.material_service.create_material(
+                    class_id,
+                    request,
                     user_id,
                 ).await {
                     Ok(response) => OperationResult {
@@ -733,12 +791,16 @@ impl SyncPushService {
                 let description = op.payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
                 let content_text = op.payload.get("content_text").and_then(|v| v.as_str()).map(|s| s.to_string());
 
-                match self.material_service.update_material(
-                    material_id,
-                    user_id,
+                let request = UpdateMaterialRequest {
                     title,
                     description,
                     content_text,
+                };
+
+                match self.material_service.update_material(
+                    material_id,
+                    request,
+                    user_id,
                 ).await {
                     Ok(response) => OperationResult {
                         id: op.id.clone(),
@@ -832,9 +894,25 @@ impl SyncPushService {
                     }
                 };
 
-                let answers = op.payload.get("answers").cloned().unwrap_or(serde_json::json!({}));
+                let request = match op.payload.get("answers") {
+                    Some(answers_val) => match serde_json::from_value::<SaveAnswersRequest>(serde_json::json!({ "answers": answers_val })) {
+                        Ok(req) => req,
+                        Err(_) => {
+                            return OperationResult {
+                                id: op.id.clone(),
+                                entity_type: op.entity_type.clone(),
+                                operation: op.operation.clone(),
+                                success: false,
+                                server_id: None,
+                                error: Some("Invalid answers format".to_string()),
+                                updated_at: None,
+                            };
+                        }
+                    },
+                    None => SaveAnswersRequest { answers: vec![] },
+                };
 
-                match self.assessment_service.save_answers(submission_id, user_id, answers).await {
+                match self.assessment_service.save_answers(submission_id, request, user_id).await {
                     Ok(_) => OperationResult {
                         id: op.id.clone(),
                         entity_type: op.entity_type.clone(),
@@ -927,7 +1005,7 @@ impl SyncPushService {
                     }
                 };
 
-                match self.assignment_service.create_submission(assignment_id, user_id).await {
+                match self.assignment_service.create_or_get_submission(assignment_id, user_id, None).await {
                     Ok(response) => OperationResult {
                         id: op.id.clone(),
                         entity_type: op.entity_type.clone(),

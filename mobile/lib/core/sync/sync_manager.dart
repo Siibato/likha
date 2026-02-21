@@ -6,6 +6,8 @@ import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/manifest_differ.dart';
 import 'package:likha/core/sync/id_reconciler.dart';
 import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';
+import 'package:likha/data/models/sync/push_response_model.dart';
+import 'package:likha/data/models/sync/fetch_response_model.dart';
 import 'package:sqflite/sqflite.dart';
 
 enum SyncPhase { idle, syncing, succeeded, failed }
@@ -91,7 +93,7 @@ class SyncManager {
   }
 
   /// Register listener for sync state changes
-  void addStateListener(void Function(SyncState) listener) {
+  void setStateListener(void Function(SyncState) listener) {
     _stateListener = listener;
   }
 
@@ -107,26 +109,29 @@ class SyncManager {
       await _outboundSync();
 
       // STEP 2: Fetch and merge server changes
-      await _inboundSync();
+      final serverTime = await _inboundSync();
 
-      // STEP 3: Save last sync time
+      // STEP 3: Save last sync time (use server time, not device time)
+      final syncTime = serverTime ?? DateTime.now().toIso8601String();
       final db = await _localDatabase.database;
-      await db.update(
-        'sync_metadata',
-        {'value': DateTime.now().toIso8601String()},
-        where: 'key = ?',
-        whereArgs: ['last_sync_at'],
-      ).catchError((_) async {
+      try {
+        await db.update(
+          'sync_metadata',
+          {'value': syncTime},
+          where: 'key = ?',
+          whereArgs: ['last_sync_at'],
+        );
+      } catch (e) {
         // If row doesn't exist, insert it
         await db.insert(
           'sync_metadata',
           {
             'key': 'last_sync_at',
-            'value': DateTime.now().toIso8601String(),
+            'value': syncTime,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
-      });
+      }
 
       _updateState(phase: SyncPhase.succeeded, lastSyncAt: DateTime.now());
     } catch (e) {
@@ -208,7 +213,8 @@ class SyncManager {
   }
 
   /// INBOUND SYNC: Fetch server changes
-  Future<void> _inboundSync() async {
+  /// Returns server time to use for last_sync_at
+  Future<String?> _inboundSync() async {
     // Step 1: Get manifest from server
     final manifest = await _syncRemoteDataSource.getManifest();
 
@@ -217,16 +223,20 @@ class SyncManager {
     final localSnapshots = await _getLocalSnapshots(db);
 
     // Step 3: Find stale records and tombstones
-    final toFetch = ManifestDiffer.findStaleRecords(manifest, localSnapshots);
+    final toFetch = ManifestDiffer.findStaleRecords(
+      serverManifest: manifest,
+      localManifest: localSnapshots,
+    );
     final tombstones = ManifestDiffer.findTombstones(manifest);
 
-    // Step 4: Apply tombstones (delete marked records)
+    // Step 4: Apply tombstones (soft delete marked records)
     for (final entry in tombstones) {
       final entityType = entry['entity_type'] as String;
       final entityId = entry['id'] as String;
 
-      await db.delete(
+      await db.update(
         _entityTypeToTableName(entityType),
+        {'deleted_at': DateTime.now().toIso8601String()},
         where: 'id = ?',
         whereArgs: [entityId],
       );
@@ -239,6 +249,9 @@ class SyncManager {
 
       await _fetchAndMergeRecords(entityType, ids);
     }
+
+    // Return server time for last_sync_at
+    return manifest.serverTime;
   }
 
   /// Fetch records for entity type and merge into local DB
@@ -250,12 +263,12 @@ class SyncManager {
     bool hasMore = true;
 
     while (hasMore) {
-      final response = await _syncRemoteDataSource.fetchRecords({
-        'cursor': cursor,
-        'entities': {entityType: ids},
-      });
+      final response = await _syncRemoteDataSource.fetchRecords(
+        entities: {entityType: ids},
+        cursor: cursor,
+      );
 
-      final records = response['entities']?[entityType] as List? ?? [];
+      final records = response.entities[entityType] ?? [];
       if (records.isEmpty) break;
 
       // Merge records into local DB
@@ -273,16 +286,16 @@ class SyncManager {
         );
       }
 
-      cursor = response['cursor'] as String?;
-      hasMore = response['has_more'] as bool? ?? false;
+      cursor = response.cursor;
+      hasMore = response.hasMore;
     }
   }
 
   /// Get local snapshots for manifest comparison
-  Future<Map<String, List<Map<String, dynamic>>>> _getLocalSnapshots(
+  Future<Map<String, Map<String, LocalManifestEntry>>> _getLocalSnapshots(
     Database db,
   ) async {
-    final snapshots = <String, List<Map<String, dynamic>>>{};
+    final snapshots = <String, Map<String, LocalManifestEntry>>{};
 
     final entityTables = {
       'classes': 'classes',
@@ -291,6 +304,8 @@ class SyncManager {
       'learning_materials': 'learning_materials',
       'assessment_submissions': 'assessment_submissions',
       'assignment_submissions': 'assignment_submissions',
+      'assessment_questions': 'questions',
+      'class_enrollments': 'class_enrollments',
     };
 
     for (final entry in entityTables.entries) {
@@ -301,13 +316,21 @@ class SyncManager {
         final rows = await db.query(
           tableName,
           columns: ['id', 'updated_at', 'deleted_at'],
-          where: 'deleted_at IS NULL',
         );
 
-        snapshots[entityType] = rows;
+        final manifestEntries = <String, LocalManifestEntry>{};
+        for (final row in rows) {
+          final id = row['id'] as String;
+          manifestEntries[id] = LocalManifestEntry(
+            id: id,
+            updatedAt: row['updated_at'] as String? ?? DateTime.now().toIso8601String(),
+            deleted: row['deleted_at'] != null,
+          );
+        }
+        snapshots[entityType] = manifestEntries;
       } catch (e) {
         // Table might not exist or be empty
-        snapshots[entityType] = [];
+        snapshots[entityType] = {};
       }
     }
 

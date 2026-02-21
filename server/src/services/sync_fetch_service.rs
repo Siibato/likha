@@ -1,5 +1,5 @@
 use serde_json::Value;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 
 use crate::db::repositories::manifest_repository::ManifestRepository;
@@ -61,11 +61,80 @@ impl SyncFetchService {
         // Step 2: Parse IDs from request
         let parsed_ids = self.parse_ids(&request.entities)?;
 
+        // Step 3: Re-verify entitlements (manifest may have changed since Step 1)
+        let entitled_manifest = self
+            .entitlement_service
+            .get_user_manifest(user_id, _user_role)
+            .await?;
+
+        // Build set of entitled IDs per entity type
+        let mut entitled_ids: HashMap<String, HashSet<Uuid>> = HashMap::new();
+        entitled_ids.insert(
+            "classes".to_string(),
+            entitled_manifest.classes.iter().map(|e| e.id).collect(),
+        );
+        entitled_ids.insert(
+            "enrollments".to_string(),
+            entitled_manifest.enrollments.iter().map(|e| e.id).collect(),
+        );
+        entitled_ids.insert(
+            "assessments".to_string(),
+            entitled_manifest.assessments.iter().map(|e| e.id).collect(),
+        );
+        entitled_ids.insert(
+            "assessment_questions".to_string(),
+            entitled_manifest
+                .assessment_questions
+                .iter()
+                .map(|e| e.id)
+                .collect(),
+        );
+        entitled_ids.insert(
+            "assessment_submissions".to_string(),
+            entitled_manifest
+                .assessment_submissions
+                .iter()
+                .map(|e| e.id)
+                .collect(),
+        );
+        entitled_ids.insert(
+            "assignments".to_string(),
+            entitled_manifest.assignments.iter().map(|e| e.id).collect(),
+        );
+        entitled_ids.insert(
+            "assignment_submissions".to_string(),
+            entitled_manifest
+                .assignment_submissions
+                .iter()
+                .map(|e| e.id)
+                .collect(),
+        );
+        entitled_ids.insert(
+            "learning_materials".to_string(),
+            entitled_manifest.learning_materials.iter().map(|e| e.id).collect(),
+        );
+
+        // Filter parsed_ids to only entitled IDs (silently drop unauthorized)
+        let filtered_ids: HashMap<String, Vec<Uuid>> = parsed_ids
+            .into_iter()
+            .map(|(entity_type, ids)| {
+                let entitled_set = entitled_ids
+                    .get(&entity_type)
+                    .cloned()
+                    .unwrap_or_default();
+                let filtered = ids
+                    .into_iter()
+                    .filter(|id| entitled_set.contains(id))
+                    .collect();
+                (entity_type, filtered)
+            })
+            .collect();
+
         // Step 4: Fetch records per entity type
         let mut result_entities: HashMap<String, Vec<Value>> = HashMap::new();
         let mut has_more = false;
 
-        for (entity_type, ids) in parsed_ids.iter() {
+        for (entity_type, ids) in filtered_ids.iter() {
             if ids.is_empty() {
                 continue;
             }

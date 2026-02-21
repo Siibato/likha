@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 4,
+      version: 5,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onOpen: (db) async {
@@ -453,6 +453,38 @@ class LocalDatabase {
         } catch (e) {
           // Index might already exist
         }
+      }
+    }
+
+    if (oldVersion < 5) {
+      // Add updated_at and sync_status to questions and class_enrollments tables
+      final tablesToMigrate = ['questions', 'class_enrollments'];
+
+      for (final table in tablesToMigrate) {
+        try {
+          await db.execute('ALTER TABLE $table ADD COLUMN updated_at TEXT');
+        } catch (e) {
+          // Column might already exist
+        }
+
+        try {
+          await db.execute('ALTER TABLE $table ADD COLUMN sync_status TEXT DEFAULT "synced"');
+        } catch (e) {
+          // Column might already exist
+        }
+      }
+
+      // Create indexes for updated_at on questions and class_enrollments
+      try {
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_questions_updated_at ON questions(updated_at)');
+      } catch (e) {
+        // Index might already exist
+      }
+
+      try {
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_class_enrollments_updated_at ON class_enrollments(updated_at)');
+      } catch (e) {
+        // Index might already exist
       }
     }
   }
