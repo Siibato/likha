@@ -1210,4 +1210,44 @@ impl AssignmentService {
             etag,
         })
     }
+
+    /// Soft delete an assignment (marks it deleted for sync, doesn't remove from DB)
+    pub async fn soft_delete(&self, assignment_id: Uuid, teacher_id: Uuid) -> AppResult<()> {
+        // Verify assignment exists and teacher owns the class
+        let assignment = self
+            .assignment_repo
+            .find_by_id(assignment_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
+
+        // Verify teacher owns the class
+        let class = self
+            .class_repo
+            .find_by_id(assignment.class_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
+
+        if class.teacher_id != teacher_id {
+            return Err(AppError::Forbidden(
+                "You can only delete assignments from your own classes".to_string(),
+            ));
+        }
+
+        // Mark as deleted
+        self.assignment_repo.soft_delete(assignment_id).await?;
+
+        // Log the deletion
+        let _ = self.change_log_repo.log_change(
+            "assignment",
+            assignment_id,
+            "delete",
+            teacher_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "id": assignment_id,
+                "title": assignment.title,
+            })).unwrap_or_default()),
+        ).await;
+
+        Ok(())
+    }
 }

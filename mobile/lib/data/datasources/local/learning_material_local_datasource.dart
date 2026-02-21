@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/domain/learning_materials/data/models/learning_material_model.dart';
+import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';

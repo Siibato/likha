@@ -19,6 +19,8 @@ pub mod submission_answer_choices;
 pub mod submission_answers;
 pub mod submission_enumeration_answers;
 pub mod submission_files;
+pub mod sync_conflicts;
+pub mod sync_cursors;
 pub mod users;
 
 pub use activity_logs::Entity as ActivityLogs;
@@ -42,6 +44,8 @@ pub use submission_answer_choices::Entity as SubmissionAnswerChoices;
 pub use submission_answers::Entity as SubmissionAnswers;
 pub use submission_enumeration_answers::Entity as SubmissionEnumerationAnswers;
 pub use submission_files::Entity as SubmissionFiles;
+pub use sync_conflicts::Entity as SyncConflicts;
+pub use sync_cursors::Entity as SyncCursors;
 pub use users::Entity as Users;
 
 pub mod prelude {
@@ -66,5 +70,7 @@ pub mod prelude {
     pub use super::submission_answers::{self, Entity as SubmissionAnswers};
     pub use super::submission_enumeration_answers::{self, Entity as SubmissionEnumerationAnswers};
     pub use super::submission_files::{self, Entity as SubmissionFiles};
+    pub use super::sync_conflicts::{self, Entity as SyncConflicts};
+    pub use super::sync_cursors::{self, Entity as SyncCursors};
     pub use super::users::{self, Entity as Users};
 }

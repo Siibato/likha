@@ -10,7 +10,6 @@ import 'package:likha/core/sync/change_log_repository.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/entity_sync_helper.dart';
-import 'package:likha/core/sync/sync_queue_manager.dart';
 import 'package:likha/core/validation/services/validation_service.dart';
 import 'package:likha/core/validation/services/data_validator.dart';
 import 'package:likha/core/validation/services/timestamp_validator.dart';
@@ -85,6 +84,7 @@ import 'package:likha/domain/classes/usecases/search_students.dart';
 import 'package:likha/domain/classes/usecases/update_class.dart';
 import 'package:likha/data/datasources/local/learning_material_local_datasource.dart';
 import 'package:likha/data/datasources/remote/learning_material_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';
 import 'package:likha/data/repositories/learning_material_repository_impl.dart';
 import 'package:likha/domain/learning_materials/repositories/learning_material_repository.dart';
 import 'package:likha/domain/learning_materials/usecases/create_material.dart';
@@ -128,9 +128,6 @@ Future<void> init() async {
   sl.registerLazySingleton<ChangeLogApplier>(
     () => ChangeLogApplier(sl()),
   );
-  sl.registerLazySingleton<SyncQueueManager>(
-    () => SyncQueueManager(sl()),
-  );
   sl.registerLazySingleton<EntitySyncHelper>(
     () => EntitySyncHelper(
       localDatabase: sl(),
@@ -161,6 +158,9 @@ Future<void> init() async {
   );
   sl.registerLazySingleton<LearningMaterialRemoteDataSource>(
     () => LearningMaterialRemoteDataSourceImpl(sl()),
+  );
+  sl.registerLazySingleton<SyncRemoteDataSource>(
+    () => SyncRemoteDataSourceImpl(sl()),
   );
 
   // Local Data sources
@@ -222,7 +222,7 @@ Future<void> init() async {
       validationService: sl(),
       connectivityService: sl(),
       entitySyncHelper: sl(),
-      syncQueueManager: sl(),
+      syncQueue: sl(),
     ),
   );
   sl.registerLazySingleton<AssessmentRepository>(

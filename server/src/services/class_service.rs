@@ -407,4 +407,37 @@ impl ClassService {
             etag,
         })
     }
+
+    /// Soft delete a class (marks it deleted for sync, doesn't remove from DB)
+    pub async fn soft_delete(&self, class_id: Uuid, teacher_id: Uuid) -> AppResult<()> {
+        // Verify class exists and belongs to teacher
+        let class = self
+            .class_repo
+            .find_by_id(class_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
+
+        if class.teacher_id != teacher_id {
+            return Err(AppError::Forbidden(
+                "You can only delete your own classes".to_string(),
+            ));
+        }
+
+        // Mark as deleted at current time
+        self.class_repo.soft_delete(class_id).await?;
+
+        // Log the deletion
+        let _ = self.change_log_repo.log_change(
+            "class",
+            class_id,
+            "delete",
+            teacher_id,
+            Some(serde_json::to_string(&serde_json::json!({
+                "id": class_id,
+                "title": class.title,
+            })).unwrap_or_default()),
+        ).await;
+
+        Ok(())
+    }
 }

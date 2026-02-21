@@ -29,6 +29,7 @@ impl ClassRepository {
             is_archived: Set(false),
             created_at: Set(Utc::now().naive_utc()),
             updated_at: Set(Utc::now().naive_utc()),
+            deleted_at: Set(None),
         };
 
         class
@@ -235,5 +236,21 @@ impl ClassRepository {
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+    }
+
+    pub async fn soft_delete(&self, id: Uuid) -> AppResult<()> {
+        let class = classes::ActiveModel {
+            id: Set(id),
+            deleted_at: Set(Some(Utc::now().naive_utc())),
+            updated_at: Set(Utc::now().naive_utc()),
+            ..Default::default()
+        };
+
+        classes::Entity::update(class)
+            .exec(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to delete class: {}", e)))?;
+
+        Ok(())
     }
 }

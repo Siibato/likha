@@ -1,15 +1,12 @@
 import 'dart:async';
-
+import 'dart:convert';
+import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/connectivity_service.dart';
-import 'package:likha/core/sync/change_log_applier.dart';
-import 'package:likha/core/sync/change_log_remote_datasource.dart';
-import 'package:likha/core/sync/change_log_repository.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/domain/assessments/repositories/assessment_repository.dart';
-import 'package:likha/domain/assignments/repositories/assignment_repository.dart';
-import 'package:likha/domain/auth/repositories/auth_repository.dart';
-import 'package:likha/domain/classes/repositories/class_repository.dart';
-import 'package:likha/domain/learning_materials/repositories/learning_material_repository.dart';
+import 'package:likha/core/sync/manifest_differ.dart';
+import 'package:likha/core/sync/id_reconciler.dart';
+import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';
+import 'package:sqflite/sqflite.dart';
 
 enum SyncPhase { idle, syncing, succeeded, failed }
 
@@ -48,14 +45,8 @@ class SyncState {
 class SyncManager {
   final ConnectivityService _connectivityService;
   final SyncQueue _syncQueue;
-  final AuthRepository _authRepository;
-  final ClassRepository _classRepository;
-  final AssessmentRepository _assessmentRepository;
-  final AssignmentRepository _assignmentRepository;
-  final LearningMaterialRepository _learningMaterialRepository;
-  final ChangeLogRemoteDataSource _changeLogRemoteDataSource;
-  final ChangeLogRepository _changeLogRepository;
-  final ChangeLogApplier _changeLogApplier;
+  final SyncRemoteDataSource _syncRemoteDataSource;
+  final LocalDatabase _localDatabase;
 
   bool _isSyncing = false;
   StreamSubscription<bool>? _connectivitySubscription;
@@ -72,200 +63,297 @@ class SyncManager {
   SyncManager(
     this._connectivityService,
     this._syncQueue,
-    this._authRepository,
-    this._classRepository,
-    this._assessmentRepository,
-    this._assignmentRepository,
-    this._learningMaterialRepository,
-    this._changeLogRemoteDataSource,
-    this._changeLogRepository,
-    this._changeLogApplier,
+    this._syncRemoteDataSource,
+    this._localDatabase,
   );
 
-  void setStateListener(void Function(SyncState) listener) {
-    _stateListener = listener;
-  }
-
+  /// Start sync manager - listen for connectivity changes
   void start() {
-    _connectivitySubscription = _connectivityService.onConnectivityChanged.listen((isOnline) {
+    _connectivitySubscription =
+        _connectivityService.onConnectivityChanged.listen((isOnline) {
       if (isOnline && !_isSyncing) {
         _runSync();
       }
     });
-
-    // Initial count
-    _updateCounts();
   }
 
+  /// Stop sync manager
+  void stop() {
+    _connectivitySubscription?.cancel();
+    _connectivitySubscription = null;
+  }
+
+  /// Manually trigger sync
+  Future<void> sync() async {
+    if (_connectivityService.isOnline) {
+      await _runSync();
+    }
+  }
+
+  /// Register listener for sync state changes
+  void addStateListener(void Function(SyncState) listener) {
+    _stateListener = listener;
+  }
+
+  /// Main sync orchestration: outbound then inbound
   Future<void> _runSync() async {
     if (_isSyncing) return;
-
     _isSyncing = true;
-    _emitState(_state.copyWith(phase: SyncPhase.syncing));
+
+    _updateState(phase: SyncPhase.syncing);
 
     try {
-      // Step 1: Pull server changes (highest priority - ensures we have latest state)
-      await _pullServerChanges();
+      // STEP 1: Push local mutations to server
+      await _outboundSync();
 
-      // Step 2: Get all retryable entries (offline writes to flush)
-      final entries = await _syncQueue.getAllRetriable();
+      // STEP 2: Fetch and merge server changes
+      await _inboundSync();
 
-      if (entries.isEmpty) {
-        // Refresh cache if online
-        await _refreshCache();
-        _emitState(_state.copyWith(
-          phase: SyncPhase.succeeded,
-          lastSyncAt: DateTime.now(),
-        ));
-        _isSyncing = false;
-        return;
-      }
+      // STEP 3: Save last sync time
+      final db = await _localDatabase.database;
+      await db.update(
+        'sync_metadata',
+        {'value': DateTime.now().toIso8601String()},
+        where: 'key = ?',
+        whereArgs: ['last_sync_at'],
+      ).catchError((_) async {
+        // If row doesn't exist, insert it
+        await db.insert(
+          'sync_metadata',
+          {
+            'key': 'last_sync_at',
+            'value': DateTime.now().toIso8601String(),
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      });
 
-      // Step 3: Flush pending syncs
-      for (final entry in entries) {
-        try {
-          await _syncQueue.incrementRetry(entry.id);
-          await _dispatchSyncOperation(entry);
-          await _syncQueue.markSucceeded(entry.id);
-        } catch (e) {
-          await _syncQueue.markFailed(entry.id, e.toString());
-        }
-      }
-
-      // Refresh cache
-      await _refreshCache();
-
-      // Update state
-      await _updateCounts();
-      final finalFailedCount = (await _syncQueue.getAllRetriable())
-          .where((e) => e.status == SyncStatus.failed)
-          .length;
-
-      if (finalFailedCount > 0) {
-        _emitState(_state.copyWith(
-          phase: SyncPhase.failed,
-          failedCount: finalFailedCount,
-          lastError: 'Some syncs failed',
-          lastSyncAt: DateTime.now(),
-        ));
-      } else {
-        _emitState(_state.copyWith(
-          phase: SyncPhase.succeeded,
-          pendingCount: 0,
-          failedCount: 0,
-          lastSyncAt: DateTime.now(),
-        ));
-      }
+      _updateState(phase: SyncPhase.succeeded, lastSyncAt: DateTime.now());
     } catch (e) {
-      _emitState(_state.copyWith(
+      _updateState(
         phase: SyncPhase.failed,
         lastError: e.toString(),
-      ));
+      );
     } finally {
       _isSyncing = false;
     }
   }
 
-  Future<void> _pullServerChanges() async {
-    try {
-      int cursor = await _changeLogRepository.getLastSyncedSequence();
-      bool hasMore = true;
+  /// OUTBOUND SYNC: Push queued mutations to server
+  Future<void> _outboundSync() async {
+    // Get all pending operations from queue
+    final pending = await _syncQueue.getAllRetriable();
+    if (pending.isEmpty) return;
 
-      while (hasMore) {
-        final response = await _changeLogRemoteDataSource.fetchChangesSince(
-          sinceSequence: cursor,
-          limit: 500,
+    _updateState(pendingCount: pending.length);
+
+    // Format operations for server
+    final operations = pending.map((entry) {
+      return {
+        'id': entry.id,
+        'entity_type': entry.entityType.toString().split('.').last,
+        'operation': entry.operation.toString().split('.').last,
+        'payload': entry.payload,
+      };
+    }).toList();
+
+    // Send to server
+    final response = await _syncRemoteDataSource.pushOperations(
+      operations: operations,
+    );
+
+    // Process results
+    await _processPushResults(response);
+  }
+
+  /// Process push results and update local state
+  Future<void> _processPushResults(PushResponseModel response) async {
+    final db = await _localDatabase.database;
+    final idMappings = <({String entityType, String localId, String serverId})>[];
+
+    for (final result in response.results) {
+      final opId = result.id;
+      final success = result.success;
+      final serverId = result.serverId;
+      final entityType = result.entityType;
+      final operation = result.operation;
+
+      // Fetch entry BEFORE marking succeeded (entry is hard-deleted on succeed)
+      final entry = await _syncQueue.getById(opId);
+
+      if (success) {
+        // Mark as succeeded and remove from queue
+        await _syncQueue.markSucceeded(opId);
+
+        // If this was a create operation, map local ID to server ID
+        if (serverId != null && operation == 'create' && entry != null) {
+          final localId = entry.payload['local_id'] as String?;
+          if (localId != null) {
+            idMappings.add(
+              (entityType: entityType, localId: localId, serverId: serverId),
+            );
+          }
+        }
+      } else {
+        // Mark as failed
+        final error = result.error ?? 'Unknown error';
+        await _syncQueue.markFailed(opId, error);
+      }
+    }
+
+    // Apply ID reconciliations using IdReconciler
+    if (idMappings.isNotEmpty) {
+      await IdReconciler.applyToDatabase(db, idMappings);
+    }
+  }
+
+  /// INBOUND SYNC: Fetch server changes
+  Future<void> _inboundSync() async {
+    // Step 1: Get manifest from server
+    final manifest = await _syncRemoteDataSource.getManifest();
+
+    // Step 2: Get local snapshots for comparison
+    final db = await _localDatabase.database;
+    final localSnapshots = await _getLocalSnapshots(db);
+
+    // Step 3: Find stale records and tombstones
+    final toFetch = ManifestDiffer.findStaleRecords(manifest, localSnapshots);
+    final tombstones = ManifestDiffer.findTombstones(manifest);
+
+    // Step 4: Apply tombstones (delete marked records)
+    for (final entry in tombstones) {
+      final entityType = entry['entity_type'] as String;
+      final entityId = entry['id'] as String;
+
+      await db.delete(
+        _entityTypeToTableName(entityType),
+        where: 'id = ?',
+        whereArgs: [entityId],
+      );
+    }
+
+    // Step 5: Fetch records by entity type with pagination
+    for (final entityType in toFetch.keys) {
+      final ids = toFetch[entityType] ?? [];
+      if (ids.isEmpty) continue;
+
+      await _fetchAndMergeRecords(entityType, ids);
+    }
+  }
+
+  /// Fetch records for entity type and merge into local DB
+  Future<void> _fetchAndMergeRecords(
+    String entityType,
+    List<String> ids,
+  ) async {
+    String? cursor;
+    bool hasMore = true;
+
+    while (hasMore) {
+      final response = await _syncRemoteDataSource.fetchRecords({
+        'cursor': cursor,
+        'entities': {entityType: ids},
+      });
+
+      final records = response['entities']?[entityType] as List? ?? [];
+      if (records.isEmpty) break;
+
+      // Merge records into local DB
+      final db = await _localDatabase.database;
+      final tableName = _entityTypeToTableName(entityType);
+
+      for (final record in records) {
+        await db.insert(
+          tableName,
+          {
+            ...record as Map<String, dynamic>,
+            'sync_status': 'synced',
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+
+      cursor = response['cursor'] as String?;
+      hasMore = response['has_more'] as bool? ?? false;
+    }
+  }
+
+  /// Get local snapshots for manifest comparison
+  Future<Map<String, List<Map<String, dynamic>>>> _getLocalSnapshots(
+    Database db,
+  ) async {
+    final snapshots = <String, List<Map<String, dynamic>>>{};
+
+    final entityTables = {
+      'classes': 'classes',
+      'assessments': 'assessments',
+      'assignments': 'assignments',
+      'learning_materials': 'learning_materials',
+      'assessment_submissions': 'assessment_submissions',
+      'assignment_submissions': 'assignment_submissions',
+    };
+
+    for (final entry in entityTables.entries) {
+      final entityType = entry.key;
+      final tableName = entry.value;
+
+      try {
+        final rows = await db.query(
+          tableName,
+          columns: ['id', 'updated_at', 'deleted_at'],
+          where: 'deleted_at IS NULL',
         );
 
-        // Apply all changes to local database
-        await _changeLogApplier.applyAll(response.changes);
-
-        // Update the cursor and last synced sequence
-        cursor = response.latestSequence;
-        await _changeLogRepository.saveLastSyncedSequence(cursor);
-
-        hasMore = response.hasMore;
+        snapshots[entityType] = rows;
+      } catch (e) {
+        // Table might not exist or be empty
+        snapshots[entityType] = [];
       }
-    } catch (e) {
-      // Best-effort pull - don't fail the entire sync
     }
+
+    return snapshots;
   }
 
-  Future<void> _dispatchSyncOperation(SyncQueueEntry entry) async {
-    switch (entry.entityType) {
-      case SyncEntityType.classEntity:
-        await _syncClassOperation(entry);
-        break;
-      case SyncEntityType.assessment:
-        await _syncAssessmentOperation(entry);
-        break;
-      case SyncEntityType.assignmentSubmission:
-        await _syncAssignmentSubmissionOperation(entry);
-        break;
-      case SyncEntityType.learningMaterial:
-        await _syncLearningMaterialOperation(entry);
-        break;
+  /// Map entity type to database table name
+  String _entityTypeToTableName(String entityType) {
+    switch (entityType) {
+      case 'classes':
+        return 'classes';
+      case 'assessments':
+        return 'assessments';
+      case 'assignments':
+        return 'assignments';
+      case 'learning_materials':
+        return 'learning_materials';
+      case 'assessment_submissions':
+        return 'assessment_submissions';
+      case 'assignment_submissions':
+        return 'assignment_submissions';
+      case 'questions':
+        return 'questions';
+      case 'class_enrollments':
+        return 'class_enrollments';
       default:
-        // Other entity types would be handled similarly
-        break;
+        return entityType;
     }
   }
 
-  Future<void> _syncClassOperation(SyncQueueEntry entry) async {
-    // Dispatch to appropriate class repository method
-    // This is a simplified version - in production, would handle all operations
-    final classId = entry.payload['id'] as String?;
-    if (classId == null) throw Exception('Missing classId in payload');
-
-    // The repository would handle the actual sync
-    // For now, this is a placeholder that would be filled in during Phase 3
-  }
-
-  Future<void> _syncAssessmentOperation(SyncQueueEntry entry) async {
-    // Similar pattern for assessments
-  }
-
-  Future<void> _syncAssignmentSubmissionOperation(SyncQueueEntry entry) async {
-    // Similar pattern for assignments
-  }
-
-  Future<void> _syncLearningMaterialOperation(SyncQueueEntry entry) async {
-    // Similar pattern for learning materials
-  }
-
-  Future<void> _refreshCache() async {
-    try {
-      // Get current user
-      final userResult = await _authRepository.getCurrentUser();
-      userResult.fold(
-        (failure) {}, // Ignore failures during refresh
-        (user) {}, // User cached by repository
-      );
-
-      // In a full implementation, would refresh all cached data
-      // This is a simplified version
-    } catch (_) {
-      // Best-effort refresh - errors don't fail the sync
-    }
-  }
-
-  Future<void> _updateCounts() async {
-    final entries = await _syncQueue.getAllRetriable();
-    final pendingCount = entries.where((e) => e.status == SyncStatus.pending).length;
-    final failedCount = entries.where((e) => e.status == SyncStatus.failed).length;
-
-    _emitState(_state.copyWith(
+  /// Update sync state and notify listeners
+  void _updateState({
+    SyncPhase? phase,
+    int? pendingCount,
+    int? failedCount,
+    String? lastError,
+    DateTime? lastSyncAt,
+  }) {
+    _state = _state.copyWith(
+      phase: phase,
       pendingCount: pendingCount,
       failedCount: failedCount,
-    ));
-  }
+      lastError: lastError,
+      lastSyncAt: lastSyncAt,
+    );
 
-  void _emitState(SyncState newState) {
-    _state = newState;
-    _stateListener?.call(newState);
-  }
-
-  void dispose() {
-    _connectivitySubscription?.cancel();
+    _stateListener?.call(_state);
   }
 }

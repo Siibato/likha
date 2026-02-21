@@ -6,7 +6,8 @@ import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/core/validation/services/validation_service.dart';
 import 'package:likha/core/network/connectivity_service.dart';
 import 'package:likha/core/sync/entity_sync_helper.dart';
-import 'package:likha/core/sync/sync_queue_manager.dart';
+import 'package:likha/core/sync/sync_queue.dart';
+import 'package:uuid/uuid.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/data/datasources/local/class_local_datasource.dart';
 import 'package:likha/data/datasources/remote/class_remote_datasource.dart';
@@ -20,7 +21,7 @@ class ClassRepositoryImpl implements ClassRepository {
   final ValidationService _validationService;
   final ConnectivityService _connectivityService;
   final EntitySyncHelper _entitySyncHelper;
-  final SyncQueueManager _syncQueueManager;
+  final SyncQueue _syncQueue;
 
   ClassRepositoryImpl({
     required ClassRemoteDataSource remoteDataSource,
@@ -28,13 +29,13 @@ class ClassRepositoryImpl implements ClassRepository {
     required ValidationService validationService,
     required ConnectivityService connectivityService,
     required EntitySyncHelper entitySyncHelper,
-    required SyncQueueManager syncQueueManager,
+    required SyncQueue syncQueue,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
         _validationService = validationService,
         _connectivityService = connectivityService,
         _entitySyncHelper = entitySyncHelper,
-        _syncQueueManager = syncQueueManager;
+        _syncQueue = syncQueue;
 
   @override
   ResultFuture<ClassEntity> createClass({
@@ -44,15 +45,22 @@ class ClassRepositoryImpl implements ClassRepository {
     try {
       // Check connectivity
       if (!_connectivityService.isOnline) {
-        // Offline: queue the mutation locally
-        await _syncQueueManager.enqueue(
-          entityType: 'class',
-          operation: 'create',
+        // Offline: queue the mutation locally with typed enums
+        final entry = SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.classEntity,
+          operation: SyncOperation.create,
           payload: {
             'title': title,
             'description': description,
           },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
         );
+
+        await _syncQueue.enqueue(entry);
 
         // Return optimistic entity for UI
         final optimisticClass = ClassEntity(
@@ -192,15 +200,22 @@ class ClassRepositoryImpl implements ClassRepository {
       // Check connectivity
       if (!_connectivityService.isOnline) {
         // Offline: queue the mutation locally
-        await _syncQueueManager.enqueue(
-          entityType: 'class',
-          operation: 'update',
+        final entry = SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.classEntity,
+          operation: SyncOperation.update,
           payload: {
             'id': classId,
             'title': title,
             'description': description,
           },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
         );
+
+        await _syncQueue.enqueue(entry);
 
         // Return optimistic entity
         try {
@@ -259,14 +274,21 @@ class ClassRepositoryImpl implements ClassRepository {
       // Check connectivity
       if (!_connectivityService.isOnline) {
         // Offline: queue the mutation
-        await _syncQueueManager.enqueue(
-          entityType: 'class_enrollment',
-          operation: 'create',
+        final entry = SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.classEntity,
+          operation: SyncOperation.create,
           payload: {
             'class_id': classId,
             'student_id': studentId,
           },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
         );
+
+        await _syncQueue.enqueue(entry);
 
         // Return optimistic enrollment
         return Right(
@@ -315,14 +337,22 @@ class ClassRepositoryImpl implements ClassRepository {
       // Check connectivity
       if (!_connectivityService.isOnline) {
         // Offline: queue the mutation
-        await _syncQueueManager.enqueue(
-          entityType: 'class_enrollment',
-          operation: 'delete',
+        final entry = SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.classEntity,
+          operation: SyncOperation.delete,
           payload: {
             'class_id': classId,
             'student_id': studentId,
           },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
         );
+
+        await _syncQueue.enqueue(entry);
+
         return const Right(null);
       }
 

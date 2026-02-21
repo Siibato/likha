@@ -2,9 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
-import 'package:likha/domain/learning_materials/data/models/learning_material_model.dart';
+import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/data/models/learning_materials/material_detail_model.dart';
-import 'package:likha/domain/learning_materials/data/models/material_file_model.dart';
+import 'package:likha/data/models/learning_materials/material_file_model.dart';
 
 abstract class LearningMaterialRemoteDataSource {
   Future<LearningMaterialModel> createMaterial({

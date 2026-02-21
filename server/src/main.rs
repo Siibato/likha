@@ -23,6 +23,16 @@ use crate::services::auth_service::AuthService;
 use crate::services::class_service::ClassService;
 use crate::services::learning_material_service::LearningMaterialService;
 use crate::services::sync_service::SyncService;
+use crate::services::entitlement_service::EntitlementService;
+use crate::services::sync_manifest_service::SyncManifestService;
+use crate::services::sync_fetch_service::SyncFetchService;
+use crate::services::sync_push_service::SyncPushService;
+use crate::services::sync_conflict_service::SyncConflictService;
+use crate::db::repositories::{
+    manifest_repository::ManifestRepository,
+    sync_cursor_repository::SyncCursorRepository,
+    sync_conflict_repository::SyncConflictRepository,
+};
 
 #[tokio::main]
 async fn main() {
@@ -146,6 +156,37 @@ async fn main() {
         material_service.clone(),
     ));
 
+    // Initialize new offline-first sync services
+    let entitlement_repo = crate::db::repositories::entitlement_repository::EntitlementRepository::new(db.clone());
+    let manifest_repo = ManifestRepository::new(db.clone());
+
+    let entitlement_service = Arc::new(EntitlementService::new(
+        entitlement_repo,
+        manifest_repo.clone(),
+    ));
+
+    let sync_manifest_service = Arc::new(SyncManifestService::new(
+        entitlement_service.clone(),
+    ));
+
+    let cursor_repo = SyncCursorRepository::new(db.clone());
+    let sync_fetch_service = Arc::new(SyncFetchService::new(
+        entitlement_service.clone(),
+        manifest_repo.clone(),
+        cursor_repo,
+    ));
+
+    let sync_push_service = Arc::new(SyncPushService::new(
+        entitlement_service.clone(),
+        class_service.clone(),
+        assessment_service.clone(),
+        assignment_service.clone(),
+        material_service.clone(),
+    ));
+
+    let conflict_repo = SyncConflictRepository::new(db.clone());
+    let sync_conflict_service = Arc::new(SyncConflictService::new(conflict_repo));
+
     let app = create_app(
         auth_service,
         class_service,
@@ -153,6 +194,10 @@ async fn main() {
         assignment_service,
         material_service,
         sync_service,
+        sync_manifest_service,
+        sync_fetch_service,
+        sync_push_service,
+        sync_conflict_service,
     );
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
@@ -175,6 +220,10 @@ fn create_app(
     assignment_service: Arc<AssignmentService>,
     material_service: Arc<LearningMaterialService>,
     sync_service: Arc<SyncService>,
+    sync_manifest_service: Arc<SyncManifestService>,
+    sync_fetch_service: Arc<SyncFetchService>,
+    sync_push_service: Arc<SyncPushService>,
+    sync_conflict_service: Arc<SyncConflictService>,
 ) -> Router {
     let cors = CorsLayer::new()
         .allow_origin(Any)
@@ -191,6 +240,10 @@ fn create_app(
                 assignment_service,
                 material_service,
                 sync_service,
+                sync_manifest_service,
+                sync_fetch_service,
+                sync_push_service,
+                sync_conflict_service,
             ),
         )
         .layer(cors)

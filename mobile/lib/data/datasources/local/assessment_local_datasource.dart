@@ -396,9 +396,8 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
     try {
       final db = await _localDatabase.database;
       await db.delete('assessments');
-      await db.delete('assessment_questions');
-      await db.delete('submission_answers');
-      await db.delete('submission_details');
+      await db.delete('questions');
+      await db.delete('assessment_submissions');
     } catch (e) {
       throw CacheException('Failed to clear assessment cache: $e');
     }

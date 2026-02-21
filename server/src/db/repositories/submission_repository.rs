@@ -32,6 +32,8 @@ impl SubmissionRepository {
             final_score: Set(0.0),
             is_submitted: Set(false),
             created_at: Set(Utc::now().naive_utc()),
+            updated_at: Set(Utc::now().naive_utc()),
+            deleted_at: Set(None),
         };
 
         submission

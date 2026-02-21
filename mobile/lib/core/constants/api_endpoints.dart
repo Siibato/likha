@@ -4,18 +4,18 @@ import 'package:likha/data/models/auth/activity_log_model.dart';
 import 'package:likha/data/models/auth/auth_response_model.dart';
 import 'package:likha/data/models/auth/check_username_result_model.dart';
 import 'package:likha/data/models/auth/user_model.dart';
-import 'package:likha/domain/assessments/data/models/assessment_model.dart';
-import 'package:likha/domain/assessments/data/models/question_model.dart';
-import 'package:likha/domain/assessments/data/models/statistics_model.dart';
-import 'package:likha/domain/assessments/data/models/submission_model.dart';
+import 'package:likha/data/models/assessments/assessment_model.dart';
+import 'package:likha/data/models/assessments/question_model.dart';
+import 'package:likha/data/models/assessments/statistics_model.dart';
+import 'package:likha/data/models/assessments/submission_model.dart';
 import 'package:likha/data/models/assignments/assignment_model.dart';
 import 'package:likha/data/models/assignments/assignment_submission_model.dart';
 import 'package:likha/data/models/assignments/submission_file_model.dart';
 import 'package:likha/data/models/classes/class_detail_model.dart';
 import 'package:likha/data/models/classes/class_model.dart';
-import 'package:likha/domain/learning_materials/data/models/learning_material_model.dart';
+import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/data/models/learning_materials/material_detail_model.dart';
-import 'package:likha/domain/learning_materials/data/models/material_file_model.dart';
+import 'package:likha/data/models/learning_materials/material_file_model.dart';
 
 class ApiEndpoints {
   ApiEndpoints._();
@@ -416,7 +416,7 @@ class ApiEndpoints {
     (json) => json as Map<String, dynamic>,
   );
 
-  // ===== Sync Endpoints =====
+  // ===== Sync Endpoints (Legacy) =====
   static ApiEndpoint<ChangesResponse> changes =
       ApiEndpoint<ChangesResponse>.fromModel(
     '/api/v1/changes',
@@ -425,6 +425,27 @@ class ApiEndpoints {
 
   static final databaseId = ApiEndpoint<Map<String, dynamic>>(
     '/api/v1/database-id',
+    (json) => json as Map<String, dynamic>,
+  );
+
+  // ===== Manifest-Driven Sync Endpoints (New) =====
+  static final syncManifest = ApiEndpoint<Map<String, dynamic>>(
+    '/api/v1/sync/manifest',
+    (json) => json as Map<String, dynamic>,
+  );
+
+  static final syncFetch = ApiEndpoint<Map<String, dynamic>>(
+    '/api/v1/sync/fetch',
+    (json) => json as Map<String, dynamic>,
+  );
+
+  static final syncPush = ApiEndpoint<Map<String, dynamic>>(
+    '/api/v1/sync/push',
+    (json) => json as Map<String, dynamic>,
+  );
+
+  static final syncResolveConflict = ApiEndpoint<Map<String, dynamic>>(
+    '/api/v1/sync/conflicts/resolve',
     (json) => json as Map<String, dynamic>,
   );
 }

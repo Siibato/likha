@@ -40,6 +40,7 @@ impl AssignmentRepository {
             is_published: Set(false),
             created_at: Set(Utc::now().naive_utc()),
             updated_at: Set(Utc::now().naive_utc()),
+            deleted_at: Set(None),
         };
 
         assignment
@@ -166,6 +167,7 @@ impl AssignmentRepository {
             graded_at: Set(None),
             created_at: Set(Utc::now().naive_utc()),
             updated_at: Set(Utc::now().naive_utc()),
+            deleted_at: Set(None),
         };
 
         submission
@@ -388,5 +390,21 @@ impl AssignmentRepository {
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+    }
+
+    pub async fn soft_delete(&self, id: Uuid) -> AppResult<()> {
+        let assignment = assignments_hw::ActiveModel {
+            id: Set(id),
+            deleted_at: Set(Some(Utc::now().naive_utc())),
+            updated_at: Set(Utc::now().naive_utc()),
+            ..Default::default()
+        };
+
+        assignments_hw::Entity::update(assignment)
+            .exec(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to delete assignment: {}", e)))?;
+
+        Ok(())
     }
 }

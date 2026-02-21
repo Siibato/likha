@@ -1,5 +1,5 @@
 import 'package:likha/domain/learning_materials/entities/material_detail.dart';
-import 'package:likha/domain/learning_materials/data/models/material_file_model.dart';
+import 'package:likha/data/models/learning_materials/material_file_model.dart';
 
 class MaterialDetailModel extends MaterialDetail {
   const MaterialDetailModel({

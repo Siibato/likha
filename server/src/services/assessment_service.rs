@@ -314,6 +314,36 @@ impl AssessmentService {
         Ok(())
     }
 
+    pub async fn soft_delete(
+        &self,
+        assessment_id: Uuid,
+        user_id: Uuid,
+        user_role: &str,
+    ) -> AppResult<()> {
+        let assessment = self.assessment_repo.find_by_id(assessment_id).await?
+            .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
+
+        let class = self.class_repo.find_by_id(assessment.class_id).await?
+            .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
+
+        // Check authorization: teacher owns the class, or user is admin
+        if user_role != "admin" && class.teacher_id != user_id {
+            return Err(AppError::Forbidden("Access denied".to_string()));
+        }
+
+        self.assessment_repo.soft_delete(assessment_id).await?;
+
+        let _ = self.change_log_repo.log_change(
+            "assessment",
+            assessment_id,
+            "soft_delete",
+            user_id,
+            None,
+        ).await;
+
+        Ok(())
+    }
+
     pub async fn publish_assessment(
         &self,
         assessment_id: Uuid,

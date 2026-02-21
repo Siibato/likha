@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 3,
+      version: 4,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onOpen: (db) async {
@@ -58,6 +58,7 @@ class LocalDatabase {
       await txn.execute('''
         CREATE TABLE IF NOT EXISTS classes (
           id TEXT PRIMARY KEY,
+          local_id TEXT,
           title TEXT NOT NULL,
           description TEXT,
           teacher_id TEXT NOT NULL,
@@ -67,6 +68,7 @@ class LocalDatabase {
           student_count INTEGER NOT NULL DEFAULT 0,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
+          deleted_at TEXT,
           cached_at TEXT NOT NULL,
           synced_at TEXT,
           is_offline_mutation INTEGER NOT NULL DEFAULT 0,
@@ -78,6 +80,7 @@ class LocalDatabase {
       await txn.execute('''
         CREATE TABLE IF NOT EXISTS class_enrollments (
           id TEXT PRIMARY KEY,
+          local_id TEXT,
           class_id TEXT NOT NULL,
           student_id TEXT NOT NULL,
           username TEXT NOT NULL,
@@ -86,6 +89,7 @@ class LocalDatabase {
           account_status TEXT NOT NULL,
           is_active INTEGER NOT NULL DEFAULT 1,
           enrolled_at TEXT NOT NULL,
+          deleted_at TEXT,
           cached_at TEXT NOT NULL,
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
         )
@@ -95,6 +99,7 @@ class LocalDatabase {
       await txn.execute('''
         CREATE TABLE IF NOT EXISTS assessments (
           id TEXT PRIMARY KEY,
+          local_id TEXT,
           class_id TEXT NOT NULL,
           title TEXT NOT NULL,
           description TEXT,
@@ -109,6 +114,7 @@ class LocalDatabase {
           submission_count INTEGER NOT NULL DEFAULT 0,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
+          deleted_at TEXT,
           cached_at TEXT NOT NULL,
           synced_at TEXT,
           is_offline_mutation INTEGER NOT NULL DEFAULT 0,
@@ -121,6 +127,7 @@ class LocalDatabase {
       await txn.execute('''
         CREATE TABLE IF NOT EXISTS questions (
           id TEXT PRIMARY KEY,
+          local_id TEXT,
           assessment_id TEXT NOT NULL,
           question_type TEXT NOT NULL,
           question_text TEXT NOT NULL,
@@ -130,6 +137,7 @@ class LocalDatabase {
           choices_json TEXT,
           correct_answers_json TEXT,
           enumeration_items_json TEXT,
+          deleted_at TEXT,
           cached_at TEXT NOT NULL,
           FOREIGN KEY(assessment_id) REFERENCES assessments(id) ON DELETE CASCADE
         )
@@ -139,6 +147,7 @@ class LocalDatabase {
       await txn.execute('''
         CREATE TABLE IF NOT EXISTS assessment_submissions (
           id TEXT PRIMARY KEY,
+          local_id TEXT,
           assessment_id TEXT NOT NULL,
           student_id TEXT NOT NULL,
           student_name TEXT NOT NULL,
@@ -150,6 +159,7 @@ class LocalDatabase {
           is_submitted INTEGER NOT NULL DEFAULT 0,
           answers_json TEXT,
           local_start_at TEXT,
+          deleted_at TEXT,
           cached_at TEXT NOT NULL,
           synced_at TEXT,
           is_offline_mutation INTEGER NOT NULL DEFAULT 0,
@@ -162,6 +172,7 @@ class LocalDatabase {
       await txn.execute('''
         CREATE TABLE IF NOT EXISTS assignments (
           id TEXT PRIMARY KEY,
+          local_id TEXT,
           class_id TEXT NOT NULL,
           title TEXT NOT NULL,
           instructions TEXT,
@@ -178,6 +189,7 @@ class LocalDatabase {
           score INTEGER,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
+          deleted_at TEXT,
           cached_at TEXT NOT NULL,
           synced_at TEXT,
           is_offline_mutation INTEGER NOT NULL DEFAULT 0,
@@ -190,6 +202,7 @@ class LocalDatabase {
       await txn.execute('''
         CREATE TABLE IF NOT EXISTS assignment_submissions (
           id TEXT PRIMARY KEY,
+          local_id TEXT,
           assignment_id TEXT NOT NULL,
           student_id TEXT NOT NULL,
           student_name TEXT NOT NULL,
@@ -202,6 +215,7 @@ class LocalDatabase {
           graded_at TEXT,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
+          deleted_at TEXT,
           cached_at TEXT NOT NULL,
           synced_at TEXT,
           is_offline_mutation INTEGER NOT NULL DEFAULT 0,
@@ -214,6 +228,7 @@ class LocalDatabase {
       await txn.execute('''
         CREATE TABLE IF NOT EXISTS submission_files (
           id TEXT PRIMARY KEY,
+          local_id TEXT,
           submission_id TEXT NOT NULL,
           file_name TEXT NOT NULL,
           file_type TEXT NOT NULL,
@@ -221,6 +236,7 @@ class LocalDatabase {
           uploaded_at TEXT NOT NULL,
           local_path TEXT,
           is_local_only INTEGER NOT NULL DEFAULT 0,
+          deleted_at TEXT,
           cached_at TEXT NOT NULL,
           FOREIGN KEY(submission_id) REFERENCES assignment_submissions(id) ON DELETE CASCADE
         )
@@ -230,6 +246,7 @@ class LocalDatabase {
       await txn.execute('''
         CREATE TABLE IF NOT EXISTS learning_materials (
           id TEXT PRIMARY KEY,
+          local_id TEXT,
           class_id TEXT NOT NULL,
           title TEXT NOT NULL,
           description TEXT,
@@ -238,6 +255,7 @@ class LocalDatabase {
           file_count INTEGER NOT NULL DEFAULT 0,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
+          deleted_at TEXT,
           cached_at TEXT NOT NULL,
           synced_at TEXT,
           is_offline_mutation INTEGER NOT NULL DEFAULT 0,
@@ -250,6 +268,7 @@ class LocalDatabase {
       await txn.execute('''
         CREATE TABLE IF NOT EXISTS material_files (
           id TEXT PRIMARY KEY,
+          local_id TEXT,
           material_id TEXT NOT NULL,
           file_name TEXT NOT NULL,
           file_type TEXT NOT NULL,
@@ -257,6 +276,7 @@ class LocalDatabase {
           uploaded_at TEXT NOT NULL,
           local_path TEXT,
           is_cached INTEGER NOT NULL DEFAULT 0,
+          deleted_at TEXT,
           cached_at TEXT NOT NULL,
           FOREIGN KEY(material_id) REFERENCES learning_materials(id) ON DELETE CASCADE
         )
@@ -300,14 +320,28 @@ class LocalDatabase {
 
       // Create indexes for common queries
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_classes_teacher_id ON classes(teacher_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_classes_updated_at ON classes(updated_at)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_classes_deleted_at ON classes(deleted_at)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_enrollments_class_id ON class_enrollments(class_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_assessments_class_id ON assessments(class_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_assessments_updated_at ON assessments(updated_at)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_assessments_deleted_at ON assessments(deleted_at)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_questions_assessment_id ON questions(assessment_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_questions_updated_at ON questions(updated_at)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_questions_deleted_at ON questions(deleted_at)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_assessment_submissions_assessment_id ON assessment_submissions(assessment_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_assessment_submissions_updated_at ON assessment_submissions(updated_at)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_assessment_submissions_deleted_at ON assessment_submissions(deleted_at)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_assignments_class_id ON assignments(class_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_assignments_updated_at ON assignments(updated_at)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_assignments_deleted_at ON assignments(deleted_at)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_assignment_submissions_assignment_id ON assignment_submissions(assignment_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_assignment_submissions_updated_at ON assignment_submissions(updated_at)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_assignment_submissions_deleted_at ON assignment_submissions(deleted_at)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_submission_files_submission_id ON submission_files(submission_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_learning_materials_class_id ON learning_materials(class_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_learning_materials_updated_at ON learning_materials(updated_at)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_learning_materials_deleted_at ON learning_materials(deleted_at)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_material_files_material_id ON material_files(material_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_sync_queue_status ON sync_queue(status)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_sync_queue_created_at ON sync_queue(created_at)');
@@ -362,6 +396,62 @@ class LocalDatabase {
               'ALTER TABLE $table ADD COLUMN is_offline_mutation INTEGER NOT NULL DEFAULT 0');
         } catch (e) {
           // Column might already exist
+        }
+      }
+    }
+
+    if (oldVersion < 4) {
+      // Add local_id and deleted_at columns to syncable tables for ID reconciliation and tombstone handling
+      final syncableTables = [
+        'classes',
+        'class_enrollments',
+        'assessments',
+        'questions',
+        'assessment_submissions',
+        'assignments',
+        'assignment_submissions',
+        'submission_files',
+        'learning_materials',
+        'material_files',
+      ];
+
+      for (final table in syncableTables) {
+        try {
+          await db.execute('ALTER TABLE $table ADD COLUMN local_id TEXT');
+        } catch (e) {
+          // Column might already exist
+        }
+
+        try {
+          await db.execute('ALTER TABLE $table ADD COLUMN deleted_at TEXT');
+        } catch (e) {
+          // Column might already exist
+        }
+      }
+
+      // Create indexes for sync performance
+      final indexStatements = [
+        'CREATE INDEX IF NOT EXISTS idx_classes_updated_at ON classes(updated_at)',
+        'CREATE INDEX IF NOT EXISTS idx_classes_deleted_at ON classes(deleted_at)',
+        'CREATE INDEX IF NOT EXISTS idx_assessments_updated_at ON assessments(updated_at)',
+        'CREATE INDEX IF NOT EXISTS idx_assessments_deleted_at ON assessments(deleted_at)',
+        'CREATE INDEX IF NOT EXISTS idx_questions_updated_at ON questions(updated_at)',
+        'CREATE INDEX IF NOT EXISTS idx_questions_deleted_at ON questions(deleted_at)',
+        'CREATE INDEX IF NOT EXISTS idx_assessment_submissions_updated_at ON assessment_submissions(updated_at)',
+        'CREATE INDEX IF NOT EXISTS idx_assessment_submissions_deleted_at ON assessment_submissions(deleted_at)',
+        'CREATE INDEX IF NOT EXISTS idx_assignments_updated_at ON assignments(updated_at)',
+        'CREATE INDEX IF NOT EXISTS idx_assignments_deleted_at ON assignments(deleted_at)',
+        'CREATE INDEX IF NOT EXISTS idx_assignment_submissions_updated_at ON assignment_submissions(updated_at)',
+        'CREATE INDEX IF NOT EXISTS idx_assignment_submissions_deleted_at ON assignment_submissions(deleted_at)',
+        'CREATE INDEX IF NOT EXISTS idx_learning_materials_updated_at ON learning_materials(updated_at)',
+        'CREATE INDEX IF NOT EXISTS idx_learning_materials_deleted_at ON learning_materials(deleted_at)',
+      ];
+
+      for (final indexStatement in indexStatements) {
+        try {
+          await db.execute(indexStatement);
+        } catch (e) {
+          // Index might already exist
         }
       }
     }

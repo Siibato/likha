@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/models/auth/user_model.dart';
-import 'package:likha/domain/classes/data/models/class_detail_model.dart';
+import 'package:likha/data/models/classes/class_detail_model.dart';
 import 'package:likha/data/models/classes/class_model.dart';
 
 abstract class ClassRemoteDataSource {

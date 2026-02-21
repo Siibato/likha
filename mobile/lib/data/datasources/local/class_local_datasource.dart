@@ -3,7 +3,7 @@ import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/data/models/classes/class_detail_model.dart';
-import 'package:likha/domain/classes/data/models/class_model.dart';
+import 'package:likha/data/models/classes/class_model.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
@@ -419,7 +419,7 @@ class ClassLocalDataSourceImpl implements ClassLocalDataSource {
     try {
       final db = await _localDatabase.database;
       // Delete all classes and their enrollments
-      await db.delete('enrollments');
+      await db.delete('class_enrollments');
       await db.delete('classes');
     } catch (e) {
       throw CacheException('Failed to clear class cache: $e');

@@ -33,6 +33,7 @@ impl LearningMaterialRepository {
             order_index: Set(order_index),
             created_at: Set(Utc::now().naive_utc()),
             updated_at: Set(Utc::now().naive_utc()),
+            deleted_at: Set(None),
         };
 
         material
@@ -192,5 +193,21 @@ impl LearningMaterialRepository {
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+    }
+
+    pub async fn soft_delete(&self, id: Uuid) -> AppResult<()> {
+        let material = learning_materials::ActiveModel {
+            id: Set(id),
+            deleted_at: Set(Some(Utc::now().naive_utc())),
+            updated_at: Set(Utc::now().naive_utc()),
+            ..Default::default()
+        };
+
+        learning_materials::Entity::update(material)
+            .exec(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to delete material: {}", e)))?;
+
+        Ok(())
     }
 }
