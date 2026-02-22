@@ -4,25 +4,34 @@ import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/core/validation/services/validation_service.dart';
+import 'package:likha/core/network/connectivity_service.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/datasources/local/learning_material_local_datasource.dart';
 import 'package:likha/data/datasources/remote/learning_material_remote_datasource.dart';
 import 'package:likha/domain/learning_materials/entities/learning_material.dart';
 import 'package:likha/domain/learning_materials/entities/material_detail.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
 import 'package:likha/domain/learning_materials/repositories/learning_material_repository.dart';
+import 'package:uuid/uuid.dart';
 
 class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
   final LearningMaterialRemoteDataSource _remoteDataSource;
   final LearningMaterialLocalDataSource _localDataSource;
   final ValidationService _validationService;
+  final ConnectivityService _connectivityService;
+  final SyncQueue _syncQueue;
 
   LearningMaterialRepositoryImpl({
     required LearningMaterialRemoteDataSource remoteDataSource,
     required LearningMaterialLocalDataSource localDataSource,
     required ValidationService validationService,
+    required ConnectivityService connectivityService,
+    required SyncQueue syncQueue,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
-        _validationService = validationService;
+        _validationService = validationService,
+        _connectivityService = connectivityService,
+        _syncQueue = syncQueue;
 
   @override
   ResultFuture<LearningMaterial> createMaterial({
@@ -32,6 +41,41 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
     String? contentText,
   }) async {
     try {
+      // Check connectivity
+      if (!_connectivityService.isOnline) {
+        // Offline: queue the mutation
+        final entry = SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.learningMaterial,
+          operation: SyncOperation.create,
+          payload: {
+            'class_id': classId,
+            'title': title,
+            if (description != null) 'description': description,
+            if (contentText != null) 'content_text': contentText,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
+        );
+
+        await _syncQueue.enqueue(entry);
+
+        // Return optimistic response
+        return Right(LearningMaterial(
+          id: '',
+          classId: classId,
+          title: title,
+          description: description,
+          contentText: contentText,
+          orderIndex: 0,
+          fileCount: 0,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ));
+      }
+
       final result = await _remoteDataSource.createMaterial(
         classId: classId,
         data: {
@@ -95,6 +139,40 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
     String? contentText,
   }) async {
     try {
+      // Check connectivity
+      if (!_connectivityService.isOnline) {
+        // Offline: queue the mutation
+        final entry = SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.learningMaterial,
+          operation: SyncOperation.update,
+          payload: {
+            'id': materialId,
+            if (title != null) 'title': title,
+            if (description != null) 'description': description,
+            if (contentText != null) 'content_text': contentText,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
+        );
+
+        await _syncQueue.enqueue(entry);
+
+        return Right(LearningMaterial(
+          id: materialId,
+          classId: '',
+          title: title ?? '',
+          description: description,
+          contentText: contentText,
+          orderIndex: 0,
+          fileCount: 0,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ));
+      }
+
       final result = await _remoteDataSource.updateMaterial(
         materialId: materialId,
         data: {
@@ -112,6 +190,26 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
   @override
   ResultVoid deleteMaterial({required String materialId}) async {
     try {
+      // Check connectivity
+      if (!_connectivityService.isOnline) {
+        // Offline: queue the mutation
+        final entry = SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.learningMaterial,
+          operation: SyncOperation.delete,
+          payload: {
+            'id': materialId,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
+        );
+
+        await _syncQueue.enqueue(entry);
+        return const Right(null);
+      }
+
       await _remoteDataSource.deleteMaterial(materialId: materialId);
       return const Right(null);
     } on ServerException catch (e) {
@@ -125,6 +223,38 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
     required int newOrderIndex,
   }) async {
     try {
+      // Check connectivity
+      if (!_connectivityService.isOnline) {
+        // Offline: queue the mutation
+        final entry = SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.learningMaterial,
+          operation: SyncOperation.update,
+          payload: {
+            'id': materialId,
+            'order_index': newOrderIndex,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
+        );
+
+        await _syncQueue.enqueue(entry);
+
+        return Right(LearningMaterial(
+          id: materialId,
+          classId: '',
+          title: '',
+          description: null,
+          contentText: null,
+          orderIndex: newOrderIndex,
+          fileCount: 0,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ));
+      }
+
       final result = await _remoteDataSource.reorderMaterial(
         materialId: materialId,
         newOrderIndex: newOrderIndex,

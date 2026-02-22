@@ -160,7 +160,7 @@ Future<void> init() async {
     () => LearningMaterialRemoteDataSourceImpl(sl()),
   );
   sl.registerLazySingleton<SyncRemoteDataSource>(
-    () => SyncRemoteDataSourceImpl(dio: sl()),
+    () => SyncRemoteDataSourceImpl(dioClient: sl()),
   );
 
   // Local Data sources
@@ -213,7 +213,7 @@ Future<void> init() async {
 
   // Repositories
   sl.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(sl(), sl(), sl(), sl()),
+    () => AuthRepositoryImpl(sl(), sl(), sl(), sl(), sl()),
   );
   sl.registerLazySingleton<ClassRepository>(
     () => ClassRepositoryImpl(
@@ -230,6 +230,8 @@ Future<void> init() async {
       remoteDataSource: sl(),
       localDataSource: sl(),
       validationService: sl(),
+      connectivityService: sl(),
+      syncQueue: sl(),
     ),
   );
   sl.registerLazySingleton<AssignmentRepository>(
@@ -237,6 +239,8 @@ Future<void> init() async {
       remoteDataSource: sl(),
       localDataSource: sl(),
       validationService: sl(),
+      connectivityService: sl(),
+      syncQueue: sl(),
     ),
   );
   sl.registerLazySingleton<LearningMaterialRepository>(
@@ -244,6 +248,8 @@ Future<void> init() async {
       remoteDataSource: sl(),
       localDataSource: sl(),
       validationService: sl(),
+      connectivityService: sl(),
+      syncQueue: sl(),
     ),
   );
 

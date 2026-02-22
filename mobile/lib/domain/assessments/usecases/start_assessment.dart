@@ -7,7 +7,26 @@ class StartAssessment {
 
   StartAssessment(this._repository);
 
-  ResultFuture<StartSubmissionResult> call(String assessmentId) {
-    return _repository.startAssessment(assessmentId: assessmentId);
+  ResultFuture<StartSubmissionResult> call(StartAssessmentParams params) {
+    return _repository.startAssessment(
+      assessmentId:    params.assessmentId,
+      studentId:       params.studentId,
+      studentName:     params.studentName,
+      studentUsername: params.studentUsername,
+    );
   }
+}
+
+class StartAssessmentParams {
+  final String assessmentId;
+  final String studentId;
+  final String studentName;
+  final String studentUsername;
+
+  StartAssessmentParams({
+    required this.assessmentId,
+    required this.studentId,
+    required this.studentName,
+    required this.studentUsername,
+  });
 }

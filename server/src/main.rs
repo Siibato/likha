@@ -22,7 +22,6 @@ use crate::services::assignment_service::AssignmentService;
 use crate::services::auth_service::AuthService;
 use crate::services::class_service::ClassService;
 use crate::services::learning_material_service::LearningMaterialService;
-use crate::services::sync_service::SyncService;
 use crate::services::entitlement_service::EntitlementService;
 use crate::services::sync_manifest_service::SyncManifestService;
 use crate::services::sync_fetch_service::SyncFetchService;
@@ -146,16 +145,6 @@ async fn main() {
     let assignment_service = Arc::new(AssignmentService::new(db.clone()));
     let material_service = Arc::new(LearningMaterialService::new(db.clone()));
 
-    // Initialize sync service
-    let sync_service = Arc::new(SyncService::new(
-        db.clone(),
-        auth_service.clone(),
-        class_service.clone(),
-        assessment_service.clone(),
-        assignment_service.clone(),
-        material_service.clone(),
-    ));
-
     // Initialize new offline-first sync services
     let entitlement_repo = crate::db::repositories::entitlement_repository::EntitlementRepository::new(db.clone());
     let manifest_repo = ManifestRepository::new(db.clone());
@@ -182,6 +171,7 @@ async fn main() {
         assessment_service.clone(),
         assignment_service.clone(),
         material_service.clone(),
+        auth_service.clone(),
     ));
 
     let conflict_repo = SyncConflictRepository::new(db.clone());
@@ -193,7 +183,6 @@ async fn main() {
         assessment_service,
         assignment_service,
         material_service,
-        sync_service,
         sync_manifest_service,
         sync_fetch_service,
         sync_push_service,
@@ -219,7 +208,6 @@ fn create_app(
     assessment_service: Arc<AssessmentService>,
     assignment_service: Arc<AssignmentService>,
     material_service: Arc<LearningMaterialService>,
-    sync_service: Arc<SyncService>,
     sync_manifest_service: Arc<SyncManifestService>,
     sync_fetch_service: Arc<SyncFetchService>,
     sync_push_service: Arc<SyncPushService>,
@@ -239,7 +227,6 @@ fn create_app(
                 assessment_service,
                 assignment_service,
                 material_service,
-                sync_service,
                 sync_manifest_service,
                 sync_fetch_service,
                 sync_push_service,

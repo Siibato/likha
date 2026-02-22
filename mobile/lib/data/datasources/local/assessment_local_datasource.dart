@@ -21,7 +21,17 @@ abstract class AssessmentLocalDataSource {
   });
   Future<void> cacheStartSubmissionResult({
     required String submissionId,
+    required String assessmentId,
+    required String studentId,
+    required String studentName,
+    required String studentUsername,
     required DateTime startedAt,
+  });
+  Future<String> startAssessmentLocally({
+    required String assessmentId,
+    required String studentId,
+    required String studentName,
+    required String studentUsername,
   });
   Future<StartSubmissionResultModel?> getCachedStartResult(String submissionId);
   Future<void> submitAssessmentLocally({
@@ -203,6 +213,7 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
             'answers_json': answersJson,
             'is_dirty': 1,
             'sync_status': 'pending',
+            'updated_at': now.toIso8601String(),
             'cached_at': now.toIso8601String(),
           },
           where: 'id = ?',
@@ -210,14 +221,15 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
         );
 
         // Enqueue sync - save answers operations should always be queued
+        // FIX: Use SyncOperation.saveAnswers and decode answers to array
         await _syncQueue.enqueue(
           SyncQueueEntry(
             id: const Uuid().v4(),
             entityType: SyncEntityType.assessmentSubmission,
-            operation: SyncOperation.update,
+            operation: SyncOperation.saveAnswers,
             payload: {
               'submission_id': submissionId,
-              'answers_json': answersJson,
+              'answers': jsonDecode(answersJson) as List<dynamic>,
             },
             status: SyncStatus.pending,
             retryCount: 0,
@@ -234,6 +246,10 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
   @override
   Future<void> cacheStartSubmissionResult({
     required String submissionId,
+    required String assessmentId,
+    required String studentId,
+    required String studentName,
+    required String studentUsername,
     required DateTime startedAt,
   }) async {
     try {
@@ -245,13 +261,14 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
         'assessment_submissions',
         {
           'id': submissionId,
-          'assessment_id': '', // Will be filled elsewhere
-          'student_id': '', // Will be filled elsewhere
-          'student_name': '', // Will be filled elsewhere
-          'student_username': '', // Will be filled elsewhere
+          'assessment_id': assessmentId,
+          'student_id': studentId,
+          'student_name': studentName,
+          'student_username': studentUsername,
           'started_at': startedAt.toIso8601String(),
           'local_start_at': startedAt.toIso8601String(),
           'is_submitted': 0,
+          'updated_at': now.toIso8601String(),
           'cached_at': now.toIso8601String(),
           'sync_status': 'synced',
           'is_dirty': 0,
@@ -260,6 +277,64 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
       );
     } catch (e) {
       throw CacheException('Failed to cache start submission result: $e');
+    }
+  }
+
+  @override
+  Future<String> startAssessmentLocally({
+    required String assessmentId,
+    required String studentId,
+    required String studentName,
+    required String studentUsername,
+  }) async {
+    try {
+      final db = await _localDatabase.database;
+      final localId = const Uuid().v4();
+      final now = DateTime.now();
+
+      await db.transaction((txn) async {
+        // Insert into assessment_submissions
+        await txn.insert(
+          'assessment_submissions',
+          {
+            'id': localId,
+            'local_id': localId,
+            'assessment_id': assessmentId,
+            'student_id': studentId,
+            'student_name': studentName,
+            'student_username': studentUsername,
+            'started_at': now.toIso8601String(),
+            'is_submitted': 0,
+            'updated_at': now.toIso8601String(),
+            'cached_at': now.toIso8601String(),
+            'sync_status': 'pending',
+            'is_dirty': 1,
+            'is_offline_mutation': 1,
+          },
+        );
+
+        // Enqueue sync
+        await _syncQueue.enqueue(
+          SyncQueueEntry(
+            id: const Uuid().v4(),
+            entityType: SyncEntityType.assessmentSubmission,
+            operation: SyncOperation.create,
+            payload: {
+              'local_id': localId,
+              'assessment_id': assessmentId,
+              'student_id': studentId,
+            },
+            status: SyncStatus.pending,
+            retryCount: 0,
+            maxRetries: 5,
+            createdAt: now,
+          ),
+        );
+      });
+
+      return localId;
+    } catch (e) {
+      throw CacheException('Failed to start assessment locally: $e');
     }
   }
 

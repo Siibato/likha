@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/utils/typedef.dart';
+import 'package:likha/core/network/connectivity_service.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/validation/services/validation_service.dart';
 import 'package:likha/data/datasources/local/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';
@@ -11,19 +14,26 @@ import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:likha/domain/assessments/repositories/assessment_repository.dart';
+import 'package:uuid/uuid.dart';
 
 class AssessmentRepositoryImpl implements AssessmentRepository {
   final AssessmentRemoteDataSource _remoteDataSource;
   final AssessmentLocalDataSource _localDataSource;
   final ValidationService _validationService;
+  final ConnectivityService _connectivityService;
+  final SyncQueue _syncQueue;
 
   AssessmentRepositoryImpl({
     required AssessmentRemoteDataSource remoteDataSource,
     required AssessmentLocalDataSource localDataSource,
     required ValidationService validationService,
+    required ConnectivityService connectivityService,
+    required SyncQueue syncQueue,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
-        _validationService = validationService;
+        _validationService = validationService,
+        _connectivityService = connectivityService,
+        _syncQueue = syncQueue;
 
   @override
   ResultFuture<Assessment> createAssessment({
@@ -36,6 +46,52 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     bool? showResultsImmediately,
   }) async {
     try {
+      // Check connectivity
+      if (!_connectivityService.isOnline) {
+        // Offline: queue the mutation
+        final entry = SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assessment,
+          operation: SyncOperation.create,
+          payload: {
+            'class_id': classId,
+            'title': title,
+            if (description != null) 'description': description,
+            'time_limit_minutes': timeLimitMinutes,
+            'open_at': openAt,
+            'close_at': closeAt,
+            if (showResultsImmediately != null)
+              'show_results_immediately': showResultsImmediately,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
+        );
+
+        await _syncQueue.enqueue(entry);
+
+        // Return optimistic response
+        return Right(Assessment(
+          id: '',
+          classId: classId,
+          title: title,
+          description: description,
+          timeLimitMinutes: timeLimitMinutes,
+          openAt: DateTime.parse(openAt),
+          closeAt: DateTime.parse(closeAt),
+          showResultsImmediately: showResultsImmediately ?? false,
+          resultsReleased: false,
+          isPublished: false,
+          totalPoints: 0,
+          questionCount: 0,
+          submissionCount: 0,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ));
+      }
+
+      // Online: send to server
       final result = await _remoteDataSource.createAssessment(
         classId: classId,
         data: {
@@ -112,6 +168,50 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     bool? showResultsImmediately,
   }) async {
     try {
+      // Check connectivity
+      if (!_connectivityService.isOnline) {
+        // Offline: queue the mutation
+        final entry = SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assessment,
+          operation: SyncOperation.update,
+          payload: {
+            'id': assessmentId,
+            if (title != null) 'title': title,
+            if (description != null) 'description': description,
+            if (timeLimitMinutes != null) 'time_limit_minutes': timeLimitMinutes,
+            if (openAt != null) 'open_at': openAt,
+            if (closeAt != null) 'close_at': closeAt,
+            if (showResultsImmediately != null)
+              'show_results_immediately': showResultsImmediately,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
+        );
+
+        await _syncQueue.enqueue(entry);
+
+        return Right(Assessment(
+          id: assessmentId,
+          classId: '',
+          title: title ?? '',
+          description: description,
+          timeLimitMinutes: timeLimitMinutes ?? 0,
+          openAt: openAt != null ? DateTime.parse(openAt) : DateTime.now(),
+          closeAt: closeAt != null ? DateTime.parse(closeAt) : DateTime.now(),
+          showResultsImmediately: showResultsImmediately ?? false,
+          resultsReleased: false,
+          isPublished: false,
+          totalPoints: 0,
+          questionCount: 0,
+          submissionCount: 0,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ));
+      }
+
       final data = <String, dynamic>{};
       if (title != null) data['title'] = title;
       if (description != null) data['description'] = description;
@@ -331,11 +431,45 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
   @override
   ResultFuture<StartSubmissionResult> startAssessment({
     required String assessmentId,
+    required String studentId,
+    required String studentName,
+    required String studentUsername,
   }) async {
     try {
+      if (!_connectivityService.isOnline) {
+        // Offline: load cached questions and create local submission
+        try {
+          final (_, questions) = await _localDataSource.getCachedAssessmentDetail(assessmentId);
+          final localId = await _localDataSource.startAssessmentLocally(
+            assessmentId:    assessmentId,
+            studentId:       studentId,
+            studentName:     studentName,
+            studentUsername: studentUsername,
+          );
+          return Right(StartSubmissionResult(
+            submissionId: localId,
+            startedAt:    DateTime.now(),
+            questions:    questions,
+          ));
+        } on CacheException catch (e) {
+          return Left(CacheFailure('Assessment not available offline: ${e.message}'));
+        }
+      }
+
       final result = await _remoteDataSource.startAssessment(
         assessmentId: assessmentId,
       );
+
+      // Cache the result so student can resume offline
+      await _localDataSource.cacheStartSubmissionResult(
+        submissionId:    result.submissionId,
+        assessmentId:    assessmentId,
+        studentId:       studentId,
+        studentName:     studentName,
+        studentUsername: studentUsername,
+        startedAt:       result.startedAt,
+      );
+
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -352,6 +486,14 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required List<Map<String, dynamic>> answers,
   }) async {
     try {
+      if (!_connectivityService.isOnline) {
+        await _localDataSource.saveAnswersLocally(
+          submissionId: submissionId,
+          answersJson:  jsonEncode(answers),
+        );
+        return const Right(null);
+      }
+
       await _remoteDataSource.saveAnswers(
         submissionId: submissionId,
         answers: answers,
@@ -371,6 +513,28 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required String submissionId,
   }) async {
     try {
+      if (!_connectivityService.isOnline) {
+        // Retrieve assessmentId from local submission record
+        final cached = await _localDataSource.getCachedSubmissionDetail(submissionId);
+        final assessmentId = cached?.assessmentId ?? '';
+
+        await _localDataSource.submitAssessmentLocally(
+          submissionId: submissionId,
+          assessmentId: assessmentId,
+        );
+
+        return Right(SubmissionSummary(
+          id:              submissionId,
+          studentId:       cached?.studentId ?? '',
+          studentName:     cached?.studentName ?? '',
+          studentUsername: '',
+          startedAt:       cached?.startedAt ?? DateTime.now(),
+          autoScore:       (cached?.autoScore ?? 0.0),
+          finalScore:      (cached?.finalScore ?? 0.0),
+          isSubmitted:     true,
+        ));
+      }
+
       final result = await _remoteDataSource.submitAssessment(
         submissionId: submissionId,
       );

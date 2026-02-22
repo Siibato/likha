@@ -150,25 +150,34 @@ class SyncManager {
     final pending = await _syncQueue.getAllRetriable();
     if (pending.isEmpty) return;
 
-    _updateState(pendingCount: pending.length);
+    // Split: upload ops need direct multipart POST, not JSON batch
+    final uploadOps   = pending.where((e) => e.operation == SyncOperation.upload).toList();
+    final regularOps  = pending.where((e) => e.operation != SyncOperation.upload).toList();
 
-    // Format operations for server
-    final operations = pending.map((entry) {
-      return {
-        'id': entry.id,
-        'entity_type': entry.entityType.toString().split('.').last,
-        'operation': entry.operation.toString().split('.').last,
-        'payload': entry.payload,
-      };
-    }).toList();
+    // Handle file uploads directly via multipart endpoint
+    for (final op in uploadOps) {
+      await _handleFileUpload(op);
+    }
 
-    // Send to server
-    final response = await _syncRemoteDataSource.pushOperations(
-      operations: operations,
-    );
+    // Handle all other operations via the batch push endpoint
+    if (regularOps.isNotEmpty) {
+      _updateState(pendingCount: regularOps.length);
 
-    // Process results
-    await _processPushResults(response);
+      final operations = regularOps.map((entry) {
+        return {
+          'id':          entry.id,
+          'entity_type': _entityTypeToServer(entry.entityType),
+          'operation':   _operationToServer(entry.operation),
+          'payload':     entry.payload,
+        };
+      }).toList();
+
+      final response = await _syncRemoteDataSource.pushOperations(
+        operations: operations,
+      );
+
+      await _processPushResults(response);
+    }
   }
 
   /// Process push results and update local state
@@ -306,6 +315,7 @@ class SyncManager {
       'assignment_submissions': 'assignment_submissions',
       'assessment_questions': 'questions',
       'class_enrollments': 'class_enrollments',
+      'users': 'users',
     };
 
     for (final entry in entityTables.entries) {
@@ -356,6 +366,9 @@ class SyncManager {
         return 'questions';
       case 'class_enrollments':
         return 'class_enrollments';
+      case 'admin_user':
+      case 'users':
+        return 'users';
       default:
         return entityType;
     }
@@ -378,5 +391,54 @@ class SyncManager {
     );
 
     _stateListener?.call(_state);
+  }
+
+  /// Handles a single file upload operation by calling the multipart endpoint directly.
+  /// References pattern in: mobile/lib/data/datasources/remote/assignment_remote_datasource.dart
+  Future<void> _handleFileUpload(SyncQueueEntry op) async {
+    try {
+      final payload      = op.payload;
+      final localPath    = payload['local_path']    as String;
+      final fileName     = payload['file_name']     as String;
+      final submissionId = payload['submission_id'] as String?;
+      final materialId   = payload['material_id']   as String?;
+
+      if (submissionId != null) {
+        await _syncRemoteDataSource.uploadSubmissionFile(
+          submissionId: submissionId,
+          localPath: localPath,
+          fileName: fileName,
+        );
+      } else if (materialId != null) {
+        await _syncRemoteDataSource.uploadMaterialFile(
+          materialId: materialId,
+          localPath: localPath,
+          fileName: fileName,
+        );
+      }
+      await _syncQueue.markSucceeded(op.id);
+    } catch (e) {
+      await _syncQueue.markFailed(op.id, e.toString());
+    }
+  }
+
+  /// Maps Dart SyncEntityType enum to server-expected snake_case string
+  static String _entityTypeToServer(SyncEntityType type) {
+    switch (type) {
+      case SyncEntityType.assessmentSubmission: return 'assessment_submission';
+      case SyncEntityType.assignmentSubmission: return 'assignment_submission';
+      case SyncEntityType.classEntity:          return 'class';
+      case SyncEntityType.learningMaterial:     return 'learning_material';
+      case SyncEntityType.materialFile:         return 'material_file';
+      case SyncEntityType.submissionFile:       return 'submission_file';
+      case SyncEntityType.adminUser:            return 'admin_user';
+      default: return type.name; // user, assessment, assignment, question
+    }
+  }
+
+  /// Maps Dart SyncOperation enum to server-expected string
+  static String _operationToServer(SyncOperation op) {
+    if (op == SyncOperation.saveAnswers) return 'save_answers';
+    return op.name;
   }
 }

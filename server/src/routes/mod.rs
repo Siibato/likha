@@ -4,7 +4,6 @@ pub mod auth_routes;
 pub mod class_routes;
 pub mod health_routes;
 pub mod learning_material_routes;
-pub mod sync_routes;
 pub mod sync_routes_new;
 
 use axum::Router;
@@ -15,7 +14,6 @@ use crate::services::assignment_service::AssignmentService;
 use crate::services::auth_service::AuthService;
 use crate::services::class_service::ClassService;
 use crate::services::learning_material_service::LearningMaterialService;
-use crate::services::sync_service::SyncService;
 use crate::services::sync_manifest_service::SyncManifestService;
 use crate::services::sync_fetch_service::SyncFetchService;
 use crate::services::sync_push_service::SyncPushService;
@@ -27,7 +25,6 @@ pub fn api_routes(
     assessment_service: Arc<AssessmentService>,
     assignment_service: Arc<AssignmentService>,
     material_service: Arc<LearningMaterialService>,
-    sync_service: Arc<SyncService>,
     sync_manifest_service: Arc<SyncManifestService>,
     sync_fetch_service: Arc<SyncFetchService>,
     sync_push_service: Arc<SyncPushService>,
@@ -40,7 +37,6 @@ pub fn api_routes(
         .merge(assessment_routes::routes(assessment_service))
         .merge(assignment_routes::routes(assignment_service))
         .merge(learning_material_routes::routes(material_service))
-        .merge(sync_routes::routes(sync_service))
         .merge(sync_routes_new::routes(
             sync_manifest_service,
             sync_fetch_service,

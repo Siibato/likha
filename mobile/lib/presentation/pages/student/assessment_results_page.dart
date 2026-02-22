@@ -4,6 +4,7 @@ import 'package:likha/presentation/pages/student/widgets/student_header.dart';
 import 'package:likha/presentation/pages/student/widgets/score_summary_card.dart';
 import 'package:likha/presentation/pages/student/widgets/answer_result_card.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/providers/auth_provider.dart';
 
 class AssessmentResultsPage extends ConsumerStatefulWidget {
   final String? submissionId;
@@ -40,9 +41,16 @@ class _AssessmentResultsPageState
   }
 
   Future<void> _loadViaAssessment() async {
+    final user = ref.read(authProvider).user;
+
     await ref
         .read(assessmentProvider.notifier)
-        .startAssessment(widget.assessmentId!);
+        .startAssessment(
+          widget.assessmentId!,
+          user?.id       ?? '',
+          user?.fullName ?? '',
+          user?.username ?? '',
+        );
     final state = ref.read(assessmentProvider);
     if (state.startResult != null) {
       ref

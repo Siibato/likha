@@ -8,6 +8,7 @@ use crate::services::class_service::ClassService;
 use crate::services::assessment_service::AssessmentService;
 use crate::services::assignment_service::AssignmentService;
 use crate::services::learning_material_service::LearningMaterialService;
+use crate::services::auth_service::AuthService;
 use crate::schema::class_schema::{CreateClassRequest, UpdateClassRequest};
 use crate::schema::assessment_schema::{CreateAssessmentRequest, UpdateAssessmentRequest, SaveAnswersRequest};
 use crate::schema::assignment_schema::{CreateAssignmentRequest, UpdateAssignmentRequest};
@@ -48,6 +49,7 @@ pub struct SyncPushService {
     assessment_service: Arc<AssessmentService>,
     assignment_service: Arc<AssignmentService>,
     material_service: Arc<LearningMaterialService>,
+    auth_service: Arc<AuthService>,
 }
 
 impl SyncPushService {
@@ -57,6 +59,7 @@ impl SyncPushService {
         assessment_service: Arc<AssessmentService>,
         assignment_service: Arc<AssignmentService>,
         material_service: Arc<LearningMaterialService>,
+        auth_service: Arc<AuthService>,
     ) -> Self {
         Self {
             entitlement_service,
@@ -64,6 +67,7 @@ impl SyncPushService {
             assessment_service,
             assignment_service,
             material_service,
+            auth_service,
         }
     }
 
@@ -131,6 +135,7 @@ impl SyncPushService {
         // Route to appropriate handler
         match op.entity_type.as_str() {
             "class" => self.handle_class_operation(user_id, op).await,
+            "admin_user" => self.handle_admin_user_operation(user_id, op).await,
             "assessment" => self.handle_assessment_operation(user_id, user_role, op).await,
             "assignment" => self.handle_assignment_operation(user_id, user_role, op).await,
             "learning_material" => self.handle_learning_material_operation(user_id, op).await,
@@ -321,6 +326,234 @@ impl SyncPushService {
         }
     }
 
+    /// Handle admin user operations (create, update)
+    async fn handle_admin_user_operation(
+        &self,
+        user_id: Uuid,
+        op: &SyncQueueEntry,
+    ) -> OperationResult {
+        match op.operation.as_str() {
+            "create" => {
+                let username = match op.payload.get("username").and_then(|v| v.as_str()) {
+                    Some(u) => u.to_string(),
+                    None => {
+                        return OperationResult {
+                            id: op.id.clone(),
+                            entity_type: op.entity_type.clone(),
+                            operation: op.operation.clone(),
+                            success: false,
+                            server_id: None,
+                            error: Some("Missing username field".to_string()),
+                            updated_at: None,
+                        };
+                    }
+                };
+
+                let full_name = match op.payload.get("full_name").and_then(|v| v.as_str()) {
+                    Some(n) => n.to_string(),
+                    None => {
+                        return OperationResult {
+                            id: op.id.clone(),
+                            entity_type: op.entity_type.clone(),
+                            operation: op.operation.clone(),
+                            success: false,
+                            server_id: None,
+                            error: Some("Missing full_name field".to_string()),
+                            updated_at: None,
+                        };
+                    }
+                };
+
+                let role = match op.payload.get("role").and_then(|v| v.as_str()) {
+                    Some(r) => r.to_string(),
+                    None => {
+                        return OperationResult {
+                            id: op.id.clone(),
+                            entity_type: op.entity_type.clone(),
+                            operation: op.operation.clone(),
+                            success: false,
+                            server_id: None,
+                            error: Some("Missing role field".to_string()),
+                            updated_at: None,
+                        };
+                    }
+                };
+
+                use crate::schema::auth_schema::CreateAccountRequest;
+
+                let request = CreateAccountRequest {
+                    username,
+                    full_name,
+                    role,
+                };
+
+                match self.auth_service.create_account(request, user_id).await {
+                    Ok(user) => OperationResult {
+                        id: op.id.clone(),
+                        entity_type: op.entity_type.clone(),
+                        operation: op.operation.clone(),
+                        success: true,
+                        server_id: Some(user.id.to_string()),
+                        error: None,
+                        updated_at: Some(Utc::now().to_rfc3339()),
+                    },
+                    Err(e) => OperationResult {
+                        id: op.id.clone(),
+                        entity_type: op.entity_type.clone(),
+                        operation: op.operation.clone(),
+                        success: false,
+                        server_id: None,
+                        error: Some(e.to_string()),
+                        updated_at: None,
+                    },
+                }
+            }
+            "update" => {
+                let target_user_id = match op.payload.get("id").and_then(|v| v.as_str()) {
+                    Some(id) => match Uuid::parse_str(id) {
+                        Ok(parsed_id) => parsed_id,
+                        Err(_) => {
+                            return OperationResult {
+                                id: op.id.clone(),
+                                entity_type: op.entity_type.clone(),
+                                operation: op.operation.clone(),
+                                success: false,
+                                server_id: None,
+                                error: Some("Invalid user ID".to_string()),
+                                updated_at: None,
+                            };
+                        }
+                    },
+                    None => {
+                        return OperationResult {
+                            id: op.id.clone(),
+                            entity_type: op.entity_type.clone(),
+                            operation: op.operation.clone(),
+                            success: false,
+                            server_id: None,
+                            error: Some("Missing id field".to_string()),
+                            updated_at: None,
+                        };
+                    }
+                };
+
+                let action = op.payload.get("action").and_then(|v| v.as_str()).unwrap_or("update");
+
+                match action {
+                    "update" => {
+                        let username = op.payload.get("username").and_then(|v| v.as_str()).map(|s| s.to_string());
+                        let full_name = op.payload.get("full_name").and_then(|v| v.as_str()).map(|s| s.to_string());
+
+                        use crate::schema::auth_schema::UpdateAccountRequest;
+
+                        let request = UpdateAccountRequest {
+                            username,
+                            full_name,
+                        };
+
+                        match self.auth_service.update_account(target_user_id, request, user_id).await {
+                            Ok(updated_user) => OperationResult {
+                                id: op.id.clone(),
+                                entity_type: op.entity_type.clone(),
+                                operation: op.operation.clone(),
+                                success: true,
+                                server_id: None,
+                                error: None,
+                                updated_at: Some(Utc::now().to_rfc3339()),
+                            },
+                            Err(e) => OperationResult {
+                                id: op.id.clone(),
+                                entity_type: op.entity_type.clone(),
+                                operation: op.operation.clone(),
+                                success: false,
+                                server_id: None,
+                                error: Some(e.to_string()),
+                                updated_at: None,
+                            },
+                        }
+                    }
+                    "reset" => {
+                        use crate::schema::auth_schema::ResetAccountRequest;
+
+                        let request = ResetAccountRequest {
+                            user_id: target_user_id,
+                        };
+
+                        match self.auth_service.reset_account(request, user_id).await {
+                            Ok(_) => OperationResult {
+                                id: op.id.clone(),
+                                entity_type: op.entity_type.clone(),
+                                operation: op.operation.clone(),
+                                success: true,
+                                server_id: None,
+                                error: None,
+                                updated_at: Some(Utc::now().to_rfc3339()),
+                            },
+                            Err(e) => OperationResult {
+                                id: op.id.clone(),
+                                entity_type: op.entity_type.clone(),
+                                operation: op.operation.clone(),
+                                success: false,
+                                server_id: None,
+                                error: Some(e.to_string()),
+                                updated_at: None,
+                            },
+                        }
+                    }
+                    "lock" => {
+                        let locked = op.payload.get("locked").and_then(|v| v.as_bool()).unwrap_or(true);
+
+                        use crate::schema::auth_schema::LockAccountRequest;
+
+                        let request = LockAccountRequest {
+                            user_id: target_user_id,
+                            locked,
+                        };
+
+                        match self.auth_service.lock_account(request, user_id).await {
+                            Ok(_) => OperationResult {
+                                id: op.id.clone(),
+                                entity_type: op.entity_type.clone(),
+                                operation: op.operation.clone(),
+                                success: true,
+                                server_id: None,
+                                error: None,
+                                updated_at: Some(Utc::now().to_rfc3339()),
+                            },
+                            Err(e) => OperationResult {
+                                id: op.id.clone(),
+                                entity_type: op.entity_type.clone(),
+                                operation: op.operation.clone(),
+                                success: false,
+                                server_id: None,
+                                error: Some(e.to_string()),
+                                updated_at: None,
+                            },
+                        }
+                    }
+                    _ => OperationResult {
+                        id: op.id.clone(),
+                        entity_type: op.entity_type.clone(),
+                        operation: op.operation.clone(),
+                        success: false,
+                        server_id: None,
+                        error: Some(format!("Unknown action for admin_user update: {}", action)),
+                        updated_at: None,
+                    },
+                }
+            }
+            _ => OperationResult {
+                id: op.id.clone(),
+                entity_type: op.entity_type.clone(),
+                operation: op.operation.clone(),
+                success: false,
+                server_id: None,
+                error: Some(format!("Unsupported operation for admin_user: {}", op.operation)),
+                updated_at: None,
+            },
+        }
+    }
+
     /// Handle assessment operations (create, update, delete)
     async fn handle_assessment_operation(
         &self,
@@ -505,7 +738,7 @@ impl SyncPushService {
     async fn handle_assignment_operation(
         &self,
         user_id: Uuid,
-        user_role: &str,
+        _user_role: &str,
         op: &SyncQueueEntry,
     ) -> OperationResult {
         match op.operation.as_str() {
@@ -878,8 +1111,45 @@ impl SyncPushService {
         op: &SyncQueueEntry,
     ) -> OperationResult {
         match op.operation.as_str() {
+            "create" => {
+                let assessment_id = op.payload.get("assessment_id")
+                    .and_then(|v| v.as_str())
+                    .and_then(|s| Uuid::parse_str(s).ok());
+
+                match assessment_id {
+                    None => OperationResult {
+                        id: op.id.clone(), entity_type: op.entity_type.clone(),
+                        operation: op.operation.clone(), success: false, server_id: None,
+                        error: Some("Missing assessment_id".to_string()), updated_at: None,
+                    },
+                    Some(assessment_id) => {
+                        match self.assessment_service.start_assessment(assessment_id, user_id).await {
+                            Ok(submission) => OperationResult {
+                                id: op.id.clone(), entity_type: op.entity_type.clone(),
+                                operation: op.operation.clone(), success: true,
+                                server_id: Some(submission.submission_id.to_string()),
+                                error: None, updated_at: None,
+                            },
+                            Err(e) => OperationResult {
+                                id: op.id.clone(), entity_type: op.entity_type.clone(),
+                                operation: op.operation.clone(), success: false,
+                                server_id: None, error: Some(e.to_string()), updated_at: None,
+                            },
+                        }
+                    }
+                }
+            }
             "save_answers" => {
+                // Try to get submission_id first, fall back to local_id if needed
                 let submission_id = match op.payload.get("submission_id").and_then(|v| v.as_str()).and_then(|s| Uuid::parse_str(s).ok()) {
+                    Some(id) => Some(id),
+                    None => {
+                        // Try local_id as fallback for offline submissions
+                        op.payload.get("local_id").and_then(|v| v.as_str()).and_then(|s| Uuid::parse_str(s).ok())
+                    }
+                };
+
+                let submission_id = match submission_id {
                     Some(id) => id,
                     None => {
                         return OperationResult {

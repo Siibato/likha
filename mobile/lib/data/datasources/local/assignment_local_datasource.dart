@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/assignments/assignment_model.dart';
 import 'package:likha/data/models/assignments/assignment_submission_model.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
@@ -238,6 +241,22 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
       final now = DateTime.now();
       final fileId = const Uuid().v4();
 
+      // Copy file to persistent staging directory
+      final appDir = await getApplicationDocumentsDirectory();
+      final uploadDir = Directory('${appDir.path}/offline_uploads');
+
+      if (!await uploadDir.exists()) {
+        await uploadDir.create(recursive: true);
+      }
+
+      final sourceFile = File(localPath);
+      if (!await sourceFile.exists()) {
+        throw CacheException('Source file does not exist: $localPath');
+      }
+
+      final stagedPath = '${uploadDir.path}/${fileId}_$fileName';
+      await sourceFile.copy(stagedPath);
+
       await db.transaction((txn) async {
         // Insert file record
         await txn.insert(
@@ -249,7 +268,7 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
             'file_type': fileType,
             'file_size': fileSize,
             'uploaded_at': now.toIso8601String(),
-            'local_path': localPath,
+            'local_path': stagedPath,
             'is_local_only': 1,
             'cached_at': now.toIso8601String(),
           },
@@ -264,7 +283,7 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
             payload: {
               'file_id': fileId,
               'submission_id': submissionId,
-              'local_path': localPath,
+              'local_path': stagedPath,
               'file_name': fileName,
               'file_type': fileType,
               'file_size': fileSize,

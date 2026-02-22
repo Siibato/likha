@@ -10,6 +10,7 @@ import 'package:likha/presentation/pages/student/widgets/assessment_question_car
 import 'package:likha/presentation/pages/student/widgets/assessment_submit_section.dart';
 import 'package:likha/presentation/pages/student/widgets/assessment_dialogs.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/providers/auth_provider.dart';
 
 class TakeAssessmentPage extends ConsumerStatefulWidget {
   final String assessmentId;
@@ -67,9 +68,17 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
   }
 
   Future<void> _startAssessment() async {
+    // Read current user from auth state
+    final user = ref.read(authProvider).user;
+
     await ref
         .read(assessmentProvider.notifier)
-        .startAssessment(widget.assessmentId);
+        .startAssessment(
+          widget.assessmentId,
+          user?.id       ?? '',
+          user?.fullName ?? '',
+          user?.username ?? '',
+        );
 
     final state = ref.read(assessmentProvider);
     if (state.startResult != null) {

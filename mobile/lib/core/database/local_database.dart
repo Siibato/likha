@@ -89,8 +89,10 @@ class LocalDatabase {
           account_status TEXT NOT NULL,
           is_active INTEGER NOT NULL DEFAULT 1,
           enrolled_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT NOT NULL,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
         )
       ''');
@@ -137,8 +139,10 @@ class LocalDatabase {
           choices_json TEXT,
           correct_answers_json TEXT,
           enumeration_items_json TEXT,
+          updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT NOT NULL,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(assessment_id) REFERENCES assessments(id) ON DELETE CASCADE
         )
       ''');
@@ -159,6 +163,7 @@ class LocalDatabase {
           is_submitted INTEGER NOT NULL DEFAULT 0,
           answers_json TEXT,
           local_start_at TEXT,
+          updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT NOT NULL,
           synced_at TEXT,
