@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/network/connectivity_service.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/auth/entities/activity_log.dart';
+import 'package:likha/data/models/auth/activity_log_model.dart';
+import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/data/datasources/local/auth_local_datasource.dart';
 import 'package:likha/data/datasources/remote/auth_remote_datasource.dart';
 import 'package:likha/domain/auth/entities/check_username_result.dart';
@@ -18,14 +20,14 @@ import 'package:uuid/uuid.dart';
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource _remoteDataSource;
   final AuthLocalDataSource _localDataSource;
-  final ConnectivityService _connectivityService;
+  final ServerReachabilityService _serverReachabilityService;
   final StorageService _storageService;
   final SyncQueue _syncQueue;
 
   AuthRepositoryImpl(
     this._remoteDataSource,
     this._localDataSource,
-    this._connectivityService,
+    this._serverReachabilityService,
     this._storageService,
     this._syncQueue,
   );
@@ -122,7 +124,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   ResultFuture<User> getCurrentUser() async {
     // Online-first routing with fallback to offline cache
-    if (_connectivityService.isOnline) {
+    if (_serverReachabilityService.isServerReachable) {
       try {
         final user = await _remoteDataSource.getCurrentUser();
         // Fire-and-forget cache update
@@ -182,7 +184,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }) async {
     try {
       // Check connectivity
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: queue the mutation locally
         final entry = SyncQueueEntry(
           id: const Uuid().v4(),
@@ -237,15 +239,41 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       // Step 1: Return cached data immediately (cache-first pattern)
       try {
-        final cachedAccounts = await _localDataSource.getCachedAccounts();
+        var cachedAccounts = await _localDataSource.getCachedAccounts();
 
-        // Step 2: Sync in background (don't await)
+        // Step 2: Get pending account creations from sync queue
+        final pendingEntries = await _syncQueue.getAllRetriable();
+        final pendingAccounts = <UserModel>[];
+
+        for (final entry in pendingEntries) {
+          if (entry.entityType == SyncEntityType.adminUser &&
+              entry.operation == SyncOperation.create) {
+            final payload = entry.payload;
+            pendingAccounts.add(
+              UserModel(
+                id: '',
+                username: payload['username'] as String? ?? '',
+                fullName: payload['full_name'] as String? ?? '',
+                role: payload['role'] as String? ?? '',
+                accountStatus: 'pending_activation',
+                isActive: false,
+                activatedAt: null,
+                createdAt: DateTime.now(),
+              ),
+            );
+          }
+        }
+
+        // Step 3: Merge cached and pending accounts
+        cachedAccounts = [...cachedAccounts, ...pendingAccounts];
+
+        // Step 4: Sync in background (don't await)
         _syncAccountsInBackground();
 
         return Right(cachedAccounts);
       } on CacheException {
         // Cache empty, try to fetch from server
-        if (!_connectivityService.isOnline) {
+        if (!_serverReachabilityService.isServerReachable) {
           return Left(NetworkFailure('No internet connection and no cached data'));
         }
 
@@ -264,7 +292,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
   /// Sync accounts in background
   Future<void> _syncAccountsInBackground() async {
-    if (!_connectivityService.isOnline) return;
+    if (!_serverReachabilityService.isServerReachable) return;
 
     try {
       final remoteAccounts = await _remoteDataSource.getAllAccounts();
@@ -278,7 +306,7 @@ class AuthRepositoryImpl implements AuthRepository {
   ResultFuture<User> resetAccount({required String userId}) async {
     try {
       // Check connectivity
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: queue the mutation
         final entry = SyncQueueEntry(
           id: const Uuid().v4(),
@@ -326,7 +354,7 @@ class AuthRepositoryImpl implements AuthRepository {
       {required String userId, required bool locked}) async {
     try {
       // Check connectivity
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: queue the mutation
         final entry = SyncQueueEntry(
           id: const Uuid().v4(),
@@ -375,15 +403,42 @@ class AuthRepositoryImpl implements AuthRepository {
   ResultFuture<List<ActivityLog>> getActivityLogs(
       {required String userId}) async {
     try {
-      final result =
-          await _remoteDataSource.getActivityLogs(userId: userId);
-      return Right(result);
+      // Step 1: Return cached data immediately (cache-first pattern)
+      try {
+        final cachedLogs = await _localDataSource.getCachedActivityLogs(userId);
+
+        // Step 2: Sync in background (don't await)
+        _syncActivityLogsInBackground(userId);
+
+        return Right(cachedLogs);
+      } on CacheException {
+        // Cache empty, try to fetch from server
+        if (!_serverReachabilityService.isServerReachable) {
+          return Left(NetworkFailure('No internet connection and no cached data'));
+        }
+
+        final freshLogs = await _remoteDataSource.getActivityLogs(userId: userId);
+        await _localDataSource.cacheActivityLogs(freshLogs as List<ActivityLogModel>, userId);
+        return Right(freshLogs);
+      }
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  /// Sync activity logs in background
+  Future<void> _syncActivityLogsInBackground(String userId) async {
+    if (!_serverReachabilityService.isServerReachable) return;
+
+    try {
+      final remoteActivityLogs = await _remoteDataSource.getActivityLogs(userId: userId);
+      await _localDataSource.cacheActivityLogs(remoteActivityLogs as List<ActivityLogModel>, userId);
+    } catch (e) {
+      // Best-effort: if sync fails, continue with cached data
     }
   }
 
@@ -395,7 +450,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }) async {
     try {
       // Check connectivity
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: queue the mutation
         final entry = SyncQueueEntry(
           id: const Uuid().v4(),

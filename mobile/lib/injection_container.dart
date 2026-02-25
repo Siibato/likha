@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/connectivity_service.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/core/sync/change_log_applier.dart';
 import 'package:likha/core/sync/change_log_remote_datasource.dart';
@@ -121,145 +122,157 @@ Future<void> init() async {
   await sl<ConnectivityService>().initialize();
 
   // Core - Sync infrastructure
-  sl.registerLazySingleton<SyncQueue>(() => SyncQueueImpl(sl()));
+  sl.registerLazySingleton<SyncQueue>(() => SyncQueueImpl(sl<LocalDatabase>()));
   sl.registerLazySingleton<ChangeLogRepository>(
-    () => ChangeLogRepository(sl()),
+    () => ChangeLogRepository(sl<LocalDatabase>()),
   );
   sl.registerLazySingleton<ChangeLogApplier>(
-    () => ChangeLogApplier(sl()),
+    () => ChangeLogApplier(sl<LocalDatabase>()),
   );
   sl.registerLazySingleton<EntitySyncHelper>(
     () => EntitySyncHelper(
-      localDatabase: sl(),
-      changeLogRemoteDataSource: sl(),
-      changeLogApplier: sl(),
+      localDatabase: sl<LocalDatabase>(),
+      changeLogRemoteDataSource: sl<ChangeLogRemoteDataSource>(),
+      changeLogApplier: sl<ChangeLogApplier>(),
     ),
   );
 
   // Core - General
-  sl.registerLazySingleton(() => StorageService(sl()));
-  sl.registerLazySingleton(() => DioClient(sl()));
+  sl.registerLazySingleton(() => StorageService(sl<FlutterSecureStorage>()));
+  sl.registerLazySingleton(() => DioClient(sl<StorageService>()));
+
+  // Core - Server Reachability (for offline detection, depends on DioClient)
+  sl.registerSingleton<ServerReachabilityService>(
+    ServerReachabilityServiceImpl(sl<DioClient>().dio),
+  );
+  await sl<ServerReachabilityService>().initialize();
 
   // Remote Data sources
   sl.registerLazySingleton<ChangeLogRemoteDataSource>(
-    () => ChangeLogRemoteDataSourceImpl(sl()),
+    () => ChangeLogRemoteDataSourceImpl(sl<DioClient>()),
   );
   sl.registerLazySingleton<AuthRemoteDataSource>(
-    () => AuthRemoteDataSourceImpl(sl(), sl()),
+    () => AuthRemoteDataSourceImpl(sl<DioClient>(), sl<StorageService>()),
   );
   sl.registerLazySingleton<ClassRemoteDataSource>(
-    () => ClassRemoteDataSourceImpl(sl()),
+    () => ClassRemoteDataSourceImpl(sl<DioClient>()),
   );
   sl.registerLazySingleton<AssessmentRemoteDataSource>(
-    () => AssessmentRemoteDataSourceImpl(sl()),
+    () => AssessmentRemoteDataSourceImpl(sl<DioClient>()),
   );
   sl.registerLazySingleton<AssignmentRemoteDataSource>(
-    () => AssignmentRemoteDataSourceImpl(sl()),
+    () => AssignmentRemoteDataSourceImpl(sl<DioClient>()),
   );
   sl.registerLazySingleton<LearningMaterialRemoteDataSource>(
-    () => LearningMaterialRemoteDataSourceImpl(sl()),
+    () => LearningMaterialRemoteDataSourceImpl(sl<DioClient>()),
   );
   sl.registerLazySingleton<SyncRemoteDataSource>(
-    () => SyncRemoteDataSourceImpl(dioClient: sl()),
+    () => SyncRemoteDataSourceImpl(dioClient: sl<DioClient>()),
   );
 
   // Local Data sources
   sl.registerLazySingleton<AuthLocalDataSource>(
-    () => AuthLocalDataSourceImpl(sl()),
+    () => AuthLocalDataSourceImpl(sl<LocalDatabase>()),
   );
   sl.registerLazySingleton<ClassLocalDataSource>(
-    () => ClassLocalDataSourceImpl(sl(), sl()),
+    () => ClassLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
   );
   sl.registerLazySingleton<AssessmentLocalDataSource>(
-    () => AssessmentLocalDataSourceImpl(sl(), sl()),
+    () => AssessmentLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
   );
   sl.registerLazySingleton<AssignmentLocalDataSource>(
-    () => AssignmentLocalDataSourceImpl(sl(), sl()),
+    () => AssignmentLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
   );
   sl.registerLazySingleton<LearningMaterialLocalDataSource>(
-    () => LearningMaterialLocalDataSourceImpl(sl(), sl()),
+    () => LearningMaterialLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
   );
 
   // Validation services
   sl.registerLazySingleton<ValidationRemoteDataSource>(
-    () => ValidationRemoteDataSourceImpl(sl()),
+    () => ValidationRemoteDataSourceImpl(sl<DioClient>()),
   );
 
   sl.registerLazySingleton<ValidationMetadataRepository>(
-    () => ValidationMetadataRepositoryImpl(sl()),
+    () => ValidationMetadataRepositoryImpl(sl<LocalDatabase>()),
   );
 
   sl.registerLazySingleton<DataValidator>(
     () => TimestampValidator(
-      remoteDataSource: sl(),
-      metadataRepository: sl(),
-      connectivityService: sl(),
+      remoteDataSource: sl<ValidationRemoteDataSource>(),
+      metadataRepository: sl<ValidationMetadataRepository>(),
+      connectivityService: sl<ConnectivityService>(),
     ),
   );
 
   sl.registerLazySingleton<ValidationService>(
     () => ValidationService(
-      validator: sl(),
-      classLocal: sl(),
-      assessmentLocal: sl(),
-      assignmentLocal: sl(),
-      materialLocal: sl(),
-      classRemote: sl(),
-      assessmentRemote: sl(),
-      assignmentRemote: sl(),
-      materialRemote: sl(),
+      validator: sl<DataValidator>(),
+      classLocal: sl<ClassLocalDataSource>(),
+      assessmentLocal: sl<AssessmentLocalDataSource>(),
+      assignmentLocal: sl<AssignmentLocalDataSource>(),
+      materialLocal: sl<LearningMaterialLocalDataSource>(),
+      classRemote: sl<ClassRemoteDataSource>(),
+      assessmentRemote: sl<AssessmentRemoteDataSource>(),
+      assignmentRemote: sl<AssignmentRemoteDataSource>(),
+      materialRemote: sl<LearningMaterialRemoteDataSource>(),
     ),
   );
 
   // Repositories
   sl.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(sl(), sl(), sl(), sl(), sl()),
+    () => AuthRepositoryImpl(
+      sl<AuthRemoteDataSource>(),
+      sl<AuthLocalDataSource>(),
+      sl<ServerReachabilityService>(),
+      sl<StorageService>(),
+      sl<SyncQueue>(),
+    ),
   );
   sl.registerLazySingleton<ClassRepository>(
     () => ClassRepositoryImpl(
-      remoteDataSource: sl(),
-      localDataSource: sl(),
-      validationService: sl(),
-      connectivityService: sl(),
-      entitySyncHelper: sl(),
-      syncQueue: sl(),
+      remoteDataSource: sl<ClassRemoteDataSource>(),
+      localDataSource: sl<ClassLocalDataSource>(),
+      validationService: sl<ValidationService>(),
+      connectivityService: sl<ConnectivityService>(),
+      entitySyncHelper: sl<EntitySyncHelper>(),
+      syncQueue: sl<SyncQueue>(),
     ),
   );
   sl.registerLazySingleton<AssessmentRepository>(
     () => AssessmentRepositoryImpl(
-      remoteDataSource: sl(),
-      localDataSource: sl(),
-      validationService: sl(),
-      connectivityService: sl(),
-      syncQueue: sl(),
+      remoteDataSource: sl<AssessmentRemoteDataSource>(),
+      localDataSource: sl<AssessmentLocalDataSource>(),
+      validationService: sl<ValidationService>(),
+      connectivityService: sl<ConnectivityService>(),
+      syncQueue: sl<SyncQueue>(),
     ),
   );
   sl.registerLazySingleton<AssignmentRepository>(
     () => AssignmentRepositoryImpl(
-      remoteDataSource: sl(),
-      localDataSource: sl(),
-      validationService: sl(),
-      connectivityService: sl(),
-      syncQueue: sl(),
+      remoteDataSource: sl<AssignmentRemoteDataSource>(),
+      localDataSource: sl<AssignmentLocalDataSource>(),
+      validationService: sl<ValidationService>(),
+      connectivityService: sl<ConnectivityService>(),
+      syncQueue: sl<SyncQueue>(),
     ),
   );
   sl.registerLazySingleton<LearningMaterialRepository>(
     () => LearningMaterialRepositoryImpl(
-      remoteDataSource: sl(),
-      localDataSource: sl(),
-      validationService: sl(),
-      connectivityService: sl(),
-      syncQueue: sl(),
+      remoteDataSource: sl<LearningMaterialRemoteDataSource>(),
+      localDataSource: sl<LearningMaterialLocalDataSource>(),
+      validationService: sl<ValidationService>(),
+      connectivityService: sl<ConnectivityService>(),
+      syncQueue: sl<SyncQueue>(),
     ),
   );
 
   // SyncManager (depends on all repositories)
   sl.registerSingleton<SyncManager>(
     SyncManager(
-      sl(), // ConnectivityService
-      sl(), // SyncQueue
-      sl(), // SyncRemoteDataSource
-      sl(), // LocalDatabase
+      sl<ServerReachabilityService>(), // ServerReachabilityService
+      sl<SyncQueue>(), // SyncQueue
+      sl<SyncRemoteDataSource>(), // SyncRemoteDataSource
+      sl<LocalDatabase>(), // LocalDatabase
     ),
   );
 

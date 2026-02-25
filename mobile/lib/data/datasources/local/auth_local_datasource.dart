@@ -1,6 +1,7 @@
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/auth/user_model.dart';
+import 'package:likha/data/models/auth/activity_log_model.dart';
 import 'package:sqflite/sqflite.dart';
 
 abstract class AuthLocalDataSource {
@@ -8,6 +9,9 @@ abstract class AuthLocalDataSource {
   Future<void> cacheCurrentUser(UserModel user);
   Future<List<UserModel>> getCachedAccounts();
   Future<void> cacheAccounts(List<UserModel> accounts);
+  Future<List<ActivityLogModel>> getCachedActivityLogs(String userId);
+  Future<void> cacheActivityLogs(List<ActivityLogModel> logs, String userId);
+  Future<void> clearActivityLogsForUser(String userId);
 }
 
 class AuthLocalDataSourceImpl implements AuthLocalDataSource {
@@ -92,6 +96,72 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
       });
     } catch (e) {
       throw CacheException('Failed to cache accounts: $e');
+    }
+  }
+
+  @override
+  Future<List<ActivityLogModel>> getCachedActivityLogs(String userId) async {
+    try {
+      final db = await _localDatabase.database;
+      final results = await db.query(
+        'activity_logs',
+        where: 'user_id = ?',
+        whereArgs: [userId],
+        orderBy: 'created_at DESC',
+      );
+
+      if (results.isEmpty) {
+        throw CacheException('No cached activity logs found for user: $userId');
+      }
+
+      return results.map((row) => ActivityLogModel.fromJson(row.cast<String, dynamic>())).toList();
+    } catch (e) {
+      if (e is CacheException) rethrow;
+      throw CacheException(e.toString());
+    }
+  }
+
+  @override
+  Future<void> cacheActivityLogs(List<ActivityLogModel> logs, String userId) async {
+    try {
+      final db = await _localDatabase.database;
+      await db.transaction((txn) async {
+        for (final log in logs) {
+          final map = {
+            'id': log.id,
+            'user_id': log.userId,
+            'action': log.action,
+            'performed_by': log.performedBy,
+            'details': log.details,
+            'created_at': log.createdAt.toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+            'cached_at': DateTime.now().toIso8601String(),
+            'sync_status': 'synced',
+          };
+
+          await txn.insert(
+            'activity_logs',
+            map,
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
+      });
+    } catch (e) {
+      throw CacheException('Failed to cache activity logs: $e');
+    }
+  }
+
+  @override
+  Future<void> clearActivityLogsForUser(String userId) async {
+    try {
+      final db = await _localDatabase.database;
+      await db.delete(
+        'activity_logs',
+        where: 'user_id = ?',
+        whereArgs: [userId],
+      );
+    } catch (e) {
+      throw CacheException('Failed to clear activity logs: $e');
     }
   }
 }

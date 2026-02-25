@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:likha/core/database/local_database.dart';
-import 'package:likha/core/network/connectivity_service.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/manifest_differ.dart';
 import 'package:likha/core/sync/id_reconciler.dart';
@@ -45,13 +45,13 @@ class SyncState {
 }
 
 class SyncManager {
-  final ConnectivityService _connectivityService;
+  final ServerReachabilityService _serverReachabilityService;
   final SyncQueue _syncQueue;
   final SyncRemoteDataSource _syncRemoteDataSource;
   final LocalDatabase _localDatabase;
 
   bool _isSyncing = false;
-  StreamSubscription<bool>? _connectivitySubscription;
+  StreamSubscription<bool>? _reachabilitySubscription;
   void Function(SyncState)? _stateListener;
 
   SyncState _state = const SyncState(
@@ -63,17 +63,17 @@ class SyncManager {
   SyncState get state => _state;
 
   SyncManager(
-    this._connectivityService,
+    this._serverReachabilityService,
     this._syncQueue,
     this._syncRemoteDataSource,
     this._localDatabase,
   );
 
-  /// Start sync manager - listen for connectivity changes
+  /// Start sync manager - listen for server reachability changes
   void start() {
-    _connectivitySubscription =
-        _connectivityService.onConnectivityChanged.listen((isOnline) {
-      if (isOnline && !_isSyncing) {
+    _reachabilitySubscription =
+        _serverReachabilityService.onServerReachabilityChanged.listen((isReachable) {
+      if (isReachable && !_isSyncing) {
         _runSync();
       }
     });
@@ -81,13 +81,13 @@ class SyncManager {
 
   /// Stop sync manager
   void stop() {
-    _connectivitySubscription?.cancel();
-    _connectivitySubscription = null;
+    _reachabilitySubscription?.cancel();
+    _reachabilitySubscription = null;
   }
 
   /// Manually trigger sync
   Future<void> sync() async {
-    if (_connectivityService.isOnline) {
+    if (_serverReachabilityService.isServerReachable) {
       await _runSync();
     }
   }
@@ -316,6 +316,7 @@ class SyncManager {
       'assessment_questions': 'questions',
       'class_enrollments': 'class_enrollments',
       'users': 'users',
+      'activity_logs': 'activity_logs',
     };
 
     for (final entry in entityTables.entries) {
@@ -369,6 +370,8 @@ class SyncManager {
       case 'admin_user':
       case 'users':
         return 'users';
+      case 'activity_logs':
+        return 'activity_logs';
       default:
         return entityType;
     }

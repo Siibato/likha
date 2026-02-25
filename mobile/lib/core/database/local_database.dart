@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 5,
+      version: 6,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onOpen: (db) async {
@@ -323,6 +323,23 @@ class LocalDatabase {
         )
       ''');
 
+      // Activity logs table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS activity_logs (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          action TEXT NOT NULL,
+          performed_by TEXT,
+          details TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          cached_at TEXT NOT NULL,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
+          FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+      ''');
+
       // Create indexes for common queries
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_classes_teacher_id ON classes(teacher_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_classes_updated_at ON classes(updated_at)');
@@ -351,6 +368,8 @@ class LocalDatabase {
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_sync_queue_status ON sync_queue(status)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_sync_queue_created_at ON sync_queue(created_at)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_sync_metadata_key ON sync_metadata(key)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_activity_logs_user_id ON activity_logs(user_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created_at)');
     });
   }
 
@@ -488,6 +507,42 @@ class LocalDatabase {
 
       try {
         await db.execute('CREATE INDEX IF NOT EXISTS idx_class_enrollments_updated_at ON class_enrollments(updated_at)');
+      } catch (e) {
+        // Index might already exist
+      }
+    }
+
+    if (oldVersion < 6) {
+      // Create activity_logs table if it doesn't exist
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS activity_logs (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            action TEXT NOT NULL,
+            performed_by TEXT,
+            details TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            deleted_at TEXT,
+            cached_at TEXT NOT NULL,
+            sync_status TEXT NOT NULL DEFAULT 'synced',
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+          )
+        ''');
+      } catch (e) {
+        // Table might already exist
+      }
+
+      // Create indexes for activity logs
+      try {
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_activity_logs_user_id ON activity_logs(user_id)');
+      } catch (e) {
+        // Index might already exist
+      }
+
+      try {
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created_at)');
       } catch (e) {
         // Index might already exist
       }

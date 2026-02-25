@@ -145,6 +145,9 @@ impl SyncPushService {
             "assignment_submission" => {
                 self.handle_assignment_submission_operation(user_id, op).await
             }
+            "activity_log" => {
+                self.handle_activity_log_operation(user_id, op).await
+            }
             _ => OperationResult {
                 id: op.id.clone(),
                 entity_type: op.entity_type.clone(),
@@ -1342,6 +1345,27 @@ impl SyncPushService {
                 error: Some(format!("Unknown operation: {}", op.operation)),
                 updated_at: None,
             },
+        }
+    }
+
+    /// Handle activity log operations (read-only fetch)
+    /// Activity logs are synced as part of the manifest fetch, not pushed via this endpoint
+    async fn handle_activity_log_operation(
+        &self,
+        _user_id: Uuid,
+        op: &SyncQueueEntry,
+    ) -> OperationResult {
+        // Activity logs are read-only and should only be fetched via the manifest/fetch endpoints
+        // If somehow an operation reaches here, return success to prevent sync loop failures
+        // but note that the actual activity log data comes from the fetch endpoint
+        OperationResult {
+            id: op.id.clone(),
+            entity_type: op.entity_type.clone(),
+            operation: op.operation.clone(),
+            success: true,
+            server_id: None,
+            error: None,
+            updated_at: Some(Utc::now().to_rfc3339()),
         }
     }
 }

@@ -16,6 +16,7 @@ pub struct UserManifest {
     pub assignments: Vec<ManifestEntry>,
     pub assignment_submissions: Vec<ManifestEntry>,
     pub learning_materials: Vec<ManifestEntry>,
+    pub activity_logs: Vec<ManifestEntry>,
 }
 
 impl UserManifest {
@@ -62,6 +63,11 @@ impl UserManifest {
                 "updated_at": e.updated_at.to_string(),
                 "deleted": e.deleted
             })).collect::<Vec<_>>(),
+            "activity_logs": self.activity_logs.iter().map(|e| json!({
+                "id": e.id.to_string(),
+                "updated_at": e.updated_at.to_string(),
+                "deleted": e.deleted
+            })).collect::<Vec<_>>(),
         })
     }
 }
@@ -96,8 +102,14 @@ impl EntitlementService {
             .get_user_accessible_classes(user_id, user_role)
             .await?;
 
+        // Step 0: Get activity logs for this user (admin-only or user's own logs)
+        let activity_logs = self
+            .manifest_repo
+            .get_activity_logs_manifest(user_id, user_role)
+            .await?;
+
         if accessible_class_ids.is_empty() {
-            // User has no classes - return empty manifest
+            // User has no classes - return manifest with only activity logs
             return Ok(UserManifest {
                 classes: Vec::new(),
                 enrollments: Vec::new(),
@@ -107,6 +119,7 @@ impl EntitlementService {
                 assignments: Vec::new(),
                 assignment_submissions: Vec::new(),
                 learning_materials: Vec::new(),
+                activity_logs,
             });
         }
 
@@ -178,6 +191,7 @@ impl EntitlementService {
             assignments,
             assignment_submissions,
             learning_materials,
+            activity_logs,
         })
     }
 

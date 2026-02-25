@@ -113,6 +113,10 @@ impl SyncFetchService {
             "learning_materials".to_string(),
             entitled_manifest.learning_materials.iter().map(|e| e.id).collect(),
         );
+        entitled_ids.insert(
+            "activity_logs".to_string(),
+            entitled_manifest.activity_logs.iter().map(|e| e.id).collect(),
+        );
 
         // Filter parsed_ids to only entitled IDs (silently drop unauthorized)
         let filtered_ids: HashMap<String, Vec<Uuid>> = parsed_ids
@@ -193,6 +197,13 @@ impl SyncFetchService {
                     let paginated = self
                         .manifest_repo
                         .get_materials_paginated(ids.clone(), 500)
+                        .await?;
+                    (paginated.records, paginated.has_more)
+                }
+                "activity_logs" => {
+                    let paginated = self
+                        .manifest_repo
+                        .get_activity_logs_paginated(ids.clone(), 500)
                         .await?;
                     (paginated.records, paginated.has_more)
                 }

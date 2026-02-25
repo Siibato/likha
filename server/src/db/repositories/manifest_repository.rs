@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::utils::{AppError, AppResult};
 use ::entity::{
     classes, class_enrollments, assessments, assessment_questions, assessment_submissions,
-    assignments_hw, assignment_submissions, learning_materials,
+    assignments_hw, assignment_submissions, learning_materials, activity_logs,
 };
 
 /// Record entry in the manifest (id + updated_at + deleted flag)
@@ -493,6 +493,71 @@ impl ManifestRepository {
                     "submitted_at": r.submitted_at.map(|d| d.to_string()),
                     "score": r.score,
                     "updated_at": r.updated_at.to_string(),
+                })
+            })
+            .collect();
+
+        Ok(PaginatedRecords { records, has_more })
+    }
+
+    /// Get manifest for activity logs - admin can see all, users see their own
+    pub async fn get_activity_logs_manifest(
+        &self,
+        user_id: Uuid,
+        user_role: &str,
+    ) -> AppResult<Vec<ManifestEntry>> {
+        let records = if user_role == "admin" {
+            // Admins see all activity logs
+            activity_logs::Entity::find()
+                .all(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
+        } else {
+            // Regular users see only their own activity logs
+            activity_logs::Entity::find()
+                .filter(activity_logs::Column::UserId.eq(user_id))
+                .all(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
+        };
+
+        Ok(records
+            .into_iter()
+            .map(|r| ManifestEntry {
+                id: r.id,
+                updated_at: r.created_at,
+                deleted: false, // Activity logs are never soft-deleted
+            })
+            .collect())
+    }
+
+    /// Get full paginated records for activity logs
+    pub async fn get_activity_logs_paginated(
+        &self,
+        activity_log_ids: Vec<Uuid>,
+        limit: i64,
+    ) -> AppResult<PaginatedRecords> {
+        let effective_limit = std::cmp::min(limit, 500) as u64;
+
+        let records = activity_logs::Entity::find()
+            .filter(activity_logs::Column::Id.is_in(activity_log_ids))
+            .limit(effective_limit + 1)
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        let has_more = records.len() > effective_limit as usize;
+        let records: Vec<Value> = records
+            .into_iter()
+            .take(effective_limit as usize)
+            .map(|r| {
+                json!({
+                    "id": r.id.to_string(),
+                    "user_id": r.user_id.to_string(),
+                    "action": r.action,
+                    "performed_by": r.performed_by.map(|id| id.to_string()),
+                    "details": r.details,
+                    "created_at": r.created_at.to_string(),
                 })
             })
             .collect();

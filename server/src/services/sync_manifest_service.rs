@@ -16,6 +16,7 @@ pub struct ManifestResponse {
     pub assignments: serde_json::Value,
     pub assignment_submissions: serde_json::Value,
     pub learning_materials: serde_json::Value,
+    pub activity_logs: serde_json::Value,
     pub server_time: String,
 }
 
@@ -79,6 +80,11 @@ impl SyncManifestService {
                 "deleted": e.deleted
             })).collect::<Vec<_>>()),
             learning_materials: json!(manifest.learning_materials.iter().map(|e| json!({
+                "id": e.id.to_string(),
+                "updated_at": e.updated_at.to_string(),
+                "deleted": e.deleted
+            })).collect::<Vec<_>>()),
+            activity_logs: json!(manifest.activity_logs.iter().map(|e| json!({
                 "id": e.id.to_string(),
                 "updated_at": e.updated_at.to_string(),
                 "deleted": e.deleted
