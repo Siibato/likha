@@ -4,6 +4,7 @@ use uuid::Uuid;
 
 use crate::db::repositories::activity_log_repository::ActivityLogRepository;
 use crate::db::repositories::change_log_repository::ChangeLogRepository;
+use crate::db::repositories::login_attempt_repository::LoginAttemptRepository;
 use crate::db::repositories::user_repository::UserRepository;
 use crate::schema::admin_schema::{AccountListResponse, ActivityLogListResponse, ActivityLogResponse};
 use crate::schema::auth_schema::{
@@ -20,6 +21,7 @@ pub struct AuthService {
     user_repo: UserRepository,
     activity_log_repo: ActivityLogRepository,
     change_log_repo: ChangeLogRepository,
+    login_attempt_repo: LoginAttemptRepository,
     jwt_service: JwtService,
 }
 
@@ -33,6 +35,7 @@ impl AuthService {
             user_repo: UserRepository::new(db.clone()),
             activity_log_repo: ActivityLogRepository::new(db.clone()),
             change_log_repo: ChangeLogRepository::new(db.clone()),
+            login_attempt_repo: LoginAttemptRepository::new(db.clone()),
             jwt_service: JwtService::new(jwt_secret, jwt_expiration),
         }
     }
@@ -166,7 +169,17 @@ impl AuthService {
         })
     }
 
-    pub async fn login(&self, request: LoginRequest) -> AppResult<AuthResponse> {
+    pub async fn login(&self, request: LoginRequest, ip: &str) -> AppResult<AuthResponse> {
+        // Check lockout before password verification
+        let (is_locked, remaining_seconds) = self
+            .login_attempt_repo
+            .check_lockout(&request.username, ip)
+            .await?;
+
+        if is_locked {
+            return Err(AppError::TooManyRequests(remaining_seconds));
+        }
+
         let user = self
             .user_repo
             .find_by_username(&request.username)
@@ -190,8 +203,29 @@ impl AuthService {
 
         let is_valid = PasswordService::verify_password(&request.password, password_hash)?;
         if !is_valid {
-            return Err(AppError::Unauthorized("Invalid credentials".to_string()));
+            // Record failed attempt
+            let (attempt_count, locked_until) = self
+                .login_attempt_repo
+                .record_failed_attempt(&request.username, ip)
+                .await?;
+
+            // If just locked, return TooManyRequests
+            if locked_until.is_some() {
+                return Err(AppError::TooManyRequests(300));
+            }
+
+            // Otherwise, return InvalidCredentials with remaining attempts
+            let attempts_remaining = 5 - attempt_count;
+            return Err(AppError::InvalidCredentials(
+                "Invalid password".to_string(),
+                attempts_remaining,
+            ));
         }
+
+        // Clear attempts on successful login
+        self.login_attempt_repo
+            .clear_attempts(&request.username, ip)
+            .await?;
 
         let access_token = self
             .jwt_service

@@ -83,6 +83,10 @@ class AuthRepositoryImpl implements AuthRepository {
         deviceId: deviceId,
       );
       return Right(result.user);
+    } on TooManyRequestsException catch (e) {
+      return Left(TooManyRequestsFailure(e.message, remainingSeconds: e.remainingSeconds));
+    } on InvalidCredentialsException catch (e) {
+      return Left(InvalidCredentialsFailure(e.message, attemptsRemaining: e.attemptsRemaining));
     } on ActivationRequiredException catch (e) {
       return Left(ActivationRequiredFailure(
         e.message,

@@ -104,12 +104,22 @@ async fn main() {
                 println!("Database reset complete");
                 return;
             }
+            "clear-invalid-attempts" => {
+                let db = db::establish_connection(&config.database_url)
+                    .await
+                    .expect("Failed to connect to database");
+                let repo = crate::db::repositories::login_attempt_repository::LoginAttemptRepository::new(db);
+                repo.clear_all_attempts().await.expect("Failed to clear attempts");
+                println!("All login attempt records cleared.");
+                return;
+            }
             other => {
                 eprintln!("Unknown command: {}", other);
                 eprintln!("Available commands:");
-                eprintln!("  create-db   Create the database and run migrations");
-                eprintln!("  delete-db   Delete the database file");
-                eprintln!("  reset-db    Delete and recreate the database");
+                eprintln!("  create-db               Create the database and run migrations");
+                eprintln!("  delete-db               Delete the database file");
+                eprintln!("  reset-db                Delete and recreate the database");
+                eprintln!("  clear-invalid-attempts  Clear all login attempt records");
                 std::process::exit(1);
             }
         }
@@ -197,7 +207,7 @@ async fn main() {
         .await
         .expect("Failed to bind to address");
 
-    axum::serve(listener, app)
+    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
         .await
         .expect("Failed to start server");
 }

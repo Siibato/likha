@@ -125,12 +125,32 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
       return authResponse;
     } on DioException catch (e) {
+      // Handle 429 Too Many Requests (lockout)
+      if (e.response?.statusCode == 429) {
+        final data = e.response?.data;
+        final secs = data?['remaining_seconds'] as int? ?? 300;
+        throw TooManyRequestsException(
+          data?['message'] ?? 'Too many failed attempts',
+          remainingSeconds: secs,
+        );
+      }
       // Handle 409 Conflict (activation required)
       if (e.response?.statusCode == 409) {
         throw ActivationRequiredException(
           e.response?.data['message'] ?? 'Account requires activation',
           username: username,
         );
+      }
+      // Handle 401 Unauthorized with attempts_remaining (invalid password)
+      if (e.response?.statusCode == 401) {
+        final data = e.response?.data;
+        final remaining = data?['attempts_remaining'] as int?;
+        if (remaining != null) {
+          throw InvalidCredentialsException(
+            data?['message'] ?? 'Invalid password',
+            attemptsRemaining: remaining,
+          );
+        }
       }
       throw _dioClient.handleError(e);
     }
