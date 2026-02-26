@@ -3,12 +3,22 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/connectivity_service.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/network/dio_client.dart';
+import 'package:likha/core/sync/change_log_applier.dart';
+import 'package:likha/core/sync/change_log_remote_datasource.dart';
+import 'package:likha/core/sync/change_log_repository.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/domain/assessments/data/datasources/assessment_local_datasource.dart';
-import 'package:likha/domain/assessments/data/datasources/assessment_remote_datasource.dart';
-import 'package:likha/domain/assessments/data/repositories/assessment_repository_impl.dart';
+import 'package:likha/core/sync/entity_sync_helper.dart';
+import 'package:likha/core/validation/services/validation_service.dart';
+import 'package:likha/core/validation/services/data_validator.dart';
+import 'package:likha/core/validation/services/timestamp_validator.dart';
+import 'package:likha/core/validation/data_sources/validation_remote_datasource.dart';
+import 'package:likha/core/validation/repositories/validation_metadata_repository.dart';
+import 'package:likha/data/datasources/local/assessment_local_datasource.dart';
+import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';
+import 'package:likha/data/repositories/assessment_repository_impl.dart';
 import 'package:likha/domain/assessments/repositories/assessment_repository.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
 import 'package:likha/domain/assessments/usecases/create_assessment.dart';
@@ -28,9 +38,9 @@ import 'package:likha/domain/assessments/usecases/submit_assessment.dart';
 import 'package:likha/domain/assessments/usecases/update_assessment.dart';
 import 'package:likha/domain/assessments/usecases/update_question.dart';
 import 'package:likha/domain/assessments/usecases/delete_question.dart';
-import 'package:likha/domain/assignments/data/datasources/assignment_local_datasource.dart';
-import 'package:likha/domain/assignments/data/datasources/assignment_remote_datasource.dart';
-import 'package:likha/domain/assignments/data/repositories/assignment_repository_impl.dart';
+import 'package:likha/data/datasources/local/assignment_local_datasource.dart';
+import 'package:likha/data/datasources/remote/assignment_remote_datasource.dart';
+import 'package:likha/data/repositories/assignment_repository_impl.dart';
 import 'package:likha/domain/assignments/repositories/assignment_repository.dart';
 import 'package:likha/domain/assignments/usecases/create_assignment.dart';
 import 'package:likha/domain/assignments/usecases/create_submission.dart';
@@ -47,9 +57,9 @@ import 'package:likha/domain/assignments/usecases/return_submission.dart';
 import 'package:likha/domain/assignments/usecases/submit_assignment.dart';
 import 'package:likha/domain/assignments/usecases/update_assignment.dart';
 import 'package:likha/domain/assignments/usecases/upload_file.dart';
-import 'package:likha/domain/auth/data/datasources/auth_local_datasource.dart';
-import 'package:likha/domain/auth/data/datasources/auth_remote_datasource.dart';
-import 'package:likha/domain/auth/data/repositories/auth_repository_impl.dart';
+import 'package:likha/data/datasources/local/auth_local_datasource.dart';
+import 'package:likha/data/datasources/remote/auth_remote_datasource.dart';
+import 'package:likha/data/repositories/auth_repository_impl.dart';
 import 'package:likha/domain/auth/repositories/auth_repository.dart';
 import 'package:likha/domain/auth/usecases/activate_account.dart';
 import 'package:likha/domain/auth/usecases/check_username.dart';
@@ -62,9 +72,9 @@ import 'package:likha/domain/auth/usecases/login.dart';
 import 'package:likha/domain/auth/usecases/logout.dart';
 import 'package:likha/domain/auth/usecases/reset_account.dart';
 import 'package:likha/domain/auth/usecases/update_account.dart';
-import 'package:likha/domain/classes/data/datasources/class_local_datasource.dart';
-import 'package:likha/domain/classes/data/datasources/class_remote_datasource.dart';
-import 'package:likha/domain/classes/data/repositories/class_repository_impl.dart';
+import 'package:likha/data/datasources/local/class_local_datasource.dart';
+import 'package:likha/data/datasources/remote/class_remote_datasource.dart';
+import 'package:likha/data/repositories/class_repository_impl.dart';
 import 'package:likha/domain/classes/repositories/class_repository.dart';
 import 'package:likha/domain/classes/usecases/add_student.dart';
 import 'package:likha/domain/classes/usecases/create_class.dart';
@@ -73,9 +83,10 @@ import 'package:likha/domain/classes/usecases/get_my_classes.dart';
 import 'package:likha/domain/classes/usecases/remove_student.dart';
 import 'package:likha/domain/classes/usecases/search_students.dart';
 import 'package:likha/domain/classes/usecases/update_class.dart';
-import 'package:likha/domain/learning_materials/data/datasources/learning_material_local_datasource.dart';
-import 'package:likha/domain/learning_materials/data/datasources/learning_material_remote_datasource.dart';
-import 'package:likha/domain/learning_materials/data/repositories/learning_material_repository_impl.dart';
+import 'package:likha/data/datasources/local/learning_material_local_datasource.dart';
+import 'package:likha/data/datasources/remote/learning_material_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';
+import 'package:likha/data/repositories/learning_material_repository_impl.dart';
 import 'package:likha/domain/learning_materials/repositories/learning_material_repository.dart';
 import 'package:likha/domain/learning_materials/usecases/create_material.dart';
 import 'package:likha/domain/learning_materials/usecases/delete_file.dart' as material;
@@ -111,66 +122,158 @@ Future<void> init() async {
   await sl<ConnectivityService>().initialize();
 
   // Core - Sync infrastructure
-  sl.registerLazySingleton<SyncQueue>(() => SyncQueueImpl(sl()));
+  sl.registerLazySingleton<SyncQueue>(() => SyncQueueImpl(sl<LocalDatabase>()));
+  sl.registerLazySingleton<ChangeLogRepository>(
+    () => ChangeLogRepository(sl<LocalDatabase>()),
+  );
+  sl.registerLazySingleton<ChangeLogApplier>(
+    () => ChangeLogApplier(sl<LocalDatabase>()),
+  );
+  sl.registerLazySingleton<EntitySyncHelper>(
+    () => EntitySyncHelper(
+      localDatabase: sl<LocalDatabase>(),
+      changeLogRemoteDataSource: sl<ChangeLogRemoteDataSource>(),
+      changeLogApplier: sl<ChangeLogApplier>(),
+    ),
+  );
 
   // Core - General
-  sl.registerLazySingleton(() => StorageService(sl()));
-  sl.registerLazySingleton(() => DioClient(sl()));
+  sl.registerLazySingleton(() => StorageService(sl<FlutterSecureStorage>()));
+  sl.registerLazySingleton(() => DioClient(sl<StorageService>()));
+
+  // Core - Server Reachability (for offline detection, depends on DioClient)
+  sl.registerSingleton<ServerReachabilityService>(
+    ServerReachabilityServiceImpl(sl<DioClient>().dio),
+  );
+  await sl<ServerReachabilityService>().initialize();
 
   // Remote Data sources
+  sl.registerLazySingleton<ChangeLogRemoteDataSource>(
+    () => ChangeLogRemoteDataSourceImpl(sl<DioClient>()),
+  );
   sl.registerLazySingleton<AuthRemoteDataSource>(
-    () => AuthRemoteDataSourceImpl(sl(), sl()),
+    () => AuthRemoteDataSourceImpl(sl<DioClient>(), sl<StorageService>()),
   );
   sl.registerLazySingleton<ClassRemoteDataSource>(
-    () => ClassRemoteDataSourceImpl(sl()),
+    () => ClassRemoteDataSourceImpl(sl<DioClient>()),
   );
   sl.registerLazySingleton<AssessmentRemoteDataSource>(
-    () => AssessmentRemoteDataSourceImpl(sl()),
+    () => AssessmentRemoteDataSourceImpl(sl<DioClient>()),
   );
   sl.registerLazySingleton<AssignmentRemoteDataSource>(
-    () => AssignmentRemoteDataSourceImpl(sl()),
+    () => AssignmentRemoteDataSourceImpl(sl<DioClient>()),
   );
   sl.registerLazySingleton<LearningMaterialRemoteDataSource>(
-    () => LearningMaterialRemoteDataSourceImpl(sl()),
+    () => LearningMaterialRemoteDataSourceImpl(sl<DioClient>()),
+  );
+  sl.registerLazySingleton<SyncRemoteDataSource>(
+    () => SyncRemoteDataSourceImpl(dioClient: sl<DioClient>()),
   );
 
   // Local Data sources
   sl.registerLazySingleton<AuthLocalDataSource>(
-    () => AuthLocalDataSourceImpl(sl()),
+    () => AuthLocalDataSourceImpl(sl<LocalDatabase>()),
   );
   sl.registerLazySingleton<ClassLocalDataSource>(
-    () => ClassLocalDataSourceImpl(sl(), sl()),
+    () => ClassLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
   );
   sl.registerLazySingleton<AssessmentLocalDataSource>(
-    () => AssessmentLocalDataSourceImpl(sl(), sl()),
+    () => AssessmentLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
   );
   sl.registerLazySingleton<AssignmentLocalDataSource>(
-    () => AssignmentLocalDataSourceImpl(sl(), sl()),
+    () => AssignmentLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
   );
   sl.registerLazySingleton<LearningMaterialLocalDataSource>(
-    () => LearningMaterialLocalDataSourceImpl(sl(), sl()),
+    () => LearningMaterialLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
+  );
+
+  // Validation services
+  sl.registerLazySingleton<ValidationRemoteDataSource>(
+    () => ValidationRemoteDataSourceImpl(sl<DioClient>()),
+  );
+
+  sl.registerLazySingleton<ValidationMetadataRepository>(
+    () => ValidationMetadataRepositoryImpl(sl<LocalDatabase>()),
+  );
+
+  sl.registerLazySingleton<DataValidator>(
+    () => TimestampValidator(
+      remoteDataSource: sl<ValidationRemoteDataSource>(),
+      metadataRepository: sl<ValidationMetadataRepository>(),
+      connectivityService: sl<ConnectivityService>(),
+    ),
+  );
+
+  sl.registerLazySingleton<ValidationService>(
+    () => ValidationService(
+      validator: sl<DataValidator>(),
+      classLocal: sl<ClassLocalDataSource>(),
+      assessmentLocal: sl<AssessmentLocalDataSource>(),
+      assignmentLocal: sl<AssignmentLocalDataSource>(),
+      materialLocal: sl<LearningMaterialLocalDataSource>(),
+      classRemote: sl<ClassRemoteDataSource>(),
+      assessmentRemote: sl<AssessmentRemoteDataSource>(),
+      assignmentRemote: sl<AssignmentRemoteDataSource>(),
+      materialRemote: sl<LearningMaterialRemoteDataSource>(),
+    ),
   );
 
   // Repositories
   sl.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(sl(), sl(), sl(), sl()),
+    () => AuthRepositoryImpl(
+      sl<AuthRemoteDataSource>(),
+      sl<AuthLocalDataSource>(),
+      sl<ServerReachabilityService>(),
+      sl<StorageService>(),
+      sl<SyncQueue>(),
+    ),
   );
   sl.registerLazySingleton<ClassRepository>(
-    () => ClassRepositoryImpl(sl()),
+    () => ClassRepositoryImpl(
+      remoteDataSource: sl<ClassRemoteDataSource>(),
+      localDataSource: sl<ClassLocalDataSource>(),
+      validationService: sl<ValidationService>(),
+      connectivityService: sl<ConnectivityService>(),
+      entitySyncHelper: sl<EntitySyncHelper>(),
+      syncQueue: sl<SyncQueue>(),
+    ),
   );
   sl.registerLazySingleton<AssessmentRepository>(
-    () => AssessmentRepositoryImpl(sl()),
+    () => AssessmentRepositoryImpl(
+      remoteDataSource: sl<AssessmentRemoteDataSource>(),
+      localDataSource: sl<AssessmentLocalDataSource>(),
+      validationService: sl<ValidationService>(),
+      connectivityService: sl<ConnectivityService>(),
+      syncQueue: sl<SyncQueue>(),
+    ),
   );
   sl.registerLazySingleton<AssignmentRepository>(
-    () => AssignmentRepositoryImpl(sl()),
+    () => AssignmentRepositoryImpl(
+      remoteDataSource: sl<AssignmentRemoteDataSource>(),
+      localDataSource: sl<AssignmentLocalDataSource>(),
+      validationService: sl<ValidationService>(),
+      connectivityService: sl<ConnectivityService>(),
+      syncQueue: sl<SyncQueue>(),
+    ),
   );
   sl.registerLazySingleton<LearningMaterialRepository>(
-    () => LearningMaterialRepositoryImpl(sl()),
+    () => LearningMaterialRepositoryImpl(
+      remoteDataSource: sl<LearningMaterialRemoteDataSource>(),
+      localDataSource: sl<LearningMaterialLocalDataSource>(),
+      validationService: sl<ValidationService>(),
+      connectivityService: sl<ConnectivityService>(),
+      syncQueue: sl<SyncQueue>(),
+    ),
   );
 
   // SyncManager (depends on all repositories)
   sl.registerSingleton<SyncManager>(
-    SyncManager(sl(), sl(), sl(), sl(), sl(), sl(), sl()),
+    SyncManager(
+      sl<ServerReachabilityService>(), // ServerReachabilityService
+      sl<SyncQueue>(), // SyncQueue
+      sl<SyncRemoteDataSource>(), // SyncRemoteDataSource
+      sl<LocalDatabase>(), // LocalDatabase
+    ),
   );
 
   // Auth use cases

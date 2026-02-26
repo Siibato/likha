@@ -42,3 +42,21 @@ class ActivationRequiredFailure extends Failure {
   @override
   List<Object> get props => [message, username];
 }
+
+class TooManyRequestsFailure extends Failure {
+  final int remainingSeconds;
+
+  const TooManyRequestsFailure(super.message, {required this.remainingSeconds});
+
+  @override
+  List<Object> get props => [message, remainingSeconds];
+}
+
+class InvalidCredentialsFailure extends Failure {
+  final int attemptsRemaining;
+
+  const InvalidCredentialsFailure(super.message, {required this.attemptsRemaining});
+
+  @override
+  List<Object> get props => [message, attemptsRemaining];
+}

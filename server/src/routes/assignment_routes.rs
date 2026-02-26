@@ -19,6 +19,10 @@ pub fn routes(assignment_service: Arc<AssignmentService>) -> Router {
             get(assignment_handler::get_assignments),
         )
         .route(
+            "/assignments/metadata",
+            get(assignment_handler::get_assignments_metadata),
+        )
+        .route(
             "/classes/{class_id}/student-assignments",
             get(assignment_handler::get_student_assignments),
         )

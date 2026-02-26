@@ -22,7 +22,16 @@ use crate::services::assignment_service::AssignmentService;
 use crate::services::auth_service::AuthService;
 use crate::services::class_service::ClassService;
 use crate::services::learning_material_service::LearningMaterialService;
-use crate::services::sync_service::SyncService;
+use crate::services::entitlement_service::EntitlementService;
+use crate::services::sync_manifest_service::SyncManifestService;
+use crate::services::sync_fetch_service::SyncFetchService;
+use crate::services::sync_push_service::SyncPushService;
+use crate::services::sync_conflict_service::SyncConflictService;
+use crate::db::repositories::{
+    manifest_repository::ManifestRepository,
+    sync_cursor_repository::SyncCursorRepository,
+    sync_conflict_repository::SyncConflictRepository,
+};
 
 #[tokio::main]
 async fn main() {
@@ -66,6 +75,7 @@ async fn main() {
                     .await
                     .expect("Failed to connect to database");
                 run_migrations(&db).await.expect("Failed to run migrations");
+                create_or_update_database_id(&db).await.expect("Failed to create database ID");
                 seed_admin(&db).await.expect("Failed to seed admin account");
                 println!("Database created and migrations applied successfully");
                 return;
@@ -89,16 +99,27 @@ async fn main() {
                     .await
                     .expect("Failed to connect to database");
                 run_migrations(&db).await.expect("Failed to run migrations");
+                create_or_update_database_id(&db).await.expect("Failed to create database ID");
                 seed_admin(&db).await.expect("Failed to seed admin account");
                 println!("Database reset complete");
+                return;
+            }
+            "clear-invalid-attempts" => {
+                let db = db::establish_connection(&config.database_url)
+                    .await
+                    .expect("Failed to connect to database");
+                let repo = crate::db::repositories::login_attempt_repository::LoginAttemptRepository::new(db);
+                repo.clear_all_attempts().await.expect("Failed to clear attempts");
+                println!("All login attempt records cleared.");
                 return;
             }
             other => {
                 eprintln!("Unknown command: {}", other);
                 eprintln!("Available commands:");
-                eprintln!("  create-db   Create the database and run migrations");
-                eprintln!("  delete-db   Delete the database file");
-                eprintln!("  reset-db    Delete and recreate the database");
+                eprintln!("  create-db               Create the database and run migrations");
+                eprintln!("  delete-db               Delete the database file");
+                eprintln!("  reset-db                Delete and recreate the database");
+                eprintln!("  clear-invalid-attempts  Clear all login attempt records");
                 std::process::exit(1);
             }
         }
@@ -134,15 +155,37 @@ async fn main() {
     let assignment_service = Arc::new(AssignmentService::new(db.clone()));
     let material_service = Arc::new(LearningMaterialService::new(db.clone()));
 
-    // Initialize sync service
-    let sync_service = Arc::new(SyncService::new(
-        db.clone(),
-        auth_service.clone(),
+    // Initialize new offline-first sync services
+    let entitlement_repo = crate::db::repositories::entitlement_repository::EntitlementRepository::new(db.clone());
+    let manifest_repo = ManifestRepository::new(db.clone());
+
+    let entitlement_service = Arc::new(EntitlementService::new(
+        entitlement_repo,
+        manifest_repo.clone(),
+    ));
+
+    let sync_manifest_service = Arc::new(SyncManifestService::new(
+        entitlement_service.clone(),
+    ));
+
+    let cursor_repo = SyncCursorRepository::new(db.clone());
+    let sync_fetch_service = Arc::new(SyncFetchService::new(
+        entitlement_service.clone(),
+        manifest_repo.clone(),
+        cursor_repo,
+    ));
+
+    let sync_push_service = Arc::new(SyncPushService::new(
+        entitlement_service.clone(),
         class_service.clone(),
         assessment_service.clone(),
         assignment_service.clone(),
         material_service.clone(),
+        auth_service.clone(),
     ));
+
+    let conflict_repo = SyncConflictRepository::new(db.clone());
+    let sync_conflict_service = Arc::new(SyncConflictService::new(conflict_repo));
 
     let app = create_app(
         auth_service,
@@ -150,7 +193,10 @@ async fn main() {
         assessment_service,
         assignment_service,
         material_service,
-        sync_service,
+        sync_manifest_service,
+        sync_fetch_service,
+        sync_push_service,
+        sync_conflict_service,
     );
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
@@ -161,7 +207,7 @@ async fn main() {
         .await
         .expect("Failed to bind to address");
 
-    axum::serve(listener, app)
+    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
         .await
         .expect("Failed to start server");
 }
@@ -172,7 +218,10 @@ fn create_app(
     assessment_service: Arc<AssessmentService>,
     assignment_service: Arc<AssignmentService>,
     material_service: Arc<LearningMaterialService>,
-    sync_service: Arc<SyncService>,
+    sync_manifest_service: Arc<SyncManifestService>,
+    sync_fetch_service: Arc<SyncFetchService>,
+    sync_push_service: Arc<SyncPushService>,
+    sync_conflict_service: Arc<SyncConflictService>,
 ) -> Router {
     let cors = CorsLayer::new()
         .allow_origin(Any)
@@ -188,7 +237,10 @@ fn create_app(
                 assessment_service,
                 assignment_service,
                 material_service,
-                sync_service,
+                sync_manifest_service,
+                sync_fetch_service,
+                sync_push_service,
+                sync_conflict_service,
             ),
         )
         .layer(cors)
@@ -236,6 +288,29 @@ async fn seed_admin(db: &DatabaseConnection) -> Result<(), sea_orm::DbErr> {
 
     admin.insert(db).await?;
     tracing::info!("Default admin account created (username: admin, status: pending_activation)");
+
+    Ok(())
+}
+
+async fn create_or_update_database_id(db: &DatabaseConnection) -> Result<(), sea_orm::DbErr> {
+    use ::entity::database_metadata;
+
+    // Generate a unique database ID using UUID + timestamp
+    let database_id = format!("{}-{}", Uuid::new_v4(), Utc::now().timestamp());
+
+    // Delete existing metadata (we only keep one record)
+    database_metadata::Entity::delete_many().exec(db).await?;
+
+    // Insert new metadata with fresh database ID
+    let metadata = database_metadata::ActiveModel {
+        id: Set(1),
+        database_id: Set(database_id.clone()),
+        created_at: Set(Utc::now()),
+        updated_at: Set(Utc::now()),
+    };
+
+    metadata.insert(db).await?;
+    tracing::info!("Database ID created: {}", database_id);
 
     Ok(())
 }

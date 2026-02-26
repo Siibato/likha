@@ -13,10 +13,12 @@ enum SyncEntityType {
   assignmentSubmission,
   submissionFile,
   learningMaterial,
-  materialFile
+  materialFile,
+  adminUser,
+  activityLog
 }
 
-enum SyncOperation { create, update, delete, submit, upload, publish }
+enum SyncOperation { create, update, delete, submit, grade, publish, upload, saveAnswers }
 
 enum SyncStatus { pending, failed }
 

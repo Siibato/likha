@@ -301,3 +301,13 @@ pub async fn get_student_results(
         Err(e) => e.into_response(),
     }
 }
+
+pub async fn get_assessments_metadata(
+    State(service): State<Arc<AssessmentService>>,
+    _auth_user: AuthUser,
+) -> impl IntoResponse {
+    match service.get_assessments_metadata().await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}

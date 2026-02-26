@@ -1,9 +1,10 @@
 use axum::{
-    extract::State,
+    extract::{ConnectInfo, State},
     http::StatusCode,
     response::IntoResponse,
     Json,
 };
+use std::net::SocketAddr;
 use std::sync::Arc;
 
 use crate::schema::auth_schema::{
@@ -34,10 +35,12 @@ pub async fn activate(
 }
 
 pub async fn login(
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
     State(auth_service): State<Arc<AuthService>>,
     Json(request): Json<LoginRequest>,
 ) -> impl IntoResponse {
-    match auth_service.login(request).await {
+    let ip = addr.ip().to_string();
+    match auth_service.login(request, &ip).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }

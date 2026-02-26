@@ -70,6 +70,9 @@ abstract class AssessmentRepository {
   // Student: Taking Assessments
   ResultFuture<StartSubmissionResult> startAssessment({
     required String assessmentId,
+    required String studentId,
+    required String studentName,
+    required String studentUsername,
   });
 
   ResultVoid saveAnswers({

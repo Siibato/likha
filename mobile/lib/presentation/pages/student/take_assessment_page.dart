@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/domain/assessments/data/models/question_model.dart';
+import 'package:likha/data/models/assessments/question_model.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/domain/assessments/usecases/save_answers.dart';
 import 'package:likha/presentation/pages/student/widgets/assessment_timer_badge.dart';
@@ -10,6 +10,7 @@ import 'package:likha/presentation/pages/student/widgets/assessment_question_car
 import 'package:likha/presentation/pages/student/widgets/assessment_submit_section.dart';
 import 'package:likha/presentation/pages/student/widgets/assessment_dialogs.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/providers/auth_provider.dart';
 
 class TakeAssessmentPage extends ConsumerStatefulWidget {
   final String assessmentId;
@@ -67,9 +68,17 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
   }
 
   Future<void> _startAssessment() async {
+    // Read current user from auth state
+    final user = ref.read(authProvider).user;
+
     await ref
         .read(assessmentProvider.notifier)
-        .startAssessment(widget.assessmentId);
+        .startAssessment(
+          widget.assessmentId,
+          user?.id       ?? '',
+          user?.fullName ?? '',
+          user?.username ?? '',
+        );
 
     final state = ref.read(assessmentProvider);
     if (state.startResult != null) {

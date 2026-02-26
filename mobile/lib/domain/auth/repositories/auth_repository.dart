@@ -1,5 +1,5 @@
 import 'package:likha/core/utils/typedef.dart';
-import 'package:likha/domain/admin/entities/activity_log.dart';
+import 'package:likha/domain/auth/entities/activity_log.dart';
 import 'package:likha/domain/auth/entities/check_username_result.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 

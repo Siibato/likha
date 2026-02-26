@@ -34,3 +34,17 @@ class ActivationRequiredException implements Exception {
     this.fullName,
   });
 }
+
+class TooManyRequestsException implements Exception {
+  final String message;
+  final int remainingSeconds;
+
+  TooManyRequestsException(this.message, {required this.remainingSeconds});
+}
+
+class InvalidCredentialsException implements Exception {
+  final String message;
+  final int attemptsRemaining;
+
+  InvalidCredentialsException(this.message, {required this.attemptsRemaining});
+}

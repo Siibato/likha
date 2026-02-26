@@ -41,6 +41,7 @@ impl AssessmentRepository {
             total_points: Set(0),
             created_at: Set(Utc::now().naive_utc()),
             updated_at: Set(Utc::now().naive_utc()),
+            deleted_at: Set(None),
         };
 
         assessment
@@ -202,6 +203,8 @@ impl AssessmentRepository {
             order_index: Set(order_index),
             is_multi_select: Set(is_multi_select),
             created_at: Set(Utc::now().naive_utc()),
+            updated_at: Set(Utc::now().naive_utc()),
+            deleted_at: Set(None),
         };
 
         question
@@ -420,5 +423,28 @@ impl AssessmentRepository {
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+    }
+
+    pub async fn find_all(&self) -> AppResult<Vec<assessments::Model>> {
+        assessments::Entity::find()
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+    }
+
+    pub async fn soft_delete(&self, id: Uuid) -> AppResult<()> {
+        let assessment = assessments::ActiveModel {
+            id: Set(id),
+            deleted_at: Set(Some(Utc::now().naive_utc())),
+            updated_at: Set(Utc::now().naive_utc()),
+            ..Default::default()
+        };
+
+        assessments::Entity::update(assessment)
+            .exec(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to delete assessment: {}", e)))?;
+
+        Ok(())
     }
 }

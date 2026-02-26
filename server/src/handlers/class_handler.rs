@@ -8,7 +8,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::schema::auth_schema::MessageResponse;
-use crate::schema::class_schema::{AddStudentRequest, CreateClassRequest, SearchStudentsQuery, UpdateClassRequest};
+use crate::schema::class_schema::{AddStudentRequest, CreateClassRequest, SearchStudentsQuery, UpdateClassRequest, ClassMetadataResponse};
 use crate::schema::common::success_response;
 use crate::services::auth_service::AuthService;
 use crate::services::class_service::ClassService;
@@ -119,6 +119,16 @@ pub async fn search_students(
 ) -> impl IntoResponse {
     let search_query = query.q.unwrap_or_default();
     match auth_service.search_students(&search_query).await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+pub async fn get_classes_metadata(
+    State(class_service): State<Arc<ClassService>>,
+    auth_user: AuthUser,
+) -> impl IntoResponse {
+    match class_service.get_classes_metadata(auth_user.user_id, &auth_user.role).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }

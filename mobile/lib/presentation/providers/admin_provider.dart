@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/domain/admin/entities/activity_log.dart';
+import 'package:likha/domain/auth/entities/activity_log.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/domain/auth/usecases/create_account.dart';
 import 'package:likha/domain/auth/usecases/get_activity_logs.dart';

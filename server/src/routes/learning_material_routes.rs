@@ -19,6 +19,10 @@ pub fn routes(material_service: Arc<LearningMaterialService>) -> Router {
             get(learning_material_handler::get_materials),
         )
         .route(
+            "/materials/metadata",
+            get(learning_material_handler::get_materials_metadata),
+        )
+        .route(
             "/materials/{id}",
             get(learning_material_handler::get_material_detail),
         )

@@ -1,20 +1,21 @@
 import 'package:likha/core/constants/api_endpoint.dart';
-import 'package:likha/domain/auth/data/models/activity_log_model.dart';
-import 'package:likha/domain/auth/data/models/auth_response_model.dart';
-import 'package:likha/domain/auth/data/models/check_username_result_model.dart';
-import 'package:likha/domain/auth/data/models/user_model.dart';
-import 'package:likha/domain/assessments/data/models/assessment_model.dart';
-import 'package:likha/domain/assessments/data/models/question_model.dart';
-import 'package:likha/domain/assessments/data/models/statistics_model.dart';
-import 'package:likha/domain/assessments/data/models/submission_model.dart';
-import 'package:likha/domain/assignments/data/models/assignment_model.dart';
-import 'package:likha/domain/assignments/data/models/assignment_submission_model.dart';
-import 'package:likha/domain/assignments/data/models/submission_file_model.dart';
-import 'package:likha/domain/classes/data/models/class_detail_model.dart';
-import 'package:likha/domain/classes/data/models/class_model.dart';
-import 'package:likha/domain/learning_materials/data/models/learning_material_model.dart';
-import 'package:likha/domain/learning_materials/data/models/material_detail_model.dart';
-import 'package:likha/domain/learning_materials/data/models/material_file_model.dart';
+import 'package:likha/core/sync/change_log_model.dart';
+import 'package:likha/data/models/auth/activity_log_model.dart';
+import 'package:likha/data/models/auth/auth_response_model.dart';
+import 'package:likha/data/models/auth/check_username_result_model.dart';
+import 'package:likha/data/models/auth/user_model.dart';
+import 'package:likha/data/models/assessments/assessment_model.dart';
+import 'package:likha/data/models/assessments/question_model.dart';
+import 'package:likha/data/models/assessments/statistics_model.dart';
+import 'package:likha/data/models/assessments/submission_model.dart';
+import 'package:likha/data/models/assignments/assignment_model.dart';
+import 'package:likha/data/models/assignments/assignment_submission_model.dart';
+import 'package:likha/data/models/assignments/submission_file_model.dart';
+import 'package:likha/data/models/classes/class_detail_model.dart';
+import 'package:likha/data/models/classes/class_model.dart';
+import 'package:likha/data/models/learning_materials/learning_material_model.dart';
+import 'package:likha/data/models/learning_materials/material_detail_model.dart';
+import 'package:likha/data/models/learning_materials/material_file_model.dart';
 
 class ApiEndpoints {
   ApiEndpoints._();
@@ -97,13 +98,23 @@ class ApiEndpoints {
         .toList(),
   );
 
+  static final classesMetadata = ApiEndpoint<Map<String, dynamic>>(
+    '/api/v1/classes/metadata',
+    (json) => json as Map<String, dynamic>,
+  );
+
   static ApiEndpoint<ClassDetailModel> classDetail(String classId) =>
       ApiEndpoint<ClassDetailModel>.fromModel(
         '/api/v1/classes/$classId',
         ClassDetailModel.fromJson,
       );
 
-  static ApiEndpoint<ClassModel> classCreate(String classId) =>
+  static final classCreate = ApiEndpoint<ClassModel>.fromModel(
+    '/api/v1/classes',
+    ClassModel.fromJson,
+  );
+
+  static ApiEndpoint<ClassModel> classUpdate(String classId) =>
       ApiEndpoint<ClassModel>.fromModel(
         '/api/v1/classes/$classId',
         ClassModel.fromJson,
@@ -236,6 +247,11 @@ class ApiEndpoints {
         StudentResultModel.fromJson,
       );
 
+  static final assessmentsMetadata = ApiEndpoint<Map<String, dynamic>>(
+    '/api/v1/assessments/metadata',
+    (json) => json as Map<String, dynamic>,
+  );
+
   // ===== Assignment Endpoints =====
   static ApiEndpoint<AssignmentModel> classAssignments(String classId) =>
       ApiEndpoint<AssignmentModel>.fromModel(
@@ -337,6 +353,11 @@ class ApiEndpoints {
         (_) {},
       );
 
+  static final assignmentsMetadata = ApiEndpoint<Map<String, dynamic>>(
+    '/api/v1/assignments/metadata',
+    (json) => json as Map<String, dynamic>,
+  );
+
   // ===== Learning Material Endpoints =====
   static ApiEndpoint<LearningMaterialModel> classMaterials(String classId) =>
       ApiEndpoint<LearningMaterialModel>.fromModel(
@@ -389,4 +410,42 @@ class ApiEndpoints {
         '/api/v1/material-files/$fileId/download',
         (_) {},
       );
+
+  static final materialsMetadata = ApiEndpoint<Map<String, dynamic>>(
+    '/api/v1/materials/metadata',
+    (json) => json as Map<String, dynamic>,
+  );
+
+  // ===== Sync Endpoints (Legacy) =====
+  static ApiEndpoint<ChangesResponse> changes =
+      ApiEndpoint<ChangesResponse>.fromModel(
+    '/api/v1/changes',
+    ChangesResponse.fromJson,
+  );
+
+  static final databaseId = ApiEndpoint<Map<String, dynamic>>(
+    '/api/v1/database-id',
+    (json) => json as Map<String, dynamic>,
+  );
+
+  // ===== Manifest-Driven Sync Endpoints (New) =====
+  static final syncManifest = ApiEndpoint<Map<String, dynamic>>(
+    '/api/v1/sync/manifest',
+    (json) => json as Map<String, dynamic>,
+  );
+
+  static final syncFetch = ApiEndpoint<Map<String, dynamic>>(
+    '/api/v1/sync/fetch',
+    (json) => json as Map<String, dynamic>,
+  );
+
+  static final syncPush = ApiEndpoint<Map<String, dynamic>>(
+    '/api/v1/sync/push',
+    (json) => json as Map<String, dynamic>,
+  );
+
+  static final syncResolveConflict = ApiEndpoint<Map<String, dynamic>>(
+    '/api/v1/sync/conflicts/resolve',
+    (json) => json as Map<String, dynamic>,
+  );
 }

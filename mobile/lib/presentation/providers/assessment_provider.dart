@@ -336,9 +336,19 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
   }
 
   // Student
-  Future<void> startAssessment(String assessmentId) async {
+  Future<void> startAssessment(
+    String assessmentId,
+    String studentId,
+    String studentName,
+    String studentUsername,
+  ) async {
     state = state.copyWith(isLoading: true, clearError: true);
-    final result = await _startAssessment(assessmentId);
+    final result = await _startAssessment(StartAssessmentParams(
+      assessmentId:    assessmentId,
+      studentId:       studentId,
+      studentName:     studentName,
+      studentUsername: studentUsername,
+    ));
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),
