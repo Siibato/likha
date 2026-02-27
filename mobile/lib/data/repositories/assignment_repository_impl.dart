@@ -13,6 +13,7 @@ import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
 import 'package:likha/domain/assignments/entities/submission_file.dart';
 import 'package:likha/domain/assignments/repositories/assignment_repository.dart';
+import 'package:likha/data/models/assignments/assignment_submission_model.dart';
 import 'package:uuid/uuid.dart';
 
 class AssignmentRepositoryImpl implements AssignmentRepository {
@@ -327,15 +328,26 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
     required String assignmentId,
   }) async {
     try {
-      final result = await _remoteDataSource.getSubmissions(
-        assignmentId: assignmentId,
-      );
-      unawaited(_validationService.validateAndSync('assignments'));
-      return Right(result);
+      // Try remote first
+      try {
+        final result = await _remoteDataSource.getSubmissions(
+          assignmentId: assignmentId,
+        );
+        // Cache the result for offline access
+        await _localDataSource.cacheSubmissions(assignmentId, result.cast<SubmissionListItemModel>());
+        unawaited(_validationService.validateAndSync('assignments'));
+        return Right(result);
+      } on NetworkException {
+        // Network unavailable, fall back to cache
+        try {
+          final cached = await _localDataSource.getCachedSubmissions(assignmentId);
+          return Right(cached);
+        } on CacheException catch (e) {
+          return Left(CacheFailure(e.message));
+        }
+      }
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -673,7 +685,20 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
   @override
   ResultFuture<List<int>> downloadFile({required String fileId}) async {
     try {
+      // Check if file is cached
+      if (await _localDataSource.isFileCached(fileId)) {
+        final cachedBytes = await _localDataSource.getCachedFileBytes(fileId);
+        return Right(cachedBytes);
+      }
+
+      // Download from remote and cache
       final result = await _remoteDataSource.downloadFile(fileId: fileId);
+      // Try to cache the file (but don't fail if caching fails)
+      try {
+        await _localDataSource.cacheFileBytes(fileId, fileId, result);
+      } catch (e) {
+        // Ignore caching errors, still return the file
+      }
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

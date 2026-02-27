@@ -4,7 +4,7 @@ import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/assignments/assignment_model.dart';
-import 'package:likha/data/models/assignments/assignment_submission_model.dart';
+import 'package:likha/data/models/assignments/assignment_submission_model.dart' show AssignmentSubmissionModel, SubmissionListItemModel;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
@@ -35,6 +35,11 @@ abstract class AssignmentLocalDataSource {
     required String assignmentId,
   });
   Future<AssignmentSubmissionModel?> getCachedSubmission(String submissionId);
+  Future<List<SubmissionListItemModel>> getCachedSubmissions(String assignmentId);
+  Future<void> cacheSubmissions(String assignmentId, List<SubmissionListItemModel> submissions);
+  Future<bool> isFileCached(String fileId);
+  Future<List<int>> getCachedFileBytes(String fileId);
+  Future<void> cacheFileBytes(String fileId, String fileName, List<int> bytes);
   Future<void> clearAllCache();
 }
 
@@ -381,12 +386,144 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
   }
 
   @override
+  Future<List<SubmissionListItemModel>> getCachedSubmissions(String assignmentId) async {
+    try {
+      final db = await _localDatabase.database;
+      final results = await db.query(
+        'assignment_submissions',
+        where: 'assignment_id = ?',
+        whereArgs: [assignmentId],
+        orderBy: 'created_at DESC',
+      );
+
+      if (results.isEmpty) {
+        throw CacheException('No cached submissions for assignment $assignmentId');
+      }
+
+      return results.map((row) => SubmissionListItemModel(
+        id: row['id'] as String,
+        studentId: row['student_id'] as String,
+        studentName: row['student_name'] as String? ?? '',
+        status: row['status'] as String,
+        submittedAt: row['submitted_at'] != null ? DateTime.parse(row['submitted_at'] as String) : null,
+        isLate: (row['is_late'] as int?) == 1,
+        score: row['score'] as int?,
+      )).toList();
+    } catch (e) {
+      if (e is CacheException) rethrow;
+      throw CacheException(e.toString());
+    }
+  }
+
+  @override
+  Future<void> cacheSubmissions(String assignmentId, List<SubmissionListItemModel> submissions) async {
+    try {
+      final db = await _localDatabase.database;
+      final now = DateTime.now();
+      await db.transaction((txn) async {
+        for (final submission in submissions) {
+          await txn.insert(
+            'assignment_submissions',
+            {
+              'id': submission.id,
+              'assignment_id': assignmentId,
+              'student_id': submission.studentId,
+              'student_name': submission.studentName,
+              'status': submission.status,
+              'submitted_at': submission.submittedAt?.toIso8601String(),
+              'is_late': submission.isLate ? 1 : 0,
+              'score': submission.score,
+              'created_at': now.toIso8601String(),
+              'updated_at': now.toIso8601String(),
+              'cached_at': now.toIso8601String(),
+              'sync_status': 'synced',
+              'is_dirty': 0,
+            },
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
+      });
+    } catch (e) {
+      throw CacheException('Failed to cache submissions: $e');
+    }
+  }
+
+  @override
+  Future<bool> isFileCached(String fileId) async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final filePath = '${dir.path}/submission_file_cache/$fileId';
+      final file = File(filePath);
+      return await file.exists();
+    } catch (e) {
+      return false;
+    }
+  }
+
+  @override
+  Future<List<int>> getCachedFileBytes(String fileId) async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final filePath = '${dir.path}/submission_file_cache/$fileId';
+      final file = File(filePath);
+
+      if (!await file.exists()) {
+        throw CacheException('File $fileId not cached');
+      }
+
+      return await file.readAsBytes();
+    } catch (e) {
+      if (e is CacheException) rethrow;
+      throw CacheException('Failed to read cached file: $e');
+    }
+  }
+
+  @override
+  Future<void> cacheFileBytes(String fileId, String fileName, List<int> bytes) async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final cacheDir = Directory('${dir.path}/submission_file_cache');
+
+      if (!await cacheDir.exists()) {
+        await cacheDir.create(recursive: true);
+      }
+
+      final filePath = '${cacheDir.path}/$fileId';
+      final file = File(filePath);
+
+      await file.writeAsBytes(bytes);
+
+      // Also update database with local_path
+      final db = await _localDatabase.database;
+      await db.update(
+        'submission_files',
+        {'local_path': filePath},
+        where: 'id = ?',
+        whereArgs: [fileId],
+      );
+    } catch (e) {
+      throw CacheException('Failed to cache file: $e');
+    }
+  }
+
+  @override
   Future<void> clearAllCache() async {
     try {
       final db = await _localDatabase.database;
       await db.delete('assignments');
       await db.delete('assignment_submissions');
       await db.delete('submission_files');
+
+      // Clear file cache directory
+      try {
+        final dir = await getApplicationDocumentsDirectory();
+        final cacheDir = Directory('${dir.path}/submission_file_cache');
+        if (await cacheDir.exists()) {
+          await cacheDir.delete(recursive: true);
+        }
+      } catch (e) {
+        // Ignore file system errors
+      }
     } catch (e) {
       throw CacheException('Failed to clear assignment cache: $e');
     }

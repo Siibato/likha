@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/sync/sync_queue.dart';
+import 'package:likha/core/utils/compression_util.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -139,19 +140,21 @@ class LearningMaterialLocalDataSourceImpl implements LearningMaterialLocalDataSo
         await materialFilesDir.create(recursive: true);
       }
 
-      // Compress and save
-      final compressed = GZipEncoder().encode(bytes);
-      final filePath = '${materialFilesDir.path}/$fileId.zlib';
-      final file = File(filePath);
-      await file.writeAsBytes(compressed);
+      // Compress if file is > 5MB
+      final (dataToWrite, wasCompressed) = CompressionUtil.compressIfNeeded(bytes);
 
-      // Update database
+      final filePath = '${materialFilesDir.path}/$fileId.cache';
+      final file = File(filePath);
+      await file.writeAsBytes(dataToWrite);
+
+      // Update database with compression flag
       final db = await _localDatabase.database;
       await db.update(
         'material_files',
         {
           'local_path': filePath,
           'is_cached': 1,
+          'is_compressed': wasCompressed ? 1 : 0,
           'cached_at': DateTime.now().toIso8601String(),
         },
         where: 'id = ?',
@@ -177,14 +180,15 @@ class LearningMaterialLocalDataSourceImpl implements LearningMaterialLocalDataSo
       }
 
       final filePath = results.first['local_path'] as String;
+      final wasCompressed = (results.first['is_compressed'] as int?) == 1;
       final file = File(filePath);
 
       if (!await file.exists()) {
         throw CacheException('Cached file does not exist: $filePath');
       }
 
-      final compressed = await file.readAsBytes();
-      return GZipDecoder().decodeBytes(compressed);
+      final data = await file.readAsBytes();
+      return CompressionUtil.decompressIfNeeded(data, wasCompressed);
     } catch (e) {
       if (e is CacheException) rethrow;
       throw CacheException('Failed to get cached file: $e');
@@ -396,27 +400,5 @@ class LearningMaterialLocalDataSourceImpl implements LearningMaterialLocalDataSo
     } catch (e) {
       throw CacheException('Failed to clear learning materials cache: $e');
     }
-  }
-}
-
-// Simple GZip codec implementation using built-in compression
-class GZipEncoder {
-  List<int> encode(List<int> data) {
-    // For now, using simple compression - in production, use package:archive
-    // This is a placeholder that compresses with a simple algorithm
-    return _simpleCompress(data);
-  }
-
-  List<int> _simpleCompress(List<int> data) {
-    // Placeholder: return data as-is for now
-    // In production, implement proper gzip or use package:archive
-    return data;
-  }
-}
-
-class GZipDecoder {
-  List<int> decodeBytes(List<int> data) {
-    // Placeholder: return data as-is for now
-    return data;
   }
 }

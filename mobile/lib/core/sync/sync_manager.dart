@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
@@ -206,6 +207,19 @@ class SyncManager {
             idMappings.add(
               (entityType: entityType, localId: localId, serverId: serverId),
             );
+
+            // Special handling for questions: update main ID and reconcile nested IDs
+            if (entityType == 'question') {
+              // Update the question's main ID from local UUID to server UUID
+              await db.update(
+                'questions',
+                {'id': serverId},
+                where: 'id = ?',
+                whereArgs: [localId],
+              );
+              // Then reconcile nested choice and answer IDs
+              await _reconcileQuestionNestedIds(db, serverId, result);
+            }
           }
         }
       } else {
@@ -218,6 +232,97 @@ class SyncManager {
     // Apply ID reconciliations using IdReconciler
     if (idMappings.isNotEmpty) {
       await IdReconciler.applyToDatabase(db, idMappings);
+    }
+  }
+
+  /// Reconcile nested IDs for questions (choices, correct_answers)
+  Future<void> _reconcileQuestionNestedIds(
+    Database db,
+    String serverQuestionId,
+    OperationResultModel result,
+  ) async {
+    // Extract metadata containing ID mappings from server response
+    final metadata = result.metadata;
+    if (metadata == null) return;
+
+    // Update choice IDs in the questions table
+    final choiceMapping = metadata['choice_id_mapping'] as List<dynamic>?;
+    if (choiceMapping != null && choiceMapping.isNotEmpty) {
+      await _updateNestedIdsInJson(
+        db,
+        'questions',
+        serverQuestionId,
+        'choices_json',
+        choiceMapping,
+      );
+    }
+
+    // Update correct answer IDs in the questions table
+    final answerMapping = metadata['answer_id_mapping'] as List<dynamic>?;
+    if (answerMapping != null && answerMapping.isNotEmpty) {
+      await _updateNestedIdsInJson(
+        db,
+        'questions',
+        serverQuestionId,
+        'correct_answers_json',
+        answerMapping,
+      );
+    }
+  }
+
+  /// Update nested IDs within a JSON field (for choices or correct answers)
+  Future<void> _updateNestedIdsInJson(
+    Database db,
+    String tableName,
+    String questionId,
+    String jsonField,
+    List<dynamic> idMappings,
+  ) async {
+    try {
+      // Query the current JSON data
+      final results = await db.query(
+        tableName,
+        columns: [jsonField],
+        where: 'id = ?',
+        whereArgs: [questionId],
+      );
+
+      if (results.isEmpty) return;
+
+      final jsonStr = results.first[jsonField] as String?;
+      if (jsonStr == null || jsonStr.isEmpty) return;
+
+      // Parse JSON
+      final List<dynamic> items = jsonDecode(jsonStr) as List<dynamic>;
+
+      // Build ID mapping from list of [local_id, server_id] pairs
+      final Map<String, String> mapping = {};
+      for (final pair in idMappings) {
+        if (pair is List && pair.length == 2) {
+          mapping[pair[0] as String] = pair[1] as String;
+        }
+      }
+
+      // Update IDs in items
+      for (final item in items) {
+        if (item is Map<String, dynamic>) {
+          final oldId = item['id'] as String?;
+          if (oldId != null && mapping.containsKey(oldId)) {
+            item['id'] = mapping[oldId];
+          }
+        }
+      }
+
+      // Write back to database
+      await db.update(
+        tableName,
+        {jsonField: jsonEncode(items)},
+        where: 'id = ?',
+        whereArgs: [questionId],
+      );
+    } catch (e) {
+      // Log but don't throw - ID reconciliation failure shouldn't block sync
+      // In production, this would go to a logger
     }
   }
 
@@ -419,6 +524,18 @@ class SyncManager {
           fileName: fileName,
         );
       }
+
+      // Clean up staged file after successful upload
+      try {
+        final stagedFile = File(localPath);
+        if (await stagedFile.exists()) {
+          await stagedFile.delete();
+        }
+      } catch (cleanupError) {
+        // Log but don't fail sync if cleanup fails
+        print('Warning: Failed to cleanup staged file: $cleanupError');
+      }
+
       await _syncQueue.markSucceeded(op.id);
     } catch (e) {
       await _syncQueue.markFailed(op.id, e.toString());
@@ -442,6 +559,8 @@ class SyncManager {
   /// Maps Dart SyncOperation enum to server-expected string
   static String _operationToServer(SyncOperation op) {
     if (op == SyncOperation.saveAnswers) return 'save_answers';
+    if (op == SyncOperation.releaseResults) return 'release_results';
+    if (op == SyncOperation.overrideAnswer) return 'override_answer';
     return op.name;
   }
 }

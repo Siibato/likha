@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 6,
+      version: 8,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onOpen: (db) async {
@@ -281,6 +281,7 @@ class LocalDatabase {
           uploaded_at TEXT NOT NULL,
           local_path TEXT,
           is_cached INTEGER NOT NULL DEFAULT 0,
+          is_compressed INTEGER NOT NULL DEFAULT 0,
           deleted_at TEXT,
           cached_at TEXT NOT NULL,
           FOREIGN KEY(material_id) REFERENCES learning_materials(id) ON DELETE CASCADE
@@ -545,6 +546,44 @@ class LocalDatabase {
         await db.execute('CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created_at)');
       } catch (e) {
         // Index might already exist
+      }
+    }
+
+    if (oldVersion < 7) {
+      // Add is_compressed column to material_files for gzip compression support
+      try {
+        await db.execute('''
+          ALTER TABLE material_files ADD COLUMN is_compressed INTEGER NOT NULL DEFAULT 0
+        ''');
+      } catch (e) {
+        // Column might already exist
+      }
+    }
+
+    if (oldVersion < 8) {
+      // Create assessment_statistics_cache and student_results_cache tables for offline read caching
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS assessment_statistics_cache (
+            assessment_id TEXT PRIMARY KEY,
+            statistics_json TEXT NOT NULL,
+            cached_at TEXT NOT NULL
+          )
+        ''');
+      } catch (e) {
+        // Table might already exist
+      }
+
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS student_results_cache (
+            submission_id TEXT PRIMARY KEY,
+            results_json TEXT NOT NULL,
+            cached_at TEXT NOT NULL
+          )
+        ''');
+      } catch (e) {
+        // Table might already exist
       }
     }
   }

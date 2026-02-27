@@ -33,6 +33,9 @@ dependencies:
   # JSON serialization
   json_annotation: ^4.10.0
 
+  # File compression
+  archive: ^3.4.0
+
   # Environment configuration
   flutter_dotenv: ^5.1.0
   file_picker: ^10.3.10

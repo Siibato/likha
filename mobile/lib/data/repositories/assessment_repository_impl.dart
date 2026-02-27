@@ -14,6 +14,7 @@ import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:likha/domain/assessments/repositories/assessment_repository.dart';
+import 'package:likha/data/models/assessments/question_model.dart' show QuestionModel, ChoiceModel, CorrectAnswerModel, EnumerationItemModel, EnumerationItemAnswerModel;
 import 'package:uuid/uuid.dart';
 
 class AssessmentRepositoryImpl implements AssessmentRepository {
@@ -48,32 +49,20 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     try {
       // Check connectivity
       if (!_connectivityService.isOnline) {
-        // Offline: queue the mutation
-        final entry = SyncQueueEntry(
-          id: const Uuid().v4(),
-          entityType: SyncEntityType.assessment,
-          operation: SyncOperation.create,
-          payload: {
-            'class_id': classId,
-            'title': title,
-            if (description != null) 'description': description,
-            'time_limit_minutes': timeLimitMinutes,
-            'open_at': openAt,
-            'close_at': closeAt,
-            if (showResultsImmediately != null)
-              'show_results_immediately': showResultsImmediately,
-          },
-          status: SyncStatus.pending,
-          retryCount: 0,
-          maxRetries: 5,
-          createdAt: DateTime.now(),
+        // Offline: create assessment locally with UUID and queue sync
+        final assessmentId = await _localDataSource.createAssessmentLocally(
+          classId: classId,
+          title: title,
+          description: description,
+          timeLimitMinutes: timeLimitMinutes,
+          openAt: openAt,
+          closeAt: closeAt,
+          showResultsImmediately: showResultsImmediately,
         );
 
-        await _syncQueue.enqueue(entry);
-
-        // Return optimistic response
+        // Return optimistic response with real UUID
         return Right(Assessment(
-          id: '',
+          id: assessmentId,
           classId: classId,
           title: title,
           description: description,
@@ -241,6 +230,25 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
   @override
   ResultVoid deleteAssessment({required String assessmentId}) async {
     try {
+      // Check connectivity
+      if (!_connectivityService.isOnline) {
+        // Offline: queue the mutation
+        await _syncQueue.enqueue(
+          SyncQueueEntry(
+            id: const Uuid().v4(),
+            entityType: SyncEntityType.assessment,
+            operation: SyncOperation.delete,
+            payload: {'id': assessmentId},
+            status: SyncStatus.pending,
+            retryCount: 0,
+            maxRetries: 5,
+            createdAt: DateTime.now(),
+          ),
+        );
+        return const Right(null);
+      }
+
+      // Online: send to server
       await _remoteDataSource.deleteAssessment(assessmentId: assessmentId);
       return const Right(null);
     } on ServerException catch (e) {
@@ -257,6 +265,57 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required String assessmentId,
   }) async {
     try {
+      // Step 1: Validate assessment has at least 1 question
+      // (prevents queuing invalid state for sync)
+      try {
+        final (_, questions) = await _localDataSource.getCachedAssessmentDetail(assessmentId);
+
+        if (questions.isEmpty) {
+          return Left(ValidationFailure('Assessment must have at least one question to publish'));
+        }
+      } catch (e) {
+        return Left(CacheFailure('Cannot validate assessment: ${e.toString()}'));
+      }
+
+      // Step 2: Check connectivity
+      if (!_connectivityService.isOnline) {
+        // Offline: queue the mutation
+        final entry = SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assessment,
+          operation: SyncOperation.publish,
+          payload: {
+            'id': assessmentId,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
+        );
+
+        await _syncQueue.enqueue(entry);
+
+        // Return optimistic response
+        return Right(Assessment(
+          id: assessmentId,
+          classId: '',
+          title: '',
+          description: null,
+          timeLimitMinutes: 0,
+          openAt: DateTime.now(),
+          closeAt: DateTime.now(),
+          showResultsImmediately: false,
+          resultsReleased: false,
+          isPublished: true,  // ← Optimistic: mark as published
+          totalPoints: 0,
+          questionCount: 0,
+          submissionCount: 0,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ));
+      }
+
+      // Online: send to server
       final result = await _remoteDataSource.publishAssessment(
         assessmentId: assessmentId,
       );
@@ -275,6 +334,66 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required String assessmentId,
   }) async {
     try {
+      // Check connectivity
+      if (!_connectivityService.isOnline) {
+        // Offline: queue the mutation
+        await _syncQueue.enqueue(
+          SyncQueueEntry(
+            id: const Uuid().v4(),
+            entityType: SyncEntityType.assessment,
+            operation: SyncOperation.releaseResults,
+            payload: {'id': assessmentId},
+            status: SyncStatus.pending,
+            retryCount: 0,
+            maxRetries: 5,
+            createdAt: DateTime.now(),
+          ),
+        );
+
+        // Return optimistic response (user sees results as released)
+        try {
+          final (cached, _) = await _localDataSource.getCachedAssessmentDetail(assessmentId);
+          // Reconstruct with resultsReleased flag set
+          return Right(Assessment(
+            id: cached.id,
+            classId: cached.classId,
+            title: cached.title,
+            description: cached.description,
+            timeLimitMinutes: cached.timeLimitMinutes,
+            openAt: cached.openAt,
+            closeAt: cached.closeAt,
+            showResultsImmediately: cached.showResultsImmediately,
+            resultsReleased: true,  // ← Optimistic
+            isPublished: cached.isPublished,
+            totalPoints: cached.totalPoints,
+            questionCount: cached.questionCount,
+            submissionCount: cached.submissionCount,
+            createdAt: cached.createdAt,
+            updatedAt: cached.updatedAt,
+          ));
+        } catch (e) {
+          // If no cache available, return generic assessment
+          return Right(Assessment(
+            id: assessmentId,
+            classId: '',
+            title: '',
+            description: null,
+            timeLimitMinutes: 0,
+            openAt: DateTime.now(),
+            closeAt: DateTime.now(),
+            showResultsImmediately: false,
+            resultsReleased: true,  // ← Optimistic
+            isPublished: false,
+            totalPoints: 0,
+            questionCount: 0,
+            submissionCount: 0,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ));
+        }
+      }
+
+      // Online: send to server
       final result = await _remoteDataSource.releaseResults(
         assessmentId: assessmentId,
       );
@@ -294,6 +413,74 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required List<Map<String, dynamic>> questions,
   }) async {
     try {
+      // Check connectivity
+      if (!_connectivityService.isOnline) {
+        // Offline: Save questions locally and queue for sync
+
+        // Step 1: Create QuestionModel instances with local UUIDs
+        final questionModels = questions.map((q) {
+          final id = const Uuid().v4();
+          return QuestionModel(
+            id: id,
+            questionType: q['question_type'] as String,
+            questionText: q['question_text'] as String,
+            points: q['points'] as int,
+            orderIndex: q['order_index'] as int? ?? 0,
+            isMultiSelect: q['is_multi_select'] as bool? ?? false,
+            choices: (q['choices'] as List?)?.map((c) {
+              return ChoiceModel(
+                id: const Uuid().v4(),
+                choiceText: c['choice_text'] as String,
+                isCorrect: c['is_correct'] as bool,
+                orderIndex: c['order_index'] as int,
+              );
+            }).toList(),
+            correctAnswers: (q['correct_answers'] as List?)?.map((a) {
+              return CorrectAnswerModel(
+                id: const Uuid().v4(),
+                answerText: a is String ? a : (a as Map)['answer_text'] as String,
+              );
+            }).toList(),
+            enumerationItems: (q['enumeration_items'] as List?)?.map((e) {
+              return EnumerationItemModel(
+                id: const Uuid().v4(),
+                orderIndex: e['order_index'] as int,
+                acceptableAnswers: (e['acceptable_answers'] as List?)
+                    ?.map((a) => EnumerationItemAnswerModel(
+                          id: const Uuid().v4(),
+                          answerText: a is String ? a : (a as Map)['answer_text'] as String,
+                        ))
+                    .toList() ?? const [],
+              );
+            }).toList(),
+          );
+        }).toList();
+
+        // Step 2: Cache questions locally
+        await _localDataSource.cacheQuestions(questionModels);
+
+        // Step 3: Batch all questions for this assessment in ONE queue entry
+        final entry = SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.question,
+          operation: SyncOperation.create,
+          payload: {
+            'assessment_id': assessmentId,
+            'questions': questions,  // Full batch of questions
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
+        );
+
+        await _syncQueue.enqueue(entry);
+
+        // Step 4: Return optimistic response
+        return Right(questionModels);
+      }
+
+      // Online: send to server
       final result = await _remoteDataSource.addQuestions(
         assessmentId: assessmentId,
         questions: questions,
@@ -314,6 +501,43 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required Map<String, dynamic> data,
   }) async {
     try {
+      // Check connectivity
+      if (!_connectivityService.isOnline) {
+        // Offline: Update question locally and queue for sync
+        await _localDataSource.updateQuestionLocally(
+          questionId: questionId,
+          updates: data,
+        );
+
+        // Queue the operation with full question data
+        final entry = SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.question,
+          operation: SyncOperation.update,
+          payload: {
+            'id': questionId,
+            ...data,  // Full question data
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
+        );
+
+        await _syncQueue.enqueue(entry);
+
+        // Return optimistic response
+        return Right(Question(
+          id: questionId,
+          questionType: data['question_type'] as String? ?? '',
+          questionText: data['question_text'] as String? ?? '',
+          points: data['points'] as int? ?? 0,
+          orderIndex: data['order_index'] as int? ?? 0,
+          isMultiSelect: data['is_multi_select'] as bool? ?? false,
+        ));
+      }
+
+      // Online: send to server
       final result = await _remoteDataSource.updateQuestion(
         questionId: questionId,
         data: data,
@@ -331,6 +555,32 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
   @override
   ResultVoid deleteQuestion({required String questionId}) async {
     try {
+      // Check connectivity
+      if (!_connectivityService.isOnline) {
+        // Offline: Soft delete locally and queue for sync
+        await _localDataSource.deleteQuestionLocally(
+          questionId: questionId,
+        );
+
+        // Queue the operation
+        final entry = SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.question,
+          operation: SyncOperation.delete,
+          payload: {
+            'id': questionId,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
+        );
+
+        await _syncQueue.enqueue(entry);
+        return const Right(null);
+      }
+
+      // Online: send to server
       await _remoteDataSource.deleteQuestion(questionId: questionId);
       return const Right(null);
     } on ServerException catch (e) {
@@ -347,15 +597,26 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required String assessmentId,
   }) async {
     try {
-      final result = await _remoteDataSource.getSubmissions(
-        assessmentId: assessmentId,
-      );
-      unawaited(_validationService.validateAndSync('assessments'));
-      return Right(result);
+      // Try remote first
+      try {
+        final result = await _remoteDataSource.getSubmissions(
+          assessmentId: assessmentId,
+        );
+        // Cache the result for offline access
+        await _localDataSource.cacheSubmissions(assessmentId, result);
+        unawaited(_validationService.validateAndSync('assessments'));
+        return Right(result);
+      } on NetworkException {
+        // Network unavailable, fall back to cache
+        try {
+          final cached = await _localDataSource.getCachedSubmissions(assessmentId);
+          return Right(cached);
+        } on CacheException catch (e) {
+          return Left(CacheFailure(e.message));
+        }
+      }
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -396,6 +657,38 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required bool isCorrect,
   }) async {
     try {
+      // Check connectivity
+      if (!_connectivityService.isOnline) {
+        // Offline: queue the mutation (silent, no UI warning)
+        await _syncQueue.enqueue(
+          SyncQueueEntry(
+            id: const Uuid().v4(),
+            entityType: SyncEntityType.assessmentSubmission,
+            operation: SyncOperation.overrideAnswer,
+            payload: {
+              'answer_id': answerId,
+              'is_correct': isCorrect,
+            },
+            status: SyncStatus.pending,
+            retryCount: 0,
+            maxRetries: 5,
+            createdAt: DateTime.now(),
+          ),
+        );
+
+        // Return optimistic response
+        return Right(SubmissionAnswer(
+          id: answerId,
+          questionId: '',
+          questionText: '',
+          questionType: '',
+          points: 0,
+          isOverrideCorrect: isCorrect,
+          pointsAwarded: 0,
+        ));
+      }
+
+      // Online: send to server
       final result = await _remoteDataSource.overrideAnswer(
         answerId: answerId,
         isCorrect: isCorrect,
@@ -415,14 +708,28 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required String assessmentId,
   }) async {
     try {
-      final result = await _remoteDataSource.getStatistics(
-        assessmentId: assessmentId,
-      );
-      return Right(result);
+      // Try remote first
+      try {
+        final result = await _remoteDataSource.getStatistics(
+          assessmentId: assessmentId,
+        );
+        // Cache the result for offline access
+        await _localDataSource.cacheStatistics(result);
+        return Right(result);
+      } on NetworkException {
+        // Network unavailable, fall back to cache
+        try {
+          final cached = await _localDataSource.getCachedStatistics(assessmentId);
+          if (cached != null) {
+            return Right(cached);
+          }
+          return Left(CacheFailure('Statistics not available offline'));
+        } on CacheException catch (e) {
+          return Left(CacheFailure(e.message));
+        }
+      }
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -553,14 +860,28 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required String submissionId,
   }) async {
     try {
-      final result = await _remoteDataSource.getStudentResults(
-        submissionId: submissionId,
-      );
-      return Right(result);
+      // Try remote first
+      try {
+        final result = await _remoteDataSource.getStudentResults(
+          submissionId: submissionId,
+        );
+        // Cache the result for offline access
+        await _localDataSource.cacheStudentResults(result);
+        return Right(result);
+      } on NetworkException {
+        // Network unavailable, fall back to cache
+        try {
+          final cached = await _localDataSource.getCachedStudentResults(submissionId);
+          if (cached != null) {
+            return Right(cached);
+          }
+          return Left(const CacheFailure('Student results not available offline'));
+        } on CacheException catch (e) {
+          return Left(CacheFailure(e.message));
+        }
+      }
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

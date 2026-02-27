@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
@@ -272,6 +273,27 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
     required String fileName,
   }) async {
     try {
+      // Check connectivity
+      if (!_connectivityService.isOnline) {
+        // Offline: stage file for later upload
+        await _localDataSource.stageMaterialFileForUpload(
+          materialId: materialId,
+          fileName: fileName,
+          fileType: _mimeType(filePath),
+          fileSize: await _fileSize(filePath),
+          localPath: filePath,
+        );
+
+        // Return optimistic response
+        return Right(MaterialFile(
+          id: '',
+          fileName: fileName,
+          fileType: _mimeType(filePath),
+          fileSize: await _fileSize(filePath),
+          uploadedAt: DateTime.now(),
+        ));
+      }
+
       final result = await _remoteDataSource.uploadFile(
         materialId: materialId,
         filePath: filePath,
@@ -283,9 +305,66 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
     }
   }
 
+  /// Get MIME type from file extension
+  String _mimeType(String filePath) {
+    final extension = filePath.split('.').last.toLowerCase();
+    switch (extension) {
+      case 'pdf':
+        return 'application/pdf';
+      case 'doc':
+      case 'docx':
+        return 'application/msword';
+      case 'xls':
+      case 'xlsx':
+        return 'application/vnd.ms-excel';
+      case 'ppt':
+      case 'pptx':
+        return 'application/vnd.ms-powerpoint';
+      case 'txt':
+        return 'text/plain';
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'gif':
+        return 'image/gif';
+      case 'zip':
+        return 'application/zip';
+      default:
+        return 'application/octet-stream';
+    }
+  }
+
+  /// Get file size in bytes
+  Future<int> _fileSize(String filePath) async {
+    try {
+      final file = File(filePath);
+      return await file.length();
+    } catch (e) {
+      return 0;
+    }
+  }
+
   @override
   ResultVoid deleteFile({required String fileId}) async {
     try {
+      // Check connectivity
+      if (!_connectivityService.isOnline) {
+        // Offline: queue the delete operation
+        await _syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.materialFile,
+          operation: SyncOperation.delete,
+          payload: {'file_id': fileId},
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
+        ));
+        return const Right(null);
+      }
+
       await _remoteDataSource.deleteFile(fileId: fileId);
       return const Right(null);
     } on ServerException catch (e) {
@@ -296,7 +375,20 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
   @override
   ResultFuture<List<int>> downloadFile({required String fileId}) async {
     try {
+      // Check if file is cached first
+      if (await _localDataSource.isFileCached(fileId)) {
+        final cachedFile = await _localDataSource.getCachedFile(fileId);
+        return Right(cachedFile);
+      }
+
+      // Download from remote and cache
       final result = await _remoteDataSource.downloadFile(fileId: fileId);
+      // Try to cache the file (but don't fail if caching fails)
+      try {
+        await _localDataSource.cacheFile(fileId, fileId, result);
+      } catch (e) {
+        // Ignore caching errors, still return the file
+      }
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
