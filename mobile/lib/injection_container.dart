@@ -20,7 +20,7 @@ import 'package:likha/core/validation/data_sources/validation_remote_datasource.
 import 'package:likha/core/validation/repositories/validation_metadata_repository.dart';
 import 'package:likha/data/datasources/local/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';
-import 'package:likha/data/repositories/assessment_repository_impl.dart';
+import 'package:likha/data/repositories/assessments/assessment_repository_impl.dart';
 import 'package:likha/domain/assessments/repositories/assessment_repository.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
 import 'package:likha/domain/assessments/usecases/create_assessment.dart';
@@ -42,7 +42,7 @@ import 'package:likha/domain/assessments/usecases/update_question.dart';
 import 'package:likha/domain/assessments/usecases/delete_question.dart';
 import 'package:likha/data/datasources/local/assignment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assignment_remote_datasource.dart';
-import 'package:likha/data/repositories/assignment_repository_impl.dart';
+import 'package:likha/data/repositories/assignments/assignment_repository_impl.dart';
 import 'package:likha/domain/assignments/repositories/assignment_repository.dart';
 import 'package:likha/domain/assignments/usecases/create_assignment.dart';
 import 'package:likha/domain/assignments/usecases/create_submission.dart';
@@ -61,7 +61,7 @@ import 'package:likha/domain/assignments/usecases/update_assignment.dart';
 import 'package:likha/domain/assignments/usecases/upload_file.dart';
 import 'package:likha/data/datasources/local/auth_local_datasource.dart';
 import 'package:likha/data/datasources/remote/auth_remote_datasource.dart';
-import 'package:likha/data/repositories/auth_repository_impl.dart';
+import 'package:likha/data/repositories/auth/auth_repository_impl.dart';
 import 'package:likha/domain/auth/repositories/auth_repository.dart';
 import 'package:likha/domain/auth/usecases/activate_account.dart';
 import 'package:likha/domain/auth/usecases/check_username.dart';
@@ -76,7 +76,7 @@ import 'package:likha/domain/auth/usecases/reset_account.dart';
 import 'package:likha/domain/auth/usecases/update_account.dart';
 import 'package:likha/data/datasources/local/class_local_datasource.dart';
 import 'package:likha/data/datasources/remote/class_remote_datasource.dart';
-import 'package:likha/data/repositories/class_repository_impl.dart';
+import 'package:likha/data/repositories/classes/class_repository_impl.dart';
 import 'package:likha/domain/classes/repositories/class_repository.dart';
 import 'package:likha/domain/classes/usecases/add_student.dart';
 import 'package:likha/domain/classes/usecases/create_class.dart';
@@ -88,17 +88,20 @@ import 'package:likha/domain/classes/usecases/update_class.dart';
 import 'package:likha/data/datasources/local/learning_material_local_datasource.dart';
 import 'package:likha/data/datasources/remote/learning_material_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';
-import 'package:likha/data/repositories/learning_material_repository_impl.dart';
+import 'package:likha/data/repositories/learning_materials/learning_material_repository_impl.dart';
 import 'package:likha/domain/learning_materials/repositories/learning_material_repository.dart';
 import 'package:likha/domain/learning_materials/usecases/create_material.dart';
-import 'package:likha/domain/learning_materials/usecases/delete_file.dart' as material;
+import 'package:likha/domain/learning_materials/usecases/delete_file.dart'
+    as material;
 import 'package:likha/domain/learning_materials/usecases/delete_material.dart';
-import 'package:likha/domain/learning_materials/usecases/download_file.dart' as material;
+import 'package:likha/domain/learning_materials/usecases/download_file.dart'
+    as material;
 import 'package:likha/domain/learning_materials/usecases/get_material_detail.dart';
 import 'package:likha/domain/learning_materials/usecases/get_materials.dart';
 import 'package:likha/domain/learning_materials/usecases/reorder_material.dart';
 import 'package:likha/domain/learning_materials/usecases/update_material.dart';
-import 'package:likha/domain/learning_materials/usecases/upload_file.dart' as material;
+import 'package:likha/domain/learning_materials/usecases/upload_file.dart'
+    as material;
 import 'package:likha/services/storage_service.dart';
 
 final sl = GetIt.instance;
@@ -106,9 +109,7 @@ final sl = GetIt.instance;
 Future<void> init() async {
   // External
   const secureStorage = FlutterSecureStorage(
-    aOptions: AndroidOptions(
-      encryptedSharedPreferences: true,
-    ),
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
   sl.registerLazySingleton(() => secureStorage);
 
@@ -198,7 +199,10 @@ Future<void> init() async {
     () => AssignmentLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
   );
   sl.registerLazySingleton<LearningMaterialLocalDataSource>(
-    () => LearningMaterialLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
+    () => LearningMaterialLocalDataSourceImpl(
+      sl<LocalDatabase>(),
+      sl<SyncQueue>(),
+    ),
   );
 
   // Validation services
@@ -235,11 +239,11 @@ Future<void> init() async {
   // Repositories
   sl.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(
-      sl<AuthRemoteDataSource>(),
-      sl<AuthLocalDataSource>(),
-      sl<ServerReachabilityService>(),
-      sl<StorageService>(),
-      sl<SyncQueue>(),
+      remoteDataSource: sl<AuthRemoteDataSource>(),
+      localDataSource: sl<AuthLocalDataSource>(),
+      serverReachabilityService: sl<ServerReachabilityService>(),
+      storageService: sl<StorageService>(),
+      syncQueue: sl<SyncQueue>(),
       classLocalDataSource: sl<ClassLocalDataSource>(),
       assignmentLocalDataSource: sl<AssignmentLocalDataSource>(),
       assessmentLocalDataSource: sl<AssessmentLocalDataSource>(),
