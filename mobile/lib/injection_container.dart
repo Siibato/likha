@@ -1,6 +1,8 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
+import 'package:likha/core/constants/api_constants.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/connectivity_service.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
@@ -139,13 +141,25 @@ Future<void> init() async {
 
   // Core - General
   sl.registerLazySingleton(() => StorageService(sl<FlutterSecureStorage>()));
-  sl.registerLazySingleton(() => DioClient(sl<StorageService>()));
 
-  // Core - Server Reachability (for offline detection, depends on DioClient)
+  // Core - Server Reachability (must be before DioClient to avoid circular dependency)
+  // Standalone Dio for health checks — does NOT go through DioClient.
+  // Used only by ServerReachabilityService; not registered in the service locator.
+  final healthDio = Dio()
+    ..options.baseUrl = ApiConstants.baseUrl
+    ..options.connectTimeout = ApiConstants.connectTimeout
+    ..options.receiveTimeout = ApiConstants.receiveTimeout
+    ..options.responseType = ResponseType.json;
+
   sl.registerSingleton<ServerReachabilityService>(
-    ServerReachabilityServiceImpl(sl<DioClient>().dio),
+    ServerReachabilityServiceImpl(healthDio),
   );
   await sl<ServerReachabilityService>().initialize();
+
+  // DioClient now receives ServerReachabilityService (no circular ref).
+  sl.registerLazySingleton(
+    () => DioClient(sl<StorageService>(), sl<ServerReachabilityService>()),
+  );
 
   // Remote Data sources
   sl.registerLazySingleton<ChangeLogRemoteDataSource>(
@@ -226,6 +240,10 @@ Future<void> init() async {
       sl<ServerReachabilityService>(),
       sl<StorageService>(),
       sl<SyncQueue>(),
+      classLocalDataSource: sl<ClassLocalDataSource>(),
+      assignmentLocalDataSource: sl<AssignmentLocalDataSource>(),
+      assessmentLocalDataSource: sl<AssessmentLocalDataSource>(),
+      learningMaterialLocalDataSource: sl<LearningMaterialLocalDataSource>(),
     ),
   );
   sl.registerLazySingleton<ClassRepository>(
@@ -233,9 +251,10 @@ Future<void> init() async {
       remoteDataSource: sl<ClassRemoteDataSource>(),
       localDataSource: sl<ClassLocalDataSource>(),
       validationService: sl<ValidationService>(),
-      connectivityService: sl<ConnectivityService>(),
+      serverReachabilityService: sl<ServerReachabilityService>(),
       entitySyncHelper: sl<EntitySyncHelper>(),
       syncQueue: sl<SyncQueue>(),
+      storageService: sl<StorageService>(),
     ),
   );
   sl.registerLazySingleton<AssessmentRepository>(
@@ -245,6 +264,8 @@ Future<void> init() async {
       validationService: sl<ValidationService>(),
       connectivityService: sl<ConnectivityService>(),
       syncQueue: sl<SyncQueue>(),
+      serverReachabilityService: sl<ServerReachabilityService>(),
+      storageService: sl<StorageService>(),
     ),
   );
   sl.registerLazySingleton<AssignmentRepository>(
@@ -254,6 +275,8 @@ Future<void> init() async {
       validationService: sl<ValidationService>(),
       connectivityService: sl<ConnectivityService>(),
       syncQueue: sl<SyncQueue>(),
+      serverReachabilityService: sl<ServerReachabilityService>(),
+      storageService: sl<StorageService>(),
     ),
   );
   sl.registerLazySingleton<LearningMaterialRepository>(
@@ -263,6 +286,8 @@ Future<void> init() async {
       validationService: sl<ValidationService>(),
       connectivityService: sl<ConnectivityService>(),
       syncQueue: sl<SyncQueue>(),
+      serverReachabilityService: sl<ServerReachabilityService>(),
+      storageService: sl<StorageService>(),
     ),
   );
 

@@ -9,7 +9,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 abstract class ClassLocalDataSource {
-  Future<List<ClassModel>> getCachedClasses();
+  Future<List<ClassModel>> getCachedClasses({String? teacherId});
   Future<ClassDetailModel> getCachedClassDetail(String classId);
   Future<void> cacheClasses(List<ClassModel> classes);
   Future<void> cacheClassDetail(ClassDetailModel classDetail);
@@ -33,6 +33,11 @@ abstract class ClassLocalDataSource {
     required String classId,
     required String studentId,
   });
+  Future<UserModel?> getStudentById(String studentId);
+  Future<void> cacheSearchStudents(List<UserModel> students);
+  Future<List<UserModel>> searchCachedStudents(String query);
+  Future<Set<String>> getEnrolledStudentIds(String classId);
+  Future<ClassDetailModel?> buildClassDetailFromEnrollments(String classId);
   Future<void> clearAllCache();
 }
 
@@ -43,10 +48,20 @@ class ClassLocalDataSourceImpl implements ClassLocalDataSource {
   ClassLocalDataSourceImpl(this._localDatabase, this._syncQueue);
 
   @override
-  Future<List<ClassModel>> getCachedClasses() async {
+  Future<List<ClassModel>> getCachedClasses({String? teacherId}) async {
     try {
       final db = await _localDatabase.database;
-      final results = await db.query('classes', orderBy: 'title ASC');
+
+      // If teacherId provided, filter by that teacher
+      // Include teacher_id = '' to show offline-created items until synced
+      final results = teacherId != null
+          ? await db.query(
+              'classes',
+              where: 'teacher_id = ? OR teacher_id = ?',
+              whereArgs: [teacherId, ''],
+              orderBy: 'title ASC',
+            )
+          : await db.query('classes', orderBy: 'title ASC');
 
       if (results.isEmpty) {
         throw CacheException('No cached classes found');
@@ -122,7 +137,7 @@ class ClassLocalDataSourceImpl implements ClassLocalDataSource {
           final map = classModel.toMap();
           map['cached_at'] = DateTime.now().toIso8601String();
           map['sync_status'] = 'synced';
-          map['is_dirty'] = 0;
+          map['is_offline_mutation'] = 0;
 
           await txn.insert(
             'classes',
@@ -157,7 +172,7 @@ class ClassLocalDataSourceImpl implements ClassLocalDataSource {
 
         classMap['cached_at'] = DateTime.now().toIso8601String();
         classMap['sync_status'] = 'synced';
-        classMap['is_dirty'] = 0;
+        classMap['is_offline_mutation'] = 0;
 
         await txn.insert(
           'classes',
@@ -179,6 +194,7 @@ class ClassLocalDataSourceImpl implements ClassLocalDataSource {
               'account_status': enrollment.student.accountStatus,
               'is_active': enrollment.student.isActive ? 1 : 0,
               'enrolled_at': enrollment.enrolledAt.toIso8601String(),
+              'updated_at': DateTime.now().toIso8601String(),
               'cached_at': DateTime.now().toIso8601String(),
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
@@ -221,7 +237,7 @@ class ClassLocalDataSourceImpl implements ClassLocalDataSource {
         final map = classModel.toMap();
         map['cached_at'] = now.toIso8601String();
         map['sync_status'] = 'pending';
-        map['is_dirty'] = 1;
+        map['is_offline_mutation'] = 1;
 
         await txn.insert('classes', map);
 
@@ -268,7 +284,7 @@ class ClassLocalDataSourceImpl implements ClassLocalDataSource {
             'title': title,
             'description': description,
             'updated_at': now.toIso8601String(),
-            'is_dirty': 1,
+            'is_offline_mutation': 1,
             'sync_status': 'pending',
             'cached_at': now.toIso8601String(),
           },
@@ -323,6 +339,7 @@ class ClassLocalDataSourceImpl implements ClassLocalDataSource {
             'account_status': student.accountStatus,
             'is_active': student.isActive ? 1 : 0,
             'enrolled_at': now.toIso8601String(),
+            'updated_at': now.toIso8601String(),
             'cached_at': now.toIso8601String(),
           },
         );
@@ -331,30 +348,12 @@ class ClassLocalDataSourceImpl implements ClassLocalDataSource {
         await txn.update(
           'classes',
           {
-            'is_dirty': 1,
+            'is_offline_mutation': 1,
             'sync_status': 'pending',
             'cached_at': now.toIso8601String(),
           },
           where: 'id = ?',
           whereArgs: [classId],
-        );
-
-        // Enqueue sync
-        await _syncQueue.enqueue(
-          SyncQueueEntry(
-            id: const Uuid().v4(),
-            entityType: SyncEntityType.classEntity,
-            operation: SyncOperation.update,
-            payload: {
-              'id': classId,
-              'operation': 'add_student',
-              'student_id': student.id,
-            },
-            status: SyncStatus.pending,
-            retryCount: 0,
-            maxRetries: 5,
-            createdAt: now,
-          ),
         );
       });
     } catch (e) {
@@ -383,30 +382,12 @@ class ClassLocalDataSourceImpl implements ClassLocalDataSource {
         await txn.update(
           'classes',
           {
-            'is_dirty': 1,
+            'is_offline_mutation': 1,
             'sync_status': 'pending',
             'cached_at': now.toIso8601String(),
           },
           where: 'id = ?',
           whereArgs: [classId],
-        );
-
-        // Enqueue sync
-        await _syncQueue.enqueue(
-          SyncQueueEntry(
-            id: const Uuid().v4(),
-            entityType: SyncEntityType.classEntity,
-            operation: SyncOperation.update,
-            payload: {
-              'id': classId,
-              'operation': 'remove_student',
-              'student_id': studentId,
-            },
-            status: SyncStatus.pending,
-            retryCount: 0,
-            maxRetries: 5,
-            createdAt: now,
-          ),
         );
       });
     } catch (e) {
@@ -423,6 +404,175 @@ class ClassLocalDataSourceImpl implements ClassLocalDataSource {
       await db.delete('classes');
     } catch (e) {
       throw CacheException('Failed to clear class cache: $e');
+    }
+  }
+
+  @override
+  Future<UserModel?> getStudentById(String studentId) async {
+    try {
+      final db = await _localDatabase.database;
+      final results = await db.query(
+        'users',
+        where: 'id = ? AND is_search_cached = 1',
+        whereArgs: [studentId],
+        limit: 1,
+      );
+      if (results.isEmpty) return null;
+      return UserModel.fromMap(results.first);
+    } catch (e) {
+      throw CacheException('Failed to get student by id: $e');
+    }
+  }
+
+  @override
+  Future<void> cacheSearchStudents(List<UserModel> students) async {
+    try {
+      final db = await _localDatabase.database;
+      await db.transaction((txn) async {
+        int cachedCount = 0;
+        int skippedCount = 0;
+        for (final student in students) {
+          // Check if this ID already exists as a non-search-cached row (logged-in user)
+          final existing = await txn.query(
+            'users',
+            where: 'id = ? AND is_search_cached = 0',
+            whereArgs: [student.id],
+            limit: 1,
+          );
+          if (existing.isNotEmpty) {
+            skippedCount++;
+            continue; // never overwrite the logged-in user
+          }
+
+          // Mark this user as search-cached
+          await txn.insert(
+            'users',
+            {
+              'id': student.id,
+              'username': student.username,
+              'full_name': student.fullName,
+              'role': student.role,
+              'account_status': student.accountStatus,
+              'is_active': student.isActive ? 1 : 0,
+              'activated_at': student.activatedAt?.toIso8601String(),
+              'created_at': student.createdAt.toIso8601String(),
+              'cached_at': DateTime.now().toIso8601String(),
+              'is_dirty': 0,
+              'sync_status': 'synced',
+              'is_search_cached': 1,
+            },
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+          cachedCount++;
+        }
+      });
+    } catch (e) {
+      throw CacheException('Failed to cache search students: $e');
+    }
+  }
+
+  @override
+  Future<List<UserModel>> searchCachedStudents(String query) async {
+    try {
+      final db = await _localDatabase.database;
+
+      final results = await db.query(
+        'users',
+        where: 'is_search_cached = 1 AND (username LIKE ? OR full_name LIKE ?)',
+        whereArgs: ['%$query%', '%$query%'],
+        orderBy: 'full_name ASC',
+      );
+
+      if (results.isEmpty) {
+        return [];
+      }
+
+      final mapped = results
+          .map((row) => UserModel.fromMap(row))
+          .toList();
+
+      return mapped;
+    } catch (e) {
+      throw CacheException('Failed to search cached students: $e');
+    }
+  }
+
+  @override
+  Future<Set<String>> getEnrolledStudentIds(String classId) async {
+    try {
+      final db = await _localDatabase.database;
+      final results = await db.query(
+        'class_enrollments',
+        columns: ['student_id'],
+        where: 'class_id = ?',
+        whereArgs: [classId],
+      );
+
+      return results.map((row) => row['student_id'] as String).toSet();
+    } catch (e) {
+      throw CacheException('Failed to get enrolled student IDs: $e');
+    }
+  }
+
+  @override
+  Future<ClassDetailModel?> buildClassDetailFromEnrollments(String classId) async {
+    try {
+      final db = await _localDatabase.database;
+
+      // Try to get basic class info from classes table
+      final classResults = await db.query(
+        'classes',
+        where: 'id = ?',
+        whereArgs: [classId],
+        limit: 1,
+      );
+
+      // If class doesn't exist in cache, return null
+      if (classResults.isEmpty) {
+        return null;
+      }
+
+      final classMap = classResults.first;
+
+      // Get all enrollments for this class
+      final enrollmentResults = await db.query(
+        'class_enrollments',
+        where: 'class_id = ?',
+        whereArgs: [classId],
+        orderBy: 'username ASC',
+      );
+
+      // Reconstruct enrollments from database rows
+      final students = enrollmentResults
+          .map((e) => EnrollmentModel(
+                id: e['id'] as String,
+                student: UserModel(
+                  id: e['student_id'] as String,
+                  username: e['username'] as String,
+                  fullName: e['full_name'] as String,
+                  role: e['role'] as String,
+                  accountStatus: e['account_status'] as String,
+                  isActive: (e['is_active'] as int?) == 1,
+                  createdAt: DateTime.parse(e['enrolled_at'] as String),
+                ),
+                enrolledAt: DateTime.parse(e['enrolled_at'] as String),
+              ))
+          .toList();
+
+      // Build complete class detail
+      return ClassDetailModel(
+        id: classMap['id'] as String,
+        title: classMap['title'] as String,
+        description: classMap['description'] as String?,
+        teacherId: classMap['teacher_id'] as String,
+        isArchived: (classMap['is_archived'] as int?) == 1,
+        students: students,
+        createdAt: DateTime.parse(classMap['created_at'] as String),
+        updatedAt: DateTime.parse(classMap['updated_at'] as String),
+      );
+    } catch (e) {
+      // If anything fails, return null - caller should handle gracefully
+      return null;
     }
   }
 }

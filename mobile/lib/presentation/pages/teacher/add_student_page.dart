@@ -24,6 +24,9 @@ class _AddStudentPageState extends ConsumerState<AddStudentPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Load class detail to get enrolled students (needed for offline enrollment status)
+      ref.read(classProvider.notifier).loadClassDetail(widget.classId);
+      // Search all students for add/remove page
       ref.read(classProvider.notifier).searchStudents();
     });
   }

@@ -268,8 +268,10 @@ impl EntitlementService {
                 }
                 Ok(())
             }
+            ("admin_user", "create" | "update" | "delete") => {
+                Ok(())
+            }
             _ => {
-                // Unknown operation/entity combination
                 Err(AppError::BadRequest(format!(
                     "Unknown operation: {} on {}",
                     operation_type, entity_type

@@ -4,13 +4,16 @@ import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/core/validation/services/validation_service.dart';
-import 'package:likha/core/network/connectivity_service.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/entity_sync_helper.dart';
 import 'package:likha/core/sync/sync_queue.dart';
+import 'package:likha/data/models/auth/user_model.dart';
+import 'package:likha/services/storage_service.dart';
 import 'package:uuid/uuid.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/data/datasources/local/class_local_datasource.dart';
 import 'package:likha/data/datasources/remote/class_remote_datasource.dart';
+import 'package:likha/data/models/classes/class_model.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
 import 'package:likha/domain/classes/repositories/class_repository.dart';
@@ -19,23 +22,27 @@ class ClassRepositoryImpl implements ClassRepository {
   final ClassRemoteDataSource _remoteDataSource;
   final ClassLocalDataSource _localDataSource;
   final ValidationService _validationService;
-  final ConnectivityService _connectivityService;
+  final ServerReachabilityService _serverReachabilityService;
   final EntitySyncHelper _entitySyncHelper;
   final SyncQueue _syncQueue;
+  final StorageService _storageService;
 
   ClassRepositoryImpl({
     required ClassRemoteDataSource remoteDataSource,
-    required ClassLocalDataSource localDataSource,
+    required ClassLocalDataSource
+     localDataSource,
     required ValidationService validationService,
-    required ConnectivityService connectivityService,
+    required ServerReachabilityService serverReachabilityService,
     required EntitySyncHelper entitySyncHelper,
     required SyncQueue syncQueue,
+    required StorageService storageService,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
         _validationService = validationService,
-        _connectivityService = connectivityService,
+        _serverReachabilityService = serverReachabilityService,
         _entitySyncHelper = entitySyncHelper,
-        _syncQueue = syncQueue;
+        _syncQueue = syncQueue,
+        _storageService = storageService;
 
   @override
   ResultFuture<ClassEntity> createClass({
@@ -43,14 +50,18 @@ class ClassRepositoryImpl implements ClassRepository {
     String? description,
   }) async {
     try {
-      // Check connectivity
-      if (!_connectivityService.isOnline) {
+      // Check server reachability
+      if (!_serverReachabilityService.isServerReachable) {
+        // Generate a local UUID for tracking
+        final localId = const Uuid().v4();
+
         // Offline: queue the mutation locally with typed enums
         final entry = SyncQueueEntry(
           id: const Uuid().v4(),
           entityType: SyncEntityType.classEntity,
           operation: SyncOperation.create,
           payload: {
+            'local_id': localId, // Include local_id for ID reconciliation
             'title': title,
             'description': description,
           },
@@ -62,9 +73,10 @@ class ClassRepositoryImpl implements ClassRepository {
 
         await _syncQueue.enqueue(entry);
 
-        // Return optimistic entity for UI
-        final optimisticClass = ClassEntity(
-          id: '',
+        // Create optimistic model with local UUID
+        final now = DateTime.now();
+        final optimisticModel = ClassModel(
+          id: localId, // Use local UUID instead of empty string
           title: title,
           description: description,
           teacherId: '',
@@ -72,11 +84,21 @@ class ClassRepositoryImpl implements ClassRepository {
           teacherFullName: '',
           isArchived: false,
           studentCount: 0,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
+          createdAt: now,
+          updatedAt: now,
         );
 
-        return Right(optimisticClass);
+        // Cache the optimistic class immediately so it appears in the list
+        try {
+          final currentUserId = await _getCurrentUserId();
+          final cached = await _localDataSource.getCachedClasses(teacherId: currentUserId);
+          await _localDataSource.cacheClasses([optimisticModel, ...cached]);
+        } catch (_) {
+          // If cache is empty or doesn't exist yet, just cache this one
+          await _localDataSource.cacheClasses([optimisticModel]);
+        }
+
+        return Right(optimisticModel);
       }
 
       // Online: send to server
@@ -101,9 +123,12 @@ class ClassRepositoryImpl implements ClassRepository {
   @override
   ResultFuture<List<ClassEntity>> getMyClasses() async {
     try {
+      // Get current user ID for filtering cached data
+      final currentUserId = await _getCurrentUserId();
+
       // Step 1: Return cached data immediately (cache-first pattern)
       try {
-        final cachedClasses = await _localDataSource.getCachedClasses();
+        final cachedClasses = await _localDataSource.getCachedClasses(teacherId: currentUserId);
 
         // Step 2: Sync in background (don't await)
         _syncClassesInBackground();
@@ -177,8 +202,18 @@ class ClassRepositoryImpl implements ClassRepository {
         try {
           final cached = await _localDataSource.getCachedClassDetail(classId);
           return Right(cached);
-        } on CacheException catch (e) {
-          return Left(CacheFailure(e.message));
+        } on CacheException {
+          // Primary cache doesn't exist, try to rebuild from enrollments
+          try {
+            final rebuilt = await _localDataSource.buildClassDetailFromEnrollments(classId);
+            if (rebuilt != null) {
+              return Right(rebuilt);
+            }
+            // No enrollments or class data available
+            return Left(CacheFailure('Class detail not available offline'));
+          } catch (e) {
+            return Left(CacheFailure('Failed to load class detail offline'));
+          }
         }
       }
     } on ServerException catch (e) {
@@ -197,8 +232,8 @@ class ClassRepositoryImpl implements ClassRepository {
     String? description,
   }) async {
     try {
-      // Check connectivity
-      if (!_connectivityService.isOnline) {
+      // Check server reachability
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: queue the mutation locally
         final entry = SyncQueueEntry(
           id: const Uuid().v4(),
@@ -271,42 +306,50 @@ class ClassRepositoryImpl implements ClassRepository {
     required String studentId,
   }) async {
     try {
-      // Check connectivity
-      if (!_connectivityService.isOnline) {
-        // Offline: queue the mutation
-        final entry = SyncQueueEntry(
+      // Check server reachability
+      if (!_serverReachabilityService.isServerReachable) {
+        // Look up cached student by ID
+        UserModel? cachedStudent;
+        try {
+          cachedStudent = await _localDataSource.getStudentById(studentId);
+        } catch (_) {}
+
+        // Skeleton if cache miss — names fill in after sync
+        final studentModel = cachedStudent ?? UserModel(
+          id: studentId, username: '', fullName: '',
+          role: 'student', accountStatus: 'active',
+          isActive: true, activatedAt: null, createdAt: DateTime.now(),
+        );
+
+        // Persist enrollment to local DB so it survives app restarts
+        try {
+          await _localDataSource.addStudentLocally(classId: classId, student: studentModel);
+        } catch (_) {}
+
+        // Queue sync
+        final payload = <String, dynamic>{
+          'class_id': classId, 'student_id': studentId,
+          if (cachedStudent != null) 'student_username': cachedStudent.username,
+          if (cachedStudent != null) 'student_full_name': cachedStudent.fullName,
+        };
+        await _syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),
           entityType: SyncEntityType.classEntity,
-          operation: SyncOperation.create,
-          payload: {
-            'class_id': classId,
-            'student_id': studentId,
-          },
-          status: SyncStatus.pending,
-          retryCount: 0,
-          maxRetries: 5,
+          operation: SyncOperation.addEnrollment,
+          payload: payload,
+          status: SyncStatus.pending, retryCount: 0, maxRetries: 5,
           createdAt: DateTime.now(),
-        );
+        ));
 
-        await _syncQueue.enqueue(entry);
+        // Refresh class detail cache with the newly added student
+        // This ensures offline-added students are visible in cached data
+        try {
+          await _localDataSource.getCachedClassDetail(classId);
+        } catch (_) {
+          // Cache refresh failure is non-critical - enrollment is still queued for sync
+        }
 
-        // Return optimistic enrollment
-        return Right(
-          Enrollment(
-            id: '',
-            student: User(
-              id: studentId,
-              username: '',
-              fullName: '',
-              role: 'student',
-              accountStatus: 'active',
-              isActive: true,
-              activatedAt: null,
-              createdAt: DateTime.now(),
-            ),
-            enrolledAt: DateTime.now(),
-          ),
-        );
+        return Right(Enrollment(id: '', student: studentModel, enrolledAt: DateTime.now()));
       }
 
       // Online: send to server
@@ -334,24 +377,30 @@ class ClassRepositoryImpl implements ClassRepository {
     required String studentId,
   }) async {
     try {
-      // Check connectivity
-      if (!_connectivityService.isOnline) {
-        // Offline: queue the mutation
-        final entry = SyncQueueEntry(
+      // Check server reachability
+      if (!_serverReachabilityService.isServerReachable) {
+        // Remove from local DB so it doesn't reappear on restart
+        try {
+          await _localDataSource.removeStudentLocally(classId: classId, studentId: studentId);
+        } catch (_) {}
+
+        // Queue sync
+        await _syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),
           entityType: SyncEntityType.classEntity,
-          operation: SyncOperation.delete,
-          payload: {
-            'class_id': classId,
-            'student_id': studentId,
-          },
-          status: SyncStatus.pending,
-          retryCount: 0,
-          maxRetries: 5,
+          operation: SyncOperation.removeEnrollment,
+          payload: {'class_id': classId, 'student_id': studentId},
+          status: SyncStatus.pending, retryCount: 0, maxRetries: 5,
           createdAt: DateTime.now(),
-        );
+        ));
 
-        await _syncQueue.enqueue(entry);
+        // Refresh class detail cache with the removed student
+        // This ensures offline-removed students are no longer visible in cached data
+        try {
+          await _localDataSource.getCachedClassDetail(classId);
+        } catch (_) {
+          // Cache refresh failure is non-critical - removal is still queued for sync
+        }
 
         return const Right(null);
       }
@@ -379,13 +428,40 @@ class ClassRepositoryImpl implements ClassRepository {
   ResultFuture<List<User>> searchStudents({String? query}) async {
     try {
       final result = await _remoteDataSource.searchStudents(query: query);
+
+      // Persist results to local cache for offline access
+      try {
+        await _localDataSource.cacheSearchStudents(result);
+      } catch (e) {
+        // Caching failure must not block the online result
+      }
+
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } on NetworkException catch (e) {
+      // Server unreachable — fall back to cached students
+      try {
+        final cached = await _localDataSource.searchCachedStudents(query ?? '');
+        if (cached.isNotEmpty) {
+          return Right(cached);
+        }
+      } catch (cacheError) {
+        // Cache lookup failed; fall through to network error
+      }
       return Left(NetworkFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  /// Get the current user ID from secure storage
+  /// Returns null if offline or no user is logged in
+  Future<String?> _getCurrentUserId() async {
+    try {
+      return await _storageService.getUserId();
+    } catch (e) {
+      return null;
     }
   }
 }

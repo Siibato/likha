@@ -208,6 +208,16 @@ class SyncManager {
               (entityType: entityType, localId: localId, serverId: serverId),
             );
 
+            // Special handling for classes: update main ID from local UUID to server UUID
+            if (entityType == 'classEntity') {
+              await db.update(
+                'classes',
+                {'id': serverId},
+                where: 'id = ?',
+                whereArgs: [localId],
+              );
+            }
+
             // Special handling for questions: update main ID and reconcile nested IDs
             if (entityType == 'question') {
               // Update the question's main ID from local UUID to server UUID
@@ -561,6 +571,8 @@ class SyncManager {
     if (op == SyncOperation.saveAnswers) return 'save_answers';
     if (op == SyncOperation.releaseResults) return 'release_results';
     if (op == SyncOperation.overrideAnswer) return 'override_answer';
+    if (op == SyncOperation.addEnrollment) return 'add_enrollment';
+    if (op == SyncOperation.removeEnrollment) return 'remove_enrollment';
     return op.name;
   }
 }

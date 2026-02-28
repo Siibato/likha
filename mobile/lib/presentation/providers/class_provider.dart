@@ -121,10 +121,16 @@ class ClassNotifier extends StateNotifier<ClassState> {
     final result = await _getClassDetail(classId);
 
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: failure.message,
-      ),
+      (failure) {
+        // For offline cache misses, don't show error - user can still see cached students
+        // Only show error for actual server issues
+        final showError = !failure.message.contains('offline') &&
+                         !failure.message.contains('Cache');
+        state = state.copyWith(
+          isLoading: false,
+          error: showError ? failure.message : null,
+        );
+      },
       (detail) => state = state.copyWith(
         isLoading: false,
         currentClassDetail: detail,
@@ -187,11 +193,31 @@ class ClassNotifier extends StateNotifier<ClassState> {
         error: failure.message,
       ),
       (enrollment) {
-        state = state.copyWith(
-          isLoading: false,
-          successMessage: 'Student added to class',
-        );
-        // Reload class detail to get updated student list
+        // Immediately update UI with the new student (optimistic update)
+        final currentDetail = state.currentClassDetail;
+        if (currentDetail != null) {
+          final updatedDetail = ClassDetail(
+            id: currentDetail.id,
+            title: currentDetail.title,
+            description: currentDetail.description,
+            teacherId: currentDetail.teacherId,
+            isArchived: currentDetail.isArchived,
+            students: [enrollment, ...currentDetail.students],
+            createdAt: currentDetail.createdAt,
+            updatedAt: currentDetail.updatedAt,
+          );
+          state = state.copyWith(
+            isLoading: false,
+            currentClassDetail: updatedDetail,
+            successMessage: 'Student added to class',
+          );
+        } else {
+          state = state.copyWith(
+            isLoading: false,
+            successMessage: 'Student added to class',
+          );
+        }
+        // Reload class detail in background to verify
         loadClassDetail(classId);
       },
     );
@@ -214,10 +240,33 @@ class ClassNotifier extends StateNotifier<ClassState> {
         error: failure.message,
       ),
       (_) {
-        state = state.copyWith(
-          isLoading: false,
-          successMessage: 'Student removed from class',
-        );
+        // Immediately update UI by removing the student (optimistic update)
+        final currentDetail = state.currentClassDetail;
+        if (currentDetail != null) {
+          final updatedDetail = ClassDetail(
+            id: currentDetail.id,
+            title: currentDetail.title,
+            description: currentDetail.description,
+            teacherId: currentDetail.teacherId,
+            isArchived: currentDetail.isArchived,
+            students: currentDetail.students
+                .where((e) => e.student.id != studentId)
+                .toList(),
+            createdAt: currentDetail.createdAt,
+            updatedAt: currentDetail.updatedAt,
+          );
+          state = state.copyWith(
+            isLoading: false,
+            currentClassDetail: updatedDetail,
+            successMessage: 'Student removed from class',
+          );
+        } else {
+          state = state.copyWith(
+            isLoading: false,
+            successMessage: 'Student removed from class',
+          );
+        }
+        // Reload class detail in background to verify
         loadClassDetail(classId);
       },
     );

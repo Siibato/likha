@@ -97,7 +97,7 @@ class LearningMaterialLocalDataSourceImpl implements LearningMaterialLocalDataSo
           final map = material.toMap();
           map['cached_at'] = DateTime.now().toIso8601String();
           map['sync_status'] = 'synced';
-          map['is_dirty'] = 0;
+          map['is_offline_mutation'] = 0;
 
           await txn.insert(
             'learning_materials',
@@ -118,7 +118,7 @@ class LearningMaterialLocalDataSourceImpl implements LearningMaterialLocalDataSo
       final map = material.toMap();
       map['cached_at'] = DateTime.now().toIso8601String();
       map['sync_status'] = 'synced';
-      map['is_dirty'] = 0;
+      map['is_offline_mutation'] = 0;
 
       await db.insert(
         'learning_materials',
@@ -239,7 +239,7 @@ class LearningMaterialLocalDataSourceImpl implements LearningMaterialLocalDataSo
         final map = material.toMap();
         map['cached_at'] = now.toIso8601String();
         map['sync_status'] = 'pending';
-        map['is_dirty'] = 1;
+        map['is_offline_mutation'] = 1;
 
         await txn.insert('learning_materials', map);
 
@@ -290,7 +290,7 @@ class LearningMaterialLocalDataSourceImpl implements LearningMaterialLocalDataSo
             'description': description,
             'content_text': contentText,
             'updated_at': now.toIso8601String(),
-            'is_dirty': 1,
+            'is_offline_mutation': 1,
             'sync_status': 'pending',
             'cached_at': now.toIso8601String(),
           },

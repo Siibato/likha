@@ -6,7 +6,9 @@ import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/core/validation/services/validation_service.dart';
 import 'package:likha/core/network/connectivity_service.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
+import 'package:likha/services/storage_service.dart';
 import 'package:likha/data/datasources/local/assignment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assignment_remote_datasource.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
@@ -14,6 +16,7 @@ import 'package:likha/domain/assignments/entities/assignment_submission.dart';
 import 'package:likha/domain/assignments/entities/submission_file.dart';
 import 'package:likha/domain/assignments/repositories/assignment_repository.dart';
 import 'package:likha/data/models/assignments/assignment_submission_model.dart';
+import 'package:likha/data/models/assignments/assignment_model.dart';
 import 'package:uuid/uuid.dart';
 
 class AssignmentRepositoryImpl implements AssignmentRepository {
@@ -22,6 +25,8 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
   final ValidationService _validationService;
   final ConnectivityService _connectivityService;
   final SyncQueue _syncQueue;
+  final ServerReachabilityService _serverReachabilityService;
+  final StorageService _storageService;
 
   AssignmentRepositoryImpl({
     required AssignmentRemoteDataSource remoteDataSource,
@@ -29,11 +34,15 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
     required ValidationService validationService,
     required ConnectivityService connectivityService,
     required SyncQueue syncQueue,
+    required ServerReachabilityService serverReachabilityService,
+    required StorageService storageService,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
         _validationService = validationService,
         _connectivityService = connectivityService,
-        _syncQueue = syncQueue;
+        _syncQueue = syncQueue,
+        _serverReachabilityService = serverReachabilityService,
+        _storageService = storageService;
 
   @override
   ResultFuture<Assignment> createAssignment({
@@ -48,7 +57,7 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
   }) async {
     try {
       // Check connectivity
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: queue the mutation
         final entry = SyncQueueEntry(
           id: const Uuid().v4(),
@@ -72,8 +81,8 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
 
         await _syncQueue.enqueue(entry);
 
-        // Return optimistic response
-        return Right(Assignment(
+        // Create optimistic response
+        final optimisticAssignment = Assignment(
           id: '',
           classId: classId,
           title: title,
@@ -88,7 +97,33 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
           gradedCount: 0,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
-        ));
+        );
+
+        // Cache the new assignment for offline access
+        try {
+          final currentCached = await _localDataSource.getCachedAssignments(classId);
+          final optimisticModel = AssignmentModel(
+            id: '',
+            classId: classId,
+            title: title,
+            instructions: instructions,
+            totalPoints: totalPoints,
+            submissionType: submissionType,
+            allowedFileTypes: allowedFileTypes,
+            maxFileSizeMb: maxFileSizeMb,
+            dueAt: DateTime.parse(dueAt),
+            isPublished: false,
+            submissionCount: 0,
+            gradedCount: 0,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+          await _localDataSource.cacheAssignments([optimisticModel, ...currentCached]);
+        } catch (_) {
+          // If caching fails, still return the optimistic response
+        }
+
+        return Right(optimisticAssignment);
       }
 
       // Online: send to server
@@ -119,9 +154,44 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
     required String classId,
   }) async {
     try {
-      final cached = await _localDataSource.getCachedAssignments(classId);
-      unawaited(_validationService.syncAssignments(classId));
-      return Right(cached);
+      var cachedAssignments = <Assignment>[];
+      bool hasCachedData = false;
+
+      // Step 1: Try to get cached data
+      try {
+        cachedAssignments = await _localDataSource.getCachedAssignments(classId);
+        hasCachedData = true;
+      } on CacheException {
+        hasCachedData = false;
+      }
+
+      // Step 2: If online, fetch fresh data
+      if (_serverReachabilityService.isServerReachable) {
+        try {
+          final freshAssignments = await _remoteDataSource.getAssignments(classId: classId);
+          await _localDataSource.cacheAssignments(freshAssignments);
+          return Right(freshAssignments);
+        } catch (e) {
+          // Server fetch failed - fall through to cached data
+          if (!hasCachedData) {
+            if (e is ServerException) {
+              return Left(ServerFailure(e.message));
+            } else if (e is NetworkException) {
+              return Left(NetworkFailure(e.message));
+            }
+            return Left(ServerFailure(e.toString()));
+          }
+          // Has cache, will use it below
+        }
+      }
+
+      // Step 3: Use cached data if we have it
+      if (hasCachedData) {
+        return Right(cachedAssignments);
+      }
+
+      // No cache and no internet
+      return Left(NetworkFailure('No internet connection and no cached data'));
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {
@@ -170,7 +240,7 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
   }) async {
     try {
       // Check connectivity
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: queue the mutation
         final entry = SyncQueueEntry(
           id: const Uuid().v4(),
@@ -239,7 +309,7 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
   ResultVoid deleteAssignment({required String assignmentId}) async {
     try {
       // Check connectivity
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: queue the mutation
         final entry = SyncQueueEntry(
           id: const Uuid().v4(),
@@ -275,7 +345,7 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
   }) async {
     try {
       // Check connectivity
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: queue the mutation
         final entry = SyncQueueEntry(
           id: const Uuid().v4(),
@@ -389,7 +459,7 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
   }) async {
     try {
       // Check connectivity
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: queue the mutation
         final entry = SyncQueueEntry(
           id: const Uuid().v4(),
@@ -449,7 +519,7 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
   }) async {
     try {
       // Check connectivity
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: queue the mutation
         final entry = SyncQueueEntry(
           id: const Uuid().v4(),
@@ -505,7 +575,7 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
   }) async {
     try {
       // Check connectivity
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: queue the mutation
         final entry = SyncQueueEntry(
           id: const Uuid().v4(),
@@ -562,7 +632,7 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
     required String fileName,
   }) async {
     try {
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Stage file for upload when connectivity returns
         final fileSize = await _fileSize(filePath);
         final mimeType = _mimeType(filePath);
@@ -601,7 +671,7 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
   @override
   ResultVoid deleteFile({required String fileId}) async {
     try {
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Queue delete — file will be removed from server when online
         await _syncQueue.enqueue(SyncQueueEntry(
           id:          const Uuid().v4(),
@@ -633,7 +703,7 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
   }) async {
     try {
       // Check connectivity
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: queue the mutation
         final entry = SyncQueueEntry(
           id: const Uuid().v4(),

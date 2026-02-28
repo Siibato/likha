@@ -10,6 +10,10 @@ import 'package:likha/domain/auth/entities/activity_log.dart';
 import 'package:likha/data/models/auth/activity_log_model.dart';
 import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/data/datasources/local/auth_local_datasource.dart';
+import 'package:likha/data/datasources/local/class_local_datasource.dart';
+import 'package:likha/data/datasources/local/assignment_local_datasource.dart';
+import 'package:likha/data/datasources/local/assessment_local_datasource.dart';
+import 'package:likha/data/datasources/local/learning_material_local_datasource.dart';
 import 'package:likha/data/datasources/remote/auth_remote_datasource.dart';
 import 'package:likha/domain/auth/entities/check_username_result.dart';
 import 'package:likha/domain/auth/entities/user.dart';
@@ -23,14 +27,25 @@ class AuthRepositoryImpl implements AuthRepository {
   final ServerReachabilityService _serverReachabilityService;
   final StorageService _storageService;
   final SyncQueue _syncQueue;
+  final ClassLocalDataSource _classLocalDataSource;
+  final AssignmentLocalDataSource _assignmentLocalDataSource;
+  final AssessmentLocalDataSource _assessmentLocalDataSource;
+  final LearningMaterialLocalDataSource _learningMaterialLocalDataSource;
 
   AuthRepositoryImpl(
     this._remoteDataSource,
     this._localDataSource,
     this._serverReachabilityService,
     this._storageService,
-    this._syncQueue,
-  );
+    this._syncQueue, {
+    required ClassLocalDataSource classLocalDataSource,
+    required AssignmentLocalDataSource assignmentLocalDataSource,
+    required AssessmentLocalDataSource assessmentLocalDataSource,
+    required LearningMaterialLocalDataSource learningMaterialLocalDataSource,
+  })  : _classLocalDataSource = classLocalDataSource,
+        _assignmentLocalDataSource = assignmentLocalDataSource,
+        _assessmentLocalDataSource = assessmentLocalDataSource,
+        _learningMaterialLocalDataSource = learningMaterialLocalDataSource;
 
   @override
   ResultFuture<CheckUsernameResult> checkUsername(
@@ -82,6 +97,17 @@ class AuthRepositoryImpl implements AuthRepository {
         password: password,
         deviceId: deviceId,
       );
+
+      // Phase 1: Detect user change and clear cache if different user logging in
+      final previousUserId = await _storageService.getUserId();
+      if (previousUserId != null && previousUserId != result.user.id) {
+        // Different user logging in - clear all cached data from previous user
+        await _clearAllUserData();
+      }
+
+      // Cache the logged-in user for offline access
+      unawaited(_localDataSource.cacheCurrentUser(result.user));
+
       return Right(result.user);
     } on TooManyRequestsException catch (e) {
       return Left(TooManyRequestsFailure(e.message, remainingSeconds: e.remainingSeconds));
@@ -147,7 +173,21 @@ class AuthRepositoryImpl implements AuthRepository {
 
     // Offline or network failure - use cached data
     try {
+      // But validate it matches the logged-in user from tokens
+      final storedUserId = await _storageService.getUserId();
+      if (storedUserId == null) {
+        // No user logged in
+        return Left(UnauthorizedFailure('Not authenticated'));
+      }
+
       final cachedUser = await _localDataSource.getCachedCurrentUser();
+
+      // Verify the cached user matches the logged-in user
+      if (cachedUser.id != storedUserId) {
+        // Cached user doesn't match logged-in user - not authenticated
+        return Left(UnauthorizedFailure('User mismatch: cached user does not match logged-in user'));
+      }
+
       return Right(cachedUser);
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
@@ -241,11 +281,65 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   ResultFuture<List<User>> getAllAccounts() async {
     try {
-      // Step 1: Return cached data immediately (cache-first pattern)
-      try {
-        var cachedAccounts = await _localDataSource.getCachedAccounts();
+      var cachedAccounts = <UserModel>[];
+      bool hasCachedData = false;
 
-        // Step 2: Get pending account creations from sync queue
+      // Step 1: Try to get cached data
+      try {
+        cachedAccounts = await _localDataSource.getCachedAccounts();
+        hasCachedData = true;
+      } on CacheException {
+        // Cache is empty
+        hasCachedData = false;
+      }
+
+      // Step 2: If server is reachable, fetch fresh data
+      if (_serverReachabilityService.isServerReachable) {
+        try {
+          final freshAccounts = await _remoteDataSource.getAllAccounts();
+          await _localDataSource.cacheAccounts(freshAccounts);
+
+          // Get pending account creations from sync queue and merge
+          final pendingEntries = await _syncQueue.getAllRetriable();
+          final pendingAccounts = <UserModel>[];
+
+          for (final entry in pendingEntries) {
+            if (entry.entityType == SyncEntityType.adminUser &&
+                entry.operation == SyncOperation.create) {
+              final payload = entry.payload;
+              pendingAccounts.add(
+                UserModel(
+                  id: '',
+                  username: payload['username'] as String? ?? '',
+                  fullName: payload['full_name'] as String? ?? '',
+                  role: payload['role'] as String? ?? '',
+                  accountStatus: 'pending_activation',
+                  isActive: false,
+                  activatedAt: null,
+                  createdAt: DateTime.now(),
+                ),
+              );
+            }
+          }
+
+          return Right([...freshAccounts, ...pendingAccounts]);
+        } catch (e) {
+          // Server fetch failed - fall through to cached data
+          if (!hasCachedData) {
+            // No cache and server failed
+            if (e is ServerException) {
+              return Left(ServerFailure(e.message));
+            } else if (e is NetworkException) {
+              return Left(NetworkFailure(e.message));
+            }
+            return Left(ServerFailure(e.toString()));
+          }
+          // Has cache, will use it below
+        }
+      }
+
+      // Step 3: Use cached data if we have it
+      if (hasCachedData) {
         final pendingEntries = await _syncQueue.getAllRetriable();
         final pendingAccounts = <UserModel>[];
 
@@ -268,41 +362,17 @@ class AuthRepositoryImpl implements AuthRepository {
           }
         }
 
-        // Step 3: Merge cached and pending accounts
-        cachedAccounts = [...cachedAccounts, ...pendingAccounts];
-
-        // Step 4: Sync in background (don't await)
-        _syncAccountsInBackground();
-
-        return Right(cachedAccounts);
-      } on CacheException {
-        // Cache empty, try to fetch from server
-        if (!_serverReachabilityService.isServerReachable) {
-          return Left(NetworkFailure('No internet connection and no cached data'));
-        }
-
-        final freshAccounts = await _remoteDataSource.getAllAccounts();
-        await _localDataSource.cacheAccounts(freshAccounts);
-        return Right(freshAccounts);
+        return Right([...cachedAccounts, ...pendingAccounts]);
       }
+
+      // No cache and no server connection
+      return Left(NetworkFailure('No internet connection and no cached data'));
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
-    }
-  }
-
-  /// Sync accounts in background
-  Future<void> _syncAccountsInBackground() async {
-    if (!_serverReachabilityService.isServerReachable) return;
-
-    try {
-      final remoteAccounts = await _remoteDataSource.getAllAccounts();
-      await _localDataSource.cacheAccounts(remoteAccounts);
-    } catch (e) {
-      // Best-effort: if sync fails, continue with cached data
     }
   }
 
@@ -443,6 +513,21 @@ class AuthRepositoryImpl implements AuthRepository {
       await _localDataSource.cacheActivityLogs(remoteActivityLogs as List<ActivityLogModel>, userId);
     } catch (e) {
       // Best-effort: if sync fails, continue with cached data
+    }
+  }
+
+  /// Clear all user-specific cached data when switching users
+  /// Called when a different user logs in to prevent data leakage
+  Future<void> _clearAllUserData() async {
+    try {
+      await Future.wait([
+        _classLocalDataSource.clearAllCache(),
+        _assignmentLocalDataSource.clearAllCache(),
+        _assessmentLocalDataSource.clearAllCache(),
+        _learningMaterialLocalDataSource.clearAllCache(),
+      ]);
+    } catch (e) {
+      // Best-effort cache clearing - don't fail login if cache clearing fails
     }
   }
 

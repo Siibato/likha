@@ -148,7 +148,7 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
           final map = assessment.toMap();
           map['cached_at'] = DateTime.now().toIso8601String();
           map['sync_status'] = 'synced';
-          map['is_dirty'] = 0;
+          map['is_offline_mutation'] = 0;
 
           await txn.insert(
             'assessments',
@@ -171,7 +171,7 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
         final assessmentMap = assessment.toMap();
         assessmentMap['cached_at'] = DateTime.now().toIso8601String();
         assessmentMap['sync_status'] = 'synced';
-        assessmentMap['is_dirty'] = 0;
+        assessmentMap['is_offline_mutation'] = 0;
 
         await txn.insert('assessments', assessmentMap, conflictAlgorithm: ConflictAlgorithm.replace);
 
@@ -219,7 +219,7 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
               'order_index': question.orderIndex,
               'is_multi_select': question.isMultiSelect ? 1 : 0,
               'cached_at': DateTime.now().toIso8601String(),
-              'is_dirty': 0,
+              'is_offline_mutation': 0,
               'sync_status': 'synced',
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
@@ -246,7 +246,7 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
           'assessment_submissions',
           {
             'answers_json': answersJson,
-            'is_dirty': 1,
+            'is_offline_mutation': 1,
             'sync_status': 'pending',
             'updated_at': now.toIso8601String(),
             'cached_at': now.toIso8601String(),
@@ -306,7 +306,7 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
           'updated_at': now.toIso8601String(),
           'cached_at': now.toIso8601String(),
           'sync_status': 'synced',
-          'is_dirty': 0,
+          'is_offline_mutation': 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -343,7 +343,7 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
             'updated_at': now.toIso8601String(),
             'cached_at': now.toIso8601String(),
             'sync_status': 'pending',
-            'is_dirty': 1,
+            'is_offline_mutation': 1,
             'is_offline_mutation': 1,
           },
         );
@@ -412,7 +412,7 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
           {
             'is_submitted': 1,
             'submitted_at': now.toIso8601String(),
-            'is_dirty': 1,
+            'is_offline_mutation': 1,
             'sync_status': 'pending',
             'cached_at': now.toIso8601String(),
           },
@@ -505,7 +505,7 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
           'answers_json': jsonEncode(submission.answers.map((a) => a).toList()),
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
-          'is_dirty': 0,
+          'is_offline_mutation': 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -526,7 +526,7 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
 
       // Add timestamp and sync markers to updates
       updates['updated_at'] = now.toIso8601String();
-      updates['is_dirty'] = 1;
+      updates['is_offline_mutation'] = 1;
       updates['sync_status'] = 'pending';
 
       await db.update(
@@ -549,7 +549,7 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
         'questions',
         {
           'deleted_at': DateTime.now().toIso8601String(),
-          'is_dirty': 1,
+          'is_offline_mutation': 1,
           'sync_status': 'pending',
         },
         where: 'id = ?',
@@ -725,7 +725,7 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
               'updated_at': DateTime.now().toIso8601String(),
               'cached_at': DateTime.now().toIso8601String(),
               'sync_status': 'synced',
-              'is_dirty': 0,
+              'is_offline_mutation': 0,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
@@ -903,7 +903,7 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
             'updated_at': now.toIso8601String(),
             'cached_at': now.toIso8601String(),
             'sync_status': 'pending',
-            'is_dirty': 1,
+            'is_offline_mutation': 1,
             'is_offline_mutation': 1,
           },
         );

@@ -324,6 +324,162 @@ impl SyncPushService {
                     },
                 }
             }
+            "add_enrollment" => {
+                let class_id = match op.payload.get("class_id").and_then(|v| v.as_str()) {
+                    Some(id) => match Uuid::parse_str(id) {
+                        Ok(id) => id,
+                        Err(_) => {
+                            return OperationResult {
+                                id: op.id.clone(),
+                                entity_type: op.entity_type.clone(),
+                                operation: op.operation.clone(),
+                                success: false,
+                                server_id: None,
+                                error: Some("Invalid class ID".to_string()),
+                                updated_at: None,
+                            };
+                        }
+                    },
+                    None => {
+                        return OperationResult {
+                            id: op.id.clone(),
+                            entity_type: op.entity_type.clone(),
+                            operation: op.operation.clone(),
+                            success: false,
+                            server_id: None,
+                            error: Some("Missing class_id field".to_string()),
+                            updated_at: None,
+                        };
+                    }
+                };
+
+                let student_id = match op.payload.get("student_id").and_then(|v| v.as_str()) {
+                    Some(id) => match Uuid::parse_str(id) {
+                        Ok(id) => id,
+                        Err(_) => {
+                            return OperationResult {
+                                id: op.id.clone(),
+                                entity_type: op.entity_type.clone(),
+                                operation: op.operation.clone(),
+                                success: false,
+                                server_id: None,
+                                error: Some("Invalid student ID".to_string()),
+                                updated_at: None,
+                            };
+                        }
+                    },
+                    None => {
+                        return OperationResult {
+                            id: op.id.clone(),
+                            entity_type: op.entity_type.clone(),
+                            operation: op.operation.clone(),
+                            success: false,
+                            server_id: None,
+                            error: Some("Missing student_id field".to_string()),
+                            updated_at: None,
+                        };
+                    }
+                };
+
+                match self.class_service.add_student(class_id, student_id, user_id).await {
+                    Ok(_) => OperationResult {
+                        id: op.id.clone(),
+                        entity_type: op.entity_type.clone(),
+                        operation: op.operation.clone(),
+                        success: true,
+                        server_id: None,
+                        error: None,
+                        updated_at: Some(Utc::now().to_rfc3339()),
+                    },
+                    Err(e) => OperationResult {
+                        id: op.id.clone(),
+                        entity_type: op.entity_type.clone(),
+                        operation: op.operation.clone(),
+                        success: false,
+                        server_id: None,
+                        error: Some(e.to_string()),
+                        updated_at: None,
+                    },
+                }
+            }
+            "remove_enrollment" => {
+                let class_id = match op.payload.get("class_id").and_then(|v| v.as_str()) {
+                    Some(id) => match Uuid::parse_str(id) {
+                        Ok(id) => id,
+                        Err(_) => {
+                            return OperationResult {
+                                id: op.id.clone(),
+                                entity_type: op.entity_type.clone(),
+                                operation: op.operation.clone(),
+                                success: false,
+                                server_id: None,
+                                error: Some("Invalid class ID".to_string()),
+                                updated_at: None,
+                            };
+                        }
+                    },
+                    None => {
+                        return OperationResult {
+                            id: op.id.clone(),
+                            entity_type: op.entity_type.clone(),
+                            operation: op.operation.clone(),
+                            success: false,
+                            server_id: None,
+                            error: Some("Missing class_id field".to_string()),
+                            updated_at: None,
+                        };
+                    }
+                };
+
+                let student_id = match op.payload.get("student_id").and_then(|v| v.as_str()) {
+                    Some(id) => match Uuid::parse_str(id) {
+                        Ok(id) => id,
+                        Err(_) => {
+                            return OperationResult {
+                                id: op.id.clone(),
+                                entity_type: op.entity_type.clone(),
+                                operation: op.operation.clone(),
+                                success: false,
+                                server_id: None,
+                                error: Some("Invalid student ID".to_string()),
+                                updated_at: None,
+                            };
+                        }
+                    },
+                    None => {
+                        return OperationResult {
+                            id: op.id.clone(),
+                            entity_type: op.entity_type.clone(),
+                            operation: op.operation.clone(),
+                            success: false,
+                            server_id: None,
+                            error: Some("Missing student_id field".to_string()),
+                            updated_at: None,
+                        };
+                    }
+                };
+
+                match self.class_service.remove_student(class_id, student_id, user_id).await {
+                    Ok(_) => OperationResult {
+                        id: op.id.clone(),
+                        entity_type: op.entity_type.clone(),
+                        operation: op.operation.clone(),
+                        success: true,
+                        server_id: None,
+                        error: None,
+                        updated_at: Some(Utc::now().to_rfc3339()),
+                    },
+                    Err(e) => OperationResult {
+                        id: op.id.clone(),
+                        entity_type: op.entity_type.clone(),
+                        operation: op.operation.clone(),
+                        success: false,
+                        server_id: None,
+                        error: Some(e.to_string()),
+                        updated_at: None,
+                    },
+                }
+            }
             _ => OperationResult {
                 id: op.id.clone(),
                 entity_type: op.entity_type.clone(),
@@ -843,8 +999,9 @@ impl SyncPushService {
                     }
                 };
 
-                let question_type = match op.payload.get("question_type").and_then(|v| v.as_str()) {
-                    Some(t) => t.to_string(),
+                // Get questions array from payload
+                let questions_array = match op.payload.get("questions").and_then(|v| v.as_array()) {
+                    Some(arr) => arr,
                     None => {
                         return OperationResult {
                             id: op.id.clone(),
@@ -852,92 +1009,109 @@ impl SyncPushService {
                             operation: op.operation.clone(),
                             success: false,
                             server_id: None,
-                            error: Some("Missing question_type field".to_string()),
+                            error: Some("Missing or invalid questions array".to_string()),
                             updated_at: None,
                         };
                     }
                 };
 
-                let question_text = match op.payload.get("question_text").and_then(|v| v.as_str()) {
-                    Some(t) => t.to_string(),
-                    None => {
-                        return OperationResult {
-                            id: op.id.clone(),
-                            entity_type: op.entity_type.clone(),
-                            operation: op.operation.clone(),
-                            success: false,
-                            server_id: None,
-                            error: Some("Missing question_text field".to_string()),
-                            updated_at: None,
-                        };
-                    }
-                };
+                // Parse all questions from the array
+                let mut questions = Vec::new();
+                for q in questions_array {
+                    let question_type = match q.get("question_type").and_then(|v| v.as_str()) {
+                        Some(t) => t.to_string(),
+                        None => {
+                            return OperationResult {
+                                id: op.id.clone(),
+                                entity_type: op.entity_type.clone(),
+                                operation: op.operation.clone(),
+                                success: false,
+                                server_id: None,
+                                error: Some("Missing question_type field".to_string()),
+                                updated_at: None,
+                            };
+                        }
+                    };
 
-                let points = match op.payload.get("points").and_then(|v| v.as_i64()) {
-                    Some(p) => p as i32,
-                    None => {
-                        return OperationResult {
-                            id: op.id.clone(),
-                            entity_type: op.entity_type.clone(),
-                            operation: op.operation.clone(),
-                            success: false,
-                            server_id: None,
-                            error: Some("Missing points field".to_string()),
-                            updated_at: None,
-                        };
-                    }
-                };
+                    let question_text = match q.get("question_text").and_then(|v| v.as_str()) {
+                        Some(t) => t.to_string(),
+                        None => {
+                            return OperationResult {
+                                id: op.id.clone(),
+                                entity_type: op.entity_type.clone(),
+                                operation: op.operation.clone(),
+                                success: false,
+                                server_id: None,
+                                error: Some("Missing question_text field".to_string()),
+                                updated_at: None,
+                            };
+                        }
+                    };
 
-                let order_index = op.payload.get("order_index").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
-                let is_multi_select = op.payload.get("is_multi_select").and_then(|v| v.as_bool());
+                    let points = match q.get("points").and_then(|v| v.as_i64()) {
+                        Some(p) => p as i32,
+                        None => {
+                            return OperationResult {
+                                id: op.id.clone(),
+                                entity_type: op.entity_type.clone(),
+                                operation: op.operation.clone(),
+                                success: false,
+                                server_id: None,
+                                error: Some("Missing points field".to_string()),
+                                updated_at: None,
+                            };
+                        }
+                    };
 
-                // Parse choices if present
-                let choices = op.payload.get("choices").and_then(|v| v.as_array()).map(|arr| {
-                    arr.iter()
-                        .filter_map(|c| {
-                            let choice_text = c.get("choice_text").and_then(|v| v.as_str())?.to_string();
-                            let is_correct = c.get("is_correct").and_then(|v| v.as_bool()).unwrap_or(false);
-                            let order_index = c.get("order_index").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
-                            Some(ChoiceInput { choice_text, is_correct, order_index })
-                        })
-                        .collect::<Vec<_>>()
-                });
+                    let order_index = q.get("order_index").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+                    let is_multi_select = q.get("is_multi_select").and_then(|v| v.as_bool());
 
-                // Parse correct answers if present
-                let correct_answers = op.payload.get("correct_answers").and_then(|v| v.as_array()).map(|arr| {
-                    arr.iter()
-                        .filter_map(|a| a.get("answer_text").and_then(|v| v.as_str()).map(|s| s.to_string()))
-                        .collect::<Vec<_>>()
-                });
+                    // Parse choices if present
+                    let choices = q.get("choices").and_then(|v| v.as_array()).map(|arr| {
+                        arr.iter()
+                            .filter_map(|c| {
+                                let choice_text = c.get("choice_text").and_then(|v| v.as_str())?.to_string();
+                                let is_correct = c.get("is_correct").and_then(|v| v.as_bool()).unwrap_or(false);
+                                let order_index = c.get("order_index").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+                                Some(ChoiceInput { choice_text, is_correct, order_index })
+                            })
+                            .collect::<Vec<_>>()
+                    });
 
-                // Parse enumeration items if present
-                let enumeration_items = op.payload.get("enumeration_items").and_then(|v| v.as_array()).map(|arr| {
-                    arr.iter()
-                        .filter_map(|item| {
-                            let order_index = item.get("order_index").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
-                            let acceptable_answers = item.get("acceptable_answers")
-                                .and_then(|v| v.as_array())
-                                .map(|a| a.iter().filter_map(|s| s.as_str().map(|s| s.to_string())).collect::<Vec<_>>())
-                                .unwrap_or_default();
-                            Some(EnumerationItemInput { order_index, acceptable_answers })
-                        })
-                        .collect::<Vec<_>>()
-                });
+                    // Parse correct answers if present
+                    let correct_answers = q.get("correct_answers").and_then(|v| v.as_array()).map(|arr| {
+                        arr.iter()
+                            .filter_map(|a| a.get("answer_text").and_then(|v| v.as_str()).map(|s| s.to_string()))
+                            .collect::<Vec<_>>()
+                    });
 
-                let question = AddQuestionRequest {
-                    question_type,
-                    question_text,
-                    points,
-                    order_index,
-                    is_multi_select,
-                    choices,
-                    correct_answers,
-                    enumeration_items,
-                };
+                    // Parse enumeration items if present
+                    let enumeration_items = q.get("enumeration_items").and_then(|v| v.as_array()).map(|arr| {
+                        arr.iter()
+                            .filter_map(|item| {
+                                let order_index = item.get("order_index").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+                                let acceptable_answers = item.get("acceptable_answers")
+                                    .and_then(|v| v.as_array())
+                                    .map(|a| a.iter().filter_map(|s| s.as_str().map(|s| s.to_string())).collect::<Vec<_>>())
+                                    .unwrap_or_default();
+                                Some(EnumerationItemInput { order_index, acceptable_answers })
+                            })
+                            .collect::<Vec<_>>()
+                    });
 
-                let request = AddQuestionsRequest {
-                    questions: vec![question],
-                };
+                    questions.push(AddQuestionRequest {
+                        question_type,
+                        question_text,
+                        points,
+                        order_index,
+                        is_multi_select,
+                        choices,
+                        correct_answers,
+                        enumeration_items,
+                    });
+                }
+
+                let request = AddQuestionsRequest { questions };
 
                 match self.assessment_service.add_questions(assessment_id, request, user_id).await {
                     Ok(mut responses) => {
@@ -1274,6 +1448,43 @@ impl SyncPushService {
                 };
 
                 match self.assignment_service.soft_delete(assignment_id, user_id).await {
+                    Ok(_) => OperationResult {
+                        id: op.id.clone(),
+                        entity_type: op.entity_type.clone(),
+                        operation: op.operation.clone(),
+                        success: true,
+                        server_id: None,
+                        error: None,
+                        updated_at: Some(Utc::now().to_rfc3339()),
+                    },
+                    Err(e) => OperationResult {
+                        id: op.id.clone(),
+                        entity_type: op.entity_type.clone(),
+                        operation: op.operation.clone(),
+                        success: false,
+                        server_id: None,
+                        error: Some(e.to_string()),
+                        updated_at: None,
+                    },
+                }
+            }
+            "publish" => {
+                let assignment_id = match op.payload.get("id").and_then(|v| v.as_str()).and_then(|s| Uuid::parse_str(s).ok()) {
+                    Some(id) => id,
+                    None => {
+                        return OperationResult {
+                            id: op.id.clone(),
+                            entity_type: op.entity_type.clone(),
+                            operation: op.operation.clone(),
+                            success: false,
+                            server_id: None,
+                            error: Some("Missing or invalid assignment id".to_string()),
+                            updated_at: None,
+                        };
+                    }
+                };
+
+                match self.assignment_service.publish_assignment(assignment_id, user_id).await {
                     Ok(_) => OperationResult {
                         id: op.id.clone(),
                         entity_type: op.entity_type.clone(),
@@ -1747,6 +1958,114 @@ impl SyncPushService {
                         error: Some(e.to_string()),
                         updated_at: None,
                     },
+                }
+            }
+            "grade" => {
+                let submission_id = match op.payload.get("id").and_then(|v| v.as_str()).and_then(|s| Uuid::parse_str(s).ok()) {
+                    Some(id) => id,
+                    None => {
+                        return OperationResult {
+                            id: op.id.clone(),
+                            entity_type: op.entity_type.clone(),
+                            operation: op.operation.clone(),
+                            success: false,
+                            server_id: None,
+                            error: Some("Missing or invalid submission_id".to_string()),
+                            updated_at: None,
+                        };
+                    }
+                };
+
+                let score = match op.payload.get("score").and_then(|v| v.as_i64()) {
+                    Some(s) => s as i32,
+                    None => {
+                        return OperationResult {
+                            id: op.id.clone(),
+                            entity_type: op.entity_type.clone(),
+                            operation: op.operation.clone(),
+                            success: false,
+                            server_id: None,
+                            error: Some("Missing score field".to_string()),
+                            updated_at: None,
+                        };
+                    }
+                };
+
+                let feedback = op.payload.get("feedback").and_then(|v| v.as_str()).map(|s| s.to_string());
+
+                use crate::schema::assignment_schema::GradeSubmissionRequest;
+                let request = GradeSubmissionRequest { score, feedback };
+
+                match self.assignment_service.grade_submission(submission_id, request, user_id).await {
+                    Ok(_) => OperationResult {
+                        id: op.id.clone(),
+                        entity_type: op.entity_type.clone(),
+                        operation: op.operation.clone(),
+                        success: true,
+                        server_id: None,
+                        error: None,
+                        updated_at: Some(Utc::now().to_rfc3339()),
+                    },
+                    Err(e) => OperationResult {
+                        id: op.id.clone(),
+                        entity_type: op.entity_type.clone(),
+                        operation: op.operation.clone(),
+                        success: false,
+                        server_id: None,
+                        error: Some(e.to_string()),
+                        updated_at: None,
+                    },
+                }
+            }
+            "update" => {
+                let submission_id = match op.payload.get("id").and_then(|v| v.as_str()).and_then(|s| Uuid::parse_str(s).ok()) {
+                    Some(id) => id,
+                    None => {
+                        return OperationResult {
+                            id: op.id.clone(),
+                            entity_type: op.entity_type.clone(),
+                            operation: op.operation.clone(),
+                            success: false,
+                            server_id: None,
+                            error: Some("Missing or invalid submission_id".to_string()),
+                            updated_at: None,
+                        };
+                    }
+                };
+
+                let action = op.payload.get("action").and_then(|v| v.as_str()).unwrap_or("");
+
+                if action == "return" {
+                    match self.assignment_service.return_submission(submission_id, user_id).await {
+                        Ok(_) => OperationResult {
+                            id: op.id.clone(),
+                            entity_type: op.entity_type.clone(),
+                            operation: op.operation.clone(),
+                            success: true,
+                            server_id: None,
+                            error: None,
+                            updated_at: Some(Utc::now().to_rfc3339()),
+                        },
+                        Err(e) => OperationResult {
+                            id: op.id.clone(),
+                            entity_type: op.entity_type.clone(),
+                            operation: op.operation.clone(),
+                            success: false,
+                            server_id: None,
+                            error: Some(e.to_string()),
+                            updated_at: None,
+                        },
+                    }
+                } else {
+                    OperationResult {
+                        id: op.id.clone(),
+                        entity_type: op.entity_type.clone(),
+                        operation: op.operation.clone(),
+                        success: false,
+                        server_id: None,
+                        error: Some(format!("Unknown update action: {}", action)),
+                        updated_at: None,
+                    }
                 }
             }
             _ => OperationResult {

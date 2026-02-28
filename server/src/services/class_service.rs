@@ -41,6 +41,29 @@ impl ClassService {
             .await?
             .ok_or_else(|| AppError::NotFound("Teacher not found".to_string()))?;
 
+        // Deduplication check: prevent creating duplicate classes with same title
+        let existing_classes = self.class_repo.find_by_teacher_id(teacher_id).await?;
+        let normalized_title = request.title.trim().to_lowercase();
+
+        if let Some(existing) = existing_classes
+            .iter()
+            .find(|c| c.title.to_lowercase() == normalized_title)
+        {
+            // Return existing class instead of creating duplicate
+            return Ok(ClassResponse {
+                id: existing.id,
+                title: existing.title.clone(),
+                description: existing.description.clone(),
+                teacher_id: existing.teacher_id,
+                teacher_username: teacher.username.clone(),
+                teacher_full_name: teacher.full_name.clone(),
+                is_archived: existing.is_archived,
+                student_count: 0,
+                created_at: existing.created_at.to_string(),
+                updated_at: existing.updated_at.to_string(),
+            });
+        }
+
         let class = self
             .class_repo
             .create_class(request.title.trim().to_string(), request.description, teacher_id)

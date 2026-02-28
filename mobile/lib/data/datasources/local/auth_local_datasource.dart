@@ -25,6 +25,7 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
       final db = await _localDatabase.database;
       final result = await db.query(
         'users',
+        where: 'is_search_cached = 0',
         limit: 1,
         orderBy: 'cached_at DESC',
       );

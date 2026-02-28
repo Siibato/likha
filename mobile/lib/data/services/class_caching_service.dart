@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:likha/core/errors/exceptions.dart';
-import 'package:likha/core/network/connectivity_service.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/data/datasources/local/class_local_datasource.dart';
 import 'package:likha/data/datasources/remote/class_remote_datasource.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
@@ -11,17 +11,17 @@ import 'package:likha/domain/classes/entities/class_entity.dart';
 class ClassCachingService {
   final ClassRemoteDataSource _remoteDataSource;
   final ClassLocalDataSource _localDataSource;
-  final ConnectivityService _connectivityService;
+  final ServerReachabilityService _serverReachabilityService;
 
   ClassCachingService(
     this._remoteDataSource,
     this._localDataSource,
-    this._connectivityService,
+    this._serverReachabilityService,
   );
 
   /// Fetches user's classes with online-first + cache fallback.
   Future<List<ClassEntity>> getMyClasses() async {
-    if (_connectivityService.isOnline) {
+    if (_serverReachabilityService.isServerReachable) {
       try {
         final result = await _remoteDataSource.getMyClasses();
         // Fire-and-forget cache update
@@ -41,7 +41,7 @@ class ClassCachingService {
 
   /// Fetches class detail with online-first + cache fallback.
   Future<ClassDetail> getClassDetail(String classId) async {
-    if (_connectivityService.isOnline) {
+    if (_serverReachabilityService.isServerReachable) {
       try {
         final result = await _remoteDataSource.getClassDetail(classId: classId);
         // Fire-and-forget cache update

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/network/connectivity_service.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/data/datasources/local/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
@@ -14,17 +15,17 @@ import 'package:likha/domain/assessments/entities/question.dart';
 class AssessmentCachingService {
   final AssessmentRemoteDataSource _remoteDataSource;
   final AssessmentLocalDataSource _localDataSource;
-  final ConnectivityService _connectivityService;
+  final ServerReachabilityService _serverReachabilityService;
 
   AssessmentCachingService(
     this._remoteDataSource,
     this._localDataSource,
-    this._connectivityService,
+    this._serverReachabilityService,
   );
 
   /// Fetches assessments with online-first + cache fallback.
   Future<List<Assessment>> getAssessments(String classId) async {
-    if (_connectivityService.isOnline) {
+    if (_serverReachabilityService.isServerReachable) {
       try {
         final result = await _remoteDataSource.getAssessments(classId: classId);
         // Fire-and-forget cache update
@@ -49,7 +50,7 @@ class AssessmentCachingService {
   Future<(Assessment, List<Question>)> getAssessmentDetail(
     String assessmentId,
   ) async {
-    if (_connectivityService.isOnline) {
+    if (_serverReachabilityService.isServerReachable) {
       try {
         final result = await _remoteDataSource.getAssessmentDetail(
           assessmentId: assessmentId,

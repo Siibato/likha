@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:likha/core/errors/exceptions.dart';
-import 'package:likha/core/network/connectivity_service.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/data/datasources/local/assignment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assignment_remote_datasource.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
@@ -10,17 +10,17 @@ import 'package:likha/domain/assignments/entities/assignment.dart';
 class AssignmentCachingService {
   final AssignmentRemoteDataSource _remoteDataSource;
   final AssignmentLocalDataSource _localDataSource;
-  final ConnectivityService _connectivityService;
+  final ServerReachabilityService _serverReachabilityService;
 
   AssignmentCachingService(
     this._remoteDataSource,
     this._localDataSource,
-    this._connectivityService,
+    this._serverReachabilityService,
   );
 
   /// Fetches assignments for a class with online-first + cache fallback.
   Future<List<Assignment>> getAssignments(String classId) async {
-    if (_connectivityService.isOnline) {
+    if (_serverReachabilityService.isServerReachable) {
       try {
         final result =
             await _remoteDataSource.getAssignments(classId: classId);
@@ -41,7 +41,7 @@ class AssignmentCachingService {
 
   /// Fetches assignment detail with online-first + cache fallback.
   Future<Assignment> getAssignmentDetail(String assignmentId) async {
-    if (_connectivityService.isOnline) {
+    if (_serverReachabilityService.isServerReachable) {
       try {
         final result = await _remoteDataSource.getAssignmentDetail(
           assignmentId: assignmentId,

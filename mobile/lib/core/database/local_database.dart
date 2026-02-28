@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 8,
+      version: 9,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onOpen: (db) async {
@@ -50,7 +50,8 @@ class LocalDatabase {
           created_at TEXT NOT NULL,
           cached_at TEXT NOT NULL,
           is_dirty INTEGER NOT NULL DEFAULT 0,
-          sync_status TEXT NOT NULL DEFAULT 'synced'
+          sync_status TEXT NOT NULL DEFAULT 'synced',
+          is_search_cached INTEGER NOT NULL DEFAULT 0
         )
       ''');
 
@@ -584,6 +585,22 @@ class LocalDatabase {
         ''');
       } catch (e) {
         // Table might already exist
+      }
+    }
+
+    if (oldVersion < 9) {
+      // Add is_search_cached column to users table for student search caching
+      try {
+        await db.execute('ALTER TABLE users ADD COLUMN is_search_cached INTEGER NOT NULL DEFAULT 0');
+      } catch (e) {
+        // Column might already exist
+      }
+
+      // Create index for faster search queries
+      try {
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_users_search_cached ON users(is_search_cached)');
+      } catch (e) {
+        // Index might already exist
       }
     }
   }

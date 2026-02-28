@@ -6,11 +6,14 @@ import 'package:likha/core/constants/api_endpoint.dart';
 import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/network/api_response.dart';
+import 'package:likha/core/network/server_reachability_interceptor.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/services/storage_service.dart';
 
 class DioClient {
   final Dio _dio;
   final StorageService _storageService;
+  final ServerReachabilityService _serverReachabilityService;
 
   /// Set this callback to be notified when auth is irrecoverably invalid.
   /// The AuthWrapper hooks into this to force-navigate to the login screen.
@@ -19,12 +22,13 @@ class DioClient {
   bool _isRefreshing = false;
   final List<Completer<bool>> _refreshQueue = [];
 
-  DioClient(this._storageService) : _dio = Dio() {
+  DioClient(this._storageService, this._serverReachabilityService) : _dio = Dio() {
     _dio
       ..options.baseUrl = ApiConstants.baseUrl
       ..options.connectTimeout = ApiConstants.connectTimeout
       ..options.receiveTimeout = ApiConstants.receiveTimeout
       ..options.responseType = ResponseType.json
+      ..interceptors.add(ServerReachabilityInterceptor(_serverReachabilityService))
       ..interceptors.add(LogInterceptor(
         request: true,
         requestHeader: true,

@@ -101,7 +101,7 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
           final map = assignment.toMap();
           map['cached_at'] = DateTime.now().toIso8601String();
           map['sync_status'] = 'synced';
-          map['is_dirty'] = 0;
+          map['is_offline_mutation'] = 0;
 
           await txn.insert(
             'assignments',
@@ -122,7 +122,7 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
       final map = assignment.toMap();
       map['cached_at'] = DateTime.now().toIso8601String();
       map['sync_status'] = 'synced';
-      map['is_dirty'] = 0;
+      map['is_offline_mutation'] = 0;
 
       await db.insert(
         'assignments',
@@ -160,7 +160,7 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
             'updated_at': now.toIso8601String(),
             'cached_at': now.toIso8601String(),
             'sync_status': 'pending',
-            'is_dirty': 1,
+            'is_offline_mutation': 1,
           },
         );
 
@@ -203,7 +203,7 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
           {
             'text_content': textContent,
             'updated_at': now.toIso8601String(),
-            'is_dirty': 1,
+            'is_offline_mutation': 1,
             'sync_status': 'pending',
             'cached_at': now.toIso8601String(),
           },
@@ -321,7 +321,7 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
           {
             'status': 'submitted',
             'submitted_at': now.toIso8601String(),
-            'is_dirty': 1,
+            'is_offline_mutation': 1,
             'sync_status': 'pending',
             'cached_at': now.toIso8601String(),
           },
@@ -437,7 +437,7 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
               'updated_at': now.toIso8601String(),
               'cached_at': now.toIso8601String(),
               'sync_status': 'synced',
-              'is_dirty': 0,
+              'is_offline_mutation': 0,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );

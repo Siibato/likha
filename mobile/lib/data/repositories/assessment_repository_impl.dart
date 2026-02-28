@@ -5,8 +5,10 @@ import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/core/network/connectivity_service.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/validation/services/validation_service.dart';
+import 'package:likha/services/storage_service.dart';
 import 'package:likha/data/datasources/local/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
@@ -21,8 +23,9 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
   final AssessmentRemoteDataSource _remoteDataSource;
   final AssessmentLocalDataSource _localDataSource;
   final ValidationService _validationService;
-  final ConnectivityService _connectivityService;
   final SyncQueue _syncQueue;
+  final ServerReachabilityService _serverReachabilityService;
+  final StorageService _storageService;
 
   AssessmentRepositoryImpl({
     required AssessmentRemoteDataSource remoteDataSource,
@@ -30,11 +33,14 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required ValidationService validationService,
     required ConnectivityService connectivityService,
     required SyncQueue syncQueue,
+    required ServerReachabilityService serverReachabilityService,
+    required StorageService storageService,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
         _validationService = validationService,
-        _connectivityService = connectivityService,
-        _syncQueue = syncQueue;
+        _syncQueue = syncQueue,
+        _serverReachabilityService = serverReachabilityService,
+        _storageService = storageService;
 
   @override
   ResultFuture<Assessment> createAssessment({
@@ -48,7 +54,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
   }) async {
     try {
       // Check connectivity
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: create assessment locally with UUID and queue sync
         final assessmentId = await _localDataSource.createAssessmentLocally(
           classId: classId,
@@ -108,9 +114,44 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required String classId,
   }) async {
     try {
-      final cached = await _localDataSource.getCachedAssessments(classId);
-      unawaited(_validationService.syncAssessments(classId));
-      return Right(cached);
+      var cachedAssessments = <Assessment>[];
+      bool hasCachedData = false;
+
+      // Step 1: Try to get cached data
+      try {
+        cachedAssessments = await _localDataSource.getCachedAssessments(classId);
+        hasCachedData = true;
+      } on CacheException {
+        hasCachedData = false;
+      }
+
+      // Step 2: If online, fetch fresh data
+      if (_serverReachabilityService.isServerReachable) {
+        try {
+          final freshAssessments = await _remoteDataSource.getAssessments(classId: classId);
+          await _localDataSource.cacheAssessments(freshAssessments);
+          return Right(freshAssessments);
+        } catch (e) {
+          // Server fetch failed - fall through to cached data
+          if (!hasCachedData) {
+            if (e is ServerException) {
+              return Left(ServerFailure(e.message));
+            } else if (e is NetworkException) {
+              return Left(NetworkFailure(e.message));
+            }
+            return Left(ServerFailure(e.toString()));
+          }
+          // Has cache, will use it below
+        }
+      }
+
+      // Step 3: Use cached data if we have it
+      if (hasCachedData) {
+        return Right(cachedAssessments);
+      }
+
+      // No cache and no internet
+      return Left(NetworkFailure('No internet connection and no cached data'));
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {
@@ -158,7 +199,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
   }) async {
     try {
       // Check connectivity
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: queue the mutation
         final entry = SyncQueueEntry(
           id: const Uuid().v4(),
@@ -231,7 +272,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
   ResultVoid deleteAssessment({required String assessmentId}) async {
     try {
       // Check connectivity
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: queue the mutation
         await _syncQueue.enqueue(
           SyncQueueEntry(
@@ -278,7 +319,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       }
 
       // Step 2: Check connectivity
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: queue the mutation
         final entry = SyncQueueEntry(
           id: const Uuid().v4(),
@@ -335,7 +376,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
   }) async {
     try {
       // Check connectivity
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: queue the mutation
         await _syncQueue.enqueue(
           SyncQueueEntry(
@@ -414,7 +455,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
   }) async {
     try {
       // Check connectivity
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: Save questions locally and queue for sync
 
         // Step 1: Create QuestionModel instances with local UUIDs
@@ -502,7 +543,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
   }) async {
     try {
       // Check connectivity
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: Update question locally and queue for sync
         await _localDataSource.updateQuestionLocally(
           questionId: questionId,
@@ -556,7 +597,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
   ResultVoid deleteQuestion({required String questionId}) async {
     try {
       // Check connectivity
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: Soft delete locally and queue for sync
         await _localDataSource.deleteQuestionLocally(
           questionId: questionId,
@@ -658,7 +699,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
   }) async {
     try {
       // Check connectivity
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: queue the mutation (silent, no UI warning)
         await _syncQueue.enqueue(
           SyncQueueEntry(
@@ -743,7 +784,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required String studentUsername,
   }) async {
     try {
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Offline: load cached questions and create local submission
         try {
           final (_, questions) = await _localDataSource.getCachedAssessmentDetail(assessmentId);
@@ -793,7 +834,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required List<Map<String, dynamic>> answers,
   }) async {
     try {
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         await _localDataSource.saveAnswersLocally(
           submissionId: submissionId,
           answersJson:  jsonEncode(answers),
@@ -820,7 +861,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required String submissionId,
   }) async {
     try {
-      if (!_connectivityService.isOnline) {
+      if (!_serverReachabilityService.isServerReachable) {
         // Retrieve assessmentId from local submission record
         final cached = await _localDataSource.getCachedSubmissionDetail(submissionId);
         final assessmentId = cached?.assessmentId ?? '';

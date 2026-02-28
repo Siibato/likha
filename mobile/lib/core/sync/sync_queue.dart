@@ -18,7 +18,7 @@ enum SyncEntityType {
   activityLog
 }
 
-enum SyncOperation { create, update, delete, submit, grade, publish, upload, saveAnswers, releaseResults, overrideAnswer }
+enum SyncOperation { create, update, delete, submit, grade, publish, upload, saveAnswers, releaseResults, overrideAnswer, addEnrollment, removeEnrollment }
 
 enum SyncStatus { pending, failed }
 
