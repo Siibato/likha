@@ -247,8 +247,8 @@ class AuthRepositoryImpl implements AuthRepository {
 
         await _syncQueue.enqueue(entry);
 
-        // Return optimistic user for UI
-        final optimisticUser = User(
+        // Create optimistic user for UI
+        final optimisticUser = UserModel(
           id: '',
           username: username,
           fullName: fullName,
@@ -258,6 +258,13 @@ class AuthRepositoryImpl implements AuthRepository {
           activatedAt: null,
           createdAt: DateTime.now(),
         );
+
+        // Cache the optimistic account locally for offline display
+        try {
+          await _localDataSource.cacheCreatedAccount(optimisticUser);
+        } catch (e) {
+          // Cache failure is not critical - continue with return
+        }
 
         return Right(optimisticUser);
       }
@@ -338,34 +345,40 @@ class AuthRepositoryImpl implements AuthRepository {
         }
       }
 
-      // Step 3: Use cached data if we have it
-      if (hasCachedData) {
-        final pendingEntries = await _syncQueue.getAllRetriable();
-        final pendingAccounts = <UserModel>[];
+      // Step 3: Reconstruct pending accounts from sync queue
+      final pendingEntries = await _syncQueue.getAllRetriable();
+      final pendingAccounts = <UserModel>[];
 
-        for (final entry in pendingEntries) {
-          if (entry.entityType == SyncEntityType.adminUser &&
-              entry.operation == SyncOperation.create) {
-            final payload = entry.payload;
-            pendingAccounts.add(
-              UserModel(
-                id: '',
-                username: payload['username'] as String? ?? '',
-                fullName: payload['full_name'] as String? ?? '',
-                role: payload['role'] as String? ?? '',
-                accountStatus: 'pending_activation',
-                isActive: false,
-                activatedAt: null,
-                createdAt: DateTime.now(),
-              ),
-            );
-          }
+      for (final entry in pendingEntries) {
+        if (entry.entityType == SyncEntityType.adminUser &&
+            entry.operation == SyncOperation.create) {
+          final payload = entry.payload;
+          pendingAccounts.add(
+            UserModel(
+              id: '',
+              username: payload['username'] as String? ?? '',
+              fullName: payload['full_name'] as String? ?? '',
+              role: payload['role'] as String? ?? '',
+              accountStatus: 'pending_activation',
+              isActive: false,
+              activatedAt: null,
+              createdAt: DateTime.now(),
+            ),
+          );
         }
+      }
 
+      // Return cached accounts + pending accounts
+      if (hasCachedData) {
         return Right([...cachedAccounts, ...pendingAccounts]);
       }
 
-      // No cache and no server connection
+      // If we have pending accounts, return them even without cache
+      if (pendingAccounts.isNotEmpty) {
+        return Right(pendingAccounts);
+      }
+
+      // No cache, no server connection, and no pending accounts
       return Left(NetworkFailure('No internet connection and no cached data'));
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

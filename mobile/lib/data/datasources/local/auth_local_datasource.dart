@@ -9,6 +9,7 @@ abstract class AuthLocalDataSource {
   Future<void> cacheCurrentUser(UserModel user);
   Future<List<UserModel>> getCachedAccounts();
   Future<void> cacheAccounts(List<UserModel> accounts);
+  Future<void> cacheCreatedAccount(UserModel account);
   Future<List<ActivityLogModel>> getCachedActivityLogs(String userId);
   Future<void> cacheActivityLogs(List<ActivityLogModel> logs, String userId);
   Future<void> clearActivityLogsForUser(String userId);
@@ -97,6 +98,25 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
       });
     } catch (e) {
       throw CacheException('Failed to cache accounts: $e');
+    }
+  }
+
+  @override
+  Future<void> cacheCreatedAccount(UserModel account) async {
+    try {
+      final db = await _localDatabase.database;
+      final map = account.toMap();
+      map['cached_at'] = DateTime.now().toIso8601String();
+      map['sync_status'] = 'pending';
+      map['is_dirty'] = 1;
+
+      await db.insert(
+        'users',
+        map,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } catch (e) {
+      throw CacheException('Failed to cache created account: $e');
     }
   }
 
