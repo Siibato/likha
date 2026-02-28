@@ -34,6 +34,8 @@ pub struct OperationResult {
     pub server_id: Option<String>, // For creates
     pub error: Option<String>,
     pub updated_at: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Value>, // For nested ID mappings
 }
 
 /// Response from push endpoint
@@ -50,6 +52,7 @@ pub struct SyncPushService {
     assignment_service: Arc<AssignmentService>,
     material_service: Arc<LearningMaterialService>,
     auth_service: Arc<AuthService>,
+    processed_ops_repo: Arc<crate::db::repositories::processed_operations_repository::ProcessedOperationsRepository>,
 }
 
 impl SyncPushService {
@@ -60,6 +63,7 @@ impl SyncPushService {
         assignment_service: Arc<AssignmentService>,
         material_service: Arc<LearningMaterialService>,
         auth_service: Arc<AuthService>,
+        processed_ops_repo: Arc<crate::db::repositories::processed_operations_repository::ProcessedOperationsRepository>,
     ) -> Self {
         Self {
             entitlement_service,
@@ -68,6 +72,7 @@ impl SyncPushService {
             assignment_service,
             material_service,
             auth_service,
+            processed_ops_repo,
         }
     }
 
@@ -96,7 +101,23 @@ impl SyncPushService {
 
         // Process each operation independently
         for op in operations {
+            // ✅ CHECK IF ALREADY PROCESSED (DEDUPLICATION)
+            if let Ok(Some(cached_result)) = self.processed_ops_repo.check_processed(&op.id).await {
+                results.push(cached_result);
+                continue;
+            }
+
             let result = self.process_single_operation(user_id, user_role, &op).await;
+
+            // ✅ SAVE RESULT BEFORE RETURNING (ENABLES DEDUP ON RETRY)
+            let _ = self.processed_ops_repo.save_processed(
+                &op.id,
+                user_id,
+                &op.entity_type,
+                &op.operation,
+                &result,
+            ).await;
+
             results.push(result);
         }
 
@@ -129,6 +150,7 @@ impl SyncPushService {
                 server_id: None,
                 error: Some("Authorization failed".to_string()),
                 updated_at: None,
+                metadata: None,
             };
         }
 
@@ -163,6 +185,7 @@ impl SyncPushService {
                 server_id: None,
                 error: Some(format!("Unknown entity type: {}", op.entity_type)),
                 updated_at: None,
+                metadata: None,
             },
         }
     }
@@ -186,6 +209,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing title field".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -207,6 +231,7 @@ impl SyncPushService {
                         server_id: Some(response.id.to_string()),
                         error: None,
                         updated_at: Some(response.updated_at),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -216,6 +241,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -232,6 +258,7 @@ impl SyncPushService {
                                 server_id: None,
                                 error: Some("Invalid class ID".to_string()),
                                 updated_at: None,
+                                metadata: None,
                             };
                         }
                     },
@@ -244,6 +271,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing id field".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -262,6 +290,7 @@ impl SyncPushService {
                         server_id: None,
                         error: None,
                         updated_at: Some(response.updated_at),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -271,6 +300,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -287,6 +317,7 @@ impl SyncPushService {
                                 server_id: None,
                                 error: Some("Invalid class ID".to_string()),
                                 updated_at: None,
+                                metadata: None,
                             };
                         }
                     },
@@ -299,6 +330,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing id field".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -312,6 +344,7 @@ impl SyncPushService {
                         server_id: None,
                         error: None,
                         updated_at: Some(Utc::now().to_rfc3339()),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -321,6 +354,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -337,6 +371,7 @@ impl SyncPushService {
                                 server_id: None,
                                 error: Some("Invalid class ID".to_string()),
                                 updated_at: None,
+                                metadata: None,
                             };
                         }
                     },
@@ -349,6 +384,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing class_id field".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -365,6 +401,7 @@ impl SyncPushService {
                                 server_id: None,
                                 error: Some("Invalid student ID".to_string()),
                                 updated_at: None,
+                                metadata: None,
                             };
                         }
                     },
@@ -377,19 +414,21 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing student_id field".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
 
                 match self.class_service.add_student(class_id, student_id, user_id).await {
-                    Ok(_) => OperationResult {
+                    Ok(enrollment_response) => OperationResult {
                         id: op.id.clone(),
                         entity_type: op.entity_type.clone(),
                         operation: op.operation.clone(),
                         success: true,
-                        server_id: None,
+                        server_id: Some(enrollment_response.id.to_string()),
                         error: None,
                         updated_at: Some(Utc::now().to_rfc3339()),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -399,6 +438,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -415,6 +455,7 @@ impl SyncPushService {
                                 server_id: None,
                                 error: Some("Invalid class ID".to_string()),
                                 updated_at: None,
+                                metadata: None,
                             };
                         }
                     },
@@ -427,6 +468,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing class_id field".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -443,6 +485,7 @@ impl SyncPushService {
                                 server_id: None,
                                 error: Some("Invalid student ID".to_string()),
                                 updated_at: None,
+                                metadata: None,
                             };
                         }
                     },
@@ -455,6 +498,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing student_id field".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -468,6 +512,7 @@ impl SyncPushService {
                         server_id: None,
                         error: None,
                         updated_at: Some(Utc::now().to_rfc3339()),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -477,6 +522,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -488,6 +534,7 @@ impl SyncPushService {
                 server_id: None,
                 error: Some(format!("Unknown operation: {}", op.operation)),
                 updated_at: None,
+                metadata: None,
             },
         }
     }
@@ -511,6 +558,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing username field".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -526,6 +574,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing full_name field".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -541,6 +590,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing role field".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -562,6 +612,7 @@ impl SyncPushService {
                         server_id: Some(user.id.to_string()),
                         error: None,
                         updated_at: Some(Utc::now().to_rfc3339()),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -571,6 +622,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -587,6 +639,7 @@ impl SyncPushService {
                                 server_id: None,
                                 error: Some("Invalid user ID".to_string()),
                                 updated_at: None,
+                                metadata: None,
                             };
                         }
                     },
@@ -599,6 +652,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing id field".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -626,6 +680,7 @@ impl SyncPushService {
                                 server_id: None,
                                 error: None,
                                 updated_at: Some(Utc::now().to_rfc3339()),
+                                metadata: None,
                             },
                             Err(e) => OperationResult {
                                 id: op.id.clone(),
@@ -635,6 +690,7 @@ impl SyncPushService {
                                 server_id: None,
                                 error: Some(e.to_string()),
                                 updated_at: None,
+                                metadata: None,
                             },
                         }
                     }
@@ -654,6 +710,7 @@ impl SyncPushService {
                                 server_id: None,
                                 error: None,
                                 updated_at: Some(Utc::now().to_rfc3339()),
+                                metadata: None,
                             },
                             Err(e) => OperationResult {
                                 id: op.id.clone(),
@@ -663,6 +720,7 @@ impl SyncPushService {
                                 server_id: None,
                                 error: Some(e.to_string()),
                                 updated_at: None,
+                                metadata: None,
                             },
                         }
                     }
@@ -685,6 +743,7 @@ impl SyncPushService {
                                 server_id: None,
                                 error: None,
                                 updated_at: Some(Utc::now().to_rfc3339()),
+                                metadata: None,
                             },
                             Err(e) => OperationResult {
                                 id: op.id.clone(),
@@ -694,6 +753,7 @@ impl SyncPushService {
                                 server_id: None,
                                 error: Some(e.to_string()),
                                 updated_at: None,
+                                metadata: None,
                             },
                         }
                     }
@@ -705,6 +765,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(format!("Unknown action for admin_user update: {}", action)),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -716,6 +777,7 @@ impl SyncPushService {
                 server_id: None,
                 error: Some(format!("Unsupported operation for admin_user: {}", op.operation)),
                 updated_at: None,
+                metadata: None,
             },
         }
     }
@@ -741,6 +803,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid class_id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -756,6 +819,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing title field".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -787,6 +851,7 @@ impl SyncPushService {
                         server_id: Some(response.id.to_string()),
                         error: None,
                         updated_at: Some(response.updated_at),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -796,6 +861,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -811,6 +877,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid assessment id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -839,6 +906,7 @@ impl SyncPushService {
                         server_id: None,
                         error: None,
                         updated_at: Some(response.updated_at),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -848,6 +916,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -863,6 +932,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid assessment id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -876,6 +946,7 @@ impl SyncPushService {
                         server_id: None,
                         error: None,
                         updated_at: Some(Utc::now().to_rfc3339()),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -885,6 +956,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -900,6 +972,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid assessment id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -913,6 +986,7 @@ impl SyncPushService {
                         server_id: None,
                         error: None,
                         updated_at: Some(Utc::now().to_rfc3339()),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -922,6 +996,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -937,6 +1012,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid assessment id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -950,6 +1026,7 @@ impl SyncPushService {
                         server_id: None,
                         error: None,
                         updated_at: Some(Utc::now().to_rfc3339()),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -959,6 +1036,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -970,6 +1048,7 @@ impl SyncPushService {
                 server_id: None,
                 error: Some(format!("Unknown operation: {}", op.operation)),
                 updated_at: None,
+                metadata: None,
             },
         }
     }
@@ -995,6 +1074,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid assessment_id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -1011,6 +1091,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid questions array".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -1029,6 +1110,7 @@ impl SyncPushService {
                                 server_id: None,
                                 error: Some("Missing question_type field".to_string()),
                                 updated_at: None,
+                                metadata: None,
                             };
                         }
                     };
@@ -1044,6 +1126,7 @@ impl SyncPushService {
                                 server_id: None,
                                 error: Some("Missing question_text field".to_string()),
                                 updated_at: None,
+                                metadata: None,
                             };
                         }
                     };
@@ -1059,6 +1142,7 @@ impl SyncPushService {
                                 server_id: None,
                                 error: Some("Missing points field".to_string()),
                                 updated_at: None,
+                                metadata: None,
                             };
                         }
                     };
@@ -1124,6 +1208,7 @@ impl SyncPushService {
                                 server_id: Some(first_response.id.to_string()),
                                 error: None,
                                 updated_at: Some(Utc::now().to_rfc3339()),
+                                metadata: None,
                             }
                         } else {
                             OperationResult {
@@ -1134,6 +1219,7 @@ impl SyncPushService {
                                 server_id: None,
                                 error: Some("No questions returned from server".to_string()),
                                 updated_at: None,
+                                metadata: None,
                             }
                         }
                     }
@@ -1145,6 +1231,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -1160,6 +1247,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid question id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -1221,6 +1309,7 @@ impl SyncPushService {
                         server_id: None,
                         error: None,
                         updated_at: Some(Utc::now().to_rfc3339()),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -1230,6 +1319,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -1245,6 +1335,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid question id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -1258,6 +1349,7 @@ impl SyncPushService {
                         server_id: None,
                         error: None,
                         updated_at: Some(Utc::now().to_rfc3339()),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -1267,6 +1359,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -1278,6 +1371,7 @@ impl SyncPushService {
                 server_id: None,
                 error: Some(format!("Unknown operation for question: {}", op.operation)),
                 updated_at: None,
+                metadata: None,
             },
         }
     }
@@ -1302,6 +1396,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid class_id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -1317,6 +1412,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing title field".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -1332,6 +1428,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing instructions field".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -1362,6 +1459,7 @@ impl SyncPushService {
                         server_id: Some(response.id.to_string()),
                         error: None,
                         updated_at: Some(response.updated_at),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -1371,6 +1469,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -1386,6 +1485,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid assignment id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -1419,6 +1519,7 @@ impl SyncPushService {
                         server_id: None,
                         error: None,
                         updated_at: Some(response.updated_at),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -1428,6 +1529,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -1443,6 +1545,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid assignment id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -1456,6 +1559,7 @@ impl SyncPushService {
                         server_id: None,
                         error: None,
                         updated_at: Some(Utc::now().to_rfc3339()),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -1465,6 +1569,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -1480,6 +1585,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid assignment id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -1493,6 +1599,7 @@ impl SyncPushService {
                         server_id: None,
                         error: None,
                         updated_at: Some(Utc::now().to_rfc3339()),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -1502,6 +1609,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -1513,6 +1621,7 @@ impl SyncPushService {
                 server_id: None,
                 error: Some(format!("Unknown operation: {}", op.operation)),
                 updated_at: None,
+                metadata: None,
             },
         }
     }
@@ -1536,6 +1645,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid class_id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -1551,6 +1661,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing title field".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -1577,6 +1688,7 @@ impl SyncPushService {
                         server_id: Some(response.id.to_string()),
                         error: None,
                         updated_at: Some(response.updated_at),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -1586,6 +1698,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -1601,6 +1714,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid material id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -1628,6 +1742,7 @@ impl SyncPushService {
                         server_id: None,
                         error: None,
                         updated_at: Some(response.updated_at),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -1637,6 +1752,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -1652,6 +1768,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid material id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -1665,6 +1782,7 @@ impl SyncPushService {
                         server_id: None,
                         error: None,
                         updated_at: Some(Utc::now().to_rfc3339()),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -1674,6 +1792,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -1685,6 +1804,7 @@ impl SyncPushService {
                 server_id: None,
                 error: Some(format!("Unknown operation: {}", op.operation)),
                 updated_at: None,
+                metadata: None,
             },
         }
     }
@@ -1705,7 +1825,7 @@ impl SyncPushService {
                     None => OperationResult {
                         id: op.id.clone(), entity_type: op.entity_type.clone(),
                         operation: op.operation.clone(), success: false, server_id: None,
-                        error: Some("Missing assessment_id".to_string()), updated_at: None,
+                        error: Some("Missing assessment_id".to_string()), updated_at: None, metadata: None,
                     },
                     Some(assessment_id) => {
                         match self.assessment_service.start_assessment(assessment_id, user_id).await {
@@ -1713,12 +1833,12 @@ impl SyncPushService {
                                 id: op.id.clone(), entity_type: op.entity_type.clone(),
                                 operation: op.operation.clone(), success: true,
                                 server_id: Some(submission.submission_id.to_string()),
-                                error: None, updated_at: None,
+                                error: None, updated_at: None, metadata: None,
                             },
                             Err(e) => OperationResult {
                                 id: op.id.clone(), entity_type: op.entity_type.clone(),
                                 operation: op.operation.clone(), success: false,
-                                server_id: None, error: Some(e.to_string()), updated_at: None,
+                                server_id: None, error: Some(e.to_string()), updated_at: None, metadata: None,
                             },
                         }
                     }
@@ -1745,6 +1865,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid submission_id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -1761,6 +1882,7 @@ impl SyncPushService {
                                 server_id: None,
                                 error: Some("Invalid answers format".to_string()),
                                 updated_at: None,
+                                metadata: None,
                             };
                         }
                     },
@@ -1776,6 +1898,7 @@ impl SyncPushService {
                         server_id: None,
                         error: None,
                         updated_at: Some(Utc::now().to_rfc3339()),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -1785,6 +1908,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -1800,6 +1924,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid submission_id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -1813,6 +1938,7 @@ impl SyncPushService {
                         server_id: None,
                         error: None,
                         updated_at: Some(Utc::now().to_rfc3339()),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -1822,6 +1948,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -1837,6 +1964,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid answer_id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -1855,6 +1983,7 @@ impl SyncPushService {
                         server_id: None,
                         error: None,
                         updated_at: Some(Utc::now().to_rfc3339()),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -1864,6 +1993,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -1875,6 +2005,7 @@ impl SyncPushService {
                 server_id: None,
                 error: Some(format!("Unknown operation: {}", op.operation)),
                 updated_at: None,
+                metadata: None,
             },
         }
     }
@@ -1898,6 +2029,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid assignment_id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -1911,6 +2043,7 @@ impl SyncPushService {
                         server_id: Some(response.id.to_string()),
                         error: None,
                         updated_at: Some(response.updated_at),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -1920,6 +2053,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -1935,6 +2069,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid submission_id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -1948,6 +2083,7 @@ impl SyncPushService {
                         server_id: None,
                         error: None,
                         updated_at: Some(Utc::now().to_rfc3339()),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -1957,6 +2093,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -1972,6 +2109,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid submission_id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -1987,6 +2125,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing score field".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -2005,6 +2144,7 @@ impl SyncPushService {
                         server_id: None,
                         error: None,
                         updated_at: Some(Utc::now().to_rfc3339()),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -2014,6 +2154,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -2029,6 +2170,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid submission_id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -2045,6 +2187,7 @@ impl SyncPushService {
                             server_id: None,
                             error: None,
                             updated_at: Some(Utc::now().to_rfc3339()),
+                            metadata: None,
                         },
                         Err(e) => OperationResult {
                             id: op.id.clone(),
@@ -2054,6 +2197,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some(e.to_string()),
                             updated_at: None,
+                            metadata: None,
                         },
                     }
                 } else {
@@ -2065,6 +2209,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(format!("Unknown update action: {}", action)),
                         updated_at: None,
+                        metadata: None,
                     }
                 }
             }
@@ -2076,6 +2221,7 @@ impl SyncPushService {
                 server_id: None,
                 error: Some(format!("Unknown operation: {}", op.operation)),
                 updated_at: None,
+                metadata: None,
             },
         }
     }
@@ -2099,6 +2245,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid file_id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -2112,6 +2259,7 @@ impl SyncPushService {
                         server_id: None,
                         error: None,
                         updated_at: Some(Utc::now().to_rfc3339()),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -2121,6 +2269,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -2132,6 +2281,7 @@ impl SyncPushService {
                 server_id: None,
                 error: Some(format!("Unknown operation for submission_file: {}", op.operation)),
                 updated_at: None,
+                metadata: None,
             },
         }
     }
@@ -2155,6 +2305,7 @@ impl SyncPushService {
                             server_id: None,
                             error: Some("Missing or invalid file_id".to_string()),
                             updated_at: None,
+                            metadata: None,
                         };
                     }
                 };
@@ -2168,6 +2319,7 @@ impl SyncPushService {
                         server_id: None,
                         error: None,
                         updated_at: Some(Utc::now().to_rfc3339()),
+                        metadata: None,
                     },
                     Err(e) => OperationResult {
                         id: op.id.clone(),
@@ -2177,6 +2329,7 @@ impl SyncPushService {
                         server_id: None,
                         error: Some(e.to_string()),
                         updated_at: None,
+                        metadata: None,
                     },
                 }
             }
@@ -2188,6 +2341,7 @@ impl SyncPushService {
                 server_id: None,
                 error: Some(format!("Unknown operation for material_file: {}", op.operation)),
                 updated_at: None,
+                metadata: None,
             },
         }
     }
@@ -2210,6 +2364,7 @@ impl SyncPushService {
             server_id: None,
             error: None,
             updated_at: Some(Utc::now().to_rfc3339()),
+            metadata: None,
         }
     }
 }

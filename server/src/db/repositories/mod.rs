@@ -7,6 +7,7 @@ pub mod entitlement_repository;
 pub mod learning_material_repository;
 pub mod login_attempt_repository;
 pub mod manifest_repository;
+pub mod processed_operations_repository;
 pub mod submission_repository;
 pub mod sync_conflict_repository;
 pub mod sync_cursor_repository;

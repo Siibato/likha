@@ -25,7 +25,7 @@ abstract class ClassLocalDataSource {
     required String title,
     required String description,
   });
-  Future<void> addStudentLocally({
+  Future<String> addStudentLocally({
     required String classId,
     required UserModel student,
   });
@@ -316,7 +316,7 @@ class ClassLocalDataSourceImpl implements ClassLocalDataSource {
   }
 
   @override
-  Future<void> addStudentLocally({
+  Future<String> addStudentLocally({
     required String classId,
     required UserModel student,
   }) async {
@@ -326,7 +326,7 @@ class ClassLocalDataSourceImpl implements ClassLocalDataSource {
       final now = DateTime.now();
 
       await db.transaction((txn) async {
-        // Insert enrollment
+        // Insert enrollment with sync_status='pending' to enable ID reconciliation on sync
         await txn.insert(
           'class_enrollments',
           {
@@ -341,6 +341,8 @@ class ClassLocalDataSourceImpl implements ClassLocalDataSource {
             'enrolled_at': now.toIso8601String(),
             'updated_at': now.toIso8601String(),
             'cached_at': now.toIso8601String(),
+            'sync_status': 'pending',
+            'local_id': enrollmentId,
           },
         );
 
@@ -356,6 +358,8 @@ class ClassLocalDataSourceImpl implements ClassLocalDataSource {
           whereArgs: [classId],
         );
       });
+
+      return enrollmentId;
     } catch (e) {
       throw CacheException('Failed to add student locally: $e');
     }

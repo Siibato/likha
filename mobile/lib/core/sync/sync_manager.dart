@@ -78,6 +78,10 @@ class SyncManager {
         _runSync();
       }
     });
+    
+    if (_serverReachabilityService.isServerReachable && !_isSyncing) {
+      _runSync();
+    }
   }
 
   /// Stop sync manager
@@ -230,6 +234,20 @@ class SyncManager {
               // Then reconcile nested choice and answer IDs
               await _reconcileQuestionNestedIds(db, serverId, result);
             }
+          }
+        }
+
+        // Handle enrollment ID reconciliation for add_enrollment operations
+        if (serverId != null && operation == 'add_enrollment' && entry != null) {
+          final localEnrollmentId = entry.payload['local_enrollment_id'] as String?;
+          if (localEnrollmentId != null) {
+            // Update the enrollment record from local UUID to server UUID
+            await db.update(
+              'class_enrollments',
+              {'id': serverId, 'sync_status': 'synced'},
+              where: 'id = ?',
+              whereArgs: [localEnrollmentId],
+            );
           }
         }
       } else {

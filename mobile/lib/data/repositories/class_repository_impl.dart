@@ -322,8 +322,9 @@ class ClassRepositoryImpl implements ClassRepository {
         );
 
         // Persist enrollment to local DB so it survives app restarts
+        String? enrollmentId;
         try {
-          await _localDataSource.addStudentLocally(classId: classId, student: studentModel);
+          enrollmentId = await _localDataSource.addStudentLocally(classId: classId, student: studentModel);
         } catch (_) {}
 
         // Queue sync
@@ -331,6 +332,7 @@ class ClassRepositoryImpl implements ClassRepository {
           'class_id': classId, 'student_id': studentId,
           if (cachedStudent != null) 'student_username': cachedStudent.username,
           if (cachedStudent != null) 'student_full_name': cachedStudent.fullName,
+          if (enrollmentId != null) 'local_enrollment_id': enrollmentId,
         };
         await _syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),

@@ -21,6 +21,32 @@ class IdReconciler {
     'class_enrollment': 'class_enrollments',
     'class_enrollments': 'class_enrollments',
   };
+
+  /// Map table names to their foreign key references
+  /// When a parent table ID changes, update all child tables that reference it
+  static const Map<String, List<(String table, String column)>> _foreignKeyMap = {
+    'classes': [
+      ('assessments', 'class_id'),
+      ('assignments', 'class_id'),
+      ('learning_materials', 'class_id'),
+      ('class_enrollments', 'class_id'),
+    ],
+    'assessments': [
+      ('questions', 'assessment_id'),
+      ('assessment_submissions', 'assessment_id'),
+    ],
+    'assignments': [
+      ('assignment_submissions', 'assignment_id'),
+    ],
+    'learning_materials': [
+      ('material_files', 'material_id'),
+    ],
+    'questions': [],
+    'assessment_submissions': [],
+    'assignment_submissions': [],
+    'class_enrollments': [],
+    'material_files': [],
+  };
   /// Map local operation IDs to server-generated IDs
   /// Updates all references and creates mapping records
   static Map<String, String> reconcileIds(
@@ -79,8 +105,10 @@ class IdReconciler {
     return localIds.where((id) => !idMap.containsKey(id)).toList();
   }
 
-  /// Apply ID mappings to database by updating sync_status
-  /// For each mapping, updates sync_status = 'synced' in the correct table WHERE local_id = localId
+  /// Apply ID mappings to database
+  /// STEP 1: Update main table ID from local UUID to server ID
+  /// STEP 2: Update all foreign key references in child tables
+  /// STEP 3: Mark sync_status as synced
   static Future<void> applyToDatabase(
     Database db,
     List<({String entityType, String localId, String serverId})> mappings,
@@ -92,14 +120,35 @@ class IdReconciler {
       }
 
       try {
+        // STEP 1: Update main table ID
         await db.update(
           tableName,
-          {'sync_status': 'synced'},
-          where: 'local_id = ?',
+          {
+            'id': mapping.serverId,
+            'sync_status': 'synced',
+          },
+          where: 'id = ?',
           whereArgs: [mapping.localId],
         );
+
+        // STEP 2: Update all foreign key references in child tables
+        final fks = _foreignKeyMap[tableName] ?? [];
+        for (final (fkTable, fkColumn) in fks) {
+          try {
+            await db.update(
+              fkTable,
+              {fkColumn: mapping.serverId},
+              where: '$fkColumn = ?',
+              whereArgs: [mapping.localId],
+            );
+          } catch (e) {
+            // Table might not have any records with this FK, continue
+            print('Warning: FK cascade update failed for $fkTable.$fkColumn: $e');
+          }
+        }
       } catch (e) {
-        // Log error but continue processing other mappings
+        // Critical error updating main table, but continue with other mappings
+        print('Error applying ID mapping for ${mapping.entityType}: $e');
       }
     }
   }

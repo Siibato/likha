@@ -31,6 +31,7 @@ use crate::db::repositories::{
     manifest_repository::ManifestRepository,
     sync_cursor_repository::SyncCursorRepository,
     sync_conflict_repository::SyncConflictRepository,
+    processed_operations_repository::ProcessedOperationsRepository,
 };
 
 #[tokio::main]
@@ -175,6 +176,7 @@ async fn main() {
         cursor_repo,
     ));
 
+    let processed_ops_repo = Arc::new(ProcessedOperationsRepository::new(db.clone()));
     let sync_push_service = Arc::new(SyncPushService::new(
         entitlement_service.clone(),
         class_service.clone(),
@@ -182,6 +184,7 @@ async fn main() {
         assignment_service.clone(),
         material_service.clone(),
         auth_service.clone(),
+        processed_ops_repo,
     ));
 
     let conflict_repo = SyncConflictRepository::new(db.clone());

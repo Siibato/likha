@@ -14,6 +14,7 @@ mod create_database_metadata_table;
 mod add_soft_delete_columns;
 mod create_sync_infrastructure_tables;
 mod create_login_attempts_table;
+mod add_processed_operations;
 
 pub struct Migrator;
 
@@ -35,6 +36,7 @@ impl MigratorTrait for Migrator {
             Box::new(add_soft_delete_columns::Migration),
             Box::new(create_sync_infrastructure_tables::Migration),
             Box::new(create_login_attempts_table::Migration),
+            Box::new(add_processed_operations::Migration),
         ]
     }
 }
