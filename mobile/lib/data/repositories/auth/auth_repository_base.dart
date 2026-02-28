@@ -1,10 +1,10 @@
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/data/datasources/local/assessment_local_datasource.dart';
-import 'package:likha/data/datasources/local/assignment_local_datasource.dart';
-import 'package:likha/data/datasources/local/auth_local_datasource.dart';
-import 'package:likha/data/datasources/local/class_local_datasource.dart';
-import 'package:likha/data/datasources/local/learning_material_local_datasource.dart';
+import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
+import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
+import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
+import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
+import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
 import 'package:likha/data/datasources/remote/auth_remote_datasource.dart';
 import 'package:likha/domain/auth/repositories/auth_repository.dart';
 import 'package:likha/services/storage_service.dart';

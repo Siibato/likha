@@ -3,7 +3,7 @@ import 'package:likha/core/network/connectivity_service.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/validation/services/validation_service.dart';
-import 'package:likha/data/datasources/local/learning_material_local_datasource.dart';
+import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
 import 'package:likha/data/datasources/remote/learning_material_remote_datasource.dart';
 import 'package:likha/domain/learning_materials/repositories/learning_material_repository.dart';
 import 'package:likha/services/storage_service.dart';

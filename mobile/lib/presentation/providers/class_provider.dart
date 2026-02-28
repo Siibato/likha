@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/data/datasources/local/class_local_datasource.dart';
+import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';

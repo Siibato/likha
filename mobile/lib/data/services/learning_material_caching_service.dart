@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
-import 'package:likha/data/datasources/local/learning_material_local_datasource.dart';
+import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
 import 'package:likha/data/datasources/remote/learning_material_remote_datasource.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/domain/learning_materials/entities/learning_material.dart';
