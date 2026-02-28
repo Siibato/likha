@@ -463,4 +463,13 @@ impl ClassService {
 
         Ok(())
     }
+
+    /// Check if a student is enrolled in a class
+    pub async fn is_student_enrolled(
+        &self,
+        class_id: Uuid,
+        student_id: Uuid,
+    ) -> AppResult<bool> {
+        self.class_repo.is_student_enrolled(class_id, student_id).await
+    }
 }

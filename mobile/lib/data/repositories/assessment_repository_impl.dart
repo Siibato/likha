@@ -66,7 +66,31 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
           showResultsImmediately: showResultsImmediately,
         );
 
+        // Queue sync operation (CRITICAL: this was missing!)
+        final entry = SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assessment,
+          operation: SyncOperation.create,
+          payload: {
+            'class_id': classId,
+            'title': title,
+            if (description != null) 'description': description,
+            'time_limit_minutes': timeLimitMinutes,
+            'open_at': openAt,
+            'close_at': closeAt,
+            if (showResultsImmediately != null)
+              'show_results_immediately': showResultsImmediately,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
+        );
+
+        await _syncQueue.enqueue(entry);
+
         // Return optimistic response with real UUID
+        final now = DateTime.now();
         return Right(Assessment(
           id: assessmentId,
           classId: classId,
@@ -81,8 +105,8 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
           totalPoints: 0,
           questionCount: 0,
           submissionCount: 0,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
+          createdAt: now,
+          updatedAt: now,
         ));
       }
 

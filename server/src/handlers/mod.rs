@@ -7,6 +7,5 @@ pub mod health_handler;
 pub mod learning_material_handler;
 pub mod sync_conflict_handler;
 pub mod sync_fetch_handler;
-pub mod sync_handler;
 pub mod sync_manifest_handler;
 pub mod sync_push_handler;

@@ -122,11 +122,7 @@ class _AddStudentPageState extends ConsumerState<AddStudentPage> {
                         itemCount: classState.searchResults.length,
                         itemBuilder: (context, index) {
                           final student = classState.searchResults[index];
-                          final enrolledIds = classState
-                                  .currentClassDetail?.students
-                                  .map((e) => e.student.id)
-                                  .toSet() ??
-                              {};
+                          final enrolledIds = classState.enrolledStudentIds;
                           final isEnrolled = enrolledIds.contains(student.id);
 
                           return SearchableStudentItem(

@@ -59,6 +59,7 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       // Check connectivity
       if (!_serverReachabilityService.isServerReachable) {
         // Offline: queue the mutation
+        final assignmentId = const Uuid().v4();
         final entry = SyncQueueEntry(
           id: const Uuid().v4(),
           entityType: SyncEntityType.assignment,
@@ -81,9 +82,9 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
 
         await _syncQueue.enqueue(entry);
 
-        // Create optimistic response
+        // Create optimistic response with generated UUID
         final optimisticAssignment = Assignment(
-          id: '',
+          id: assignmentId,
           classId: classId,
           title: title,
           instructions: instructions,
@@ -103,7 +104,7 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
         try {
           final currentCached = await _localDataSource.getCachedAssignments(classId);
           final optimisticModel = AssignmentModel(
-            id: '',
+            id: assignmentId,
             classId: classId,
             title: title,
             instructions: instructions,

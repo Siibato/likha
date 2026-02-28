@@ -138,6 +138,17 @@ class ClassRepositoryImpl implements ClassRepository {
         // Cache empty, try to fetch from server
         final freshClasses = await _remoteDataSource.getMyClasses();
         await _localDataSource.cacheClasses(freshClasses);
+
+        // Eagerly cache each class detail so enrollments are available offline
+        for (final cls in freshClasses) {
+          try {
+            final detail = await _remoteDataSource.getClassDetail(classId: cls.id);
+            await _localDataSource.cacheClassDetail(detail);
+          } catch (_) {
+            // Best-effort: if individual class detail fetch fails, continue with others
+          }
+        }
+
         return Right(freshClasses);
       }
     } on ServerException catch (e) {
@@ -170,6 +181,16 @@ class ClassRepositoryImpl implements ClassRepository {
 
       // Update local cache with fresh data
       await _localDataSource.cacheClasses(remoteClasses);
+
+      // Eagerly cache each class detail so enrollments are available offline
+      for (final cls in remoteClasses) {
+        try {
+          final detail = await _remoteDataSource.getClassDetail(classId: cls.id);
+          await _localDataSource.cacheClassDetail(detail);
+        } catch (_) {
+          // Best-effort: if individual class detail fetch fails, continue with others
+        }
+      }
     } catch (e) {
       // Best-effort: if sync fails, continue with cached data
     }
@@ -308,6 +329,21 @@ class ClassRepositoryImpl implements ClassRepository {
     try {
       // Check server reachability
       if (!_serverReachabilityService.isServerReachable) {
+        // Check existing local enrollment to prevent duplicate queue entry
+        try {
+          final alreadyEnrolled = await _localDataSource.getEnrolledStudentIds(classId);
+          if (alreadyEnrolled.contains(studentId)) {
+            // Return the already-cached enrollment as success — no re-queue needed
+            final cachedStudent = await _localDataSource.getStudentById(studentId);
+            final s = cachedStudent ?? UserModel(
+              id: studentId, username: '', fullName: '',
+              role: 'student', accountStatus: 'active',
+              isActive: true, activatedAt: null, createdAt: DateTime.now(),
+            );
+            return Right(Enrollment(id: '', student: s, enrolledAt: DateTime.now()));
+          }
+        } catch (_) {}
+
         // Look up cached student by ID
         UserModel? cachedStudent;
         try {

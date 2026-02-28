@@ -9,4 +9,3 @@ pub mod sync_conflict_service;
 pub mod sync_fetch_service;
 pub mod sync_manifest_service;
 pub mod sync_push_service;
-pub mod sync_service;

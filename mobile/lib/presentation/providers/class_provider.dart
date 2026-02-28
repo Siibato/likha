@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/data/datasources/local/class_local_datasource.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
@@ -18,6 +19,7 @@ class ClassState {
   final bool isLoading;
   final String? error;
   final String? successMessage;
+  final Set<String> enrolledStudentIds; // ids of students enrolled in currentClassDetail
 
   ClassState({
     this.classes = const [],
@@ -26,6 +28,7 @@ class ClassState {
     this.isLoading = false,
     this.error,
     this.successMessage,
+    this.enrolledStudentIds = const {},
   });
 
   ClassState copyWith({
@@ -35,10 +38,12 @@ class ClassState {
     bool? isLoading,
     String? error,
     String? successMessage,
+    Set<String>? enrolledStudentIds,
     bool clearError = false,
     bool clearSuccess = false,
     bool clearDetail = false,
     bool clearSearch = false,
+    bool clearEnrolled = false,
   }) {
     return ClassState(
       classes: classes ?? this.classes,
@@ -49,6 +54,7 @@ class ClassState {
       error: clearError ? null : (error ?? this.error),
       successMessage:
           clearSuccess ? null : (successMessage ?? this.successMessage),
+      enrolledStudentIds: clearEnrolled ? {} : (enrolledStudentIds ?? this.enrolledStudentIds),
     );
   }
 }
@@ -120,22 +126,46 @@ class ClassNotifier extends StateNotifier<ClassState> {
 
     final result = await _getClassDetail(classId);
 
+    // Handle success case
     result.fold(
-      (failure) {
+      (failure) async {},  // Handled below after fold
+      (detail) {
+        // On success: Derive ids from loaded detail
+        final ids = detail.students.map((e) => e.student.id).toSet();
+        state = state.copyWith(
+          isLoading: false,
+          currentClassDetail: detail,
+          enrolledStudentIds: ids,
+        );
+      },
+    );
+
+    // If result is failure, handle offline fallback
+    if (result.isLeft()) {
+      final failure = result.fold((f) => f, (d) => null);
+      if (failure != null) {
         // For offline cache misses, don't show error - user can still see cached students
         // Only show error for actual server issues
         final showError = !failure.message.contains('offline') &&
                          !failure.message.contains('Cache');
-        state = state.copyWith(
-          isLoading: false,
-          error: showError ? failure.message : null,
-        );
-      },
-      (detail) => state = state.copyWith(
-        isLoading: false,
-        currentClassDetail: detail,
-      ),
-    );
+
+        // On failure, fall back to directly querying local enrollments table
+        // This allows enrollment status to work even if class detail failed to load
+        try {
+          final ids = await sl<ClassLocalDataSource>().getEnrolledStudentIds(classId);
+          state = state.copyWith(
+            isLoading: false,
+            error: showError ? failure.message : null,
+            enrolledStudentIds: ids,
+          );
+        } catch (_) {
+          state = state.copyWith(
+            isLoading: false,
+            error: showError ? failure.message : null,
+          );
+        }
+      }
+    }
   }
 
   Future<void> updateClass({

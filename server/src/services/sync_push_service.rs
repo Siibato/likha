@@ -25,7 +25,7 @@ pub struct SyncQueueEntry {
 }
 
 /// Result of processing one operation
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct OperationResult {
     pub id: String,              // Matches SyncQueueEntry.id
     pub entity_type: String,
@@ -418,6 +418,25 @@ impl SyncPushService {
                         };
                     }
                 };
+
+                // Idempotency check: if already enrolled, treat as success
+                let already_enrolled = self.class_service
+                    .is_student_enrolled(class_id, student_id)
+                    .await
+                    .unwrap_or(false);
+
+                if already_enrolled {
+                    return OperationResult {
+                        id: op.id.clone(),
+                        entity_type: op.entity_type.clone(),
+                        operation: op.operation.clone(),
+                        success: true,
+                        server_id: None, // existing enrollment ID not fetched, that's ok
+                        error: None,
+                        updated_at: Some(Utc::now().to_rfc3339()),
+                        metadata: None,
+                    };
+                }
 
                 match self.class_service.add_student(class_id, student_id, user_id).await {
                     Ok(enrollment_response) => OperationResult {
