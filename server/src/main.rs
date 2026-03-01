@@ -26,6 +26,8 @@ use crate::services::sync_manifest_service::SyncManifestService;
 use crate::services::sync_fetch_service::SyncFetchService;
 use crate::services::sync_push_service::SyncPushService;
 use crate::services::sync_conflict_service::SyncConflictService;
+use crate::services::sync_full_service::SyncFullService;
+use crate::services::sync_delta_service::SyncDeltaService;
 use crate::db::repositories::{
     manifest_repository::ManifestRepository,
     sync_cursor_repository::SyncCursorRepository,
@@ -189,6 +191,16 @@ async fn main() {
     let conflict_repo = SyncConflictRepository::new(db.clone());
     let sync_conflict_service = Arc::new(SyncConflictService::new(conflict_repo));
 
+    let sync_full_service = Arc::new(SyncFullService::new(
+        entitlement_service.clone(),
+        manifest_repo.clone(),
+    ));
+
+    let sync_delta_service = Arc::new(SyncDeltaService::new(
+        entitlement_service.clone(),
+        manifest_repo.clone(),
+    ));
+
     let app = create_app(
         auth_service,
         class_service,
@@ -199,6 +211,8 @@ async fn main() {
         sync_fetch_service,
         sync_push_service,
         sync_conflict_service,
+        sync_full_service,
+        sync_delta_service,
     );
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
@@ -224,6 +238,8 @@ fn create_app(
     sync_fetch_service: Arc<SyncFetchService>,
     sync_push_service: Arc<SyncPushService>,
     sync_conflict_service: Arc<SyncConflictService>,
+    sync_full_service: Arc<SyncFullService>,
+    sync_delta_service: Arc<SyncDeltaService>,
 ) -> Router {
     let cors = CorsLayer::new()
         .allow_origin(Any)
@@ -243,6 +259,8 @@ fn create_app(
                 sync_fetch_service,
                 sync_push_service,
                 sync_conflict_service,
+                sync_full_service,
+                sync_delta_service,
             ),
         )
         .layer(cors)

@@ -4,12 +4,11 @@ import 'dart:io';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/core/sync/manifest_differ.dart';
 import 'package:likha/core/sync/id_reconciler.dart';
 import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';
 import 'package:likha/data/models/sync/push_response_model.dart';
-import 'package:likha/data/models/sync/fetch_response_model.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:uuid/uuid.dart';
 
 enum SyncPhase { idle, syncing, succeeded, failed }
 
@@ -354,131 +353,218 @@ class SyncManager {
     }
   }
 
-  /// INBOUND SYNC: Fetch server changes
+  /// INBOUND SYNC: Fetch server changes (full or delta)
   /// Returns server time to use for last_sync_at
   Future<String?> _inboundSync() async {
-    // Step 1: Get manifest from server
-    final manifest = await _syncRemoteDataSource.getManifest();
-
-    // Step 2: Get local snapshots for comparison
     final db = await _localDatabase.database;
-    final localSnapshots = await _getLocalSnapshots(db);
 
-    // Step 3: Find stale records and tombstones
-    final toFetch = ManifestDiffer.findStaleRecords(
-      serverManifest: manifest,
-      localManifest: localSnapshots,
+    // Check for last_sync_at
+    final rows = await db.query(
+      'sync_metadata',
+      where: 'key = ?',
+      whereArgs: ['last_sync_at'],
     );
-    final tombstones = ManifestDiffer.findTombstones(manifest);
+    final lastSyncAt = rows.isNotEmpty ? rows.first['value'] as String? : null;
 
-    // Step 4: Apply tombstones (soft delete marked records)
-    for (final entry in tombstones) {
-      final entityType = entry['entity_type'] as String;
-      final entityId = entry['id'] as String;
+    final expiryRows = await db.query(
+      'sync_metadata',
+      where: 'key = ?',
+      whereArgs: ['data_expiry_at'],
+    );
+    final dataExpiryAt = expiryRows.isNotEmpty ? expiryRows.first['value'] as String? : null;
 
-      await db.update(
-        _entityTypeToTableName(entityType),
-        {'deleted_at': DateTime.now().toIso8601String()},
-        where: 'id = ?',
-        whereArgs: [entityId],
-      );
-    }
-
-    // Step 5: Fetch records by entity type with pagination
-    for (final entityType in toFetch.keys) {
-      final ids = toFetch[entityType] ?? [];
-      if (ids.isEmpty) continue;
-
-      await _fetchAndMergeRecords(entityType, ids);
-    }
-
-    // Return server time for last_sync_at
-    return manifest.serverTime;
-  }
-
-  /// Fetch records for entity type and merge into local DB
-  Future<void> _fetchAndMergeRecords(
-    String entityType,
-    List<String> ids,
-  ) async {
-    String? cursor;
-    bool hasMore = true;
-
-    while (hasMore) {
-      final response = await _syncRemoteDataSource.fetchRecords(
-        entities: {entityType: ids},
-        cursor: cursor,
-      );
-
-      final records = response.entities[entityType] ?? [];
-      if (records.isEmpty) break;
-
-      // Merge records into local DB
-      final db = await _localDatabase.database;
-      final tableName = _entityTypeToTableName(entityType);
-
-      for (final record in records) {
-        await db.insert(
-          tableName,
-          {
-            ...record as Map<String, dynamic>,
-            'sync_status': 'synced',
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
+    if (lastSyncAt == null) {
+      // FIRST LOGIN: full sync
+      return await _runFullSync();
+    } else {
+      // APP RESTART: delta sync
+      final deltaResult = await _runDeltaSync(lastSyncAt, dataExpiryAt);
+      if (deltaResult == null) {
+        // data_expired → fall back to full sync
+        return await _runFullSync();
       }
-
-      cursor = response.cursor;
-      hasMore = response.hasMore;
+      return deltaResult;
     }
   }
 
-  /// Get local snapshots for manifest comparison
-  Future<Map<String, Map<String, LocalManifestEntry>>> _getLocalSnapshots(
-    Database db,
-  ) async {
-    final snapshots = <String, Map<String, LocalManifestEntry>>{};
+  /// Run full sync on first login
+  Future<String?> _runFullSync() async {
+    // Get device ID (or generate and store)
+    final db = await _localDatabase.database;
+    final deviceIdRows = await db.query(
+      'sync_metadata',
+      where: 'key = ?',
+      whereArgs: ['device_id'],
+    );
+    final deviceId = deviceIdRows.isNotEmpty
+        ? deviceIdRows.first['value'] as String
+        : _generateAndStoreDeviceId(db);
 
-    final entityTables = {
+    // Fetch full sync data
+    final response = await _syncRemoteDataSource.fullSync(deviceId: deviceId);
+    final syncToken = response['sync_token'] as String?;
+    final serverTime = response['server_time'] as String?;
+
+    if (syncToken == null) {
+      throw Exception('No sync_token in full sync response');
+    }
+
+    // Upsert all entity data
+    await _upsertEntity(db, 'classes', response['classes'] ?? []);
+    await _upsertEntity(db, 'class_enrollments', response['enrollments'] ?? []);
+    await _upsertEntity(db, 'assessments', response['assessments'] ?? []);
+    await _upsertEntity(db, 'questions', response['questions'] ?? []);
+    await _upsertEntity(
+      db,
+      'assessment_submissions',
+      response['assessment_submissions'] ?? [],
+    );
+    await _upsertEntity(db, 'assignments', response['assignments'] ?? []);
+    await _upsertEntity(
+      db,
+      'assignment_submissions',
+      response['assignment_submissions'] ?? [],
+    );
+    await _upsertEntity(db, 'learning_materials', response['learning_materials'] ?? []);
+
+    // Save sync metadata
+    final expiryAt = DateTime.now().add(const Duration(days: 30)).toIso8601String();
+    await db.insert(
+      'sync_metadata',
+      {'key': 'last_sync_at', 'value': syncToken},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    await db.insert(
+      'sync_metadata',
+      {'key': 'data_expiry_at', 'value': expiryAt},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+
+    return serverTime ?? syncToken;
+  }
+
+  /// Run delta sync on app restart
+  /// Returns null if data_expired (caller should fall back to full sync)
+  Future<String?> _runDeltaSync(String lastSyncAt, String? dataExpiryAt) async {
+    // Get device ID
+    final db = await _localDatabase.database;
+    final deviceIdRows = await db.query(
+      'sync_metadata',
+      where: 'key = ?',
+      whereArgs: ['device_id'],
+    );
+    final deviceId = deviceIdRows.isNotEmpty
+        ? deviceIdRows.first['value'] as String
+        : _generateAndStoreDeviceId(db);
+
+    // Fetch deltas
+    final response =
+        await _syncRemoteDataSource.deltaSync(
+      deviceId: deviceId,
+      lastSyncAt: lastSyncAt,
+      dataExpiryAt: dataExpiryAt,
+    );
+
+    // Check if data is expired
+    if (response['status'] == 'data_expired') {
+      return null; // Caller will fall back to full sync
+    }
+
+    final syncToken = response['sync_token'] as String?;
+    final serverTime = response['server_time'] as String?;
+    final deltas = response['deltas'] as Map<String, dynamic>?;
+
+    if (syncToken == null || deltas == null) {
+      throw Exception('Invalid delta sync response');
+    }
+
+    // Process deltas: upsert updated, delete removed
+    await _processDeltaPayload(db, deltas);
+
+    // Update sync metadata
+    final expiryAt = DateTime.now().add(const Duration(days: 30)).toIso8601String();
+    await db.insert(
+      'sync_metadata',
+      {'key': 'last_sync_at', 'value': syncToken},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    await db.insert(
+      'sync_metadata',
+      {'key': 'data_expiry_at', 'value': expiryAt},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+
+    return serverTime ?? syncToken;
+  }
+
+  /// Upsert records into a table
+  Future<void> _upsertEntity(
+    Database db,
+    String tableName,
+    List<dynamic> records,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+      await db.insert(
+        tableName,
+        {
+          ...data,
+          'sync_status': 'synced',
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+  /// Process delta payload: upsert updated, soft-delete removed
+  Future<void> _processDeltaPayload(
+    Database db,
+    Map<String, dynamic> deltas,
+  ) async {
+    final entityMap = {
       'classes': 'classes',
+      'enrollments': 'class_enrollments',
       'assessments': 'assessments',
-      'assignments': 'assignments',
-      'learning_materials': 'learning_materials',
+      'questions': 'questions',
       'assessment_submissions': 'assessment_submissions',
+      'assignments': 'assignments',
       'assignment_submissions': 'assignment_submissions',
-      'assessment_questions': 'questions',
-      'class_enrollments': 'class_enrollments',
-      'users': 'users',
-      'activity_logs': 'activity_logs',
+      'learning_materials': 'learning_materials',
     };
 
-    for (final entry in entityTables.entries) {
-      final entityType = entry.key;
+    for (final entry in entityMap.entries) {
+      final entityKey = entry.key;
       final tableName = entry.value;
+      final entityDeltas = deltas[entityKey] as Map<String, dynamic>?;
 
-      try {
-        final rows = await db.query(
+      if (entityDeltas == null) continue;
+
+      // Upsert updated records
+      final updated = entityDeltas['updated'] as List<dynamic>? ?? [];
+      await _upsertEntity(db, tableName, updated);
+
+      // Soft-delete removed records
+      final deleted = entityDeltas['deleted'] as List<dynamic>? ?? [];
+      for (final id in deleted) {
+        await db.update(
           tableName,
-          columns: ['id', 'updated_at', 'deleted_at'],
+          {'deleted_at': DateTime.now().toIso8601String()},
+          where: 'id = ?',
+          whereArgs: [id as String],
         );
-
-        final manifestEntries = <String, LocalManifestEntry>{};
-        for (final row in rows) {
-          final id = row['id'] as String;
-          manifestEntries[id] = LocalManifestEntry(
-            id: id,
-            updatedAt: row['updated_at'] as String? ?? DateTime.now().toIso8601String(),
-            deleted: row['deleted_at'] != null,
-          );
-        }
-        snapshots[entityType] = manifestEntries;
-      } catch (e) {
-        // Table might not exist or be empty
-        snapshots[entityType] = {};
       }
     }
+  }
 
-    return snapshots;
+  /// Generate and store a device ID
+  String _generateAndStoreDeviceId(Database db) {
+    final deviceId = const Uuid().v4();
+    db.insert(
+      'sync_metadata',
+      {'key': 'device_id', 'value': deviceId},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    return deviceId;
   }
 
   /// Map entity type to database table name

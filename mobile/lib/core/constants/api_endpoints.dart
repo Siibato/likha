@@ -448,4 +448,15 @@ class ApiEndpoints {
     '/api/v1/sync/conflicts/resolve',
     (json) => json as Map<String, dynamic>,
   );
+
+  // ===== Full/Delta Sync Endpoints (Optimized) =====
+  static final syncFull = ApiEndpoint<Map<String, dynamic>>(
+    '/api/v1/sync/full',
+    (json) => json as Map<String, dynamic>,
+  );
+
+  static final syncDeltas = ApiEndpoint<Map<String, dynamic>>(
+    '/api/v1/sync/deltas',
+    (json) => json as Map<String, dynamic>,
+  );
 }
