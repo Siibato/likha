@@ -9,11 +9,11 @@ pub mod sync_routes_new;
 use axum::Router;
 use std::sync::Arc;
 
-use crate::services::assessment_service::AssessmentService;
-use crate::services::assignment_service::AssignmentService;
-use crate::services::auth_service::AuthService;
-use crate::services::class_service::ClassService;
-use crate::services::learning_material_service::LearningMaterialService;
+use crate::services::assessment::AssessmentService;
+use crate::services::assignment::AssignmentService;
+use crate::services::auth::AuthService;
+use crate::services::class::ClassService;
+use crate::services::learning_material::LearningMaterialService;
 use crate::services::sync_manifest_service::SyncManifestService;
 use crate::services::sync_fetch_service::SyncFetchService;
 use crate::services::sync_push_service::SyncPushService;

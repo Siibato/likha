@@ -12,7 +12,7 @@ use crate::middleware::auth_middleware::AuthUser;
 use crate::schema::auth_schema::MessageResponse;
 use crate::schema::common::success_response;
 use crate::schema::learning_material_schema::*;
-use crate::services::learning_material_service::LearningMaterialService;
+use crate::services::learning_material::LearningMaterialService;
 use crate::utils::error::AppError;
 
 // ===== MATERIAL CRUD =====

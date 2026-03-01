@@ -9,7 +9,7 @@ use uuid::Uuid;
 
 use crate::schema::auth_schema::{CreateAccountRequest, LockAccountRequest, ResetAccountRequest, UpdateAccountRequest};
 use crate::schema::common::success_response;
-use crate::services::auth_service::AuthService;
+use crate::services::auth::AuthService;
 use crate::middleware::auth_middleware::AuthUser;
 use crate::utils::error::AppError;
 

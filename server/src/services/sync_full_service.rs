@@ -4,7 +4,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::db::repositories::manifest_repository::ManifestRepository;
-use crate::services::entitlement_service::EntitlementService;
+use crate::services::entitlement::EntitlementService;
 use crate::utils::AppResult;
 
 /// Request for full sync

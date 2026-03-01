@@ -1,118 +1,10 @@
-use sea_orm::DatabaseConnection;
 use uuid::Uuid;
-use md5;
-
-use crate::db::repositories::activity_log_repository::ActivityLogRepository;
-use crate::db::repositories::change_log_repository::ChangeLogRepository;
-use crate::db::repositories::class_repository::ClassRepository;
-use crate::db::repositories::learning_material_repository::LearningMaterialRepository;
-use crate::schema::learning_material_schema::*;
 use crate::utils::error::{AppError, AppResult};
+use crate::schema::learning_material_schema::{
+    CreateMaterialRequest, UpdateMaterialRequest, MaterialResponse, MaterialListResponse, MaterialDetailResponse, FileMetadataResponse, ReorderMaterialRequest,
+};
 
-const MAX_FILE_SIZE_MB: i64 = 50;
-const MAX_FILES_PER_MATERIAL: usize = 10;
-
-pub struct LearningMaterialService {
-    material_repo: LearningMaterialRepository,
-    class_repo: ClassRepository,
-    activity_log_repo: ActivityLogRepository,
-    change_log_repo: ChangeLogRepository,
-}
-
-impl LearningMaterialService {
-    pub fn new(db: DatabaseConnection) -> Self {
-        Self {
-            material_repo: LearningMaterialRepository::new(db.clone()),
-            class_repo: ClassRepository::new(db.clone()),
-            activity_log_repo: ActivityLogRepository::new(db.clone()),
-            change_log_repo: ChangeLogRepository::new(db),
-        }
-    }
-
-    // ===== AUTHORIZATION HELPERS =====
-
-    async fn verify_teacher_owns_class(&self, class_id: Uuid, teacher_id: Uuid) -> AppResult<()> {
-        let class = self
-            .class_repo
-            .find_by_id(class_id)
-            .await?
-            .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
-
-        if class.teacher_id != teacher_id {
-            return Err(AppError::Forbidden(
-                "You can only manage materials in your own classes".to_string(),
-            ));
-        }
-
-        Ok(())
-    }
-
-    async fn verify_student_enrolled(&self, class_id: Uuid, student_id: Uuid) -> AppResult<()> {
-        let is_enrolled = self
-            .class_repo
-            .is_student_enrolled(class_id, student_id)
-            .await?;
-
-        if !is_enrolled {
-            return Err(AppError::Forbidden(
-                "You must be enrolled in this class to view materials".to_string(),
-            ));
-        }
-
-        Ok(())
-    }
-
-    // ===== VALIDATION HELPERS =====
-
-    fn validate_title(title: &str) -> AppResult<String> {
-        let title = title.trim().to_string();
-        if title.is_empty() {
-            return Err(AppError::BadRequest("Title is required".to_string()));
-        }
-        if title.len() > 200 {
-            return Err(AppError::BadRequest(
-                "Title must be at most 200 characters".to_string(),
-            ));
-        }
-        Ok(title)
-    }
-
-    fn validate_description(desc: &Option<String>) -> AppResult<Option<String>> {
-        if let Some(d) = desc {
-            let trimmed = d.trim();
-            if trimmed.is_empty() {
-                return Ok(None);
-            }
-            if trimmed.len() > 500 {
-                return Err(AppError::BadRequest(
-                    "Description must be at most 500 characters".to_string(),
-                ));
-            }
-            Ok(Some(trimmed.to_string()))
-        } else {
-            Ok(None)
-        }
-    }
-
-    fn validate_content_text(content: &Option<String>) -> AppResult<Option<String>> {
-        if let Some(c) = content {
-            let trimmed = c.trim();
-            if trimmed.is_empty() {
-                return Ok(None);
-            }
-            if trimmed.len() > 50000 {
-                return Err(AppError::BadRequest(
-                    "Content text must be at most 50000 characters".to_string(),
-                ));
-            }
-            Ok(Some(trimmed.to_string()))
-        } else {
-            Ok(None)
-        }
-    }
-
-    // ===== MATERIAL CRUD =====
-
+impl super::LearningMaterialService {
     pub async fn create_material(
         &self,
         class_id: Uuid,
@@ -407,187 +299,13 @@ impl LearningMaterialService {
         })
     }
 
-    // ===== FILE MANAGEMENT =====
-
-    pub async fn upload_file(
-        &self,
-        material_id: Uuid,
-        file_name: String,
-        file_type: String,
-        file_data: Vec<u8>,
-        teacher_id: Uuid,
-    ) -> AppResult<FileMetadataResponse> {
-        let material = self
-            .material_repo
-            .find_by_id(material_id)
-            .await?
-            .ok_or_else(|| AppError::NotFound("Material not found".to_string()))?;
-
-        self.verify_teacher_owns_class(material.class_id, teacher_id)
-            .await?;
-
-        let file_size = file_data.len() as i64;
-        let file_size_mb = file_size / (1024 * 1024);
-
-        if file_size_mb > MAX_FILE_SIZE_MB {
-            return Err(AppError::BadRequest(format!(
-                "File size exceeds maximum of {} MB",
-                MAX_FILE_SIZE_MB
-            )));
-        }
-
-        let current_file_count = self
-            .material_repo
-            .count_files_by_material(material_id)
-            .await?;
-
-        if current_file_count >= MAX_FILES_PER_MATERIAL {
-            return Err(AppError::BadRequest(format!(
-                "Maximum of {} files per material exceeded",
-                MAX_FILES_PER_MATERIAL
-            )));
-        }
-
-        let file = self
-            .material_repo
-            .save_file(material_id, file_name, file_type, file_size, file_data)
-            .await?;
-
-        let _ = self
-            .activity_log_repo
-            .create_log(
-                teacher_id,
-                "material_file_uploaded",
-                Some(teacher_id),
-                Some(format!(
-                    "File '{}' uploaded to material '{}'",
-                    file.file_name, material.title
-                )),
-            )
-            .await;
-
-        let _ = self.change_log_repo.log_change(
-            "material_file",
-            file.id,
-            "create",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "file_name": file.file_name,
-                "material_id": material_id,
-            })).unwrap_or_default()),
-        ).await;
-
-        Ok(FileMetadataResponse {
-            id: file.id,
-            file_name: file.file_name,
-            file_type: file.file_type,
-            file_size: file.file_size,
-            uploaded_at: file.uploaded_at.to_string(),
-        })
-    }
-
-    pub async fn delete_file(&self, file_id: Uuid, teacher_id: Uuid) -> AppResult<()> {
-        let file = self
-            .material_repo
-            .find_file_by_id(file_id)
-            .await?
-            .ok_or_else(|| AppError::NotFound("File not found".to_string()))?;
-
-        let material = self
-            .material_repo
-            .find_by_id(file.material_id)
-            .await?
-            .ok_or_else(|| AppError::NotFound("Material not found".to_string()))?;
-
-        self.verify_teacher_owns_class(material.class_id, teacher_id)
-            .await?;
-
-        self.material_repo.delete_file(file_id).await?;
-
-        let _ = self
-            .activity_log_repo
-            .create_log(
-                teacher_id,
-                "material_file_deleted",
-                Some(teacher_id),
-                Some(format!("File '{}' deleted", file.file_name)),
-            )
-            .await;
-
-        let _ = self.change_log_repo.log_change(
-            "material_file",
-            file_id,
-            "delete",
-            teacher_id,
-            None,
-        ).await;
-
-        Ok(())
-    }
-
-    pub async fn download_file(
-        &self,
-        file_id: Uuid,
-        user_id: Uuid,
-        role: &str,
-    ) -> AppResult<(String, String, Vec<u8>)> {
-        let file = self
-            .material_repo
-            .find_file_by_id(file_id)
-            .await?
-            .ok_or_else(|| AppError::NotFound("File not found".to_string()))?;
-
-        let material = self
-            .material_repo
-            .find_by_id(file.material_id)
-            .await?
-            .ok_or_else(|| AppError::NotFound("Material not found".to_string()))?;
-
-        if role == "teacher" {
-            self.verify_teacher_owns_class(material.class_id, user_id)
-                .await?;
-        } else {
-            self.verify_student_enrolled(material.class_id, user_id)
-                .await?;
-        }
-
-        Ok((file.file_name, file.file_type, file.file_data))
-    }
-
-    pub async fn get_materials_metadata(&self) -> AppResult<LearningMaterialMetadataResponse> {
-        let materials = self.material_repo.find_all().await?;
-        let count = materials.len();
-
-        let last_modified = if count > 0 {
-            materials
-                .iter()
-                .map(|m| m.updated_at)
-                .max()
-                .unwrap_or_else(|| chrono::Utc::now().naive_utc())
-        } else {
-            chrono::Utc::now().naive_utc()
-        };
-
-        let etag_data = format!("{}-{}", count, last_modified);
-        let etag = format!("{:x}", md5::compute(etag_data.as_bytes()));
-
-        Ok(LearningMaterialMetadataResponse {
-            last_modified: last_modified.to_string(),
-            record_count: count,
-            etag,
-        })
-    }
-
-    /// Soft delete a learning material (marks it deleted for sync, doesn't remove from DB)
     pub async fn soft_delete(&self, material_id: Uuid, teacher_id: Uuid) -> AppResult<()> {
-        // Verify material exists and teacher owns the class
         let material = self
             .material_repo
             .find_by_id(material_id)
             .await?
             .ok_or_else(|| AppError::NotFound("Material not found".to_string()))?;
 
-        // Verify teacher owns the class
         let class = self
             .class_repo
             .find_by_id(material.class_id)
@@ -600,7 +318,6 @@ impl LearningMaterialService {
             ));
         }
 
-        // Mark as deleted
         self.material_repo.soft_delete(material_id).await?;
 
         let _ = self.change_log_repo.log_change(

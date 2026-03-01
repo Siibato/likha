@@ -10,8 +10,8 @@ use uuid::Uuid;
 use crate::schema::auth_schema::MessageResponse;
 use crate::schema::class_schema::{AddStudentRequest, CreateClassRequest, SearchStudentsQuery, UpdateClassRequest, ClassMetadataResponse};
 use crate::schema::common::success_response;
-use crate::services::auth_service::AuthService;
-use crate::services::class_service::ClassService;
+use crate::services::auth::AuthService;
+use crate::services::class::ClassService;
 use crate::middleware::auth_middleware::AuthUser;
 use crate::utils::error::AppError;
 

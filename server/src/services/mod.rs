@@ -1,10 +1,10 @@
-pub mod assessment_service;
-pub mod assignment_service;
-pub mod auth_service;
-pub mod class_service;
-pub mod entitlement_service;
-pub mod grading_service;
-pub mod learning_material_service;
+pub mod assignment;
+pub mod assessment;
+pub mod auth;
+pub mod class;
+pub mod entitlement;
+pub mod grading;
+pub mod learning_material;
 pub mod sync_conflict_service;
 pub mod sync_delta_service;
 pub mod sync_fetch_service;

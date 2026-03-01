@@ -5,7 +5,7 @@ use axum::{
 use std::sync::Arc;
 
 use crate::handlers::learning_material_handler;
-use crate::services::learning_material_service::LearningMaterialService;
+use crate::services::learning_material::LearningMaterialService;
 
 pub fn routes(material_service: Arc<LearningMaterialService>) -> Router {
     Router::new()

@@ -3,12 +3,12 @@ use serde_json::Value;
 use std::sync::Arc;
 use uuid::Uuid;
 
-use crate::services::entitlement_service::EntitlementService;
-use crate::services::class_service::ClassService;
-use crate::services::assessment_service::AssessmentService;
-use crate::services::assignment_service::AssignmentService;
-use crate::services::learning_material_service::LearningMaterialService;
-use crate::services::auth_service::AuthService;
+use crate::services::entitlement::EntitlementService;
+use crate::services::class::ClassService;
+use crate::services::assessment::AssessmentService;
+use crate::services::assignment::AssignmentService;
+use crate::services::learning_material::LearningMaterialService;
+use crate::services::auth::AuthService;
 use crate::schema::class_schema::{CreateClassRequest, UpdateClassRequest};
 use crate::schema::assessment_schema::{CreateAssessmentRequest, UpdateAssessmentRequest, SaveAnswersRequest};
 use crate::schema::assignment_schema::{CreateAssignmentRequest, UpdateAssignmentRequest};

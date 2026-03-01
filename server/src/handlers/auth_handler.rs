@@ -11,7 +11,7 @@ use crate::schema::auth_schema::{
     ActivateAccountRequest, CheckUsernameRequest, LoginRequest, MessageResponse, RefreshTokenRequest,
 };
 use crate::schema::common::success_response;
-use crate::services::auth_service::AuthService;
+use crate::services::auth::AuthService;
 use crate::middleware::auth_middleware::AuthUser;
 
 pub async fn check_username(

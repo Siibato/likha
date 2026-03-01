@@ -5,7 +5,7 @@ use axum::{
 use std::sync::Arc;
 
 use crate::handlers::{admin_handler, auth_handler};
-use crate::services::auth_service::AuthService;
+use crate::services::auth::AuthService;
 
 pub fn routes(auth_service: Arc<AuthService>) -> Router {
     Router::new()
