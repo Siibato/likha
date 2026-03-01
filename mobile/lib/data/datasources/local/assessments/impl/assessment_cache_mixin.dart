@@ -110,6 +110,8 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
       await db.delete('assessments');
       await db.delete('questions');
       await db.delete('assessment_submissions');
+      await db.delete('assessment_statistics_cache');
+      await db.delete('student_results_cache');
     } catch (e) {
       throw CacheException('Failed to clear assessment cache: $e');
     }

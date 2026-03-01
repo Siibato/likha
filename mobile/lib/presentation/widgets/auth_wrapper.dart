@@ -40,6 +40,12 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
       );
     }
 
+    if (authState.pendingForceLogout) {
+      return _ForceLogoutWarningPage(
+        pendingSyncCount: authState.pendingSyncCount,
+      );
+    }
+
     if (authState.isAuthenticated) {
       return const HomePage();
     }
@@ -53,5 +59,77 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
     }
 
     return const LoginPage();
+  }
+}
+
+class _ForceLogoutWarningPage extends ConsumerWidget {
+  final int pendingSyncCount;
+
+  const _ForceLogoutWarningPage({
+    required this.pendingSyncCount,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.lock_outline,
+                size: 64,
+                color: Color(0xFFD32F2F),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Your session has expired',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF2B2B2B),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'You had $pendingSyncCount unsaved change(s) that could not be synced.',
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF7A7A7A),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    ref.read(authProvider.notifier).confirmForceLogout();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2B2B2B),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Log me out',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

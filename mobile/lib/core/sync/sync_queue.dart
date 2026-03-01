@@ -94,6 +94,7 @@ abstract class SyncQueue {
   Future<void> incrementRetry(String id);
   Future<void> clear();
   Future<SyncQueueEntry?> getById(String id);
+  Future<int> getPendingCount();
 }
 
 class SyncQueueImpl implements SyncQueue {
@@ -173,6 +174,15 @@ class SyncQueueImpl implements SyncQueue {
     );
     if (results.isEmpty) return null;
     return SyncQueueEntry.fromMap(results.first);
+  }
+
+  @override
+  Future<int> getPendingCount() async {
+    final db = await _localDatabase.database;
+    final result = await db.rawQuery(
+      "SELECT COUNT(*) as count FROM sync_queue WHERE status = 'pending'",
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
   }
 }
 

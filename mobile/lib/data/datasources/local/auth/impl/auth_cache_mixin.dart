@@ -88,4 +88,15 @@ mixin AuthCacheMixin on AuthLocalDataSourceBase {
       throw CacheException('Failed to clear activity logs: $e');
     }
   }
+
+  @override
+  Future<void> clearAllCache() async {
+    try {
+      final db = await localDatabase.database;
+      await db.delete('users');
+      await db.delete('activity_logs');
+    } catch (e) {
+      throw CacheException('Failed to clear auth cache: $e');
+    }
+  }
 }

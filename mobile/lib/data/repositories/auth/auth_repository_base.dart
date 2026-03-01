@@ -32,8 +32,8 @@ abstract class AuthRepositoryBase extends AuthRepository {
     required this.learningMaterialLocalDataSource,
   });
 
-  /// Clear all user-specific cached data when switching users.
-  /// Called when a different user logs in to prevent data leakage.
+  /// Clear all user-specific cached data when switching users or logging out.
+  /// Called when a different user logs in or when logging out to prevent data leakage.
   Future<void> clearAllUserData() async {
     try {
       await Future.wait([
@@ -41,9 +41,11 @@ abstract class AuthRepositoryBase extends AuthRepository {
         assignmentLocalDataSource.clearAllCache(),
         assessmentLocalDataSource.clearAllCache(),
         learningMaterialLocalDataSource.clearAllCache(),
+        localDataSource.clearAllCache(),
+        syncQueue.clear(),
       ]);
     } catch (e) {
-      // Best-effort cache clearing — don't fail login if cache clearing fails
+      // Best-effort cache clearing — don't fail login/logout if cache clearing fails
     }
   }
 }

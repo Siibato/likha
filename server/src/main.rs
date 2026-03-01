@@ -2,7 +2,6 @@ mod config;
 mod db;
 mod handlers;
 mod middleware;
-mod models;
 mod routes;
 mod schema;
 mod services;
