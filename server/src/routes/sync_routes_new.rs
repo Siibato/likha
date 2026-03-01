@@ -11,7 +11,7 @@ use crate::handlers::{
 use crate::services::{
     sync_conflict_service::SyncConflictService, sync_delta_service::SyncDeltaService,
     sync_fetch_service::SyncFetchService, sync_full_service::SyncFullService,
-    sync_manifest_service::SyncManifestService, sync_push_service::SyncPushService,
+    sync_manifest_service::SyncManifestService, sync_push::SyncPushService,
 };
 
 /// Wire all sync routes and services (manifest-driven + full/delta)

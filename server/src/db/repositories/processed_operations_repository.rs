@@ -4,7 +4,7 @@ use tokio::sync::RwLock;
 use uuid::Uuid;
 use sea_orm::{ConnectionTrait, Statement, DbBackend};
 
-use crate::services::sync_push_service::OperationResult;
+use crate::services::sync_push::OperationResult;
 
 /// Repository for tracking processed sync operations
 /// Enables deduplication - prevents processing same operation twice

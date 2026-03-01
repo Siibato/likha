@@ -24,7 +24,7 @@ use crate::services::learning_material::LearningMaterialService;
 use crate::services::entitlement::EntitlementService;
 use crate::services::sync_manifest_service::SyncManifestService;
 use crate::services::sync_fetch_service::SyncFetchService;
-use crate::services::sync_push_service::SyncPushService;
+use crate::services::sync_push::SyncPushService;
 use crate::services::sync_conflict_service::SyncConflictService;
 use crate::services::sync_full_service::SyncFullService;
 use crate::services::sync_delta_service::SyncDeltaService;

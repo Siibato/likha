@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use crate::middleware::auth_middleware::AuthUser;
 use crate::schema::common::success_response;
-use crate::services::sync_push_service::SyncPushService;
+use crate::services::sync_push::SyncPushService;
 
 pub async fn push(
     State(service): State<Arc<SyncPushService>>,
