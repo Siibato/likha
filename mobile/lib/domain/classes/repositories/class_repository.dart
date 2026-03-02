@@ -7,9 +7,12 @@ abstract class ClassRepository {
   ResultFuture<ClassEntity> createClass({
     required String title,
     String? description,
+    String? teacherId,
   });
 
   ResultFuture<List<ClassEntity>> getMyClasses();
+
+  ResultFuture<List<ClassEntity>> getAllClasses();
 
   ResultFuture<ClassDetail> getClassDetail({required String classId});
 

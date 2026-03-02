@@ -53,6 +53,7 @@ impl super::ClassService {
         class_id: Uuid,
         student_id: Uuid,
         teacher_id: Uuid,
+        role: &str,
     ) -> AppResult<EnrollmentResponse> {
         let class = self
             .class_repo
@@ -60,7 +61,8 @@ impl super::ClassService {
             .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        // Only enforce ownership check for teachers, not admins
+        if role == "teacher" && class.teacher_id != teacher_id {
             return Err(AppError::Forbidden(
                 "You can only manage your own classes".to_string(),
             ));
@@ -127,6 +129,7 @@ impl super::ClassService {
         class_id: Uuid,
         student_id: Uuid,
         teacher_id: Uuid,
+        role: &str,
     ) -> AppResult<()> {
         let class = self
             .class_repo
@@ -134,7 +137,8 @@ impl super::ClassService {
             .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        // Only enforce ownership check for teachers, not admins
+        if role == "teacher" && class.teacher_id != teacher_id {
             return Err(AppError::Forbidden(
                 "You can only manage your own classes".to_string(),
             ));

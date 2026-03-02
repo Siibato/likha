@@ -12,7 +12,7 @@ impl super::SyncPushService {
                     None => return self.error_result(op, "Missing title field"),
                 };
                 let description = op.payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
-                let request = CreateClassRequest { title, description };
+                let request = CreateClassRequest { title, description, teacher_id: None };
 
                 match self.class_service.create_class(request, user_id).await {
                     Ok(r) => self.success_result(op, Some(r.id.to_string()), Some(r.updated_at)),
@@ -57,7 +57,7 @@ impl super::SyncPushService {
                     return self.success_result(op, None, Some(Utc::now().to_rfc3339()));
                 }
 
-                match self.class_service.add_student(class_id, student_id, user_id).await {
+                match self.class_service.add_student(class_id, student_id, user_id, "teacher").await {
                     Ok(r) => self.success_result(op, Some(r.id.to_string()), Some(Utc::now().to_rfc3339())),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }
@@ -71,7 +71,7 @@ impl super::SyncPushService {
                     Ok(id) => id,
                     Err(e) => return self.error_result(op, &e),
                 };
-                match self.class_service.remove_student(class_id, student_id, user_id).await {
+                match self.class_service.remove_student(class_id, student_id, user_id, "teacher").await {
                     Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }

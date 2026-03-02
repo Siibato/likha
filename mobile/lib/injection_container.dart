@@ -84,6 +84,7 @@ import 'package:likha/data/repositories/classes/class_repository_impl.dart';
 import 'package:likha/domain/classes/repositories/class_repository.dart';
 import 'package:likha/domain/classes/usecases/add_student.dart';
 import 'package:likha/domain/classes/usecases/create_class.dart';
+import 'package:likha/domain/classes/usecases/get_all_classes.dart';
 import 'package:likha/domain/classes/usecases/get_class_detail.dart';
 import 'package:likha/domain/classes/usecases/get_my_classes.dart';
 import 'package:likha/domain/classes/usecases/remove_student.dart';
@@ -322,6 +323,7 @@ Future<void> init() async {
   // Class use cases
   sl.registerLazySingleton(() => CreateClass(sl()));
   sl.registerLazySingleton(() => GetMyClasses(sl()));
+  sl.registerLazySingleton(() => GetAllClasses(sl()));
   sl.registerLazySingleton(() => GetClassDetail(sl()));
   sl.registerLazySingleton(() => UpdateClass(sl()));
   sl.registerLazySingleton(() => AddStudent(sl()));

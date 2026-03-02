@@ -5,6 +5,7 @@ import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
 import 'package:likha/domain/classes/usecases/add_student.dart';
 import 'package:likha/domain/classes/usecases/create_class.dart';
+import 'package:likha/domain/classes/usecases/get_all_classes.dart';
 import 'package:likha/domain/classes/usecases/get_class_detail.dart';
 import 'package:likha/domain/classes/usecases/get_my_classes.dart';
 import 'package:likha/domain/classes/usecases/remove_student.dart';
@@ -62,6 +63,7 @@ class ClassState {
 class ClassNotifier extends StateNotifier<ClassState> {
   final CreateClass _createClass;
   final GetMyClasses _getMyClasses;
+  final GetAllClasses _getAllClasses;
   final GetClassDetail _getClassDetail;
   final UpdateClass _updateClass;
   final AddStudent _addStudent;
@@ -71,6 +73,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
   ClassNotifier(
     this._createClass,
     this._getMyClasses,
+    this._getAllClasses,
     this._getClassDetail,
     this._updateClass,
     this._addStudent,
@@ -95,15 +98,34 @@ class ClassNotifier extends StateNotifier<ClassState> {
     );
   }
 
+  Future<void> loadAllClasses() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    final result = await _getAllClasses();
+
+    result.fold(
+      (failure) => state = state.copyWith(
+        isLoading: false,
+        error: failure.message,
+      ),
+      (classes) => state = state.copyWith(
+        isLoading: false,
+        classes: classes,
+      ),
+    );
+  }
+
   Future<void> createClass({
     required String title,
     String? description,
+    String? teacherId,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
 
     final result = await _createClass(CreateClassParams(
       title: title,
       description: description,
+      teacherId: teacherId,
     ));
 
     result.fold(
@@ -332,6 +354,7 @@ final classProvider = StateNotifierProvider<ClassNotifier, ClassState>((ref) {
   return ClassNotifier(
     sl<CreateClass>(),
     sl<GetMyClasses>(),
+    sl<GetAllClasses>(),
     sl<GetClassDetail>(),
     sl<UpdateClass>(),
     sl<AddStudent>(),

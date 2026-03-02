@@ -9,9 +9,12 @@ abstract class ClassRemoteDataSource {
   Future<ClassModel> createClass({
     required String title,
     String? description,
+    String? teacherId,
   });
 
   Future<List<ClassModel>> getMyClasses();
+
+  Future<List<ClassModel>> getAllClasses();
 
   Future<ClassDetailModel> getClassDetail({required String classId});
 
@@ -43,6 +46,7 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
   Future<ClassModel> createClass({
     required String title,
     String? description,
+    String? teacherId,
   }) async {
     try {
       return await _dioClient.postTyped(
@@ -50,6 +54,7 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
         data: {
           'title': title,
           if (description != null) 'description': description,
+          if (teacherId != null) 'teacher_id': teacherId,
         },
       );
     } on DioException catch (e) {
@@ -59,6 +64,15 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
 
   @override
   Future<List<ClassModel>> getMyClasses() async {
+    try {
+      return await _dioClient.getTyped(ApiEndpoints.classes);
+    } on DioException catch (e) {
+      throw _dioClient.handleError(e);
+    }
+  }
+
+  @override
+  Future<List<ClassModel>> getAllClasses() async {
     try {
       return await _dioClient.getTyped(ApiEndpoints.classes);
     } on DioException catch (e) {

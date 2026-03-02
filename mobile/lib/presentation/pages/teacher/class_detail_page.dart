@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/presentation/pages/teacher/add_student_page.dart';
 import 'package:likha/presentation/pages/teacher/assessment_detail_page.dart';
 import 'package:likha/presentation/pages/teacher/assignment_detail_page.dart';
 import 'package:likha/presentation/pages/teacher/create_assessment_page.dart';
 import 'package:likha/presentation/pages/teacher/create_assignment_page.dart';
 import 'package:likha/presentation/pages/teacher/create_material_page.dart';
-import 'package:likha/presentation/pages/teacher/edit_class_page.dart';
 import 'package:likha/presentation/pages/teacher/material_detail_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/empty_assessment_list_state.dart';
 import 'package:likha/presentation/pages/teacher/widgets/empty_assignment_list_state.dart';
@@ -88,55 +86,6 @@ class _ClassDetailPageState extends ConsumerState<ClassDetailPage>
             letterSpacing: -0.4,
           ),
         ),
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Color(0xFF2B2B2B)),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            onSelected: (value) {
-              if (value == 'edit' && detail != null) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => EditClassPage(
-                      classId: widget.classId,
-                      currentTitle: detail.title,
-                      currentDescription: detail.description,
-                    ),
-                  ),
-                ).then((_) => ref.read(classProvider.notifier).loadClassDetail(widget.classId));
-              } else if (value == 'add_students') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AddStudentPage(classId: widget.classId),
-                  ),
-                ).then((_) => ref.read(classProvider.notifier).loadClassDetail(widget.classId));
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'edit',
-                child: Row(
-                  children: [
-                    Icon(Icons.edit_rounded, size: 20, color: Color(0xFF2B2B2B)),
-                    SizedBox(width: 12),
-                    Text('Edit Class', style: TextStyle(fontSize: 15)),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'add_students',
-                child: Row(
-                  children: [
-                    Icon(Icons.person_add_rounded, size: 20, color: Color(0xFF2B2B2B)),
-                    SizedBox(width: 12),
-                    Text('Add Students', style: TextStyle(fontSize: 15)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: Container(

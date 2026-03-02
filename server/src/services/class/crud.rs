@@ -14,13 +14,16 @@ impl super::ClassService {
             return Err(AppError::BadRequest("Class title is required".to_string()));
         }
 
+        // Use admin-provided teacher_id if present, otherwise use the requesting user's id
+        let actual_teacher_id = request.teacher_id.unwrap_or(teacher_id);
+
         let teacher = self
             .user_repo
-            .find_by_id(teacher_id)
+            .find_by_id(actual_teacher_id)
             .await?
             .ok_or_else(|| AppError::NotFound("Teacher not found".to_string()))?;
 
-        let existing_classes = self.class_repo.find_by_teacher_id(teacher_id).await?;
+        let existing_classes = self.class_repo.find_by_teacher_id(actual_teacher_id).await?;
         let normalized_title = request.title.trim().to_lowercase();
 
         if let Some(existing) = existing_classes
@@ -43,7 +46,7 @@ impl super::ClassService {
 
         let class = self
             .class_repo
-            .create_class(request.title.trim().to_string(), request.description, teacher_id)
+            .create_class(request.title.trim().to_string(), request.description, actual_teacher_id)
             .await?;
 
         let _ = self.change_log_repo.log_change(
@@ -192,6 +195,37 @@ impl super::ClassService {
             .class_repo
             .find_classes_by_student_id(student_id)
             .await?;
+
+        let mut class_responses = Vec::new();
+        for class in classes {
+            let teacher = self
+                .user_repo
+                .find_by_id(class.teacher_id)
+                .await?
+                .ok_or_else(|| AppError::NotFound("Teacher not found".to_string()))?;
+
+            let student_count = self.class_repo.count_students_in_class(class.id).await?;
+            class_responses.push(ClassResponse {
+                id: class.id,
+                title: class.title,
+                description: class.description,
+                teacher_id: class.teacher_id,
+                teacher_username: teacher.username,
+                teacher_full_name: teacher.full_name,
+                is_archived: class.is_archived,
+                student_count,
+                created_at: class.created_at.to_string(),
+                updated_at: class.updated_at.to_string(),
+            });
+        }
+
+        Ok(ClassListResponse {
+            classes: class_responses,
+        })
+    }
+
+    pub async fn get_all_classes(&self) -> AppResult<ClassListResponse> {
+        let classes = self.class_repo.find_all().await?;
 
         let mut class_responses = Vec::new();
         for class in classes {

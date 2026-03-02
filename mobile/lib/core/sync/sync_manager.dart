@@ -137,7 +137,13 @@ class SyncManager {
         );
       }
 
-      _updateState(phase: SyncPhase.succeeded, lastSyncAt: DateTime.now());
+      // Refresh pending count after sync completes (should be 0 now)
+      final finalPendingCount = await _syncQueue.getPendingCount();
+      _updateState(
+        phase: SyncPhase.succeeded,
+        lastSyncAt: DateTime.now(),
+        pendingCount: finalPendingCount,
+      );
     } catch (e) {
       _updateState(
         phase: SyncPhase.failed,

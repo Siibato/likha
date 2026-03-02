@@ -9,6 +9,7 @@ use super::auth_schema::UserResponse;
 pub struct CreateClassRequest {
     pub title: String,
     pub description: Option<String>,
+    pub teacher_id: Option<Uuid>,
 }
 
 #[derive(Debug, Deserialize)]

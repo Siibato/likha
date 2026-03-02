@@ -13,6 +13,7 @@ mixin ClassCrudMixin on ClassRepositoryBase {
   ResultFuture<ClassEntity> createClass({
     required String title,
     String? description,
+    String? teacherId,
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
@@ -26,6 +27,7 @@ mixin ClassCrudMixin on ClassRepositoryBase {
             'local_id': localId,
             'title': title,
             'description': description,
+            if (teacherId != null) 'teacher_id': teacherId,
           },
           status: SyncStatus.pending,
           retryCount: 0,
@@ -38,7 +40,7 @@ mixin ClassCrudMixin on ClassRepositoryBase {
           id: localId,
           title: title,
           description: description,
-          teacherId: '',
+          teacherId: teacherId ?? '',
           teacherUsername: '',
           teacherFullName: '',
           isArchived: false,
@@ -61,6 +63,7 @@ mixin ClassCrudMixin on ClassRepositoryBase {
       final result = await remoteDataSource.createClass(
         title: title,
         description: description,
+        teacherId: teacherId,
       );
 
       syncInBackgroundForClass(result.id);

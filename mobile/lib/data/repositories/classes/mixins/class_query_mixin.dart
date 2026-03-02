@@ -8,6 +8,41 @@ import 'package:likha/domain/classes/entities/class_entity.dart';
 
 mixin ClassQueryMixin on ClassRepositoryBase {
   @override
+  ResultFuture<List<ClassEntity>> getAllClasses() async {
+    try {
+      try {
+        final cachedClasses = await localDataSource.getCachedClasses();
+
+        _syncAllClassesInBackground();
+
+        return Right(cachedClasses);
+      } on CacheException {
+        final freshClasses = await remoteDataSource.getAllClasses();
+        await localDataSource.cacheClasses(freshClasses);
+
+        for (final cls in freshClasses) {
+          try {
+            final detail = await remoteDataSource.getClassDetail(classId: cls.id);
+            await localDataSource.cacheClassDetail(detail);
+          } catch (_) {
+            // Best-effort
+          }
+        }
+
+        return Right(freshClasses);
+      }
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on CacheException catch (e) {
+      return Left(CacheFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   ResultFuture<List<ClassEntity>> getMyClasses() async {
     try {
       final currentUserId = await getCurrentUserId();
@@ -73,6 +108,35 @@ mixin ClassQueryMixin on ClassRepositoryBase {
       return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  Future<void> _syncAllClassesInBackground() async {
+    try {
+      final remoteClasses = await remoteDataSource.getAllClasses();
+
+      await entitySyncHelper.syncEntitiesByTimestamp(
+        entityType: 'class',
+        remoteEntities: remoteClasses
+            .map((e) => {
+                  'id': e.id,
+                  'updated_at': e.updatedAt.toIso8601String(),
+                })
+            .toList(),
+      );
+
+      await localDataSource.cacheClasses(remoteClasses);
+
+      for (final cls in remoteClasses) {
+        try {
+          final detail = await remoteDataSource.getClassDetail(classId: cls.id);
+          await localDataSource.cacheClassDetail(detail);
+        } catch (_) {
+          // Best-effort
+        }
+      }
+    } catch (_) {
+      // Best-effort sync — continue with cached data
     }
   }
 
