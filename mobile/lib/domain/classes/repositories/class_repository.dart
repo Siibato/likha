@@ -8,6 +8,8 @@ abstract class ClassRepository {
     required String title,
     String? description,
     String? teacherId,
+    String? teacherUsername,
+    String? teacherFullName,
   });
 
   ResultFuture<List<ClassEntity>> getMyClasses();

@@ -12,7 +12,11 @@ impl super::SyncPushService {
                     None => return self.error_result(op, "Missing title field"),
                 };
                 let description = op.payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
-                let request = CreateClassRequest { title, description, teacher_id: None };
+                let teacher_id = op.payload
+                    .get("teacher_id")
+                    .and_then(|v| v.as_str())
+                    .and_then(|s| Uuid::parse_str(s).ok());
+                let request = CreateClassRequest { title, description, teacher_id };
 
                 match self.class_service.create_class(request, user_id).await {
                     Ok(r) => self.success_result(op, Some(r.id.to_string()), Some(r.updated_at)),
@@ -53,7 +57,15 @@ impl super::SyncPushService {
                     Err(e) => return self.error_result(op, &e),
                 };
 
-                if self.class_service.is_student_enrolled(class_id, student_id).await.unwrap_or(false) {
+                let is_enrolled = match self.class_service
+                    .is_student_enrolled(class_id, student_id)
+                    .await
+                {
+                    Ok(enrolled) => enrolled,
+                    Err(e) => return self.error_result(op, &e.to_string()),
+                };
+
+                if is_enrolled {
                     return self.success_result(op, None, Some(Utc::now().to_rfc3339()));
                 }
 

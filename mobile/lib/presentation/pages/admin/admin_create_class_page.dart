@@ -36,13 +36,29 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
 
   Future<void> _handleCreate() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_selectedTeacherId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a teacher'),
+          backgroundColor: Color(0xFFEF5350),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final adminState = ref.read(adminProvider);
+    final teachers = adminState.accounts.where((u) => u.isTeacher).toList();
+    final selectedTeacher = teachers.firstWhere((t) => t.id == _selectedTeacherId);
 
     await ref.read(classProvider.notifier).createClass(
           title: _titleController.text.trim(),
           description: _descriptionController.text.trim().isEmpty
               ? null
               : _descriptionController.text.trim(),
-          teacherId: _selectedTeacherId.isEmpty ? null : _selectedTeacherId,
+          teacherId: _selectedTeacherId,
+          teacherUsername: selectedTeacher.username,
+          teacherFullName: selectedTeacher.fullName,
         );
 
     if (mounted) {
@@ -178,22 +194,29 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
                 ),
                 const SizedBox(height: 16),
                 StyledDropdown(
-                  value: _selectedTeacherId.isEmpty ? teachers.first.id : _selectedTeacherId,
+                  value: _selectedTeacherId,
                   label: 'Assign Teacher',
                   icon: Icons.person_outline_rounded,
-                  items: teachers
-                      .map(
-                        (teacher) => DropdownMenuItem<String>(
-                          value: teacher.id,
-                          child: Text(
-                            '${teacher.fullName} (@${teacher.username})',
+                  items: [
+                    const DropdownMenuItem<String>(
+                      value: '',
+                      child: Text('Select a teacher'),
+                      enabled: false,
+                    ),
+                    ...teachers
+                        .map(
+                          (teacher) => DropdownMenuItem<String>(
+                            value: teacher.id,
+                            child: Text(
+                              '${teacher.fullName} (@${teacher.username})',
+                            ),
                           ),
-                        ),
-                      )
-                      .toList(),
+                        )
+                        .toList(),
+                  ],
                   onChanged: (value) {
                     setState(() {
-                      _selectedTeacherId = value ?? teachers.first.id;
+                      _selectedTeacherId = value ?? '';
                     });
                   },
                   enabled: !classState.isLoading,

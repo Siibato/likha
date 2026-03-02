@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/admin/admin_class_detail_page.dart';
 import 'package:likha/presentation/pages/admin/admin_create_class_page.dart';
+import 'package:likha/presentation/pages/student/widgets/class_card.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
 class AdminClassesPage extends ConsumerStatefulWidget {
@@ -69,47 +70,17 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
                     itemCount: classState.classes.length,
                     itemBuilder: (context, index) {
                       final cls = classState.classes[index];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: const BorderSide(color: Color(0xFFE0E0E0)),
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          leading: const Icon(
-                            Icons.class_outlined,
-                            color: Color(0xFF2B2B2B),
+                      return ClassCard(
+                        title: cls.title,
+                        teacher: cls.teacherFullName.isEmpty
+                            ? cls.teacherUsername
+                            : cls.teacherFullName,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AdminClassDetailPage(classId: cls.id),
                           ),
-                          title: Text(
-                            cls.title,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          subtitle: Text(
-                            'Teacher: ${cls.teacherFullName}',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF999999),
-                            ),
-                          ),
-                          trailing: Text(
-                            '${cls.studentCount} student${cls.studentCount != 1 ? 's' : ''}',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF999999),
-                            ),
-                          ),
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => AdminClassDetailPage(classId: cls.id),
-                            ),
-                          ).then((_) => ref.read(classProvider.notifier).loadAllClasses()),
-                        ),
+                        ).then((_) => ref.read(classProvider.notifier).loadAllClasses()),
                       );
                     },
                   ),
@@ -118,7 +89,7 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
         onPressed: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const AdminCreateClassPage()),
-        ).then((_) => ref.read(classProvider.notifier).loadAllClasses()),
+        ),
         backgroundColor: const Color(0xFF2B2B2B),
         child: const Icon(Icons.add_rounded, color: Colors.white),
       ),

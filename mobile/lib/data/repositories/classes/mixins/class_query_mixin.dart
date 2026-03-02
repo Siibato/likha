@@ -84,15 +84,20 @@ mixin ClassQueryMixin on ClassRepositoryBase {
   @override
   ResultFuture<ClassDetail> getClassDetail({required String classId}) async {
     try {
+      // Try cache first (includes locally-added enrollments that haven't synced yet)
       try {
-        final fresh = await remoteDataSource.getClassDetail(classId: classId);
-        await localDataSource.cacheClassDetail(fresh);
-        return Right(fresh);
-      } on NetworkException {
+        final cached = await localDataSource.getCachedClassDetail(classId);
+        // Fetch fresh in background to update cache silently
+        _fetchClassDetailInBackground(classId);
+        return Right(cached);
+      } on CacheException {
+        // No cache, fetch fresh from server
         try {
-          final cached = await localDataSource.getCachedClassDetail(classId);
-          return Right(cached);
-        } on CacheException {
+          final fresh = await remoteDataSource.getClassDetail(classId: classId);
+          await localDataSource.cacheClassDetail(fresh);
+          return Right(fresh);
+        } on NetworkException {
+          // No cache and no network, try rebuilding from enrollments
           try {
             final rebuilt = await localDataSource.buildClassDetailFromEnrollments(classId);
             if (rebuilt != null) return Right(rebuilt);
@@ -108,6 +113,16 @@ mixin ClassQueryMixin on ClassRepositoryBase {
       return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  // Fetch fresh class detail in background without blocking UI
+  Future<void> _fetchClassDetailInBackground(String classId) async {
+    try {
+      final fresh = await remoteDataSource.getClassDetail(classId: classId);
+      await localDataSource.cacheClassDetail(fresh);
+    } catch (_) {
+      // Best-effort - cache is already good, so silently ignore errors
     }
   }
 

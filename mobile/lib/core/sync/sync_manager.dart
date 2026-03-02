@@ -207,6 +207,7 @@ class SyncManager {
 
       if (success) {
         // Mark as succeeded and remove from queue
+        print('✅ Sync operation $opId ($operation on $entityType) succeeded');
         await _syncQueue.markSucceeded(opId);
 
         if (entityType == 'adminUser' && operation == 'create') {
@@ -237,6 +238,33 @@ class SyncManager {
                 where: 'id = ?',
                 whereArgs: [localId],
               );
+
+              // Update any pending enrollment operations that reference this class
+              // (e.g., add_enrollment/remove_enrollment operations queued while class was offline)
+              final pendingEnrollments = await db.query(
+                'sync_queue',
+                where: 'status = ? AND (operation = ? OR operation = ?) AND payload LIKE ?',
+                whereArgs: [
+                  'pending',
+                  'add_enrollment',
+                  'remove_enrollment',
+                  '%"class_id":"$localId"%',
+                ],
+              );
+
+              for (final entry in pendingEnrollments) {
+                final payloadStr = entry['payload'] as String?;
+                if (payloadStr != null) {
+                  // Replace local class_id with server class_id in the payload
+                  final updatedPayload = payloadStr.replaceAll('"class_id":"$localId"', '"class_id":"$serverId"');
+                  await db.update(
+                    'sync_queue',
+                    {'payload': updatedPayload},
+                    where: 'id = ?',
+                    whereArgs: [entry['id']],
+                  );
+                }
+              }
             }
 
             // Special handling for questions: update main ID and reconcile nested IDs
@@ -270,6 +298,7 @@ class SyncManager {
       } else {
         // Mark as failed
         final error = result.error ?? 'Unknown error';
+        print('❌ Sync operation $opId ($operation on $entityType) failed: $error');
         await _syncQueue.markFailed(opId, error);
       }
     }

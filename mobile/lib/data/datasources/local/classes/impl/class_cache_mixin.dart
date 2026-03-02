@@ -28,13 +28,27 @@ mixin ClassCacheMixin on ClassLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       await db.transaction((txn) async {
+        final existing = await txn.query(
+          'classes',
+          columns: ['teacher_username', 'teacher_full_name'],
+          where: 'id = ?',
+          whereArgs: [classDetail.id],
+          limit: 1,
+        );
+        final teacherUsername = existing.isNotEmpty
+            ? (existing.first['teacher_username'] as String? ?? '')
+            : '';
+        final teacherFullName = existing.isNotEmpty
+            ? (existing.first['teacher_full_name'] as String? ?? '')
+            : '';
+
         final classMap = ClassModel(
           id: classDetail.id,
           title: classDetail.title,
           description: classDetail.description,
           teacherId: classDetail.teacherId,
-          teacherUsername: '',
-          teacherFullName: '',
+          teacherUsername: teacherUsername,
+          teacherFullName: teacherFullName,
           isArchived: classDetail.isArchived,
           studentCount: classDetail.students.length,
           createdAt: classDetail.createdAt,
@@ -60,6 +74,7 @@ mixin ClassCacheMixin on ClassLocalDataSourceBase {
               'enrolled_at': enrollment.enrolledAt.toIso8601String(),
               'updated_at': DateTime.now().toIso8601String(),
               'cached_at': DateTime.now().toIso8601String(),
+              'sync_status': 'synced',
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );

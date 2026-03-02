@@ -19,9 +19,18 @@ impl super::SyncPushService {
         let mut results = Vec::new();
 
         for op in operations {
-            if let Ok(Some(cached_result)) = self.processed_ops_repo.check_processed(&op.id).await {
-                results.push(cached_result);
-                continue;
+            match self.processed_ops_repo.check_processed(&op.id).await {
+                Ok(Some(cached_result)) => {
+                    results.push(cached_result);
+                    continue;
+                }
+                Ok(None) => {
+                    // Not processed yet, continue to process below
+                }
+                Err(e) => {
+                    // Log the error, but process anyway (fail-open to avoid data loss)
+                    eprintln!("Warning: Failed to check processed operations for {}: {}", op.id, e);
+                }
             }
 
             let result = self.process_single_operation(user_id, user_role, &op).await;

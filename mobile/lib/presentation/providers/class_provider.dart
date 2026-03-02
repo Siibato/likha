@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
+import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
@@ -119,6 +120,8 @@ class ClassNotifier extends StateNotifier<ClassState> {
     required String title,
     String? description,
     String? teacherId,
+    String? teacherUsername,
+    String? teacherFullName,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
 
@@ -126,6 +129,8 @@ class ClassNotifier extends StateNotifier<ClassState> {
       title: title,
       description: description,
       teacherId: teacherId,
+      teacherUsername: teacherUsername,
+      teacherFullName: teacherFullName,
     ));
 
     result.fold(
@@ -133,13 +138,11 @@ class ClassNotifier extends StateNotifier<ClassState> {
         isLoading: false,
         error: failure.message,
       ),
-      (newClass) {
-        state = state.copyWith(
-          isLoading: false,
-          classes: [newClass, ...state.classes],
-          successMessage: 'Class created successfully',
-        );
-      },
+      (newClass) => state = state.copyWith(
+        isLoading: false,
+        classes: [newClass, ...state.classes],
+        successMessage: 'Class created successfully',
+      ),
     );
   }
 
@@ -232,21 +235,80 @@ class ClassNotifier extends StateNotifier<ClassState> {
     required String classId,
     required String studentId,
   }) async {
-    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(clearError: true, clearSuccess: true);
 
+    // Try to get the student from search results to show in UI immediately
+    final studentToAdd = state.searchResults.firstWhere(
+      (u) => u.id == studentId,
+      orElse: () => UserModel(
+        id: studentId,
+        username: '',
+        fullName: '',
+        role: 'student',
+        accountStatus: 'pending',
+        isActive: false,
+        createdAt: DateTime.now(),
+      ),
+    );
+
+    final currentDetail = state.currentClassDetail;
+
+    // Optimistic update: immediately show student as added
+    if (currentDetail != null) {
+      final optimisticEnrollment = Enrollment(
+        id: 'temp_${studentToAdd.id}', // Temporary ID that will be updated on sync
+        student: studentToAdd,
+        enrolledAt: DateTime.now(),
+      );
+
+      final updatedDetail = ClassDetail(
+        id: currentDetail.id,
+        title: currentDetail.title,
+        description: currentDetail.description,
+        teacherId: currentDetail.teacherId,
+        isArchived: currentDetail.isArchived,
+        students: [optimisticEnrollment, ...currentDetail.students],
+        createdAt: currentDetail.createdAt,
+        updatedAt: currentDetail.updatedAt,
+      );
+
+      state = state.copyWith(
+        currentClassDetail: updatedDetail,
+        enrolledStudentIds: {...state.enrolledStudentIds, studentId},
+      );
+    }
+
+    // Perform the actual operation in background
     final result = await _addStudent(AddStudentParams(
       classId: classId,
       studentId: studentId,
     ));
 
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: failure.message,
-      ),
+      (failure) {
+        // On failure, remove the optimistically added student and show error
+        if (currentDetail != null) {
+          final revertedDetail = ClassDetail(
+            id: currentDetail.id,
+            title: currentDetail.title,
+            description: currentDetail.description,
+            teacherId: currentDetail.teacherId,
+            isArchived: currentDetail.isArchived,
+            students: currentDetail.students, // Revert to original students
+            createdAt: currentDetail.createdAt,
+            updatedAt: currentDetail.updatedAt,
+          );
+          state = state.copyWith(
+            currentClassDetail: revertedDetail,
+            enrolledStudentIds: state.enrolledStudentIds..remove(studentId),
+            error: failure.message,
+          );
+        } else {
+          state = state.copyWith(error: failure.message);
+        }
+      },
       (enrollment) {
-        // Immediately update UI with the new student (optimistic update)
-        final currentDetail = state.currentClassDetail;
+        // On success, update with real enrollment data from server
         if (currentDetail != null) {
           final updatedDetail = ClassDetail(
             id: currentDetail.id,
@@ -254,22 +316,24 @@ class ClassNotifier extends StateNotifier<ClassState> {
             description: currentDetail.description,
             teacherId: currentDetail.teacherId,
             isArchived: currentDetail.isArchived,
-            students: [enrollment, ...currentDetail.students],
+            students: currentDetail.students.map((s) {
+              // Replace temp enrollment with real one
+              if (s.id.startsWith('temp_') && s.student.id == studentId) {
+                return enrollment;
+              }
+              return s;
+            }).toList(),
             createdAt: currentDetail.createdAt,
             updatedAt: currentDetail.updatedAt,
           );
           state = state.copyWith(
-            isLoading: false,
             currentClassDetail: updatedDetail,
             successMessage: 'Student added to class',
           );
         } else {
-          state = state.copyWith(
-            isLoading: false,
-            successMessage: 'Student added to class',
-          );
+          state = state.copyWith(successMessage: 'Student added to class');
         }
-        // Reload class detail in background to verify
+        // Reload class detail in background to sync with server
         loadClassDetail(classId);
       },
     );
@@ -279,46 +343,56 @@ class ClassNotifier extends StateNotifier<ClassState> {
     required String classId,
     required String studentId,
   }) async {
-    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(clearError: true, clearSuccess: true);
 
+    final currentDetail = state.currentClassDetail;
+    final removedStudent = currentDetail?.students
+        .cast<Enrollment?>()
+        .firstWhere((e) => e?.student.id == studentId, orElse: () => null);
+
+    // Optimistic update: immediately remove the student
+    if (currentDetail != null) {
+      final updatedDetail = ClassDetail(
+        id: currentDetail.id,
+        title: currentDetail.title,
+        description: currentDetail.description,
+        teacherId: currentDetail.teacherId,
+        isArchived: currentDetail.isArchived,
+        students: currentDetail.students
+            .where((e) => e.student.id != studentId)
+            .toList(),
+        createdAt: currentDetail.createdAt,
+        updatedAt: currentDetail.updatedAt,
+      );
+      state = state.copyWith(
+        currentClassDetail: updatedDetail,
+        enrolledStudentIds: state.enrolledStudentIds..remove(studentId),
+      );
+    }
+
+    // Perform the actual operation in background
     final result = await _removeStudent(RemoveStudentParams(
       classId: classId,
       studentId: studentId,
     ));
 
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: failure.message,
-      ),
-      (_) {
-        // Immediately update UI by removing the student (optimistic update)
-        final currentDetail = state.currentClassDetail;
-        if (currentDetail != null) {
-          final updatedDetail = ClassDetail(
-            id: currentDetail.id,
-            title: currentDetail.title,
-            description: currentDetail.description,
-            teacherId: currentDetail.teacherId,
-            isArchived: currentDetail.isArchived,
-            students: currentDetail.students
-                .where((e) => e.student.id != studentId)
-                .toList(),
-            createdAt: currentDetail.createdAt,
-            updatedAt: currentDetail.updatedAt,
-          );
+      (failure) {
+        // On failure, restore the removed student and show error
+        if (currentDetail != null && removedStudent != null) {
           state = state.copyWith(
-            isLoading: false,
-            currentClassDetail: updatedDetail,
-            successMessage: 'Student removed from class',
+            currentClassDetail: currentDetail, // Restore original detail
+            enrolledStudentIds: state.enrolledStudentIds..add(studentId),
+            error: failure.message,
           );
         } else {
-          state = state.copyWith(
-            isLoading: false,
-            successMessage: 'Student removed from class',
-          );
+          state = state.copyWith(error: failure.message);
         }
-        // Reload class detail in background to verify
+      },
+      (_) {
+        // On success, confirm the removal
+        state = state.copyWith(successMessage: 'Student removed from class');
+        // Reload class detail in background to sync with server
         loadClassDetail(classId);
       },
     );

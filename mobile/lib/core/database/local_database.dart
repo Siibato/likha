@@ -586,6 +586,15 @@ class LocalDatabase {
         // Table might already exist
       }
     }
+
+    if (oldVersion < 9) {
+      // Add completed_at column to sync_queue for audit trail of completed operations
+      try {
+        await db.execute('ALTER TABLE sync_queue ADD COLUMN completed_at TEXT');
+      } catch (e) {
+        // Column might already exist
+      }
+    }
   }
 
   Future<void> close() async {

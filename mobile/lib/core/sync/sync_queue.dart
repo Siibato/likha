@@ -127,8 +127,12 @@ class SyncQueueImpl implements SyncQueue {
   @override
   Future<void> markSucceeded(String id) async {
     final db = await _localDatabase.database;
-    await db.delete(
+    await db.update(
       'sync_queue',
+      {
+        'status': 'succeeded',
+        'completed_at': DateTime.now().toIso8601String(),
+      },
       where: 'id = ?',
       whereArgs: [id],
     );

@@ -30,7 +30,9 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
         UserModel? cachedStudent;
         try {
           cachedStudent = await localDataSource.getStudentById(studentId);
-        } catch (_) {}
+        } catch (e) {
+          print('WARNING: Failed to get cached student $studentId: $e');
+        }
 
         final studentModel = cachedStudent ?? _skeletonStudent(studentId);
 
@@ -40,7 +42,9 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
             classId: classId,
             student: studentModel,
           );
-        } catch (_) {}
+        } catch (e) {
+          print('WARNING: Failed to add student locally to class $classId: $e');
+        }
 
         await syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),

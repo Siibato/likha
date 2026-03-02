@@ -14,6 +14,8 @@ mixin ClassCrudMixin on ClassRepositoryBase {
     required String title,
     String? description,
     String? teacherId,
+    String? teacherUsername,
+    String? teacherFullName,
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
@@ -41,8 +43,8 @@ mixin ClassCrudMixin on ClassRepositoryBase {
           title: title,
           description: description,
           teacherId: teacherId ?? '',
-          teacherUsername: '',
-          teacherFullName: '',
+          teacherUsername: teacherUsername ?? '',
+          teacherFullName: teacherFullName ?? '',
           isArchived: false,
           studentCount: 0,
           createdAt: now,
@@ -65,6 +67,14 @@ mixin ClassCrudMixin on ClassRepositoryBase {
         description: description,
         teacherId: teacherId,
       );
+
+      // Cache the result immediately so it appears in the list
+      try {
+        final cached = await localDataSource.getCachedClasses();
+        await localDataSource.cacheClasses([result, ...cached]);
+      } catch (_) {
+        await localDataSource.cacheClasses([result]);
+      }
 
       syncInBackgroundForClass(result.id);
 

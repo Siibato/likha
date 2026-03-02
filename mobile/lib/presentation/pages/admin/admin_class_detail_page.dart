@@ -42,6 +42,17 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
       }
     });
 
+    // Get class and teacher name from classState
+    final classInfo = classState.classes.cast<dynamic?>().firstWhere(
+      (c) => c?.id == widget.classId,
+      orElse: () => null,
+    );
+    final teacherName = classInfo != null
+        ? (classInfo.teacherFullName.isNotEmpty
+            ? classInfo.teacherFullName
+            : classInfo.teacherUsername)
+        : 'Unknown';
+
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
@@ -108,7 +119,7 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              'Teacher: Not available in detail view',
+                              'Teacher: $teacherName',
                               style: TextStyle(
                                 fontSize: 13,
                                 color: Colors.grey[600],

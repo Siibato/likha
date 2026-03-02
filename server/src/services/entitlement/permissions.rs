@@ -68,6 +68,14 @@ impl super::EntitlementService {
                 Ok(())
             }
             ("admin_user", "create" | "update" | "delete") => Ok(()),
+            ("class", "add_enrollment" | "remove_enrollment") => {
+                if let Some(class_id) = class_id {
+                    self.entitlement_repo
+                        .assert_can_modify_class(user_id, user_role, class_id)
+                        .await?;
+                }
+                Ok(())
+            }
             _ => {
                 Err(AppError::BadRequest(format!(
                     "Unknown operation: {} on {}",
