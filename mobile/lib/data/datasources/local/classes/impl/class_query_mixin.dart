@@ -9,6 +9,7 @@ mixin ClassQueryMixin on ClassLocalDataSourceBase {
   Future<List<ClassModel>> getCachedClasses({String? teacherId}) async {
     try {
       final db = await localDatabase.database;
+
       final results = teacherId != null
           ? await db.query(
               'classes',
@@ -17,8 +18,13 @@ mixin ClassQueryMixin on ClassLocalDataSourceBase {
               orderBy: 'title ASC',
             )
           : await db.query('classes', orderBy: 'title ASC');
-      if (results.isEmpty) throw CacheException('No cached classes found');
-      return results.map(ClassModel.fromMap).toList();
+
+      if (results.isEmpty) {
+        throw CacheException('No cached classes found');
+      }
+
+      final models = results.map(ClassModel.fromMap).toList();
+      return models;
     } catch (e) {
       if (e is CacheException) rethrow;
       throw CacheException(e.toString());

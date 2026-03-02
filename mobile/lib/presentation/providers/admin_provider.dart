@@ -228,6 +228,21 @@ class AdminNotifier extends StateNotifier<AdminState> {
   void clearMessages() {
     state = state.copyWith(clearError: true, clearSuccess: true);
   }
+
+  Future<void> cacheAccountsOffline() async {
+    try {
+      final result = await _getAllAccounts();
+      result.fold(
+        (failure) {
+        },
+        (accounts) {
+          state = state.copyWith(accounts: accounts);
+        },
+      );
+    } catch (e) {
+      // Silently ignore
+    }
+  }
 }
 
 final adminProvider = StateNotifierProvider<AdminNotifier, AdminState>((ref) {

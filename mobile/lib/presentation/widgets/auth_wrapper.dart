@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/network/dio_client.dart';
+import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/pages/activate_account_page.dart';
 import 'package:likha/presentation/pages/home_page.dart';
 import 'package:likha/presentation/pages/login_page.dart';
 import 'package:likha/presentation/pages/login_password_page.dart';
+import 'package:likha/presentation/providers/admin_provider.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 
 class AuthWrapper extends ConsumerStatefulWidget {
@@ -16,6 +18,8 @@ class AuthWrapper extends ConsumerStatefulWidget {
 }
 
 class _AuthWrapperState extends ConsumerState<AuthWrapper> {
+  String? _lastSyncedUserId;
+
   @override
   void initState() {
     super.initState();
@@ -47,8 +51,22 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
     }
 
     if (authState.isAuthenticated) {
+      // Only trigger sync once per user login, not on every build
+      if (_lastSyncedUserId != authState.user?.id) {
+        _lastSyncedUserId = authState.user?.id;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          sl<SyncManager>().sync();
+
+          if (authState.user?.role == 'admin') {
+            ref.read(adminProvider.notifier).cacheAccountsOffline();
+          }
+        });
+      }
       return const HomePage();
     }
+
+    // Reset sync tracking when logged out
+    _lastSyncedUserId = null;
 
     if (authState.pendingActivationUsername != null) {
       return const ActivateAccountPage();

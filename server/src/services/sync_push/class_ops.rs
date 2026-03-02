@@ -4,7 +4,7 @@ use super::sync_push_service::{OperationResult, SyncQueueEntry};
 use crate::schema::class_schema::{CreateClassRequest, UpdateClassRequest};
 
 impl super::SyncPushService {
-    pub(super) async fn handle_class_operation(&self, user_id: Uuid, op: &SyncQueueEntry) -> OperationResult {
+    pub(super) async fn handle_class_operation(&self, user_id: Uuid, user_role: &str, op: &SyncQueueEntry) -> OperationResult {
         match op.operation.as_str() {
             "create" => {
                 let title = match op.payload.get("title").and_then(|v| v.as_str()) {
@@ -69,7 +69,7 @@ impl super::SyncPushService {
                     return self.success_result(op, None, Some(Utc::now().to_rfc3339()));
                 }
 
-                match self.class_service.add_student(class_id, student_id, user_id, "teacher").await {
+                match self.class_service.add_student(class_id, student_id, user_id, &user_role).await {
                     Ok(r) => self.success_result(op, Some(r.id.to_string()), Some(Utc::now().to_rfc3339())),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }
@@ -83,7 +83,7 @@ impl super::SyncPushService {
                     Ok(id) => id,
                     Err(e) => return self.error_result(op, &e),
                 };
-                match self.class_service.remove_student(class_id, student_id, user_id, "teacher").await {
+                match self.class_service.remove_student(class_id, student_id, user_id, &user_role).await {
                     Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }

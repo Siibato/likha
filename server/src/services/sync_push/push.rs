@@ -67,7 +67,7 @@ impl super::SyncPushService {
         }
 
         match op.entity_type.as_str() {
-            "class" => self.handle_class_operation(user_id, op).await,
+            "class" => self.handle_class_operation(user_id, user_role, op).await,
             "admin_user" => self.handle_admin_user_operation(user_id, op).await,
             "assessment" => self.handle_assessment_operation(user_id, user_role, op).await,
             "question" => self.handle_question_operation(user_id, op).await,

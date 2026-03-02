@@ -13,6 +13,7 @@ mixin AuthCacheMixin on AuthLocalDataSourceBase {
       map['cached_at'] = DateTime.now().toIso8601String();
       map['sync_status'] = 'synced';
       map['is_dirty'] = 0;
+      map['is_search_cached'] = 0; // Mark as actual user, not search cache
       await db.insert('users', map, conflictAlgorithm: ConflictAlgorithm.replace);
     } catch (e) {
       throw CacheException('Failed to cache user: $e');
@@ -29,6 +30,7 @@ mixin AuthCacheMixin on AuthLocalDataSourceBase {
           map['cached_at'] = DateTime.now().toIso8601String();
           map['sync_status'] = 'synced';
           map['is_dirty'] = 0;
+          map['is_search_cached'] = 0; // Mark as actual user, not search cache
           await txn.insert('users', map, conflictAlgorithm: ConflictAlgorithm.replace);
         }
       });
@@ -45,6 +47,7 @@ mixin AuthCacheMixin on AuthLocalDataSourceBase {
       map['cached_at'] = DateTime.now().toIso8601String();
       map['sync_status'] = 'pending';
       map['is_dirty'] = 1;
+      map['is_search_cached'] = 0; // Mark as actual user, not search cache
       await db.insert('users', map, conflictAlgorithm: ConflictAlgorithm.replace);
     } catch (e) {
       throw CacheException('Failed to cache created account: $e');
@@ -95,6 +98,7 @@ mixin AuthCacheMixin on AuthLocalDataSourceBase {
       final db = await localDatabase.database;
       await db.delete('users');
       await db.delete('activity_logs');
+      await db.delete('sync_metadata');
     } catch (e) {
       throw CacheException('Failed to clear auth cache: $e');
     }
