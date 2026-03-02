@@ -275,15 +275,16 @@ mixin AuthAdminMixin on AuthRepositoryBase {
   }
 
   /// Builds the list of optimistic [UserModel]s from pending sync queue entries.
+  /// Includes both pending AND failed entries to prevent duplicate usernames.
   Future<List<UserModel>> _buildPendingAccounts() async {
-    final pendingEntries = await syncQueue.getAllRetriable();
+    // Get all admin user creations (pending OR failed) to prevent queueing duplicates
+    final entries = await syncQueue.getByEntityAndOperation(
+      SyncEntityType.adminUser,
+      SyncOperation.create,
+    );
     final seenUsernames = <String>{};
     final result = <UserModel>[];
-    for (final entry in pendingEntries) {
-      if (entry.entityType != SyncEntityType.adminUser ||
-          entry.operation != SyncOperation.create) {
-        continue;
-      }
+    for (final entry in entries) {
       final username = entry.payload['username'] as String? ?? '';
       if (seenUsernames.contains(username)) {
         continue;

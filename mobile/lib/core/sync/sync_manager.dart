@@ -186,7 +186,13 @@ class SyncManager {
         operations: operations,
       );
 
-      await _processPushResults(response);
+      try {
+        await _processPushResults(response);
+      } catch (e, st) {
+        print('❌ ERROR in _processPushResults: $e');
+        print('Stack trace: $st');
+        rethrow;
+      }
     }
   }
 

@@ -4,8 +4,6 @@ import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 
-/// Handles logout with confirmation if there are pending unsynced changes.
-/// Shows a confirm dialog if user has pending sync operations.
 Future<void> handleLogoutTap(BuildContext context, WidgetRef ref) async {
   final count = await sl<SyncQueue>().getPendingCount();
 
@@ -13,7 +11,6 @@ Future<void> handleLogoutTap(BuildContext context, WidgetRef ref) async {
 
   if (count > 0) {
     final confirmed = await showDialog<bool>(
-      // ignore: use_build_context_synchronously
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(

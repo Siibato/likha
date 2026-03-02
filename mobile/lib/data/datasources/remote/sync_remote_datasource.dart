@@ -132,7 +132,10 @@ class SyncRemoteDataSourceImpl implements SyncRemoteDataSource {
         throw Exception('Failed to push operations');
       }
 
-      return PushResponseModel.fromJson(response.data);
+      // Extract the 'data' wrapper from the API response
+      final responseData = response.data as Map<String, dynamic>;
+      final innerData = responseData['data'] as Map<String, dynamic>? ?? {};
+      return PushResponseModel.fromJson(innerData);
     } on DioException catch (e) {
       throw Exception('Network error pushing operations: ${e.message}');
     } catch (e) {
