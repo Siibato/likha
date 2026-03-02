@@ -2,7 +2,7 @@ import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/data/models/auth/activity_log_model.dart';
 
 abstract class AuthLocalDataSource {
-  Future<UserModel> getCachedCurrentUser();
+  Future<UserModel> getCachedCurrentUser([String? userId]);
   Future<void> cacheCurrentUser(UserModel user);
   Future<List<UserModel>> getCachedAccounts();
   Future<void> cacheAccounts(List<UserModel> accounts);

@@ -10,7 +10,7 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
       final db = await localDatabase.database;
       final results = await db.query(
         'users',
-        where: 'id = ? AND is_search_cached = 1',
+        where: 'id = ?',
         whereArgs: [studentId],
         limit: 1,
       );
@@ -29,7 +29,7 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
         for (final student in students) {
           final existing = await txn.query(
             'users',
-            where: 'id = ? AND is_search_cached = 0',
+            where: 'id = ?',
             whereArgs: [student.id],
             limit: 1,
           );
@@ -49,7 +49,6 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
               'cached_at': DateTime.now().toIso8601String(),
               'is_dirty': 0,
               'sync_status': 'synced',
-              'is_search_cached': 1,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
@@ -66,7 +65,7 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
       final db = await localDatabase.database;
       final results = await db.query(
         'users',
-        where: 'is_search_cached = 1 AND (username LIKE ? OR full_name LIKE ?)',
+        where: '(username LIKE ? OR full_name LIKE ?)',
         whereArgs: ['%$query%', '%$query%'],
         orderBy: 'full_name ASC',
       );

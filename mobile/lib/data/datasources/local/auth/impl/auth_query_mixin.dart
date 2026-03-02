@@ -5,15 +5,29 @@ import '../auth_local_datasource_base.dart';
 
 mixin AuthQueryMixin on AuthLocalDataSourceBase {
   @override
-  Future<UserModel> getCachedCurrentUser() async {
+  Future<UserModel> getCachedCurrentUser([String? userId]) async {
     try {
       final db = await localDatabase.database;
-      final result = await db.query(
-        'users',
-        where: 'is_search_cached = 0',
-        limit: 1,
-        orderBy: 'cached_at DESC',
-      );
+
+      List<Map<String, dynamic>> result;
+      if (userId != null) {
+        // If userId provided, query for that specific user
+        result = await db.query(
+          'users',
+          where: 'id = ?',
+          whereArgs: [userId],
+          limit: 1,
+        );
+      } else {
+        // Otherwise, return most recent user (backwards compatibility)
+        result = await db.query(
+          'users',
+          where: 'id != ""',
+          limit: 1,
+          orderBy: 'cached_at DESC',
+        );
+      }
+
       if (result.isEmpty) throw CacheException('No cached current user found');
       return UserModel.fromMap(result.first);
     } catch (e) {
@@ -26,7 +40,10 @@ mixin AuthQueryMixin on AuthLocalDataSourceBase {
   Future<List<UserModel>> getCachedAccounts() async {
     try {
       final db = await localDatabase.database;
-      final results = await db.query('users', orderBy: 'username ASC');
+      final results = await db.query(
+        'users',
+        orderBy: 'username ASC'
+        );
       if (results.isEmpty) throw CacheException('No cached accounts found');
       return results.map(UserModel.fromMap).toList();
     } catch (e) {

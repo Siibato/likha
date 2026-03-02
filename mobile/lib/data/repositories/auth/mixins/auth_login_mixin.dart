@@ -135,11 +135,7 @@ mixin AuthLoginMixin on AuthRepositoryBase {
         return const Left(UnauthorizedFailure('Not authenticated'));
       }
 
-      final cachedUser = await localDataSource.getCachedCurrentUser();
-
-      if (cachedUser.id != storedUserId) {
-        return const Left(UnauthorizedFailure('User mismatch: cached user does not match logged-in user'));
-      }
+      final cachedUser = await localDataSource.getCachedCurrentUser(storedUserId);
 
       return Right(cachedUser);
     } on CacheException catch (e) {

@@ -203,6 +203,18 @@ class SyncManager {
         // Mark as succeeded and remove from queue
         await _syncQueue.markSucceeded(opId);
 
+        if (entityType == 'adminUser' && operation == 'create') {
+          try {
+            await db.delete(
+              'users',
+              where: 'id = ? AND sync_status = ?',
+              whereArgs: ['', 'pending'],
+            );
+          } catch (e) {
+            // 
+          }
+        }
+
         // If this was a create operation, map local ID to server ID
         if (serverId != null && operation == 'create' && entry != null) {
           final localId = entry.payload['local_id'] as String?;
@@ -412,6 +424,10 @@ class SyncManager {
     // Upsert all entity data
     await _upsertEntity(db, 'classes', response['classes'] ?? []);
     await _upsertEntity(db, 'class_enrollments', response['enrollments'] ?? []);
+    await _upsertEnrolledStudents(
+      db,
+      response['enrolled_students'] ?? [],
+    );
     await _upsertEntity(db, 'assessments', response['assessments'] ?? []);
     await _upsertEntity(db, 'questions', response['questions'] ?? []);
     await _upsertEntity(
@@ -516,6 +532,24 @@ class SyncManager {
     }
   }
 
+  /// This distinguishes enrolled students from search-cached students
+  Future<void> _upsertEnrolledStudents(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+      await db.insert(
+        'users',
+        {
+          ...data,
+          'sync_status': 'synced',
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
   /// Process delta payload: upsert updated, soft-delete removed
   Future<void> _processDeltaPayload(
     Database db,
@@ -553,6 +587,15 @@ class SyncManager {
           whereArgs: [id as String],
         );
       }
+    }
+
+    final enrolledStudentsDeltas = deltas['enrolled_students'] as Map<String, dynamic>?;
+    if (enrolledStudentsDeltas != null) {
+      final updated = enrolledStudentsDeltas['updated'] as List<dynamic>? ?? [];
+      await _upsertEnrolledStudents(db, updated);
+
+      // Note: We don't soft-delete users - they are reusable across contexts
+      // (current user, enrolled students, search results)
     }
   }
 

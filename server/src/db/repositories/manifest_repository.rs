@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::utils::{AppError, AppResult};
 use ::entity::{
     classes, class_enrollments, assessments, assessment_questions, assessment_submissions,
-    assignments_hw, assignment_submissions, learning_materials, activity_logs,
+    assignments_hw, assignment_submissions, learning_materials, activity_logs, users,
 };
 
 /// Record entry in the manifest (id + updated_at + deleted flag)
@@ -856,5 +856,42 @@ impl ManifestRepository {
             .collect();
 
         Ok(records)
+    }
+
+    /// Get users by IDs with full profile data
+    pub async fn get_users_paginated(
+        &self,
+        user_ids: Vec<Uuid>,
+        limit: i64,
+    ) -> AppResult<PaginatedRecords> {
+        let effective_limit = std::cmp::min(limit, 500) as u64;
+
+        let records = users::Entity::find()
+            .filter(users::Column::Id.is_in(user_ids))
+            .limit(effective_limit + 1)
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        let has_more = records.len() > effective_limit as usize;
+        let records: Vec<Value> = records
+            .into_iter()
+            .take(effective_limit as usize)
+            .map(|r| {
+                json!({
+                    "id": r.id.to_string(),
+                    "username": r.username,
+                    "full_name": r.full_name,
+                    "role": r.role,
+                    "account_status": r.account_status,
+                    "is_active": r.is_active,
+                    "activated_at": r.activated_at.map(|d| d.to_string()),
+                    "created_at": r.created_at.to_string(),
+                    "updated_at": r.updated_at.to_string(),
+                })
+            })
+            .collect();
+
+        Ok(PaginatedRecords { records, has_more })
     }
 }

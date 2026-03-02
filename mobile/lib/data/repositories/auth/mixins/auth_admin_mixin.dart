@@ -17,6 +17,19 @@ mixin AuthAdminMixin on AuthRepositoryBase {
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
+        final pendingAccounts = await _buildPendingAccounts();
+        if (pendingAccounts.any((a) => a.username.toLowerCase() == username.toLowerCase())) {
+          return Left(ServerFailure('Account "$username" is already being created. Please wait for sync.'));
+        }
+
+        try {
+          final cachedAccounts = await localDataSource.getCachedAccounts();
+          if (cachedAccounts.any((a) => a.username.toLowerCase() == username.toLowerCase())) {
+            return Left(ServerFailure('Account "$username" already exists.'));
+          }
+        } on CacheException {
+        }
+
         await syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),
           entityType: SyncEntityType.adminUser,
@@ -75,6 +88,7 @@ mixin AuthAdminMixin on AuthRepositoryBase {
 
       try {
         cachedAccounts = await localDataSource.getCachedAccounts();
+        print(cachedAccounts);
         hasCachedData = true;
       } on CacheException {
         hasCachedData = false;
@@ -86,7 +100,12 @@ mixin AuthAdminMixin on AuthRepositoryBase {
           await localDataSource.cacheAccounts(freshAccounts);
 
           final pendingAccounts = await _buildPendingAccounts();
-          return Right([...freshAccounts, ...pendingAccounts]);
+          // Final dedup: remove pending accounts that already exist in server accounts
+          final serverUsernames = freshAccounts.map((a) => a.username).toSet();
+          final deduped = pendingAccounts
+              .where((p) => !serverUsernames.contains(p.username))
+              .toList();
+          return Right([...freshAccounts, ...deduped]);
         } catch (e) {
           if (!hasCachedData) {
             if (e is ServerException) return Left(ServerFailure(e.message));
@@ -100,7 +119,12 @@ mixin AuthAdminMixin on AuthRepositoryBase {
       final pendingAccounts = await _buildPendingAccounts();
 
       if (hasCachedData) {
-        return Right([...cachedAccounts, ...pendingAccounts]);
+        // Final dedup: remove pending accounts that already exist in cached accounts
+        final cachedUsernames = cachedAccounts.map((a) => a.username).toSet();
+        final deduped = pendingAccounts
+            .where((p) => !cachedUsernames.contains(p.username))
+            .toList();
+        return Right([...cachedAccounts, ...deduped]);
       }
 
       if (pendingAccounts.isNotEmpty) {
@@ -253,20 +277,29 @@ mixin AuthAdminMixin on AuthRepositoryBase {
   /// Builds the list of optimistic [UserModel]s from pending sync queue entries.
   Future<List<UserModel>> _buildPendingAccounts() async {
     final pendingEntries = await syncQueue.getAllRetriable();
-    return [
-      for (final entry in pendingEntries)
-        if (entry.entityType == SyncEntityType.adminUser &&
-            entry.operation == SyncOperation.create)
-          UserModel(
-            id: '',
-            username: entry.payload['username'] as String? ?? '',
-            fullName: entry.payload['full_name'] as String? ?? '',
-            role: entry.payload['role'] as String? ?? '',
-            accountStatus: 'pending_activation',
-            isActive: false,
-            activatedAt: null,
-            createdAt: DateTime.now(),
-          ),
-    ];
+    final seenUsernames = <String>{};
+    final result = <UserModel>[];
+    for (final entry in pendingEntries) {
+      if (entry.entityType != SyncEntityType.adminUser ||
+          entry.operation != SyncOperation.create) {
+        continue;
+      }
+      final username = entry.payload['username'] as String? ?? '';
+      if (seenUsernames.contains(username)) {
+        continue;
+      }
+      seenUsernames.add(username);
+      result.add(UserModel(
+        id: '',
+        username: username,
+        fullName: entry.payload['full_name'] as String? ?? '',
+        role: entry.payload['role'] as String? ?? '',
+        accountStatus: 'pending_activation',
+        isActive: false,
+        activatedAt: null,
+        createdAt: DateTime.now(),
+      ));
+    }
+    return result;
   }
 }

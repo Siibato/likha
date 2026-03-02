@@ -21,6 +21,7 @@ pub struct FullSyncResponse {
     pub user: Option<Value>,
     pub classes: Vec<Value>,
     pub enrollments: Vec<Value>,
+    pub enrolled_students: Vec<Value>,
     pub assessments: Vec<Value>,
     pub questions: Vec<Value>,
     pub assessment_submissions: Vec<Value>,
@@ -69,14 +70,36 @@ impl SyncFullService {
             .await?
             .records;
 
-        let enrollments = self
+        let enrollment_data = self
             .manifest_repo
             .get_enrollments_paginated(
                 manifest.enrollments.iter().map(|e| e.id).collect(),
                 10000,
             )
-            .await?
-            .records;
+            .await?;
+        let enrollments = enrollment_data.records.clone();
+
+        // Extract unique student IDs from enrollments
+        let student_ids: Vec<Uuid> = enrollment_data
+            .records
+            .iter()
+            .filter_map(|e| {
+                e.get("student_id")
+                    .and_then(|id| id.as_str())
+                    .and_then(|id_str| uuid::Uuid::parse_str(id_str).ok())
+            })
+            .collect::<std::collections::HashSet<_>>()
+            .into_iter()
+            .collect();
+
+        let enrolled_students = if student_ids.is_empty() {
+            Vec::new()
+        } else {
+            self.manifest_repo
+                .get_users_paginated(student_ids, 10000)
+                .await?
+                .records
+        };
 
         let assessments = self
             .manifest_repo
@@ -147,6 +170,7 @@ impl SyncFullService {
             user: None, // TODO: include user data if needed
             classes,
             enrollments,
+            enrolled_students,
             assessments,
             questions,
             assessment_submissions,
