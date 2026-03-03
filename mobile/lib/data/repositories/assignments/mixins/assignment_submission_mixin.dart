@@ -334,6 +334,25 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
 
       final result = await remoteDataSource.submitAssignment(
           submissionId: submissionId);
+
+      // Best-effort: cache submission detail for offline viewing
+      try {
+        await localDataSource.cacheSubmissions(
+          result.assignmentId,
+          [SubmissionListItemModel(
+            id: result.id,
+            studentId: result.studentId,
+            studentName: result.studentName,
+            status: result.status,
+            submittedAt: result.submittedAt,
+            isLate: result.isLate,
+            score: result.score,
+          )],
+        );
+      } catch (_) {
+        // Silently fail — don't block submission if cache write fails
+      }
+
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

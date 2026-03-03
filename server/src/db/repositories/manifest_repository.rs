@@ -137,7 +137,7 @@ impl ManifestRepository {
             .into_iter()
             .map(|r| ManifestEntry {
                 id: r.id,
-                updated_at: r.created_at, // Use created_at since updated_at doesn't exist
+                updated_at: r.updated_at,
                 deleted: false,
             })
             .collect())
@@ -499,8 +499,13 @@ impl ManifestRepository {
                     "assignment_id": r.assignment_id.to_string(),
                     "student_id": r.student_id.to_string(),
                     "status": r.status,
+                    "text_content": r.text_content,
+                    "is_late": r.is_late,
                     "submitted_at": r.submitted_at.map(|d| d.to_string()),
                     "score": r.score,
+                    "feedback": r.feedback,
+                    "graded_at": r.graded_at.map(|d| d.to_string()),
+                    "created_at": r.created_at.to_string(),
                     "updated_at": r.updated_at.to_string(),
                 })
             })

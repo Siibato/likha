@@ -151,10 +151,21 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
             studentName: studentName,
             studentUsername: studentUsername,
           );
+
+          // Convert Question domain objects to JSON maps for TakeAssessmentPage
+          final questionMaps = questions.map((q) => {
+            'id': q.id,
+            'question_type': q.questionType,
+            'question_text': q.questionText,
+            'points': q.points,
+            'order_index': q.orderIndex,
+            'is_multi_select': q.isMultiSelect,
+          }).toList();
+
           return Right(StartSubmissionResult(
             submissionId: localId,
             startedAt: DateTime.now(),
-            questions: questions,
+            questions: questionMaps,
           ));
         } on CacheException catch (e) {
           return Left(
@@ -239,6 +250,24 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
 
       final result =
           await remoteDataSource.submitAssessment(submissionId: submissionId);
+
+      // Best-effort: if showResultsImmediately, fetch and cache student results
+      try {
+        final cached =
+            await localDataSource.getCachedSubmissionDetail(submissionId);
+        if (cached != null) {
+          final assessmentDetail = await localDataSource
+              .getCachedAssessmentDetail(cached.assessmentId);
+          if (assessmentDetail.$1.showResultsImmediately == true) {
+            final studentResults =
+                await remoteDataSource.getStudentResults(submissionId: submissionId);
+            await localDataSource.cacheStudentResults(studentResults);
+          }
+        }
+      } catch (_) {
+        // Silently fail — don't block submission if result caching fails
+      }
+
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

@@ -228,6 +228,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
           'final_score': submission.finalScore.toInt(),
           'is_submitted': submission.isSubmitted ? 1 : 0,
           'answers_json': jsonEncode(submission.answers),
+          'updated_at': submission.submittedAt?.toIso8601String() ?? submission.startedAt.toIso8601String(),
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
           'is_offline_mutation': 0,
