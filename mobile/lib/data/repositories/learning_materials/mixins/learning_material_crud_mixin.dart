@@ -18,6 +18,9 @@ mixin LearningMaterialCrudMixin on LearningMaterialRepositoryBase {
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
+        // Generate local UUID for offline creation
+        final materialId = const Uuid().v4();
+
         await syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),
           entityType: SyncEntityType.learningMaterial,
@@ -35,7 +38,7 @@ mixin LearningMaterialCrudMixin on LearningMaterialRepositoryBase {
         ));
 
         final optimisticMaterial = LearningMaterial(
-          id: '',
+          id: materialId,
           classId: classId,
           title: title,
           description: description,
@@ -49,7 +52,7 @@ mixin LearningMaterialCrudMixin on LearningMaterialRepositoryBase {
         try {
           final currentCached = await localDataSource.getCachedMaterials(classId);
           final optimisticModel = LearningMaterialModel(
-            id: '',
+            id: materialId,
             classId: classId,
             title: title,
             description: description,

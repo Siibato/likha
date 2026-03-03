@@ -88,7 +88,6 @@ mixin AuthAdminMixin on AuthRepositoryBase {
 
       try {
         cachedAccounts = await localDataSource.getCachedAccounts();
-        print(cachedAccounts);
         hasCachedData = true;
       } on CacheException {
         hasCachedData = false;

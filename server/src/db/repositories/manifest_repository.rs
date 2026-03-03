@@ -270,10 +270,15 @@ impl ManifestRepository {
                     "title": r.title,
                     "description": r.description,
                     "time_limit_minutes": r.time_limit_minutes,
+                    "open_at": r.open_at.to_string(),
+                    "close_at": r.close_at.to_string(),
+                    "show_results_immediately": r.show_results_immediately,
                     "is_published": r.is_published,
                     "results_released": r.results_released,
+                    "total_points": r.total_points,
                     "created_at": r.created_at.to_string(),
                     "updated_at": r.updated_at.to_string(),
+                    "deleted_at": r.deleted_at.map(|d| d.to_string()),
                 })
             })
             .collect();
@@ -307,10 +312,14 @@ impl ManifestRepository {
                     "title": r.title,
                     "instructions": r.instructions,
                     "total_points": r.total_points,
+                    "submission_type": r.submission_type,
+                    "allowed_file_types": r.allowed_file_types,
+                    "max_file_size_mb": r.max_file_size_mb,
                     "due_at": r.due_at.to_string(),
                     "is_published": r.is_published,
                     "created_at": r.created_at.to_string(),
                     "updated_at": r.updated_at.to_string(),
+                    "deleted_at": r.deleted_at.map(|d| d.to_string()),
                 })
             })
             .collect();
@@ -619,8 +628,12 @@ impl ManifestRepository {
                     "title": r.title,
                     "description": r.description,
                     "time_limit_minutes": r.time_limit_minutes,
+                    "open_at": r.open_at.to_string(),
+                    "close_at": r.close_at.to_string(),
+                    "show_results_immediately": r.show_results_immediately,
                     "is_published": r.is_published,
                     "results_released": r.results_released,
+                    "total_points": r.total_points,
                     "created_at": r.created_at.to_string(),
                     "updated_at": r.updated_at.to_string(),
                     "deleted_at": r.deleted_at.map(|d| d.to_string()),
@@ -653,6 +666,9 @@ impl ManifestRepository {
                     "title": r.title,
                     "instructions": r.instructions,
                     "total_points": r.total_points,
+                    "submission_type": r.submission_type,
+                    "allowed_file_types": r.allowed_file_types,
+                    "max_file_size_mb": r.max_file_size_mb,
                     "due_at": r.due_at.to_string(),
                     "is_published": r.is_published,
                     "created_at": r.created_at.to_string(),

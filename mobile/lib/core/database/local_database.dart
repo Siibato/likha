@@ -48,9 +48,10 @@ class LocalDatabase {
           is_active INTEGER NOT NULL DEFAULT 1,
           activated_at TEXT,
           created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
           cached_at TEXT NOT NULL,
           is_dirty INTEGER NOT NULL DEFAULT 0,
-          sync_status TEXT NOT NULL DEFAULT 'synced',
+          sync_status TEXT NOT NULL DEFAULT 'synced'
         )
       ''');
 

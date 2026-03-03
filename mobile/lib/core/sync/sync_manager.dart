@@ -188,9 +188,7 @@ class SyncManager {
 
       try {
         await _processPushResults(response);
-      } catch (e, st) {
-        print('❌ ERROR in _processPushResults: $e');
-        print('Stack trace: $st');
+      } catch (e) {
         rethrow;
       }
     }
@@ -213,7 +211,6 @@ class SyncManager {
 
       if (success) {
         // Mark as succeeded and remove from queue
-        print('✅ Sync operation $opId ($operation on $entityType) succeeded');
         await _syncQueue.markSucceeded(opId);
 
         if (entityType == 'adminUser' && operation == 'create') {
@@ -304,7 +301,6 @@ class SyncManager {
       } else {
         // Mark as failed
         final error = result.error ?? 'Unknown error';
-        print('❌ Sync operation $opId ($operation on $entityType) failed: $error');
         await _syncQueue.markFailed(opId, error);
       }
     }
@@ -472,23 +468,22 @@ class SyncManager {
     // Upsert all entity data
     final enrolledStudents = (data['enrolled_students'] as List?) ?? [];
 
+    // Build studentMap for submission enrichment
+    final studentMap = <String, dynamic>{};
+    for (final s in enrolledStudents) {
+      final student = s as Map<String, dynamic>;
+      studentMap[student['id'] as String] = student;
+    }
+
     await _upsertClasses(db, data['classes'] ?? []);
     await _upsertEnrolledStudents(db, enrolledStudents);
     await _upsertEnrollments(db, data['enrollments'] ?? [], enrolledStudents);
-    await _upsertEntity(db, 'assessments', data['assessments'] ?? []);
-    await _upsertEntity(db, 'questions', data['questions'] ?? []);
-    await _upsertEntity(
-      db,
-      'assessment_submissions',
-      data['assessment_submissions'] ?? [],
-    );
-    await _upsertEntity(db, 'assignments', data['assignments'] ?? []);
-    await _upsertEntity(
-      db,
-      'assignment_submissions',
-      data['assignment_submissions'] ?? [],
-    );
-    await _upsertEntity(db, 'learning_materials', data['learning_materials'] ?? []);
+    await _upsertAssessments(db, data['assessments'] ?? []);
+    await _upsertQuestions(db, data['questions'] ?? []);
+    await _upsertAssessmentSubmissions(db, data['assessment_submissions'] ?? [], studentMap);
+    await _upsertAssignments(db, data['assignments'] ?? []);
+    await _upsertAssignmentSubmissions(db, data['assignment_submissions'] ?? [], studentMap);
+    await _upsertLearningMaterials(db, data['learning_materials'] ?? []);
 
     // Save sync metadata
     final expiryAt = DateTime.now().add(const Duration(days: 30)).toIso8601String();
@@ -560,25 +555,6 @@ class SyncManager {
     return serverTime ?? syncToken;
   }
 
-  /// Upsert records into a table
-  Future<void> _upsertEntity(
-    Database db,
-    String tableName,
-    List<dynamic> records,
-  ) async {
-    for (final record in records) {
-      final data = record as Map<String, dynamic>;
-      await db.insert(
-        tableName,
-        {
-          ...data,
-          'sync_status': 'synced',
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-    }
-  }
-
   Future<void> _upsertClasses(
     Database db,
     List<dynamic> records,
@@ -606,17 +582,14 @@ class SyncManager {
     try {
       final classesNeedingTeacher = await db.query(
         'classes',
-        where: 'teacher_username = ? OR teacher_username = ?',
-        whereArgs: ['', null],
+        where: 'teacher_username = ?',
+        whereArgs: [''],
       );
 
       if (classesNeedingTeacher.isEmpty) return;
 
-      // Get cached user accounts (where is_search_cached = 0, these are actual users not search cache)
-      final cachedUsers = await db.query(
-        'users',
-        where: 'is_search_cached = 0',
-      );
+      // Get cached user accounts
+      final cachedUsers = await db.query('users');
 
       // Build teacher map: teacher_id -> (username, full_name)
       final teacherMap = <String, Map<String, String>>{};
@@ -711,7 +684,211 @@ class SyncManager {
           'created_at': data['created_at'],
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
-          'is_search_cached': 0, // Mark as actual user, not search cache
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+  /// Explicit upsert handler for assessments with proper field mapping
+  Future<void> _upsertAssessments(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+      await db.insert(
+        'assessments',
+        {
+          'id': data['id'],
+          'class_id': data['class_id'],
+          'title': data['title'],
+          'description': data['description'],
+          'time_limit_minutes': data['time_limit_minutes'] ?? 0,
+          'open_at': data['open_at'] ?? DateTime.now().toIso8601String(),
+          'close_at': data['close_at'] ?? DateTime.now().toIso8601String(),
+          'show_results_immediately': (data['show_results_immediately'] == true) ? 1 : 0,
+          'results_released': (data['results_released'] == true) ? 1 : 0,
+          'is_published': (data['is_published'] == true) ? 1 : 0,
+          'total_points': data['total_points'] ?? 0,
+          'question_count': data['question_count'] ?? 0,
+          'submission_count': data['submission_count'] ?? 0,
+          'created_at': data['created_at'] ?? DateTime.now().toIso8601String(),
+          'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
+          'deleted_at': data['deleted_at'],
+          'cached_at': DateTime.now().toIso8601String(),
+          'sync_status': 'synced',
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+  /// Explicit upsert handler for questions with proper field mapping
+  /// CRITICAL: Preserves existing choices_json/correct_answers_json/enumeration_items_json
+  /// from REST API cache path (server manifest doesn't include choices)
+  Future<void> _upsertQuestions(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+
+      // Preserve existing cached choices (choices come from REST API, not from sync)
+      final existing = await db.query(
+        'questions',
+        columns: ['choices_json', 'correct_answers_json', 'enumeration_items_json'],
+        where: 'id = ?',
+        whereArgs: [data['id']],
+      );
+      final existingChoices = existing.isNotEmpty ? existing.first['choices_json'] : null;
+      final existingAnswers = existing.isNotEmpty ? existing.first['correct_answers_json'] : null;
+      final existingEnum = existing.isNotEmpty ? existing.first['enumeration_items_json'] : null;
+
+      await db.insert(
+        'questions',
+        {
+          'id': data['id'],
+          'assessment_id': data['assessment_id'],
+          'question_type': data['question_type'],
+          'question_text': data['question_text'],
+          'points': data['points'] ?? 0,
+          'order_index': data['order_index'] ?? 0,
+          'is_multi_select': (data['is_multi_select'] == true) ? 1 : 0,
+          'choices_json': existingChoices,
+          'correct_answers_json': existingAnswers,
+          'enumeration_items_json': existingEnum,
+          'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
+          'deleted_at': data['deleted_at'],
+          'cached_at': DateTime.now().toIso8601String(),
+          'sync_status': 'synced',
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+  /// Explicit upsert handler for assignments with proper field mapping
+  Future<void> _upsertAssignments(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+      await db.insert(
+        'assignments',
+        {
+          'id': data['id'],
+          'class_id': data['class_id'],
+          'title': data['title'],
+          'instructions': data['instructions'],
+          'total_points': data['total_points'] ?? 0,
+          'submission_type': data['submission_type'] ?? 'file',
+          'allowed_file_types': data['allowed_file_types'],
+          'max_file_size_mb': data['max_file_size_mb'],
+          'due_at': data['due_at'],
+          'is_published': (data['is_published'] == true) ? 1 : 0,
+          'submission_count': data['submission_count'] ?? 0,
+          'graded_count': data['graded_count'] ?? 0,
+          'created_at': data['created_at'] ?? DateTime.now().toIso8601String(),
+          'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
+          'deleted_at': data['deleted_at'],
+          'cached_at': DateTime.now().toIso8601String(),
+          'sync_status': 'synced',
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+  /// Explicit upsert handler for learning materials with proper field mapping
+  Future<void> _upsertLearningMaterials(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+      await db.insert(
+        'learning_materials',
+        {
+          'id': data['id'],
+          'class_id': data['class_id'],
+          'title': data['title'],
+          'description': data['description'],
+          'content_text': data['content_text'],
+          'order_index': data['order_index'] ?? 0,
+          'file_count': data['file_count'] ?? 0,
+          'created_at': data['created_at'] ?? DateTime.now().toIso8601String(),
+          'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
+          'deleted_at': data['deleted_at'],
+          'cached_at': DateTime.now().toIso8601String(),
+          'sync_status': 'synced',
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+  /// Explicit upsert handler for assessment submissions with student enrichment
+  Future<void> _upsertAssessmentSubmissions(
+    Database db,
+    List<dynamic> records,
+    Map<String, dynamic> studentMap,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+      final student = studentMap[data['student_id']] ?? {};
+
+      await db.insert(
+        'assessment_submissions',
+        {
+          'id': data['id'],
+          'assessment_id': data['assessment_id'],
+          'student_id': data['student_id'],
+          'student_name': (student['full_name'] as String?) ?? '',
+          'student_username': (student['username'] as String?) ?? '',
+          'started_at': data['started_at'] ?? DateTime.now().toIso8601String(),
+          'submitted_at': data['submitted_at'],
+          'auto_score': data['auto_score'] ?? 0,
+          'final_score': data['final_score'] ?? 0,
+          'is_submitted': (data['is_submitted'] == true) ? 1 : 0,
+          'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
+          'cached_at': DateTime.now().toIso8601String(),
+          'sync_status': 'synced',
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+  /// Explicit upsert handler for assignment submissions with student enrichment
+  Future<void> _upsertAssignmentSubmissions(
+    Database db,
+    List<dynamic> records,
+    Map<String, dynamic> studentMap,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+      final student = studentMap[data['student_id']] ?? {};
+
+      await db.insert(
+        'assignment_submissions',
+        {
+          'id': data['id'],
+          'assignment_id': data['assignment_id'],
+          'student_id': data['student_id'],
+          'student_name': (student['full_name'] as String?) ?? '',
+          'status': data['status'] ?? 'pending',
+          'text_content': data['text_content'],
+          'submitted_at': data['submitted_at'],
+          'is_late': 0,
+          'score': data['score'],
+          'feedback': data['feedback'],
+          'graded_at': data['graded_at'],
+          'created_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
+          'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
+          'cached_at': DateTime.now().toIso8601String(),
+          'sync_status': 'synced',
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -790,32 +967,108 @@ class SyncManager {
       }
     }
 
-    // Generic handler for other entities
-    final entityMap = {
-      'assessments': 'assessments',
-      'questions': 'questions',
-      'assessment_submissions': 'assessment_submissions',
-      'assignments': 'assignments',
-      'assignment_submissions': 'assignment_submissions',
-      'learning_materials': 'learning_materials',
-    };
+    // Build student map from local cache for submission enrichment
+    final cachedUsers = await db.query('users');
+    final studentMap = <String, dynamic>{};
+    for (final u in cachedUsers) {
+      studentMap[u['id'] as String] = u;
+    }
 
-    for (final entry in entityMap.entries) {
-      final entityKey = entry.key;
-      final tableName = entry.value;
-      final entityDeltas = deltas[entityKey] as Map<String, dynamic>?;
+    // Handle assessments separately (requires explicit field mapping)
+    final assessmentDeltas = deltas['assessments'] as Map<String, dynamic>?;
+    if (assessmentDeltas != null) {
+      final updated = assessmentDeltas['updated'] as List<dynamic>? ?? [];
+      await _upsertAssessments(db, updated);
 
-      if (entityDeltas == null) continue;
-
-      // Upsert updated records
-      final updated = entityDeltas['updated'] as List<dynamic>? ?? [];
-      await _upsertEntity(db, tableName, updated);
-
-      // Soft-delete removed records
-      final deleted = entityDeltas['deleted'] as List<dynamic>? ?? [];
+      final deleted = assessmentDeltas['deleted'] as List<dynamic>? ?? [];
       for (final id in deleted) {
         await db.update(
-          tableName,
+          'assessments',
+          {'deleted_at': DateTime.now().toIso8601String()},
+          where: 'id = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle questions separately (preserves cached choices)
+    final questionDeltas = deltas['questions'] as Map<String, dynamic>?;
+    if (questionDeltas != null) {
+      final updated = questionDeltas['updated'] as List<dynamic>? ?? [];
+      await _upsertQuestions(db, updated);
+
+      final deleted = questionDeltas['deleted'] as List<dynamic>? ?? [];
+      for (final id in deleted) {
+        await db.update(
+          'questions',
+          {'deleted_at': DateTime.now().toIso8601String()},
+          where: 'id = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle assessment submissions separately (requires student enrichment)
+    final assessmentSubmissionDeltas = deltas['assessment_submissions'] as Map<String, dynamic>?;
+    if (assessmentSubmissionDeltas != null) {
+      final updated = assessmentSubmissionDeltas['updated'] as List<dynamic>? ?? [];
+      await _upsertAssessmentSubmissions(db, updated, studentMap);
+
+      final deleted = assessmentSubmissionDeltas['deleted'] as List<dynamic>? ?? [];
+      for (final id in deleted) {
+        await db.update(
+          'assessment_submissions',
+          {'deleted_at': DateTime.now().toIso8601String()},
+          where: 'id = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle assignments separately (requires explicit field mapping)
+    final assignmentDeltas = deltas['assignments'] as Map<String, dynamic>?;
+    if (assignmentDeltas != null) {
+      final updated = assignmentDeltas['updated'] as List<dynamic>? ?? [];
+      await _upsertAssignments(db, updated);
+
+      final deleted = assignmentDeltas['deleted'] as List<dynamic>? ?? [];
+      for (final id in deleted) {
+        await db.update(
+          'assignments',
+          {'deleted_at': DateTime.now().toIso8601String()},
+          where: 'id = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle assignment submissions separately (requires student enrichment)
+    final assignmentSubmissionDeltas = deltas['assignment_submissions'] as Map<String, dynamic>?;
+    if (assignmentSubmissionDeltas != null) {
+      final updated = assignmentSubmissionDeltas['updated'] as List<dynamic>? ?? [];
+      await _upsertAssignmentSubmissions(db, updated, studentMap);
+
+      final deleted = assignmentSubmissionDeltas['deleted'] as List<dynamic>? ?? [];
+      for (final id in deleted) {
+        await db.update(
+          'assignment_submissions',
+          {'deleted_at': DateTime.now().toIso8601String()},
+          where: 'id = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle learning materials separately (requires explicit field mapping)
+    final materialDeltas = deltas['learning_materials'] as Map<String, dynamic>?;
+    if (materialDeltas != null) {
+      final updated = materialDeltas['updated'] as List<dynamic>? ?? [];
+      await _upsertLearningMaterials(db, updated);
+
+      final deleted = materialDeltas['deleted'] as List<dynamic>? ?? [];
+      for (final id in deleted) {
+        await db.update(
+          'learning_materials',
           {'deleted_at': DateTime.now().toIso8601String()},
           where: 'id = ?',
           whereArgs: [id as String],
@@ -842,34 +1095,6 @@ class SyncManager {
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
     return deviceId;
-  }
-
-  String _entityTypeToTableName(String entityType) {
-    switch (entityType) {
-      case 'classes':
-        return 'classes';
-      case 'assessments':
-        return 'assessments';
-      case 'assignments':
-        return 'assignments';
-      case 'learning_materials':
-        return 'learning_materials';
-      case 'assessment_submissions':
-        return 'assessment_submissions';
-      case 'assignment_submissions':
-        return 'assignment_submissions';
-      case 'questions':
-        return 'questions';
-      case 'class_enrollments':
-        return 'class_enrollments';
-      case 'admin_user':
-      case 'users':
-        return 'users';
-      case 'activity_logs':
-        return 'activity_logs';
-      default:
-        return entityType;
-    }
   }
 
   /// Update sync state and notify listeners
@@ -921,9 +1146,8 @@ class SyncManager {
         if (await stagedFile.exists()) {
           await stagedFile.delete();
         }
-      } catch (cleanupError) {
+      } catch (_) {
         // Log but don't fail sync if cleanup fails
-        print('Warning: Failed to cleanup staged file: $cleanupError');
       }
 
       await _syncQueue.markSucceeded(op.id);

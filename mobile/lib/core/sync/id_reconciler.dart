@@ -1,13 +1,7 @@
 import 'package:likha/data/models/sync/push_response_model.dart';
 import 'package:sqflite/sqflite.dart';
 
-/// Reconciles local IDs with server-generated IDs after sync
-///
-/// When client creates records offline, it generates temporary local IDs.
-/// After syncing, the server assigns permanent IDs which need to be
-/// reconciled back to the local records.
 class IdReconciler {
-  /// Map entity type to database table name
   static const Map<String, String> _entityToTable = {
     'class': 'classes',
     'classEntity': 'classes',
@@ -22,8 +16,6 @@ class IdReconciler {
     'class_enrollments': 'class_enrollments',
   };
 
-  /// Map table names to their foreign key references
-  /// When a parent table ID changes, update all child tables that reference it
   static const Map<String, List<(String table, String column)>> _foreignKeyMap = {
     'classes': [
       ('assessments', 'class_id'),
@@ -47,8 +39,6 @@ class IdReconciler {
     'class_enrollments': [],
     'material_files': [],
   };
-  /// Map local operation IDs to server-generated IDs
-  /// Updates all references and creates mapping records
   static Map<String, String> reconcileIds(
     List<OperationResultModel> results,
   ) {
@@ -56,7 +46,6 @@ class IdReconciler {
 
     for (final result in results) {
       if (result.success && result.serverId != null) {
-        // Local ID -> Server ID mapping
         mapping[result.id] = result.serverId!;
       }
     }
@@ -64,8 +53,6 @@ class IdReconciler {
     return mapping;
   }
 
-  /// Batch reconcile multiple operation results
-  /// Separates successes and failures for appropriate handling
   static ({
     Map<String, String> idMap,
     List<FailedOperation> failures,
@@ -97,7 +84,6 @@ class IdReconciler {
     return localIds.any((id) => !idMap.containsKey(id));
   }
 
-  /// Get unmapped local IDs that need resolution
   static List<String> getUnmappedIds(
     Map<String, String> idMap,
     List<String> localIds,
@@ -105,10 +91,6 @@ class IdReconciler {
     return localIds.where((id) => !idMap.containsKey(id)).toList();
   }
 
-  /// Apply ID mappings to database
-  /// STEP 1: Update main table ID from local UUID to server ID
-  /// STEP 2: Update all foreign key references in child tables
-  /// STEP 3: Mark sync_status as synced
   static Future<void> applyToDatabase(
     Database db,
     List<({String entityType, String localId, String serverId})> mappings,
@@ -141,14 +123,12 @@ class IdReconciler {
               where: '$fkColumn = ?',
               whereArgs: [mapping.localId],
             );
-          } catch (e) {
+          } catch (_) {
             // Table might not have any records with this FK, continue
-            print('Warning: FK cascade update failed for $fkTable.$fkColumn: $e');
           }
         }
-      } catch (e) {
+      } catch (_) {
         // Critical error updating main table, but continue with other mappings
-        print('Error applying ID mapping for ${mapping.entityType}: $e');
       }
     }
   }

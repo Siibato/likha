@@ -42,7 +42,26 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
         orderBy: 'order_index ASC',
       );
       final questions = questionResults
-          .map((q) => QuestionModel.fromJson(jsonDecode(jsonEncode(q))))
+          .map((q) {
+            final questionData = Map<String, dynamic>.from(q as Map<String, dynamic>);
+            // Convert _json suffix columns to proper array keys for fromJson
+            if (questionData['choices_json'] != null) {
+              try {
+                questionData['choices'] = jsonDecode(questionData['choices_json'] as String);
+              } catch (_) {}
+            }
+            if (questionData['correct_answers_json'] != null) {
+              try {
+                questionData['correct_answers'] = jsonDecode(questionData['correct_answers_json'] as String);
+              } catch (_) {}
+            }
+            if (questionData['enumeration_items_json'] != null) {
+              try {
+                questionData['enumeration_items'] = jsonDecode(questionData['enumeration_items_json'] as String);
+              } catch (_) {}
+            }
+            return QuestionModel.fromJson(questionData);
+          })
           .toList();
 
       return (assessment, questions);

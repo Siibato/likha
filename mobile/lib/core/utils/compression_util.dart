@@ -15,9 +15,8 @@ class CompressionUtil {
         if (compressed != null) {
           return (compressed, true);
         }
-      } catch (e) {
+      } catch (_) {
         // If compression fails, return uncompressed
-        print('Compression failed: $e');
       }
     }
     // Don't compress files <= 5MB or if compression failed
@@ -33,9 +32,8 @@ class CompressionUtil {
     try {
       final decoder = GZipDecoder();
       return decoder.decodeBytes(data);
-    } catch (e) {
+    } catch (_) {
       // If decompression fails, return as-is (might already be uncompressed)
-      print('Decompression failed: $e');
       return data;
     }
   }
