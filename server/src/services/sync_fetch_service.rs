@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::db::repositories::manifest_repository::ManifestRepository;
 use crate::db::repositories::sync_cursor_repository::SyncCursorRepository;
-use crate::services::entitlement_service::EntitlementService;
+use crate::services::entitlement::EntitlementService;
 use crate::utils::{AppError, AppResult};
 
 /// Request for fetching stale records

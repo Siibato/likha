@@ -65,6 +65,7 @@ class UserModel extends User {
       'is_active': isActive ? 1 : 0,
       'activated_at': activatedAt?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
+      'updated_at': createdAt.toIso8601String(),
     };
   }
 

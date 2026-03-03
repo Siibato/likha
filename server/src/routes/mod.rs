@@ -9,15 +9,17 @@ pub mod sync_routes_new;
 use axum::Router;
 use std::sync::Arc;
 
-use crate::services::assessment_service::AssessmentService;
-use crate::services::assignment_service::AssignmentService;
-use crate::services::auth_service::AuthService;
-use crate::services::class_service::ClassService;
-use crate::services::learning_material_service::LearningMaterialService;
+use crate::services::assessment::AssessmentService;
+use crate::services::assignment::AssignmentService;
+use crate::services::auth::AuthService;
+use crate::services::class::ClassService;
+use crate::services::learning_material::LearningMaterialService;
 use crate::services::sync_manifest_service::SyncManifestService;
 use crate::services::sync_fetch_service::SyncFetchService;
-use crate::services::sync_push_service::SyncPushService;
+use crate::services::sync_push::SyncPushService;
 use crate::services::sync_conflict_service::SyncConflictService;
+use crate::services::sync_full_service::SyncFullService;
+use crate::services::sync_delta_service::SyncDeltaService;
 
 pub fn api_routes(
     auth_service: Arc<AuthService>,
@@ -29,6 +31,8 @@ pub fn api_routes(
     sync_fetch_service: Arc<SyncFetchService>,
     sync_push_service: Arc<SyncPushService>,
     sync_conflict_service: Arc<SyncConflictService>,
+    sync_full_service: Arc<SyncFullService>,
+    sync_delta_service: Arc<SyncDeltaService>,
 ) -> Router {
     Router::new()
         .merge(health_routes::routes())
@@ -42,5 +46,7 @@ pub fn api_routes(
             sync_fetch_service,
             sync_push_service,
             sync_conflict_service,
+            sync_full_service,
+            sync_delta_service,
         ))
 }

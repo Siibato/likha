@@ -17,6 +17,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
   final _usernameController = TextEditingController();
   final _fullNameController = TextEditingController();
   String _selectedRole = 'student';
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -26,40 +27,46 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
   }
 
   Future<void> _handleCreate() async {
+    if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) return;
 
-    await ref.read(adminProvider.notifier).createAccount(
-          username: _usernameController.text.trim(),
-          fullName: _fullNameController.text.trim(),
-          role: _selectedRole,
-        );
+    setState(() => _isSubmitting = true);
+    try {
+      await ref.read(adminProvider.notifier).createAccount(
+            username: _usernameController.text.trim(),
+            fullName: _fullNameController.text.trim(),
+            role: _selectedRole,
+          );
 
-    if (mounted) {
-      final state = ref.read(adminProvider);
-      if (state.successMessage != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(state.successMessage!),
-            backgroundColor: const Color(0xFF28A745),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+      if (mounted) {
+        final state = ref.read(adminProvider);
+        if (state.successMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.successMessage!),
+              backgroundColor: const Color(0xFF28A745),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-          ),
-        );
-        Navigator.pop(context);
-      } else if (state.error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(state.error!),
-            backgroundColor: const Color(0xFFDC3545),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+          );
+          Navigator.pop(context);
+        } else if (state.error != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.error!),
+              backgroundColor: const Color(0xFFDC3545),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-          ),
-        );
+          );
+        }
       }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 

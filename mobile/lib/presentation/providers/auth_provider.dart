@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/domain/auth/usecases/activate_account.dart';
 import 'package:likha/domain/auth/usecases/check_username.dart';
@@ -15,5 +16,6 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
     sl<GetCurrentUser>(),
     sl<CheckUsername>(),
     sl<ActivateAccount>(),
+    sl<SyncQueue>(),
   );
 });

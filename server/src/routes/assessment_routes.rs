@@ -5,7 +5,7 @@ use axum::{
 use std::sync::Arc;
 
 use crate::handlers::assessment_handler;
-use crate::services::assessment_service::AssessmentService;
+use crate::services::assessment::AssessmentService;
 
 pub fn routes(assessment_service: Arc<AssessmentService>) -> Router {
     Router::new()

@@ -11,6 +11,9 @@ class CreateClass {
     return _repository.createClass(
       title: params.title,
       description: params.description,
+      teacherId: params.teacherId,
+      teacherUsername: params.teacherUsername,
+      teacherFullName: params.teacherFullName,
     );
   }
 }
@@ -18,6 +21,15 @@ class CreateClass {
 class CreateClassParams {
   final String title;
   final String? description;
+  final String? teacherId;
+  final String? teacherUsername;
+  final String? teacherFullName;
 
-  CreateClassParams({required this.title, this.description});
+  CreateClassParams({
+    required this.title,
+    this.description,
+    this.teacherId,
+    this.teacherUsername,
+    this.teacherFullName,
+  });
 }

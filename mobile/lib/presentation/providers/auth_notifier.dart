@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/domain/auth/usecases/activate_account.dart';
 import 'package:likha/domain/auth/usecases/check_username.dart';
@@ -21,6 +22,8 @@ class AuthState {
   final String? loginUsername;
   final int? attemptsRemaining;
   final int? lockoutRemainingSeconds;
+  final bool pendingForceLogout;
+  final int pendingSyncCount;
 
   AuthState({
     this.user,
@@ -33,6 +36,8 @@ class AuthState {
     this.loginUsername,
     this.attemptsRemaining,
     this.lockoutRemainingSeconds,
+    this.pendingForceLogout = false,
+    this.pendingSyncCount = 0,
   });
 
   AuthState copyWith({
@@ -46,6 +51,8 @@ class AuthState {
     String? loginUsername,
     int? attemptsRemaining,
     int? lockoutRemainingSeconds,
+    bool? pendingForceLogout,
+    int? pendingSyncCount,
     bool clearError = false,
     bool clearUser = false,
     bool clearPendingActivation = false,
@@ -70,6 +77,8 @@ class AuthState {
           : (loginUsername ?? this.loginUsername),
       attemptsRemaining: clearAttempts ? null : (attemptsRemaining ?? this.attemptsRemaining),
       lockoutRemainingSeconds: clearLockout ? null : (lockoutRemainingSeconds ?? this.lockoutRemainingSeconds),
+      pendingForceLogout: pendingForceLogout ?? this.pendingForceLogout,
+      pendingSyncCount: pendingSyncCount ?? this.pendingSyncCount,
     );
   }
 }
@@ -81,6 +90,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final GetCurrentUser _getCurrentUser;
   final CheckUsername _checkUsername;
   final ActivateAccount _activateAccount;
+  final SyncQueue _syncQueue;
   Timer? _lockoutTimer;
 
   AuthNotifier(
@@ -89,6 +99,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     this._getCurrentUser,
     this._checkUsername,
     this._activateAccount,
+    this._syncQueue,
   ) : super(AuthState());
 
   @override
@@ -312,7 +323,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Called by DioClient when refresh token is invalid and auth is irrecoverable.
-  void forceLogout() {
+  /// Checks for pending sync operations and shows warning if needed.
+  Future<void> forceLogout() async {
+    final count = await _syncQueue.getPendingCount();
+    if (count > 0) {
+      state = state.copyWith(pendingForceLogout: true, pendingSyncCount: count);
+    } else {
+      state = AuthState(isInitialized: true);
+    }
+  }
+
+  /// Called when user confirms force logout (taps OK on warning dialog).
+  /// Clears all user data and returns to login screen.
+  Future<void> confirmForceLogout() async {
+    // clearAllUserData() was already called in the logout() repository method via DioClient
+    // but we also clear auth cache here to ensure everything is gone
     state = AuthState(isInitialized: true);
   }
 }

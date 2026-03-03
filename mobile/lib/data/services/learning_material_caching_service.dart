@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:likha/core/errors/exceptions.dart';
-import 'package:likha/core/network/connectivity_service.dart';
-import 'package:likha/data/datasources/local/learning_material_local_datasource.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
 import 'package:likha/data/datasources/remote/learning_material_remote_datasource.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/domain/learning_materials/entities/learning_material.dart';
@@ -15,17 +15,17 @@ import 'package:likha/domain/learning_materials/entities/material_detail.dart';
 class LearningMaterialCachingService {
   final LearningMaterialRemoteDataSource _remoteDataSource;
   final LearningMaterialLocalDataSource _localDataSource;
-  final ConnectivityService _connectivityService;
+  final ServerReachabilityService _serverReachabilityService;
 
   LearningMaterialCachingService(
     this._remoteDataSource,
     this._localDataSource,
-    this._connectivityService,
+    this._serverReachabilityService,
   );
 
   /// Fetches materials for a class with online-first + cache fallback.
   Future<List<LearningMaterial>> getMaterials(String classId) async {
-    if (_connectivityService.isOnline) {
+    if (_serverReachabilityService.isServerReachable) {
       try {
         final result =
             await _remoteDataSource.getMaterials(classId: classId);
@@ -49,7 +49,7 @@ class LearningMaterialCachingService {
   /// Special handling: converts MaterialDetail to LearningMaterialModel
   /// for caching, then converts back for return.
   Future<MaterialDetail> getMaterialDetail(String materialId) async {
-    if (_connectivityService.isOnline) {
+    if (_serverReachabilityService.isServerReachable) {
       try {
         final result = await _remoteDataSource.getMaterialDetail(
           materialId: materialId,

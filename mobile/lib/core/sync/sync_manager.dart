@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/core/sync/manifest_differ.dart';
 import 'package:likha/core/sync/id_reconciler.dart';
 import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';
 import 'package:likha/data/models/sync/push_response_model.dart';
-import 'package:likha/data/models/sync/fetch_response_model.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:uuid/uuid.dart';
 
 enum SyncPhase { idle, syncing, succeeded, failed }
 
@@ -77,6 +77,10 @@ class SyncManager {
         _runSync();
       }
     });
+    
+    if (_serverReachabilityService.isServerReachable && !_isSyncing) {
+      _runSync();
+    }
   }
 
   /// Stop sync manager
@@ -133,7 +137,13 @@ class SyncManager {
         );
       }
 
-      _updateState(phase: SyncPhase.succeeded, lastSyncAt: DateTime.now());
+      // Refresh pending count after sync completes (should be 0 now)
+      final finalPendingCount = await _syncQueue.getPendingCount();
+      _updateState(
+        phase: SyncPhase.succeeded,
+        lastSyncAt: DateTime.now(),
+        pendingCount: finalPendingCount,
+      );
     } catch (e) {
       _updateState(
         phase: SyncPhase.failed,
@@ -176,7 +186,11 @@ class SyncManager {
         operations: operations,
       );
 
-      await _processPushResults(response);
+      try {
+        await _processPushResults(response);
+      } catch (e) {
+        rethrow;
+      }
     }
   }
 
@@ -199,12 +213,88 @@ class SyncManager {
         // Mark as succeeded and remove from queue
         await _syncQueue.markSucceeded(opId);
 
+        if (entityType == 'adminUser' && operation == 'create') {
+          try {
+            await db.delete(
+              'users',
+              where: 'id = ? AND sync_status = ?',
+              whereArgs: ['', 'pending'],
+            );
+          } catch (e) {
+            // 
+          }
+        }
+
         // If this was a create operation, map local ID to server ID
         if (serverId != null && operation == 'create' && entry != null) {
           final localId = entry.payload['local_id'] as String?;
           if (localId != null) {
             idMappings.add(
               (entityType: entityType, localId: localId, serverId: serverId),
+            );
+
+            // Special handling for classes: update main ID from local UUID to server UUID
+            if (entityType == 'classEntity') {
+              await db.update(
+                'classes',
+                {'id': serverId},
+                where: 'id = ?',
+                whereArgs: [localId],
+              );
+
+              // Update any pending enrollment operations that reference this class
+              // (e.g., add_enrollment/remove_enrollment operations queued while class was offline)
+              final pendingEnrollments = await db.query(
+                'sync_queue',
+                where: 'status = ? AND (operation = ? OR operation = ?) AND payload LIKE ?',
+                whereArgs: [
+                  'pending',
+                  'add_enrollment',
+                  'remove_enrollment',
+                  '%"class_id":"$localId"%',
+                ],
+              );
+
+              for (final entry in pendingEnrollments) {
+                final payloadStr = entry['payload'] as String?;
+                if (payloadStr != null) {
+                  // Replace local class_id with server class_id in the payload
+                  final updatedPayload = payloadStr.replaceAll('"class_id":"$localId"', '"class_id":"$serverId"');
+                  await db.update(
+                    'sync_queue',
+                    {'payload': updatedPayload},
+                    where: 'id = ?',
+                    whereArgs: [entry['id']],
+                  );
+                }
+              }
+            }
+
+            // Special handling for questions: update main ID and reconcile nested IDs
+            if (entityType == 'question') {
+              // Update the question's main ID from local UUID to server UUID
+              await db.update(
+                'questions',
+                {'id': serverId},
+                where: 'id = ?',
+                whereArgs: [localId],
+              );
+              // Then reconcile nested choice and answer IDs
+              await _reconcileQuestionNestedIds(db, serverId, result);
+            }
+          }
+        }
+
+        // Handle enrollment ID reconciliation for add_enrollment operations
+        if (serverId != null && operation == 'add_enrollment' && entry != null) {
+          final localEnrollmentId = entry.payload['local_enrollment_id'] as String?;
+          if (localEnrollmentId != null) {
+            // Update the enrollment record from local UUID to server UUID
+            await db.update(
+              'class_enrollments',
+              {'id': serverId, 'sync_status': 'synced'},
+              where: 'id = ?',
+              whereArgs: [localEnrollmentId],
             );
           }
         }
@@ -221,160 +311,790 @@ class SyncManager {
     }
   }
 
-  /// INBOUND SYNC: Fetch server changes
-  /// Returns server time to use for last_sync_at
-  Future<String?> _inboundSync() async {
-    // Step 1: Get manifest from server
-    final manifest = await _syncRemoteDataSource.getManifest();
+  /// Reconcile nested IDs for questions (choices, correct_answers)
+  Future<void> _reconcileQuestionNestedIds(
+    Database db,
+    String serverQuestionId,
+    OperationResultModel result,
+  ) async {
+    // Extract metadata containing ID mappings from server response
+    final metadata = result.metadata;
+    if (metadata == null) return;
 
-    // Step 2: Get local snapshots for comparison
-    final db = await _localDatabase.database;
-    final localSnapshots = await _getLocalSnapshots(db);
-
-    // Step 3: Find stale records and tombstones
-    final toFetch = ManifestDiffer.findStaleRecords(
-      serverManifest: manifest,
-      localManifest: localSnapshots,
-    );
-    final tombstones = ManifestDiffer.findTombstones(manifest);
-
-    // Step 4: Apply tombstones (soft delete marked records)
-    for (final entry in tombstones) {
-      final entityType = entry['entity_type'] as String;
-      final entityId = entry['id'] as String;
-
-      await db.update(
-        _entityTypeToTableName(entityType),
-        {'deleted_at': DateTime.now().toIso8601String()},
-        where: 'id = ?',
-        whereArgs: [entityId],
+    // Update choice IDs in the questions table
+    final choiceMapping = metadata['choice_id_mapping'] as List<dynamic>?;
+    if (choiceMapping != null && choiceMapping.isNotEmpty) {
+      await _updateNestedIdsInJson(
+        db,
+        'questions',
+        serverQuestionId,
+        'choices_json',
+        choiceMapping,
       );
     }
 
-    // Step 5: Fetch records by entity type with pagination
-    for (final entityType in toFetch.keys) {
-      final ids = toFetch[entityType] ?? [];
-      if (ids.isEmpty) continue;
-
-      await _fetchAndMergeRecords(entityType, ids);
+    // Update correct answer IDs in the questions table
+    final answerMapping = metadata['answer_id_mapping'] as List<dynamic>?;
+    if (answerMapping != null && answerMapping.isNotEmpty) {
+      await _updateNestedIdsInJson(
+        db,
+        'questions',
+        serverQuestionId,
+        'correct_answers_json',
+        answerMapping,
+      );
     }
-
-    // Return server time for last_sync_at
-    return manifest.serverTime;
   }
 
-  /// Fetch records for entity type and merge into local DB
-  Future<void> _fetchAndMergeRecords(
-    String entityType,
-    List<String> ids,
+  /// Update nested IDs within a JSON field (for choices or correct answers)
+  Future<void> _updateNestedIdsInJson(
+    Database db,
+    String tableName,
+    String questionId,
+    String jsonField,
+    List<dynamic> idMappings,
   ) async {
-    String? cursor;
-    bool hasMore = true;
-
-    while (hasMore) {
-      final response = await _syncRemoteDataSource.fetchRecords(
-        entities: {entityType: ids},
-        cursor: cursor,
+    try {
+      // Query the current JSON data
+      final results = await db.query(
+        tableName,
+        columns: [jsonField],
+        where: 'id = ?',
+        whereArgs: [questionId],
       );
 
-      final records = response.entities[entityType] ?? [];
-      if (records.isEmpty) break;
+      if (results.isEmpty) return;
 
-      // Merge records into local DB
-      final db = await _localDatabase.database;
-      final tableName = _entityTypeToTableName(entityType);
+      final jsonStr = results.first[jsonField] as String?;
+      if (jsonStr == null || jsonStr.isEmpty) return;
 
-      for (final record in records) {
+      // Parse JSON
+      final List<dynamic> items = jsonDecode(jsonStr) as List<dynamic>;
+
+      // Build ID mapping from list of [local_id, server_id] pairs
+      final Map<String, String> mapping = {};
+      for (final pair in idMappings) {
+        if (pair is List && pair.length == 2) {
+          mapping[pair[0] as String] = pair[1] as String;
+        }
+      }
+
+      // Update IDs in items
+      for (final item in items) {
+        if (item is Map<String, dynamic>) {
+          final oldId = item['id'] as String?;
+          if (oldId != null && mapping.containsKey(oldId)) {
+            item['id'] = mapping[oldId];
+          }
+        }
+      }
+
+      // Write back to database
+      await db.update(
+        tableName,
+        {jsonField: jsonEncode(items)},
+        where: 'id = ?',
+        whereArgs: [questionId],
+      );
+    } catch (e) {
+      // Log but don't throw - ID reconciliation failure shouldn't block sync
+      // In production, this would go to a logger
+    }
+  }
+
+  /// INBOUND SYNC: Fetch server changes (full or delta)
+  /// Returns server time to use for last_sync_at
+  Future<String?> _inboundSync() async {
+    final db = await _localDatabase.database;
+
+    // Check for last_sync_at
+    final rows = await db.query(
+      'sync_metadata',
+      where: 'key = ?',
+      whereArgs: ['last_sync_at'],
+    );
+    final lastSyncAt = rows.isNotEmpty ? rows.first['value'] as String? : null;
+
+    final expiryRows = await db.query(
+      'sync_metadata',
+      where: 'key = ?',
+      whereArgs: ['data_expiry_at'],
+    );
+    final dataExpiryAt = expiryRows.isNotEmpty ? expiryRows.first['value'] as String? : null;
+
+    if (lastSyncAt == null) {
+      // FIRST LOGIN: full sync
+      return await _runFullSync();
+    } else {
+      // APP RESTART: delta sync
+      final deltaResult = await _runDeltaSync(lastSyncAt, dataExpiryAt);
+      if (deltaResult == null) {
+        // data_expired → fall back to full sync
+        return await _runFullSync();
+      }
+      return deltaResult;
+    }
+  }
+
+  /// Run full sync on first login
+  Future<String?> _runFullSync() async {
+    // Get device ID (or generate and store)
+    final db = await _localDatabase.database;
+    final deviceIdRows = await db.query(
+      'sync_metadata',
+      where: 'key = ?',
+      whereArgs: ['device_id'],
+    );
+    final deviceId = deviceIdRows.isNotEmpty
+        ? deviceIdRows.first['value'] as String
+        : _generateAndStoreDeviceId(db);
+
+    // Fetch full sync data
+    final response = await _syncRemoteDataSource.fullSync(deviceId: deviceId);
+
+    // Extract the data wrapper (response structure: {success, status_code, data: {...}, error})
+    final data = response['data'] as Map<String, dynamic>?;
+    if (data == null) {
+      throw Exception('No data in full sync response');
+    }
+
+    final syncToken = data['sync_token'] as String?;
+    final serverTime = data['server_time'] as String?;
+
+    if (syncToken == null) {
+      throw Exception('No sync_token in full sync response');
+    }
+
+    // Upsert all entity data
+    final enrolledStudents = (data['enrolled_students'] as List?) ?? [];
+
+    // Build studentMap for submission enrichment
+    final studentMap = <String, dynamic>{};
+    for (final s in enrolledStudents) {
+      final student = s as Map<String, dynamic>;
+      studentMap[student['id'] as String] = student;
+    }
+
+    await _upsertClasses(db, data['classes'] ?? []);
+    await _upsertEnrolledStudents(db, enrolledStudents);
+    await _upsertEnrollments(db, data['enrollments'] ?? [], enrolledStudents);
+    await _upsertAssessments(db, data['assessments'] ?? []);
+    await _upsertQuestions(db, data['questions'] ?? []);
+    await _upsertAssessmentSubmissions(db, data['assessment_submissions'] ?? [], studentMap);
+    await _upsertAssignments(db, data['assignments'] ?? []);
+    await _upsertAssignmentSubmissions(db, data['assignment_submissions'] ?? [], studentMap);
+    await _upsertLearningMaterials(db, data['learning_materials'] ?? []);
+
+    // Save sync metadata
+    final expiryAt = DateTime.now().add(const Duration(days: 30)).toIso8601String();
+    await db.insert(
+      'sync_metadata',
+      {'key': 'last_sync_at', 'value': syncToken},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    await db.insert(
+      'sync_metadata',
+      {'key': 'data_expiry_at', 'value': expiryAt},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+
+    return serverTime ?? syncToken;
+  }
+
+  /// Run delta sync on app restart
+  /// Returns null if data_expired (caller should fall back to full sync)
+  Future<String?> _runDeltaSync(String lastSyncAt, String? dataExpiryAt) async {
+    // Get device ID
+    final db = await _localDatabase.database;
+    final deviceIdRows = await db.query(
+      'sync_metadata',
+      where: 'key = ?',
+      whereArgs: ['device_id'],
+    );
+    final deviceId = deviceIdRows.isNotEmpty
+        ? deviceIdRows.first['value'] as String
+        : _generateAndStoreDeviceId(db);
+
+    // Fetch deltas
+    final response =
+        await _syncRemoteDataSource.deltaSync(
+      deviceId: deviceId,
+      lastSyncAt: lastSyncAt,
+      dataExpiryAt: dataExpiryAt,
+    );
+
+    // Check if data is expired
+    if (response['status'] == 'data_expired') {
+      return null; // Caller will fall back to full sync
+    }
+
+    final syncToken = response['sync_token'] as String?;
+    final serverTime = response['server_time'] as String?;
+    final deltas = response['deltas'] as Map<String, dynamic>?;
+
+    if (syncToken == null || deltas == null) {
+      throw Exception('Invalid delta sync response');
+    }
+
+    // Process deltas: upsert updated, delete removed
+    await _processDeltaPayload(db, deltas);
+
+    // Update sync metadata
+    final expiryAt = DateTime.now().add(const Duration(days: 30)).toIso8601String();
+    await db.insert(
+      'sync_metadata',
+      {'key': 'last_sync_at', 'value': syncToken},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    await db.insert(
+      'sync_metadata',
+      {'key': 'data_expiry_at', 'value': expiryAt},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+
+    return serverTime ?? syncToken;
+  }
+
+  Future<void> _upsertClasses(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+      await db.insert(
+        'classes',
+        {
+          ...data,
+          'teacher_username': data['teacher_username'] ?? '',
+          'teacher_full_name': data['teacher_full_name'] ?? '',
+          'cached_at': DateTime.now().toIso8601String(),
+          'sync_status': 'synced',
+          'is_archived': (data['is_archived'] == true) ? 1 : 0,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+
+    await _populateTeacherInfoFromAccounts(db);
+  }
+
+  Future<void> _populateTeacherInfoFromAccounts(Database db) async {
+    try {
+      final classesNeedingTeacher = await db.query(
+        'classes',
+        where: 'teacher_username = ?',
+        whereArgs: [''],
+      );
+
+      if (classesNeedingTeacher.isEmpty) return;
+
+      // Get cached user accounts
+      final cachedUsers = await db.query('users');
+
+      // Build teacher map: teacher_id -> (username, full_name)
+      final teacherMap = <String, Map<String, String>>{};
+      for (final user in cachedUsers) {
+        final userId = user['id'] as String?;
+        final username = user['username'] as String?;
+        final fullName = user['full_name'] as String?;
+        if (userId != null && username != null && fullName != null) {
+          teacherMap[userId] = {
+            'username': username,
+            'full_name': fullName,
+          };
+        }
+      }
+
+      for (final cls in classesNeedingTeacher) {
+        final teacherId = cls['teacher_id'] as String?;
+        if (teacherId != null && teacherMap.containsKey(teacherId)) {
+          final teacherInfo = teacherMap[teacherId]!;
+          await db.update(
+            'classes',
+            {
+              'teacher_username': teacherInfo['username'],
+              'teacher_full_name': teacherInfo['full_name'],
+            },
+            where: 'id = ?',
+            whereArgs: [cls['id']],
+          );
+        }
+      }
+    } catch (e) {
+      // Silently fail
+    }
+  }
+
+  Future<void> _upsertEnrollments(
+    Database db,
+    List<dynamic> enrollments,
+    List<dynamic> enrolledStudents,
+  ) async {
+    // Build lookup map: student_id -> student data
+    final studentMap = <String, Map<String, dynamic>>{};
+    for (final s in enrolledStudents) {
+      final student = s as Map<String, dynamic>;
+      studentMap[student['id'] as String] = student;
+    }
+
+    for (final enrollment in enrollments) {
+      final e = enrollment as Map<String, dynamic>;
+      final studentId = e['student_id'] as String;
+      final student = studentMap[studentId] ?? {};
+
+      await db.insert(
+        'class_enrollments',
+        {
+          'id': e['id'],
+          'class_id': e['class_id'],
+          'student_id': studentId,
+          'username': student['username'] ?? '',
+          'full_name': student['full_name'] ?? '',
+          'role': student['role'] ?? 'student',
+          'account_status': student['account_status'] ?? 'active',
+          'is_active': (student['is_active'] == true) ? 1 : 0,
+          'enrolled_at': e['enrolled_at'],
+          'updated_at': e['enrolled_at'],
+          'cached_at': DateTime.now().toIso8601String(),
+          'sync_status': 'synced',
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+  /// This distinguishes enrolled students from search-cached students
+  Future<void> _upsertEnrolledStudents(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+      // Only insert columns that exist in the users table
+      await db.insert(
+        'users',
+        {
+          'id': data['id'],
+          'username': data['username'],
+          'full_name': data['full_name'],
+          'role': data['role'],
+          'account_status': data['account_status'],
+          'is_active': (data['is_active'] == true) ? 1 : 0,
+          'activated_at': data['activated_at'],
+          'created_at': data['created_at'],
+          'cached_at': DateTime.now().toIso8601String(),
+          'sync_status': 'synced',
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+  /// Explicit upsert handler for assessments with proper field mapping
+  Future<void> _upsertAssessments(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+      await db.insert(
+        'assessments',
+        {
+          'id': data['id'],
+          'class_id': data['class_id'],
+          'title': data['title'],
+          'description': data['description'],
+          'time_limit_minutes': data['time_limit_minutes'] ?? 0,
+          'open_at': data['open_at'] ?? DateTime.now().toIso8601String(),
+          'close_at': data['close_at'] ?? DateTime.now().toIso8601String(),
+          'show_results_immediately': (data['show_results_immediately'] == true) ? 1 : 0,
+          'results_released': (data['results_released'] == true) ? 1 : 0,
+          'is_published': (data['is_published'] == true) ? 1 : 0,
+          'total_points': data['total_points'] ?? 0,
+          'question_count': data['question_count'] ?? 0,
+          'submission_count': data['submission_count'] ?? 0,
+          'created_at': data['created_at'] ?? DateTime.now().toIso8601String(),
+          'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
+          'deleted_at': data['deleted_at'],
+          'cached_at': DateTime.now().toIso8601String(),
+          'sync_status': 'synced',
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+  /// Explicit upsert handler for questions with proper field mapping
+  /// CRITICAL: Preserves existing choices_json/correct_answers_json/enumeration_items_json
+  /// from REST API cache path (server manifest doesn't include choices)
+  Future<void> _upsertQuestions(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+
+      // Preserve existing cached choices (choices come from REST API, not from sync)
+      final existing = await db.query(
+        'questions',
+        columns: ['choices_json', 'correct_answers_json', 'enumeration_items_json'],
+        where: 'id = ?',
+        whereArgs: [data['id']],
+      );
+      final existingChoices = existing.isNotEmpty ? existing.first['choices_json'] : null;
+      final existingAnswers = existing.isNotEmpty ? existing.first['correct_answers_json'] : null;
+      final existingEnum = existing.isNotEmpty ? existing.first['enumeration_items_json'] : null;
+
+      await db.insert(
+        'questions',
+        {
+          'id': data['id'],
+          'assessment_id': data['assessment_id'],
+          'question_type': data['question_type'],
+          'question_text': data['question_text'],
+          'points': data['points'] ?? 0,
+          'order_index': data['order_index'] ?? 0,
+          'is_multi_select': (data['is_multi_select'] == true) ? 1 : 0,
+          'choices_json': existingChoices,
+          'correct_answers_json': existingAnswers,
+          'enumeration_items_json': existingEnum,
+          'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
+          'deleted_at': data['deleted_at'],
+          'cached_at': DateTime.now().toIso8601String(),
+          'sync_status': 'synced',
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+  /// Explicit upsert handler for assignments with proper field mapping
+  Future<void> _upsertAssignments(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+      await db.insert(
+        'assignments',
+        {
+          'id': data['id'],
+          'class_id': data['class_id'],
+          'title': data['title'],
+          'instructions': data['instructions'],
+          'total_points': data['total_points'] ?? 0,
+          'submission_type': data['submission_type'] ?? 'file',
+          'allowed_file_types': data['allowed_file_types'],
+          'max_file_size_mb': data['max_file_size_mb'],
+          'due_at': data['due_at'],
+          'is_published': (data['is_published'] == true) ? 1 : 0,
+          'submission_count': data['submission_count'] ?? 0,
+          'graded_count': data['graded_count'] ?? 0,
+          'created_at': data['created_at'] ?? DateTime.now().toIso8601String(),
+          'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
+          'deleted_at': data['deleted_at'],
+          'cached_at': DateTime.now().toIso8601String(),
+          'sync_status': 'synced',
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+  /// Explicit upsert handler for learning materials with proper field mapping
+  Future<void> _upsertLearningMaterials(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+      await db.insert(
+        'learning_materials',
+        {
+          'id': data['id'],
+          'class_id': data['class_id'],
+          'title': data['title'],
+          'description': data['description'],
+          'content_text': data['content_text'],
+          'order_index': data['order_index'] ?? 0,
+          'file_count': data['file_count'] ?? 0,
+          'created_at': data['created_at'] ?? DateTime.now().toIso8601String(),
+          'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
+          'deleted_at': data['deleted_at'],
+          'cached_at': DateTime.now().toIso8601String(),
+          'sync_status': 'synced',
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+  /// Explicit upsert handler for assessment submissions with student enrichment
+  Future<void> _upsertAssessmentSubmissions(
+    Database db,
+    List<dynamic> records,
+    Map<String, dynamic> studentMap,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+      final student = studentMap[data['student_id']] ?? {};
+
+      await db.insert(
+        'assessment_submissions',
+        {
+          'id': data['id'],
+          'assessment_id': data['assessment_id'],
+          'student_id': data['student_id'],
+          'student_name': (student['full_name'] as String?) ?? '',
+          'student_username': (student['username'] as String?) ?? '',
+          'started_at': data['started_at'] ?? DateTime.now().toIso8601String(),
+          'submitted_at': data['submitted_at'],
+          'auto_score': data['auto_score'] ?? 0,
+          'final_score': data['final_score'] ?? 0,
+          'is_submitted': (data['is_submitted'] == true) ? 1 : 0,
+          'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
+          'cached_at': DateTime.now().toIso8601String(),
+          'sync_status': 'synced',
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+  /// Explicit upsert handler for assignment submissions with student enrichment
+  Future<void> _upsertAssignmentSubmissions(
+    Database db,
+    List<dynamic> records,
+    Map<String, dynamic> studentMap,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+      final student = studentMap[data['student_id']] ?? {};
+
+      await db.insert(
+        'assignment_submissions',
+        {
+          'id': data['id'],
+          'assignment_id': data['assignment_id'],
+          'student_id': data['student_id'],
+          'student_name': (student['full_name'] as String?) ?? '',
+          'status': data['status'] ?? 'pending',
+          'text_content': data['text_content'],
+          'submitted_at': data['submitted_at'],
+          'is_late': 0,
+          'score': data['score'],
+          'feedback': data['feedback'],
+          'graded_at': data['graded_at'],
+          'created_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
+          'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
+          'cached_at': DateTime.now().toIso8601String(),
+          'sync_status': 'synced',
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+  /// Process delta payload: upsert updated, soft-delete removed
+  Future<void> _processDeltaPayload(
+    Database db,
+    Map<String, dynamic> deltas,
+  ) async {
+    // Handle classes separately (requires mobile-only defaults)
+    final classesDeltas = deltas['classes'] as Map<String, dynamic>?;
+    if (classesDeltas != null) {
+      final updated = classesDeltas['updated'] as List<dynamic>? ?? [];
+      await _upsertClasses(db, updated);
+
+      final deleted = classesDeltas['deleted'] as List<dynamic>? ?? [];
+      for (final id in deleted) {
+        await db.update(
+          'classes',
+          {'deleted_at': DateTime.now().toIso8601String()},
+          where: 'id = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle enrollments separately (requires student data lookup)
+    final enrollmentDeltas = deltas['enrollments'] as Map<String, dynamic>?;
+    if (enrollmentDeltas != null) {
+      final updated = enrollmentDeltas['updated'] as List<dynamic>? ?? [];
+      // For delta, students should already be in the users table
+      for (final enrollment in updated) {
+        final e = enrollment as Map<String, dynamic>;
+        final studentId = e['student_id'] as String;
+
+        // Look up student from local users table
+        final studentRows = await db.query(
+          'users',
+          where: 'id = ?',
+          whereArgs: [studentId],
+        );
+        final student = studentRows.isNotEmpty
+            ? studentRows.first as Map<String, dynamic>
+            : <String, dynamic>{};
+
         await db.insert(
-          tableName,
+          'class_enrollments',
           {
-            ...record as Map<String, dynamic>,
+            'id': e['id'],
+            'class_id': e['class_id'],
+            'student_id': studentId,
+            'username': student['username'] ?? '',
+            'full_name': student['full_name'] ?? '',
+            'role': student['role'] ?? 'student',
+            'account_status': student['account_status'] ?? 'active',
+            'is_active': student['is_active'] ?? 1,
+            'enrolled_at': e['enrolled_at'],
+            'updated_at': e['enrolled_at'],
+            'cached_at': DateTime.now().toIso8601String(),
             'sync_status': 'synced',
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
 
-      cursor = response.cursor;
-      hasMore = response.hasMore;
-    }
-  }
-
-  /// Get local snapshots for manifest comparison
-  Future<Map<String, Map<String, LocalManifestEntry>>> _getLocalSnapshots(
-    Database db,
-  ) async {
-    final snapshots = <String, Map<String, LocalManifestEntry>>{};
-
-    final entityTables = {
-      'classes': 'classes',
-      'assessments': 'assessments',
-      'assignments': 'assignments',
-      'learning_materials': 'learning_materials',
-      'assessment_submissions': 'assessment_submissions',
-      'assignment_submissions': 'assignment_submissions',
-      'assessment_questions': 'questions',
-      'class_enrollments': 'class_enrollments',
-      'users': 'users',
-      'activity_logs': 'activity_logs',
-    };
-
-    for (final entry in entityTables.entries) {
-      final entityType = entry.key;
-      final tableName = entry.value;
-
-      try {
-        final rows = await db.query(
-          tableName,
-          columns: ['id', 'updated_at', 'deleted_at'],
+      // Hard-delete removed enrollments (student was unenrolled)
+      final deleted = enrollmentDeltas['deleted'] as List<dynamic>? ?? [];
+      for (final id in deleted) {
+        await db.delete(
+          'class_enrollments',
+          where: 'id = ?',
+          whereArgs: [id as String],
         );
-
-        final manifestEntries = <String, LocalManifestEntry>{};
-        for (final row in rows) {
-          final id = row['id'] as String;
-          manifestEntries[id] = LocalManifestEntry(
-            id: id,
-            updatedAt: row['updated_at'] as String? ?? DateTime.now().toIso8601String(),
-            deleted: row['deleted_at'] != null,
-          );
-        }
-        snapshots[entityType] = manifestEntries;
-      } catch (e) {
-        // Table might not exist or be empty
-        snapshots[entityType] = {};
       }
     }
 
-    return snapshots;
+    // Build student map from local cache for submission enrichment
+    final cachedUsers = await db.query('users');
+    final studentMap = <String, dynamic>{};
+    for (final u in cachedUsers) {
+      studentMap[u['id'] as String] = u;
+    }
+
+    // Handle assessments separately (requires explicit field mapping)
+    final assessmentDeltas = deltas['assessments'] as Map<String, dynamic>?;
+    if (assessmentDeltas != null) {
+      final updated = assessmentDeltas['updated'] as List<dynamic>? ?? [];
+      await _upsertAssessments(db, updated);
+
+      final deleted = assessmentDeltas['deleted'] as List<dynamic>? ?? [];
+      for (final id in deleted) {
+        await db.update(
+          'assessments',
+          {'deleted_at': DateTime.now().toIso8601String()},
+          where: 'id = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle questions separately (preserves cached choices)
+    final questionDeltas = deltas['questions'] as Map<String, dynamic>?;
+    if (questionDeltas != null) {
+      final updated = questionDeltas['updated'] as List<dynamic>? ?? [];
+      await _upsertQuestions(db, updated);
+
+      final deleted = questionDeltas['deleted'] as List<dynamic>? ?? [];
+      for (final id in deleted) {
+        await db.update(
+          'questions',
+          {'deleted_at': DateTime.now().toIso8601String()},
+          where: 'id = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle assessment submissions separately (requires student enrichment)
+    final assessmentSubmissionDeltas = deltas['assessment_submissions'] as Map<String, dynamic>?;
+    if (assessmentSubmissionDeltas != null) {
+      final updated = assessmentSubmissionDeltas['updated'] as List<dynamic>? ?? [];
+      await _upsertAssessmentSubmissions(db, updated, studentMap);
+
+      final deleted = assessmentSubmissionDeltas['deleted'] as List<dynamic>? ?? [];
+      for (final id in deleted) {
+        await db.update(
+          'assessment_submissions',
+          {'deleted_at': DateTime.now().toIso8601String()},
+          where: 'id = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle assignments separately (requires explicit field mapping)
+    final assignmentDeltas = deltas['assignments'] as Map<String, dynamic>?;
+    if (assignmentDeltas != null) {
+      final updated = assignmentDeltas['updated'] as List<dynamic>? ?? [];
+      await _upsertAssignments(db, updated);
+
+      final deleted = assignmentDeltas['deleted'] as List<dynamic>? ?? [];
+      for (final id in deleted) {
+        await db.update(
+          'assignments',
+          {'deleted_at': DateTime.now().toIso8601String()},
+          where: 'id = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle assignment submissions separately (requires student enrichment)
+    final assignmentSubmissionDeltas = deltas['assignment_submissions'] as Map<String, dynamic>?;
+    if (assignmentSubmissionDeltas != null) {
+      final updated = assignmentSubmissionDeltas['updated'] as List<dynamic>? ?? [];
+      await _upsertAssignmentSubmissions(db, updated, studentMap);
+
+      final deleted = assignmentSubmissionDeltas['deleted'] as List<dynamic>? ?? [];
+      for (final id in deleted) {
+        await db.update(
+          'assignment_submissions',
+          {'deleted_at': DateTime.now().toIso8601String()},
+          where: 'id = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle learning materials separately (requires explicit field mapping)
+    final materialDeltas = deltas['learning_materials'] as Map<String, dynamic>?;
+    if (materialDeltas != null) {
+      final updated = materialDeltas['updated'] as List<dynamic>? ?? [];
+      await _upsertLearningMaterials(db, updated);
+
+      final deleted = materialDeltas['deleted'] as List<dynamic>? ?? [];
+      for (final id in deleted) {
+        await db.update(
+          'learning_materials',
+          {'deleted_at': DateTime.now().toIso8601String()},
+          where: 'id = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    final enrolledStudentsDeltas = deltas['enrolled_students'] as Map<String, dynamic>?;
+    if (enrolledStudentsDeltas != null) {
+      final updated = enrolledStudentsDeltas['updated'] as List<dynamic>? ?? [];
+      await _upsertEnrolledStudents(db, updated);
+
+      // Note: We don't soft-delete users - they are reusable across contexts
+      // (current user, enrolled students, search results)
+    }
   }
 
-  /// Map entity type to database table name
-  String _entityTypeToTableName(String entityType) {
-    switch (entityType) {
-      case 'classes':
-        return 'classes';
-      case 'assessments':
-        return 'assessments';
-      case 'assignments':
-        return 'assignments';
-      case 'learning_materials':
-        return 'learning_materials';
-      case 'assessment_submissions':
-        return 'assessment_submissions';
-      case 'assignment_submissions':
-        return 'assignment_submissions';
-      case 'questions':
-        return 'questions';
-      case 'class_enrollments':
-        return 'class_enrollments';
-      case 'admin_user':
-      case 'users':
-        return 'users';
-      case 'activity_logs':
-        return 'activity_logs';
-      default:
-        return entityType;
-    }
+  /// Generate and store a device ID
+  String _generateAndStoreDeviceId(Database db) {
+    final deviceId = const Uuid().v4();
+    db.insert(
+      'sync_metadata',
+      {'key': 'device_id', 'value': deviceId},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    return deviceId;
   }
 
   /// Update sync state and notify listeners
@@ -419,6 +1139,17 @@ class SyncManager {
           fileName: fileName,
         );
       }
+
+      // Clean up staged file after successful upload
+      try {
+        final stagedFile = File(localPath);
+        if (await stagedFile.exists()) {
+          await stagedFile.delete();
+        }
+      } catch (_) {
+        // Log but don't fail sync if cleanup fails
+      }
+
       await _syncQueue.markSucceeded(op.id);
     } catch (e) {
       await _syncQueue.markFailed(op.id, e.toString());
@@ -442,6 +1173,10 @@ class SyncManager {
   /// Maps Dart SyncOperation enum to server-expected string
   static String _operationToServer(SyncOperation op) {
     if (op == SyncOperation.saveAnswers) return 'save_answers';
+    if (op == SyncOperation.releaseResults) return 'release_results';
+    if (op == SyncOperation.overrideAnswer) return 'override_answer';
+    if (op == SyncOperation.addEnrollment) return 'add_enrollment';
+    if (op == SyncOperation.removeEnrollment) return 'remove_enrollment';
     return op.name;
   }
 }

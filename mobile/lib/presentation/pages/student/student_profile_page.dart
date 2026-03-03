@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/student/widgets/student_header.dart';
-import 'package:likha/presentation/providers/auth_provider.dart';
+import 'package:likha/presentation/utils/logout_helper.dart';
 
 class StudentProfilePage extends ConsumerWidget {
   const StudentProfilePage({super.key});
@@ -75,7 +75,7 @@ class StudentProfilePage extends ConsumerWidget {
                           child: InkWell(
                             borderRadius: BorderRadius.circular(15),
                             onTap: () =>
-                                ref.read(authProvider.notifier).logout(),
+                                handleLogoutTap(context, ref),
                             child: const Padding(
                               padding: EdgeInsets.symmetric(vertical: 16),
                               child: Row(

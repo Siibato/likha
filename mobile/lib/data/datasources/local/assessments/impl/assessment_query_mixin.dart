@@ -1,0 +1,73 @@
+import 'dart:convert';
+import 'package:likha/core/errors/exceptions.dart';
+import 'package:likha/data/models/assessments/assessment_model.dart';
+import 'package:likha/data/models/assessments/question_model.dart';
+import '../assessment_local_datasource_base.dart';
+
+mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
+  @override
+  Future<List<AssessmentModel>> getCachedAssessments(String classId) async {
+    try {
+      final db = await localDatabase.database;
+      final results = await db.query(
+        'assessments',
+        where: 'class_id = ?',
+        whereArgs: [classId],
+        orderBy: 'created_at DESC',
+      );
+      if (results.isEmpty) throw CacheException('No cached assessments for class $classId');
+      return results.map(AssessmentModel.fromMap).toList();
+    } catch (e) {
+      if (e is CacheException) rethrow;
+      throw CacheException(e.toString());
+    }
+  }
+
+  @override
+  Future<(AssessmentModel, List<QuestionModel>)> getCachedAssessmentDetail(String assessmentId) async {
+    try {
+      final db = await localDatabase.database;
+      final assessmentResults = await db.query(
+        'assessments',
+        where: 'id = ?',
+        whereArgs: [assessmentId],
+      );
+      if (assessmentResults.isEmpty) throw CacheException('Assessment $assessmentId not cached');
+
+      final assessment = AssessmentModel.fromMap(assessmentResults.first);
+      final questionResults = await db.query(
+        'questions',
+        where: 'assessment_id = ?',
+        whereArgs: [assessmentId],
+        orderBy: 'order_index ASC',
+      );
+      final questions = questionResults
+          .map((q) {
+            final questionData = Map<String, dynamic>.from(q as Map<String, dynamic>);
+            // Convert _json suffix columns to proper array keys for fromJson
+            if (questionData['choices_json'] != null) {
+              try {
+                questionData['choices'] = jsonDecode(questionData['choices_json'] as String);
+              } catch (_) {}
+            }
+            if (questionData['correct_answers_json'] != null) {
+              try {
+                questionData['correct_answers'] = jsonDecode(questionData['correct_answers_json'] as String);
+              } catch (_) {}
+            }
+            if (questionData['enumeration_items_json'] != null) {
+              try {
+                questionData['enumeration_items'] = jsonDecode(questionData['enumeration_items_json'] as String);
+              } catch (_) {}
+            }
+            return QuestionModel.fromJson(questionData);
+          })
+          .toList();
+
+      return (assessment, questions);
+    } catch (e) {
+      if (e is CacheException) rethrow;
+      throw CacheException(e.toString());
+    }
+  }
+}

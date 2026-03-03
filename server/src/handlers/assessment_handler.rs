@@ -11,7 +11,7 @@ use crate::middleware::auth_middleware::AuthUser;
 use crate::schema::assessment_schema::*;
 use crate::schema::auth_schema::MessageResponse;
 use crate::schema::common::success_response;
-use crate::services::assessment_service::AssessmentService;
+use crate::services::assessment::AssessmentService;
 use crate::utils::error::AppError;
 
 // ===== TEACHER: ASSESSMENT CRUD =====

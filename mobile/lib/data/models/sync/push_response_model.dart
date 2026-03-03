@@ -27,6 +27,9 @@ class OperationResultModel {
   @JsonKey(name: 'updated_at')
   final String? updatedAt;
 
+  /// Additional metadata from server (e.g., nested ID mappings for questions)
+  final Map<String, dynamic>? metadata;
+
   OperationResultModel({
     required this.id,
     required this.entityType,
@@ -35,6 +38,7 @@ class OperationResultModel {
     this.serverId,
     this.error,
     this.updatedAt,
+    this.metadata,
   });
 
   factory OperationResultModel.fromJson(Map<String, dynamic> json) =>

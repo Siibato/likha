@@ -2,7 +2,6 @@ mod config;
 mod db;
 mod handlers;
 mod middleware;
-mod models;
 mod routes;
 mod schema;
 mod services;
@@ -17,20 +16,23 @@ use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
 use uuid::Uuid;
 
-use crate::services::assessment_service::AssessmentService;
-use crate::services::assignment_service::AssignmentService;
-use crate::services::auth_service::AuthService;
-use crate::services::class_service::ClassService;
-use crate::services::learning_material_service::LearningMaterialService;
-use crate::services::entitlement_service::EntitlementService;
+use crate::services::assessment::AssessmentService;
+use crate::services::assignment::AssignmentService;
+use crate::services::auth::AuthService;
+use crate::services::class::ClassService;
+use crate::services::learning_material::LearningMaterialService;
+use crate::services::entitlement::EntitlementService;
 use crate::services::sync_manifest_service::SyncManifestService;
 use crate::services::sync_fetch_service::SyncFetchService;
-use crate::services::sync_push_service::SyncPushService;
+use crate::services::sync_push::SyncPushService;
 use crate::services::sync_conflict_service::SyncConflictService;
+use crate::services::sync_full_service::SyncFullService;
+use crate::services::sync_delta_service::SyncDeltaService;
 use crate::db::repositories::{
     manifest_repository::ManifestRepository,
     sync_cursor_repository::SyncCursorRepository,
     sync_conflict_repository::SyncConflictRepository,
+    processed_operations_repository::ProcessedOperationsRepository,
 };
 
 #[tokio::main]
@@ -175,6 +177,7 @@ async fn main() {
         cursor_repo,
     ));
 
+    let processed_ops_repo = Arc::new(ProcessedOperationsRepository::new(db.clone()));
     let sync_push_service = Arc::new(SyncPushService::new(
         entitlement_service.clone(),
         class_service.clone(),
@@ -182,10 +185,21 @@ async fn main() {
         assignment_service.clone(),
         material_service.clone(),
         auth_service.clone(),
+        processed_ops_repo,
     ));
 
     let conflict_repo = SyncConflictRepository::new(db.clone());
     let sync_conflict_service = Arc::new(SyncConflictService::new(conflict_repo));
+
+    let sync_full_service = Arc::new(SyncFullService::new(
+        entitlement_service.clone(),
+        manifest_repo.clone(),
+    ));
+
+    let sync_delta_service = Arc::new(SyncDeltaService::new(
+        entitlement_service.clone(),
+        manifest_repo.clone(),
+    ));
 
     let app = create_app(
         auth_service,
@@ -197,6 +211,8 @@ async fn main() {
         sync_fetch_service,
         sync_push_service,
         sync_conflict_service,
+        sync_full_service,
+        sync_delta_service,
     );
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
@@ -222,6 +238,8 @@ fn create_app(
     sync_fetch_service: Arc<SyncFetchService>,
     sync_push_service: Arc<SyncPushService>,
     sync_conflict_service: Arc<SyncConflictService>,
+    sync_full_service: Arc<SyncFullService>,
+    sync_delta_service: Arc<SyncDeltaService>,
 ) -> Router {
     let cors = CorsLayer::new()
         .allow_origin(Any)
@@ -241,6 +259,8 @@ fn create_app(
                 sync_fetch_service,
                 sync_push_service,
                 sync_conflict_service,
+                sync_full_service,
+                sync_delta_service,
             ),
         )
         .layer(cors)

@@ -12,7 +12,7 @@ use crate::middleware::auth_middleware::AuthUser;
 use crate::schema::assignment_schema::*;
 use crate::schema::auth_schema::MessageResponse;
 use crate::schema::common::success_response;
-use crate::services::assignment_service::AssignmentService;
+use crate::services::assignment::AssignmentService;
 use crate::utils::error::AppError;
 
 // ===== TEACHER: ASSIGNMENT CRUD =====

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/network/dio_client.dart';
+import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/pages/activate_account_page.dart';
 import 'package:likha/presentation/pages/home_page.dart';
 import 'package:likha/presentation/pages/login_page.dart';
 import 'package:likha/presentation/pages/login_password_page.dart';
+import 'package:likha/presentation/providers/admin_provider.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 
 class AuthWrapper extends ConsumerStatefulWidget {
@@ -16,6 +18,8 @@ class AuthWrapper extends ConsumerStatefulWidget {
 }
 
 class _AuthWrapperState extends ConsumerState<AuthWrapper> {
+  String? _lastSyncedUserId;
+
   @override
   void initState() {
     super.initState();
@@ -40,9 +44,29 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
       );
     }
 
+    if (authState.pendingForceLogout) {
+      return _ForceLogoutWarningPage(
+        pendingSyncCount: authState.pendingSyncCount,
+      );
+    }
+
     if (authState.isAuthenticated) {
+      // Only trigger sync once per user login, not on every build
+      if (_lastSyncedUserId != authState.user?.id) {
+        _lastSyncedUserId = authState.user?.id;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          sl<SyncManager>().sync();
+
+          if (authState.user?.role == 'admin') {
+            ref.read(adminProvider.notifier).cacheAccountsOffline();
+          }
+        });
+      }
       return const HomePage();
     }
+
+    // Reset sync tracking when logged out
+    _lastSyncedUserId = null;
 
     if (authState.pendingActivationUsername != null) {
       return const ActivateAccountPage();
@@ -53,5 +77,77 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
     }
 
     return const LoginPage();
+  }
+}
+
+class _ForceLogoutWarningPage extends ConsumerWidget {
+  final int pendingSyncCount;
+
+  const _ForceLogoutWarningPage({
+    required this.pendingSyncCount,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.lock_outline,
+                size: 64,
+                color: Color(0xFFD32F2F),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Your session has expired',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF2B2B2B),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'You had $pendingSyncCount unsaved change(s) that could not be synced.',
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF7A7A7A),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    ref.read(authProvider.notifier).confirmForceLogout();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2B2B2B),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Log me out',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

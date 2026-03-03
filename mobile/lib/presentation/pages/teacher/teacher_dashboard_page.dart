@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/teacher/class_detail_page.dart';
-import 'package:likha/presentation/pages/teacher/create_class_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/empty_class_state.dart';
 import 'package:likha/presentation/pages/teacher/widgets/teacher_class_card.dart';
-import 'package:likha/presentation/providers/auth_provider.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
+import 'package:likha/presentation/utils/logout_helper.dart';
 
 class TeacherDashboardPage extends ConsumerStatefulWidget {
   const TeacherDashboardPage({super.key});
@@ -46,7 +45,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
           IconButton(
             icon: const Icon(Icons.logout_rounded),
             color: const Color(0xFF2B2B2B),
-            onPressed: () => ref.read(authProvider.notifier).logout(),
+            onPressed: () => handleLogoutTap(context, ref),
           ),
         ],
       ),
@@ -82,14 +81,6 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
                     },
                   ),
                 ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const CreateClassPage()),
-        ).then((_) => ref.read(classProvider.notifier).loadClasses()),
-        backgroundColor: const Color(0xFF2B2B2B),
-        child: const Icon(Icons.add_rounded, color: Colors.white),
-      ),
     );
   }
 }

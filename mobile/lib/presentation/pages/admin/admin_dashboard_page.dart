@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/admin/account_management_page.dart';
+import 'package:likha/presentation/pages/admin/admin_classes_page.dart';
 import 'package:likha/presentation/pages/admin/create_account_page.dart';
 import 'package:likha/presentation/pages/admin/widgets/admin_header.dart';
 import 'package:likha/presentation/pages/admin/widgets/dashboard_card.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
+import 'package:likha/presentation/utils/logout_helper.dart';
 
 class AdminDashboardPage extends ConsumerWidget {
   const AdminDashboardPage({super.key});
@@ -33,7 +35,7 @@ class AdminDashboardPage extends ConsumerWidget {
               Icons.logout_rounded,
               color: Color(0xFF404040),
             ),
-            onPressed: () => ref.read(authProvider.notifier).logout(),
+            onPressed: () => handleLogoutTap(context, ref),
           ),
         ],
       ),
@@ -46,6 +48,18 @@ class AdminDashboardPage extends ConsumerWidget {
               fullName: authState.user?.fullName ?? 'Admin',
             ),
             const SizedBox(height: 32),
+            DashboardCard(
+              icon: Icons.class_outlined,
+              title: 'Class Management',
+              subtitle: 'Create classes and manage student enrollment',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AdminClassesPage(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
             DashboardCard(
               icon: Icons.people_outline_rounded,
               title: 'Account Management',

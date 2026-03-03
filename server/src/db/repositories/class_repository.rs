@@ -48,6 +48,15 @@ impl ClassRepository {
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
     }
 
+    pub async fn find_all(&self) -> AppResult<Vec<classes::Model>> {
+        classes::Entity::find()
+            .filter(classes::Column::IsArchived.eq(false))
+            .order_by_desc(classes::Column::CreatedAt)
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+    }
+
     pub async fn find_by_id(&self, id: Uuid) -> AppResult<Option<classes::Model>> {
         classes::Entity::find_by_id(id)
             .one(&self.db)

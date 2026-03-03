@@ -1,12 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:likha/core/validation/services/data_validator.dart';
-import 'package:likha/data/datasources/local/class_local_datasource.dart';
+import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/data/datasources/remote/class_remote_datasource.dart';
-import 'package:likha/data/datasources/local/assessment_local_datasource.dart';
+import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';
-import 'package:likha/data/datasources/local/assignment_local_datasource.dart';
+import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assignment_remote_datasource.dart';
-import 'package:likha/data/datasources/local/learning_material_local_datasource.dart';
+import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
 import 'package:likha/data/datasources/remote/learning_material_remote_datasource.dart';
 
 class ValidationService {

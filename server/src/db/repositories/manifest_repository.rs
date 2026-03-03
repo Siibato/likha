@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::utils::{AppError, AppResult};
 use ::entity::{
     classes, class_enrollments, assessments, assessment_questions, assessment_submissions,
-    assignments_hw, assignment_submissions, learning_materials, activity_logs,
+    assignments_hw, assignment_submissions, learning_materials, activity_logs, users,
 };
 
 /// Record entry in the manifest (id + updated_at + deleted flag)
@@ -270,10 +270,15 @@ impl ManifestRepository {
                     "title": r.title,
                     "description": r.description,
                     "time_limit_minutes": r.time_limit_minutes,
+                    "open_at": r.open_at.to_string(),
+                    "close_at": r.close_at.to_string(),
+                    "show_results_immediately": r.show_results_immediately,
                     "is_published": r.is_published,
                     "results_released": r.results_released,
+                    "total_points": r.total_points,
                     "created_at": r.created_at.to_string(),
                     "updated_at": r.updated_at.to_string(),
+                    "deleted_at": r.deleted_at.map(|d| d.to_string()),
                 })
             })
             .collect();
@@ -307,10 +312,14 @@ impl ManifestRepository {
                     "title": r.title,
                     "instructions": r.instructions,
                     "total_points": r.total_points,
+                    "submission_type": r.submission_type,
+                    "allowed_file_types": r.allowed_file_types,
+                    "max_file_size_mb": r.max_file_size_mb,
                     "due_at": r.due_at.to_string(),
                     "is_published": r.is_published,
                     "created_at": r.created_at.to_string(),
                     "updated_at": r.updated_at.to_string(),
+                    "deleted_at": r.deleted_at.map(|d| d.to_string()),
                 })
             })
             .collect();
@@ -558,6 +567,343 @@ impl ManifestRepository {
                     "performed_by": r.performed_by.map(|id| id.to_string()),
                     "details": r.details,
                     "created_at": r.created_at.to_string(),
+                })
+            })
+            .collect();
+
+        Ok(PaginatedRecords { records, has_more })
+    }
+
+    /// Get classes that have been updated since a given time
+    pub async fn get_classes_since(
+        &self,
+        class_ids: Vec<Uuid>,
+        since: NaiveDateTime,
+    ) -> AppResult<Vec<Value>> {
+        let records = classes::Entity::find()
+            .filter(classes::Column::Id.is_in(class_ids))
+            .filter(classes::Column::UpdatedAt.gt(since))
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        let records: Vec<Value> = records
+            .into_iter()
+            .map(|r| {
+                json!({
+                    "id": r.id.to_string(),
+                    "title": r.title,
+                    "description": r.description,
+                    "teacher_id": r.teacher_id.to_string(),
+                    "is_archived": r.is_archived,
+                    "created_at": r.created_at.to_string(),
+                    "updated_at": r.updated_at.to_string(),
+                    "deleted_at": r.deleted_at.map(|d| d.to_string()),
+                })
+            })
+            .collect();
+
+        Ok(records)
+    }
+
+    /// Get assessments that have been updated since a given time
+    pub async fn get_assessments_since(
+        &self,
+        assessment_ids: Vec<Uuid>,
+        since: NaiveDateTime,
+    ) -> AppResult<Vec<Value>> {
+        let records = assessments::Entity::find()
+            .filter(assessments::Column::Id.is_in(assessment_ids))
+            .filter(assessments::Column::UpdatedAt.gt(since))
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        let records: Vec<Value> = records
+            .into_iter()
+            .map(|r| {
+                json!({
+                    "id": r.id.to_string(),
+                    "class_id": r.class_id.to_string(),
+                    "title": r.title,
+                    "description": r.description,
+                    "time_limit_minutes": r.time_limit_minutes,
+                    "open_at": r.open_at.to_string(),
+                    "close_at": r.close_at.to_string(),
+                    "show_results_immediately": r.show_results_immediately,
+                    "is_published": r.is_published,
+                    "results_released": r.results_released,
+                    "total_points": r.total_points,
+                    "created_at": r.created_at.to_string(),
+                    "updated_at": r.updated_at.to_string(),
+                    "deleted_at": r.deleted_at.map(|d| d.to_string()),
+                })
+            })
+            .collect();
+
+        Ok(records)
+    }
+
+    /// Get assignments that have been updated since a given time
+    pub async fn get_assignments_since(
+        &self,
+        assignment_ids: Vec<Uuid>,
+        since: NaiveDateTime,
+    ) -> AppResult<Vec<Value>> {
+        let records = assignments_hw::Entity::find()
+            .filter(assignments_hw::Column::Id.is_in(assignment_ids))
+            .filter(assignments_hw::Column::UpdatedAt.gt(since))
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        let records: Vec<Value> = records
+            .into_iter()
+            .map(|r| {
+                json!({
+                    "id": r.id.to_string(),
+                    "class_id": r.class_id.to_string(),
+                    "title": r.title,
+                    "instructions": r.instructions,
+                    "total_points": r.total_points,
+                    "submission_type": r.submission_type,
+                    "allowed_file_types": r.allowed_file_types,
+                    "max_file_size_mb": r.max_file_size_mb,
+                    "due_at": r.due_at.to_string(),
+                    "is_published": r.is_published,
+                    "created_at": r.created_at.to_string(),
+                    "updated_at": r.updated_at.to_string(),
+                    "deleted_at": r.deleted_at.map(|d| d.to_string()),
+                })
+            })
+            .collect();
+
+        Ok(records)
+    }
+
+    /// Get learning materials that have been updated since a given time
+    pub async fn get_materials_since(
+        &self,
+        material_ids: Vec<Uuid>,
+        since: NaiveDateTime,
+    ) -> AppResult<Vec<Value>> {
+        let records = learning_materials::Entity::find()
+            .filter(learning_materials::Column::Id.is_in(material_ids))
+            .filter(learning_materials::Column::UpdatedAt.gt(since))
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        let records: Vec<Value> = records
+            .into_iter()
+            .map(|r| {
+                json!({
+                    "id": r.id.to_string(),
+                    "class_id": r.class_id.to_string(),
+                    "title": r.title,
+                    "description": r.description,
+                    "content_text": r.content_text,
+                    "order_index": r.order_index,
+                    "created_at": r.created_at.to_string(),
+                    "updated_at": r.updated_at.to_string(),
+                    "deleted_at": r.deleted_at.map(|d| d.to_string()),
+                })
+            })
+            .collect();
+
+        Ok(records)
+    }
+
+    /// Get class enrollments that have been updated since a given time
+    pub async fn get_enrollments_since(
+        &self,
+        enrollment_ids: Vec<Uuid>,
+        since: NaiveDateTime,
+    ) -> AppResult<Vec<Value>> {
+        let records = class_enrollments::Entity::find()
+            .filter(class_enrollments::Column::Id.is_in(enrollment_ids))
+            .filter(class_enrollments::Column::EnrolledAt.gt(since))
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        let records: Vec<Value> = records
+            .into_iter()
+            .map(|r| {
+                json!({
+                    "id": r.id.to_string(),
+                    "class_id": r.class_id.to_string(),
+                    "student_id": r.student_id.to_string(),
+                    "enrolled_at": r.enrolled_at.to_string(),
+                    "removed_at": r.removed_at.map(|d| d.to_string()),
+                })
+            })
+            .collect();
+
+        Ok(records)
+    }
+
+    /// Get assessment questions that have been updated since a given time
+    pub async fn get_questions_since(
+        &self,
+        question_ids: Vec<Uuid>,
+        since: NaiveDateTime,
+    ) -> AppResult<Vec<Value>> {
+        let records = assessment_questions::Entity::find()
+            .filter(assessment_questions::Column::Id.is_in(question_ids))
+            .filter(assessment_questions::Column::UpdatedAt.gt(since))
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        let records: Vec<Value> = records
+            .into_iter()
+            .map(|r| {
+                json!({
+                    "id": r.id.to_string(),
+                    "assessment_id": r.assessment_id.to_string(),
+                    "question_type": r.question_type,
+                    "question_text": r.question_text,
+                    "points": r.points,
+                    "order_index": r.order_index,
+                    "is_multi_select": r.is_multi_select,
+                    "updated_at": r.updated_at.to_string(),
+                    "deleted_at": r.deleted_at.map(|d| d.to_string()),
+                })
+            })
+            .collect();
+
+        Ok(records)
+    }
+
+    /// Get assessment submissions that have been updated since a given time
+    pub async fn get_assessment_submissions_since(
+        &self,
+        user_id: Uuid,
+        submission_ids: Vec<Uuid>,
+        since: NaiveDateTime,
+    ) -> AppResult<Vec<Value>> {
+        let records = assessment_submissions::Entity::find()
+            .filter(assessment_submissions::Column::StudentId.eq(user_id))
+            .filter(assessment_submissions::Column::Id.is_in(submission_ids))
+            .filter(assessment_submissions::Column::UpdatedAt.gt(since))
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        let records: Vec<Value> = records
+            .into_iter()
+            .map(|r| {
+                json!({
+                    "id": r.id.to_string(),
+                    "assessment_id": r.assessment_id.to_string(),
+                    "student_id": r.student_id.to_string(),
+                    "started_at": r.created_at.to_string(),
+                    "submitted_at": r.submitted_at.map(|d| d.to_string()),
+                    "auto_score": r.auto_score,
+                    "final_score": r.final_score,
+                    "is_submitted": r.is_submitted,
+                    "updated_at": r.updated_at.to_string(),
+                })
+            })
+            .collect();
+
+        Ok(records)
+    }
+
+    /// Get assignment submissions that have been updated since a given time
+    pub async fn get_assignment_submissions_since(
+        &self,
+        user_id: Uuid,
+        submission_ids: Vec<Uuid>,
+        since: NaiveDateTime,
+    ) -> AppResult<Vec<Value>> {
+        let records = assignment_submissions::Entity::find()
+            .filter(assignment_submissions::Column::StudentId.eq(user_id))
+            .filter(assignment_submissions::Column::Id.is_in(submission_ids))
+            .filter(assignment_submissions::Column::UpdatedAt.gt(since))
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        let records: Vec<Value> = records
+            .into_iter()
+            .map(|r| {
+                json!({
+                    "id": r.id.to_string(),
+                    "assignment_id": r.assignment_id.to_string(),
+                    "student_id": r.student_id.to_string(),
+                    "status": r.status,
+                    "submitted_at": r.submitted_at.map(|d| d.to_string()),
+                    "score": r.score,
+                    "updated_at": r.updated_at.to_string(),
+                })
+            })
+            .collect();
+
+        Ok(records)
+    }
+
+    /// Get activity logs that have been created since a given time
+    pub async fn get_activity_logs_since(
+        &self,
+        activity_log_ids: Vec<Uuid>,
+        since: NaiveDateTime,
+    ) -> AppResult<Vec<Value>> {
+        let records = activity_logs::Entity::find()
+            .filter(activity_logs::Column::Id.is_in(activity_log_ids))
+            .filter(activity_logs::Column::CreatedAt.gt(since))
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        let records: Vec<Value> = records
+            .into_iter()
+            .map(|r| {
+                json!({
+                    "id": r.id.to_string(),
+                    "user_id": r.user_id.to_string(),
+                    "action": r.action,
+                    "performed_by": r.performed_by.map(|id| id.to_string()),
+                    "details": r.details,
+                    "created_at": r.created_at.to_string(),
+                })
+            })
+            .collect();
+
+        Ok(records)
+    }
+
+    /// Get users by IDs with full profile data
+    pub async fn get_users_paginated(
+        &self,
+        user_ids: Vec<Uuid>,
+        limit: i64,
+    ) -> AppResult<PaginatedRecords> {
+        let effective_limit = std::cmp::min(limit, 500) as u64;
+
+        let records = users::Entity::find()
+            .filter(users::Column::Id.is_in(user_ids))
+            .limit(effective_limit + 1)
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        let has_more = records.len() > effective_limit as usize;
+        let records: Vec<Value> = records
+            .into_iter()
+            .take(effective_limit as usize)
+            .map(|r| {
+                json!({
+                    "id": r.id.to_string(),
+                    "username": r.username,
+                    "full_name": r.full_name,
+                    "role": r.role,
+                    "account_status": r.account_status,
+                    "is_active": r.is_active,
+                    "activated_at": r.activated_at.map(|d| d.to_string()),
+                    "created_at": r.created_at.to_string(),
+                    "updated_at": r.updated_at.to_string(),
                 })
             })
             .collect();

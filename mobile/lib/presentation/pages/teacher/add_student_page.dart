@@ -24,6 +24,9 @@ class _AddStudentPageState extends ConsumerState<AddStudentPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Load class detail to get enrolled students (needed for offline enrollment status)
+      ref.read(classProvider.notifier).loadClassDetail(widget.classId);
+      // Search all students for add/remove page
       ref.read(classProvider.notifier).searchStudents();
     });
   }
@@ -112,41 +115,46 @@ class _AddStudentPageState extends ConsumerState<AddStudentPage> {
                       strokeWidth: 2.5,
                     ),
                   )
-                : classState.searchResults.isEmpty
-                    ? const EmptySearchState()
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(24),
-                        itemCount: classState.searchResults.length,
-                        itemBuilder: (context, index) {
-                          final student = classState.searchResults[index];
-                          final enrolledIds = classState
-                                  .currentClassDetail?.students
-                                  .map((e) => e.student.id)
-                                  .toSet() ??
-                              {};
-                          final isEnrolled = enrolledIds.contains(student.id);
+                : Builder(
+                    builder: (context) {
+                      // Filter to only show students
+                      final students = classState.searchResults
+                          .where((u) => u.isStudent)
+                          .toList();
 
-                          return SearchableStudentItem(
-                            fullName: student.fullName,
-                            username: student.username,
-                            accountStatus: student.accountStatus,
-                            isEnrolled: isEnrolled,
-                            onAction: () {
-                              if (isEnrolled) {
-                                ref.read(classProvider.notifier).removeStudent(
-                                      classId: widget.classId,
-                                      studentId: student.id,
-                                    );
-                              } else {
-                                ref.read(classProvider.notifier).addStudent(
-                                      classId: widget.classId,
-                                      studentId: student.id,
-                                    );
-                              }
-                            },
-                          );
-                        },
-                      ),
+                      return students.isEmpty
+                          ? const EmptySearchState()
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(24),
+                              itemCount: students.length,
+                              itemBuilder: (context, index) {
+                                final student = students[index];
+                                final enrolledIds = classState.enrolledStudentIds;
+                                final isEnrolled = enrolledIds.contains(student.id);
+
+                                return SearchableStudentItem(
+                                  fullName: student.fullName,
+                                  username: student.username,
+                                  accountStatus: student.accountStatus,
+                                  isEnrolled: isEnrolled,
+                                  onAction: () {
+                                    if (isEnrolled) {
+                                      ref.read(classProvider.notifier).removeStudent(
+                                            classId: widget.classId,
+                                            studentId: student.id,
+                                          );
+                                    } else {
+                                      ref.read(classProvider.notifier).addStudent(
+                                            classId: widget.classId,
+                                            studentId: student.id,
+                                          );
+                                    }
+                                  },
+                                );
+                              },
+                            );
+                    },
+                  ),
           ),
         ],
       ),

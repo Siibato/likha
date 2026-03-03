@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/domain/auth/entities/activity_log.dart';
 import 'package:likha/domain/auth/entities/user.dart';
+import 'package:likha/domain/auth/usecases/check_username.dart';
 import 'package:likha/domain/auth/usecases/create_account.dart';
 import 'package:likha/domain/auth/usecases/get_activity_logs.dart';
 import 'package:likha/domain/auth/usecases/get_all_accounts.dart';
@@ -46,6 +47,7 @@ class AdminState {
 
 class AdminNotifier extends StateNotifier<AdminState> {
   final GetAllAccounts _getAllAccounts;
+  final CheckUsername _checkUsername;
   final CreateAccount _createAccount;
   final ResetAccount _resetAccount;
   final LockAccount _lockAccount;
@@ -54,6 +56,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
 
   AdminNotifier(
     this._getAllAccounts,
+    this._checkUsername,
     this._createAccount,
     this._resetAccount,
     this._lockAccount,
@@ -84,6 +87,25 @@ class AdminNotifier extends StateNotifier<AdminState> {
     required String role,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+
+    final checkResult = await _checkUsername(username);
+
+    final usernameExists = checkResult.fold(
+      (failure) {
+        return state.accounts.any(
+          (account) => account.username.toLowerCase() == username.toLowerCase(),
+        );
+      },
+      (result) => true,
+    );
+
+    if (usernameExists) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Username already exists. Please choose a different username.',
+      );
+      return;
+    }
 
     final result = await _createAccount(CreateAccountParams(
       username: username,
@@ -176,6 +198,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
     required String userId,
     String? username,
     String? fullName,
+    String? role,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
 
@@ -183,6 +206,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
       userId: userId,
       username: username,
       fullName: fullName,
+      role: role,
     ));
 
     result.fold(
@@ -206,11 +230,27 @@ class AdminNotifier extends StateNotifier<AdminState> {
   void clearMessages() {
     state = state.copyWith(clearError: true, clearSuccess: true);
   }
+
+  Future<void> cacheAccountsOffline() async {
+    try {
+      final result = await _getAllAccounts();
+      result.fold(
+        (failure) {
+        },
+        (accounts) {
+          state = state.copyWith(accounts: accounts);
+        },
+      );
+    } catch (e) {
+      // Silently ignore
+    }
+  }
 }
 
 final adminProvider = StateNotifierProvider<AdminNotifier, AdminState>((ref) {
   return AdminNotifier(
     sl<GetAllAccounts>(),
+    sl<CheckUsername>(),
     sl<CreateAccount>(),
     sl<ResetAccount>(),
     sl<LockAccount>(),

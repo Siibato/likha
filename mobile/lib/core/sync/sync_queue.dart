@@ -18,7 +18,7 @@ enum SyncEntityType {
   activityLog
 }
 
-enum SyncOperation { create, update, delete, submit, grade, publish, upload, saveAnswers }
+enum SyncOperation { create, update, delete, submit, grade, publish, upload, saveAnswers, releaseResults, overrideAnswer, addEnrollment, removeEnrollment }
 
 enum SyncStatus { pending, failed }
 
@@ -89,11 +89,13 @@ class SyncQueueEntry {
 abstract class SyncQueue {
   Future<void> enqueue(SyncQueueEntry entry);
   Future<List<SyncQueueEntry>> getAllRetriable();
+  Future<List<SyncQueueEntry>> getByEntityAndOperation(SyncEntityType entityType, SyncOperation operation);
   Future<void> markSucceeded(String id);
   Future<void> markFailed(String id, String errorMessage);
   Future<void> incrementRetry(String id);
   Future<void> clear();
   Future<SyncQueueEntry?> getById(String id);
+  Future<int> getPendingCount();
 }
 
 class SyncQueueImpl implements SyncQueue {
@@ -126,8 +128,9 @@ class SyncQueueImpl implements SyncQueue {
   @override
   Future<void> markSucceeded(String id) async {
     final db = await _localDatabase.database;
-    await db.delete(
+    await db.update(
       'sync_queue',
+      {'status': 'succeeded'},
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -173,6 +176,39 @@ class SyncQueueImpl implements SyncQueue {
     );
     if (results.isEmpty) return null;
     return SyncQueueEntry.fromMap(results.first);
+  }
+
+  @override
+  Future<int> getPendingCount() async {
+    final db = await _localDatabase.database;
+    final result = await db.rawQuery(
+      "SELECT COUNT(*) as count FROM sync_queue WHERE status = 'pending'",
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  @override
+  Future<List<SyncQueueEntry>> getByEntityAndOperation(SyncEntityType entityType, SyncOperation operation) async {
+    final db = await _localDatabase.database;
+    final results = await db.query(
+      'sync_queue',
+      where: 'entity_type = ? AND operation = ?',
+      whereArgs: [
+        entityType.toString().split('.').last,
+        operation.toString().split('.').last,
+      ],
+      orderBy: 'created_at ASC',
+    );
+    return results.map(SyncQueueEntry.fromMap).toList();
+  }
+
+  Future<void> deleteEntry(String id) async {
+    final db = await _localDatabase.database;
+    await db.delete(
+      'sync_queue',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 }
 

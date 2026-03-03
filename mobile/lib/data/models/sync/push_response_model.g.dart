@@ -16,6 +16,7 @@ OperationResultModel _$OperationResultModelFromJson(
   serverId: json['server_id'] as String?,
   error: json['error'] as String?,
   updatedAt: json['updated_at'] as String?,
+  metadata: json['metadata'] as Map<String, dynamic>?,
 );
 
 Map<String, dynamic> _$OperationResultModelToJson(
@@ -28,6 +29,7 @@ Map<String, dynamic> _$OperationResultModelToJson(
   'server_id': instance.serverId,
   'error': instance.error,
   'updated_at': instance.updatedAt,
+  'metadata': instance.metadata,
 };
 
 PushResponseModel _$PushResponseModelFromJson(Map<String, dynamic> json) =>

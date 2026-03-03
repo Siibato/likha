@@ -2,7 +2,7 @@ use chrono::Utc;
 use serde_json::json;
 use uuid::Uuid;
 
-use crate::services::entitlement_service::{EntitlementService, UserManifest};
+use crate::services::entitlement::{EntitlementService, manifest::UserManifest};
 use crate::utils::{AppError, AppResult};
 
 /// Response for manifest endpoint

@@ -48,6 +48,7 @@ abstract class AuthRemoteDataSource {
     required String userId,
     String? username,
     String? fullName,
+    String? role,
   });
 }
 
@@ -272,11 +273,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String userId,
     String? username,
     String? fullName,
+    String? role,
   }) async {
     try {
       final data = <String, dynamic>{};
       if (username != null) data['username'] = username;
       if (fullName != null) data['full_name'] = fullName;
+      if (role != null) data['role'] = role;
 
       return await _dioClient.putTyped(
         ApiEndpoints.accountUpdate(userId),

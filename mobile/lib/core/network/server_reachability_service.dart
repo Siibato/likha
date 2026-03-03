@@ -18,7 +18,7 @@ class ServerReachabilityServiceImpl implements ServerReachabilityService {
 
   late StreamController<bool> _reachabilityStream;
   late Timer? _periodicCheck;
-  bool _isServerReachable = true;
+  bool _isServerReachable = false;
 
   ServerReachabilityServiceImpl(
     this._dio, {
@@ -40,9 +40,10 @@ class ServerReachabilityServiceImpl implements ServerReachabilityService {
     // Initial check
     await checkNow();
 
-    // Periodic checks
-    _periodicCheck = Timer.periodic(checkInterval, (_) async {
-      await checkNow();
+    // Periodic checks (we use unawaited here since Timer.periodic doesn't wait)
+    _periodicCheck = Timer.periodic(checkInterval, (_) {
+      // Fire-and-forget: checkNow() updates the internal state
+      unawaited(checkNow());
     });
   }
 
@@ -50,7 +51,7 @@ class ServerReachabilityServiceImpl implements ServerReachabilityService {
   Future<bool> checkNow() async {
     try {
       final response = await _dio.get(
-        '/health',
+        '/api/v1/health',
         options: Options(
           sendTimeout: timeout,
           receiveTimeout: timeout,
