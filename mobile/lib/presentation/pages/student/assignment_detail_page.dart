@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/domain/assignments/usecases/create_submission.dart';
 import 'package:likha/domain/assignments/usecases/upload_file.dart';
-import 'package:likha/presentation/pages/student/widgets/student_header.dart';
+import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/student/widgets/assignment_instructions_card.dart';
 import 'package:likha/presentation/pages/student/widgets/assignment_returned_banner.dart';
 import 'package:likha/presentation/pages/student/widgets/assignment_text_input_card.dart';
@@ -315,7 +315,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
             : CustomScrollView(
                 slivers: [
                   SliverToBoxAdapter(
-                    child: StudentHeader(
+                    child: ClassSectionHeader(
                       title: 'Assignment Details',
                       showBackButton: true,
                     ),

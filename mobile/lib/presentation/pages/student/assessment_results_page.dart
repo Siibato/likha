@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/presentation/pages/student/widgets/student_header.dart';
+import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/student/widgets/score_summary_card.dart';
 import 'package:likha/presentation/pages/student/widgets/answer_result_card.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
@@ -139,7 +139,7 @@ class _AssessmentResultsPageState
             : CustomScrollView(
                 slivers: [
                   const SliverToBoxAdapter(
-                    child: StudentHeader(
+                    child: ClassSectionHeader(
                       title: 'Results',
                       showBackButton: true,
                     ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:likha/presentation/pages/student/widgets/student_header.dart';
+import 'package:likha/presentation/pages/shared/class_section_header.dart';
 
 class StudentTasksPage extends StatelessWidget {
   const StudentTasksPage({super.key});
@@ -10,7 +10,7 @@ class StudentTasksPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const StudentHeader(title: 'Tasks'),
+          const ClassSectionHeader(title: 'Tasks'),
           Expanded(
             child: Center(
               child: Column(

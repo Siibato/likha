@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/presentation/pages/student/widgets/student_header.dart';
+import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/utils/logout_helper.dart';
 
 class StudentProfilePage extends ConsumerWidget {
@@ -12,7 +12,7 @@ class StudentProfilePage extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const StudentHeader(title: 'Profile'),
+          const ClassSectionHeader(title: 'Profile'),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
