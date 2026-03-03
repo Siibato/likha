@@ -123,4 +123,28 @@ impl super::SyncPushService {
             .ok_or_else(|| format!("Missing {} field", field))
             .and_then(|s| uuid::Uuid::parse_str(s).map_err(|_| format!("Invalid {}", field)))
     }
+
+    pub(super) fn parse_str_field(
+        &self,
+        payload: &serde_json::Value,
+        field: &str,
+    ) -> Result<String, String> {
+        payload
+            .get(field)
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| format!("Missing {} field", field))
+            .map(String::from)
+    }
+
+    pub(super) fn parse_i32_field(
+        &self,
+        payload: &serde_json::Value,
+        field: &str,
+    ) -> Result<i32, String> {
+        payload
+            .get(field)
+            .and_then(|v| v.as_i64())
+            .ok_or_else(|| format!("Missing {} field", field))
+            .map(|v| v as i32)
+    }
 }

@@ -19,17 +19,17 @@ impl super::SyncPushService {
 
                 let mut questions = Vec::new();
                 for q in questions_array {
-                    let question_type = match q.get("question_type").and_then(|v| v.as_str()) {
-                        Some(t) => t.to_string(),
-                        None => return self.error_result(op, "Missing question_type field"),
+                    let question_type = match q.get("question_type").and_then(|v| v.as_str()).ok_or_else(|| "Missing question_type field".to_string()) {
+                        Ok(v) => v.to_string(),
+                        Err(e) => return self.error_result(op, &e),
                     };
-                    let question_text = match q.get("question_text").and_then(|v| v.as_str()) {
-                        Some(t) => t.to_string(),
-                        None => return self.error_result(op, "Missing question_text field"),
+                    let question_text = match q.get("question_text").and_then(|v| v.as_str()).ok_or_else(|| "Missing question_text field".to_string()) {
+                        Ok(v) => v.to_string(),
+                        Err(e) => return self.error_result(op, &e),
                     };
-                    let points = match q.get("points").and_then(|v| v.as_i64()) {
-                        Some(p) => p as i32,
-                        None => return self.error_result(op, "Missing points field"),
+                    let points = match q.get("points").and_then(|v| v.as_i64()).ok_or_else(|| "Missing points field".to_string()).map(|v| v as i32) {
+                        Ok(v) => v,
+                        Err(e) => return self.error_result(op, &e),
                     };
                     let order_index = q.get("order_index").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
                     let is_multi_select = q.get("is_multi_select").and_then(|v| v.as_bool());

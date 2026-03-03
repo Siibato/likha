@@ -11,9 +11,9 @@ impl super::SyncPushService {
                     Ok(id) => id,
                     Err(e) => return self.error_result(op, &e),
                 };
-                let title = match op.payload.get("title").and_then(|v| v.as_str()) {
-                    Some(t) => t.to_string(),
-                    None => return self.error_result(op, "Missing title field"),
+                let title = match self.parse_str_field(&op.payload, "title") {
+                    Ok(v) => v,
+                    Err(e) => return self.error_result(op, &e),
                 };
                 let description = op.payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
                 let time_limit = op.payload.get("time_limit_minutes").and_then(|v| v.as_i64()).unwrap_or(30) as i32;

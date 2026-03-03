@@ -7,9 +7,9 @@ impl super::SyncPushService {
     pub(super) async fn handle_class_operation(&self, user_id: Uuid, user_role: &str, op: &SyncQueueEntry) -> OperationResult {
         match op.operation.as_str() {
             "create" => {
-                let title = match op.payload.get("title").and_then(|v| v.as_str()) {
-                    Some(t) => t.to_string(),
-                    None => return self.error_result(op, "Missing title field"),
+                let title = match self.parse_str_field(&op.payload, "title") {
+                    Ok(v) => v,
+                    Err(e) => return self.error_result(op, &e),
                 };
                 let description = op.payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
                 let teacher_id = op.payload

@@ -30,26 +30,6 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           showResultsImmediately: showResultsImmediately,
         );
 
-        await syncQueue.enqueue(SyncQueueEntry(
-          id: const Uuid().v4(),
-          entityType: SyncEntityType.assessment,
-          operation: SyncOperation.create,
-          payload: {
-            'class_id': classId,
-            'title': title,
-            if (description != null) 'description': description,
-            'time_limit_minutes': timeLimitMinutes,
-            'open_at': openAt,
-            'close_at': closeAt,
-            if (showResultsImmediately != null)
-              'show_results_immediately': showResultsImmediately,
-          },
-          status: SyncStatus.pending,
-          retryCount: 0,
-          maxRetries: 5,
-          createdAt: DateTime.now(),
-        ));
-
         final now = DateTime.now();
         return Right(Assessment(
           id: assessmentId,

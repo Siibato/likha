@@ -194,6 +194,14 @@ impl SyncFullService {
             .records;
         tracing::debug!("Fetched {} learning materials", learning_materials.len());
 
+        // Fetch the logged-in user's own record for sync response
+        let user = self.manifest_repo
+            .get_users_paginated(vec![user_id], 1)
+            .await?
+            .records
+            .into_iter()
+            .next();
+
         let now = Utc::now();
         let sync_token = now.to_rfc3339();
         let server_time = now.to_rfc3339();
@@ -212,7 +220,7 @@ impl SyncFullService {
         Ok(FullSyncResponse {
             sync_token,
             server_time,
-            user: None, // TODO: include user data if needed
+            user,
             classes,
             enrollments,
             enrolled_students,

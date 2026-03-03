@@ -47,7 +47,7 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
               'activated_at': student.activatedAt?.toIso8601String(),
               'created_at': student.createdAt.toIso8601String(),
               'cached_at': DateTime.now().toIso8601String(),
-              'is_dirty': 0,
+              'is_offline_mutation': 0,
               'sync_status': 'synced',
             },
             conflictAlgorithm: ConflictAlgorithm.replace,

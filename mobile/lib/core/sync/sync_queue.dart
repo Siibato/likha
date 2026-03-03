@@ -4,23 +4,54 @@ import 'package:sqflite/sqflite.dart';
 import 'package:likha/core/database/local_database.dart';
 
 enum SyncEntityType {
-  user,
-  classEntity,
-  assessment,
-  question,
-  assessmentSubmission,
-  assignment,
-  assignmentSubmission,
-  submissionFile,
-  learningMaterial,
-  materialFile,
-  adminUser,
-  activityLog
+  user('user'),
+  classEntity('class'),
+  assessment('assessment'),
+  question('question'),
+  assessmentSubmission('assessment_submission'),
+  assignment('assignment'),
+  assignmentSubmission('assignment_submission'),
+  submissionFile('submission_file'),
+  learningMaterial('learning_material'),
+  materialFile('material_file'),
+  adminUser('admin_user'),
+  activityLog('activityLog');
+
+  const SyncEntityType(this.serverValue);
+  final String serverValue;
+
+  /// DB-stored value — matches Dart .name (camelCase). Stable: existing SQLite rows use this format.
+  String get dbValue => name;
 }
 
-enum SyncOperation { create, update, delete, submit, grade, publish, upload, saveAnswers, releaseResults, overrideAnswer, addEnrollment, removeEnrollment }
+enum SyncOperation {
+  create('create'),
+  update('update'),
+  delete('delete'),
+  submit('submit'),
+  grade('grade'),
+  publish('publish'),
+  upload('upload'),
+  saveAnswers('save_answers'),
+  releaseResults('release_results'),
+  overrideAnswer('override_answer'),
+  addEnrollment('add_enrollment'),
+  removeEnrollment('remove_enrollment');
 
-enum SyncStatus { pending, failed }
+  const SyncOperation(this.serverValue);
+  final String serverValue;
+
+  /// DB-stored value — matches Dart .name (camelCase). Stable: existing SQLite rows use this format.
+  String get dbValue => name;
+}
+
+enum SyncStatus {
+  pending,
+  failed;
+
+  /// DB-stored value — matches Dart .name.
+  String get dbValue => name;
+}
 
 class SyncQueueEntry {
   final String id;
@@ -51,14 +82,14 @@ class SyncQueueEntry {
     return SyncQueueEntry(
       id: map['id'] as String,
       entityType: SyncEntityType.values.firstWhere(
-        (e) => e.toString().split('.').last == map['entity_type'],
+        (e) => e.dbValue == map['entity_type'],
       ),
       operation: SyncOperation.values.firstWhere(
-        (e) => e.toString().split('.').last == map['operation'],
+        (e) => e.dbValue == map['operation'],
       ),
       payload: _parseJsonString(map['payload'] as String),
       status: SyncStatus.values.firstWhere(
-        (e) => e.toString().split('.').last == map['status'],
+        (e) => e.dbValue == map['status'],
       ),
       retryCount: map['retry_count'] as int,
       maxRetries: map['max_retries'] as int,
@@ -73,10 +104,10 @@ class SyncQueueEntry {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'entity_type': entityType.toString().split('.').last,
-      'operation': operation.toString().split('.').last,
+      'entity_type': entityType.dbValue,
+      'operation': operation.dbValue,
       'payload': _stringifyJson(payload),
-      'status': status.toString().split('.').last,
+      'status': status.dbValue,
       'retry_count': retryCount,
       'max_retries': maxRetries,
       'created_at': createdAt.toIso8601String(),
@@ -194,8 +225,8 @@ class SyncQueueImpl implements SyncQueue {
       'sync_queue',
       where: 'entity_type = ? AND operation = ?',
       whereArgs: [
-        entityType.toString().split('.').last,
-        operation.toString().split('.').last,
+        entityType.dbValue,
+        operation.dbValue,
       ],
       orderBy: 'created_at ASC',
     );

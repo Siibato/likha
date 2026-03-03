@@ -176,8 +176,8 @@ class SyncManager {
       final operations = regularOps.map((entry) {
         return {
           'id':          entry.id,
-          'entity_type': _entityTypeToServer(entry.entityType),
-          'operation':   _operationToServer(entry.operation),
+          'entity_type': entry.entityType.serverValue,
+          'operation':   entry.operation.serverValue,
           'payload':     entry.payload,
         };
       }).toList();
@@ -213,7 +213,7 @@ class SyncManager {
         // Mark as succeeded and remove from queue
         await _syncQueue.markSucceeded(opId);
 
-        if (entityType == 'adminUser' && operation == 'create') {
+        if (entityType == SyncEntityType.adminUser.serverValue && operation == 'create') {
           try {
             await db.delete(
               'users',
@@ -221,7 +221,7 @@ class SyncManager {
               whereArgs: ['', 'pending'],
             );
           } catch (e) {
-            // 
+            //
           }
         }
 
@@ -234,7 +234,7 @@ class SyncManager {
             );
 
             // Special handling for classes: update main ID from local UUID to server UUID
-            if (entityType == 'classEntity') {
+            if (entityType == SyncEntityType.classEntity.serverValue) {
               await db.update(
                 'classes',
                 {'id': serverId},
@@ -249,8 +249,8 @@ class SyncManager {
                 where: 'status = ? AND (operation = ? OR operation = ?) AND payload LIKE ?',
                 whereArgs: [
                   'pending',
-                  'add_enrollment',
-                  'remove_enrollment',
+                  SyncOperation.addEnrollment.dbValue,
+                  SyncOperation.removeEnrollment.dbValue,
                   '%"class_id":"$localId"%',
                 ],
               );
@@ -467,6 +467,7 @@ class SyncManager {
 
     // Upsert all entity data
     final enrolledStudents = (data['enrolled_students'] as List?) ?? [];
+    final userData = data['user'] as Map<String, dynamic>?;
 
     // Build studentMap for submission enrichment
     final studentMap = <String, dynamic>{};
@@ -484,6 +485,28 @@ class SyncManager {
     await _upsertAssignments(db, data['assignments'] ?? []);
     await _upsertAssignmentSubmissions(db, data['assignment_submissions'] ?? [], studentMap);
     await _upsertLearningMaterials(db, data['learning_materials'] ?? []);
+
+    // Cache the logged-in user from sync response
+    if (userData != null) {
+      await db.insert(
+        'users',
+        {
+          'id': userData['id'],
+          'username': userData['username'],
+          'full_name': userData['full_name'],
+          'role': userData['role'],
+          'account_status': userData['account_status'],
+          'is_active': (userData['is_active'] == true) ? 1 : 0,
+          'activated_at': userData['activated_at'],
+          'created_at': userData['created_at'],
+          'updated_at': userData['updated_at'] ?? userData['created_at'],
+          'cached_at': DateTime.now().toIso8601String(),
+          'sync_status': 'synced',
+          'is_offline_mutation': 0,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
 
     // Save sync metadata
     final expiryAt = DateTime.now().add(const Duration(days: 30)).toIso8601String();
@@ -1156,27 +1179,4 @@ class SyncManager {
     }
   }
 
-  /// Maps Dart SyncEntityType enum to server-expected snake_case string
-  static String _entityTypeToServer(SyncEntityType type) {
-    switch (type) {
-      case SyncEntityType.assessmentSubmission: return 'assessment_submission';
-      case SyncEntityType.assignmentSubmission: return 'assignment_submission';
-      case SyncEntityType.classEntity:          return 'class';
-      case SyncEntityType.learningMaterial:     return 'learning_material';
-      case SyncEntityType.materialFile:         return 'material_file';
-      case SyncEntityType.submissionFile:       return 'submission_file';
-      case SyncEntityType.adminUser:            return 'admin_user';
-      default: return type.name; // user, assessment, assignment, question
-    }
-  }
-
-  /// Maps Dart SyncOperation enum to server-expected string
-  static String _operationToServer(SyncOperation op) {
-    if (op == SyncOperation.saveAnswers) return 'save_answers';
-    if (op == SyncOperation.releaseResults) return 'release_results';
-    if (op == SyncOperation.overrideAnswer) return 'override_answer';
-    if (op == SyncOperation.addEnrollment) return 'add_enrollment';
-    if (op == SyncOperation.removeEnrollment) return 'remove_enrollment';
-    return op.name;
-  }
 }

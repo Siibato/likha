@@ -7,17 +7,17 @@ impl super::SyncPushService {
     pub(super) async fn handle_admin_user_operation(&self, user_id: Uuid, op: &SyncQueueEntry) -> OperationResult {
         match op.operation.as_str() {
             "create" => {
-                let username = match op.payload.get("username").and_then(|v| v.as_str()) {
-                    Some(u) => u.to_string(),
-                    None => return self.error_result(op, "Missing username field"),
+                let username = match self.parse_str_field(&op.payload, "username") {
+                    Ok(v) => v,
+                    Err(e) => return self.error_result(op, &e),
                 };
-                let full_name = match op.payload.get("full_name").and_then(|v| v.as_str()) {
-                    Some(n) => n.to_string(),
-                    None => return self.error_result(op, "Missing full_name field"),
+                let full_name = match self.parse_str_field(&op.payload, "full_name") {
+                    Ok(v) => v,
+                    Err(e) => return self.error_result(op, &e),
                 };
-                let role = match op.payload.get("role").and_then(|v| v.as_str()) {
-                    Some(r) => r.to_string(),
-                    None => return self.error_result(op, "Missing role field"),
+                let role = match self.parse_str_field(&op.payload, "role") {
+                    Ok(v) => v,
+                    Err(e) => return self.error_result(op, &e),
                 };
                 let request = CreateAccountRequest { username, full_name, role };
                 match self.auth_service.create_account(request, user_id).await {

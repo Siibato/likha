@@ -82,14 +82,22 @@ impl SyncConflictService {
                 })
             }
             "client_wins" => {
-                // TODO: Implement client-wins strategy
-                // This would require re-applying client changes over server state
+                // Fetch the stored conflict record to retrieve the client-side snapshot
+                let record = self
+                    .conflict_repo
+                    .get_conflict_by_id(conflict_id)
+                    .await?
+                    .ok_or_else(|| AppError::NotFound("Conflict not found".to_string()))?;
+
+                // Parse the stored TEXT → serde_json::Value (same pattern as get_unresolved_conflicts)
+                let client_data: Option<Value> = record.client_data;
+
                 self.conflict_repo.mark_resolved(conflict_id, resolution).await?;
 
                 Ok(ConflictResolutionResponse {
                     success: true,
-                    message: Some("Conflict resolved using client-wins strategy".to_string()),
-                    resolved_entity: None,
+                    message: Some("Conflict resolved: client data restored".to_string()),
+                    resolved_entity: client_data,
                 })
             }
             _ => Err(AppError::BadRequest(format!(

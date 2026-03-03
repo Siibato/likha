@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 9,
+      version: 10,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onOpen: (db) async {
@@ -50,7 +50,7 @@ class LocalDatabase {
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           cached_at TEXT NOT NULL,
-          is_dirty INTEGER NOT NULL DEFAULT 0,
+          is_offline_mutation INTEGER NOT NULL DEFAULT 0,
           sync_status TEXT NOT NULL DEFAULT 'synced'
         )
       ''');
@@ -94,6 +94,7 @@ class LocalDatabase {
           deleted_at TEXT,
           cached_at TEXT NOT NULL,
           sync_status TEXT NOT NULL DEFAULT 'synced',
+          is_offline_mutation INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
         )
       ''');
@@ -144,6 +145,7 @@ class LocalDatabase {
           deleted_at TEXT,
           cached_at TEXT NOT NULL,
           sync_status TEXT NOT NULL DEFAULT 'synced',
+          is_offline_mutation INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY(assessment_id) REFERENCES assessments(id) ON DELETE CASCADE
         )
       ''');
@@ -594,6 +596,40 @@ class LocalDatabase {
         await db.execute('ALTER TABLE sync_queue ADD COLUMN completed_at TEXT');
       } catch (e) {
         // Column might already exist
+      }
+    }
+
+    if (oldVersion < 10) {
+      // Standardize users table: add is_offline_mutation column (copy from is_dirty)
+      try {
+        await db.execute(
+          'ALTER TABLE users ADD COLUMN is_offline_mutation INTEGER NOT NULL DEFAULT 0'
+        );
+      } catch (e) {
+        // Column already exists
+      }
+      try {
+        await db.execute('UPDATE users SET is_offline_mutation = is_dirty');
+      } catch (e) {
+        // Ignore — is_dirty not present on fresh installs
+      }
+
+      // Fix crash bug: questions table was missing is_offline_mutation
+      try {
+        await db.execute(
+          'ALTER TABLE questions ADD COLUMN is_offline_mutation INTEGER NOT NULL DEFAULT 0'
+        );
+      } catch (e) {
+        // Column already exists
+      }
+
+      // Fix crash bug: class_enrollments table was missing is_offline_mutation
+      try {
+        await db.execute(
+          'ALTER TABLE class_enrollments ADD COLUMN is_offline_mutation INTEGER NOT NULL DEFAULT 0'
+        );
+      } catch (e) {
+        // Column already exists
       }
     }
   }

@@ -12,6 +12,12 @@ impl super::SyncPushService {
                     Ok(id) => id,
                     Err(e) => return self.error_result(op, &e),
                 };
+                // Idempotency: return existing server_id so downstream saveAnswers/submit can proceed
+                if let Ok(Some(existing)) = self.assessment_service.submission_repo
+                    .find_by_student_and_assessment(user_id, assessment_id).await
+                {
+                    return self.success_result(op, Some(existing.id.to_string()), None);
+                }
                 match self.assessment_service.start_assessment(assessment_id, user_id).await {
                     Ok(s) => self.success_result(op, Some(s.submission_id.to_string()), None),
                     Err(e) => self.error_result(op, &e.to_string()),
@@ -93,9 +99,9 @@ impl super::SyncPushService {
                     Ok(id) => id,
                     Err(e) => return self.error_result(op, &e),
                 };
-                let score = match op.payload.get("score").and_then(|v| v.as_i64()) {
-                    Some(s) => s as i32,
-                    None => return self.error_result(op, "Missing score field"),
+                let score = match self.parse_i32_field(&op.payload, "score") {
+                    Ok(v) => v,
+                    Err(e) => return self.error_result(op, &e),
                 };
                 let request = GradeSubmissionRequest {
                     score,

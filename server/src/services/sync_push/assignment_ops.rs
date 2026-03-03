@@ -11,13 +11,13 @@ impl super::SyncPushService {
                     Ok(id) => id,
                     Err(e) => return self.error_result(op, &e),
                 };
-                let title = match op.payload.get("title").and_then(|v| v.as_str()) {
-                    Some(t) => t.to_string(),
-                    None => return self.error_result(op, "Missing title field"),
+                let title = match self.parse_str_field(&op.payload, "title") {
+                    Ok(v) => v,
+                    Err(e) => return self.error_result(op, &e),
                 };
-                let instructions = match op.payload.get("instructions").and_then(|v| v.as_str()) {
-                    Some(i) => i.to_string(),
-                    None => return self.error_result(op, "Missing instructions field"),
+                let instructions = match self.parse_str_field(&op.payload, "instructions") {
+                    Ok(v) => v,
+                    Err(e) => return self.error_result(op, &e),
                 };
                 let request = CreateAssignmentRequest {
                     title,
