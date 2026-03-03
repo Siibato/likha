@@ -115,6 +115,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
                       );
                 },
               ),
+              onEditRole: () => _showRoleDialog(context, user),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -221,6 +222,88 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showRoleDialog(BuildContext context, User user) {
+    String selectedRole = user.role;
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Change Role',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF202020),
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Changing a user\'s role affects their access to features. This change will sync when connected.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF666666),
+                ),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: selectedRole,
+                decoration: const InputDecoration(
+                  labelText: 'Role',
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                items: ['student', 'teacher', 'admin']
+                    .map((r) => DropdownMenuItem(
+                          value: r,
+                          child: Text(r),
+                        ))
+                    .toList(),
+                onChanged: (v) {
+                  if (v != null) setDialogState(() => selectedRole = v);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF999999),
+              ),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            TextButton(
+              onPressed: selectedRole == user.role
+                  ? null
+                  : () {
+                      Navigator.pop(ctx);
+                      ref.read(adminProvider.notifier).updateAccount(
+                            userId: user.id,
+                            role: selectedRole,
+                          );
+                    },
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF007AFF),
+              ),
+              child: const Text(
+                'Change',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

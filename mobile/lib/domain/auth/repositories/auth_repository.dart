@@ -45,5 +45,6 @@ abstract class AuthRepository {
     required String userId,
     String? username,
     String? fullName,
+    String? role,
   });
 }

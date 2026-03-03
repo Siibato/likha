@@ -6,6 +6,7 @@ class UserInfoCard extends StatelessWidget {
   final bool isLoading;
   final VoidCallback onEditUsername;
   final VoidCallback onEditFullName;
+  final VoidCallback? onEditRole;
 
   const UserInfoCard({
     super.key,
@@ -13,6 +14,7 @@ class UserInfoCard extends StatelessWidget {
     required this.isLoading,
     required this.onEditUsername,
     required this.onEditFullName,
+    this.onEditRole,
   });
 
   @override
@@ -44,7 +46,14 @@ class UserInfoCard extends StatelessWidget {
               onEdit: isLoading ? null : onEditFullName,
             ),
             const Divider(height: 24, color: Color(0xFFF0F0F0)),
-            _InfoRow(label: 'Role', value: user.role),
+            if (onEditRole != null)
+              _EditableInfoRow(
+                label: 'Role',
+                value: user.role,
+                onEdit: isLoading ? null : onEditRole,
+              )
+            else
+              _InfoRow(label: 'Role', value: user.role),
             const Divider(height: 24, color: Color(0xFFF0F0F0)),
             _InfoRow(label: 'Status', value: user.accountStatus),
             const Divider(height: 24, color: Color(0xFFF0F0F0)),

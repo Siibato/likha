@@ -55,6 +55,7 @@ pub struct ResetPasswordRequest {
 pub struct UpdateAccountRequest {
     pub username: Option<String>,
     pub full_name: Option<String>,
+    pub role: Option<String>,
 }
 
 // ===== RESPONSE SCHEMAS =====

@@ -198,6 +198,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
     required String userId,
     String? username,
     String? fullName,
+    String? role,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
 
@@ -205,6 +206,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
       userId: userId,
       username: username,
       fullName: fullName,
+      role: role,
     ));
 
     result.fold(

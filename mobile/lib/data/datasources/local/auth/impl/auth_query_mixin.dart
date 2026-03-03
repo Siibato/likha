@@ -53,6 +53,24 @@ mixin AuthQueryMixin on AuthLocalDataSourceBase {
   }
 
   @override
+  Future<UserModel> getCachedUser(String userId) async {
+    try {
+      final db = await localDatabase.database;
+      final result = await db.query(
+        'users',
+        where: 'id = ?',
+        whereArgs: [userId],
+        limit: 1,
+      );
+      if (result.isEmpty) throw CacheException('User not found in cache: $userId');
+      return UserModel.fromMap(result.first);
+    } catch (e) {
+      if (e is CacheException) rethrow;
+      throw CacheException('Failed to get cached user: $e');
+    }
+  }
+
+  @override
   Future<List<ActivityLogModel>> getCachedActivityLogs(String userId) async {
     try {
       final db = await localDatabase.database;

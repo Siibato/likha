@@ -102,6 +102,7 @@ impl UserRepository {
         user_id: Uuid,
         username: Option<String>,
         full_name: Option<String>,
+        role: Option<String>,
     ) -> AppResult<users::Model> {
         let mut user: users::ActiveModel = users::Entity::find_by_id(user_id)
             .one(&self.db)
@@ -115,6 +116,9 @@ impl UserRepository {
         }
         if let Some(full_name) = full_name {
             user.full_name = Set(full_name);
+        }
+        if let Some(role) = role {
+            user.role = Set(role);
         }
         user.updated_at = Set(Utc::now().naive_utc());
 

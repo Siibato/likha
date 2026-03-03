@@ -37,6 +37,7 @@ impl super::SyncPushService {
                         let request = UpdateAccountRequest {
                             username: op.payload.get("username").and_then(|v| v.as_str()).map(|s| s.to_string()),
                             full_name: op.payload.get("full_name").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                            role: op.payload.get("role").and_then(|v| v.as_str()).map(|s| s.to_string()),
                         };
                         match self.auth_service.update_account(target_user_id, request, user_id).await {
                             Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),

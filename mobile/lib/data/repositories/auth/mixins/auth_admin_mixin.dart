@@ -227,6 +227,7 @@ mixin AuthAdminMixin on AuthRepositoryBase {
     required String userId,
     String? username,
     String? fullName,
+    String? role,
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
@@ -239,6 +240,7 @@ mixin AuthAdminMixin on AuthRepositoryBase {
             'action': 'update',
             if (username != null) 'username': username,
             if (fullName != null) 'full_name': fullName,
+            if (role != null) 'role': role,
           },
           status: SyncStatus.pending,
           retryCount: 0,
@@ -246,22 +248,49 @@ mixin AuthAdminMixin on AuthRepositoryBase {
           createdAt: DateTime.now(),
         ));
 
-        return Right(User(
-          id: userId,
-          username: username ?? '',
-          fullName: fullName ?? '',
-          role: '',
-          accountStatus: 'active',
-          isActive: true,
-          activatedAt: null,
-          createdAt: DateTime.now(),
-        ));
+        // Read existing user to preserve all fields (fixes existing bug of returning blank user)
+        UserModel? existingUser;
+        try {
+          existingUser = await localDataSource.getCachedUser(userId);
+        } on CacheException {
+          // User not in cache — fall back to minimal optimistic
+        }
+
+        final optimisticUser = existingUser != null
+            ? UserModel(
+                id: existingUser.id,
+                username: username ?? existingUser.username,
+                fullName: fullName ?? existingUser.fullName,
+                role: role ?? existingUser.role,
+                accountStatus: existingUser.accountStatus,
+                isActive: existingUser.isActive,
+                activatedAt: existingUser.activatedAt,
+                createdAt: existingUser.createdAt,
+              )
+            : UserModel(
+                id: userId,
+                username: username ?? '',
+                fullName: fullName ?? '',
+                role: role ?? '',
+                accountStatus: 'activated',
+                isActive: true,
+                activatedAt: null,
+                createdAt: DateTime.now(),
+              );
+
+        // Update local cache with changed values
+        try {
+          await localDataSource.cacheAccounts([optimisticUser]);
+        } catch (_) {}
+
+        return Right(optimisticUser);
       }
 
       final result = await remoteDataSource.updateAccount(
         userId: userId,
         username: username,
         fullName: fullName,
+        role: role,
       );
       return Right(result);
     } on ServerException catch (e) {

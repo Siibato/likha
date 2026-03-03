@@ -61,7 +61,7 @@ impl super::AuthService {
         request: UpdateAccountRequest,
         admin_id: Uuid,
     ) -> AppResult<UserResponse> {
-        if request.username.is_none() && request.full_name.is_none() {
+        if request.username.is_none() && request.full_name.is_none() && request.role.is_none() {
             return Err(AppError::BadRequest("No fields to update".to_string()));
         }
 
@@ -80,9 +80,15 @@ impl super::AuthService {
             }
         }
 
+        if let Some(ref role) = request.role {
+            Validator::validate_role(role)?;
+        }
+
+        let has_role_update = request.role.is_some();
+
         let user = self
             .user_repo
-            .update_account(user_id, request.username, request.full_name.map(|n| n.trim().to_string()))
+            .update_account(user_id, request.username, request.full_name.map(|n| n.trim().to_string()), request.role)
             .await?;
 
         self.activity_log_repo
@@ -94,15 +100,20 @@ impl super::AuthService {
             )
             .await?;
 
+        let mut change_log_data = serde_json::json!({
+            "username": user.username,
+            "full_name": user.full_name,
+        });
+        if has_role_update {
+            change_log_data["role"] = serde_json::json!(user.role);
+        }
+
         let _ = self.change_log_repo.log_change(
             "user",
             user_id,
             "update",
             admin_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "username": user.username,
-                "full_name": user.full_name,
-            })).unwrap_or_default()),
+            Some(serde_json::to_string(&change_log_data).unwrap_or_default()),
         ).await;
 
         Ok(Self::user_to_response(&user))
