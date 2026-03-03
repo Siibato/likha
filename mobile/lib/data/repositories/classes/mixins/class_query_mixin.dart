@@ -130,16 +130,6 @@ mixin ClassQueryMixin on ClassRepositoryBase {
     try {
       final remoteClasses = await remoteDataSource.getAllClasses();
 
-      await entitySyncHelper.syncEntitiesByTimestamp(
-        entityType: 'class',
-        remoteEntities: remoteClasses
-            .map((e) => {
-                  'id': e.id,
-                  'updated_at': e.updatedAt.toIso8601String(),
-                })
-            .toList(),
-      );
-
       await localDataSource.cacheClasses(remoteClasses);
 
       for (final cls in remoteClasses) {
@@ -158,16 +148,6 @@ mixin ClassQueryMixin on ClassRepositoryBase {
   Future<void> _syncClassesInBackground() async {
     try {
       final remoteClasses = await remoteDataSource.getMyClasses();
-
-      await entitySyncHelper.syncEntitiesByTimestamp(
-        entityType: 'class',
-        remoteEntities: remoteClasses
-            .map((e) => {
-                  'id': e.id,
-                  'updated_at': e.updatedAt.toIso8601String(),
-                })
-            .toList(),
-      );
 
       await localDataSource.cacheClasses(remoteClasses);
 

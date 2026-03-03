@@ -7,12 +7,8 @@ import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/connectivity_service.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/network/dio_client.dart';
-import 'package:likha/core/sync/change_log_applier.dart';
-import 'package:likha/core/sync/change_log_remote_datasource.dart';
-import 'package:likha/core/sync/change_log_repository.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/core/sync/entity_sync_helper.dart';
 import 'package:likha/core/validation/services/validation_service.dart';
 import 'package:likha/core/validation/services/data_validator.dart';
 import 'package:likha/core/validation/services/timestamp_validator.dart';
@@ -128,19 +124,6 @@ Future<void> init() async {
 
   // Core - Sync infrastructure
   sl.registerLazySingleton<SyncQueue>(() => SyncQueueImpl(sl<LocalDatabase>()));
-  sl.registerLazySingleton<ChangeLogRepository>(
-    () => ChangeLogRepository(sl<LocalDatabase>()),
-  );
-  sl.registerLazySingleton<ChangeLogApplier>(
-    () => ChangeLogApplier(sl<LocalDatabase>()),
-  );
-  sl.registerLazySingleton<EntitySyncHelper>(
-    () => EntitySyncHelper(
-      localDatabase: sl<LocalDatabase>(),
-      changeLogRemoteDataSource: sl<ChangeLogRemoteDataSource>(),
-      changeLogApplier: sl<ChangeLogApplier>(),
-    ),
-  );
 
   // Core - General
   sl.registerLazySingleton(() => StorageService(sl<FlutterSecureStorage>()));
@@ -165,9 +148,6 @@ Future<void> init() async {
   );
 
   // Remote Data sources
-  sl.registerLazySingleton<ChangeLogRemoteDataSource>(
-    () => ChangeLogRemoteDataSourceImpl(sl<DioClient>()),
-  );
   sl.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSourceImpl(sl<DioClient>(), sl<StorageService>()),
   );
@@ -258,7 +238,6 @@ Future<void> init() async {
       localDataSource: sl<ClassLocalDataSource>(),
       validationService: sl<ValidationService>(),
       serverReachabilityService: sl<ServerReachabilityService>(),
-      entitySyncHelper: sl<EntitySyncHelper>(),
       syncQueue: sl<SyncQueue>(),
       storageService: sl<StorageService>(),
     ),

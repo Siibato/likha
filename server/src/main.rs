@@ -22,15 +22,12 @@ use crate::services::auth::AuthService;
 use crate::services::class::ClassService;
 use crate::services::learning_material::LearningMaterialService;
 use crate::services::entitlement::EntitlementService;
-use crate::services::sync_manifest_service::SyncManifestService;
-use crate::services::sync_fetch_service::SyncFetchService;
 use crate::services::sync_push::SyncPushService;
 use crate::services::sync_conflict_service::SyncConflictService;
 use crate::services::sync_full_service::SyncFullService;
 use crate::services::sync_delta_service::SyncDeltaService;
 use crate::db::repositories::{
     manifest_repository::ManifestRepository,
-    sync_cursor_repository::SyncCursorRepository,
     sync_conflict_repository::SyncConflictRepository,
     processed_operations_repository::ProcessedOperationsRepository,
 };
@@ -166,17 +163,6 @@ async fn main() {
         manifest_repo.clone(),
     ));
 
-    let sync_manifest_service = Arc::new(SyncManifestService::new(
-        entitlement_service.clone(),
-    ));
-
-    let cursor_repo = SyncCursorRepository::new(db.clone());
-    let sync_fetch_service = Arc::new(SyncFetchService::new(
-        entitlement_service.clone(),
-        manifest_repo.clone(),
-        cursor_repo,
-    ));
-
     let processed_ops_repo = Arc::new(ProcessedOperationsRepository::new(db.clone()));
     let sync_push_service = Arc::new(SyncPushService::new(
         entitlement_service.clone(),
@@ -207,8 +193,6 @@ async fn main() {
         assessment_service,
         assignment_service,
         material_service,
-        sync_manifest_service,
-        sync_fetch_service,
         sync_push_service,
         sync_conflict_service,
         sync_full_service,
@@ -234,8 +218,6 @@ fn create_app(
     assessment_service: Arc<AssessmentService>,
     assignment_service: Arc<AssignmentService>,
     material_service: Arc<LearningMaterialService>,
-    sync_manifest_service: Arc<SyncManifestService>,
-    sync_fetch_service: Arc<SyncFetchService>,
     sync_push_service: Arc<SyncPushService>,
     sync_conflict_service: Arc<SyncConflictService>,
     sync_full_service: Arc<SyncFullService>,
@@ -255,8 +237,6 @@ fn create_app(
                 assessment_service,
                 assignment_service,
                 material_service,
-                sync_manifest_service,
-                sync_fetch_service,
                 sync_push_service,
                 sync_conflict_service,
                 sync_full_service,

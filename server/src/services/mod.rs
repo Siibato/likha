@@ -8,6 +8,4 @@ pub mod sync_push;
 pub mod learning_material;
 pub mod sync_conflict_service;
 pub mod sync_delta_service;
-pub mod sync_fetch_service;
 pub mod sync_full_service;
-pub mod sync_manifest_service;

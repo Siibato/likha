@@ -1,5 +1,4 @@
 import 'package:likha/core/constants/api_endpoint.dart';
-import 'package:likha/core/sync/change_log_model.dart';
 import 'package:likha/data/models/auth/activity_log_model.dart';
 import 'package:likha/data/models/auth/auth_response_model.dart';
 import 'package:likha/data/models/auth/check_username_result_model.dart';
@@ -416,29 +415,12 @@ class ApiEndpoints {
     (json) => json as Map<String, dynamic>,
   );
 
-  // ===== Sync Endpoints (Legacy) =====
-  static ApiEndpoint<ChangesResponse> changes =
-      ApiEndpoint<ChangesResponse>.fromModel(
-    '/api/v1/changes',
-    ChangesResponse.fromJson,
-  );
-
   static final databaseId = ApiEndpoint<Map<String, dynamic>>(
     '/api/v1/database-id',
     (json) => json as Map<String, dynamic>,
   );
 
-  // ===== Manifest-Driven Sync Endpoints (New) =====
-  static final syncManifest = ApiEndpoint<Map<String, dynamic>>(
-    '/api/v1/sync/manifest',
-    (json) => json as Map<String, dynamic>,
-  );
-
-  static final syncFetch = ApiEndpoint<Map<String, dynamic>>(
-    '/api/v1/sync/fetch',
-    (json) => json as Map<String, dynamic>,
-  );
-
+  // ===== Sync Endpoints (Full/Delta Optimized) =====
   static final syncPush = ApiEndpoint<Map<String, dynamic>>(
     '/api/v1/sync/push',
     (json) => json as Map<String, dynamic>,
