@@ -268,7 +268,7 @@ class _QuestionTypeChip extends StatelessWidget {
   }
 }
 
-class QuestionDraftCard extends StatelessWidget {
+class QuestionDraftCard extends StatefulWidget {
   final int index;
   final QuestionDraft question;
   final VoidCallback onRemove;
@@ -283,25 +283,32 @@ class QuestionDraftCard extends StatelessWidget {
   });
 
   @override
+  State<QuestionDraftCard> createState() => _QuestionDraftCardState();
+}
+
+class _QuestionDraftCardState extends State<QuestionDraftCard> {
+  @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFFE0E0E0),
-          width: 1,
-        ),
+        color: const Color(0xFFE0E0E0),
+        borderRadius: BorderRadius.circular(16),
       ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(1, 1, 1, 3.5),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Row(
             children: [
               Text(
-                'Question ${index + 1}',
+                'Question ${widget.index + 1}',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -316,14 +323,14 @@ class QuestionDraftCard extends StatelessWidget {
                   color: Color(0xFFEF5350),
                   size: 20,
                 ),
-                onPressed: onRemove,
+                onPressed: widget.onRemove,
                 tooltip: 'Remove question',
               ),
             ],
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            value: question.type,
+            value: widget.question.type,
             decoration: InputDecoration(
               labelText: 'Question Type',
               labelStyle: const TextStyle(
@@ -374,14 +381,16 @@ class QuestionDraftCard extends StatelessWidget {
             ],
             onChanged: (value) {
               if (value != null) {
-                question.type = value;
-                onChanged();
+                setState(() {
+                  widget.question.type = value;
+                });
+                widget.onChanged();
               }
             },
           ),
           const SizedBox(height: 12),
           TextFormField(
-            initialValue: question.questionText,
+            initialValue: widget.question.questionText,
             maxLines: 2,
             style: const TextStyle(
               fontSize: 15,
@@ -423,12 +432,12 @@ class QuestionDraftCard extends StatelessWidget {
               ),
             ),
             onChanged: (value) {
-              question.questionText = value;
+              widget.question.questionText = value;
             },
           ),
           const SizedBox(height: 12),
           TextFormField(
-            initialValue: question.points.toString(),
+            initialValue: widget.question.points.toString(),
             keyboardType: TextInputType.number,
             style: const TextStyle(
               fontSize: 15,
@@ -470,26 +479,30 @@ class QuestionDraftCard extends StatelessWidget {
               ),
             ),
             onChanged: (value) {
-              question.points = int.tryParse(value) ?? 1;
+              widget.question.points = int.tryParse(value) ?? 1;
             },
           ),
           const SizedBox(height: 16),
-          if (question.type == 'multiple_choice')
+          if (widget.question.type == 'multiple_choice')
             _MultipleChoiceSection(
-              question: question,
-              onChanged: onChanged,
+              question: widget.question,
+              onChanged: widget.onChanged,
+              onStructuralChange: () => setState(() {}),
             ),
-          if (question.type == 'identification')
+          if (widget.question.type == 'identification')
             _IdentificationSection(
-              question: question,
-              onChanged: onChanged,
+              question: widget.question,
+              onChanged: widget.onChanged,
+              onStructuralChange: () => setState(() {}),
             ),
-          if (question.type == 'enumeration')
+          if (widget.question.type == 'enumeration')
             _EnumerationSection(
-              question: question,
-              onChanged: onChanged,
+              question: widget.question,
+              onChanged: widget.onChanged,
+              onStructuralChange: () => setState(() {}),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -500,10 +513,12 @@ class QuestionDraftCard extends StatelessWidget {
 class _MultipleChoiceSection extends StatelessWidget {
   final QuestionDraft question;
   final VoidCallback onChanged;
+  final VoidCallback onStructuralChange;
 
   const _MultipleChoiceSection({
     required this.question,
     required this.onChanged,
+    required this.onStructuralChange,
   });
 
   @override
@@ -539,6 +554,7 @@ class _MultipleChoiceSection extends StatelessWidget {
                   if (c.isCorrect) found = true;
                 }
               }
+              onStructuralChange();
               onChanged();
             },
           ),
@@ -561,6 +577,7 @@ class _MultipleChoiceSection extends StatelessWidget {
                       }
                     }
                     choice.isCorrect = value ?? false;
+                    onStructuralChange();
                     onChanged();
                   },
                 ),const SizedBox(width: 8),
@@ -621,6 +638,7 @@ class _MultipleChoiceSection extends StatelessWidget {
                     ),
                     onPressed: () {
                       question.choices.removeAt(ci);
+                      onStructuralChange();
                       onChanged();
                     },
                   ),
@@ -632,6 +650,7 @@ class _MultipleChoiceSection extends StatelessWidget {
         TextButton.icon(
           onPressed: () {
             question.choices.add(ChoiceDraft());
+            onStructuralChange();
             onChanged();
           },
           icon: const Icon(Icons.add_rounded, size: 18),
@@ -649,10 +668,12 @@ class _MultipleChoiceSection extends StatelessWidget {
 class _IdentificationSection extends StatelessWidget {
   final QuestionDraft question;
   final VoidCallback onChanged;
+  final VoidCallback onStructuralChange;
 
   const _IdentificationSection({
     required this.question,
     required this.onChanged,
+    required this.onStructuralChange,
   });
 
   @override
@@ -732,6 +753,7 @@ class _IdentificationSection extends StatelessWidget {
                     ),
                     onPressed: () {
                       question.acceptableAnswers.removeAt(ai);
+                      onStructuralChange();
                       onChanged();
                     },
                   ),
@@ -742,6 +764,7 @@ class _IdentificationSection extends StatelessWidget {
         TextButton.icon(
           onPressed: () {
             question.acceptableAnswers.add('');
+            onStructuralChange();
             onChanged();
           },
           icon: const Icon(Icons.add_rounded, size: 18),
@@ -759,10 +782,12 @@ class _IdentificationSection extends StatelessWidget {
 class _EnumerationSection extends StatelessWidget {
   final QuestionDraft question;
   final VoidCallback onChanged;
+  final VoidCallback onStructuralChange;
 
   const _EnumerationSection({
     required this.question,
     required this.onChanged,
+    required this.onStructuralChange,
   });
 
   @override
@@ -806,6 +831,7 @@ class _EnumerationSection extends StatelessWidget {
                       ),
                       onPressed: () {
                         question.enumerationItems.removeAt(ii);
+                        onStructuralChange();
                         onChanged();
                       },
                       constraints: const BoxConstraints(),
@@ -877,6 +903,7 @@ class _EnumerationSection extends StatelessWidget {
                             ),
                             onPressed: () {
                               item.answers.removeAt(ai);
+                              onStructuralChange();
                               onChanged();
                             },
                             constraints: const BoxConstraints(),
@@ -889,6 +916,7 @@ class _EnumerationSection extends StatelessWidget {
                 TextButton.icon(
                   onPressed: () {
                     item.answers.add('');
+                    onStructuralChange();
                     onChanged();
                   },
                   icon: const Icon(Icons.add_rounded, size: 16),
@@ -912,6 +940,7 @@ class _EnumerationSection extends StatelessWidget {
         TextButton.icon(
           onPressed: () {
             question.enumerationItems.add(EnumerationItemDraft());
+            onStructuralChange();
             onChanged();
           },
           icon: const Icon(Icons.add_rounded, size: 18),

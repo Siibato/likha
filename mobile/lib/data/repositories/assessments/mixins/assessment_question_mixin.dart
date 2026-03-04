@@ -55,7 +55,7 @@ mixin AssessmentQuestionMixin on AssessmentRepositoryBase {
           );
         }).toList();
 
-        await localDataSource.cacheQuestions(questionModels);
+        await localDataSource.cacheQuestions(assessmentId, questionModels);
 
         await syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),

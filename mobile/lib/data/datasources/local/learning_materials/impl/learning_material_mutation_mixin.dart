@@ -53,7 +53,7 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
           retryCount: 0,
           maxRetries: 5,
           createdAt: now,
-        ));
+        ), txn: txn);
       });
 
       return material;
@@ -103,7 +103,7 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
           retryCount: 0,
           maxRetries: 5,
           createdAt: now,
-        ));
+        ), txn: txn);
       });
     } catch (e) {
       throw CacheException('Failed to update material locally: $e');

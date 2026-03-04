@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:uuid/uuid.dart';
@@ -44,25 +45,29 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
             'is_offline_mutation': 1,
           },
         );
-        await syncQueue.enqueue(SyncQueueEntry(
-          id: const Uuid().v4(),
-          entityType: SyncEntityType.assessment,
-          operation: SyncOperation.create,
-          payload: {
-            'local_id': assessmentId,
-            'class_id': classId,
-            'title': title,
-            if (description != null) 'description': description,
-            'time_limit_minutes': timeLimitMinutes,
-            'open_at': openAt,
-            'close_at': closeAt,
-            if (showResultsImmediately != null) 'show_results_immediately': showResultsImmediately,
-          },
-          status: SyncStatus.pending,
-          retryCount: 0,
-          maxRetries: 5,
-          createdAt: now,
-        ));
+
+        await syncQueue.enqueue(
+          SyncQueueEntry(
+            id: const Uuid().v4(),
+            entityType: SyncEntityType.assessment,
+            operation: SyncOperation.create,
+            payload: {
+              'local_id': assessmentId,
+              'class_id': classId,
+              'title': title,
+              if (description != null) 'description': description,
+              'time_limit_minutes': timeLimitMinutes,
+              'open_at': openAt,
+              'close_at': closeAt,
+              if (showResultsImmediately != null) 'show_results_immediately': showResultsImmediately,
+            },
+            status: SyncStatus.pending,
+            retryCount: 0,
+            maxRetries: 5,
+            createdAt: now,
+          ),
+          txn: txn,
+        );
       });
 
       return assessmentId;

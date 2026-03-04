@@ -8,7 +8,7 @@ abstract class AssessmentLocalDataSource {
   Future<(AssessmentModel, List<QuestionModel>)> getCachedAssessmentDetail(String assessmentId);
   Future<void> cacheAssessments(List<AssessmentModel> assessments);
   Future<void> cacheAssessmentDetail(AssessmentModel assessment, List<QuestionModel> questions);
-  Future<void> cacheQuestions(List<QuestionModel> questions);
+  Future<void> cacheQuestions(String assessmentId, List<QuestionModel> questions);
   Future<void> updateQuestionLocally({
     required String questionId,
     required Map<String, dynamic> updates,

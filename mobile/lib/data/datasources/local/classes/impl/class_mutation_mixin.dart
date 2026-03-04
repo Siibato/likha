@@ -46,7 +46,7 @@ mixin ClassMutationMixin on ClassLocalDataSourceBase {
           retryCount: 0,
           maxRetries: 5,
           createdAt: now,
-        ));
+        ), txn: txn);
       });
 
       return classModel;
@@ -87,7 +87,7 @@ mixin ClassMutationMixin on ClassLocalDataSourceBase {
           retryCount: 0,
           maxRetries: 5,
           createdAt: now,
-        ));
+        ), txn: txn);
       });
     } catch (e) {
       throw CacheException('Failed to update class locally: $e');

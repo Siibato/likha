@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:likha/presentation/pages/teacher/widgets/question_card.dart';
 import 'package:likha/presentation/pages/teacher/widgets/question_draft.dart';
 
-class AssessmentQuestionsStep extends StatelessWidget {
+class AssessmentQuestionsSection extends StatelessWidget {
   final List<QuestionDraft> questions;
   final bool isLoading;
   final VoidCallback onAddQuestion;
   final ValueChanged<int> onRemoveQuestion;
   final VoidCallback onQuestionsChanged;
-  final VoidCallback onSaveQuestions;
+  final VoidCallback? onSaveQuestions;
 
-  const AssessmentQuestionsStep({
+  const AssessmentQuestionsSection({
     super.key,
     required this.questions,
     required this.isLoading,
@@ -75,38 +75,6 @@ class AssessmentQuestionsStep extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 16),
-        ElevatedButton(
-          onPressed: isLoading ? null : onSaveQuestions,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF2B2B2B),
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: const Color(0xFFE0E0E0),
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: 0,
-          ),
-          child: isLoading
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : const Text(
-                  'Save Questions & Review',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: -0.2,
-                  ),
-                ),
-        ),
-        const SizedBox(height: 16),
       ],
     );
   }

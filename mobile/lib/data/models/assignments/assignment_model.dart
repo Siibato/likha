@@ -36,7 +36,7 @@ class AssignmentModel extends Assignment {
       allowedFileTypes: json['allowed_file_types'] as String?,
       maxFileSizeMb: json['max_file_size_mb'] as int?,
       dueAt: _parseUtc(json['due_at'] as String),
-      isPublished: json['is_published'] as bool,
+      isPublished: _parseBool(json['is_published']),
       submissionCount: json['submission_count'] as int? ?? 0,
       gradedCount: json['graded_count'] as int? ?? 0,
       submissionStatus: json['submission_status'] as String?,
@@ -45,6 +45,13 @@ class AssignmentModel extends Assignment {
       createdAt: json['created_at'] != null ? _parseUtc(json['created_at'] as String) : DateTime.now(),
       updatedAt: json['updated_at'] != null ? _parseUtc(json['updated_at'] as String) : DateTime.now(),
     );
+  }
+
+  static bool _parseBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is int) return value == 1;
+    if (value is String) return value.toLowerCase() == 'true' || value == '1';
+    return false;
   }
 
   factory AssignmentModel.fromMap(Map<String, dynamic> map) {

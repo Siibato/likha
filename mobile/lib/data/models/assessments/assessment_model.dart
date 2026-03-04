@@ -28,15 +28,22 @@ class AssessmentModel extends Assessment {
       timeLimitMinutes: json['time_limit_minutes'] as int,
       openAt: DateTime.parse(json['open_at'] as String),
       closeAt: DateTime.parse(json['close_at'] as String),
-      showResultsImmediately: json['show_results_immediately'] as bool,
-      resultsReleased: json['results_released'] as bool,
-      isPublished: json['is_published'] as bool,
+      showResultsImmediately: _parseBool(json['show_results_immediately']),
+      resultsReleased: _parseBool(json['results_released']),
+      isPublished: _parseBool(json['is_published']),
       totalPoints: json['total_points'] as int,
       questionCount: json['question_count'] as int? ?? 0,
       submissionCount: json['submission_count'] as int? ?? 0,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
+  }
+
+  static bool _parseBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is int) return value == 1;
+    if (value is String) return value.toLowerCase() == 'true' || value == '1';
+    return false;
   }
 
   factory AssessmentModel.fromMap(Map<String, dynamic> map) {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
@@ -145,13 +146,18 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
     );
   }
 
-  Future<void> createAssessment(CreateAssessmentParams params) async {
+  Future<Assessment?> createAssessment(CreateAssessmentParams params) async {
+    final completer = Completer<Assessment?>();
+
     state =
         state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
     final result = await _createAssessment(params);
+
     result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) {
+        state = state.copyWith(isLoading: false, error: failure.message);
+        completer.complete(null);
+      },
       (assessment) {
         state = state.copyWith(
           isLoading: false,
@@ -159,8 +165,11 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
           currentAssessment: assessment,
           successMessage: 'Assessment created',
         );
+        completer.complete(assessment);
       },
     );
+
+    return completer.future;
   }
 
   Future<void> loadAssessmentDetail(String assessmentId) async {

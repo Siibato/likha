@@ -37,7 +37,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
           retryCount: 0,
           maxRetries: 5,
           createdAt: now,
-        ));
+        ), txn: txn);
       });
     } catch (e) {
       throw CacheException('Failed to save answers locally: $e');
@@ -114,7 +114,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
           retryCount: 0,
           maxRetries: 5,
           createdAt: now,
-        ));
+        ), txn: txn);
       });
       return localId;
     } catch (e) {
@@ -169,7 +169,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
           retryCount: 0,
           maxRetries: 5,
           createdAt: now,
-        ));
+        ), txn: txn);
       });
     } catch (e) {
       throw CacheException('Failed to submit assessment locally: $e');

@@ -19,12 +19,19 @@ class UserModel extends User {
       fullName: json['full_name'] as String,
       role: json['role'] as String,
       accountStatus: json['account_status'] as String,
-      isActive: json['is_active'] as bool,
+      isActive: _parseBool(json['is_active']),
       activatedAt: json['activated_at'] != null
           ? DateTime.parse(json['activated_at'] as String)
           : null,
       createdAt: DateTime.parse(json['created_at'] as String),
     );
+  }
+
+  static bool _parseBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is int) return value == 1;
+    if (value is String) return value.toLowerCase() == 'true' || value == '1';
+    return false;
   }
 
   factory UserModel.fromMap(Map<String, dynamic> map) {

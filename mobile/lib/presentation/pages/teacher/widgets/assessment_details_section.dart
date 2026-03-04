@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_field.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_date_time_picker.dart';
 
-class AssessmentDetailsStep extends StatelessWidget {
+class AssessmentDetailsSection extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final TextEditingController titleController;
   final TextEditingController descriptionController;
@@ -14,9 +14,9 @@ class AssessmentDetailsStep extends StatelessWidget {
   final ValueChanged<DateTime> onOpenAtChanged;
   final ValueChanged<DateTime> onCloseAtChanged;
   final ValueChanged<bool> onShowResultsChanged;
-  final VoidCallback onCreateAssessment;
+  final VoidCallback? onCreateAssessment;
 
-  const AssessmentDetailsStep({
+  const AssessmentDetailsSection({
     super.key,
     required this.formKey,
     required this.titleController,
@@ -128,38 +128,6 @@ class AssessmentDetailsStep extends StatelessWidget {
               onChanged: isLoading ? null : onShowResultsChanged,
             ),
           ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: isLoading ? null : onCreateAssessment,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2B2B2B),
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: const Color(0xFFE0E0E0),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 0,
-            ),
-            child: isLoading
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : const Text(
-                    'Create & Continue',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.2,
-                    ),
-                  ),
-          ),
-          const SizedBox(height: 16),
         ],
       ),
     );

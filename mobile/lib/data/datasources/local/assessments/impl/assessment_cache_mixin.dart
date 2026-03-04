@@ -36,6 +36,7 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
         await txn.insert('assessments', assessmentMap, conflictAlgorithm: ConflictAlgorithm.replace);
 
         for (final question in questions) {
+          final now = DateTime.now().toIso8601String();
           await txn.insert(
             'questions',
             {
@@ -63,7 +64,8 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
               'enumeration_items_json': question.enumerationItems != null
                   ? jsonEncode(question.enumerationItems)
                   : null,
-              'cached_at': DateTime.now().toIso8601String(),
+              'updated_at': now,
+              'cached_at': now,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
@@ -75,24 +77,51 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
   }
 
   @override
-  Future<void> cacheQuestions(List<QuestionModel> questions) async {
+  Future<void> cacheQuestions(String assessmentId, List<QuestionModel> questions) async {
     try {
       final db = await localDatabase.database;
       await db.transaction((txn) async {
         for (final question in questions) {
+          final now = DateTime.now().toIso8601String();
           await txn.insert(
             'questions',
             {
               'id': question.id,
-              'assessment_id': '',
+              'local_id': question.id,
+              'assessment_id': assessmentId,
               'question_type': question.questionType,
               'question_text': question.questionText,
               'points': question.points,
               'order_index': question.orderIndex,
               'is_multi_select': question.isMultiSelect ? 1 : 0,
-              'cached_at': DateTime.now().toIso8601String(),
-              'is_offline_mutation': 0,
-              'sync_status': 'synced',
+              'choices_json': question.choices != null
+                  ? jsonEncode(question.choices!.map((c) => {
+                        'id': c.id,
+                        'choice_text': c.choiceText,
+                        'is_correct': c.isCorrect,
+                        'order_index': c.orderIndex,
+                      }).toList())
+                  : null,
+              'correct_answers_json': question.correctAnswers != null
+                  ? jsonEncode(question.correctAnswers!.map((a) => {
+                        'id': a.id,
+                        'answer_text': a.answerText,
+                      }).toList())
+                  : null,
+              'enumeration_items_json': question.enumerationItems != null
+                  ? jsonEncode(question.enumerationItems!.map((e) => {
+                        'id': e.id,
+                        'order_index': e.orderIndex,
+                        'acceptable_answers': e.acceptableAnswers.map((a) => {
+                              'id': a.id,
+                              'answer_text': a.answerText,
+                            }).toList(),
+                      }).toList())
+                  : null,
+              'updated_at': now,
+              'cached_at': now,
+              'is_offline_mutation': 1,
+              'sync_status': 'pending',
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );

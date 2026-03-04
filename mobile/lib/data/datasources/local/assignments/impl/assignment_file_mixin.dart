@@ -60,7 +60,7 @@ mixin AssignmentFileMixin on AssignmentLocalDataSourceBase {
           retryCount: 0,
           maxRetries: 5,
           createdAt: now,
-        ));
+        ), txn: txn);
       });
     } catch (e) {
       throw CacheException('Failed to stage file for upload: $e');

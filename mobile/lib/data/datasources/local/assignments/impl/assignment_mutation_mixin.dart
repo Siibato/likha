@@ -40,7 +40,7 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
           retryCount: 0,
           maxRetries: 5,
           createdAt: now,
-        ));
+        ), txn: txn);
       });
     } catch (e) {
       throw CacheException('Failed to create submission locally: $e');
@@ -77,7 +77,7 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
           retryCount: 0,
           maxRetries: 5,
           createdAt: now,
-        ));
+        ), txn: txn);
       });
     } catch (e) {
       throw CacheException('Failed to update submission text: $e');
@@ -114,7 +114,7 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
           retryCount: 0,
           maxRetries: 5,
           createdAt: now,
-        ));
+        ), txn: txn);
       });
     } catch (e) {
       throw CacheException('Failed to submit assignment locally: $e');
