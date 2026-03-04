@@ -4,11 +4,9 @@ import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/utils/typedef.dart';
-import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:likha/data/repositories/assessments/assessment_repository_base.dart';
-import 'package:uuid/uuid.dart';
 
 mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
   @override
@@ -72,17 +70,10 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
-        await syncQueue.enqueue(SyncQueueEntry(
-          id: const Uuid().v4(),
-          entityType: SyncEntityType.assessmentSubmission,
-          operation: SyncOperation.overrideAnswer,
-          payload: {'answer_id': answerId, 'is_correct': isCorrect},
-          status: SyncStatus.pending,
-          retryCount: 0,
-          maxRetries: 5,
-          createdAt: DateTime.now(),
-        ));
-
+        await localDataSource.overrideAnswerLocally(
+          answerId: answerId,
+          isCorrect: isCorrect,
+        );
         return Right(SubmissionAnswer(
           id: answerId,
           questionId: '',

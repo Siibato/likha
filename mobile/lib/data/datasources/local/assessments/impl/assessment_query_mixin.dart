@@ -11,7 +11,7 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
       final db = await localDatabase.database;
       final results = await db.query(
         'assessments',
-        where: 'class_id = ?',
+        where: 'class_id = ? AND deleted_at IS NULL',
         whereArgs: [classId],
         orderBy: 'created_at DESC',
       );
@@ -29,7 +29,7 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
       final db = await localDatabase.database;
       final assessmentResults = await db.query(
         'assessments',
-        where: 'id = ?',
+        where: 'id = ? AND deleted_at IS NULL',
         whereArgs: [assessmentId],
       );
       if (assessmentResults.isEmpty) throw CacheException('Assessment $assessmentId not cached');
@@ -37,7 +37,7 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
       final assessment = AssessmentModel.fromMap(assessmentResults.first);
       final questionResults = await db.query(
         'questions',
-        where: 'assessment_id = ?',
+        where: 'assessment_id = ? AND deleted_at IS NULL',
         whereArgs: [assessmentId],
         orderBy: 'order_index ASC',
       );

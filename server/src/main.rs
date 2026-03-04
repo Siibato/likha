@@ -180,6 +180,7 @@ async fn main() {
     let sync_full_service = Arc::new(SyncFullService::new(
         entitlement_service.clone(),
         manifest_repo.clone(),
+        db.clone(),
     ));
 
     let sync_delta_service = Arc::new(SyncDeltaService::new(

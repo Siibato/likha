@@ -66,5 +66,10 @@ abstract class AssessmentLocalDataSource {
   Future<void> cacheStatistics(AssessmentStatisticsModel statistics);
   Future<StudentResultModel?> getCachedStudentResults(String submissionId);
   Future<void> cacheStudentResults(StudentResultModel result);
+  Future<void> releaseResultsLocally({required String assessmentId});
+  Future<void> overrideAnswerLocally({
+    required String answerId,
+    required bool isCorrect,
+  });
   Future<void> clearAllCache();
 }

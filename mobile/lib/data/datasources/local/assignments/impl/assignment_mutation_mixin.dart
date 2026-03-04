@@ -120,4 +120,85 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
       throw CacheException('Failed to submit assignment locally: $e');
     }
   }
+
+  @override
+  Future<void> gradeSubmissionLocally({
+    required String submissionId,
+    required int score,
+    String? feedback,
+  }) async {
+    try {
+      final db = await localDatabase.database;
+      final now = DateTime.now();
+      await db.transaction((txn) async {
+        await txn.update(
+          'assignment_submissions',
+          {
+            'score': score,
+            'feedback': feedback,
+            'graded_at': now.toIso8601String(),
+            'status': 'graded',
+            'is_offline_mutation': 1,
+            'sync_status': 'pending',
+            'updated_at': now.toIso8601String(),
+            'cached_at': now.toIso8601String(),
+          },
+          where: 'id = ?',
+          whereArgs: [submissionId],
+        );
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assignmentSubmission,
+          operation: SyncOperation.grade,
+          payload: {
+            'id': submissionId,
+            'score': score,
+            if (feedback != null) 'feedback': feedback,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: now,
+        ), txn: txn);
+      });
+    } catch (e) {
+      throw CacheException('Failed to grade submission locally: $e');
+    }
+  }
+
+  @override
+  Future<void> returnSubmissionLocally({
+    required String submissionId,
+  }) async {
+    try {
+      final db = await localDatabase.database;
+      final now = DateTime.now();
+      await db.transaction((txn) async {
+        await txn.update(
+          'assignment_submissions',
+          {
+            'status': 'returned',
+            'is_offline_mutation': 1,
+            'sync_status': 'pending',
+            'updated_at': now.toIso8601String(),
+            'cached_at': now.toIso8601String(),
+          },
+          where: 'id = ?',
+          whereArgs: [submissionId],
+        );
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assignmentSubmission,
+          operation: SyncOperation.update,
+          payload: {'id': submissionId, 'action': 'return'},
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: now,
+        ), txn: txn);
+      });
+    } catch (e) {
+      throw CacheException('Failed to return submission locally: $e');
+    }
+  }
 }

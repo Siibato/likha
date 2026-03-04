@@ -152,4 +152,7 @@ cargo run -- delete-db
 
 # Delete and recreate the database (fresh start)
 cargo run -- reset-db
+
+# Clear all failed login attempts
+cargo run -- clear-invalid-attempts
 ```

@@ -2,7 +2,6 @@ import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/utils/typedef.dart';
-import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/data/repositories/learning_materials/learning_material_repository_base.dart';
 import 'package:likha/domain/learning_materials/entities/learning_material.dart';
 import 'package:likha/domain/learning_materials/entities/material_detail.dart';
@@ -13,34 +12,21 @@ mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
     required String classId,
   }) async {
     try {
-      var cachedMaterials = <LearningMaterial>[];
-      bool hasCachedData = false;
-
       try {
-        cachedMaterials = await localDataSource.getCachedMaterials(classId);
-        hasCachedData = true;
+        final cachedMaterials = await localDataSource.getCachedMaterials(classId);
+        return Right(cachedMaterials);
       } on CacheException {
-        hasCachedData = false;
-      }
-
-      if (serverReachabilityService.isServerReachable) {
+        // Cache empty — must fetch from server
         try {
           final freshMaterials = await remoteDataSource.getMaterials(classId: classId);
           await localDataSource.cacheMaterials(freshMaterials);
           return Right(freshMaterials);
-        } catch (e) {
-          if (!hasCachedData) {
-            if (e is ServerException) return Left(ServerFailure(e.message));
-            if (e is NetworkException) return Left(NetworkFailure(e.message));
-            return Left(ServerFailure(e.toString()));
-          }
-          // Has cache — fall through
+        } on NetworkException catch (e) {
+          return Left(NetworkFailure(e.message));
+        } on ServerException catch (e) {
+          return Left(ServerFailure(e.message));
         }
       }
-
-      if (hasCachedData) return Right(cachedMaterials);
-
-      return const Left(NetworkFailure('No internet connection and no cached data'));
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {
@@ -53,17 +39,21 @@ mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
     required String materialId,
   }) async {
     try {
-      LearningMaterialModel? cachedMaterial;
-      bool hasCachedData = false;
-
       try {
-        cachedMaterial = await localDataSource.getCachedMaterialDetail(materialId);
-        hasCachedData = true;
+        final cachedMaterial = await localDataSource.getCachedMaterialDetail(materialId);
+        final cachedFiles = await localDataSource.getCachedMaterialFiles(materialId);
+        return Right(MaterialDetail(
+          id: cachedMaterial.id,
+          classId: cachedMaterial.classId,
+          title: cachedMaterial.title,
+          description: cachedMaterial.description,
+          contentText: cachedMaterial.contentText,
+          orderIndex: cachedMaterial.orderIndex,
+          files: cachedFiles,
+          createdAt: cachedMaterial.createdAt,
+          updatedAt: cachedMaterial.updatedAt,
+        ));
       } on CacheException {
-        hasCachedData = false;
-      }
-
-      if (serverReachabilityService.isServerReachable) {
         try {
           final freshMaterial = await remoteDataSource.getMaterialDetail(materialId: materialId);
 
@@ -79,38 +69,16 @@ mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
             updatedAt: freshMaterial.updatedAt,
           );
           return Right(detail);
-        } catch (e) {
-          if (!hasCachedData) {
-            if (e is ServerException) return Left(ServerFailure(e.message));
-            if (e is NetworkException) return Left(NetworkFailure(e.message));
-            return Left(ServerFailure(e.toString()));
-          }
-          // Has cache — fall through
+        } on NetworkException catch (e) {
+          return Left(NetworkFailure(e.message));
         }
       }
-
-      if (hasCachedData && cachedMaterial != null) {
-        return Right(_toDetail(cachedMaterial));
-      }
-
-      return const Left(NetworkFailure('No internet connection and no cached data'));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
   }
-
-  /// Converts a [LearningMaterialModel] to a [MaterialDetail].
-  MaterialDetail _toDetail(LearningMaterialModel m) => MaterialDetail(
-        id: m.id,
-        classId: m.classId,
-        title: m.title,
-        description: m.description,
-        contentText: m.contentText,
-        orderIndex: m.orderIndex,
-        files: const [], // Files are stored separately in the database
-        createdAt: m.createdAt,
-        updatedAt: m.updatedAt,
-      );
 }

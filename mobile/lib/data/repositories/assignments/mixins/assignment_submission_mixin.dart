@@ -55,6 +55,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
     try {
       final result = await remoteDataSource.getSubmissionDetail(
           submissionId: submissionId);
+      unawaited(localDataSource.cacheSubmissionDetail(result));
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -73,32 +74,26 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
-        await syncQueue.enqueue(SyncQueueEntry(
-          id: const Uuid().v4(),
-          entityType: SyncEntityType.assignmentSubmission,
-          operation: SyncOperation.grade,
-          payload: {
-            'id': submissionId,
-            'score': score,
-            if (feedback != null) 'feedback': feedback,
-          },
-          status: SyncStatus.pending,
-          retryCount: 0,
-          maxRetries: 5,
-          createdAt: DateTime.now(),
-        ));
-
+        await localDataSource.gradeSubmissionLocally(
+          submissionId: submissionId,
+          score: score,
+          feedback: feedback,
+        );
+        // Read back the now-updated cached row for response
+        final cached = await localDataSource.getCachedSubmission(submissionId);
+        if (cached != null) return Right(cached);
+        // Fallback (shouldn't happen — submission was just graded from UI which loaded it)
         return Right(AssignmentSubmission(
           id: submissionId,
           assignmentId: '',
           studentId: '',
           studentName: '',
           status: 'graded',
-          textContent: null,
+          isLate: false,
           score: score,
           feedback: feedback,
-          isLate: false,
           files: const [],
+          textContent: null,
           submittedAt: DateTime.now(),
           gradedAt: DateTime.now(),
           createdAt: DateTime.now(),
@@ -129,28 +124,22 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
-        await syncQueue.enqueue(SyncQueueEntry(
-          id: const Uuid().v4(),
-          entityType: SyncEntityType.assignmentSubmission,
-          operation: SyncOperation.update,
-          payload: {'id': submissionId, 'action': 'return'},
-          status: SyncStatus.pending,
-          retryCount: 0,
-          maxRetries: 5,
-          createdAt: DateTime.now(),
-        ));
-
+        await localDataSource.returnSubmissionLocally(
+          submissionId: submissionId,
+        );
+        final cached = await localDataSource.getCachedSubmission(submissionId);
+        if (cached != null) return Right(cached);
         return Right(AssignmentSubmission(
           id: submissionId,
           assignmentId: '',
           studentId: '',
           studentName: '',
           status: 'returned',
+          isLate: false,
+          files: const [],
           textContent: null,
           score: null,
           feedback: null,
-          isLate: false,
-          files: const [],
           submittedAt: DateTime.now(),
           gradedAt: null,
           createdAt: DateTime.now(),

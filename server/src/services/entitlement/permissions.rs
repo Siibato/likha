@@ -67,6 +67,14 @@ impl super::EntitlementService {
                 }
                 Ok(())
             }
+            ("question", "create" | "update" | "delete") => {
+                if user_role != "teacher" {
+                    return Err(AppError::Forbidden(
+                        "Only teachers can create/update/delete questions".to_string(),
+                    ));
+                }
+                Ok(())
+            }
             ("admin_user", "create" | "update" | "delete") => Ok(()),
             ("class", "add_enrollment" | "remove_enrollment") => {
                 if let Some(class_id) = class_id {

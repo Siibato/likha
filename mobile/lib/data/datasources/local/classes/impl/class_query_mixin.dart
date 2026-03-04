@@ -13,11 +13,15 @@ mixin ClassQueryMixin on ClassLocalDataSourceBase {
       final results = teacherId != null
           ? await db.query(
               'classes',
-              where: 'teacher_id = ? OR teacher_id = ?',
+              where: '(teacher_id = ? OR teacher_id = ?) AND deleted_at IS NULL',
               whereArgs: [teacherId, ''],
               orderBy: 'title ASC',
             )
-          : await db.query('classes', orderBy: 'title ASC');
+          : await db.query(
+              'classes',
+              where: 'deleted_at IS NULL',
+              orderBy: 'title ASC',
+            );
 
       if (results.isEmpty) {
         throw CacheException('No cached classes found');

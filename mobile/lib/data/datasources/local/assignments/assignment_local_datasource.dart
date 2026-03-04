@@ -1,6 +1,7 @@
 import 'package:likha/data/models/assignments/assignment_model.dart';
 import 'package:likha/data/models/assignments/assignment_submission_model.dart'
     show AssignmentSubmissionModel, SubmissionListItemModel;
+import 'package:likha/data/models/assignments/submission_file_model.dart';
 
 abstract class AssignmentLocalDataSource {
   Future<List<AssignmentModel>> getCachedAssignments(String classId);
@@ -29,9 +30,19 @@ abstract class AssignmentLocalDataSource {
   });
   Future<AssignmentSubmissionModel?> getCachedSubmission(String submissionId);
   Future<List<SubmissionListItemModel>> getCachedSubmissions(String assignmentId);
+  Future<List<SubmissionFileModel>> getCachedSubmissionFiles(String submissionId);
   Future<void> cacheSubmissions(String assignmentId, List<SubmissionListItemModel> submissions);
   Future<bool> isFileCached(String fileId);
   Future<List<int>> getCachedFileBytes(String fileId);
   Future<void> cacheFileBytes(String fileId, String fileName, List<int> bytes);
+  Future<void> gradeSubmissionLocally({
+    required String submissionId,
+    required int score,
+    String? feedback,
+  });
+  Future<void> returnSubmissionLocally({
+    required String submissionId,
+  });
+  Future<void> cacheSubmissionDetail(AssignmentSubmissionModel submission);
   Future<void> clearAllCache();
 }

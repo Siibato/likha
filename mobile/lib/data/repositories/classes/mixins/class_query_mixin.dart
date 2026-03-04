@@ -12,9 +12,6 @@ mixin ClassQueryMixin on ClassRepositoryBase {
     try {
       try {
         final cachedClasses = await localDataSource.getCachedClasses();
-
-        _syncAllClassesInBackground();
-
         return Right(cachedClasses);
       } on CacheException {
         final freshClasses = await remoteDataSource.getAllClasses();
@@ -52,8 +49,6 @@ mixin ClassQueryMixin on ClassRepositoryBase {
           teacherId: currentUserId,
         );
 
-        _syncClassesInBackground();
-
         return Right(cachedClasses);
       } on CacheException {
         final freshClasses = await remoteDataSource.getMyClasses();
@@ -87,8 +82,6 @@ mixin ClassQueryMixin on ClassRepositoryBase {
       // Try cache first (includes locally-added enrollments that haven't synced yet)
       try {
         final cached = await localDataSource.getCachedClassDetail(classId);
-        // Fetch fresh in background to update cache silently
-        _fetchClassDetailInBackground(classId);
         return Right(cached);
       } on CacheException {
         // No cache, fetch fresh from server
@@ -116,51 +109,4 @@ mixin ClassQueryMixin on ClassRepositoryBase {
     }
   }
 
-  // Fetch fresh class detail in background without blocking UI
-  Future<void> _fetchClassDetailInBackground(String classId) async {
-    try {
-      final fresh = await remoteDataSource.getClassDetail(classId: classId);
-      await localDataSource.cacheClassDetail(fresh);
-    } catch (_) {
-      // Best-effort - cache is already good, so silently ignore errors
-    }
-  }
-
-  Future<void> _syncAllClassesInBackground() async {
-    try {
-      final remoteClasses = await remoteDataSource.getAllClasses();
-
-      await localDataSource.cacheClasses(remoteClasses);
-
-      for (final cls in remoteClasses) {
-        try {
-          final detail = await remoteDataSource.getClassDetail(classId: cls.id);
-          await localDataSource.cacheClassDetail(detail);
-        } catch (_) {
-          // Best-effort
-        }
-      }
-    } catch (_) {
-      // Best-effort sync — continue with cached data
-    }
-  }
-
-  Future<void> _syncClassesInBackground() async {
-    try {
-      final remoteClasses = await remoteDataSource.getMyClasses();
-
-      await localDataSource.cacheClasses(remoteClasses);
-
-      for (final cls in remoteClasses) {
-        try {
-          final detail = await remoteDataSource.getClassDetail(classId: cls.id);
-          await localDataSource.cacheClassDetail(detail);
-        } catch (_) {
-          // Best-effort
-        }
-      }
-    } catch (_) {
-      // Best-effort sync — continue with cached data
-    }
-  }
 }

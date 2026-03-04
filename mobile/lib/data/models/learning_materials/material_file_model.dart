@@ -19,6 +19,16 @@ class MaterialFileModel extends MaterialFile {
     );
   }
 
+  factory MaterialFileModel.fromMap(Map<String, dynamic> map) {
+    return MaterialFileModel(
+      id: map['id'] as String,
+      fileName: map['file_name'] as String,
+      fileType: map['file_type'] as String,
+      fileSize: map['file_size'] as int,
+      uploadedAt: DateTime.parse(map['uploaded_at'] as String),
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

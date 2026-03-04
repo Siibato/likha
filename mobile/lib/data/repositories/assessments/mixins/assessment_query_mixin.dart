@@ -14,33 +14,22 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
     required String classId,
   }) async {
     try {
-      var cachedAssessments = <Assessment>[];
-      bool hasCachedData = false;
-
       try {
-        cachedAssessments = await localDataSource.getCachedAssessments(classId);
-        hasCachedData = true;
+        final cachedAssessments = await localDataSource.getCachedAssessments(classId);
+        return Right(cachedAssessments);
       } on CacheException {
-        hasCachedData = false;
-      }
-
-      if (serverReachabilityService.isServerReachable) {
+        // Cache empty — must fetch from server
         try {
           final freshAssessments =
               await remoteDataSource.getAssessments(classId: classId);
           await localDataSource.cacheAssessments(freshAssessments);
           return Right(freshAssessments);
-        } catch (e) {
-          if (!hasCachedData) {
-            if (e is ServerException) return Left(ServerFailure(e.message));
-            if (e is NetworkException) return Left(NetworkFailure(e.message));
-            return Left(ServerFailure(e.toString()));
-          }
+        } on NetworkException catch (e) {
+          return Left(NetworkFailure(e.message));
+        } on ServerException catch (e) {
+          return Left(ServerFailure(e.message));
         }
       }
-
-      if (hasCachedData) return Right(cachedAssessments);
-      return Left(NetworkFailure('No internet connection and no cached data'));
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {
@@ -142,17 +131,8 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
-        await syncQueue.enqueue(SyncQueueEntry(
-          id: const Uuid().v4(),
-          entityType: SyncEntityType.assessment,
-          operation: SyncOperation.releaseResults,
-          payload: {'id': assessmentId},
-          status: SyncStatus.pending,
-          retryCount: 0,
-          maxRetries: 5,
-          createdAt: DateTime.now(),
-        ));
-
+        await localDataSource.releaseResultsLocally(assessmentId: assessmentId);
+        // Build optimistic response from cached assessment
         try {
           final (cached, _) =
               await localDataSource.getCachedAssessmentDetail(assessmentId);
@@ -171,7 +151,7 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
             questionCount: cached.questionCount,
             submissionCount: cached.submissionCount,
             createdAt: cached.createdAt,
-            updatedAt: cached.updatedAt,
+            updatedAt: DateTime.now(),
           ));
         } catch (_) {
           return Right(Assessment(

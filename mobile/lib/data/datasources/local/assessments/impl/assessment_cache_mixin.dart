@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:likha/core/errors/exceptions.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/assessments/assessment_model.dart';
 import 'package:likha/data/models/assessments/question_model.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:uuid/uuid.dart';
 import '../assessment_local_datasource_base.dart';
 
 mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
@@ -129,6 +131,40 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
       });
     } catch (e) {
       throw CacheException('Failed to cache questions: $e');
+    }
+  }
+
+  @override
+  Future<void> releaseResultsLocally({required String assessmentId}) async {
+    try {
+      final db = await localDatabase.database;
+      final now = DateTime.now();
+      await db.transaction((txn) async {
+        await txn.update(
+          'assessments',
+          {
+            'results_released': 1,
+            'is_offline_mutation': 1,
+            'sync_status': 'pending',
+            'updated_at': now.toIso8601String(),
+            'cached_at': now.toIso8601String(),
+          },
+          where: 'id = ?',
+          whereArgs: [assessmentId],
+        );
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assessment,
+          operation: SyncOperation.releaseResults,
+          payload: {'id': assessmentId},
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: now,
+        ), txn: txn);
+      });
+    } catch (e) {
+      throw CacheException('Failed to release results locally: $e');
     }
   }
 

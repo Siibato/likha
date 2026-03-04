@@ -11,34 +11,23 @@ mixin AssignmentQueryMixin on AssignmentRepositoryBase {
     required String classId,
   }) async {
     try {
-      var cachedAssignments = <Assignment>[];
-      bool hasCachedData = false;
-
       try {
-        cachedAssignments =
+        final cachedAssignments =
             await localDataSource.getCachedAssignments(classId);
-        hasCachedData = true;
+        return Right(cachedAssignments);
       } on CacheException {
-        hasCachedData = false;
-      }
-
-      if (serverReachabilityService.isServerReachable) {
+        // Cache empty — must fetch from server
         try {
           final freshAssignments =
               await remoteDataSource.getAssignments(classId: classId);
           await localDataSource.cacheAssignments(freshAssignments);
           return Right(freshAssignments);
-        } catch (e) {
-          if (!hasCachedData) {
-            if (e is ServerException) return Left(ServerFailure(e.message));
-            if (e is NetworkException) return Left(NetworkFailure(e.message));
-            return Left(ServerFailure(e.toString()));
-          }
+        } on NetworkException catch (e) {
+          return Left(NetworkFailure(e.message));
+        } on ServerException catch (e) {
+          return Left(ServerFailure(e.message));
         }
       }
-
-      if (hasCachedData) return Right(cachedAssignments);
-      return Left(NetworkFailure('No internet connection and no cached data'));
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {
@@ -52,17 +41,17 @@ mixin AssignmentQueryMixin on AssignmentRepositoryBase {
   }) async {
     try {
       try {
-        final fresh = await remoteDataSource.getAssignmentDetail(
-            assignmentId: assignmentId);
-        await localDataSource.cacheAssignmentDetail(fresh);
-        return Right(fresh);
-      } on NetworkException {
+        final cached =
+            await localDataSource.getCachedAssignmentDetail(assignmentId);
+        return Right(cached);
+      } on CacheException {
         try {
-          final cached =
-              await localDataSource.getCachedAssignmentDetail(assignmentId);
-          return Right(cached);
-        } on CacheException catch (e) {
-          return Left(CacheFailure(e.message));
+          final fresh = await remoteDataSource.getAssignmentDetail(
+              assignmentId: assignmentId);
+          await localDataSource.cacheAssignmentDetail(fresh);
+          return Right(fresh);
+        } on NetworkException catch (e) {
+          return Left(NetworkFailure(e.message));
         }
       }
     } on ServerException catch (e) {

@@ -64,7 +64,9 @@ class AssignmentModel extends Assignment {
       submissionType: map['submission_type'] as String,
       allowedFileTypes: map['allowed_file_types'] as String?,
       maxFileSizeMb: map['max_file_size_mb'] as int?,
-      dueAt: DateTime.parse(map['due_at'] as String),
+      dueAt: map['due_at'] != null
+          ? DateTime.parse(map['due_at'] as String)
+          : DateTime.now(),
       isPublished: (map['is_published'] as int?) == 1,
       submissionCount: map['submission_count'] as int? ?? 0,
       gradedCount: map['graded_count'] as int? ?? 0,

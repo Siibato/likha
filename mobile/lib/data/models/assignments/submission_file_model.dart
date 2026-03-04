@@ -22,4 +22,14 @@ class SubmissionFileModel extends SubmissionFile {
       uploadedAt: _parseUtc(json['uploaded_at'] as String),
     );
   }
+
+  factory SubmissionFileModel.fromMap(Map<String, dynamic> map) {
+    return SubmissionFileModel(
+      id: map['id'] as String,
+      fileName: map['file_name'] as String,
+      fileType: map['file_type'] as String,
+      fileSize: map['file_size'] as int,
+      uploadedAt: DateTime.parse(map['uploaded_at'] as String),
+    );
+  }
 }

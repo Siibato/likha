@@ -484,7 +484,9 @@ class SyncManager {
     await _upsertAssessmentSubmissions(db, data['assessment_submissions'] ?? [], studentMap);
     await _upsertAssignments(db, data['assignments'] ?? []);
     await _upsertAssignmentSubmissions(db, data['assignment_submissions'] ?? [], studentMap);
+    await _upsertSubmissionFiles(db, data['submission_files'] ?? []);
     await _upsertLearningMaterials(db, data['learning_materials'] ?? []);
+    await _upsertMaterialFiles(db, data['material_files'] ?? []);
 
     // Cache the logged-in user from sync response
     if (userData != null) {
@@ -748,8 +750,8 @@ class SyncManager {
   }
 
   /// Explicit upsert handler for questions with proper field mapping
-  /// CRITICAL: Preserves existing choices_json/correct_answers_json/enumeration_items_json
-  /// from REST API cache path (server manifest doesn't include choices)
+  /// NEW: Server now sends nested choices/correct_answers/enumeration_items
+  /// Backward compat: Preserves existing if server doesn't send them
   Future<void> _upsertQuestions(
     Database db,
     List<dynamic> records,
@@ -757,34 +759,80 @@ class SyncManager {
     for (final record in records) {
       final data = record as Map<String, dynamic>;
 
-      // Preserve existing cached choices (choices come from REST API, not from sync)
-      final existing = await db.query(
-        'questions',
-        columns: ['choices_json', 'correct_answers_json', 'enumeration_items_json'],
-        where: 'id = ?',
-        whereArgs: [data['id']],
-      );
-      final existingChoices = existing.isNotEmpty ? existing.first['choices_json'] : null;
-      final existingAnswers = existing.isNotEmpty ? existing.first['correct_answers_json'] : null;
-      final existingEnum = existing.isNotEmpty ? existing.first['enumeration_items_json'] : null;
+      // Check if server sent nested data
+      final serverSentChoices = data.containsKey('choices');
+      final serverSentCorrectAnswers = data.containsKey('correct_answers');
+      final serverSentEnumItems = data.containsKey('enumeration_items');
+
+      // Resolve: use server value if sent, otherwise preserve existing
+      String? choicesJson;
+      String? correctAnswersJson;
+      String? enumItemsJson;
+
+      if (serverSentChoices || serverSentCorrectAnswers || serverSentEnumItems) {
+        // Server sent at least some nested data; resolve each field
+        if (serverSentChoices && data['choices'] is List && (data['choices'] as List).isNotEmpty) {
+          choicesJson = jsonEncode(data['choices']);
+        } else if (serverSentChoices) {
+          choicesJson = null;
+        } else {
+          // Use existing
+          final existing = await db.query('questions',
+              columns: ['choices_json'], where: 'id = ?', whereArgs: [data['id']]);
+          choicesJson = existing.isNotEmpty ? existing.first['choices_json'] as String? : null;
+        }
+
+        if (serverSentCorrectAnswers && data['correct_answers'] is List && (data['correct_answers'] as List).isNotEmpty) {
+          correctAnswersJson = jsonEncode(data['correct_answers']);
+        } else if (serverSentCorrectAnswers) {
+          correctAnswersJson = null;
+        } else {
+          final existing = await db.query('questions',
+              columns: ['correct_answers_json'], where: 'id = ?', whereArgs: [data['id']]);
+          correctAnswersJson = existing.isNotEmpty ? existing.first['correct_answers_json'] as String? : null;
+        }
+
+        if (serverSentEnumItems && data['enumeration_items'] is List && (data['enumeration_items'] as List).isNotEmpty) {
+          enumItemsJson = jsonEncode(data['enumeration_items']);
+        } else if (serverSentEnumItems) {
+          enumItemsJson = null;
+        } else {
+          final existing = await db.query('questions',
+              columns: ['enumeration_items_json'], where: 'id = ?', whereArgs: [data['id']]);
+          enumItemsJson = existing.isNotEmpty ? existing.first['enumeration_items_json'] as String? : null;
+        }
+      } else {
+        // Server didn't send nested data; preserve existing (backward compat)
+        final existing = await db.query(
+          'questions',
+          columns: ['choices_json', 'correct_answers_json', 'enumeration_items_json'],
+          where: 'id = ?',
+          whereArgs: [data['id']],
+        );
+        choicesJson = existing.isNotEmpty ? existing.first['choices_json'] as String? : null;
+        correctAnswersJson = existing.isNotEmpty ? existing.first['correct_answers_json'] as String? : null;
+        enumItemsJson = existing.isNotEmpty ? existing.first['enumeration_items_json'] as String? : null;
+      }
 
       await db.insert(
         'questions',
         {
           'id': data['id'],
+          'local_id': data['id'],
           'assessment_id': data['assessment_id'],
           'question_type': data['question_type'],
           'question_text': data['question_text'],
           'points': data['points'] ?? 0,
           'order_index': data['order_index'] ?? 0,
           'is_multi_select': (data['is_multi_select'] == true) ? 1 : 0,
-          'choices_json': existingChoices,
-          'correct_answers_json': existingAnswers,
-          'enumeration_items_json': existingEnum,
+          'choices_json': choicesJson,
+          'correct_answers_json': correctAnswersJson,
+          'enumeration_items_json': enumItemsJson,
           'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
           'deleted_at': data['deleted_at'],
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
+          'is_offline_mutation': 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -852,7 +900,7 @@ class SyncManager {
     }
   }
 
-  /// Explicit upsert handler for assessment submissions with student enrichment
+  /// Explicit upsert handler for assessment submissions with nested answers
   Future<void> _upsertAssessmentSubmissions(
     Database db,
     List<dynamic> records,
@@ -862,10 +910,15 @@ class SyncManager {
       final data = record as Map<String, dynamic>;
       final student = studentMap[data['student_id']] ?? {};
 
+      final answersJson = data.containsKey('answers') && data['answers'] != null
+          ? jsonEncode(data['answers'] as List<dynamic>)
+          : null;
+
       await db.insert(
         'assessment_submissions',
         {
           'id': data['id'],
+          'local_id': data['id'],
           'assessment_id': data['assessment_id'],
           'student_id': data['student_id'],
           'student_name': (student['full_name'] as String?) ?? '',
@@ -875,9 +928,11 @@ class SyncManager {
           'auto_score': data['auto_score'] ?? 0,
           'final_score': data['final_score'] ?? 0,
           'is_submitted': (data['is_submitted'] == true) ? 1 : 0,
+          'answers_json': answersJson,
           'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
+          'is_offline_mutation': 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -915,6 +970,113 @@ class SyncManager {
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
+    }
+  }
+
+  /// NEW: Upsert material files metadata (no binary data)
+  Future<void> _upsertMaterialFiles(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+
+      // Preserve local cache state (is_cached, local_path, is_compressed) if row exists
+      final existing = await db.query(
+        'material_files',
+        columns: ['is_cached', 'local_path', 'is_compressed'],
+        where: 'id = ?',
+        whereArgs: [data['id']],
+      );
+
+      if (existing.isEmpty) {
+        await db.insert(
+          'material_files',
+          {
+            'id': data['id'],
+            'local_id': data['id'],
+            'material_id': data['material_id'],
+            'file_name': data['file_name'],
+            'file_type': data['file_type'],
+            'file_size': data['file_size'] ?? 0,
+            'uploaded_at': data['uploaded_at'] ?? DateTime.now().toIso8601String(),
+            'local_path': null,
+            'is_cached': 0,
+            'is_compressed': 0,
+            'deleted_at': null,
+            'cached_at': DateTime.now().toIso8601String(),
+          },
+          conflictAlgorithm: ConflictAlgorithm.ignore,
+        );
+      } else {
+        // Only update server-side metadata — preserve local cache state
+        await db.update(
+          'material_files',
+          {
+            'file_name': data['file_name'],
+            'file_type': data['file_type'],
+            'file_size': data['file_size'] ?? 0,
+            'uploaded_at': data['uploaded_at'] ?? DateTime.now().toIso8601String(),
+            'cached_at': DateTime.now().toIso8601String(),
+          },
+          where: 'id = ?',
+          whereArgs: [data['id']],
+        );
+      }
+    }
+  }
+
+  /// NEW: Upsert submission files metadata (no binary data)
+  Future<void> _upsertSubmissionFiles(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+
+      final existing = await db.query(
+        'submission_files',
+        columns: ['is_local_only', 'local_path'],
+        where: 'id = ?',
+        whereArgs: [data['id']],
+      );
+
+      if (existing.isEmpty) {
+        await db.insert(
+          'submission_files',
+          {
+            'id': data['id'],
+            'local_id': data['id'],
+            'submission_id': data['submission_id'],
+            'file_name': data['file_name'],
+            'file_type': data['file_type'],
+            'file_size': data['file_size'] ?? 0,
+            'uploaded_at': data['uploaded_at'] ?? DateTime.now().toIso8601String(),
+            'local_path': null,
+            'is_local_only': 0,
+            'deleted_at': null,
+            'cached_at': DateTime.now().toIso8601String(),
+          },
+          conflictAlgorithm: ConflictAlgorithm.ignore,
+        );
+      } else {
+        // Only update if it's a server-synced file (not a locally-staged pending upload)
+        final isLocalOnly = (existing.first['is_local_only'] as int?) == 1;
+        if (!isLocalOnly) {
+          await db.update(
+            'submission_files',
+            {
+              'file_name': data['file_name'],
+              'file_type': data['file_type'],
+              'file_size': data['file_size'] ?? 0,
+              'uploaded_at': data['uploaded_at'] ?? DateTime.now().toIso8601String(),
+              'cached_at': DateTime.now().toIso8601String(),
+            },
+            where: 'id = ? AND is_local_only = 0',
+            whereArgs: [data['id']],
+          );
+        }
+      }
     }
   }
 
@@ -1094,6 +1256,40 @@ class SyncManager {
           'learning_materials',
           {'deleted_at': DateTime.now().toIso8601String()},
           where: 'id = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // NEW: Handle material files delta
+    final materialFilesDeltas = deltas['material_files'] as Map<String, dynamic>?;
+    if (materialFilesDeltas != null) {
+      final updated = materialFilesDeltas['updated'] as List<dynamic>? ?? [];
+      await _upsertMaterialFiles(db, updated);
+
+      final deleted = materialFilesDeltas['deleted'] as List<dynamic>? ?? [];
+      for (final id in deleted) {
+        await db.update(
+          'material_files',
+          {'deleted_at': DateTime.now().toIso8601String()},
+          where: 'id = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // NEW: Handle submission files delta
+    final submissionFilesDeltas = deltas['submission_files'] as Map<String, dynamic>?;
+    if (submissionFilesDeltas != null) {
+      final updated = submissionFilesDeltas['updated'] as List<dynamic>? ?? [];
+      await _upsertSubmissionFiles(db, updated);
+
+      final deleted = submissionFilesDeltas['deleted'] as List<dynamic>? ?? [];
+      for (final id in deleted) {
+        await db.update(
+          'submission_files',
+          {'deleted_at': DateTime.now().toIso8601String()},
+          where: 'id = ? AND is_local_only = 0',
           whereArgs: [id as String],
         );
       }

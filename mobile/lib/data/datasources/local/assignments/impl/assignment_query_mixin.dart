@@ -2,6 +2,7 @@ import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/assignments/assignment_model.dart';
 import 'package:likha/data/models/assignments/assignment_submission_model.dart'
     show AssignmentSubmissionModel, SubmissionListItemModel;
+import 'package:likha/data/models/assignments/submission_file_model.dart';
 import '../assignment_local_datasource_base.dart';
 
 mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
@@ -11,7 +12,7 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
       final db = await localDatabase.database;
       final results = await db.query(
         'assignments',
-        where: 'class_id = ?',
+        where: 'class_id = ? AND deleted_at IS NULL',
         whereArgs: [classId],
         orderBy: 'created_at DESC',
       );
@@ -29,7 +30,7 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
       final db = await localDatabase.database;
       final results = await db.query(
         'assignments',
-        where: 'id = ?',
+        where: 'id = ? AND deleted_at IS NULL',
         whereArgs: [assignmentId],
       );
       if (results.isEmpty) throw CacheException('Assignment $assignmentId not cached');
@@ -51,6 +52,10 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
       );
       if (results.isEmpty) return null;
       final sub = results.first;
+
+      // NEW: Query files from submission_files table
+      final files = await getCachedSubmissionFiles(submissionId);
+
       return AssignmentSubmissionModel(
         id: sub['id'] as String,
         assignmentId: sub['assignment_id'] as String,
@@ -63,12 +68,29 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
         score: sub['score'] as int?,
         feedback: sub['feedback'] as String?,
         gradedAt: sub['graded_at'] != null ? DateTime.parse(sub['graded_at'] as String) : null,
-        files: const [],
+        files: files,
         createdAt: DateTime.parse(sub['created_at'] as String),
         updatedAt: DateTime.parse(sub['updated_at'] as String),
       );
     } catch (e) {
       throw CacheException('Failed to get cached submission: $e');
+    }
+  }
+
+  /// NEW: Get cached submission files from SQLite
+  @override
+  Future<List<SubmissionFileModel>> getCachedSubmissionFiles(String submissionId) async {
+    try {
+      final db = await localDatabase.database;
+      final results = await db.query(
+        'submission_files',
+        where: 'submission_id = ? AND deleted_at IS NULL',
+        whereArgs: [submissionId],
+        orderBy: 'uploaded_at ASC',
+      );
+      return results.map((row) => SubmissionFileModel.fromMap(row)).toList();
+    } catch (e) {
+      throw CacheException('Failed to fetch submission files: $e');
     }
   }
 

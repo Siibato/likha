@@ -300,4 +300,62 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
       throw CacheException('Failed to cache submissions: $e');
     }
   }
+
+  @override
+  Future<void> overrideAnswerLocally({
+    required String answerId,
+    required bool isCorrect,
+  }) async {
+    try {
+      final db = await localDatabase.database;
+      final now = DateTime.now();
+
+      final rows = await db.query(
+        'assessment_submissions',
+        columns: ['id', 'answers_json'],
+        where: "answers_json LIKE ?",
+        whereArgs: ['%"$answerId"%'],
+      );
+
+      await db.transaction((txn) async {
+        if (rows.isNotEmpty) {
+          final submissionId = rows.first['id'] as String;
+          final rawJson = rows.first['answers_json'] as String?;
+          if (rawJson != null) {
+            final answers = (jsonDecode(rawJson) as List<dynamic>)
+                .cast<Map<String, dynamic>>();
+            for (final answer in answers) {
+              if (answer['id'] == answerId) {
+                answer['is_override_correct'] = isCorrect;
+                break;
+              }
+            }
+            await txn.update(
+              'assessment_submissions',
+              {
+                'answers_json': jsonEncode(answers),
+                'is_offline_mutation': 1,
+                'sync_status': 'pending',
+                'updated_at': now.toIso8601String(),
+              },
+              where: 'id = ?',
+              whereArgs: [submissionId],
+            );
+          }
+        }
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assessmentSubmission,
+          operation: SyncOperation.overrideAnswer,
+          payload: {'answer_id': answerId, 'is_correct': isCorrect},
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: now,
+        ), txn: txn);
+      });
+    } catch (e) {
+      throw CacheException('Failed to override answer locally: $e');
+    }
+  }
 }
