@@ -8,6 +8,7 @@ import 'package:likha/domain/classes/usecases/add_student.dart';
 import 'package:likha/domain/classes/usecases/create_class.dart';
 import 'package:likha/domain/classes/usecases/get_all_classes.dart';
 import 'package:likha/domain/classes/usecases/get_class_detail.dart';
+import 'package:likha/domain/classes/usecases/get_enrolled_students.dart';
 import 'package:likha/domain/classes/usecases/get_my_classes.dart';
 import 'package:likha/domain/classes/usecases/remove_student.dart';
 import 'package:likha/domain/classes/usecases/search_students.dart';
@@ -70,6 +71,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
   final AddStudent _addStudent;
   final RemoveStudent _removeStudent;
   final SearchStudents _searchStudents;
+  final GetEnrolledStudents _getEnrolledStudents;
 
   ClassNotifier(
     this._createClass,
@@ -80,6 +82,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
     this._addStudent,
     this._removeStudent,
     this._searchStudents,
+    this._getEnrolledStudents,
   ) : super(ClassState());
 
   Future<void> loadClasses() async {
@@ -415,6 +418,15 @@ class ClassNotifier extends StateNotifier<ClassState> {
     );
   }
 
+  Future<void> loadEnrolledStudentsOffline(String classId) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    final result = await _getEnrolledStudents(classId: classId);
+    result.fold(
+      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (students) => state = state.copyWith(isLoading: false, searchResults: students),
+    );
+  }
+
   void clearMessages() {
     state = state.copyWith(clearError: true, clearSuccess: true);
   }
@@ -434,5 +446,6 @@ final classProvider = StateNotifierProvider<ClassNotifier, ClassState>((ref) {
     sl<AddStudent>(),
     sl<RemoveStudent>(),
     sl<SearchStudents>(),
+    sl<GetEnrolledStudents>(),
   );
 });

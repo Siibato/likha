@@ -686,7 +686,7 @@ impl ManifestRepository {
                     "id": r.id.to_string(),
                     "assessment_id": r.assessment_id.to_string(),
                     "student_id": r.student_id.to_string(),
-                    "started_at": r.created_at.to_string(),
+                    "started_at": r.started_at.to_string(),
                     "submitted_at": r.submitted_at.map(|d| d.to_string()),
                     "auto_score": r.auto_score,
                     "final_score": r.final_score,
@@ -760,6 +760,63 @@ impl ManifestRepository {
             .collect();
 
         Ok(records)
+    }
+
+    /// Get assessment submissions for a student filtered by assessment IDs (for batch full sync)
+    /// Used when a student requests full sync for specific classes (assessments)
+    pub async fn get_student_submissions_for_assessments(
+        &self,
+        user_id: Uuid,
+        assessment_ids: Vec<Uuid>,
+        limit: i64,
+    ) -> AppResult<PaginatedRecords> {
+        let query = assessment_submissions::Entity::find()
+            .filter(assessment_submissions::Column::StudentId.eq(user_id))
+            .filter(assessment_submissions::Column::AssessmentId.is_in(assessment_ids));
+        Self::paginate_query(&self.db, query, limit, |r| {
+            json!({
+                "id": r.id.to_string(),
+                "assessment_id": r.assessment_id.to_string(),
+                "student_id": r.student_id.to_string(),
+                "started_at": r.started_at.to_string(),
+                "submitted_at": r.submitted_at.map(|d| d.to_string()),
+                "auto_score": r.auto_score,
+                "final_score": r.final_score,
+                "is_submitted": r.is_submitted,
+                "updated_at": r.updated_at.to_string(),
+            })
+        })
+        .await
+    }
+
+    /// Get assignment submissions for a student filtered by assignment IDs (for batch full sync)
+    /// Used when a student requests full sync for specific classes (assignments)
+    pub async fn get_student_assignment_submissions_for_assignments(
+        &self,
+        user_id: Uuid,
+        assignment_ids: Vec<Uuid>,
+        limit: i64,
+    ) -> AppResult<PaginatedRecords> {
+        let query = assignment_submissions::Entity::find()
+            .filter(assignment_submissions::Column::StudentId.eq(user_id))
+            .filter(assignment_submissions::Column::AssignmentId.is_in(assignment_ids));
+        Self::paginate_query(&self.db, query, limit, |r| {
+            json!({
+                "id": r.id.to_string(),
+                "assignment_id": r.assignment_id.to_string(),
+                "student_id": r.student_id.to_string(),
+                "status": r.status,
+                "text_content": r.text_content,
+                "is_late": r.is_late,
+                "submitted_at": r.submitted_at.map(|d| d.to_string()),
+                "score": r.score,
+                "feedback": r.feedback,
+                "graded_at": r.graded_at.map(|d| d.to_string()),
+                "created_at": r.created_at.to_string(),
+                "updated_at": r.updated_at.to_string(),
+            })
+        })
+        .await
     }
 
     /// Get ALL assessment submissions for given assessments (not filtered by student_id)

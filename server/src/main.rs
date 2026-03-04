@@ -13,7 +13,9 @@ use dotenv::dotenv;
 use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter, ColumnTrait, ActiveModelTrait, Set};
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
 use tower_http::cors::{Any, CorsLayer};
+use tower_http::timeout::TimeoutLayer;
 use uuid::Uuid;
 
 use crate::services::assessment::AssessmentService;
@@ -244,6 +246,7 @@ fn create_app(
                 sync_delta_service,
             ),
         )
+        .layer(TimeoutLayer::new(Duration::from_secs(60)))
         .layer(cors)
         .layer(middleware::logging_middleware())
 }

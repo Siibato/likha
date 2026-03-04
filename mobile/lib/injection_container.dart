@@ -82,6 +82,7 @@ import 'package:likha/domain/classes/usecases/add_student.dart';
 import 'package:likha/domain/classes/usecases/create_class.dart';
 import 'package:likha/domain/classes/usecases/get_all_classes.dart';
 import 'package:likha/domain/classes/usecases/get_class_detail.dart';
+import 'package:likha/domain/classes/usecases/get_enrolled_students.dart';
 import 'package:likha/domain/classes/usecases/get_my_classes.dart';
 import 'package:likha/domain/classes/usecases/remove_student.dart';
 import 'package:likha/domain/classes/usecases/search_students.dart';
@@ -283,6 +284,8 @@ Future<void> init() async {
       sl<SyncQueue>(), // SyncQueue
       sl<SyncRemoteDataSource>(), // SyncRemoteDataSource
       sl<LocalDatabase>(), // LocalDatabase
+      sl<AssessmentRemoteDataSource>(), // AssessmentRemoteDataSource
+      sl<AssessmentLocalDataSource>(), // AssessmentLocalDataSource
     ),
   );
 
@@ -308,6 +311,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => AddStudent(sl()));
   sl.registerLazySingleton(() => RemoveStudent(sl()));
   sl.registerLazySingleton(() => SearchStudents(sl()));
+  sl.registerLazySingleton(() => GetEnrolledStudents(sl()));
 
   // Assessment use cases
   sl.registerLazySingleton(() => CreateAssessment(sl()));

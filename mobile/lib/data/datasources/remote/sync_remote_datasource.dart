@@ -20,7 +20,14 @@ abstract class SyncRemoteDataSource {
   });
 
   /// Fetch full sync data on first login
-  Future<Map<String, dynamic>> fullSync({required String deviceId});
+  ///
+  /// [classIds] - List of class IDs to sync (empty = base request only)
+  /// [receiveTimeout] - Custom timeout for receiving the response
+  Future<Map<String, dynamic>> fullSync({
+    required String deviceId,
+    List<String> classIds = const [],
+    Duration? receiveTimeout,
+  });
 
   /// Fetch delta sync data on app restart
   Future<Map<String, dynamic>> deltaSync({
@@ -146,11 +153,25 @@ class SyncRemoteDataSourceImpl implements SyncRemoteDataSource {
   }
 
   @override
-  Future<Map<String, dynamic>> fullSync({required String deviceId}) async {
+  Future<Map<String, dynamic>> fullSync({
+    required String deviceId,
+    List<String> classIds = const [],
+    Duration? receiveTimeout,
+  }) async {
     try {
+      final data = {
+        'device_id': deviceId,
+        if (classIds.isNotEmpty) 'class_ids': classIds,
+      };
+
+      final options = receiveTimeout != null
+          ? Options(receiveTimeout: receiveTimeout)
+          : null;
+
       final response = await _dio.postUri(
         Uri.parse(ApiEndpoints.syncFull.path),
-        data: {'device_id': deviceId},
+        data: data,
+        options: options,
       );
 
       if (response.statusCode != 200) {

@@ -35,4 +35,6 @@ abstract class ClassRepository {
   });
 
   ResultFuture<List<User>> searchStudents({String? query});
+
+  ResultFuture<List<User>> getEnrolledStudents({required String classId});
 }

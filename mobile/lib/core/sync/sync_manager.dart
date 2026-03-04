@@ -5,6 +5,8 @@ import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/id_reconciler.dart';
+import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
+import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';
 import 'package:likha/data/models/sync/push_response_model.dart';
 import 'package:sqflite/sqflite.dart';
@@ -18,6 +20,8 @@ class SyncState {
   final int failedCount;
   final String? lastError;
   final DateTime? lastSyncAt;
+  final double progress;
+  final String? currentStep;
 
   const SyncState({
     required this.phase,
@@ -25,6 +29,8 @@ class SyncState {
     required this.failedCount,
     this.lastError,
     this.lastSyncAt,
+    this.progress = 0.0,
+    this.currentStep,
   });
 
   SyncState copyWith({
@@ -33,6 +39,8 @@ class SyncState {
     int? failedCount,
     String? lastError,
     DateTime? lastSyncAt,
+    double? progress,
+    String? currentStep,
   }) {
     return SyncState(
       phase: phase ?? this.phase,
@@ -40,6 +48,8 @@ class SyncState {
       failedCount: failedCount ?? this.failedCount,
       lastError: lastError ?? this.lastError,
       lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+      progress: progress ?? this.progress,
+      currentStep: currentStep ?? this.currentStep,
     );
   }
 }
@@ -49,6 +59,8 @@ class SyncManager {
   final SyncQueue _syncQueue;
   final SyncRemoteDataSource _syncRemoteDataSource;
   final LocalDatabase _localDatabase;
+  final AssessmentRemoteDataSource _assessmentRemoteDataSource;
+  final AssessmentLocalDataSource _assessmentLocalDataSource;
 
   bool _isSyncing = false;
   StreamSubscription<bool>? _reachabilitySubscription;
@@ -67,6 +79,8 @@ class SyncManager {
     this._syncQueue,
     this._syncRemoteDataSource,
     this._localDatabase,
+    this._assessmentRemoteDataSource,
+    this._assessmentLocalDataSource,
   );
 
   /// Start sync manager - listen for server reachability changes
@@ -449,44 +463,33 @@ class SyncManager {
         ? deviceIdRows.first['value'] as String
         : _generateAndStoreDeviceId(db);
 
-    // Fetch full sync data
-    final response = await _syncRemoteDataSource.fullSync(deviceId: deviceId);
+    // STEP 0: Initialize progress
+    _updateState(progress: 0.0, currentStep: 'Preparing Likha for you…');
 
-    // Extract the data wrapper (response structure: {success, status_code, data: {...}, error})
-    final data = response['data'] as Map<String, dynamic>?;
-    if (data == null) {
+    // STEP 1: Make base request (empty classIds) to get user, classes, enrollments, enrolled_students
+    final baseResponse = await _syncRemoteDataSource.fullSync(
+      deviceId: deviceId,
+      receiveTimeout: const Duration(seconds: 30),
+    );
+    final baseData = baseResponse['data'] as Map<String, dynamic>?;
+    if (baseData == null) {
       throw Exception('No data in full sync response');
     }
 
-    final syncToken = data['sync_token'] as String?;
-    final serverTime = data['server_time'] as String?;
+    final syncToken = baseData['sync_token'] as String?;
+    final serverTime = baseData['server_time'] as String?;
 
     if (syncToken == null) {
       throw Exception('No sync_token in full sync response');
     }
 
-    // Upsert all entity data
-    final enrolledStudents = (data['enrolled_students'] as List?) ?? [];
-    final userData = data['user'] as Map<String, dynamic>?;
+    // Upsert base response data (user, classes, enrollments, enrolled_students)
+    final enrolledStudents = (baseData['enrolled_students'] as List?) ?? [];
+    final userData = baseData['user'] as Map<String, dynamic>?;
 
-    // Build studentMap for submission enrichment
-    final studentMap = <String, dynamic>{};
-    for (final s in enrolledStudents) {
-      final student = s as Map<String, dynamic>;
-      studentMap[student['id'] as String] = student;
-    }
-
-    await _upsertClasses(db, data['classes'] ?? []);
+    await _upsertClasses(db, baseData['classes'] ?? []);
     await _upsertEnrolledStudents(db, enrolledStudents);
-    await _upsertEnrollments(db, data['enrollments'] ?? [], enrolledStudents);
-    await _upsertAssessments(db, data['assessments'] ?? []);
-    await _upsertQuestions(db, data['questions'] ?? []);
-    await _upsertAssessmentSubmissions(db, data['assessment_submissions'] ?? [], studentMap);
-    await _upsertAssignments(db, data['assignments'] ?? []);
-    await _upsertAssignmentSubmissions(db, data['assignment_submissions'] ?? [], studentMap);
-    await _upsertSubmissionFiles(db, data['submission_files'] ?? []);
-    await _upsertLearningMaterials(db, data['learning_materials'] ?? []);
-    await _upsertMaterialFiles(db, data['material_files'] ?? []);
+    await _upsertEnrollments(db, baseData['enrollments'] ?? [], enrolledStudents);
 
     // Cache the logged-in user from sync response
     if (userData != null) {
@@ -509,6 +512,96 @@ class SyncManager {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
     }
+
+    // STEP 2: Extract classes and create batches of 2
+    final classes = (baseData['classes'] as List?)
+        ?.whereType<Map<String, dynamic>>()
+        .toList() ?? [];
+    final classBatches = <List<String>>[];
+    final classMap = <String, String>{};
+    for (final cls in classes) {
+      final id = cls['id']?.toString();
+      final title = cls['title'] as String?;
+      if (id != null && id.isNotEmpty && title != null) {
+        classMap[id] = title;
+      }
+    }
+
+    for (int i = 0; i < classes.length; i += 2) {
+      final batch = classes.skip(i).take(2)
+          .map((c) => c['id']?.toString() ?? '')
+          .where((id) => id.isNotEmpty)
+          .toList();
+      classBatches.add(batch);
+    }
+
+    // STEP 3: Update progress to 0.1 and start batch loading
+    _updateState(progress: 0.1, currentStep: 'Loading your classes…');
+
+    // Build student map for submission enrichment
+    final studentMap = <String, dynamic>{};
+    for (final s in enrolledStudents) {
+      if (s is! Map<String, dynamic>) continue;
+      final id = s['id']?.toString();
+      if (id != null && id.isNotEmpty) {
+        studentMap[id] = s;
+      }
+    }
+
+    // STEP 4: Iterate through batches with progress updates
+    if (classBatches.isNotEmpty) {
+      for (int batchIndex = 0; batchIndex < classBatches.length; batchIndex++) {
+        final batch = classBatches[batchIndex];
+        final progressBase = 0.1;
+        final progressRange = 0.85;
+        final batchProgress = progressBase + (progressRange * (batchIndex / classBatches.length));
+
+        // Create step description with batch titles
+        final batchTitles = batch.map((id) => classMap[id] ?? id).join(' & ');
+        final currentStepText = 'Getting $batchTitles ready… (${batchIndex + 1}/${classBatches.length})';
+        _updateState(progress: batchProgress, currentStep: currentStepText);
+
+        // Make batch request with receiveTimeout
+        final batchResponse = await _syncRemoteDataSource.fullSync(
+          deviceId: deviceId,
+          classIds: batch,
+          receiveTimeout: const Duration(seconds: 30),
+        );
+
+        final batchData = batchResponse['data'] as Map<String, dynamic>?;
+        if (batchData == null) {
+          continue;
+        }
+
+        // Upsert all entities from batch response
+        await _upsertAssessments(db, batchData['assessments'] ?? []);
+        await _upsertQuestions(db, batchData['questions'] ?? []);
+        await _upsertAssessmentSubmissions(
+          db,
+          batchData['assessment_submissions'] ?? [],
+          studentMap,
+        );
+        await _upsertAssignments(db, batchData['assignments'] ?? []);
+        await _upsertAssignmentSubmissions(
+          db,
+          batchData['assignment_submissions'] ?? [],
+          studentMap,
+        );
+        await _upsertSubmissionFiles(db, batchData['submission_files'] ?? []);
+        await _upsertLearningMaterials(db, batchData['learning_materials'] ?? []);
+        await _upsertMaterialFiles(db, batchData['material_files'] ?? []);
+      }
+    }
+
+    // STEP 5: After all batches, set progress to 0.95 with "Almost there…"
+    _updateState(progress: 0.95, currentStep: 'Almost there…');
+
+    // STEP 6: Call warm-up methods without awaiting
+    _warmUpStatisticsCache();
+    _warmUpStudentResultsCache();
+
+    // STEP 7: Set progress to 1.0 with "Likha is ready!"
+    _updateState(progress: 1.0, currentStep: 'Likha is ready!');
 
     // Save sync metadata
     final expiryAt = DateTime.now().add(const Duration(days: 30)).toIso8601String();
@@ -585,16 +678,23 @@ class SyncManager {
     List<dynamic> records,
   ) async {
     for (final record in records) {
-      final data = record as Map<String, dynamic>;
+      if (record is! Map<String, dynamic>) continue;
       await db.insert(
         'classes',
         {
-          ...data,
-          'teacher_username': data['teacher_username'] ?? '',
-          'teacher_full_name': data['teacher_full_name'] ?? '',
+          'id': record['id'],
+          'title': record['title'],
+          'description': record['description'],
+          'teacher_id': record['teacher_id'],
+          'teacher_username': record['teacher_username'] ?? '',
+          'teacher_full_name': record['teacher_full_name'] ?? '',
+          'is_archived': (record['is_archived'] == true) ? 1 : 0,
+          'student_count': record['student_count'] ?? 0,
+          'created_at': record['created_at'],
+          'updated_at': record['updated_at'] ?? record['created_at'],
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
-          'is_archived': (data['is_archived'] == true) ? 1 : 0,
+          'is_offline_mutation': 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -658,13 +758,18 @@ class SyncManager {
     // Build lookup map: student_id -> student data
     final studentMap = <String, Map<String, dynamic>>{};
     for (final s in enrolledStudents) {
-      final student = s as Map<String, dynamic>;
-      studentMap[student['id'] as String] = student;
+      if (s is! Map<String, dynamic>) continue;
+      final id = s['id']?.toString();
+      if (id != null && id.isNotEmpty) {
+        studentMap[id] = s;
+      }
     }
 
     for (final enrollment in enrollments) {
-      final e = enrollment as Map<String, dynamic>;
-      final studentId = e['student_id'] as String;
+      if (enrollment is! Map<String, dynamic>) continue;
+      final e = enrollment;
+      final studentId = e['student_id']?.toString();
+      if (studentId == null || studentId.isEmpty) continue;
       final student = studentMap[studentId] ?? {};
 
       await db.insert(
@@ -682,6 +787,7 @@ class SyncManager {
           'updated_at': e['enrolled_at'],
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
+          'is_offline_mutation': 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -694,21 +800,23 @@ class SyncManager {
     List<dynamic> records,
   ) async {
     for (final record in records) {
-      final data = record as Map<String, dynamic>;
+      if (record is! Map<String, dynamic>) continue;
       // Only insert columns that exist in the users table
       await db.insert(
         'users',
         {
-          'id': data['id'],
-          'username': data['username'],
-          'full_name': data['full_name'],
-          'role': data['role'],
-          'account_status': data['account_status'],
-          'is_active': (data['is_active'] == true) ? 1 : 0,
-          'activated_at': data['activated_at'],
-          'created_at': data['created_at'],
+          'id': record['id'],
+          'username': record['username'],
+          'full_name': record['full_name'],
+          'role': record['role'],
+          'account_status': record['account_status'],
+          'is_active': (record['is_active'] == true) ? 1 : 0,
+          'activated_at': record['activated_at'],
+          'created_at': record['created_at'],
+          'updated_at': record['updated_at'] ?? record['created_at'],
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
+          'is_offline_mutation': 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -1323,6 +1431,8 @@ class SyncManager {
     int? failedCount,
     String? lastError,
     DateTime? lastSyncAt,
+    double? progress,
+    String? currentStep,
   }) {
     _state = _state.copyWith(
       phase: phase,
@@ -1330,9 +1440,78 @@ class SyncManager {
       failedCount: failedCount,
       lastError: lastError,
       lastSyncAt: lastSyncAt,
+      progress: progress,
+      currentStep: currentStep,
     );
 
     _stateListener?.call(_state);
+  }
+
+  /// Warm-up statistics cache for first 30 assessments
+  void _warmUpStatisticsCache() {
+    Future.microtask(() async {
+      try {
+        final db = await _localDatabase.database;
+        final assessments = await db.query(
+          'assessments',
+          limit: 30,
+          orderBy: 'created_at DESC',
+        );
+        for (final assessment in assessments) {
+          final assessmentId = assessment['id'] as String;
+          try {
+            final result = await _assessmentRemoteDataSource.getStatistics(
+              assessmentId: assessmentId,
+            );
+            await _assessmentLocalDataSource.cacheStatistics(result);
+          } catch (_) {
+            // Silently fail — warm-up is non-critical
+          }
+        }
+      } catch (_) {
+        // Silently fail
+      }
+    });
+  }
+
+  /// Warm-up student results cache for released assessments
+  void _warmUpStudentResultsCache() {
+    Future.microtask(() async {
+      try {
+        final db = await _localDatabase.database;
+        final releasedAssessments = await db.query(
+          'assessments',
+          where: '(results_released = 1 OR show_results_immediately = 1)',
+          limit: 30,
+        );
+        final releasedIds = releasedAssessments
+            .map((a) => a['id'] as String)
+            .toSet();
+
+        final submissions = await db.query(
+          'assessment_submissions',
+          where: 'is_submitted = 1',
+          limit: 30,
+        );
+
+        for (final submission in submissions) {
+          final assessmentId = submission['assessment_id'] as String;
+          if (!releasedIds.contains(assessmentId)) continue;
+
+          final submissionId = submission['id'] as String;
+          try {
+            final result = await _assessmentRemoteDataSource.getStudentResults(
+              submissionId: submissionId,
+            );
+            await _assessmentLocalDataSource.cacheStudentResults(result);
+          } catch (_) {
+            // Silently fail — warm-up is non-critical
+          }
+        }
+      } catch (_) {
+        // Silently fail
+      }
+    });
   }
 
   /// Handles a single file upload operation by calling the multipart endpoint directly.
@@ -1373,6 +1552,17 @@ class SyncManager {
     } catch (e) {
       await _syncQueue.markFailed(op.id, e.toString());
     }
+  }
+
+  /// Resets the in-memory sync state to idle, clearing stale data after logout.
+  /// This ensures that the singleton instance doesn't carry over state from previous sessions.
+  void reset() {
+    _state = const SyncState(
+      phase: SyncPhase.idle,
+      pendingCount: 0,
+      failedCount: 0,
+    );
+    _stateListener?.call(_state);
   }
 
 }

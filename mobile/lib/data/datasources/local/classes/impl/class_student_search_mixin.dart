@@ -74,4 +74,29 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
       throw CacheException('Failed to search cached students: $e');
     }
   }
+
+  @override
+  Future<List<UserModel>> getCachedEnrolledStudents(String classId) async {
+    try {
+      final db = await localDatabase.database;
+      final rows = await db.query(
+        'class_enrollments',
+        where: 'class_id = ? AND deleted_at IS NULL',
+        whereArgs: [classId],
+        orderBy: 'full_name ASC',
+      );
+      return rows.map((row) => UserModel(
+        id: row['student_id'] as String,
+        username: row['username'] as String,
+        fullName: row['full_name'] as String,
+        role: row['role'] as String,
+        accountStatus: row['account_status'] as String,
+        isActive: (row['is_active'] as int) == 1,
+        activatedAt: null,
+        createdAt: DateTime.parse(row['enrolled_at'] as String),
+      )).toList();
+    } catch (e) {
+      throw CacheException('Failed to get enrolled students: $e');
+    }
+  }
 }

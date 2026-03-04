@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/pages/teacher/widgets/empty_search_state.dart';
 import 'package:likha/presentation/pages/teacher/widgets/searchable_student_item.dart';
 import 'package:likha/presentation/pages/teacher/widgets/student_search_field.dart';
@@ -19,6 +21,7 @@ class AddStudentPage extends ConsumerStatefulWidget {
 class _AddStudentPageState extends ConsumerState<AddStudentPage> {
   final _searchController = TextEditingController();
   Timer? _debounce;
+  bool _isOffline = false;
 
   @override
   void initState() {
@@ -52,6 +55,21 @@ class _AddStudentPageState extends ConsumerState<AddStudentPage> {
     final classState = ref.watch(classProvider);
 
     ref.listen<ClassState>(classProvider, (prev, next) {
+      // Detect offline and load enrolled students as fallback
+      if (!sl<ServerReachabilityService>().isServerReachable &&
+          next.error != null &&
+          next.searchResults.isEmpty &&
+          !_isOffline) {
+        _isOffline = true;
+        ref.read(classProvider.notifier).loadEnrolledStudentsOffline(widget.classId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Offline — showing enrolled students only'),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -66,7 +84,7 @@ class _AddStudentPageState extends ConsumerState<AddStudentPage> {
         );
         ref.read(classProvider.notifier).clearMessages();
       }
-      if (next.error != null && prev?.error != next.error) {
+      if (next.error != null && prev?.error != next.error && !_isOffline) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.error!),
@@ -143,7 +161,7 @@ class _AddStudentPageState extends ConsumerState<AddStudentPage> {
                                             classId: widget.classId,
                                             studentId: student.id,
                                           );
-                                    } else {
+                                    } else if (!_isOffline) {
                                       ref.read(classProvider.notifier).addStudent(
                                             classId: widget.classId,
                                             studentId: student.id,

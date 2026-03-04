@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 10,
+      version: 11,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onOpen: (db) async {
@@ -344,6 +344,24 @@ class LocalDatabase {
         )
       ''');
 
+      // Assessment statistics cache table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS assessment_statistics_cache (
+          assessment_id TEXT PRIMARY KEY,
+          statistics_json TEXT NOT NULL,
+          cached_at TEXT NOT NULL
+        )
+      ''');
+
+      // Student results cache table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS student_results_cache (
+          submission_id TEXT PRIMARY KEY,
+          results_json TEXT NOT NULL,
+          cached_at TEXT NOT NULL
+        )
+      ''');
+
       // Create indexes for common queries
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_classes_teacher_id ON classes(teacher_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_classes_updated_at ON classes(updated_at)');
@@ -631,6 +649,28 @@ class LocalDatabase {
       } catch (e) {
         // Column already exists
       }
+    }
+
+    if (oldVersion < 11) {
+      // Create missing cache tables for existing installs that were fresh-installed at v8+
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS assessment_statistics_cache (
+            assessment_id TEXT PRIMARY KEY,
+            statistics_json TEXT NOT NULL,
+            cached_at TEXT NOT NULL
+          )
+        ''');
+      } catch (_) {}
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS student_results_cache (
+            submission_id TEXT PRIMARY KEY,
+            results_json TEXT NOT NULL,
+            cached_at TEXT NOT NULL
+          )
+        ''');
+      } catch (_) {}
     }
   }
 

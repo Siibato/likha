@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/core/sync/sync_manager.dart';
-import 'package:likha/injection_container.dart';
+import 'package:likha/injection_container.dart' as di;
 import 'package:likha/presentation/pages/activate_account_page.dart';
 import 'package:likha/presentation/pages/home_page.dart';
 import 'package:likha/presentation/pages/login_page.dart';
 import 'package:likha/presentation/pages/login_password_page.dart';
+import 'package:likha/presentation/pages/sync_loading_page.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
+import 'package:likha/presentation/providers/sync_provider.dart';
 
 class AuthWrapper extends ConsumerStatefulWidget {
   const AuthWrapper({super.key});
@@ -19,13 +21,14 @@ class AuthWrapper extends ConsumerStatefulWidget {
 
 class _AuthWrapperState extends ConsumerState<AuthWrapper> {
   String? _lastSyncedUserId;
+  bool _syncFailureAcknowledged = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Wire up force-logout so invalid tokens auto-navigate to login
-      sl<DioClient>().onForceLogout = () {
+      di.sl<DioClient>().onForceLogout = () {
         ref.read(authProvider.notifier).forceLogout();
       };
       ref.read(authProvider.notifier).checkAuthStatus();
@@ -35,6 +38,14 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+
+    ref.listen(authProvider, (prev, next) {
+      if (prev != null && prev.isAuthenticated && !next.isAuthenticated) {
+        _lastSyncedUserId = null;
+        _syncFailureAcknowledged = false;
+        di.sl<SyncManager>().reset();
+      }
+    });
 
     if (!authState.isInitialized) {
       return const Scaffold(
@@ -55,18 +66,26 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
       if (_lastSyncedUserId != authState.user?.id) {
         _lastSyncedUserId = authState.user?.id;
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          sl<SyncManager>().sync();
+          di.sl<SyncManager>().sync();
 
           if (authState.user?.role == 'admin') {
             ref.read(adminProvider.notifier).cacheAccountsOffline();
           }
         });
       }
+
+      final syncState = ref.watch(syncProvider);
+      final isFirstSync = syncState.lastSyncAt == null;
+
+      if (isFirstSync && syncState.phase == SyncPhase.syncing) {
+        return SyncLoadingPage(onContinueOffline: _acknowledgeSyncFailure);
+      }
+      if (isFirstSync && !_syncFailureAcknowledged && syncState.phase == SyncPhase.failed) {
+        return SyncLoadingPage(onContinueOffline: _acknowledgeSyncFailure);
+      }
+
       return const HomePage();
     }
-
-    // Reset sync tracking when logged out
-    _lastSyncedUserId = null;
 
     if (authState.pendingActivationUsername != null) {
       return const ActivateAccountPage();
@@ -77,6 +96,10 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
     }
 
     return const LoginPage();
+  }
+
+  void _acknowledgeSyncFailure() {
+    setState(() => _syncFailureAcknowledged = true);
   }
 }
 

@@ -163,6 +163,18 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
     }
   }
 
+  @override
+  ResultFuture<List<User>> getEnrolledStudents({required String classId}) async {
+    try {
+      final students = await localDataSource.getCachedEnrolledStudents(classId);
+      return Right(students.cast<User>());
+    } on CacheException catch (e) {
+      return Left(CacheFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
   /// Builds a skeleton [UserModel] when the student is not in the local cache.
   /// Names will be filled in after the next sync.
   UserModel _skeletonStudent(String studentId) => UserModel(
