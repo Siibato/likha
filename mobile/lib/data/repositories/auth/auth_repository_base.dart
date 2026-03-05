@@ -1,3 +1,4 @@
+import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
@@ -15,6 +16,7 @@ abstract class AuthRepositoryBase extends AuthRepository {
   final ServerReachabilityService serverReachabilityService;
   final StorageService storageService;
   final SyncQueue syncQueue;
+  final LocalDatabase localDatabase;
   final ClassLocalDataSource classLocalDataSource;
   final AssignmentLocalDataSource assignmentLocalDataSource;
   final AssessmentLocalDataSource assessmentLocalDataSource;
@@ -26,6 +28,7 @@ abstract class AuthRepositoryBase extends AuthRepository {
     required this.serverReachabilityService,
     required this.storageService,
     required this.syncQueue,
+    required this.localDatabase,
     required this.classLocalDataSource,
     required this.assignmentLocalDataSource,
     required this.assessmentLocalDataSource,
@@ -44,6 +47,19 @@ abstract class AuthRepositoryBase extends AuthRepository {
         localDataSource.clearAllCache(),
         syncQueue.clear(),
       ]);
+
+      // Clear sync metadata (last_sync_at and data_expiry_at) to prevent user B from inheriting
+      // user A's delta sync cursor. Preserve device_id as it should persist across user sessions.
+      try {
+        final db = await localDatabase.database;
+        await db.delete(
+          'sync_metadata',
+          where: 'key IN (?, ?)',
+          whereArgs: ['last_sync_at', 'data_expiry_at'],
+        );
+      } catch (e) {
+        // Best-effort sync metadata clearing
+      }
     } catch (e) {
       // Best-effort cache clearing — don't fail login/logout if cache clearing fails
     }

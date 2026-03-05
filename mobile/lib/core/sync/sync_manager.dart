@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/id_reconciler.dart';
+import 'package:likha/core/sync/sync_logger.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';
@@ -22,6 +24,9 @@ class SyncState {
   final DateTime? lastSyncAt;
   final double progress;
   final String? currentStep;
+  final bool assessmentsReady;
+  final bool assignmentsReady;
+  final bool materialsReady;
 
   const SyncState({
     required this.phase,
@@ -31,6 +36,9 @@ class SyncState {
     this.lastSyncAt,
     this.progress = 0.0,
     this.currentStep,
+    this.assessmentsReady = false,
+    this.assignmentsReady = false,
+    this.materialsReady = false,
   });
 
   SyncState copyWith({
@@ -41,6 +49,9 @@ class SyncState {
     DateTime? lastSyncAt,
     double? progress,
     String? currentStep,
+    bool? assessmentsReady,
+    bool? assignmentsReady,
+    bool? materialsReady,
   }) {
     return SyncState(
       phase: phase ?? this.phase,
@@ -50,6 +61,9 @@ class SyncState {
       lastSyncAt: lastSyncAt ?? this.lastSyncAt,
       progress: progress ?? this.progress,
       currentStep: currentStep ?? this.currentStep,
+      assessmentsReady: assessmentsReady ?? this.assessmentsReady,
+      assignmentsReady: assignmentsReady ?? this.assignmentsReady,
+      materialsReady: materialsReady ?? this.materialsReady,
     );
   }
 }
@@ -61,6 +75,7 @@ class SyncManager {
   final LocalDatabase _localDatabase;
   final AssessmentRemoteDataSource _assessmentRemoteDataSource;
   final AssessmentLocalDataSource _assessmentLocalDataSource;
+  final SyncLogger _log;
 
   bool _isSyncing = false;
   StreamSubscription<bool>? _reachabilitySubscription;
@@ -81,6 +96,7 @@ class SyncManager {
     this._localDatabase,
     this._assessmentRemoteDataSource,
     this._assessmentLocalDataSource,
+    this._log,
   );
 
   /// Start sync manager - listen for server reachability changes
@@ -177,6 +193,8 @@ class SyncManager {
     // Split: upload ops need direct multipart POST, not JSON batch
     final uploadOps   = pending.where((e) => e.operation == SyncOperation.upload).toList();
     final regularOps  = pending.where((e) => e.operation != SyncOperation.upload).toList();
+
+    _log.outboundSync(uploadOps: uploadOps.length, regularOps: regularOps.length);
 
     // Handle file uploads directly via multipart endpoint
     for (final op in uploadOps) {
@@ -487,9 +505,31 @@ class SyncManager {
     final enrolledStudents = (baseData['enrolled_students'] as List?) ?? [];
     final userData = baseData['user'] as Map<String, dynamic>?;
 
+    // Track students per class
+    final rawEnrollments = (baseData['enrollments'] as List?) ?? [];
+    final studentsPerClassCount = <String, int>{};
+    for (final e in rawEnrollments) {
+      if (e is! Map<String, dynamic>) continue;
+      final cid = e['class_id']?.toString();
+      if (cid != null) studentsPerClassCount[cid] = (studentsPerClassCount[cid] ?? 0) + 1;
+    }
+
     await _upsertClasses(db, baseData['classes'] ?? []);
     await _upsertEnrolledStudents(db, enrolledStudents);
     await _upsertEnrollments(db, baseData['enrollments'] ?? [], enrolledStudents);
+
+    _log.baseResponse(
+      classes: (baseData['classes'] as List?)?.length ?? 0,
+      enrollments: rawEnrollments.length,
+      students: enrolledStudents.length,
+    );
+
+    // Log per-class student counts
+    final classes = (baseData['classes'] as List?)?.whereType<Map<String, dynamic>>().toList() ?? [];
+    for (final cls in classes) {
+      final clsId = cls['id']?.toString() ?? '';
+      _log.studentsPerClass(cls, studentsPerClassCount[clsId] ?? 0);
+    }
 
     // Cache the logged-in user from sync response
     if (userData != null) {
@@ -514,12 +554,12 @@ class SyncManager {
     }
 
     // STEP 2: Extract classes and create batches of 2
-    final classes = (baseData['classes'] as List?)
+    final classesForBatching = (baseData['classes'] as List?)
         ?.whereType<Map<String, dynamic>>()
         .toList() ?? [];
     final classBatches = <List<String>>[];
     final classMap = <String, String>{};
-    for (final cls in classes) {
+    for (final cls in classesForBatching) {
       final id = cls['id']?.toString();
       final title = cls['title'] as String?;
       if (id != null && id.isNotEmpty && title != null) {
@@ -527,13 +567,15 @@ class SyncManager {
       }
     }
 
-    for (int i = 0; i < classes.length; i += 2) {
-      final batch = classes.skip(i).take(2)
+    for (int i = 0; i < classesForBatching.length; i += 2) {
+      final batch = classesForBatching.skip(i).take(2)
           .map((c) => c['id']?.toString() ?? '')
           .where((id) => id.isNotEmpty)
           .toList();
       classBatches.add(batch);
     }
+
+    _log.fullSyncStart(classesForBatching.length, classBatches.length);
 
     // STEP 3: Update progress to 0.1 and start batch loading
     _updateState(progress: 0.1, currentStep: 'Loading your classes…');
@@ -561,6 +603,8 @@ class SyncManager {
         final currentStepText = 'Getting $batchTitles ready… (${batchIndex + 1}/${classBatches.length})';
         _updateState(progress: batchProgress, currentStep: currentStepText);
 
+        _log.batchStart(batchIndex, classBatches.length, batch);
+
         // Make batch request with receiveTimeout
         final batchResponse = await _syncRemoteDataSource.fullSync(
           deviceId: deviceId,
@@ -574,31 +618,74 @@ class SyncManager {
         }
 
         // Upsert all entities from batch response
-        await _upsertAssessments(db, batchData['assessments'] ?? []);
-        await _upsertQuestions(db, batchData['questions'] ?? []);
-        await _upsertAssessmentSubmissions(
-          db,
-          batchData['assessment_submissions'] ?? [],
-          studentMap,
-        );
-        await _upsertAssignments(db, batchData['assignments'] ?? []);
-        await _upsertAssignmentSubmissions(
-          db,
-          batchData['assignment_submissions'] ?? [],
-          studentMap,
-        );
-        await _upsertSubmissionFiles(db, batchData['submission_files'] ?? []);
-        await _upsertLearningMaterials(db, batchData['learning_materials'] ?? []);
-        await _upsertMaterialFiles(db, batchData['material_files'] ?? []);
+        final assessments = batchData['assessments'] ?? [];
+        final questions = batchData['questions'] ?? [];
+        final assessmentSubmissions = batchData['assessment_submissions'] ?? [];
+        final assignments = batchData['assignments'] ?? [];
+        final assignmentSubmissions = batchData['assignment_submissions'] ?? [];
+        final submissionFiles = batchData['submission_files'] ?? [];
+        final learningMaterials = batchData['learning_materials'] ?? [];
+        final materialFiles = batchData['material_files'] ?? [];
+        final assessmentStatistics = batchData['assessment_statistics'] ?? [];
+        final studentResults = batchData['student_results'] ?? [];
+
+        _log.batchReceived(batchIndex, classBatches.length, {
+          'assessments': assessments.length,
+          'questions': questions.length,
+          'assessment_submissions': assessmentSubmissions.length,
+          'assignments': assignments.length,
+          'assignment_submissions': assignmentSubmissions.length,
+          'learning_materials': learningMaterials.length,
+          'material_files': materialFiles.length,
+          'submission_files': submissionFiles.length,
+          'assessment_statistics': assessmentStatistics.length,
+          'student_results': studentResults.length,
+        });
+
+        // Log questions per assessment
+        final questionsByAssessment = <String, int>{};
+        for (final q in questions) {
+          if (q is Map<String, dynamic>) {
+            final assessmentId = q['assessment_id'] as String?;
+            if (assessmentId != null) {
+              questionsByAssessment[assessmentId] = (questionsByAssessment[assessmentId] ?? 0) + 1;
+            }
+          }
+        }
+        for (final assessment in assessments) {
+          if (assessment is Map<String, dynamic>) {
+            final assessmentId = assessment['id'] as String?;
+            final title = assessment['title'] as String? ?? 'unknown';
+            final qCount = questionsByAssessment[assessmentId] ?? 0;
+            _log.questionsPerAssessment(title, assessmentId ?? '?', qCount);
+          }
+        }
+
+        await _upsertAssessments(db, assessments);
+        await _upsertQuestions(db, questions);
+        await _upsertAssessmentSubmissions(db, assessmentSubmissions, studentMap);
+        await _upsertAssignments(db, assignments);
+        await _upsertAssignmentSubmissions(db, assignmentSubmissions, studentMap);
+        await _upsertSubmissionFiles(db, submissionFiles);
+        await _upsertLearningMaterials(db, learningMaterials);
+        await _upsertMaterialFiles(db, materialFiles);
+
+        _log.upsertSummary('assessment_statistics', assessmentStatistics.length);
+        await _upsertStatistics(db, assessmentStatistics);
+        _log.upsertSummary('student_results', studentResults.length);
+        await _upsertStudentResults(db, studentResults);
       }
     }
 
-    // STEP 5: After all batches, set progress to 0.95 with "Almost there…"
-    _updateState(progress: 0.95, currentStep: 'Almost there…');
+    // STEP 5: Signal that entity data is now in the local DB
+    _updateState(
+      assessmentsReady: true,
+      assignmentsReady: true,
+      materialsReady: true,
+    );
 
-    // STEP 6: Call warm-up methods without awaiting
-    _warmUpStatisticsCache();
-    _warmUpStudentResultsCache();
+    // STEP 6: After all batches, set progress to 0.95 with "Almost there…"
+    _updateState(progress: 0.95, currentStep: 'Almost there…');
 
     // STEP 7: Set progress to 1.0 with "Likha is ready!"
     _updateState(progress: 1.0, currentStep: 'Likha is ready!');
@@ -656,6 +743,13 @@ class SyncManager {
 
     // Process deltas: upsert updated, delete removed
     await _processDeltaPayload(db, deltas);
+
+    // Signal that delta data is now merged into local DB
+    _updateState(
+      assessmentsReady: true,
+      assignmentsReady: true,
+      materialsReady: true,
+    );
 
     // Update sync metadata
     final expiryAt = DateTime.now().add(const Duration(days: 30)).toIso8601String();
@@ -851,6 +945,7 @@ class SyncManager {
           'deleted_at': data['deleted_at'],
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
+          'is_offline_mutation': 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -965,7 +1060,10 @@ class SyncManager {
           'submission_type': data['submission_type'] ?? 'file',
           'allowed_file_types': data['allowed_file_types'],
           'max_file_size_mb': data['max_file_size_mb'],
-          'due_at': data['due_at'],
+          'due_at': data['due_at'] ?? '',
+          'submission_status': data['submission_status'],
+          'submission_id': data['submission_id'],
+          'score': data['score'],
           'is_published': (data['is_published'] == true) ? 1 : 0,
           'submission_count': data['submission_count'] ?? 0,
           'graded_count': data['graded_count'] ?? 0,
@@ -1002,6 +1100,7 @@ class SyncManager {
           'deleted_at': data['deleted_at'],
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
+          'is_offline_mutation': 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -1033,6 +1132,7 @@ class SyncManager {
           'student_username': (student['username'] as String?) ?? '',
           'started_at': data['started_at'] ?? DateTime.now().toIso8601String(),
           'submitted_at': data['submitted_at'],
+          'created_at': data['created_at'] ?? DateTime.now().toIso8601String(),
           'auto_score': data['auto_score'] ?? 0,
           'final_score': data['final_score'] ?? 0,
           'is_submitted': (data['is_submitted'] == true) ? 1 : 0,
@@ -1075,6 +1175,7 @@ class SyncManager {
           'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
+          'is_offline_mutation': 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -1188,18 +1289,65 @@ class SyncManager {
     }
   }
 
+  /// NEW: Upsert assessment statistics cache
+  Future<void> _upsertStatistics(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+      final assessmentId = data['assessment_id'] as String?;
+      _log.upsertRecord('assessment_statistics', assessmentId ?? '?');
+      await db.insert(
+        'assessment_statistics_cache',
+        {
+          'assessment_id': data['assessment_id'],
+          'statistics_json': jsonEncode(data),
+          'cached_at': DateTime.now().toIso8601String(),
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+  /// NEW: Upsert student results cache
+  Future<void> _upsertStudentResults(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+      final submissionId = data['submission_id'] as String?;
+      _log.upsertRecord('student_results', submissionId ?? '?');
+      await db.insert(
+        'student_results_cache',
+        {
+          'submission_id': data['submission_id'],
+          'results_json': jsonEncode(data),
+          'cached_at': DateTime.now().toIso8601String(),
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
   /// Process delta payload: upsert updated, soft-delete removed
   Future<void> _processDeltaPayload(
     Database db,
     Map<String, dynamic> deltas,
   ) async {
+    final updatedCounts = <String, int>{};
+    final deletedCounts = <String, int>{};
+
     // Handle classes separately (requires mobile-only defaults)
     final classesDeltas = deltas['classes'] as Map<String, dynamic>?;
     if (classesDeltas != null) {
       final updated = classesDeltas['updated'] as List<dynamic>? ?? [];
       await _upsertClasses(db, updated);
+      updatedCounts['classes'] = updated.length;
 
       final deleted = classesDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['classes'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           'classes',
@@ -1214,6 +1362,7 @@ class SyncManager {
     final enrollmentDeltas = deltas['enrollments'] as Map<String, dynamic>?;
     if (enrollmentDeltas != null) {
       final updated = enrollmentDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['enrollments'] = updated.length;
       // For delta, students should already be in the users table
       for (final enrollment in updated) {
         final e = enrollment as Map<String, dynamic>;
@@ -1251,6 +1400,7 @@ class SyncManager {
 
       // Hard-delete removed enrollments (student was unenrolled)
       final deleted = enrollmentDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['enrollments'] = deleted.length;
       for (final id in deleted) {
         await db.delete(
           'class_enrollments',
@@ -1271,9 +1421,11 @@ class SyncManager {
     final assessmentDeltas = deltas['assessments'] as Map<String, dynamic>?;
     if (assessmentDeltas != null) {
       final updated = assessmentDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['assessments'] = updated.length;
       await _upsertAssessments(db, updated);
 
       final deleted = assessmentDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['assessments'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           'assessments',
@@ -1288,9 +1440,11 @@ class SyncManager {
     final questionDeltas = deltas['questions'] as Map<String, dynamic>?;
     if (questionDeltas != null) {
       final updated = questionDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['questions'] = updated.length;
       await _upsertQuestions(db, updated);
 
       final deleted = questionDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['questions'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           'questions',
@@ -1305,9 +1459,11 @@ class SyncManager {
     final assessmentSubmissionDeltas = deltas['assessment_submissions'] as Map<String, dynamic>?;
     if (assessmentSubmissionDeltas != null) {
       final updated = assessmentSubmissionDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['assessment_submissions'] = updated.length;
       await _upsertAssessmentSubmissions(db, updated, studentMap);
 
       final deleted = assessmentSubmissionDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['assessment_submissions'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           'assessment_submissions',
@@ -1322,9 +1478,11 @@ class SyncManager {
     final assignmentDeltas = deltas['assignments'] as Map<String, dynamic>?;
     if (assignmentDeltas != null) {
       final updated = assignmentDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['assignments'] = updated.length;
       await _upsertAssignments(db, updated);
 
       final deleted = assignmentDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['assignments'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           'assignments',
@@ -1339,9 +1497,11 @@ class SyncManager {
     final assignmentSubmissionDeltas = deltas['assignment_submissions'] as Map<String, dynamic>?;
     if (assignmentSubmissionDeltas != null) {
       final updated = assignmentSubmissionDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['assignment_submissions'] = updated.length;
       await _upsertAssignmentSubmissions(db, updated, studentMap);
 
       final deleted = assignmentSubmissionDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['assignment_submissions'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           'assignment_submissions',
@@ -1356,9 +1516,11 @@ class SyncManager {
     final materialDeltas = deltas['learning_materials'] as Map<String, dynamic>?;
     if (materialDeltas != null) {
       final updated = materialDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['learning_materials'] = updated.length;
       await _upsertLearningMaterials(db, updated);
 
       final deleted = materialDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['learning_materials'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           'learning_materials',
@@ -1373,9 +1535,11 @@ class SyncManager {
     final materialFilesDeltas = deltas['material_files'] as Map<String, dynamic>?;
     if (materialFilesDeltas != null) {
       final updated = materialFilesDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['material_files'] = updated.length;
       await _upsertMaterialFiles(db, updated);
 
       final deleted = materialFilesDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['material_files'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           'material_files',
@@ -1390,9 +1554,11 @@ class SyncManager {
     final submissionFilesDeltas = deltas['submission_files'] as Map<String, dynamic>?;
     if (submissionFilesDeltas != null) {
       final updated = submissionFilesDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['submission_files'] = updated.length;
       await _upsertSubmissionFiles(db, updated);
 
       final deleted = submissionFilesDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['submission_files'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           'submission_files',
@@ -1406,11 +1572,14 @@ class SyncManager {
     final enrolledStudentsDeltas = deltas['enrolled_students'] as Map<String, dynamic>?;
     if (enrolledStudentsDeltas != null) {
       final updated = enrolledStudentsDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['enrolled_students'] = updated.length;
       await _upsertEnrolledStudents(db, updated);
 
       // Note: We don't soft-delete users - they are reusable across contexts
       // (current user, enrolled students, search results)
     }
+
+    _log.deltaSync(updatedCounts: updatedCounts, deletedCounts: deletedCounts);
   }
 
   /// Generate and store a device ID
@@ -1433,6 +1602,9 @@ class SyncManager {
     DateTime? lastSyncAt,
     double? progress,
     String? currentStep,
+    bool? assessmentsReady,
+    bool? assignmentsReady,
+    bool? materialsReady,
   }) {
     _state = _state.copyWith(
       phase: phase,
@@ -1442,6 +1614,9 @@ class SyncManager {
       lastSyncAt: lastSyncAt,
       progress: progress,
       currentStep: currentStep,
+      assessmentsReady: assessmentsReady,
+      assignmentsReady: assignmentsReady,
+      materialsReady: materialsReady,
     );
 
     _stateListener?.call(_state);
@@ -1557,10 +1732,14 @@ class SyncManager {
   /// Resets the in-memory sync state to idle, clearing stale data after logout.
   /// This ensures that the singleton instance doesn't carry over state from previous sessions.
   void reset() {
+    _isSyncing = false;
     _state = const SyncState(
       phase: SyncPhase.idle,
       pendingCount: 0,
       failedCount: 0,
+      assessmentsReady: false,
+      assignmentsReady: false,
+      materialsReady: false,
     );
     _stateListener?.call(_state);
   }

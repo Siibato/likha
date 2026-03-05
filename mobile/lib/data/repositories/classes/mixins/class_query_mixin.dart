@@ -16,16 +16,6 @@ mixin ClassQueryMixin on ClassRepositoryBase {
       } on CacheException {
         final freshClasses = await remoteDataSource.getAllClasses();
         await localDataSource.cacheClasses(freshClasses);
-
-        for (final cls in freshClasses) {
-          try {
-            final detail = await remoteDataSource.getClassDetail(classId: cls.id);
-            await localDataSource.cacheClassDetail(detail);
-          } catch (_) {
-            // Best-effort
-          }
-        }
-
         return Right(freshClasses);
       }
     } on ServerException catch (e) {
@@ -53,16 +43,6 @@ mixin ClassQueryMixin on ClassRepositoryBase {
       } on CacheException {
         final freshClasses = await remoteDataSource.getMyClasses();
         await localDataSource.cacheClasses(freshClasses);
-
-        for (final cls in freshClasses) {
-          try {
-            final detail = await remoteDataSource.getClassDetail(classId: cls.id);
-            await localDataSource.cacheClassDetail(detail);
-          } catch (_) {
-            // Best-effort
-          }
-        }
-
         return Right(freshClasses);
       }
     } on ServerException catch (e) {

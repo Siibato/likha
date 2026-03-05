@@ -115,12 +115,21 @@ impl super::EntitlementService {
             .await?;
 
         let assessment_ids: Vec<Uuid> = assessments.iter().map(|a| a.id).collect();
+        tracing::debug!("Manifest building: Found {} assessments", assessment_ids.len());
+
         let assessment_questions = if assessment_ids.is_empty() {
+            tracing::debug!("Manifest building: No assessments found, skipping questions");
             Vec::new()
         } else {
-            self.manifest_repo
+            tracing::debug!("Manifest building: Fetching questions for {} assessments", assessment_ids.len());
+            let questions = self.manifest_repo
                 .get_questions_manifest(assessment_ids.clone())
-                .await?
+                .await?;
+            tracing::debug!("Manifest building: Found {} questions for {} assessments", questions.len(), assessment_ids.len());
+            if questions.is_empty() {
+                tracing::debug!("Manifest building: No questions found for assessments");
+            }
+            questions
         };
 
         let assessment_submissions = if assessment_ids.is_empty() {

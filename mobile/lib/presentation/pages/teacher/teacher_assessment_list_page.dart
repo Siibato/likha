@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/teacher/assessment_detail_page.dart';
 import 'package:likha/presentation/pages/teacher/create_assessment_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/empty_assessment_list_state.dart';
 import 'package:likha/presentation/pages/teacher/widgets/teacher_assessment_card.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/providers/sync_provider.dart';
 
 class TeacherAssessmentListPage extends ConsumerStatefulWidget {
   final String classId;
@@ -29,6 +31,14 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
   @override
   Widget build(BuildContext context) {
     final assessmentState = ref.watch(assessmentProvider);
+
+    // Listen for sync completion to auto-refresh if data arrives after page opens
+    ref.listen<SyncState>(syncProvider, (previous, next) {
+      if (!(previous?.assessmentsReady ?? false) && next.assessmentsReady) {
+        // Assessments just became ready in the DB — reload
+        ref.read(assessmentProvider.notifier).loadAssessments(widget.classId);
+      }
+    });
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),

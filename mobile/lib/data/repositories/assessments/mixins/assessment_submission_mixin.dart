@@ -15,22 +15,25 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
   }) async {
     try {
       try {
-        final result =
-            await remoteDataSource.getSubmissions(assessmentId: assessmentId);
-        await localDataSource.cacheSubmissions(assessmentId, result);
-        unawaited(validationService.validateAndSync('assessments'));
-        return Right(result);
-      } on NetworkException {
+        final cached =
+            await localDataSource.getCachedSubmissions(assessmentId);
+        return Right(cached);
+      } on CacheException {
+        // Not in local DB — fetch from server if reachable
         try {
-          final cached =
-              await localDataSource.getCachedSubmissions(assessmentId);
-          return Right(cached);
-        } on CacheException catch (e) {
-          return Left(CacheFailure(e.message));
+          final result =
+              await remoteDataSource.getSubmissions(assessmentId: assessmentId);
+          await localDataSource.cacheSubmissions(assessmentId, result);
+          unawaited(validationService.validateAndSync('assessments'));
+          return Right(result);
+        } on NetworkException catch (e) {
+          return Left(NetworkFailure(e.message));
+        } on ServerException catch (e) {
+          return Left(ServerFailure(e.message));
         }
       }
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+    } on CacheException catch (e) {
+      return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -102,25 +105,24 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
     required String assessmentId,
   }) async {
     try {
+      // Try cache first
+      final cached =
+          await localDataSource.getCachedStatistics(assessmentId);
+      if (cached != null) return Right(cached);
+
+      // Cache miss — fetch from server if reachable
       try {
         final result =
             await remoteDataSource.getStatistics(assessmentId: assessmentId);
         await localDataSource.cacheStatistics(result);
         return Right(result);
-      } on NetworkException {
-        try {
-          final cached =
-              await localDataSource.getCachedStatistics(assessmentId);
-          if (cached != null) return Right(cached);
-          return Left(CacheFailure('Statistics not available offline'));
-        } on CacheException catch (e) {
-          return Left(CacheFailure(e.message));
-        }
+      } on NetworkException catch (e) {
+        return Left(NetworkFailure(e.message));
+      } on ServerException catch (e) {
+        return Left(ServerFailure(e.message));
       }
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(CacheFailure('Statistics not available offline'));
     }
   }
 
@@ -274,25 +276,24 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
     required String submissionId,
   }) async {
     try {
+      // Try cache first
+      final cached =
+          await localDataSource.getCachedStudentResults(submissionId);
+      if (cached != null) return Right(cached);
+
+      // Cache miss — fetch from server if reachable
       try {
         final result = await remoteDataSource.getStudentResults(
             submissionId: submissionId);
         await localDataSource.cacheStudentResults(result);
         return Right(result);
-      } on NetworkException {
-        try {
-          final cached =
-              await localDataSource.getCachedStudentResults(submissionId);
-          if (cached != null) return Right(cached);
-          return Left(const CacheFailure('Student results not available offline'));
-        } on CacheException catch (e) {
-          return Left(CacheFailure(e.message));
-        }
+      } on NetworkException catch (e) {
+        return Left(NetworkFailure(e.message));
+      } on ServerException catch (e) {
+        return Left(ServerFailure(e.message));
       }
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(const CacheFailure('Student results not available offline'));
     }
   }
 }

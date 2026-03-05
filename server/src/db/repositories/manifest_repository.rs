@@ -337,8 +337,7 @@ impl ManifestRepository {
         limit: i64,
     ) -> AppResult<PaginatedRecords> {
         let query = assessment_questions::Entity::find()
-            .filter(assessment_questions::Column::Id.is_in(question_ids))
-            .filter(assessment_questions::Column::DeletedAt.is_null());
+            .filter(assessment_questions::Column::Id.is_in(question_ids));
         Self::paginate_query(&self.db, query, limit, |r| {
             json!({
                 "id": r.id.to_string(),

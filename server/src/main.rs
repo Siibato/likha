@@ -41,6 +41,7 @@ async fn main() {
     tracing_subscriber::fmt()
         .with_target(false)
         .compact()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
     let config = config::ServerConfig::from_env();

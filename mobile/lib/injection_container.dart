@@ -9,6 +9,7 @@ import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/core/sync/sync_queue.dart';
+import 'package:likha/core/sync/sync_logger.dart';
 import 'package:likha/core/validation/services/validation_service.dart';
 import 'package:likha/core/validation/services/data_validator.dart';
 import 'package:likha/core/validation/services/timestamp_validator.dart';
@@ -227,6 +228,7 @@ Future<void> init() async {
       serverReachabilityService: sl<ServerReachabilityService>(),
       storageService: sl<StorageService>(),
       syncQueue: sl<SyncQueue>(),
+      localDatabase: sl<LocalDatabase>(),
       classLocalDataSource: sl<ClassLocalDataSource>(),
       assignmentLocalDataSource: sl<AssignmentLocalDataSource>(),
       assessmentLocalDataSource: sl<AssessmentLocalDataSource>(),
@@ -277,6 +279,9 @@ Future<void> init() async {
     ),
   );
 
+  // Sync Logger
+  sl.registerSingleton<SyncLogger>(SyncLogger());
+
   // SyncManager (depends on all repositories)
   sl.registerSingleton<SyncManager>(
     SyncManager(
@@ -286,6 +291,7 @@ Future<void> init() async {
       sl<LocalDatabase>(), // LocalDatabase
       sl<AssessmentRemoteDataSource>(), // AssessmentRemoteDataSource
       sl<AssessmentLocalDataSource>(), // AssessmentLocalDataSource
+      sl<SyncLogger>(), // SyncLogger
     ),
   );
 

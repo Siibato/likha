@@ -78,6 +78,7 @@ mixin AssessmentQuestionMixin on AssessmentRepositoryBase {
         assessmentId: assessmentId,
         questions: questions,
       );
+      await localDataSource.cacheQuestions(assessmentId, result);
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -155,6 +156,7 @@ mixin AssessmentQuestionMixin on AssessmentRepositoryBase {
       }
 
       await remoteDataSource.deleteQuestion(questionId: questionId);
+      await localDataSource.deleteQuestionLocally(questionId: questionId);
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

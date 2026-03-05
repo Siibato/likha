@@ -61,3 +61,15 @@ final syncLastErrorProvider = Provider<String?>((ref) {
 final syncLastSyncAtProvider = Provider<DateTime?>((ref) {
   return ref.watch(syncProvider).lastSyncAt;
 });
+
+final syncAssessmentsReadyProvider = Provider<bool>((ref) {
+  return ref.watch(syncProvider).assessmentsReady;
+});
+
+final syncAssignmentsReadyProvider = Provider<bool>((ref) {
+  return ref.watch(syncProvider).assignmentsReady;
+});
+
+final syncMaterialsReadyProvider = Provider<bool>((ref) {
+  return ref.watch(syncProvider).materialsReady;
+});

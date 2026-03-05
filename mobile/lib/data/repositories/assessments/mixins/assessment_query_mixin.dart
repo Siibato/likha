@@ -43,22 +43,36 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
   }) async {
     try {
       try {
+        final cached =
+            await localDataSource.getCachedAssessmentDetail(assessmentId);
+        final (assessment, questions) = cached;
+
+        // If server is reachable and local questions are stale (count says there
+        // should be questions but none are cached), fall through to refresh.
+        final shouldRefetch = serverReachabilityService.isServerReachable &&
+            assessment.questionCount > 0 &&
+            questions.isEmpty;
+
+        if (!shouldRefetch) {
+          return Right(cached);
+        }
+        // Fall through to remote fetch below
+      } on CacheException {
+        // Not in local DB — fall through to remote fetch below
+      }
+
+      // Remote fetch (covers: cache miss OR stale questions)
+      try {
         final fresh = await remoteDataSource.getAssessmentDetail(
             assessmentId: assessmentId);
         await localDataSource.cacheAssessmentDetail(
             fresh.assessment, fresh.questions);
         return Right((fresh.assessment, fresh.questions));
-      } on NetworkException {
-        try {
-          final cached =
-              await localDataSource.getCachedAssessmentDetail(assessmentId);
-          return Right(cached);
-        } on CacheException catch (e) {
-          return Left(CacheFailure(e.message));
-        }
+      } on NetworkException catch (e) {
+        return Left(NetworkFailure(e.message));
+      } on ServerException catch (e) {
+        return Left(ServerFailure(e.message));
       }
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {

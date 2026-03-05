@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/student/assignment_detail_page.dart';
 import 'package:likha/presentation/pages/student/widgets/assignment_card.dart';
 import 'package:likha/presentation/pages/student/widgets/empty_assignment_state.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/sync_provider.dart';
 
 class StudentAssignmentListPage extends ConsumerStatefulWidget {
   final String classId;
@@ -28,6 +30,14 @@ class _StudentAssignmentListPageState extends ConsumerState<StudentAssignmentLis
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(assignmentProvider);
+
+    // Listen for sync completion to auto-refresh if data arrives after page opens
+    ref.listen<SyncState>(syncProvider, (previous, next) {
+      if (!(previous?.assignmentsReady ?? false) && next.assignmentsReady) {
+        // Assignments just became ready in the DB — reload
+        ref.read(assignmentProvider.notifier).loadAssignments(widget.classId);
+      }
+    });
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
