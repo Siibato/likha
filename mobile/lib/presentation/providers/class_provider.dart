@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/domain/auth/entities/user.dart';
@@ -73,6 +75,8 @@ class ClassNotifier extends StateNotifier<ClassState> {
   final SearchStudents _searchStudents;
   final GetEnrolledStudents _getEnrolledStudents;
 
+  late StreamSubscription<void> _refreshSub;
+
   ClassNotifier(
     this._createClass,
     this._getMyClasses,
@@ -83,7 +87,11 @@ class ClassNotifier extends StateNotifier<ClassState> {
     this._removeStudent,
     this._searchStudents,
     this._getEnrolledStudents,
-  ) : super(ClassState());
+  ) : super(ClassState()) {
+    _refreshSub = sl<DataEventBus>().onClassesChanged.listen((_) {
+      loadClasses();
+    });
+  }
 
   Future<void> loadClasses() async {
     state = state.copyWith(isLoading: true, clearError: true);
@@ -433,6 +441,12 @@ class ClassNotifier extends StateNotifier<ClassState> {
 
   void clearSearch() {
     state = state.copyWith(clearSearch: true);
+  }
+
+  @override
+  void dispose() {
+    _refreshSub.cancel();
+    super.dispose();
   }
 }
 

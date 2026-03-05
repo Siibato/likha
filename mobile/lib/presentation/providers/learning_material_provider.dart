@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/domain/learning_materials/entities/learning_material.dart';
 import 'package:likha/domain/learning_materials/entities/material_detail.dart';
 import 'package:likha/domain/learning_materials/usecases/create_material.dart';
@@ -58,6 +60,9 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
   final material.DeleteFile _deleteFile;
   final material.DownloadFile _downloadFile;
 
+  String? _currentClassId;
+  late StreamSubscription<String?> _refreshSub;
+
   LearningMaterialNotifier(
     this._createMaterial,
     this._getMaterials,
@@ -68,9 +73,16 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     this._uploadFile,
     this._deleteFile,
     this._downloadFile,
-  ) : super(LearningMaterialState());
+  ) : super(LearningMaterialState()) {
+    _refreshSub = sl<DataEventBus>().onMaterialsChanged.listen((classId) {
+      if (_currentClassId != null && _currentClassId == classId) {
+        loadMaterials(_currentClassId!);
+      }
+    });
+  }
 
   Future<void> loadMaterials(String classId) async {
+    _currentClassId = classId;
     state = state.copyWith(isLoading: true, clearError: true);
     final result = await _getMaterials(classId);
     result.fold(
@@ -228,6 +240,12 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
 
   void clearMessages() {
     state = state.copyWith(clearError: true, clearSuccess: true);
+  }
+
+  @override
+  void dispose() {
+    _refreshSub.cancel();
+    super.dispose();
   }
 }
 

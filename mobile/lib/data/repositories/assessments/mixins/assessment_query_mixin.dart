@@ -16,6 +16,12 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
     try {
       try {
         final cachedAssessments = await localDataSource.getCachedAssessments(classId);
+
+        // If server is reachable, fetch fresh in background (fire-and-forget)
+        if (serverReachabilityService.isServerReachable) {
+          _backgroundFetchAssessments(classId);
+        }
+
         return Right(cachedAssessments);
       } on CacheException {
         // Cache empty — must fetch from server
@@ -198,5 +204,53 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
+  }
+
+  /// Silently fetches fresh assessments for [classId] from the server.
+  /// Updates local cache only if any record has a newer [updatedAt].
+  /// Emits a DataEventBus event so the page can reload from updated cache.
+  /// All errors are swallowed — users keep seeing stale cache without error.
+  void _backgroundFetchAssessments(String classId) {
+    Future.microtask(() async {
+      try {
+        final fresh =
+            await remoteDataSource.getAssessments(classId: classId);
+
+        // Compare with cached data using updatedAt timestamps
+        final List<Assessment> cached;
+        try {
+          cached = await localDataSource.getCachedAssessments(classId);
+        } on CacheException {
+          // Cache was cleared between the original read and now — write fresh anyway
+          await localDataSource.cacheAssessments(fresh);
+          dataEventBus.notifyAssessmentsChanged(classId);
+          return;
+        }
+
+        if (_assessmentsHaveChanged(cached, fresh)) {
+          await localDataSource.cacheAssessments(fresh);
+          dataEventBus.notifyAssessmentsChanged(classId);
+        }
+        // If nothing changed, do nothing (no DB write, no notification)
+      } catch (_) {
+        // Network/server error — silent fail, stale cache stays
+      }
+    });
+  }
+
+  /// Returns true if any remote assessment is newer than its local counterpart,
+  /// or if the item counts differ (addition or deletion).
+  bool _assessmentsHaveChanged(
+    List<Assessment> local,
+    List<Assessment> remote,
+  ) {
+    if (local.length != remote.length) return true;
+    final localById = {for (final a in local) a.id: a};
+    for (final r in remote) {
+      final l = localById[r.id];
+      if (l == null) return true;                           // New item
+      if (l.updatedAt.isBefore(r.updatedAt)) return true;  // Updated item
+    }
+    return false;
   }
 }

@@ -39,6 +39,11 @@ mixin ClassQueryMixin on ClassRepositoryBase {
           teacherId: currentUserId,
         );
 
+        // If server is reachable, fetch fresh in background (fire-and-forget)
+        if (serverReachabilityService.isServerReachable) {
+          _backgroundFetchMyClasses();
+        }
+
         return Right(cachedClasses);
       } on CacheException {
         final freshClasses = await remoteDataSource.getMyClasses();
@@ -87,6 +92,42 @@ mixin ClassQueryMixin on ClassRepositoryBase {
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
+  }
+
+  /// Silently fetches fresh classes from the server.
+  /// Updates local cache only if any record has a newer [updatedAt].
+  /// Emits a DataEventBus event so the page can reload from updated cache.
+  /// All errors are swallowed — users keep seeing stale cache without error.
+  void _backgroundFetchMyClasses() {
+    Future.microtask(() async {
+      try {
+        final fresh = await remoteDataSource.getMyClasses();
+        final currentUserId = await getCurrentUserId();
+        final List<ClassEntity> cached;
+        try {
+          cached = await localDataSource.getCachedClasses(teacherId: currentUserId);
+        } on CacheException {
+          await localDataSource.cacheClasses(fresh);
+          dataEventBus.notifyClassesChanged();
+          return;
+        }
+        if (_classesHaveChanged(cached, fresh)) {
+          await localDataSource.cacheClasses(fresh);
+          dataEventBus.notifyClassesChanged();
+        }
+      } catch (_) {}
+    });
+  }
+
+  bool _classesHaveChanged(List<ClassEntity> local, List<ClassEntity> remote) {
+    if (local.length != remote.length) return true;
+    final localById = {for (final c in local) c.id: c};
+    for (final r in remote) {
+      final l = localById[r.id];
+      if (l == null) return true;
+      if (l.updatedAt.isBefore(r.updatedAt)) return true;
+    }
+    return false;
   }
 
 }

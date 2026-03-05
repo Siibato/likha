@@ -15,5 +15,6 @@ class ClassRepositoryImpl extends ClassRepositoryBase
     required super.serverReachabilityService,
     required super.syncQueue,
     required super.storageService,
+    required super.dataEventBus,
   });
 }

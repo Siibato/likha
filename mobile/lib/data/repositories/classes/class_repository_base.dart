@@ -1,3 +1,4 @@
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/validation/services/validation_service.dart';
@@ -13,6 +14,7 @@ abstract class ClassRepositoryBase extends ClassRepository {
   final ServerReachabilityService serverReachabilityService;
   final SyncQueue syncQueue;
   final StorageService storageService;
+  final DataEventBus dataEventBus;
 
   ClassRepositoryBase({
     required this.remoteDataSource,
@@ -21,6 +23,7 @@ abstract class ClassRepositoryBase extends ClassRepository {
     required this.serverReachabilityService,
     required this.syncQueue,
     required this.storageService,
+    required this.dataEventBus,
   });
 
   Future<String?> getCurrentUserId() async {

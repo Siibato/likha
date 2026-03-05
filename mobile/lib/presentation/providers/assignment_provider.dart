@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
 import 'package:likha/domain/assignments/usecases/create_assignment.dart';
@@ -84,6 +86,9 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   final SubmitAssignment _submitAssignment;
   final DownloadFile _downloadFile;
 
+  String? _currentClassId;
+  late StreamSubscription<String?> _refreshSub;
+
   AssignmentNotifier(
     this._createAssignment,
     this._getAssignments,
@@ -100,9 +105,16 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     this._deleteFile,
     this._submitAssignment,
     this._downloadFile,
-  ) : super(AssignmentState());
+  ) : super(AssignmentState()) {
+    _refreshSub = sl<DataEventBus>().onAssignmentsChanged.listen((classId) {
+      if (_currentClassId != null && _currentClassId == classId) {
+        loadAssignments(_currentClassId!);
+      }
+    });
+  }
 
   Future<void> loadAssignments(String classId) async {
+    _currentClassId = classId;
     state = state.copyWith(isLoading: true, clearError: true);
     final result = await _getAssignments(classId);
     result.fold(
@@ -322,6 +334,12 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
 
   void clearMessages() {
     state = state.copyWith(clearError: true, clearSuccess: true);
+  }
+
+  @override
+  void dispose() {
+    _refreshSub.cancel();
+    super.dispose();
   }
 }
 

@@ -14,6 +14,12 @@ mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
     try {
       try {
         final cachedMaterials = await localDataSource.getCachedMaterials(classId);
+
+        // If server is reachable, fetch fresh in background (fire-and-forget)
+        if (serverReachabilityService.isServerReachable) {
+          _backgroundFetchMaterials(classId);
+        }
+
         return Right(cachedMaterials);
       } on CacheException {
         // Cache empty — must fetch from server
@@ -80,5 +86,43 @@ mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
+  }
+
+  /// Silently fetches fresh materials for [classId] from the server.
+  /// Updates local cache only if any record has a newer [updatedAt].
+  /// Emits a DataEventBus event so the page can reload from updated cache.
+  /// All errors are swallowed — users keep seeing stale cache without error.
+  void _backgroundFetchMaterials(String classId) {
+    Future.microtask(() async {
+      try {
+        final fresh = await remoteDataSource.getMaterials(classId: classId);
+        final List<LearningMaterial> cached;
+        try {
+          cached = await localDataSource.getCachedMaterials(classId);
+        } on CacheException {
+          await localDataSource.cacheMaterials(fresh);
+          dataEventBus.notifyMaterialsChanged(classId);
+          return;
+        }
+        if (_materialsHaveChanged(cached, fresh)) {
+          await localDataSource.cacheMaterials(fresh);
+          dataEventBus.notifyMaterialsChanged(classId);
+        }
+      } catch (_) {}
+    });
+  }
+
+  bool _materialsHaveChanged(
+    List<LearningMaterial> local,
+    List<LearningMaterial> remote,
+  ) {
+    if (local.length != remote.length) return true;
+    final localById = {for (final m in local) m.id: m};
+    for (final r in remote) {
+      final l = localById[r.id];
+      if (l == null) return true;
+      if (l.updatedAt.isBefore(r.updatedAt)) return true;
+    }
+    return false;
   }
 }

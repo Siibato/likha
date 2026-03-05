@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:likha/core/constants/api_constants.dart';
 import 'package:likha/core/database/local_database.dart';
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/connectivity_service.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/network/dio_client.dart';
@@ -127,6 +128,9 @@ Future<void> init() async {
   // Core - Sync infrastructure
   sl.registerLazySingleton<SyncQueue>(() => SyncQueueImpl(sl<LocalDatabase>()));
 
+  // Core - Event Bus (must be before repositories)
+  sl.registerSingleton<DataEventBus>(DataEventBus());
+
   // Core - General
   sl.registerLazySingleton(() => StorageService(sl<FlutterSecureStorage>()));
 
@@ -243,6 +247,7 @@ Future<void> init() async {
       serverReachabilityService: sl<ServerReachabilityService>(),
       syncQueue: sl<SyncQueue>(),
       storageService: sl<StorageService>(),
+      dataEventBus: sl<DataEventBus>(),
     ),
   );
   sl.registerLazySingleton<AssessmentRepository>(
@@ -254,6 +259,7 @@ Future<void> init() async {
       syncQueue: sl<SyncQueue>(),
       serverReachabilityService: sl<ServerReachabilityService>(),
       storageService: sl<StorageService>(),
+      dataEventBus: sl<DataEventBus>(),
     ),
   );
   sl.registerLazySingleton<AssignmentRepository>(
@@ -265,6 +271,7 @@ Future<void> init() async {
       syncQueue: sl<SyncQueue>(),
       serverReachabilityService: sl<ServerReachabilityService>(),
       storageService: sl<StorageService>(),
+      dataEventBus: sl<DataEventBus>(),
     ),
   );
   sl.registerLazySingleton<LearningMaterialRepository>(
@@ -276,6 +283,7 @@ Future<void> init() async {
       syncQueue: sl<SyncQueue>(),
       serverReachabilityService: sl<ServerReachabilityService>(),
       storageService: sl<StorageService>(),
+      dataEventBus: sl<DataEventBus>(),
     ),
   );
 

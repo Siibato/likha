@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/connectivity_service.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
@@ -16,6 +17,7 @@ abstract class LearningMaterialRepositoryBase extends LearningMaterialRepository
   final SyncQueue syncQueue;
   final ServerReachabilityService serverReachabilityService;
   final StorageService storageService;
+  final DataEventBus dataEventBus;
 
   LearningMaterialRepositoryBase({
     required this.remoteDataSource,
@@ -25,6 +27,7 @@ abstract class LearningMaterialRepositoryBase extends LearningMaterialRepository
     required this.syncQueue,
     required this.serverReachabilityService,
     required this.storageService,
+    required this.dataEventBus,
   });
 
   /// Get MIME type from file extension.

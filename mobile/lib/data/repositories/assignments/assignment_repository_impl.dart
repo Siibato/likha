@@ -17,5 +17,6 @@ class AssignmentRepositoryImpl extends AssignmentRepositoryBase
     required super.syncQueue,
     required super.serverReachabilityService,
     required super.storageService,
+    required super.dataEventBus,
   });
 }

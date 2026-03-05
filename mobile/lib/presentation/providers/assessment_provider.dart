@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
@@ -114,6 +115,9 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
   final UpdateQuestion _updateQuestion;
   final DeleteQuestion _deleteQuestion;
 
+  String? _currentClassId;
+  late StreamSubscription<String?> _refreshSub;
+
   AssessmentNotifier(
     this._createAssessment,
     this._getAssessments,
@@ -133,9 +137,17 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
     this._updateAssessment,
     this._updateQuestion,
     this._deleteQuestion,
-  ) : super(AssessmentState());
+  ) : super(AssessmentState()) {
+    _refreshSub = sl<DataEventBus>().onAssessmentsChanged.listen((classId) {
+      // Only reload if this notifier is currently showing that classId
+      if (_currentClassId != null && _currentClassId == classId) {
+        loadAssessments(_currentClassId!);
+      }
+    });
+  }
 
   Future<void> loadAssessments(String classId) async {
+    _currentClassId = classId;
     state = state.copyWith(isLoading: true, clearError: true);
     final result = await _getAssessments(classId);
     result.fold(
@@ -402,6 +414,12 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
 
   void clearMessages() {
     state = state.copyWith(clearError: true, clearSuccess: true);
+  }
+
+  @override
+  void dispose() {
+    _refreshSub.cancel();
+    super.dispose();
   }
 }
 

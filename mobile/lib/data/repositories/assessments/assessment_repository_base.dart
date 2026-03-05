@@ -1,3 +1,4 @@
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/connectivity_service.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
@@ -14,6 +15,7 @@ abstract class AssessmentRepositoryBase extends AssessmentRepository {
   final SyncQueue syncQueue;
   final ServerReachabilityService serverReachabilityService;
   final StorageService storageService;
+  final DataEventBus dataEventBus;
 
   AssessmentRepositoryBase({
     required this.remoteDataSource,
@@ -23,5 +25,6 @@ abstract class AssessmentRepositoryBase extends AssessmentRepository {
     required this.syncQueue,
     required this.serverReachabilityService,
     required this.storageService,
+    required this.dataEventBus,
   });
 }
