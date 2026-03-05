@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/presentation/pages/teacher/add_student_page.dart';
+import 'package:likha/presentation/pages/teacher/class_student_list.dart';
 import 'package:likha/presentation/pages/teacher/teacher_assessment_list_page.dart';
 import 'package:likha/presentation/pages/teacher/teacher_assignment_list_page.dart';
 import 'package:likha/presentation/pages/teacher/teacher_material_list_page.dart';
@@ -109,11 +109,11 @@ class _ClassDetailPageState extends ConsumerState<ClassDetailPage> {
                           ClassNavigationCard(
                             icon: Icons.people_outline_rounded,
                             title: 'Students',
-                            subtitle: 'Manage class enrollment',
+                            subtitle: 'View enrolled students',
                             onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => AddStudentPage(classId: widget.classId),
+                                builder: (_) => ClassStudentListPage(classId: widget.classId),
                               ),
                             ),
                           ),

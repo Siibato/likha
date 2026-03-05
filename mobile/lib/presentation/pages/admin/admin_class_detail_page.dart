@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/presentation/pages/teacher/add_student_page.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
 class AdminClassDetailPage extends ConsumerStatefulWidget {
@@ -134,46 +133,13 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                   // Students Section
                   Padding(
                     padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Students Enrolled',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF2B2B2B),
-                          ),
-                        ),
-                        ElevatedButton.icon(
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => AddStudentPage(classId: widget.classId),
-                            ),
-                          ).then((_) => ref.read(classProvider.notifier).loadClassDetail(widget.classId)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2B2B2B),
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          icon: const Icon(Icons.person_add_rounded, size: 16),
-                          label: const Text(
-                            'Add/Remove',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
+                    child: const Text(
+                      'Students Enrolled',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2B2B2B),
+                      ),
                     ),
                   ),
 

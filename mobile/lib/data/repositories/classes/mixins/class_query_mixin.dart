@@ -59,18 +59,18 @@ mixin ClassQueryMixin on ClassRepositoryBase {
   @override
   ResultFuture<ClassDetail> getClassDetail({required String classId}) async {
     try {
-      // Try cache first (includes locally-added enrollments that haven't synced yet)
+      // API-first: always get fresh data when online (ensures enrollment data is current)
       try {
-        final cached = await localDataSource.getCachedClassDetail(classId);
-        return Right(cached);
-      } on CacheException {
-        // No cache, fetch fresh from server
+        final fresh = await remoteDataSource.getClassDetail(classId: classId);
+        await localDataSource.cacheClassDetail(fresh);
+        return Right(fresh);
+      } on NetworkException {
+        // Offline: fall back to cache (which has enrollment data from prior online visit)
         try {
-          final fresh = await remoteDataSource.getClassDetail(classId: classId);
-          await localDataSource.cacheClassDetail(fresh);
-          return Right(fresh);
-        } on NetworkException {
-          // No cache and no network, try rebuilding from enrollments
+          final cached = await localDataSource.getCachedClassDetail(classId);
+          return Right(cached);
+        } on CacheException {
+          // No cache: try rebuilding from enrollments table
           try {
             final rebuilt = await localDataSource.buildClassDetailFromEnrollments(classId);
             if (rebuilt != null) return Right(rebuilt);
