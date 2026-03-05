@@ -12,8 +12,8 @@ class IdReconciler {
     'assignment_submission': 'assignment_submissions',
     'question': 'questions',
     'assessment_questions': 'questions',
-    'class_enrollment': 'class_enrollments',
-    'class_enrollments': 'class_enrollments',
+    'class_enrollment': 'class_participants',
+    'class_enrollments': 'class_participants',
   };
 
   static const Map<String, List<(String table, String column)>> _foreignKeyMap = {
@@ -21,7 +21,7 @@ class IdReconciler {
       ('assessments', 'class_id'),
       ('assignments', 'class_id'),
       ('learning_materials', 'class_id'),
-      ('class_enrollments', 'class_id'),
+      ('class_participants', 'class_id'),
     ],
     'assessments': [
       ('questions', 'assessment_id'),
@@ -36,7 +36,7 @@ class IdReconciler {
     'questions': [],
     'assessment_submissions': [],
     'assignment_submissions': [],
-    'class_enrollments': [],
+    'class_participants': [],
     'material_files': [],
   };
   static Map<String, String> reconcileIds(

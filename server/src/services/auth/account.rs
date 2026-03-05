@@ -28,7 +28,6 @@ impl super::AuthService {
                 request.username,
                 request.full_name.trim().to_string(),
                 request.role,
-                Some(admin_id),
             )
             .await?;
 

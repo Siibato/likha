@@ -284,9 +284,8 @@ async fn seed_admin(db: &DatabaseConnection) -> Result<(), sea_orm::DbErr> {
         full_name: Set("System Administrator".to_string()),
         role: Set("admin".to_string()),
         account_status: Set("pending_activation".to_string()),
-        is_active: Set(true),
         activated_at: Set(None),
-        created_by: Set(None),
+        deleted_at: Set(None),
         created_at: Set(Utc::now().naive_utc()),
         updated_at: Set(Utc::now().naive_utc()),
     };

@@ -43,9 +43,9 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
               'full_name': student.fullName,
               'role': student.role,
               'account_status': student.accountStatus,
-              'is_active': student.isActive ? 1 : 0,
               'activated_at': student.activatedAt?.toIso8601String(),
               'created_at': student.createdAt.toIso8601String(),
+              'deleted_at': student.deletedAt?.toIso8601String(),
               'cached_at': DateTime.now().toIso8601String(),
               'is_offline_mutation': 0,
               'sync_status': 'synced',
@@ -80,21 +80,28 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final rows = await db.query(
-        'class_enrollments',
-        where: 'class_id = ? AND deleted_at IS NULL',
-        whereArgs: [classId],
+        'class_participants',
+        where: 'class_id = ? AND role = ? AND removed_at IS NULL',
+        whereArgs: [classId, 'student'],
         orderBy: 'full_name ASC',
       );
-      return rows.map((row) => UserModel(
-        id: row['student_id'] as String,
-        username: row['username'] as String,
-        fullName: row['full_name'] as String,
-        role: row['role'] as String,
-        accountStatus: row['account_status'] as String,
-        isActive: (row['is_active'] as int) == 1,
-        activatedAt: null,
-        createdAt: DateTime.parse(row['enrolled_at'] as String),
-      )).toList();
+      return rows.map((row) {
+        final accountStatus = row['account_status'] as String?;
+        final isActive = accountStatus != null &&
+            accountStatus != 'locked' &&
+            accountStatus != 'deactivated';
+
+        return UserModel(
+          id: row['user_id'] as String,
+          username: row['username'] as String,
+          fullName: row['full_name'] as String,
+          role: row['role'] as String,
+          accountStatus: accountStatus ?? 'active',
+          isActive: isActive,
+          activatedAt: null,
+          createdAt: DateTime.parse(row['joined_at'] as String),
+        );
+      }).toList();
     } catch (e) {
       throw CacheException('Failed to get enrolled students: $e');
     }

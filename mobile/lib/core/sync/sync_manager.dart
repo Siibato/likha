@@ -174,14 +174,24 @@ class SyncManager {
         lastSyncAt: DateTime.now(),
         pendingCount: finalPendingCount,
       );
-    } catch (e) {
+    } catch (e, st) {
+      final errorMsg = _formatError(e, st);
+      _log.syncError(errorMsg);
       _updateState(
         phase: SyncPhase.failed,
-        lastError: e.toString(),
+        lastError: errorMsg,
       );
     } finally {
       _isSyncing = false;
     }
+  }
+
+  /// Format error with stack trace for better debugging
+  String _formatError(Object error, StackTrace stackTrace) {
+    if (error is Exception) {
+      return error.toString();
+    }
+    return 'Unexpected error: ${error.toString()}\n${stackTrace.toString()}';
   }
 
   /// OUTBOUND SYNC: Push queued mutations to server
@@ -321,9 +331,9 @@ class SyncManager {
         if (serverId != null && operation == 'add_enrollment' && entry != null) {
           final localEnrollmentId = entry.payload['local_enrollment_id'] as String?;
           if (localEnrollmentId != null) {
-            // Update the enrollment record from local UUID to server UUID
+            // Update the participant record from local UUID to server UUID
             await db.update(
-              'class_enrollments',
+              'class_participants',
               {'id': serverId, 'sync_status': 'synced'},
               where: 'id = ?',
               whereArgs: [localEnrollmentId],
@@ -485,13 +495,19 @@ class SyncManager {
     _updateState(progress: 0.0, currentStep: 'Preparing Likha for you…');
 
     // STEP 1: Make base request (empty classIds) to get user, classes, enrollments, enrolled_students
+    _updateState(currentStep: 'Fetching classes and enrollments…');
+
     final baseResponse = await _syncRemoteDataSource.fullSync(
       deviceId: deviceId,
       receiveTimeout: const Duration(seconds: 30),
     );
+
+    _log.warn('Full sync response keys: ${baseResponse.keys.join(", ")}');
+
     final baseData = baseResponse['data'] as Map<String, dynamic>?;
     if (baseData == null) {
-      throw Exception('No data in full sync response');
+      _log.error('No data in full sync response', 'Response: $baseResponse');
+      throw Exception('No data in full sync response. Response: $baseResponse');
     }
 
     final syncToken = baseData['sync_token'] as String?;
@@ -541,10 +557,10 @@ class SyncManager {
           'full_name': userData['full_name'],
           'role': userData['role'],
           'account_status': userData['account_status'],
-          'is_active': (userData['is_active'] == true) ? 1 : 0,
           'activated_at': userData['activated_at'],
           'created_at': userData['created_at'],
           'updated_at': userData['updated_at'] ?? userData['created_at'],
+          'deleted_at': userData['deleted_at'],
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
           'is_offline_mutation': 0,
@@ -728,17 +744,25 @@ class SyncManager {
       dataExpiryAt: dataExpiryAt,
     );
 
+    // Extract the actual data from the wrapper
+    final data = response['data'] as Map<String, dynamic>?;
+    if (data == null) {
+      _log.error('No data in delta sync response', 'Response: $response');
+      throw Exception('Invalid delta sync response: no data field');
+    }
+
     // Check if data is expired
     if (response['status'] == 'data_expired') {
       return null; // Caller will fall back to full sync
     }
 
-    final syncToken = response['sync_token'] as String?;
-    final serverTime = response['server_time'] as String?;
-    final deltas = response['deltas'] as Map<String, dynamic>?;
+    final syncToken = data['sync_token'] as String?;
+    final serverTime = data['server_time'] as String?;
+    final deltas = data['deltas'] as Map<String, dynamic>?;
 
     if (syncToken == null || deltas == null) {
-      throw Exception('Invalid delta sync response');
+      _log.error('Missing fields in delta sync response', 'sync_token=$syncToken, deltas=$deltas');
+      throw Exception('Invalid delta sync response: missing sync_token or deltas');
     }
 
     // Process deltas: upsert updated, delete removed
@@ -771,27 +795,47 @@ class SyncManager {
     Database db,
     List<dynamic> records,
   ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
     for (final record in records) {
-      if (record is! Map<String, dynamic>) continue;
-      await db.insert(
-        'classes',
-        {
-          'id': record['id'],
-          'title': record['title'],
-          'description': record['description'],
-          'teacher_id': record['teacher_id'],
-          'teacher_username': record['teacher_username'] ?? '',
-          'teacher_full_name': record['teacher_full_name'] ?? '',
-          'is_archived': (record['is_archived'] == true) ? 1 : 0,
-          'student_count': record['student_count'] ?? 0,
-          'created_at': record['created_at'],
-          'updated_at': record['updated_at'] ?? record['created_at'],
-          'cached_at': DateTime.now().toIso8601String(),
-          'sync_status': 'synced',
-          'is_offline_mutation': 0,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      try {
+        if (record is! Map<String, dynamic>) continue;
+
+        final teacherId = record['teacher_id'] ?? '';
+        if (teacherId.isEmpty) {
+          _log.warn('Class ${record['id']} has missing teacher_id', record);
+        }
+
+        await db.insert(
+          'classes',
+          {
+            'id': record['id'],
+            'title': record['title'],
+            'description': record['description'],
+            'teacher_id': teacherId,
+            'teacher_username': record['teacher_username'] ?? '',
+            'teacher_full_name': record['teacher_full_name'] ?? '',
+            'is_archived': (record['is_archived'] == true) ? 1 : 0,
+            'student_count': record['student_count'] ?? 0,
+            'created_at': record['created_at'],
+            'updated_at': record['updated_at'] ?? record['created_at'],
+            'cached_at': DateTime.now().toIso8601String(),
+            'sync_status': 'synced',
+            'is_offline_mutation': 0,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert class', e);
+      }
+    }
+
+    _log.upsertSummary('classes', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert classes', failedCount);
     }
 
     await _populateTeacherInfoFromAccounts(db);
@@ -806,6 +850,8 @@ class SyncManager {
       );
 
       if (classesNeedingTeacher.isEmpty) return;
+
+      _log.warn('Found ${classesNeedingTeacher.length} classes missing teacher info, attempting fallback');
 
       // Get cached user accounts
       final cachedUsers = await db.query('users');
@@ -824,6 +870,7 @@ class SyncManager {
         }
       }
 
+      int updatedCount = 0;
       for (final cls in classesNeedingTeacher) {
         final teacherId = cls['teacher_id'] as String?;
         if (teacherId != null && teacherMap.containsKey(teacherId)) {
@@ -837,10 +884,12 @@ class SyncManager {
             where: 'id = ?',
             whereArgs: [cls['id']],
           );
+          updatedCount++;
         }
       }
-    } catch (e) {
-      // Silently fail
+      _log.warn('Fallback populated $updatedCount/${classesNeedingTeacher.length} class teacher info');
+    } catch (e, st) {
+      _log.error('Error populating teacher info from accounts', '$e\n$st');
     }
   }
 
@@ -849,7 +898,7 @@ class SyncManager {
     List<dynamic> enrollments,
     List<dynamic> enrolledStudents,
   ) async {
-    // Build lookup map: student_id -> student data
+    // Build lookup map: user_id -> student data
     final studentMap = <String, Map<String, dynamic>>{};
     for (final s in enrolledStudents) {
       if (s is! Map<String, dynamic>) continue;
@@ -862,23 +911,25 @@ class SyncManager {
     for (final enrollment in enrollments) {
       if (enrollment is! Map<String, dynamic>) continue;
       final e = enrollment;
-      final studentId = e['student_id']?.toString();
-      if (studentId == null || studentId.isEmpty) continue;
-      final student = studentMap[studentId] ?? {};
+      // Accept both user_id (new) and student_id (old) for backward compat
+      final userId = (e['user_id'] ?? e['student_id'])?.toString();
+      if (userId == null || userId.isEmpty) continue;
+      final student = studentMap[userId] ?? {};
 
       await db.insert(
-        'class_enrollments',
+        'class_participants',
         {
           'id': e['id'],
+          'local_id': e['id'],
           'class_id': e['class_id'],
-          'student_id': studentId,
+          'user_id': userId,
           'username': student['username'] ?? '',
           'full_name': student['full_name'] ?? '',
-          'role': student['role'] ?? 'student',
+          'role': 'student',
           'account_status': student['account_status'] ?? 'active',
-          'is_active': (student['is_active'] == true) ? 1 : 0,
-          'enrolled_at': e['enrolled_at'],
-          'updated_at': e['enrolled_at'],
+          'joined_at': e['joined_at'] ?? e['enrolled_at'],
+          'updated_at': e['joined_at'] ?? e['enrolled_at'],
+          'removed_at': e['removed_at'],
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
           'is_offline_mutation': 0,
@@ -904,10 +955,10 @@ class SyncManager {
           'full_name': record['full_name'],
           'role': record['role'],
           'account_status': record['account_status'],
-          'is_active': (record['is_active'] == true) ? 1 : 0,
           'activated_at': record['activated_at'],
           'created_at': record['created_at'],
           'updated_at': record['updated_at'] ?? record['created_at'],
+          'deleted_at': record['deleted_at'],
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
           'is_offline_mutation': 0,
@@ -1138,6 +1189,7 @@ class SyncManager {
           'is_submitted': (data['is_submitted'] == true) ? 1 : 0,
           'answers_json': answersJson,
           'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
+          'deleted_at': data['deleted_at'],
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
           'is_offline_mutation': 0,
@@ -1173,6 +1225,7 @@ class SyncManager {
           'graded_at': data['graded_at'],
           'created_at': data['created_at'] ?? DateTime.now().toIso8601String(),
           'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
+          'deleted_at': data['deleted_at'],
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
           'is_offline_mutation': 0,
@@ -1366,31 +1419,32 @@ class SyncManager {
       // For delta, students should already be in the users table
       for (final enrollment in updated) {
         final e = enrollment as Map<String, dynamic>;
-        final studentId = e['student_id'] as String;
+        // Accept both user_id (new) and student_id (old) for backward compat
+        final userId = (e['user_id'] ?? e['student_id']) as String;
 
         // Look up student from local users table
         final studentRows = await db.query(
           'users',
           where: 'id = ?',
-          whereArgs: [studentId],
+          whereArgs: [userId],
         );
         final student = studentRows.isNotEmpty
             ? studentRows.first as Map<String, dynamic>
             : <String, dynamic>{};
 
         await db.insert(
-          'class_enrollments',
+          'class_participants',
           {
             'id': e['id'],
             'class_id': e['class_id'],
-            'student_id': studentId,
+            'user_id': userId,
             'username': student['username'] ?? '',
             'full_name': student['full_name'] ?? '',
-            'role': student['role'] ?? 'student',
+            'role': 'student',
             'account_status': student['account_status'] ?? 'active',
-            'is_active': student['is_active'] ?? 1,
-            'enrolled_at': e['enrolled_at'],
-            'updated_at': e['enrolled_at'],
+            'joined_at': e['joined_at'] ?? e['enrolled_at'],
+            'updated_at': e['joined_at'] ?? e['enrolled_at'],
+            'removed_at': null,
             'cached_at': DateTime.now().toIso8601String(),
             'sync_status': 'synced',
           },
@@ -1398,12 +1452,13 @@ class SyncManager {
         );
       }
 
-      // Hard-delete removed enrollments (student was unenrolled)
+      // Soft-delete removed enrollments (student was unenrolled)
       final deleted = enrollmentDeltas['deleted'] as List<dynamic>? ?? [];
       deletedCounts['enrollments'] = deleted.length;
       for (final id in deleted) {
-        await db.delete(
-          'class_enrollments',
+        await db.update(
+          'class_participants',
+          {'removed_at': DateTime.now().toIso8601String()},
           where: 'id = ?',
           whereArgs: [id as String],
         );

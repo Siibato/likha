@@ -19,7 +19,6 @@ impl UserRepository {
         username: String,
         full_name: String,
         role: String,
-        created_by: Option<Uuid>,
     ) -> AppResult<users::Model> {
         let user = users::ActiveModel {
             id: Set(Uuid::new_v4()),
@@ -28,11 +27,10 @@ impl UserRepository {
             full_name: Set(full_name),
             role: Set(role),
             account_status: Set("pending_activation".to_string()),
-            is_active: Set(true),
             activated_at: Set(None),
-            created_by: Set(created_by),
             created_at: Set(Utc::now().naive_utc()),
             updated_at: Set(Utc::now().naive_utc()),
+            deleted_at: Set(None),
         };
 
         user.insert(&self.db)
@@ -64,11 +62,9 @@ impl UserRepository {
         user_id: Uuid,
         status: &str,
     ) -> AppResult<users::Model> {
-        let is_active = status != "locked";
         let user = users::ActiveModel {
             id: Set(user_id),
             account_status: Set(status.to_string()),
-            is_active: Set(is_active),
             updated_at: Set(Utc::now().naive_utc()),
             ..Default::default()
         };

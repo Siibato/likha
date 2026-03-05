@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 11,
+      version: 12,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onOpen: (db) async {
@@ -45,10 +45,10 @@ class LocalDatabase {
           full_name TEXT NOT NULL,
           role TEXT NOT NULL,
           account_status TEXT NOT NULL,
-          is_active INTEGER NOT NULL DEFAULT 1,
           activated_at TEXT,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
+          deleted_at TEXT,
           cached_at TEXT NOT NULL,
           is_offline_mutation INTEGER NOT NULL DEFAULT 0,
           sync_status TEXT NOT NULL DEFAULT 'synced'
@@ -671,6 +671,98 @@ class LocalDatabase {
           )
         ''');
       } catch (_) {}
+    }
+
+    if (oldVersion < 12) {
+      // Migrate from class_enrollments to class_participants
+      // 1. Create class_participants table
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS class_participants (
+            id TEXT PRIMARY KEY,
+            local_id TEXT,
+            class_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            username TEXT NOT NULL,
+            full_name TEXT NOT NULL,
+            role TEXT NOT NULL,
+            account_status TEXT NOT NULL,
+            joined_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            removed_at TEXT,
+            cached_at TEXT NOT NULL,
+            sync_status TEXT NOT NULL DEFAULT 'synced',
+            is_offline_mutation INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
+          )
+        ''');
+      } catch (e) {
+        // Table might already exist
+      }
+
+      // 2. Create indexes for class_participants
+      try {
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_class_participants_class_id ON class_participants(class_id)'
+        );
+      } catch (e) {
+        // Index might already exist
+      }
+
+      try {
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_class_participants_user_id ON class_participants(user_id)'
+        );
+      } catch (e) {
+        // Index might already exist
+      }
+
+      try {
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_class_participants_removed_at ON class_participants(removed_at)'
+        );
+      } catch (e) {
+        // Index might already exist
+      }
+
+      // 3. Migrate students from class_enrollments
+      try {
+        await db.execute('''
+          INSERT INTO class_participants
+          (id, local_id, class_id, user_id, username, full_name, role,
+           account_status, joined_at, updated_at, removed_at, cached_at,
+           sync_status, is_offline_mutation)
+          SELECT
+            ce.id, ce.local_id, ce.class_id, ce.student_id, ce.username,
+            ce.full_name, 'student', ce.account_status,
+            ce.enrolled_at, ce.updated_at, ce.deleted_at, ce.cached_at,
+            ce.sync_status, ce.is_offline_mutation
+          FROM class_enrollments ce
+        ''');
+      } catch (e) {
+        // Might already be migrated
+      }
+
+      // 4. Drop old class_enrollments table
+      try {
+        await db.execute('DROP TABLE IF EXISTS class_enrollments');
+      } catch (e) {
+        // Table might not exist
+      }
+
+      // 5. Add deleted_at column to users table
+      try {
+        await db.execute('ALTER TABLE users ADD COLUMN deleted_at TEXT');
+      } catch (e) {
+        // Column might already exist
+      }
+
+      // 6. Drop vestigial is_active column from users table
+      try {
+        await db.execute('ALTER TABLE users DROP COLUMN is_active');
+      } catch (e) {
+        // Column might already be dropped or not exist
+      }
     }
   }
 

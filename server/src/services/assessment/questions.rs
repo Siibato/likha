@@ -15,7 +15,7 @@ impl super::AssessmentService {
         let class = self.class_repo.find_by_id(assessment.class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        if !self.class_repo.is_teacher_of_class(teacher_id, assessment.class_id).await? {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
@@ -80,7 +80,7 @@ impl super::AssessmentService {
         let class = self.class_repo.find_by_id(assessment.class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        if !self.class_repo.is_teacher_of_class(teacher_id, assessment.class_id).await? {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
@@ -160,7 +160,7 @@ impl super::AssessmentService {
         let class = self.class_repo.find_by_id(assessment.class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        if !self.class_repo.is_teacher_of_class(teacher_id, assessment.class_id).await? {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 

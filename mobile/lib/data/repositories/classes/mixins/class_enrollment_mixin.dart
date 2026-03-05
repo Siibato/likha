@@ -23,7 +23,7 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
           if (alreadyEnrolled.contains(studentId)) {
             final cachedStudent = await localDataSource.getStudentById(studentId);
             final s = cachedStudent ?? _skeletonStudent(studentId);
-            return Right(Enrollment(id: '', student: s, enrolledAt: DateTime.now()));
+            return Right(Enrollment(id: '', student: s, joinedAt: DateTime.now()));
           }
         } catch (_) {}
 
@@ -48,7 +48,7 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
           operation: SyncOperation.addEnrollment,
           payload: {
             'class_id': classId,
-            'student_id': studentId,
+            'user_id': studentId,
             if (cachedStudent != null) 'student_username': cachedStudent.username,
             if (cachedStudent != null) 'student_full_name': cachedStudent.fullName,
             if (enrollmentId != null) 'local_enrollment_id': enrollmentId,
@@ -65,7 +65,7 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
           // Non-critical
         }
 
-        return Right(Enrollment(id: '', student: studentModel, enrolledAt: DateTime.now()));
+        return Right(Enrollment(id: '', student: studentModel, joinedAt: DateTime.now()));
       }
 
       final result = await remoteDataSource.addStudent(
@@ -103,7 +103,7 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
           id: const Uuid().v4(),
           entityType: SyncEntityType.classEntity,
           operation: SyncOperation.removeEnrollment,
-          payload: {'class_id': classId, 'student_id': studentId},
+          payload: {'class_id': classId, 'user_id': studentId},
           status: SyncStatus.pending,
           retryCount: 0,
           maxRetries: 5,

@@ -312,7 +312,7 @@ impl super::LearningMaterialService {
             .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        if !self.class_repo.is_teacher_of_class(teacher_id, material.class_id).await? {
             return Err(AppError::Forbidden(
                 "You can only delete materials from your own classes".to_string(),
             ));

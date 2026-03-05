@@ -79,4 +79,8 @@ class SyncLogger {
   void error(String message, [Object? error]) {
     debugPrint('[SYNC ERROR] $message${error != null ? ' | $error' : ''}');
   }
+
+  void syncError(String message) {
+    debugPrint('[SYNC ERROR] FULL SYNC FAILED: $message');
+  }
 }

@@ -297,12 +297,7 @@ impl super::AssignmentService {
             .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
 
         if role == "teacher" {
-            let class = self
-                .class_repo
-                .find_by_id(assignment.class_id)
-                .await?
-                .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
-            if class.teacher_id != user_id {
+            if !self.class_repo.is_teacher_of_class(user_id, assignment.class_id).await? {
                 return Err(AppError::Forbidden("Access denied".to_string()));
             }
         } else if submission.student_id != user_id {
@@ -345,12 +340,7 @@ impl super::AssignmentService {
                 .find_by_id(submission.assignment_id)
                 .await?
                 .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
-            let class = self
-                .class_repo
-                .find_by_id(assignment.class_id)
-                .await?
-                .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
-            if class.teacher_id != user_id {
+            if !self.class_repo.is_teacher_of_class(user_id, assignment.class_id).await? {
                 return Err(AppError::Forbidden("Access denied".to_string()));
             }
         } else if submission.student_id != user_id {

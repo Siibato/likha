@@ -60,7 +60,7 @@ pub struct ClassDetailResponse {
 pub struct EnrollmentResponse {
     pub id: Uuid,
     pub student: UserResponse,
-    pub enrolled_at: String,
+    pub joined_at: String,
 }
 
 #[derive(Debug, Serialize)]

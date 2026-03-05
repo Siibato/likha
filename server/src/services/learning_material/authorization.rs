@@ -3,13 +3,13 @@ use crate::utils::error::{AppError, AppResult};
 
 impl super::LearningMaterialService {
     pub async fn verify_teacher_owns_class(&self, class_id: Uuid, teacher_id: Uuid) -> AppResult<()> {
-        let class = self
+        let _ = self
             .class_repo
             .find_by_id(class_id)
             .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        if !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
             return Err(AppError::Forbidden(
                 "You can only manage materials in your own classes".to_string(),
             ));

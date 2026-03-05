@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/sync/sync_manager.dart';
-import 'package:likha/presentation/pages/home_page.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
 
 class SyncLoadingPage extends ConsumerWidget {
@@ -39,6 +38,24 @@ class SyncLoadingPage extends ConsumerWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
+              if (hasFailed && syncState.lastError != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
+                    border: Border.all(color: Colors.red[200]!),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'Error: ${syncState.lastError}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.red[900],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
               const SizedBox(height: 48),
               if (!hasFailed) ...[
                 ClipRRect(

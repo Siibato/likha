@@ -269,7 +269,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
       final optimisticEnrollment = Enrollment(
         id: 'temp_${studentToAdd.id}', // Temporary ID that will be updated on sync
         student: studentToAdd,
-        enrolledAt: DateTime.now(),
+        joinedAt: DateTime.now(),
       );
 
       final updatedDetail = ClassDetail(

@@ -11,10 +11,10 @@ impl super::AssessmentService {
         request: CreateAssessmentRequest,
         teacher_id: Uuid,
     ) -> AppResult<AssessmentResponse> {
-        let class = self.class_repo.find_by_id(class_id).await?
+        let _ = self.class_repo.find_by_id(class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        if !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
             return Err(AppError::Forbidden("You can only create assessments in your own classes".to_string()));
         }
 
@@ -84,10 +84,11 @@ impl super::AssessmentService {
         user_id: Uuid,
         role: &str,
     ) -> AppResult<AssessmentListResponse> {
-        let class = self.class_repo.find_by_id(class_id).await?
+        let _ = self.class_repo.find_by_id(class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        let assessments = if role == "teacher" && class.teacher_id == user_id {
+        let is_teacher_of_class = role == "teacher" && self.class_repo.is_teacher_of_class(user_id, class_id).await?;
+        let assessments = if is_teacher_of_class {
             self.assessment_repo.find_by_class_id(class_id).await?
         } else {
             self.assessment_repo.find_published_by_class_id(class_id).await?
@@ -138,7 +139,7 @@ impl super::AssessmentService {
             return Err(AppError::NotFound("Assessment not found".to_string()));
         }
 
-        if role == "teacher" && class.teacher_id != user_id {
+        if role == "teacher" && !self.class_repo.is_teacher_of_class(user_id, assessment.class_id).await? {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
@@ -181,7 +182,7 @@ impl super::AssessmentService {
         let class = self.class_repo.find_by_id(assessment.class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        if !self.class_repo.is_teacher_of_class(teacher_id, assessment.class_id).await? {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
@@ -254,7 +255,7 @@ impl super::AssessmentService {
         let class = self.class_repo.find_by_id(assessment.class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        if !self.class_repo.is_teacher_of_class(teacher_id, assessment.class_id).await? {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
@@ -285,10 +286,10 @@ impl super::AssessmentService {
         let assessment = self.assessment_repo.find_by_id(assessment_id).await?
             .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
 
-        let class = self.class_repo.find_by_id(assessment.class_id).await?
+        let _class = self.class_repo.find_by_id(assessment.class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if user_role != "admin" && class.teacher_id != user_id {
+        if user_role != "admin" && !self.class_repo.is_teacher_of_class(user_id, assessment.class_id).await? {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
@@ -313,10 +314,10 @@ impl super::AssessmentService {
         let assessment = self.assessment_repo.find_by_id(assessment_id).await?
             .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
 
-        let class = self.class_repo.find_by_id(assessment.class_id).await?
+        let _class = self.class_repo.find_by_id(assessment.class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        if !self.class_repo.is_teacher_of_class(teacher_id, assessment.class_id).await? {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
@@ -373,10 +374,10 @@ impl super::AssessmentService {
         let assessment = self.assessment_repo.find_by_id(assessment_id).await?
             .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
 
-        let class = self.class_repo.find_by_id(assessment.class_id).await?
+        let _class = self.class_repo.find_by_id(assessment.class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        if !self.class_repo.is_teacher_of_class(teacher_id, assessment.class_id).await? {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 

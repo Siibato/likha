@@ -17,6 +17,7 @@ mod create_login_attempts_table;
 mod add_processed_operations;
 mod add_updated_at_to_questions;
 mod add_updated_at_to_assessment_submissions;
+mod m20260305_000001_schema_v2;
 
 pub struct Migrator;
 
@@ -41,6 +42,7 @@ impl MigratorTrait for Migrator {
             Box::new(add_processed_operations::Migration),
             Box::new(add_updated_at_to_questions::Migration),
             Box::new(add_updated_at_to_assessment_submissions::Migration),
+            Box::new(m20260305_000001_schema_v2::Migration),
         ]
     }
 }

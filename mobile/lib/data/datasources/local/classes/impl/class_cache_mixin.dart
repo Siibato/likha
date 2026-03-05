@@ -59,22 +59,25 @@ mixin ClassCacheMixin on ClassLocalDataSourceBase {
         classMap['is_offline_mutation'] = 0;
         await txn.insert('classes', classMap, conflictAlgorithm: ConflictAlgorithm.replace);
 
+        // Cache students as class_participants with role='student'
         for (final enrollment in classDetail.students) {
           await txn.insert(
-            'class_enrollments',
+            'class_participants',
             {
               'id': enrollment.id,
+              'local_id': enrollment.id,
               'class_id': classDetail.id,
-              'student_id': enrollment.student.id,
+              'user_id': enrollment.student.id,
               'username': enrollment.student.username,
               'full_name': enrollment.student.fullName,
-              'role': enrollment.student.role,
+              'role': 'student',
               'account_status': enrollment.student.accountStatus,
-              'is_active': enrollment.student.isActive ? 1 : 0,
-              'enrolled_at': enrollment.enrolledAt.toIso8601String(),
+              'joined_at': enrollment.joinedAt.toIso8601String(),
               'updated_at': DateTime.now().toIso8601String(),
+              'removed_at': null,
               'cached_at': DateTime.now().toIso8601String(),
               'sync_status': 'synced',
+              'is_offline_mutation': 0,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
@@ -89,7 +92,7 @@ mixin ClassCacheMixin on ClassLocalDataSourceBase {
   Future<void> clearAllCache() async {
     try {
       final db = await localDatabase.database;
-      await db.delete('class_enrollments');
+      await db.delete('class_participants');
       await db.delete('classes');
     } catch (e) {
       throw CacheException('Failed to clear class cache: $e');

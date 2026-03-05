@@ -10,42 +10,52 @@ class UserModel extends User {
     required super.isActive,
     super.activatedAt,
     required super.createdAt,
+    super.deletedAt,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    final accountStatus = json['account_status'] as String;
+    // Compute isActive: not locked, not deactivated
+    final isActive = accountStatus != 'locked' && accountStatus != 'deactivated';
+
     return UserModel(
       id: json['id'] as String,
       username: json['username'] as String,
       fullName: json['full_name'] as String,
       role: json['role'] as String,
-      accountStatus: json['account_status'] as String,
-      isActive: _parseBool(json['is_active']),
+      accountStatus: accountStatus,
+      isActive: isActive,
       activatedAt: json['activated_at'] != null
           ? DateTime.parse(json['activated_at'] as String)
           : null,
       createdAt: DateTime.parse(json['created_at'] as String),
+      deletedAt: json['deleted_at'] != null
+          ? DateTime.parse(json['deleted_at'] as String)
+          : null,
     );
   }
 
-  static bool _parseBool(dynamic value) {
-    if (value is bool) return value;
-    if (value is int) return value == 1;
-    if (value is String) return value.toLowerCase() == 'true' || value == '1';
-    return false;
-  }
-
   factory UserModel.fromMap(Map<String, dynamic> map) {
+    final accountStatus = map['account_status'] as String?;
+    // Compute isActive: not locked, not deactivated
+    final isActive = accountStatus != null &&
+        accountStatus != 'locked' &&
+        accountStatus != 'deactivated';
+
     return UserModel(
       id: map['id'] as String,
       username: map['username'] as String,
       fullName: map['full_name'] as String,
       role: map['role'] as String,
-      accountStatus: map['account_status'] as String,
-      isActive: (map['is_active'] as int?) == 1,
+      accountStatus: accountStatus ?? 'active',
+      isActive: isActive,
       activatedAt: map['activated_at'] != null
           ? DateTime.parse(map['activated_at'] as String)
           : null,
       createdAt: DateTime.parse(map['created_at'] as String),
+      deletedAt: map['deleted_at'] != null
+          ? DateTime.parse(map['deleted_at'] as String)
+          : null,
     );
   }
 
@@ -56,7 +66,6 @@ class UserModel extends User {
       'full_name': fullName,
       'role': role,
       'account_status': accountStatus,
-      'is_active': isActive,
       'activated_at': activatedAt?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
     };
@@ -69,10 +78,10 @@ class UserModel extends User {
       'full_name': fullName,
       'role': role,
       'account_status': accountStatus,
-      'is_active': isActive ? 1 : 0,
       'activated_at': activatedAt?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': createdAt.toIso8601String(),
+      'deleted_at': deletedAt?.toIso8601String(),
     };
   }
 
@@ -85,6 +94,7 @@ class UserModel extends User {
     bool? isActive,
     DateTime? activatedAt,
     DateTime? createdAt,
+    DateTime? deletedAt,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -95,6 +105,7 @@ class UserModel extends User {
       isActive: isActive ?? this.isActive,
       activatedAt: activatedAt ?? this.activatedAt,
       createdAt: createdAt ?? this.createdAt,
+      deletedAt: deletedAt ?? this.deletedAt,
     );
   }
 }

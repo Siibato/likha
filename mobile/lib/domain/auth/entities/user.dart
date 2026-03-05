@@ -9,6 +9,7 @@ class User extends Equatable {
   final bool isActive;
   final DateTime? activatedAt;
   final DateTime createdAt;
+  final DateTime? deletedAt;
 
   const User({
     required this.id,
@@ -19,6 +20,7 @@ class User extends Equatable {
     required this.isActive,
     this.activatedAt,
     required this.createdAt,
+    this.deletedAt,
   });
 
   bool get isTeacher => role == 'teacher';
@@ -38,5 +40,6 @@ class User extends Equatable {
     isActive,
     activatedAt,
     createdAt,
+    deletedAt,
   ];
 }

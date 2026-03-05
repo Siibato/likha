@@ -34,7 +34,7 @@ impl super::ClassService {
                 id: existing.id,
                 title: existing.title.clone(),
                 description: existing.description.clone(),
-                teacher_id: existing.teacher_id,
+                teacher_id: actual_teacher_id,
                 teacher_username: teacher.username.clone(),
                 teacher_full_name: teacher.full_name.clone(),
                 is_archived: existing.is_archived,
@@ -58,7 +58,7 @@ impl super::ClassService {
                 "id": class.id,
                 "title": class.title,
                 "description": class.description,
-                "teacher_id": class.teacher_id,
+                "teacher_id": actual_teacher_id,
                 "is_archived": class.is_archived,
                 "created_at": class.created_at.to_string(),
                 "updated_at": class.updated_at.to_string(),
@@ -69,7 +69,7 @@ impl super::ClassService {
             id: class.id,
             title: class.title,
             description: class.description,
-            teacher_id: class.teacher_id,
+            teacher_id: actual_teacher_id,
             teacher_username: teacher.username,
             teacher_full_name: teacher.full_name,
             is_archived: class.is_archived,
@@ -91,7 +91,7 @@ impl super::ClassService {
             .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        if !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
             return Err(AppError::Forbidden(
                 "You can only update your own classes".to_string(),
             ));
@@ -121,9 +121,9 @@ impl super::ClassService {
             )
             .await?;
 
-        let teacher = self
-            .user_repo
-            .find_by_id(updated_class.teacher_id)
+        let teacher_model = self
+            .class_repo
+            .find_teacher_of_class(class_id)
             .await?
             .ok_or_else(|| AppError::NotFound("Teacher not found".to_string()))?;
 
@@ -138,7 +138,7 @@ impl super::ClassService {
                 "id": updated_class.id,
                 "title": updated_class.title,
                 "description": updated_class.description,
-                "teacher_id": updated_class.teacher_id,
+                "teacher_id": teacher_model.id,
                 "is_archived": updated_class.is_archived,
                 "created_at": updated_class.created_at.to_string(),
                 "updated_at": updated_class.updated_at.to_string(),
@@ -149,9 +149,9 @@ impl super::ClassService {
             id: updated_class.id,
             title: updated_class.title,
             description: updated_class.description,
-            teacher_id: updated_class.teacher_id,
-            teacher_username: teacher.username,
-            teacher_full_name: teacher.full_name,
+            teacher_id: teacher_model.id,
+            teacher_username: teacher_model.username,
+            teacher_full_name: teacher_model.full_name,
             is_archived: updated_class.is_archived,
             student_count,
             created_at: updated_class.created_at.to_string(),
@@ -175,7 +175,7 @@ impl super::ClassService {
                 id: class.id,
                 title: class.title,
                 description: class.description,
-                teacher_id: class.teacher_id,
+                teacher_id: teacher_id,
                 teacher_username: teacher.username.clone(),
                 teacher_full_name: teacher.full_name.clone(),
                 is_archived: class.is_archived,
@@ -199,8 +199,8 @@ impl super::ClassService {
         let mut class_responses = Vec::new();
         for class in classes {
             let teacher = self
-                .user_repo
-                .find_by_id(class.teacher_id)
+                .class_repo
+                .find_teacher_of_class(class.id)
                 .await?
                 .ok_or_else(|| AppError::NotFound("Teacher not found".to_string()))?;
 
@@ -209,7 +209,7 @@ impl super::ClassService {
                 id: class.id,
                 title: class.title,
                 description: class.description,
-                teacher_id: class.teacher_id,
+                teacher_id: teacher.id,
                 teacher_username: teacher.username,
                 teacher_full_name: teacher.full_name,
                 is_archived: class.is_archived,
@@ -230,8 +230,8 @@ impl super::ClassService {
         let mut class_responses = Vec::new();
         for class in classes {
             let teacher = self
-                .user_repo
-                .find_by_id(class.teacher_id)
+                .class_repo
+                .find_teacher_of_class(class.id)
                 .await?
                 .ok_or_else(|| AppError::NotFound("Teacher not found".to_string()))?;
 
@@ -240,7 +240,7 @@ impl super::ClassService {
                 id: class.id,
                 title: class.title,
                 description: class.description,
-                teacher_id: class.teacher_id,
+                teacher_id: teacher.id,
                 teacher_username: teacher.username,
                 teacher_full_name: teacher.full_name,
                 is_archived: class.is_archived,
@@ -262,7 +262,7 @@ impl super::ClassService {
             .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        if !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
             return Err(AppError::Forbidden(
                 "You can only delete your own classes".to_string(),
             ));

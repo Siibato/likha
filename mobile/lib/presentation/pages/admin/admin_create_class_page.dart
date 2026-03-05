@@ -17,7 +17,7 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  String _selectedTeacherId = '';
+  String? _selectedTeacherId;
 
   @override
   void initState() {
@@ -36,7 +36,7 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
 
   Future<void> _handleCreate() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedTeacherId.isEmpty) {
+    if (_selectedTeacherId == null || _selectedTeacherId!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select a teacher'),
@@ -49,7 +49,7 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
 
     final adminState = ref.read(adminProvider);
     final teachers = adminState.accounts.where((u) => u.isTeacher).toList();
-    final selectedTeacher = teachers.firstWhere((t) => t.id == _selectedTeacherId);
+    final selectedTeacher = teachers.firstWhere((t) => t.id == _selectedTeacherId!);
 
     await ref.read(classProvider.notifier).createClass(
           title: _titleController.text.trim(),
@@ -193,19 +193,19 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
                   validator: null,
                 ),
                 const SizedBox(height: 16),
-                StyledDropdown(
+                StyledDropdown<String?>(
                   value: _selectedTeacherId,
                   label: 'Assign Teacher',
                   icon: Icons.person_outline_rounded,
                   items: [
-                    const DropdownMenuItem<String>(
-                      value: '',
+                    const DropdownMenuItem<String?>(
+                      value: null,
                       child: Text('Select a teacher'),
                       enabled: false,
                     ),
                     ...teachers
                         .map(
-                          (teacher) => DropdownMenuItem<String>(
+                          (teacher) => DropdownMenuItem<String?>(
                             value: teacher.id,
                             child: Text(
                               '${teacher.fullName} (@${teacher.username})',
@@ -216,7 +216,7 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
                   ],
                   onChanged: (value) {
                     setState(() {
-                      _selectedTeacherId = value ?? '';
+                      _selectedTeacherId = value;
                     });
                   },
                   enabled: !classState.isLoading,
