@@ -189,6 +189,7 @@ async fn main() {
     let sync_delta_service = Arc::new(SyncDeltaService::new(
         entitlement_service.clone(),
         manifest_repo.clone(),
+        db.clone(),
     ));
 
     let app = create_app(

@@ -53,24 +53,36 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
             await localDataSource.getCachedAssessmentDetail(assessmentId);
         final (assessment, questions) = cached;
 
-        // If server is reachable and local questions are stale (count says there
-        // should be questions but none are cached), fall through to refresh.
+        // Log cache hit
+        syncLogger.assessmentDetailLoad(assessmentId, cached: true, questionCount: questions.length);
+
+        // If server is reachable and no questions are cached, fetch from server.
         final shouldRefetch = serverReachabilityService.isServerReachable &&
-            assessment.questionCount > 0 &&
             questions.isEmpty;
 
         if (!shouldRefetch) {
+          syncLogger.assessmentDetailFetch(assessmentId, online: false);
+          // Questions are already cached. If online, refresh in background
+          // (e.g., to pick up stale choices from delta sync).
+          if (serverReachabilityService.isServerReachable &&
+              questions.isNotEmpty) {
+            _backgroundFetchAssessmentDetail(assessmentId);
+          }
           return Right(cached);
         }
+
         // Fall through to remote fetch below
+        syncLogger.assessmentDetailFetch(assessmentId, online: true);
       } on CacheException {
         // Not in local DB — fall through to remote fetch below
+        syncLogger.warn('Assessment detail not in cache for $assessmentId, fetching from server');
       }
 
       // Remote fetch (covers: cache miss OR stale questions)
       try {
         final fresh = await remoteDataSource.getAssessmentDetail(
             assessmentId: assessmentId);
+        syncLogger.assessmentDetailResponse(assessmentId, fresh.questions.length);
         await localDataSource.cacheAssessmentDetail(
             fresh.assessment, fresh.questions);
         return Right((fresh.assessment, fresh.questions));
@@ -236,6 +248,78 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
         // Network/server error — silent fail, stale cache stays
       }
     });
+  }
+
+  /// Silently fetches fresh assessment detail from the server.
+  /// Updates local cache only if the assessment or questions have changed.
+  /// Emits a DataEventBus event so the page can reload from updated cache.
+  /// All errors are swallowed — users keep seeing stale cache without error.
+  void _backgroundFetchAssessmentDetail(String assessmentId) {
+    Future.microtask(() async {
+      try {
+        final fresh = await remoteDataSource.getAssessmentDetail(
+            assessmentId: assessmentId);
+
+        // Compare with cached data
+        late Assessment cachedAssessment;
+        late List<Question> cachedQuestions;
+        try {
+          final result =
+              await localDataSource.getCachedAssessmentDetail(assessmentId);
+          cachedAssessment = result.$1;
+          cachedQuestions = result.$2;
+        } on CacheException {
+          // Cache was cleared — write fresh anyway
+          await localDataSource.cacheAssessmentDetail(
+              fresh.assessment, fresh.questions);
+          dataEventBus.notifyAssessmentDetailChanged(assessmentId);
+          return;
+        }
+
+        // Check if questions have changed (different count or different content)
+        final changed = _assessmentDetailHasChanged(cachedAssessment, cachedQuestions,
+            fresh.assessment, fresh.questions);
+        syncLogger.assessmentDetailBackgroundFetch(assessmentId, changed: changed);
+
+        if (changed) {
+          await localDataSource.cacheAssessmentDetail(
+              fresh.assessment, fresh.questions);
+          dataEventBus.notifyAssessmentDetailChanged(assessmentId);
+        }
+        // If nothing changed, do nothing (no DB write, no notification)
+      } catch (e) {
+        // Network/server error — silent fail, stale cache stays
+        syncLogger.warn('Background fetch failed for $assessmentId', e);
+      }
+    });
+  }
+
+  /// Returns true if the assessment or questions have changed.
+  bool _assessmentDetailHasChanged(
+    Assessment cachedAssessment,
+    List<Question> cachedQuestions,
+    Assessment remoteAssessment,
+    List<Question> remoteQuestions,
+  ) {
+    // Check if assessment itself changed
+    if (cachedAssessment.updatedAt.isBefore(remoteAssessment.updatedAt)) {
+      return true;
+    }
+
+    // Check if question count differs
+    if (cachedQuestions.length != remoteQuestions.length) {
+      return true;
+    }
+
+    // Check if any question is missing (new question added)
+    final cachedIds = {for (final q in cachedQuestions) q.id};
+    for (final rq in remoteQuestions) {
+      if (!cachedIds.contains(rq.id)) {
+        return true; // New question added
+      }
+    }
+
+    return false;
   }
 
   /// Returns true if any remote assessment is newer than its local counterpart,

@@ -51,6 +51,17 @@ class SyncLogger {
     debugPrint('[SYNC] Upserting $entity: $count records');
   }
 
+  void sqliteVerification({
+    required int totalClassParticipants,
+    required Map<String, int> participantsByClass,
+  }) {
+    if (!_enabled) return;
+    debugPrint('[SYNC] ✓ SQLite Verification: class_participants table has $totalClassParticipants total rows');
+    for (final entry in participantsByClass.entries) {
+      debugPrint('[SYNC]   class_id ${entry.key.substring(0, 8)}: ${entry.value} students');
+    }
+  }
+
   void upsertRecord(String entity, String id) {
     if (!_enabled) return;
     debugPrint('[SYNC]   $entity id=$id');
@@ -123,6 +134,32 @@ class SyncLogger {
     final updated = updatedCounts.entries.where((e) => e.value > 0).map((e) => '${e.key}=${e.value}').join(', ');
     final deleted = deletedCounts.entries.where((e) => e.value > 0).map((e) => '${e.key}=${e.value}').join(', ');
     debugPrint('[SYNC] Delta: updated[$updated] deleted[$deleted]');
+  }
+
+  void assessmentDetailLoad(String assessmentId, {required bool cached, required int questionCount}) {
+    if (!_enabled) return;
+    final source = cached ? 'CACHE' : 'SERVER';
+    debugPrint('[DETAIL] Load assessment_id=${assessmentId.substring(0, 8)} from $source: $questionCount questions');
+  }
+
+  void assessmentDetailFetch(String assessmentId, {required bool online}) {
+    if (!_enabled) return;
+    if (online) {
+      debugPrint('[DETAIL] shouldRefetch=true, fetching from server for assessment_id=${assessmentId.substring(0, 8)}');
+    } else {
+      debugPrint('[DETAIL] shouldRefetch=false, returning cached data for assessment_id=${assessmentId.substring(0, 8)}');
+    }
+  }
+
+  void assessmentDetailResponse(String assessmentId, int questionCount) {
+    if (!_enabled) return;
+    debugPrint('[DETAIL] Server response for assessment_id=${assessmentId.substring(0, 8)}: $questionCount questions in payload');
+  }
+
+  void assessmentDetailBackgroundFetch(String assessmentId, {required bool changed}) {
+    if (!_enabled) return;
+    final status = changed ? 'CHANGED' : 'UNCHANGED';
+    debugPrint('[DETAIL] Background fetch for assessment_id=${assessmentId.substring(0, 8)}: $status');
   }
 
   // warn/error always log regardless of _enabled

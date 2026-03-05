@@ -48,7 +48,7 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
           operation: SyncOperation.addEnrollment,
           payload: {
             'class_id': classId,
-            'user_id': studentId,
+            'student_id': studentId,
             if (cachedStudent != null) 'student_username': cachedStudent.username,
             if (cachedStudent != null) 'student_full_name': cachedStudent.fullName,
             if (enrollmentId != null) 'local_enrollment_id': enrollmentId,
@@ -103,7 +103,7 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
           id: const Uuid().v4(),
           entityType: SyncEntityType.classEntity,
           operation: SyncOperation.removeEnrollment,
-          payload: {'class_id': classId, 'user_id': studentId},
+          payload: {'class_id': classId, 'student_id': studentId},
           status: SyncStatus.pending,
           retryCount: 0,
           maxRetries: 5,
@@ -153,7 +153,7 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
     } on NetworkException catch (e) {
       try {
         final cached = await localDataSource.searchCachedStudents(query ?? '');
-        if (cached.isNotEmpty) return Right(cached);
+        return Right(cached);
       } catch (_) {
         // Fall through to network error
       }

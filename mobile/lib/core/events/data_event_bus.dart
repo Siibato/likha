@@ -10,6 +10,8 @@ import 'dart:async';
 class DataEventBus {
   final StreamController<String?> _assessments =
       StreamController<String?>.broadcast();
+  final StreamController<String?> _assessmentDetail =
+      StreamController<String?>.broadcast();
   final StreamController<String?> _assignments =
       StreamController<String?>.broadcast();
   final StreamController<String?> _materials =
@@ -18,17 +20,20 @@ class DataEventBus {
       StreamController<void>.broadcast();
 
   Stream<String?> get onAssessmentsChanged => _assessments.stream;
+  Stream<String?> get onAssessmentDetailChanged => _assessmentDetail.stream;
   Stream<String?> get onAssignmentsChanged => _assignments.stream;
   Stream<String?> get onMaterialsChanged   => _materials.stream;
   Stream<void>    get onClassesChanged      => _classes.stream;
 
   void notifyAssessmentsChanged(String classId) => _assessments.add(classId);
+  void notifyAssessmentDetailChanged(String assessmentId) => _assessmentDetail.add(assessmentId);
   void notifyAssignmentsChanged(String classId) => _assignments.add(classId);
   void notifyMaterialsChanged(String classId)   => _materials.add(classId);
   void notifyClassesChanged()                    => _classes.add(null);
 
   void dispose() {
     _assessments.close();
+    _assessmentDetail.close();
     _assignments.close();
     _materials.close();
     _classes.close();

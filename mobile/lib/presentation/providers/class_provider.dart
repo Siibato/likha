@@ -46,6 +46,7 @@ class ClassState {
     String? error,
     String? successMessage,
     Set<String>? enrolledStudentIds,
+    Set<String>? loadingStudentIds,
     bool clearError = false,
     bool clearSuccess = false,
     bool clearDetail = false,
@@ -62,6 +63,7 @@ class ClassState {
       successMessage:
           clearSuccess ? null : (successMessage ?? this.successMessage),
       enrolledStudentIds: clearEnrolled ? {} : (enrolledStudentIds ?? this.enrolledStudentIds),
+      loadingStudentIds: loadingStudentIds ?? this.loadingStudentIds,
     );
   }
 }
@@ -164,6 +166,16 @@ class ClassNotifier extends StateNotifier<ClassState> {
 
     final result = await _getClassDetail(classId);
 
+    // Always try to load cached students for offline display (even if online)
+    try {
+      final cachedStudents = await sl<ClassLocalDataSource>().getCachedEnrolledStudents(classId);
+      final ids = cachedStudents.map((u) => u.id).toSet();
+      // Store in searchResults for teacher page fallback when offline
+      state = state.copyWith(searchResults: cachedStudents, enrolledStudentIds: ids);
+    } catch (_) {
+      // If caching fails, continue with current state
+    }
+
     // Handle success case
     result.fold(
       (failure) async {},  // Handled below after fold
@@ -187,21 +199,10 @@ class ClassNotifier extends StateNotifier<ClassState> {
         final showError = !failure.message.contains('offline') &&
                          !failure.message.contains('Cache');
 
-        // On failure, fall back to directly querying local enrollments table
-        // This allows enrollment status to work even if class detail failed to load
-        try {
-          final ids = await sl<ClassLocalDataSource>().getEnrolledStudentIds(classId);
-          state = state.copyWith(
-            isLoading: false,
-            error: showError ? failure.message : null,
-            enrolledStudentIds: ids,
-          );
-        } catch (_) {
-          state = state.copyWith(
-            isLoading: false,
-            error: showError ? failure.message : null,
-          );
-        }
+        state = state.copyWith(
+          isLoading: false,
+          error: showError ? failure.message : null,
+        );
       }
     }
   }
@@ -248,7 +249,11 @@ class ClassNotifier extends StateNotifier<ClassState> {
     required String classId,
     required String studentId,
   }) async {
-    state = state.copyWith(clearError: true, clearSuccess: true);
+    state = state.copyWith(
+      clearError: true,
+      clearSuccess: true,
+      loadingStudentIds: {...state.loadingStudentIds, studentId},
+    );
 
     // Try to get the student from search results to show in UI immediately
     final studentToAdd = state.searchResults.firstWhere(
@@ -315,9 +320,13 @@ class ClassNotifier extends StateNotifier<ClassState> {
             currentClassDetail: revertedDetail,
             enrolledStudentIds: state.enrolledStudentIds..remove(studentId),
             error: failure.message,
+            loadingStudentIds: state.loadingStudentIds..remove(studentId),
           );
         } else {
-          state = state.copyWith(error: failure.message);
+          state = state.copyWith(
+            error: failure.message,
+            loadingStudentIds: state.loadingStudentIds..remove(studentId),
+          );
         }
       },
       (enrollment) {
@@ -342,9 +351,13 @@ class ClassNotifier extends StateNotifier<ClassState> {
           state = state.copyWith(
             currentClassDetail: updatedDetail,
             successMessage: 'Student added to class',
+            loadingStudentIds: state.loadingStudentIds..remove(studentId),
           );
         } else {
-          state = state.copyWith(successMessage: 'Student added to class');
+          state = state.copyWith(
+            successMessage: 'Student added to class',
+            loadingStudentIds: state.loadingStudentIds..remove(studentId),
+          );
         }
         // Reload class detail in background to sync with server
         loadClassDetail(classId);
@@ -356,7 +369,11 @@ class ClassNotifier extends StateNotifier<ClassState> {
     required String classId,
     required String studentId,
   }) async {
-    state = state.copyWith(clearError: true, clearSuccess: true);
+    state = state.copyWith(
+      clearError: true,
+      clearSuccess: true,
+      loadingStudentIds: {...state.loadingStudentIds, studentId},
+    );
 
     final currentDetail = state.currentClassDetail;
     final removedStudent = currentDetail?.students
@@ -397,14 +414,21 @@ class ClassNotifier extends StateNotifier<ClassState> {
             currentClassDetail: currentDetail, // Restore original detail
             enrolledStudentIds: state.enrolledStudentIds..add(studentId),
             error: failure.message,
+            loadingStudentIds: state.loadingStudentIds..remove(studentId),
           );
         } else {
-          state = state.copyWith(error: failure.message);
+          state = state.copyWith(
+            error: failure.message,
+            loadingStudentIds: state.loadingStudentIds..remove(studentId),
+          );
         }
       },
       (_) {
         // On success, confirm the removal
-        state = state.copyWith(successMessage: 'Student removed from class');
+        state = state.copyWith(
+          successMessage: 'Student removed from class',
+          loadingStudentIds: state.loadingStudentIds..remove(studentId),
+        );
         // Reload class detail in background to sync with server
         loadClassDetail(classId);
       },

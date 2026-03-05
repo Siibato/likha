@@ -39,11 +39,8 @@ mixin ClassQueryMixin on ClassRepositoryBase {
           teacherId: currentUserId,
         );
 
-        // If server is reachable, fetch fresh in background (fire-and-forget)
-        if (serverReachabilityService.isServerReachable) {
-          _backgroundFetchMyClasses();
-        }
-
+        // Return cached data without background fetch. Sync already provides fresh data.
+        // Manual pull-to-refresh works if user wants to refresh.
         return Right(cachedClasses);
       } on CacheException {
         final freshClasses = await remoteDataSource.getMyClasses();

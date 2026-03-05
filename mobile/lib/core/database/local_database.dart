@@ -77,21 +77,20 @@ class LocalDatabase {
         )
       ''');
 
-      // Class enrollments table
+      // Class participants table (v12 schema)
       await txn.execute('''
-        CREATE TABLE IF NOT EXISTS class_enrollments (
+        CREATE TABLE IF NOT EXISTS class_participants (
           id TEXT PRIMARY KEY,
           local_id TEXT,
           class_id TEXT NOT NULL,
-          student_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
           username TEXT NOT NULL,
           full_name TEXT NOT NULL,
           role TEXT NOT NULL,
           account_status TEXT NOT NULL,
-          is_active INTEGER NOT NULL DEFAULT 1,
-          enrolled_at TEXT NOT NULL,
+          joined_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
-          deleted_at TEXT,
+          removed_at TEXT,
           cached_at TEXT NOT NULL,
           sync_status TEXT NOT NULL DEFAULT 'synced',
           is_offline_mutation INTEGER NOT NULL DEFAULT 0,
@@ -366,7 +365,9 @@ class LocalDatabase {
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_classes_teacher_id ON classes(teacher_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_classes_updated_at ON classes(updated_at)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_classes_deleted_at ON classes(deleted_at)');
-      await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_enrollments_class_id ON class_enrollments(class_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_class_id ON class_participants(class_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_user_id ON class_participants(user_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_removed_at ON class_participants(removed_at)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_assessments_class_id ON assessments(class_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_assessments_updated_at ON assessments(updated_at)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_assessments_deleted_at ON assessments(deleted_at)');

@@ -55,8 +55,10 @@ mixin AssessmentQuestionMixin on AssessmentRepositoryBase {
           );
         }).toList();
 
+        // Cache questions with explicit transaction to ensure FK constraints work
         await localDataSource.cacheQuestions(assessmentId, questionModels);
 
+        // Enqueue sync separately to avoid transaction nesting
         await syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),
           entityType: SyncEntityType.question,
@@ -78,7 +80,7 @@ mixin AssessmentQuestionMixin on AssessmentRepositoryBase {
         assessmentId: assessmentId,
         questions: questions,
       );
-      await localDataSource.cacheQuestions(assessmentId, result);
+      await localDataSource.cacheQuestions(assessmentId, result, isServerConfirmed: true);
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

@@ -260,6 +260,7 @@ Future<void> init() async {
       serverReachabilityService: sl<ServerReachabilityService>(),
       storageService: sl<StorageService>(),
       dataEventBus: sl<DataEventBus>(),
+      syncLogger: sl<SyncLogger>(),
     ),
   );
   sl.registerLazySingleton<AssignmentRepository>(

@@ -67,6 +67,7 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
                   ? jsonEncode(question.enumerationItems)
                   : null,
               'updated_at': now,
+              'deleted_at': null,
               'cached_at': now,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
@@ -79,9 +80,28 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
   }
 
   @override
-  Future<void> cacheQuestions(String assessmentId, List<QuestionModel> questions) async {
+  Future<void> cacheQuestions(
+    String assessmentId,
+    List<QuestionModel> questions, {
+    bool isServerConfirmed = false,
+  }) async {
     try {
       final db = await localDatabase.database;
+
+      // Verify assessment exists before inserting questions (FK constraint check)
+      // This ensures the transaction can see the assessment record
+      final assessmentExists = await db.rawQuery(
+        'SELECT id FROM assessments WHERE id = ? LIMIT 1',
+        [assessmentId],
+      );
+
+      if (assessmentExists.isEmpty) {
+        throw CacheException(
+          'Assessment with ID $assessmentId not found in database. '
+          'Cannot insert questions without a valid assessment reference.'
+        );
+      }
+
       await db.transaction((txn) async {
         for (final question in questions) {
           final now = DateTime.now().toIso8601String();
@@ -122,8 +142,8 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
                   : null,
               'updated_at': now,
               'cached_at': now,
-              'is_offline_mutation': 1,
-              'sync_status': 'pending',
+              'is_offline_mutation': isServerConfirmed ? 0 : 1,
+              'sync_status': isServerConfirmed ? 'synced' : 'pending',
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );

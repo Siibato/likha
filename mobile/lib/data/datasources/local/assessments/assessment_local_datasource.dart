@@ -8,7 +8,7 @@ abstract class AssessmentLocalDataSource {
   Future<(AssessmentModel, List<QuestionModel>)> getCachedAssessmentDetail(String assessmentId);
   Future<void> cacheAssessments(List<AssessmentModel> assessments);
   Future<void> cacheAssessmentDetail(AssessmentModel assessment, List<QuestionModel> questions);
-  Future<void> cacheQuestions(String assessmentId, List<QuestionModel> questions);
+  Future<void> cacheQuestions(String assessmentId, List<QuestionModel> questions, {bool isServerConfirmed = false});
   Future<void> updateQuestionLocally({
     required String questionId,
     required Map<String, dynamic> updates,
@@ -59,6 +59,16 @@ abstract class AssessmentLocalDataSource {
     required String openAt,
     required String closeAt,
     bool? showResultsImmediately,
+  });
+  Future<String> createAssessmentWithQuestionsLocally({
+    required String classId,
+    required String title,
+    String? description,
+    required int timeLimitMinutes,
+    required String openAt,
+    required String closeAt,
+    bool? showResultsImmediately,
+    required List<QuestionModel> questions,
   });
   Future<List<SubmissionSummaryModel>> getCachedSubmissions(String assessmentId);
   Future<void> cacheSubmissions(String assessmentId, List<SubmissionSummaryModel> submissions);

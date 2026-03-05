@@ -2,6 +2,7 @@ import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/connectivity_service.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
+import 'package:likha/core/sync/sync_logger.dart';
 import 'package:likha/core/validation/services/validation_service.dart';
 import 'package:likha/services/storage_service.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
@@ -16,6 +17,7 @@ abstract class AssessmentRepositoryBase extends AssessmentRepository {
   final ServerReachabilityService serverReachabilityService;
   final StorageService storageService;
   final DataEventBus dataEventBus;
+  final SyncLogger syncLogger;
 
   AssessmentRepositoryBase({
     required this.remoteDataSource,
@@ -26,5 +28,6 @@ abstract class AssessmentRepositoryBase extends AssessmentRepository {
     required this.serverReachabilityService,
     required this.storageService,
     required this.dataEventBus,
+    required this.syncLogger,
   });
 }

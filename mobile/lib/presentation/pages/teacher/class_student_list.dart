@@ -19,6 +19,8 @@ class _ClassStudentListPageState extends ConsumerState<ClassStudentListPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Load class detail to get enrolled students
       ref.read(classProvider.notifier).loadClassDetail(widget.classId);
+      // Also load cached students immediately for offline display
+      ref.read(classProvider.notifier).loadEnrolledStudentsOffline(widget.classId);
     });
   }
 

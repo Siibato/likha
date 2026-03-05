@@ -678,6 +678,8 @@ class SyncManager {
       if (cid != null) studentsPerClassCount[cid] = (studentsPerClassCount[cid] ?? 0) + 1;
     }
 
+    // Upsert all base response data sequentially (proper await ensures committed before verification)
+    _log.warn('Starting base response data upsert (classes, enrollments, students)...');
     await _upsertClasses(db, baseData['classes'] ?? []);
     await _upsertEnrolledStudents(db, enrolledStudents);
     await _upsertEnrollments(db, baseData['enrollments'] ?? [], enrolledStudents);
@@ -716,6 +718,39 @@ class SyncManager {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
     }
+
+    // VERIFICATION: Check what was actually stored in SQLite (after all awaits complete)
+    _log.warn('Starting SQLite verification for class_participants...');
+    try {
+      final countResult = await db.rawQuery('SELECT COUNT(*) FROM class_participants');
+      _log.warn('Count query returned ${countResult.length} result row(s)');
+
+      final totalRows = Sqflite.firstIntValue(countResult) ?? 0;
+      _log.warn('Verified $totalRows total rows in class_participants');
+
+      final byClassQuery = await db.rawQuery(
+        'SELECT class_id, COUNT(*) as count FROM class_participants WHERE role = ? AND removed_at IS NULL GROUP BY class_id ORDER BY class_id',
+        ['student'],
+      );
+
+      _log.warn('Per-class breakdown query returned ${byClassQuery.length} row(s)');
+
+      final byClass = <String, int>{};
+      for (final row in byClassQuery) {
+        final classId = row['class_id']?.toString() ?? '?';
+        var count = row['count'];
+        final countInt = count is int ? count : (int.tryParse(count.toString()) ?? 0);
+        byClass[classId] = countInt;
+        _log.warn('  class_id $classId: $countInt students');
+      }
+
+      _log.sqliteVerification(totalClassParticipants: totalRows, participantsByClass: byClass);
+      _log.warn('SQLite verification completed successfully');
+    } catch (e) {
+      _log.warn('SQLite verification failed: $e');
+      _log.error('class_participants verification error', e.toString());
+    }
+    _log.warn('Base response data upsert completed');
 
     // STEP 2: Extract classes and create batches of 2
     final classesForBatching = (baseData['classes'] as List?)
@@ -793,6 +828,10 @@ class SyncManager {
         final assessmentStatistics = batchData['assessment_statistics'] ?? [];
         final studentResults = batchData['student_results'] ?? [];
 
+        // NEW: Extract enrolled_students and enrollments from batch (for full offline support)
+        final batchEnrolledStudents = (batchData['enrolled_students'] as List?) ?? [];
+        final batchEnrollments = (batchData['enrollments'] as List?) ?? [];
+
         _log.batchReceived(batchIndex, classBatches.length, {
           'assessments': assessments.length,
           'questions': questions.length,
@@ -804,6 +843,8 @@ class SyncManager {
           'submission_files': submissionFiles.length,
           'assessment_statistics': assessmentStatistics.length,
           'student_results': studentResults.length,
+          'enrolled_students': batchEnrolledStudents.length,  // NEW: for offline support
+          'enrollments': batchEnrollments.length,              // NEW: for offline support
         });
 
         // Log questions per assessment
@@ -822,6 +863,19 @@ class SyncManager {
             final title = assessment['title'] as String? ?? 'unknown';
             final qCount = questionsByAssessment[assessmentId] ?? 0;
             _log.questionsPerAssessment(title, assessmentId ?? '?', qCount);
+          }
+        }
+
+        // NEW: Upsert batch enrolled_students and enrollments (for full offline support)
+        await _upsertEnrolledStudents(db, batchEnrolledStudents);
+        await _upsertEnrollments(db, batchEnrollments, batchEnrolledStudents);
+
+        // Update in-memory studentMap with batch students so submissions can reference them
+        for (final s in batchEnrolledStudents) {
+          if (s is! Map<String, dynamic>) continue;
+          final id = s['id']?.toString();
+          if (id != null && id.isNotEmpty) {
+            studentMap[id] = s;
           }
         }
 
@@ -1584,6 +1638,7 @@ class SyncManager {
           'class_participants',
           {
             'id': e['id'],
+            'local_id': e['id'],
             'class_id': e['class_id'],
             'user_id': userId,
             'username': student['username'] ?? '',
@@ -1595,6 +1650,7 @@ class SyncManager {
             'removed_at': null,
             'cached_at': DateTime.now().toIso8601String(),
             'sync_status': 'synced',
+            'is_offline_mutation': 0,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );

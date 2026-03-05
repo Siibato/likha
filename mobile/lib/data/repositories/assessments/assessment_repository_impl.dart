@@ -20,5 +20,6 @@ class AssessmentRepositoryImpl extends AssessmentRepositoryBase
     required super.serverReachabilityService,
     required super.storageService,
     required super.dataEventBus,
+    required super.syncLogger,
   });
 }

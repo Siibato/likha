@@ -65,8 +65,8 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
       final db = await localDatabase.database;
       final results = await db.query(
         'users',
-        where: '(username LIKE ? OR full_name LIKE ?)',
-        whereArgs: ['%$query%', '%$query%'],
+        where: '(username LIKE ? OR full_name LIKE ?) AND role = ?',
+        whereArgs: ['%$query%', '%$query%', 'student'],
         orderBy: 'full_name ASC',
       );
       return results.map(UserModel.fromMap).toList();

@@ -244,6 +244,55 @@ impl SyncFullService {
             tracing::debug!("No questions found in manifest for assessments");
         }
 
+        // Fetch enrollments for batch classes (needed for full offline support)
+        let batch_enrollment_ids: Vec<Uuid> = manifest.enrollments
+            .iter()
+            .map(|e| e.id)
+            .collect();
+
+        let batch_enrollment_data = if batch_enrollment_ids.is_empty() {
+            crate::db::repositories::manifest_repository::PaginatedRecords {
+                records: Vec::new(),
+                has_more: false,
+            }
+        } else {
+            self.manifest_repo
+                .get_enrollments_paginated(batch_enrollment_ids, 10000)
+                .await?
+        };
+        let batch_enrollments = batch_enrollment_data.records.clone();
+
+        // Extract unique student_ids from enrollment records
+        let batch_student_ids: Vec<Uuid> = batch_enrollment_data
+            .records
+            .iter()
+            .filter_map(|e| {
+                e.get("student_id")
+                    .and_then(|id| id.as_str())
+                    .and_then(|id_str| uuid::Uuid::parse_str(id_str).ok())
+            })
+            .collect::<std::collections::HashSet<_>>()
+            .into_iter()
+            .collect();
+
+        // Fetch enrolled student profiles (role-aware: students don't see classmates)
+        let batch_enrolled_students = match user_role {
+            "student" => Vec::new(),
+            _ => {
+                if batch_student_ids.is_empty() {
+                    Vec::new()
+                } else {
+                    self.manifest_repo
+                        .get_users_paginated(batch_student_ids, 10000)
+                        .await?
+                        .records
+                }
+            }
+        };
+
+        tracing::debug!("BATCH REQUEST: enrollments={}, enrolled_students={}",
+            batch_enrollments.len(), batch_enrolled_students.len());
+
         // Fetch entity data (same as current logic)
         tracing::debug!("Fetching assessments for batch");
         let assessments = self
@@ -462,8 +511,8 @@ impl SyncFullService {
             server_time,
             user: None, // Not returned in batch requests (already returned in base)
             classes: vec![], // Not returned in batch requests
-            enrollments: vec![], // Not returned in batch requests
-            enrolled_students: vec![], // Not returned in batch requests
+            enrollments: batch_enrollments, // Batch classes' enrollments for full offline support
+            enrolled_students: batch_enrolled_students, // Batch classes' students for full offline support
             assessments,
             questions: enriched_questions,
             assessment_submissions: enriched_assessment_submissions,
