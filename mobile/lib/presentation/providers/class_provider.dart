@@ -25,6 +25,7 @@ class ClassState {
   final String? error;
   final String? successMessage;
   final Set<String> enrolledStudentIds; // ids of students enrolled in currentClassDetail
+  final Set<String> loadingStudentIds; // ids of students being added/removed
 
   ClassState({
     this.classes = const [],
@@ -34,6 +35,7 @@ class ClassState {
     this.error,
     this.successMessage,
     this.enrolledStudentIds = const {},
+    this.loadingStudentIds = const {},
   });
 
   ClassState copyWith({

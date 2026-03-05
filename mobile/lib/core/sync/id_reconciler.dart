@@ -14,6 +14,9 @@ class IdReconciler {
     'assessment_questions': 'questions',
     'class_enrollment': 'class_participants',
     'class_enrollments': 'class_participants',
+    'adminUser': 'users',
+    'admin_user': 'users',
+    'user': 'users',
   };
 
   static const Map<String, List<(String table, String column)>> _foreignKeyMap = {
@@ -32,6 +35,9 @@ class IdReconciler {
     ],
     'learning_materials': [
       ('material_files', 'material_id'),
+    ],
+    'users': [
+      ('classes', 'teacher_id'),
     ],
     'questions': [],
     'assessment_submissions': [],

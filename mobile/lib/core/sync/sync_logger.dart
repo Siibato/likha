@@ -61,6 +61,60 @@ class SyncLogger {
     debugPrint('[SYNC] Outbound: uploadOps=$uploadOps regularOps=$regularOps');
   }
 
+  void pushStarting({
+    required int uploadOpsCount,
+    required int regularOpsCount,
+    required Map<String, int> operationsByType,
+  }) {
+    if (!_enabled) return;
+    final opTypes = operationsByType.entries.where((e) => e.value > 0).map((e) => '${e.key}=${e.value}').join(', ');
+    debugPrint('[SYNC] ══ PUSH SYNC START ══ uploadOps=$uploadOpsCount regularOps=$regularOpsCount [$opTypes]');
+  }
+
+  void pushResults({
+    required Map<String, int> successByType,
+    required Map<String, int> failedByType,
+    required Map<String, int> idMappingsByType,
+    required int totalDuration,
+  }) {
+    if (!_enabled) return;
+    final success = successByType.entries.where((e) => e.value > 0).map((e) => '${e.key}=${e.value}').join(', ');
+    final failed = failedByType.entries.where((e) => e.value > 0).map((e) => '${e.key}=${e.value}').join(', ');
+    final mapped = idMappingsByType.entries.where((e) => e.value > 0).map((e) => '${e.key}=${e.value}').join(', ');
+
+    debugPrint('[SYNC] Push results: success[$success] failed[$failed] mapped_ids[$mapped] duration=${totalDuration}ms');
+  }
+
+  void pushOperationResult({
+    required String entityType,
+    required String operation,
+    required String opId,
+    required bool success,
+    required String? serverId,
+    required String? error,
+  }) {
+    if (!_enabled) return;
+    if (success) {
+      debugPrint('[SYNC]   ✓ $entityType $operation (op_id: ${opId.substring(0, 8)}, server_id: ${serverId?.substring(0, 8) ?? "none"})');
+    } else {
+      debugPrint('[SYNC]   ✗ $entityType $operation (op_id: ${opId.substring(0, 8)}) | error: $error');
+    }
+  }
+
+  void pushReconciliation({
+    required Map<String, int> reconciliedIds,
+    required String? nestedIdMapping,
+  }) {
+    if (!_enabled) return;
+    final reconciled = reconciliedIds.entries.where((e) => e.value > 0).map((e) => '${e.key}=${e.value}').join(', ');
+    if (reconciled.isNotEmpty) {
+      debugPrint('[SYNC] Push reconciliation: ID mappings applied [$reconciled]');
+    }
+    if (nestedIdMapping != null && nestedIdMapping.isNotEmpty) {
+      debugPrint('[SYNC]   Nested IDs: $nestedIdMapping');
+    }
+  }
+
   void deltaSync({
     required Map<String, int> updatedCounts,
     required Map<String, int> deletedCounts,

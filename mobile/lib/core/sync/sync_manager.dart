@@ -194,52 +194,137 @@ class SyncManager {
     return 'Unexpected error: ${error.toString()}\n${stackTrace.toString()}';
   }
 
-  /// OUTBOUND SYNC: Push queued mutations to server
   Future<void> _outboundSync() async {
-    // Get all pending operations from queue
     final pending = await _syncQueue.getAllRetriable();
     if (pending.isEmpty) return;
 
-    // Split: upload ops need direct multipart POST, not JSON batch
     final uploadOps   = pending.where((e) => e.operation == SyncOperation.upload).toList();
     final regularOps  = pending.where((e) => e.operation != SyncOperation.upload).toList();
 
-    _log.outboundSync(uploadOps: uploadOps.length, regularOps: regularOps.length);
+    final adminUserCreates = regularOps
+        .where((e) => e.entityType == SyncEntityType.adminUser && e.operation == SyncOperation.create)
+        .toList();
 
-    // Handle file uploads directly via multipart endpoint
+    final opsByType = <String, int>{};
+    for (final op in regularOps) {
+      opsByType[op.entityType.serverValue] = (opsByType[op.entityType.serverValue] ?? 0) + 1;
+    }
+
+    _log.pushStarting(
+      uploadOpsCount: uploadOps.length,
+      regularOpsCount: regularOps.length,
+      operationsByType: opsByType,
+    );
+
+    final pushStartTime = DateTime.now();
+
     for (final op in uploadOps) {
       await _handleFileUpload(op);
     }
 
-    // Handle all other operations via the batch push endpoint
-    if (regularOps.isNotEmpty) {
-      _updateState(pendingCount: regularOps.length);
+    if (adminUserCreates.isNotEmpty) {
+      await _syncPhase1(adminUserCreates);
 
-      final operations = regularOps.map((entry) {
-        return {
-          'id':          entry.id,
-          'entity_type': entry.entityType.serverValue,
-          'operation':   entry.operation.serverValue,
-          'payload':     entry.payload,
-        };
-      }).toList();
+      // After Phase 1, re-fetch retriable ops from queue
+      final pendingAfterPhase1 = await _syncQueue.getAllRetriable();
+      final otherOpsAfterPhase1 = pendingAfterPhase1
+          .where((e) => !(e.entityType == SyncEntityType.adminUser && e.operation == SyncOperation.create))
+          .toList();
 
-      final response = await _syncRemoteDataSource.pushOperations(
-        operations: operations,
-      );
-
-      try {
-        await _processPushResults(response);
-      } catch (e) {
-        rethrow;
+      // Phase 2: Sync all other operations (now with reconciled IDs)
+      if (otherOpsAfterPhase1.isNotEmpty) {
+        await _syncPhase2(otherOpsAfterPhase1, pushStartTime);
+      }
+    } else {
+      // No adminUser creates: process regularOps as usual
+      if (regularOps.isNotEmpty) {
+        await _syncRegularBatch(regularOps, pushStartTime);
       }
     }
   }
 
+  /// Phase 1: Sync only adminUser create operations
+  Future<void> _syncPhase1(List<SyncQueueEntry> adminUserCreates) async {
+    _updateState(pendingCount: adminUserCreates.length);
+
+    final operations = adminUserCreates.map((entry) {
+      return {
+        'id':          entry.id,
+        'entity_type': entry.entityType.serverValue,
+        'operation':   entry.operation.serverValue,
+        'payload':     entry.payload,
+      };
+    }).toList();
+
+    final response = await _syncRemoteDataSource.pushOperations(
+      operations: operations,
+    );
+
+    try {
+      await _processPushResults(response, DateTime.now());
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Phase 2: Sync all other operations (with reconciled IDs)
+  Future<void> _syncPhase2(List<SyncQueueEntry> otherOps, DateTime originalPushStartTime) async {
+    _updateState(pendingCount: otherOps.length);
+
+    final operations = otherOps.map((entry) {
+      return {
+        'id':          entry.id,
+        'entity_type': entry.entityType.serverValue,
+        'operation':   entry.operation.serverValue,
+        'payload':     entry.payload,
+      };
+    }).toList();
+
+    final response = await _syncRemoteDataSource.pushOperations(
+      operations: operations,
+    );
+
+    try {
+      await _processPushResults(response, originalPushStartTime);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Sync a regular batch of operations (no phase split)
+  Future<void> _syncRegularBatch(List<SyncQueueEntry> regularOps, DateTime pushStartTime) async {
+    _updateState(pendingCount: regularOps.length);
+
+    final operations = regularOps.map((entry) {
+      return {
+        'id':          entry.id,
+        'entity_type': entry.entityType.serverValue,
+        'operation':   entry.operation.serverValue,
+        'payload':     entry.payload,
+      };
+    }).toList();
+
+    final response = await _syncRemoteDataSource.pushOperations(
+      operations: operations,
+    );
+
+    try {
+      await _processPushResults(response, pushStartTime);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   /// Process push results and update local state
-  Future<void> _processPushResults(PushResponseModel response) async {
+  Future<void> _processPushResults(PushResponseModel response, DateTime startTime) async {
     final db = await _localDatabase.database;
     final idMappings = <({String entityType, String localId, String serverId})>[];
+
+    // Track success/failure/mapping by entity type for logging
+    final successByType = <String, int>{};
+    final failedByType = <String, int>{};
+    final idMappingsByType = <String, int>{};
+    final nestedIdSummary = <String>[];
 
     for (final result in response.results) {
       final opId = result.id;
@@ -251,21 +336,21 @@ class SyncManager {
       // Fetch entry BEFORE marking succeeded (entry is hard-deleted on succeed)
       final entry = await _syncQueue.getById(opId);
 
+      // Log individual operation result
+      _log.pushOperationResult(
+        entityType: entityType,
+        operation: operation,
+        opId: opId,
+        success: success,
+        serverId: serverId,
+        error: result.error,
+      );
+
       if (success) {
+        successByType[entityType] = (successByType[entityType] ?? 0) + 1;
+
         // Mark as succeeded and remove from queue
         await _syncQueue.markSucceeded(opId);
-
-        if (entityType == SyncEntityType.adminUser.serverValue && operation == 'create') {
-          try {
-            await db.delete(
-              'users',
-              where: 'id = ? AND sync_status = ?',
-              whereArgs: ['', 'pending'],
-            );
-          } catch (e) {
-            //
-          }
-        }
 
         // If this was a create operation, map local ID to server ID
         if (serverId != null && operation == 'create' && entry != null) {
@@ -274,6 +359,36 @@ class SyncManager {
             idMappings.add(
               (entityType: entityType, localId: localId, serverId: serverId),
             );
+            idMappingsByType[entityType] = (idMappingsByType[entityType] ?? 0) + 1;
+
+            // Special handling for adminUser: patch pending class creations that reference this teacher
+            if (entityType == SyncEntityType.adminUser.serverValue && operation == 'create') {
+              // Scan for pending classEntity creates with this teacher's local ID
+              final pendingClassCreates = await db.query(
+                'sync_queue',
+                where: 'status = ? AND entity_type = ? AND operation = ? AND payload LIKE ?',
+                whereArgs: [
+                  'pending',
+                  SyncEntityType.classEntity.dbValue,
+                  SyncOperation.create.dbValue,
+                  '%"teacher_id":"$localId"%',
+                ],
+              );
+
+              for (final classEntry in pendingClassCreates) {
+                final payloadStr = classEntry['payload'] as String?;
+                if (payloadStr != null) {
+                  // Replace local teacher_id with server teacher_id in the payload
+                  final updatedPayload = payloadStr.replaceAll('"teacher_id":"$localId"', '"teacher_id":"$serverId"');
+                  await db.update(
+                    'sync_queue',
+                    {'payload': updatedPayload},
+                    where: 'id = ?',
+                    whereArgs: [classEntry['id']],
+                  );
+                }
+              }
+            }
 
             // Special handling for classes: update main ID from local UUID to server UUID
             if (entityType == SyncEntityType.classEntity.serverValue) {
@@ -322,7 +437,7 @@ class SyncManager {
                 whereArgs: [localId],
               );
               // Then reconcile nested choice and answer IDs
-              await _reconcileQuestionNestedIds(db, serverId, result);
+              await _reconcileQuestionNestedIds(db, serverId, result, nestedIdSummary);
             }
           }
         }
@@ -338,18 +453,38 @@ class SyncManager {
               where: 'id = ?',
               whereArgs: [localEnrollmentId],
             );
+            idMappingsByType['enrollment'] = (idMappingsByType['enrollment'] ?? 0) + 1;
           }
         }
       } else {
+        failedByType[entityType] = (failedByType[entityType] ?? 0) + 1;
+
         // Mark as failed
         final error = result.error ?? 'Unknown error';
         await _syncQueue.markFailed(opId, error);
       }
     }
 
+    // Log summary of push results
+    final duration = DateTime.now().difference(startTime).inMilliseconds;
+    _log.pushResults(
+      successByType: successByType,
+      failedByType: failedByType,
+      idMappingsByType: idMappingsByType,
+      totalDuration: duration,
+    );
+
     // Apply ID reconciliations using IdReconciler
     if (idMappings.isNotEmpty) {
       await IdReconciler.applyToDatabase(db, idMappings);
+    }
+
+    // Log reconciliation details
+    if (idMappingsByType.isNotEmpty || nestedIdSummary.isNotEmpty) {
+      _log.pushReconciliation(
+        reconciliedIds: idMappingsByType,
+        nestedIdMapping: nestedIdSummary.isNotEmpty ? nestedIdSummary.join('; ') : null,
+      );
     }
   }
 
@@ -358,14 +493,19 @@ class SyncManager {
     Database db,
     String serverQuestionId,
     OperationResultModel result,
+    List<String> nestedIdSummary,
   ) async {
     // Extract metadata containing ID mappings from server response
     final metadata = result.metadata;
     if (metadata == null) return;
 
+    int choiceCount = 0;
+    int answerCount = 0;
+
     // Update choice IDs in the questions table
     final choiceMapping = metadata['choice_id_mapping'] as List<dynamic>?;
     if (choiceMapping != null && choiceMapping.isNotEmpty) {
+      choiceCount = choiceMapping.length;
       await _updateNestedIdsInJson(
         db,
         'questions',
@@ -378,12 +518,20 @@ class SyncManager {
     // Update correct answer IDs in the questions table
     final answerMapping = metadata['answer_id_mapping'] as List<dynamic>?;
     if (answerMapping != null && answerMapping.isNotEmpty) {
+      answerCount = answerMapping.length;
       await _updateNestedIdsInJson(
         db,
         'questions',
         serverQuestionId,
         'correct_answers_json',
         answerMapping,
+      );
+    }
+
+    // Add to summary if there were any nested ID mappings
+    if (choiceCount > 0 || answerCount > 0) {
+      nestedIdSummary.add(
+        'question_${serverQuestionId.substring(0, 8)}: $choiceCount choices, $answerCount answers',
       );
     }
   }
