@@ -16,7 +16,32 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
         orderBy: 'order_index ASC',
       );
       if (results.isEmpty) throw CacheException('No cached materials for class $classId');
-      return results.map((r) => LearningMaterialModel.fromMap(r)).toList();
+
+      // Compute actual file counts from material_files table instead of using cached value
+      final materials = <LearningMaterialModel>[];
+      for (final r in results) {
+        final materialId = r['id'] as String;
+        final fileCountResult = await db.query(
+          'material_files',
+          where: 'material_id = ? AND deleted_at IS NULL',
+          whereArgs: [materialId],
+        );
+
+        final model = LearningMaterialModel(
+          id: r['id'] as String,
+          classId: r['class_id'] as String,
+          title: r['title'] as String,
+          description: r['description'] as String?,
+          contentText: r['content_text'] as String?,
+          orderIndex: r['order_index'] as int,
+          fileCount: fileCountResult.length,
+          createdAt: DateTime.parse(r['created_at'] as String),
+          updatedAt: DateTime.parse(r['updated_at'] as String),
+        );
+        materials.add(model);
+      }
+
+      return materials;
     } catch (e) {
       if (e is CacheException) rethrow;
       throw CacheException(e.toString());
@@ -33,7 +58,26 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
         whereArgs: [materialId],
       );
       if (results.isEmpty) throw CacheException('Material $materialId not cached');
-      return LearningMaterialModel.fromMap(results.first);
+
+      final r = results.first;
+      // Count actual files from material_files table
+      final fileCountResult = await db.query(
+        'material_files',
+        where: 'material_id = ? AND deleted_at IS NULL',
+        whereArgs: [materialId],
+      );
+
+      return LearningMaterialModel(
+        id: r['id'] as String,
+        classId: r['class_id'] as String,
+        title: r['title'] as String,
+        description: r['description'] as String?,
+        contentText: r['content_text'] as String?,
+        orderIndex: r['order_index'] as int,
+        fileCount: fileCountResult.length,
+        createdAt: DateTime.parse(r['created_at'] as String),
+        updatedAt: DateTime.parse(r['updated_at'] as String),
+      );
     } catch (e) {
       if (e is CacheException) rethrow;
       throw CacheException(e.toString());
