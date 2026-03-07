@@ -23,9 +23,10 @@ impl LearningMaterialRepository {
         description: Option<String>,
         content_text: Option<String>,
         order_index: i32,
+        client_id: Option<Uuid>,
     ) -> AppResult<learning_materials::Model> {
         let material = learning_materials::ActiveModel {
-            id: Set(Uuid::new_v4()),
+            id: Set(client_id.unwrap_or_else(Uuid::new_v4)),
             class_id: Set(class_id),
             title: Set(title),
             description: Set(description),

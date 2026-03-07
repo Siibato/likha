@@ -4,7 +4,7 @@ import 'package:likha/data/models/assignments/assignment_submission_model.dart'
 import 'package:likha/data/models/assignments/submission_file_model.dart';
 
 abstract class AssignmentLocalDataSource {
-  Future<List<AssignmentModel>> getCachedAssignments(String classId);
+  Future<List<AssignmentModel>> getCachedAssignments(String classId, {bool publishedOnly = false});
   Future<AssignmentModel> getCachedAssignmentDetail(String assignmentId);
   Future<void> cacheAssignments(List<AssignmentModel> assignments);
   Future<void> cacheAssignmentDetail(AssignmentModel assignment);
@@ -44,5 +44,6 @@ abstract class AssignmentLocalDataSource {
     required String submissionId,
   });
   Future<void> cacheSubmissionDetail(AssignmentSubmissionModel submission);
+  Future<void> markAssignmentPublishedLocally({required String assignmentId});
   Future<void> clearAllCache();
 }

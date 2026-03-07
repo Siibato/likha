@@ -21,6 +21,7 @@ impl super::AssignmentService {
         class_id: Uuid,
         request: CreateAssignmentRequest,
         teacher_id: Uuid,
+        client_id: Option<Uuid>,
     ) -> AppResult<AssignmentResponse> {
         let _ = self
             .class_repo
@@ -83,6 +84,7 @@ impl super::AssignmentService {
                 request.allowed_file_types,
                 request.max_file_size_mb,
                 due_at,
+                client_id,
             )
             .await?;
 

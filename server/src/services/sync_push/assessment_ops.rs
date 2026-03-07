@@ -22,6 +22,7 @@ impl super::SyncPushService {
                 let close_at = op.payload.get("close_at").and_then(|v| v.as_str()).map(|s| s.to_string())
                     .unwrap_or_else(|| Utc::now().checked_add_signed(chrono::Duration::hours(1)).unwrap().to_rfc3339());
 
+                let client_id = self.parse_uuid_field(&op.payload, "id").ok();
                 let request = CreateAssessmentRequest {
                     title,
                     description,
@@ -31,7 +32,7 @@ impl super::SyncPushService {
                     show_results_immediately: None,
                 };
 
-                match self.assessment_service.create_assessment(class_id, request, user_id).await {
+                match self.assessment_service.create_assessment(class_id, request, user_id, client_id).await {
                     Ok(r) => self.success_result(op, Some(r.id.to_string()), Some(r.updated_at)),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }

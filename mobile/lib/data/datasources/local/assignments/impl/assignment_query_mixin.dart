@@ -7,12 +7,15 @@ import '../assignment_local_datasource_base.dart';
 
 mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
   @override
-  Future<List<AssignmentModel>> getCachedAssignments(String classId) async {
+  Future<List<AssignmentModel>> getCachedAssignments(String classId, {bool publishedOnly = false}) async {
     try {
       final db = await localDatabase.database;
+      final where = publishedOnly
+          ? 'class_id = ? AND is_published = 1 AND deleted_at IS NULL'
+          : 'class_id = ? AND deleted_at IS NULL';
       final results = await db.query(
         'assignments',
-        where: 'class_id = ? AND deleted_at IS NULL',
+        where: where,
         whereArgs: [classId],
         orderBy: 'created_at DESC',
       );

@@ -23,7 +23,7 @@ class _StudentAssignmentListPageState extends ConsumerState<StudentAssignmentLis
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(assignmentProvider.notifier).loadAssignments(widget.classId);
+      ref.read(assignmentProvider.notifier).loadAssignments(widget.classId, publishedOnly: true);
     });
   }
 
@@ -35,7 +35,7 @@ class _StudentAssignmentListPageState extends ConsumerState<StudentAssignmentLis
     ref.listen<SyncState>(syncProvider, (previous, next) {
       if (!(previous?.assignmentsReady ?? false) && next.assignmentsReady) {
         // Assignments just became ready in the DB — reload
-        ref.read(assignmentProvider.notifier).loadAssignments(widget.classId);
+        ref.read(assignmentProvider.notifier).loadAssignments(widget.classId, publishedOnly: true);
       }
     });
 
@@ -62,7 +62,7 @@ class _StudentAssignmentListPageState extends ConsumerState<StudentAssignmentLis
                       : RefreshIndicator(
                           onRefresh: () => ref
                               .read(assignmentProvider.notifier)
-                              .loadAssignments(widget.classId),
+                              .loadAssignments(widget.classId, publishedOnly: true),
                           color: const Color(0xFF2B2B2B),
                           child: ListView.builder(
                             padding: const EdgeInsets.all(24),
@@ -97,7 +97,7 @@ class _StudentAssignmentListPageState extends ConsumerState<StudentAssignmentLis
                                 ),
                               ).then((_) => ref
                                   .read(assignmentProvider.notifier)
-                                  .loadAssignments(widget.classId)),
+                                  .loadAssignments(widget.classId, publishedOnly: true)),
                             );
                           },
                         ),

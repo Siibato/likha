@@ -19,6 +19,7 @@ impl super::SyncPushService {
                     Ok(v) => v,
                     Err(e) => return self.error_result(op, &e),
                 };
+                let client_id = self.parse_uuid_field(&op.payload, "id").ok();
                 let request = CreateAssignmentRequest {
                     title,
                     instructions,
@@ -29,7 +30,7 @@ impl super::SyncPushService {
                     due_at: op.payload.get("due_at").and_then(|v| v.as_str()).map(|s| s.to_string())
                         .unwrap_or_else(|| Utc::now().to_rfc3339()),
                 };
-                match self.assignment_service.create_assignment(class_id, request, user_id).await {
+                match self.assignment_service.create_assignment(class_id, request, user_id, client_id).await {
                     Ok(r) => self.success_result(op, Some(r.id.to_string()), Some(r.updated_at)),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }

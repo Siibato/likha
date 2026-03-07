@@ -9,15 +9,16 @@ mixin AssignmentQueryMixin on AssignmentRepositoryBase {
   @override
   ResultFuture<List<Assignment>> getAssignments({
     required String classId,
+    bool publishedOnly = false,
   }) async {
     try {
       try {
         final cachedAssignments =
-            await localDataSource.getCachedAssignments(classId);
+            await localDataSource.getCachedAssignments(classId, publishedOnly: publishedOnly);
 
         // If server is reachable, fetch fresh in background (fire-and-forget)
         if (serverReachabilityService.isServerReachable) {
-          _backgroundFetchAssignments(classId);
+          _backgroundFetchAssignments(classId, publishedOnly: publishedOnly);
         }
 
         return Right(cachedAssignments);
@@ -73,13 +74,13 @@ mixin AssignmentQueryMixin on AssignmentRepositoryBase {
   /// Updates local cache only if any record has a newer [updatedAt].
   /// Emits a DataEventBus event so the page can reload from updated cache.
   /// All errors are swallowed — users keep seeing stale cache without error.
-  void _backgroundFetchAssignments(String classId) {
+  void _backgroundFetchAssignments(String classId, {bool publishedOnly = false}) {
     Future.microtask(() async {
       try {
         final fresh = await remoteDataSource.getAssignments(classId: classId);
         final List<Assignment> cached;
         try {
-          cached = await localDataSource.getCachedAssignments(classId);
+          cached = await localDataSource.getCachedAssignments(classId, publishedOnly: publishedOnly);
         } on CacheException {
           await localDataSource.cacheAssignments(fresh);
           dataEventBus.notifyAssignmentsChanged(classId);

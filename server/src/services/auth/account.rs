@@ -10,6 +10,7 @@ impl super::AuthService {
         &self,
         request: CreateAccountRequest,
         admin_id: Uuid,
+        client_id: Option<Uuid>,
     ) -> AppResult<UserResponse> {
         Validator::validate_username(&request.username)?;
         Validator::validate_role(&request.role)?;
@@ -28,6 +29,7 @@ impl super::AuthService {
                 request.username,
                 request.full_name.trim().to_string(),
                 request.role,
+                client_id,
             )
             .await?;
 

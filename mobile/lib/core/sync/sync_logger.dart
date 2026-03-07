@@ -112,20 +112,6 @@ class SyncLogger {
     }
   }
 
-  void pushReconciliation({
-    required Map<String, int> reconciliedIds,
-    required String? nestedIdMapping,
-  }) {
-    if (!_enabled) return;
-    final reconciled = reconciliedIds.entries.where((e) => e.value > 0).map((e) => '${e.key}=${e.value}').join(', ');
-    if (reconciled.isNotEmpty) {
-      debugPrint('[SYNC] Push reconciliation: ID mappings applied [$reconciled]');
-    }
-    if (nestedIdMapping != null && nestedIdMapping.isNotEmpty) {
-      debugPrint('[SYNC]   Nested IDs: $nestedIdMapping');
-    }
-  }
-
   void deltaSync({
     required Map<String, int> updatedCounts,
     required Map<String, int> deletedCounts,

@@ -25,6 +25,7 @@ pub struct UpdateAssessmentRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct AddQuestionRequest {
+    pub id: Option<Uuid>,
     pub question_type: String,
     pub question_text: String,
     pub points: i32,

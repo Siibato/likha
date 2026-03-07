@@ -109,10 +109,15 @@ impl super::EntitlementService {
             .get_enrollments_manifest(accessible_class_ids.clone())
             .await?;
 
-        let assessments = self
-            .manifest_repo
-            .get_assessments_manifest(accessible_class_ids.clone())
-            .await?;
+        let assessments = if user_role == "student" {
+            self.manifest_repo
+                .get_published_assessments_manifest(accessible_class_ids.clone())
+                .await?
+        } else {
+            self.manifest_repo
+                .get_assessments_manifest(accessible_class_ids.clone())
+                .await?
+        };
 
         let assessment_ids: Vec<Uuid> = assessments.iter().map(|a| a.id).collect();
         tracing::debug!("Manifest building: Found {} assessments", assessment_ids.len());
@@ -140,10 +145,15 @@ impl super::EntitlementService {
                 .await?
         };
 
-        let assignments = self
-            .manifest_repo
-            .get_assignments_manifest(accessible_class_ids.clone())
-            .await?;
+        let assignments = if user_role == "student" {
+            self.manifest_repo
+                .get_published_assignments_manifest(accessible_class_ids.clone())
+                .await?
+        } else {
+            self.manifest_repo
+                .get_assignments_manifest(accessible_class_ids.clone())
+                .await?
+        };
 
         let assignment_ids: Vec<Uuid> = assignments.iter().map(|a| a.id).collect();
         let assignment_submissions = if assignment_ids.is_empty() {

@@ -176,6 +176,29 @@ impl ManifestRepository {
             .collect())
     }
 
+    /// Get manifest entries for assessments (published only)
+    pub async fn get_published_assessments_manifest(
+        &self,
+        class_ids: Vec<Uuid>,
+    ) -> AppResult<Vec<ManifestEntry>> {
+        let records = assessments::Entity::find()
+            .filter(assessments::Column::ClassId.is_in(class_ids))
+            .filter(assessments::Column::IsPublished.eq(true))
+            .filter(assessments::Column::DeletedAt.is_null())
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        Ok(records
+            .into_iter()
+            .map(|r| ManifestEntry {
+                id: r.id,
+                updated_at: r.updated_at,
+                deleted: false,
+            })
+            .collect())
+    }
+
     /// Get manifest entries for assignments
     pub async fn get_assignments_manifest(
         &self,
@@ -193,6 +216,29 @@ impl ManifestRepository {
                 id: r.id,
                 updated_at: r.updated_at,
                 deleted: r.deleted_at.is_some(),
+            })
+            .collect())
+    }
+
+    /// Get manifest entries for assignments (published only)
+    pub async fn get_published_assignments_manifest(
+        &self,
+        class_ids: Vec<Uuid>,
+    ) -> AppResult<Vec<ManifestEntry>> {
+        let records = assignments_hw::Entity::find()
+            .filter(assignments_hw::Column::ClassId.is_in(class_ids))
+            .filter(assignments_hw::Column::IsPublished.eq(true))
+            .filter(assignments_hw::Column::DeletedAt.is_null())
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        Ok(records
+            .into_iter()
+            .map(|r| ManifestEntry {
+                id: r.id,
+                updated_at: r.updated_at,
+                deleted: false,
             })
             .collect())
     }

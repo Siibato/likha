@@ -29,7 +29,7 @@ pub async fn create_account(
         return e.into_response();
     }
 
-    match auth_service.create_account(request, auth_user.user_id).await {
+    match auth_service.create_account(request, auth_user.user_id, None).await {
         Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
         Err(e) => e.into_response(),
     }

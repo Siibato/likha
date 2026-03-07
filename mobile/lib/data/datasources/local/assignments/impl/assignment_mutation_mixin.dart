@@ -35,7 +35,7 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
           id: const Uuid().v4(),
           entityType: SyncEntityType.assignmentSubmission,
           operation: SyncOperation.create,
-          payload: {'local_id': submissionId, 'assignment_id': assignmentId, 'student_id': studentId},
+          payload: {'id': submissionId, 'assignment_id': assignmentId, 'student_id': studentId},
           status: SyncStatus.pending,
           retryCount: 0,
           maxRetries: 5,
@@ -199,6 +199,25 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
       });
     } catch (e) {
       throw CacheException('Failed to return submission locally: $e');
+    }
+  }
+
+  @override
+  Future<void> markAssignmentPublishedLocally({required String assignmentId}) async {
+    try {
+      final db = await localDatabase.database;
+      await db.update(
+        'assignments',
+        {
+          'is_published': 1,
+          'updated_at': DateTime.now().toIso8601String(),
+          'cached_at': DateTime.now().toIso8601String(),
+        },
+        where: 'id = ?',
+        whereArgs: [assignmentId],
+      );
+    } catch (e) {
+      throw CacheException('Failed to mark assignment as published locally: $e');
     }
   }
 }

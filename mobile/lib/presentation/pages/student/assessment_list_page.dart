@@ -24,7 +24,7 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(assessmentProvider.notifier).loadAssessments(widget.classId);
+      ref.read(assessmentProvider.notifier).loadAssessments(widget.classId, publishedOnly: true);
     });
   }
 
@@ -58,7 +58,7 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
       ).then((_) {
         ref
             .read(assessmentProvider.notifier)
-            .loadAssessments(widget.classId);
+            .loadAssessments(widget.classId, publishedOnly: true);
       });
     } else if (status == AssessmentStatus.submitted &&
         (assessment.resultsReleased || assessment.showResultsImmediately)) {
@@ -79,7 +79,7 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
     ref.listen<SyncState>(syncProvider, (previous, next) {
       if (!(previous?.assessmentsReady ?? false) && next.assessmentsReady) {
         // Assessments just became ready in the DB — reload
-        ref.read(assessmentProvider.notifier).loadAssessments(widget.classId);
+        ref.read(assessmentProvider.notifier).loadAssessments(widget.classId, publishedOnly: true);
       }
     });
 

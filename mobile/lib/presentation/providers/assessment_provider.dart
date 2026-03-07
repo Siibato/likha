@@ -146,10 +146,10 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
     });
   }
 
-  Future<void> loadAssessments(String classId) async {
+  Future<void> loadAssessments(String classId, {bool publishedOnly = false}) async {
     _currentClassId = classId;
     state = state.copyWith(isLoading: true, clearError: true);
-    final result = await _getAssessments(classId);
+    final result = await _getAssessments(classId, publishedOnly: publishedOnly);
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),

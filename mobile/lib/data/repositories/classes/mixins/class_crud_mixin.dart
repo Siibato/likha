@@ -26,7 +26,7 @@ mixin ClassCrudMixin on ClassRepositoryBase {
           entityType: SyncEntityType.classEntity,
           operation: SyncOperation.create,
           payload: {
-            'local_id': localId,
+            'id': localId,
             'title': title,
             'description': description,
             if (teacherId != null) 'teacher_id': teacherId,

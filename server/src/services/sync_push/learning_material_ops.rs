@@ -15,12 +15,13 @@ impl super::SyncPushService {
                     Ok(v) => v,
                     Err(e) => return self.error_result(op, &e),
                 };
+                let client_id = self.parse_uuid_field(&op.payload, "id").ok();
                 let request = CreateMaterialRequest {
                     title,
                     description: op.payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()),
                     content_text: op.payload.get("content_text").and_then(|v| v.as_str()).map(|s| s.to_string()),
                 };
-                match self.material_service.create_material(class_id, request, user_id).await {
+                match self.material_service.create_material(class_id, request, user_id, client_id).await {
                     Ok(r) => self.success_result(op, Some(r.id.to_string()), Some(r.updated_at)),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }

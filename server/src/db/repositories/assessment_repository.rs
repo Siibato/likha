@@ -26,9 +26,10 @@ impl AssessmentRepository {
         open_at: chrono::NaiveDateTime,
         close_at: chrono::NaiveDateTime,
         show_results_immediately: bool,
+        client_id: Option<Uuid>,
     ) -> AppResult<assessments::Model> {
         let assessment = assessments::ActiveModel {
-            id: Set(Uuid::new_v4()),
+            id: Set(client_id.unwrap_or_else(Uuid::new_v4)),
             class_id: Set(class_id),
             title: Set(title),
             description: Set(description),
@@ -193,9 +194,10 @@ impl AssessmentRepository {
         points: i32,
         order_index: i32,
         is_multi_select: bool,
+        client_id: Option<Uuid>,
     ) -> AppResult<assessment_questions::Model> {
         let question = assessment_questions::ActiveModel {
-            id: Set(Uuid::new_v4()),
+            id: Set(client_id.unwrap_or_else(Uuid::new_v4)),
             assessment_id: Set(assessment_id),
             question_type: Set(question_type),
             question_text: Set(question_text),

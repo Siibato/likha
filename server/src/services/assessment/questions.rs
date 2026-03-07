@@ -41,6 +41,7 @@ impl super::AssessmentService {
                 q_request.points,
                 q_request.order_index,
                 q_request.is_multi_select.unwrap_or(false),
+                q_request.id,
             ).await?;
 
             let _ = self.change_log_repo.log_change(

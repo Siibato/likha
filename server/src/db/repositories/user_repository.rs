@@ -19,9 +19,10 @@ impl UserRepository {
         username: String,
         full_name: String,
         role: String,
+        client_id: Option<Uuid>,
     ) -> AppResult<users::Model> {
         let user = users::ActiveModel {
-            id: Set(Uuid::new_v4()),
+            id: Set(client_id.unwrap_or_else(Uuid::new_v4)),
             username: Set(username),
             password_hash: Set(None),
             full_name: Set(full_name),

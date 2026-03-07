@@ -30,7 +30,7 @@ mixin AuthAdminMixin on AuthRepositoryBase {
         } on CacheException {
         }
 
-        // Generate a temp UUID for the offline-created user (will be replaced with server ID on sync)
+        // Generate a UUID for the offline-created user (permanent ID shared with server)
         final localId = const Uuid().v4();
 
         await syncQueue.enqueue(SyncQueueEntry(
@@ -38,7 +38,7 @@ mixin AuthAdminMixin on AuthRepositoryBase {
           entityType: SyncEntityType.adminUser,
           operation: SyncOperation.create,
           payload: {
-            'local_id': localId,
+            'id': localId,
             'username': username,
             'full_name': fullName,
             'role': role,
@@ -322,8 +322,8 @@ mixin AuthAdminMixin on AuthRepositoryBase {
         continue;
       }
       seenUsernames.add(username);
-      // Read local_id from payload; fall back to empty string for backward compatibility with old queue entries
-      final localId = entry.payload['local_id'] as String? ?? '';
+      // Read id from payload; support both old 'local_id' and new 'id' field for backward compat
+      final localId = (entry.payload['id'] ?? entry.payload['local_id']) as String? ?? '';
       result.add(UserModel(
         id: localId,
         username: username,

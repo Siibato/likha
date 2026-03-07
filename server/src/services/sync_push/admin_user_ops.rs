@@ -19,8 +19,9 @@ impl super::SyncPushService {
                     Ok(v) => v,
                     Err(e) => return self.error_result(op, &e),
                 };
+                let client_id = self.parse_uuid_field(&op.payload, "id").ok();
                 let request = CreateAccountRequest { username, full_name, role };
-                match self.auth_service.create_account(request, user_id).await {
+                match self.auth_service.create_account(request, user_id, client_id).await {
                     Ok(u) => self.success_result(op, Some(u.id.to_string()), Some(Utc::now().to_rfc3339())),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }

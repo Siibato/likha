@@ -43,7 +43,7 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
           entityType: SyncEntityType.learningMaterial,
           operation: SyncOperation.create,
           payload: {
-            'local_id': id,
+            'id': id,
             'class_id': classId,
             'title': title,
             'description': description,

@@ -53,7 +53,7 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
             entityType: SyncEntityType.assessment,
             operation: SyncOperation.create,
             payload: {
-              'local_id': assessmentId,
+              'id': assessmentId,
               'class_id': classId,
               'title': title,
               if (description != null) 'description': description,
@@ -184,7 +184,7 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
             entityType: SyncEntityType.assessment,
             operation: SyncOperation.create,
             payload: {
-              'local_id': assessmentId,
+              'id': assessmentId,
               'class_id': classId,
               'title': title,
               if (description != null) 'description': description,
@@ -273,6 +273,25 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
       return assessmentId;
     } catch (e) {
       throw CacheException('Failed to create assessment with questions locally: $e');
+    }
+  }
+
+  @override
+  Future<void> markAssessmentPublishedLocally({required String assessmentId}) async {
+    try {
+      final db = await localDatabase.database;
+      await db.update(
+        'assessments',
+        {
+          'is_published': 1,
+          'updated_at': DateTime.now().toIso8601String(),
+          'cached_at': DateTime.now().toIso8601String(),
+        },
+        where: 'id = ?',
+        whereArgs: [assessmentId],
+      );
+    } catch (e) {
+      throw CacheException('Failed to mark assessment as published locally: $e');
     }
   }
 }

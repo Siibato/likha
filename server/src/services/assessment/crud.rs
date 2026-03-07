@@ -10,6 +10,7 @@ impl super::AssessmentService {
         class_id: Uuid,
         request: CreateAssessmentRequest,
         teacher_id: Uuid,
+        client_id: Option<Uuid>,
     ) -> AppResult<AssessmentResponse> {
         let _ = self.class_repo.find_by_id(class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
@@ -37,6 +38,7 @@ impl super::AssessmentService {
             open_at,
             close_at,
             request.show_results_immediately.unwrap_or(true),
+            client_id,
         ).await?;
 
         let _ = self.change_log_repo.log_change(

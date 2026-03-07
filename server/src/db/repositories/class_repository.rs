@@ -20,13 +20,14 @@ impl ClassRepository {
         title: String,
         description: Option<String>,
         teacher_id: Uuid,
+        client_id: Option<Uuid>,
     ) -> AppResult<classes::Model> {
         // Start a transaction for atomic class + teacher participant creation
         let txn = self.db.begin().await
             .map_err(|e| AppError::InternalServerError(format!("Transaction error: {}", e)))?;
 
         // Insert the class
-        let class_id = Uuid::new_v4();
+        let class_id = client_id.unwrap_or_else(Uuid::new_v4);
         let now = Utc::now().naive_utc();
         let class = classes::ActiveModel {
             id: Set(class_id),

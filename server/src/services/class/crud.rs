@@ -9,6 +9,7 @@ impl super::ClassService {
         &self,
         request: CreateClassRequest,
         teacher_id: Uuid,
+        client_id: Option<Uuid>,
     ) -> AppResult<ClassResponse> {
         if request.title.trim().is_empty() {
             return Err(AppError::BadRequest("Class title is required".to_string()));
@@ -46,7 +47,7 @@ impl super::ClassService {
 
         let class = self
             .class_repo
-            .create_class(request.title.trim().to_string(), request.description, actual_teacher_id)
+            .create_class(request.title.trim().to_string(), request.description, actual_teacher_id, client_id)
             .await?;
 
         let _ = self.change_log_repo.log_change(

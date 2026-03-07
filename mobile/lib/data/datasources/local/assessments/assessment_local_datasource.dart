@@ -4,7 +4,7 @@ import 'package:likha/data/models/assessments/submission_model.dart';
 import 'package:likha/data/models/assessments/statistics_model.dart';
 
 abstract class AssessmentLocalDataSource {
-  Future<List<AssessmentModel>> getCachedAssessments(String classId);
+  Future<List<AssessmentModel>> getCachedAssessments(String classId, {bool publishedOnly = false});
   Future<(AssessmentModel, List<QuestionModel>)> getCachedAssessmentDetail(String assessmentId);
   Future<void> cacheAssessments(List<AssessmentModel> assessments);
   Future<void> cacheAssessmentDetail(AssessmentModel assessment, List<QuestionModel> questions);
@@ -81,5 +81,6 @@ abstract class AssessmentLocalDataSource {
     required String answerId,
     required bool isCorrect,
   });
+  Future<void> markAssessmentPublishedLocally({required String assessmentId});
   Future<void> clearAllCache();
 }

@@ -227,6 +227,9 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
           createdAt: DateTime.now(),
         ));
 
+        // Persist published state to local DB immediately
+        await localDataSource.markAssignmentPublishedLocally(assignmentId: assignmentId);
+
         return Right(Assignment(
           id: assignmentId,
           classId: '',

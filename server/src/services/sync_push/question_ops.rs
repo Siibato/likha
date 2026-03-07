@@ -19,6 +19,9 @@ impl super::SyncPushService {
 
                 let mut questions = Vec::new();
                 for q in questions_array {
+                    let id = q.get("id")
+                        .and_then(|v| v.as_str())
+                        .and_then(|s| Uuid::parse_str(s).ok());
                     let question_type = match q.get("question_type").and_then(|v| v.as_str()).ok_or_else(|| "Missing question_type field".to_string()) {
                         Ok(v) => v.to_string(),
                         Err(e) => return self.error_result(op, &e),
@@ -38,6 +41,7 @@ impl super::SyncPushService {
                     let enumeration_items = Self::parse_enumeration_items(q);
 
                     questions.push(AddQuestionRequest {
+                        id,
                         question_type,
                         question_text,
                         points,

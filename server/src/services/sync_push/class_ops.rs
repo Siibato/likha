@@ -16,9 +16,10 @@ impl super::SyncPushService {
                     .get("teacher_id")
                     .and_then(|v| v.as_str())
                     .and_then(|s| Uuid::parse_str(s).ok());
+                let client_id = self.parse_uuid_field(&op.payload, "id").ok();
                 let request = CreateClassRequest { title, description, teacher_id };
 
-                match self.class_service.create_class(request, user_id).await {
+                match self.class_service.create_class(request, user_id, client_id).await {
                     Ok(r) => self.success_result(op, Some(r.id.to_string()), Some(r.updated_at)),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }

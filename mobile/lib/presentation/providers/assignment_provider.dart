@@ -113,10 +113,10 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     });
   }
 
-  Future<void> loadAssignments(String classId) async {
+  Future<void> loadAssignments(String classId, {bool publishedOnly = false}) async {
     _currentClassId = classId;
     state = state.copyWith(isLoading: true, clearError: true);
-    final result = await _getAssignments(classId);
+    final result = await _getAssignments(classId, publishedOnly: publishedOnly);
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),

@@ -26,9 +26,10 @@ impl AssignmentRepository {
         allowed_file_types: Option<String>,
         max_file_size_mb: Option<i32>,
         due_at: chrono::NaiveDateTime,
+        client_id: Option<Uuid>,
     ) -> AppResult<assignments_hw::Model> {
         let assignment = assignments_hw::ActiveModel {
-            id: Set(Uuid::new_v4()),
+            id: Set(client_id.unwrap_or_else(Uuid::new_v4)),
             class_id: Set(class_id),
             title: Set(title),
             instructions: Set(instructions),

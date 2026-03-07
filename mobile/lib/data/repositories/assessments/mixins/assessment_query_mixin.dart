@@ -12,14 +12,15 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
   @override
   ResultFuture<List<Assessment>> getAssessments({
     required String classId,
+    bool publishedOnly = false,
   }) async {
     try {
       try {
-        final cachedAssessments = await localDataSource.getCachedAssessments(classId);
+        final cachedAssessments = await localDataSource.getCachedAssessments(classId, publishedOnly: publishedOnly);
 
         // If server is reachable, fetch fresh in background (fire-and-forget)
         if (serverReachabilityService.isServerReachable) {
-          _backgroundFetchAssessments(classId);
+          _backgroundFetchAssessments(classId, publishedOnly: publishedOnly);
         }
 
         return Right(cachedAssessments);
@@ -126,6 +127,9 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
           createdAt: DateTime.now(),
         ));
 
+        // Persist published state to local DB immediately
+        await localDataSource.markAssessmentPublishedLocally(assessmentId: assessmentId);
+
         return Right(Assessment(
           id: assessmentId,
           classId: '',
@@ -222,7 +226,7 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
   /// Updates local cache only if any record has a newer [updatedAt].
   /// Emits a DataEventBus event so the page can reload from updated cache.
   /// All errors are swallowed — users keep seeing stale cache without error.
-  void _backgroundFetchAssessments(String classId) {
+  void _backgroundFetchAssessments(String classId, {bool publishedOnly = false}) {
     Future.microtask(() async {
       try {
         final fresh =
@@ -231,7 +235,7 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
         // Compare with cached data using updatedAt timestamps
         final List<Assessment> cached;
         try {
-          cached = await localDataSource.getCachedAssessments(classId);
+          cached = await localDataSource.getCachedAssessments(classId, publishedOnly: publishedOnly);
         } on CacheException {
           // Cache was cleared between the original read and now — write fresh anyway
           await localDataSource.cacheAssessments(fresh);

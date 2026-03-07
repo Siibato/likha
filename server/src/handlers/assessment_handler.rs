@@ -26,7 +26,7 @@ pub async fn create_assessment(
         return AppError::Forbidden("Teacher access required".to_string()).into_response();
     }
 
-    match service.create_assessment(class_id, request, auth_user.user_id).await {
+    match service.create_assessment(class_id, request, auth_user.user_id, None).await {
         Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
         Err(e) => e.into_response(),
     }

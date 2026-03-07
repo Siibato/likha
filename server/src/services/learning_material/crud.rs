@@ -10,6 +10,7 @@ impl super::LearningMaterialService {
         class_id: Uuid,
         request: CreateMaterialRequest,
         teacher_id: Uuid,
+        client_id: Option<Uuid>,
     ) -> AppResult<MaterialResponse> {
         self.verify_teacher_owns_class(class_id, teacher_id).await?;
 
@@ -22,7 +23,7 @@ impl super::LearningMaterialService {
 
         let material = self
             .material_repo
-            .create_material(class_id, title, description, content_text, order_index)
+            .create_material(class_id, title, description, content_text, order_index, client_id)
             .await?;
 
         let _ = self

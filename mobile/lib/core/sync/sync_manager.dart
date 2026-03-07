@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/core/sync/id_reconciler.dart';
 import 'package:likha/core/sync/sync_logger.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';
@@ -209,10 +208,6 @@ class SyncManager {
         .where((e) => e.operation != SyncOperation.upload)
         .toList();
 
-    final adminUserCreates = regularOps
-        .where((e) => e.entityType == SyncEntityType.adminUser && e.operation == SyncOperation.create)
-        .toList();
-
     final opsByType = <String, int>{};
     for (final op in regularOps) {
       opsByType[op.entityType.serverValue] = (opsByType[op.entityType.serverValue] ?? 0) + 1;
@@ -231,82 +226,18 @@ class SyncManager {
       await _handleFileUpload(op);
     }
 
-    // Step 2: Run regular ops (with adminUser two-phase logic if needed)
-    if (adminUserCreates.isNotEmpty) {
-      await _syncPhase1(adminUserCreates);
-
-      // After Phase 1, re-fetch retriable ops from queue
-      final pendingAfterPhase1 = await _syncQueue.getAllRetriable();
-      final otherOpsAfterPhase1 = pendingAfterPhase1
-          .where((e) => !(e.entityType == SyncEntityType.adminUser && e.operation == SyncOperation.create))
-          .toList();
-
-      // Phase 2: Sync all other operations (now with reconciled IDs)
-      if (otherOpsAfterPhase1.isNotEmpty) {
-        await _syncPhase2(otherOpsAfterPhase1, pushStartTime);
-      }
-    } else {
-      // No adminUser creates: process regularOps as usual
-      if (regularOps.isNotEmpty) {
-        await _syncRegularBatch(regularOps, pushStartTime);
-      }
+    // Step 2: Run all regular operations in one batch (no two-phase split)
+    if (regularOps.isNotEmpty) {
+      await _syncRegularBatch(regularOps, pushStartTime);
     }
 
-    // Step 3: Run material file uploads AFTER regular ops (material now exists on server + DB reconciled)
+    // Step 3: Run material file uploads AFTER regular ops (material now exists on server)
     for (final op in materialFileUploads) {
       await _handleFileUpload(op);
     }
   }
 
-  /// Phase 1: Sync only adminUser create operations
-  Future<void> _syncPhase1(List<SyncQueueEntry> adminUserCreates) async {
-    _updateState(pendingCount: adminUserCreates.length);
-
-    final operations = adminUserCreates.map((entry) {
-      return {
-        'id':          entry.id,
-        'entity_type': entry.entityType.serverValue,
-        'operation':   entry.operation.serverValue,
-        'payload':     entry.payload,
-      };
-    }).toList();
-
-    final response = await _syncRemoteDataSource.pushOperations(
-      operations: operations,
-    );
-
-    try {
-      await _processPushResults(response, DateTime.now());
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// Phase 2: Sync all other operations (with reconciled IDs)
-  Future<void> _syncPhase2(List<SyncQueueEntry> otherOps, DateTime originalPushStartTime) async {
-    _updateState(pendingCount: otherOps.length);
-
-    final operations = otherOps.map((entry) {
-      return {
-        'id':          entry.id,
-        'entity_type': entry.entityType.serverValue,
-        'operation':   entry.operation.serverValue,
-        'payload':     entry.payload,
-      };
-    }).toList();
-
-    final response = await _syncRemoteDataSource.pushOperations(
-      operations: operations,
-    );
-
-    try {
-      await _processPushResults(response, originalPushStartTime);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// Sync a regular batch of operations (no phase split)
+  /// Sync a batch of operations
   Future<void> _syncRegularBatch(List<SyncQueueEntry> regularOps, DateTime pushStartTime) async {
     _updateState(pendingCount: regularOps.length);
 
@@ -333,13 +264,10 @@ class SyncManager {
   /// Process push results and update local state
   Future<void> _processPushResults(PushResponseModel response, DateTime startTime) async {
     final db = await _localDatabase.database;
-    final idMappings = <({String entityType, String localId, String serverId})>[];
 
-    // Track success/failure/mapping by entity type for logging
+    // Track success/failure by entity type for logging
     final successByType = <String, int>{};
     final failedByType = <String, int>{};
-    final idMappingsByType = <String, int>{};
-    final nestedIdSummary = <String>[];
 
     for (final result in response.results) {
       final opId = result.id;
@@ -347,9 +275,6 @@ class SyncManager {
       final serverId = result.serverId;
       final entityType = result.entityType;
       final operation = result.operation;
-
-      // Fetch entry BEFORE marking succeeded (entry is hard-deleted on succeed)
-      final entry = await _syncQueue.getById(opId);
 
       // Log individual operation result
       _log.pushOperationResult(
@@ -364,113 +289,29 @@ class SyncManager {
       if (success) {
         successByType[entityType] = (successByType[entityType] ?? 0) + 1;
 
-        // Mark as succeeded and remove from queue
-        await _syncQueue.markSucceeded(opId);
+        // Fetch entry BEFORE marking succeeded (entry is hard-deleted on succeed)
+        final entry = await _syncQueue.getById(opId);
 
-        // If this was a create operation, map local ID to server ID
+        // Minimal fallback: if server returned a different ID (class dedup edge case only),
+        // update the local database to use the server's ID instead
         if (serverId != null && operation == 'create' && entry != null) {
-          final localId = entry.payload['local_id'] as String?;
-          if (localId != null) {
-            idMappings.add(
-              (entityType: entityType, localId: localId, serverId: serverId),
-            );
-            idMappingsByType[entityType] = (idMappingsByType[entityType] ?? 0) + 1;
-
-            // Special handling for adminUser: patch pending class creations that reference this teacher
-            if (entityType == SyncEntityType.adminUser.serverValue && operation == 'create') {
-              // Scan for pending classEntity creates with this teacher's local ID
-              final pendingClassCreates = await db.query(
-                'sync_queue',
-                where: 'status = ? AND entity_type = ? AND operation = ? AND payload LIKE ?',
-                whereArgs: [
-                  'pending',
-                  SyncEntityType.classEntity.dbValue,
-                  SyncOperation.create.dbValue,
-                  '%"teacher_id":"$localId"%',
-                ],
-              );
-
-              for (final classEntry in pendingClassCreates) {
-                final payloadStr = classEntry['payload'] as String?;
-                if (payloadStr != null) {
-                  // Replace local teacher_id with server teacher_id in the payload
-                  final updatedPayload = payloadStr.replaceAll('"teacher_id":"$localId"', '"teacher_id":"$serverId"');
-                  await db.update(
-                    'sync_queue',
-                    {'payload': updatedPayload},
-                    where: 'id = ?',
-                    whereArgs: [classEntry['id']],
-                  );
-                }
-              }
-            }
-
-            // Special handling for classes: update main ID from local UUID to server UUID
+          final payloadId = entry.payload['id'] as String?;
+          if (payloadId != null && payloadId != serverId) {
+            // Server returned different ID (likely due to class title dedup)
+            // Update the entity table to use the server ID
             if (entityType == SyncEntityType.classEntity.serverValue) {
               await db.update(
                 'classes',
                 {'id': serverId},
                 where: 'id = ?',
-                whereArgs: [localId],
+                whereArgs: [payloadId],
               );
-
-              // Update any pending enrollment operations that reference this class
-              // (e.g., add_enrollment/remove_enrollment operations queued while class was offline)
-              final pendingEnrollments = await db.query(
-                'sync_queue',
-                where: 'status = ? AND (operation = ? OR operation = ?) AND payload LIKE ?',
-                whereArgs: [
-                  'pending',
-                  SyncOperation.addEnrollment.dbValue,
-                  SyncOperation.removeEnrollment.dbValue,
-                  '%"class_id":"$localId"%',
-                ],
-              );
-
-              for (final entry in pendingEnrollments) {
-                final payloadStr = entry['payload'] as String?;
-                if (payloadStr != null) {
-                  // Replace local class_id with server class_id in the payload
-                  final updatedPayload = payloadStr.replaceAll('"class_id":"$localId"', '"class_id":"$serverId"');
-                  await db.update(
-                    'sync_queue',
-                    {'payload': updatedPayload},
-                    where: 'id = ?',
-                    whereArgs: [entry['id']],
-                  );
-                }
-              }
-            }
-
-            // Special handling for questions: update main ID and reconcile nested IDs
-            if (entityType == 'question') {
-              // Update the question's main ID from local UUID to server UUID
-              await db.update(
-                'questions',
-                {'id': serverId},
-                where: 'id = ?',
-                whereArgs: [localId],
-              );
-              // Then reconcile nested choice and answer IDs
-              await _reconcileQuestionNestedIds(db, serverId, result, nestedIdSummary);
             }
           }
         }
 
-        // Handle enrollment ID reconciliation for add_enrollment operations
-        if (serverId != null && operation == 'add_enrollment' && entry != null) {
-          final localEnrollmentId = entry.payload['local_enrollment_id'] as String?;
-          if (localEnrollmentId != null) {
-            // Update the participant record from local UUID to server UUID
-            await db.update(
-              'class_participants',
-              {'id': serverId, 'sync_status': 'synced'},
-              where: 'id = ?',
-              whereArgs: [localEnrollmentId],
-            );
-            idMappingsByType['enrollment'] = (idMappingsByType['enrollment'] ?? 0) + 1;
-          }
-        }
+        // Mark as succeeded and remove from queue
+        await _syncQueue.markSucceeded(opId);
       } else {
         failedByType[entityType] = (failedByType[entityType] ?? 0) + 1;
 
@@ -485,126 +326,9 @@ class SyncManager {
     _log.pushResults(
       successByType: successByType,
       failedByType: failedByType,
-      idMappingsByType: idMappingsByType,
+      idMappingsByType: const {},
       totalDuration: duration,
     );
-
-    // Apply ID reconciliations using IdReconciler
-    if (idMappings.isNotEmpty) {
-      await IdReconciler.applyToDatabase(db, idMappings);
-    }
-
-    // Log reconciliation details
-    if (idMappingsByType.isNotEmpty || nestedIdSummary.isNotEmpty) {
-      _log.pushReconciliation(
-        reconciliedIds: idMappingsByType,
-        nestedIdMapping: nestedIdSummary.isNotEmpty ? nestedIdSummary.join('; ') : null,
-      );
-    }
-  }
-
-  /// Reconcile nested IDs for questions (choices, correct_answers)
-  Future<void> _reconcileQuestionNestedIds(
-    Database db,
-    String serverQuestionId,
-    OperationResultModel result,
-    List<String> nestedIdSummary,
-  ) async {
-    // Extract metadata containing ID mappings from server response
-    final metadata = result.metadata;
-    if (metadata == null) return;
-
-    int choiceCount = 0;
-    int answerCount = 0;
-
-    // Update choice IDs in the questions table
-    final choiceMapping = metadata['choice_id_mapping'] as List<dynamic>?;
-    if (choiceMapping != null && choiceMapping.isNotEmpty) {
-      choiceCount = choiceMapping.length;
-      await _updateNestedIdsInJson(
-        db,
-        'questions',
-        serverQuestionId,
-        'choices_json',
-        choiceMapping,
-      );
-    }
-
-    // Update correct answer IDs in the questions table
-    final answerMapping = metadata['answer_id_mapping'] as List<dynamic>?;
-    if (answerMapping != null && answerMapping.isNotEmpty) {
-      answerCount = answerMapping.length;
-      await _updateNestedIdsInJson(
-        db,
-        'questions',
-        serverQuestionId,
-        'correct_answers_json',
-        answerMapping,
-      );
-    }
-
-    // Add to summary if there were any nested ID mappings
-    if (choiceCount > 0 || answerCount > 0) {
-      nestedIdSummary.add(
-        'question_${serverQuestionId.substring(0, 8)}: $choiceCount choices, $answerCount answers',
-      );
-    }
-  }
-
-  /// Update nested IDs within a JSON field (for choices or correct answers)
-  Future<void> _updateNestedIdsInJson(
-    Database db,
-    String tableName,
-    String questionId,
-    String jsonField,
-    List<dynamic> idMappings,
-  ) async {
-    try {
-      // Query the current JSON data
-      final results = await db.query(
-        tableName,
-        columns: [jsonField],
-        where: 'id = ?',
-        whereArgs: [questionId],
-      );
-
-      if (results.isEmpty) return;
-
-      final jsonStr = results.first[jsonField] as String?;
-      if (jsonStr == null || jsonStr.isEmpty) return;
-
-      // Parse JSON
-      final List<dynamic> items = jsonDecode(jsonStr) as List<dynamic>;
-
-      // Build ID mapping from list of [local_id, server_id] pairs
-      final Map<String, String> mapping = {};
-      for (final pair in idMappings) {
-        if (pair is List && pair.length == 2) {
-          mapping[pair[0] as String] = pair[1] as String;
-        }
-      }
-
-      // Update IDs in items
-      for (final item in items) {
-        if (item is Map<String, dynamic>) {
-          final oldId = item['id'] as String?;
-          if (oldId != null && mapping.containsKey(oldId)) {
-            item['id'] = mapping[oldId];
-          }
-        }
-      }
-
-      // Write back to database
-      await db.update(
-        tableName,
-        {jsonField: jsonEncode(items)},
-        where: 'id = ?',
-        whereArgs: [questionId],
-      );
-    } catch (e) {
-      // Log but don't throw - ID reconciliation failure shouldn't block sync
-      // In production, this would go to a logger
-    }
   }
 
   /// INBOUND SYNC: Fetch server changes (full or delta)

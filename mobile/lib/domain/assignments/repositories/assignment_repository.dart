@@ -16,7 +16,7 @@ abstract class AssignmentRepository {
     required String dueAt,
   });
 
-  ResultFuture<List<Assignment>> getAssignments({required String classId});
+  ResultFuture<List<Assignment>> getAssignments({required String classId, bool publishedOnly = false});
 
   ResultFuture<Assignment> getAssignmentDetail({required String assignmentId});
 
