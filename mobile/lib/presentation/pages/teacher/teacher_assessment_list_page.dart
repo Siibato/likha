@@ -36,7 +36,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
     ref.listen<SyncState>(syncProvider, (previous, next) {
       if (!(previous?.assessmentsReady ?? false) && next.assessmentsReady) {
         // Assessments just became ready in the DB — reload
-        ref.read(assessmentProvider.notifier).loadAssessments(widget.classId);
+        ref.read(assessmentProvider.notifier).loadAssessments(widget.classId, skipBackgroundRefresh: true);
       }
     });
 

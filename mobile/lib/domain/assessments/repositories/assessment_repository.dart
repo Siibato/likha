@@ -16,7 +16,7 @@ abstract class AssessmentRepository {
     bool? showResultsImmediately,
   });
 
-  ResultFuture<List<Assessment>> getAssessments({required String classId, bool publishedOnly = false});
+  ResultFuture<List<Assessment>> getAssessments({required String classId, bool publishedOnly = false, bool skipBackgroundRefresh = false});
 
   ResultFuture<(Assessment, List<Question>)> getAssessmentDetail({required String assessmentId});
 

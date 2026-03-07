@@ -31,7 +31,7 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
         );
         final actualCount = countResult.first['count'] as int? ?? 0;
 
-        // Create new assessment with the actual count
+        // Create new assessment with the actual count (or fallback to stored count if none cached)
         final updatedAssessment = AssessmentModel(
           id: assessment.id,
           classId: assessment.classId,
@@ -44,7 +44,7 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
           resultsReleased: assessment.resultsReleased,
           isPublished: assessment.isPublished,
           totalPoints: assessment.totalPoints,
-          questionCount: actualCount,
+          questionCount: actualCount > 0 ? actualCount : assessment.questionCount,
           submissionCount: assessment.submissionCount,
           createdAt: assessment.createdAt,
           updatedAt: assessment.updatedAt,

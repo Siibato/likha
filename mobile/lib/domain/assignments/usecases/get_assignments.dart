@@ -7,7 +7,7 @@ class GetAssignments {
 
   GetAssignments(this._repository);
 
-  ResultFuture<List<Assignment>> call(String classId, {bool publishedOnly = false}) {
-    return _repository.getAssignments(classId: classId, publishedOnly: publishedOnly);
+  ResultFuture<List<Assignment>> call(String classId, {bool publishedOnly = false, bool skipBackgroundRefresh = false}) {
+    return _repository.getAssignments(classId: classId, publishedOnly: publishedOnly, skipBackgroundRefresh: skipBackgroundRefresh);
   }
 }

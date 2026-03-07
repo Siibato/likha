@@ -7,7 +7,7 @@ class GetAssessments {
 
   GetAssessments(this._repository);
 
-  ResultFuture<List<Assessment>> call(String classId, {bool publishedOnly = false}) {
-    return _repository.getAssessments(classId: classId, publishedOnly: publishedOnly);
+  ResultFuture<List<Assessment>> call(String classId, {bool publishedOnly = false, bool skipBackgroundRefresh = false}) {
+    return _repository.getAssessments(classId: classId, publishedOnly: publishedOnly, skipBackgroundRefresh: skipBackgroundRefresh);
   }
 }

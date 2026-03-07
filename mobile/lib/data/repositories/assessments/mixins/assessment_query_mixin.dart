@@ -13,32 +13,29 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
   ResultFuture<List<Assessment>> getAssessments({
     required String classId,
     bool publishedOnly = false,
+    bool skipBackgroundRefresh = false,
   }) async {
     try {
       try {
+        // STEP 1: Try cache first (immediate, non-blocking)
         final cachedAssessments = await localDataSource.getCachedAssessments(classId, publishedOnly: publishedOnly);
 
-        // If server is reachable, fetch fresh in background (fire-and-forget)
-        if (serverReachabilityService.isServerReachable) {
+        // STEP 2: If cache hit, trigger background fetch to check for updates
+        if (!skipBackgroundRefresh) {
           _backgroundFetchAssessments(classId, publishedOnly: publishedOnly);
         }
 
+        // STEP 3: Return cache immediately (don't wait for remote)
         return Right(cachedAssessments);
       } on CacheException {
-        // Cache empty — must fetch from server
-        try {
-          final freshAssessments =
-              await remoteDataSource.getAssessments(classId: classId);
-          await localDataSource.cacheAssessments(freshAssessments);
-          return Right(freshAssessments);
-        } on NetworkException catch (e) {
-          return Left(NetworkFailure(e.message));
-        } on ServerException catch (e) {
-          return Left(ServerFailure(e.message));
+        // Cache miss: return empty immediately, trigger background fetch to populate cache
+        // Don't block on remote fetch — offline-first means immediate return
+        if (!skipBackgroundRefresh) {
+          _backgroundFetchAssessments(classId, publishedOnly: publishedOnly);
         }
+
+        return const Right([]);
       }
-    } on CacheException catch (e) {
-      return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -223,7 +220,7 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
   }
 
   /// Silently fetches fresh assessments for [classId] from the server.
-  /// Updates local cache only if any record has a newer [updatedAt].
+  /// Handles both cache hit (updates if changed) and cache miss (populates cache).
   /// Emits a DataEventBus event so the page can reload from updated cache.
   /// All errors are swallowed — users keep seeing stale cache without error.
   void _backgroundFetchAssessments(String classId, {bool publishedOnly = false}) {
@@ -232,24 +229,30 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
         final fresh =
             await remoteDataSource.getAssessments(classId: classId);
 
-        // Compare with cached data using updatedAt timestamps
+        // Try to read current cache
         final List<Assessment> cached;
         try {
           cached = await localDataSource.getCachedAssessments(classId, publishedOnly: publishedOnly);
         } on CacheException {
-          // Cache was cleared between the original read and now — write fresh anyway
+          // Cache miss: initial sync may not have completed yet
+          // Write fresh data and notify page to reload with populated cache
           await localDataSource.cacheAssessments(fresh);
           dataEventBus.notifyAssessmentsChanged(classId);
           return;
         }
 
+        // Cache hit: compare and update only if changed
         if (_assessmentsHaveChanged(cached, fresh)) {
           await localDataSource.cacheAssessments(fresh);
           dataEventBus.notifyAssessmentsChanged(classId);
         }
         // If nothing changed, do nothing (no DB write, no notification)
+      } on NetworkException {
+        // Network failure during background fetch: silent fail, cache persists
+      } on ServerException {
+        // Server error during background fetch: silent fail, cache persists
       } catch (_) {
-        // Network/server error — silent fail, stale cache stays
+        // Other errors — silent fail, stale cache stays
       }
     });
   }

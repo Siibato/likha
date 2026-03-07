@@ -161,10 +161,12 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           maxRetries: 5,
           createdAt: DateTime.now(),
         ));
+        await localDataSource.deleteAssessmentLocally(assessmentId: assessmentId);
         return const Right(null);
       }
 
       await remoteDataSource.deleteAssessment(assessmentId: assessmentId);
+      await localDataSource.deleteAssessmentLocally(assessmentId: assessmentId);
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

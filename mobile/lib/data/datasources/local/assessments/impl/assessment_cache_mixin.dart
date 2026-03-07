@@ -189,6 +189,25 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
   }
 
   @override
+  Future<void> deleteAssessmentLocally({required String assessmentId}) async {
+    try {
+      final db = await localDatabase.database;
+      await db.update(
+        'assessments',
+        {
+          'deleted_at': DateTime.now().toIso8601String(),
+          'is_offline_mutation': 1,
+          'sync_status': 'pending',
+        },
+        where: 'id = ?',
+        whereArgs: [assessmentId],
+      );
+    } catch (e) {
+      throw CacheException('Failed to delete assessment locally: $e');
+    }
+  }
+
+  @override
   Future<void> clearAllCache() async {
     try {
       final db = await localDatabase.database;

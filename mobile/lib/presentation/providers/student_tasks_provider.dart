@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/domain/assignments/usecases/get_assignments.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
+import 'package:likha/presentation/providers/sync_provider.dart';
 
 enum TaskStatus { pending, submitted, graded, missing }
 
@@ -93,7 +95,7 @@ class StudentTasksNotifier extends StateNotifier<StudentTasksState> {
 
   final Ref _ref;
 
-  Future<void> loadAllTasks() async {
+  Future<void> loadAllTasks({bool skipBackgroundRefresh = false}) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -112,7 +114,11 @@ class StudentTasksNotifier extends StateNotifier<StudentTasksState> {
       // For each class, load assignments
       for (final cls in enrolledClasses) {
         try {
-          final result = await getAssignmentsUseCase(cls.id);
+          final result = await getAssignmentsUseCase(
+            cls.id,
+            publishedOnly: true,
+            skipBackgroundRefresh: skipBackgroundRefresh,
+          );
 
           result.fold(
             (failure) {
@@ -146,5 +152,11 @@ class StudentTasksNotifier extends StateNotifier<StudentTasksState> {
 
 final studentTasksProvider =
     StateNotifierProvider<StudentTasksNotifier, StudentTasksState>((ref) {
-  return StudentTasksNotifier(ref);
+  final notifier = StudentTasksNotifier(ref);
+  ref.listen<SyncState>(syncProvider, (previous, next) {
+    if (!(previous?.assignmentsReady ?? false) && next.assignmentsReady) {
+      notifier.loadAllTasks(skipBackgroundRefresh: true);
+    }
+  });
+  return notifier;
 });

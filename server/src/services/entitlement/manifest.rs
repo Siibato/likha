@@ -106,7 +106,7 @@ impl super::EntitlementService {
 
         let enrollments = self
             .manifest_repo
-            .get_enrollments_manifest(accessible_class_ids.clone())
+            .get_enrollments_manifest(accessible_class_ids.clone(), user_id, user_role)
             .await?;
 
         let assessments = if user_role == "student" {

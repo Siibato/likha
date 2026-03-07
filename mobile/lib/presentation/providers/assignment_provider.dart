@@ -87,6 +87,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   final DownloadFile _downloadFile;
 
   String? _currentClassId;
+  bool _currentPublishedOnly = false;
   late StreamSubscription<String?> _refreshSub;
 
   AssignmentNotifier(
@@ -108,15 +109,16 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   ) : super(AssignmentState()) {
     _refreshSub = sl<DataEventBus>().onAssignmentsChanged.listen((classId) {
       if (_currentClassId != null && _currentClassId == classId) {
-        loadAssignments(_currentClassId!);
+        loadAssignments(_currentClassId!, publishedOnly: _currentPublishedOnly, skipBackgroundRefresh: true);
       }
     });
   }
 
-  Future<void> loadAssignments(String classId, {bool publishedOnly = false}) async {
+  Future<void> loadAssignments(String classId, {bool publishedOnly = false, bool skipBackgroundRefresh = false}) async {
     _currentClassId = classId;
+    _currentPublishedOnly = publishedOnly;
     state = state.copyWith(isLoading: true, clearError: true);
-    final result = await _getAssignments(classId, publishedOnly: publishedOnly);
+    final result = await _getAssignments(classId, publishedOnly: publishedOnly, skipBackgroundRefresh: skipBackgroundRefresh);
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),

@@ -14,6 +14,7 @@ abstract class AssessmentLocalDataSource {
     required Map<String, dynamic> updates,
   });
   Future<void> deleteQuestionLocally({required String questionId});
+  Future<void> deleteAssessmentLocally({required String assessmentId});
   Future<void> updateQuestionId({
     required String localId,
     required String serverId,

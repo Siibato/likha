@@ -10,33 +10,30 @@ mixin AssignmentQueryMixin on AssignmentRepositoryBase {
   ResultFuture<List<Assignment>> getAssignments({
     required String classId,
     bool publishedOnly = false,
+    bool skipBackgroundRefresh = false,
   }) async {
     try {
       try {
+        // STEP 1: Try cache first (immediate, non-blocking)
         final cachedAssignments =
             await localDataSource.getCachedAssignments(classId, publishedOnly: publishedOnly);
 
-        // If server is reachable, fetch fresh in background (fire-and-forget)
-        if (serverReachabilityService.isServerReachable) {
+        // STEP 2: If cache hit, trigger background fetch to check for updates
+        if (!skipBackgroundRefresh) {
           _backgroundFetchAssignments(classId, publishedOnly: publishedOnly);
         }
 
+        // STEP 3: Return cache immediately (don't wait for remote)
         return Right(cachedAssignments);
       } on CacheException {
-        // Cache empty — must fetch from server
-        try {
-          final freshAssignments =
-              await remoteDataSource.getAssignments(classId: classId);
-          await localDataSource.cacheAssignments(freshAssignments);
-          return Right(freshAssignments);
-        } on NetworkException catch (e) {
-          return Left(NetworkFailure(e.message));
-        } on ServerException catch (e) {
-          return Left(ServerFailure(e.message));
+        // Cache miss: return empty immediately, trigger background fetch to populate cache
+        // Don't block on remote fetch — offline-first means immediate return
+        if (!skipBackgroundRefresh) {
+          _backgroundFetchAssignments(classId, publishedOnly: publishedOnly);
         }
+
+        return const Right([]);
       }
-    } on CacheException catch (e) {
-      return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -71,7 +68,7 @@ mixin AssignmentQueryMixin on AssignmentRepositoryBase {
   }
 
   /// Silently fetches fresh assignments for [classId] from the server.
-  /// Updates local cache only if any record has a newer [updatedAt].
+  /// Handles both cache hit (updates if changed) and cache miss (populates cache).
   /// Emits a DataEventBus event so the page can reload from updated cache.
   /// All errors are swallowed — users keep seeing stale cache without error.
   void _backgroundFetchAssignments(String classId, {bool publishedOnly = false}) {
@@ -82,15 +79,24 @@ mixin AssignmentQueryMixin on AssignmentRepositoryBase {
         try {
           cached = await localDataSource.getCachedAssignments(classId, publishedOnly: publishedOnly);
         } on CacheException {
+          // Cache miss: initial sync may not have completed yet
+          // Write fresh data and notify page to reload with populated cache
           await localDataSource.cacheAssignments(fresh);
           dataEventBus.notifyAssignmentsChanged(classId);
           return;
         }
+        // Cache hit: compare and update only if changed
         if (_assignmentsHaveChanged(cached, fresh)) {
           await localDataSource.cacheAssignments(fresh);
           dataEventBus.notifyAssignmentsChanged(classId);
         }
-      } catch (_) {}
+      } on NetworkException {
+        // Network failure during background fetch: silent fail, cache persists
+      } on ServerException {
+        // Server error during background fetch: silent fail, cache persists
+      } catch (_) {
+        // Other errors — silent fail, stale cache stays
+      }
     });
   }
 

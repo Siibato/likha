@@ -89,14 +89,24 @@ impl ManifestRepository {
     }
 
     /// Get manifest entries for enrollments (class participants with student role)
+    /// For students, only returns their own enrollment records.
+    /// For teachers/admins, returns all student enrollments in their classes.
     pub async fn get_enrollments_manifest(
         &self,
         class_ids: Vec<Uuid>,
+        user_id: Uuid,
+        user_role: &str,
     ) -> AppResult<Vec<ManifestEntry>> {
-        let records = class_participants::Entity::find()
+        let mut query = class_participants::Entity::find()
             .filter(class_participants::Column::ClassId.is_in(class_ids))
             .filter(class_participants::Column::Role.eq("student"))
-            .filter(class_participants::Column::RemovedAt.is_null())
+            .filter(class_participants::Column::RemovedAt.is_null());
+
+        if user_role == "student" {
+            query = query.filter(class_participants::Column::UserId.eq(user_id));
+        }
+
+        let records = query
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;

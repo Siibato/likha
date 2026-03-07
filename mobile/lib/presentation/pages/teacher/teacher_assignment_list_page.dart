@@ -36,7 +36,7 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
     ref.listen<SyncState>(syncProvider, (previous, next) {
       if (!(previous?.assignmentsReady ?? false) && next.assignmentsReady) {
         // Assignments just became ready in the DB — reload
-        ref.read(assignmentProvider.notifier).loadAssignments(widget.classId);
+        ref.read(assignmentProvider.notifier).loadAssignments(widget.classId, skipBackgroundRefresh: true);
       }
     });
 

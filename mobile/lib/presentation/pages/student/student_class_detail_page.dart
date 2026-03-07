@@ -44,10 +44,6 @@ class StudentClassDetailPage extends ConsumerWidget {
                               builder: (_) =>
                                   AssessmentListPage(classId: classId),
                             ),
-                          ).then(
-                            (_) => ref
-                                .read(assessmentProvider.notifier)
-                                .loadAssessments(classId),
                           ),
                     ),
                     const SizedBox(height: 16),
@@ -62,10 +58,6 @@ class StudentClassDetailPage extends ConsumerWidget {
                               builder: (_) =>
                                   StudentAssignmentListPage(classId: classId),
                             ),
-                          ).then(
-                            (_) => ref
-                                .read(assignmentProvider.notifier)
-                                .loadAssignments(classId),
                           ),
                     ),
                     const SizedBox(height: 16),
@@ -80,10 +72,6 @@ class StudentClassDetailPage extends ConsumerWidget {
                               builder: (_) =>
                                   StudentMaterialListPage(classId: classId),
                             ),
-                          ).then(
-                            (_) => ref
-                                .read(learningMaterialProvider.notifier)
-                                .loadMaterials(classId),
                           ),
                     ),
                   ],

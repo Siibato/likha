@@ -16,7 +16,7 @@ class _StudentTasksPageState extends ConsumerState<StudentTasksPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(studentTasksProvider.notifier).loadAllTasks();
+      ref.read(studentTasksProvider.notifier).loadAllTasks(skipBackgroundRefresh: true);
     });
   }
 

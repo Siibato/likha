@@ -141,15 +141,15 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
     _refreshSub = sl<DataEventBus>().onAssessmentsChanged.listen((classId) {
       // Only reload if this notifier is currently showing that classId
       if (_currentClassId != null && _currentClassId == classId) {
-        loadAssessments(_currentClassId!);
+        loadAssessments(_currentClassId!, skipBackgroundRefresh: true);
       }
     });
   }
 
-  Future<void> loadAssessments(String classId, {bool publishedOnly = false}) async {
+  Future<void> loadAssessments(String classId, {bool publishedOnly = false, bool skipBackgroundRefresh = false}) async {
     _currentClassId = classId;
     state = state.copyWith(isLoading: true, clearError: true);
-    final result = await _getAssessments(classId, publishedOnly: publishedOnly);
+    final result = await _getAssessments(classId, publishedOnly: publishedOnly, skipBackgroundRefresh: skipBackgroundRefresh);
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),

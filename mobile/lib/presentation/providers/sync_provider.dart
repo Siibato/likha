@@ -1,9 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:get_it/get_it.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-
-final sl = GetIt.instance;
+import 'package:likha/injection_container.dart';
 
 class SyncNotifier extends StateNotifier<SyncState> {
   final SyncManager _syncManager;
