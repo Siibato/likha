@@ -1,5 +1,6 @@
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/data/models/learning_materials/material_file_model.dart';
+import 'package:likha/domain/learning_materials/entities/material_file.dart';
 
 abstract class LearningMaterialLocalDataSource {
   Future<List<LearningMaterialModel>> getCachedMaterials(String classId);
@@ -7,6 +8,7 @@ abstract class LearningMaterialLocalDataSource {
   Future<List<MaterialFileModel>> getCachedMaterialFiles(String materialId);
   Future<void> cacheMaterials(List<LearningMaterialModel> materials);
   Future<void> cacheMaterialDetail(LearningMaterialModel material);
+  Future<void> cacheMaterialFiles(String materialId, List<MaterialFile> files);
   Future<void> cacheFile(String fileId, String fileName, List<int> bytes);
   Future<List<int>> getCachedFile(String fileId);
   Future<bool> isFileCached(String fileId);

@@ -198,8 +198,16 @@ class SyncManager {
     final pending = await _syncQueue.getAllRetriable();
     if (pending.isEmpty) return;
 
-    final uploadOps   = pending.where((e) => e.operation == SyncOperation.upload).toList();
-    final regularOps  = pending.where((e) => e.operation != SyncOperation.upload).toList();
+    // Split uploads: material files run AFTER regular ops, others run FIRST
+    final nonMaterialFileUploads = pending
+        .where((e) => e.operation == SyncOperation.upload && e.entityType != SyncEntityType.materialFile)
+        .toList();
+    final materialFileUploads = pending
+        .where((e) => e.operation == SyncOperation.upload && e.entityType == SyncEntityType.materialFile)
+        .toList();
+    final regularOps = pending
+        .where((e) => e.operation != SyncOperation.upload)
+        .toList();
 
     final adminUserCreates = regularOps
         .where((e) => e.entityType == SyncEntityType.adminUser && e.operation == SyncOperation.create)
@@ -211,17 +219,19 @@ class SyncManager {
     }
 
     _log.pushStarting(
-      uploadOpsCount: uploadOps.length,
+      uploadOpsCount: nonMaterialFileUploads.length + materialFileUploads.length,
       regularOpsCount: regularOps.length,
       operationsByType: opsByType,
     );
 
     final pushStartTime = DateTime.now();
 
-    for (final op in uploadOps) {
+    // Step 1: Run non-material file uploads first (submission files, etc.)
+    for (final op in nonMaterialFileUploads) {
       await _handleFileUpload(op);
     }
 
+    // Step 2: Run regular ops (with adminUser two-phase logic if needed)
     if (adminUserCreates.isNotEmpty) {
       await _syncPhase1(adminUserCreates);
 
@@ -240,6 +250,11 @@ class SyncManager {
       if (regularOps.isNotEmpty) {
         await _syncRegularBatch(regularOps, pushStartTime);
       }
+    }
+
+    // Step 3: Run material file uploads AFTER regular ops (material now exists on server + DB reconciled)
+    for (final op in materialFileUploads) {
+      await _handleFileUpload(op);
     }
   }
 
@@ -1950,13 +1965,33 @@ class SyncManager {
 
   /// Handles a single file upload operation by calling the multipart endpoint directly.
   /// References pattern in: mobile/lib/data/datasources/remote/assignment_remote_datasource.dart
+  /// For material files, looks up correct (reconciled) material_id from DB instead of using payload.
   Future<void> _handleFileUpload(SyncQueueEntry op) async {
     try {
       final payload      = op.payload;
       final localPath    = payload['local_path']    as String;
       final fileName     = payload['file_name']     as String;
+      final fileId       = payload['file_id']       as String?;
       final submissionId = payload['submission_id'] as String?;
-      final materialId   = payload['material_id']   as String?;
+      var materialId     = payload['material_id']   as String?;
+
+      // For material file uploads, look up the correct (reconciled) material_id from DB
+      if (materialId != null && fileId != null) {
+        try {
+          final db = await _localDatabase.database;
+          final rows = await db.query(
+            'material_files',
+            columns: ['material_id'],
+            where: 'id = ?',
+            whereArgs: [fileId],
+          );
+          if (rows.isNotEmpty) {
+            materialId = rows.first['material_id'] as String?;
+          }
+        } catch (_) {
+          // If DB lookup fails, fall back to payload value
+        }
+      }
 
       if (submissionId != null) {
         await _syncRemoteDataSource.uploadSubmissionFile(

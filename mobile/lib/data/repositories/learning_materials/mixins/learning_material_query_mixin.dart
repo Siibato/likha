@@ -5,6 +5,7 @@ import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/repositories/learning_materials/learning_material_repository_base.dart';
 import 'package:likha/domain/learning_materials/entities/learning_material.dart';
 import 'package:likha/domain/learning_materials/entities/material_detail.dart';
+import 'package:likha/domain/learning_materials/entities/material_file.dart';
 
 mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
   @override
@@ -48,6 +49,12 @@ mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
       try {
         final cachedMaterial = await localDataSource.getCachedMaterialDetail(materialId);
         final cachedFiles = await localDataSource.getCachedMaterialFiles(materialId);
+
+        // Background refresh of file metadata if server is reachable
+        if (serverReachabilityService.isServerReachable) {
+          _backgroundRefreshMaterialFiles(materialId, cachedMaterial.classId);
+        }
+
         return Right(MaterialDetail(
           id: cachedMaterial.id,
           classId: cachedMaterial.classId,
@@ -63,6 +70,15 @@ mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
         try {
           final freshMaterial = await remoteDataSource.getMaterialDetail(materialId: materialId);
 
+          // Cache file metadata for future offline-capable reads
+          if (freshMaterial.files.isNotEmpty) {
+            try {
+              await localDataSource.cacheMaterialFiles(materialId, freshMaterial.files);
+            } catch (_) {
+              // Ignore cache write errors — still return fresh data to user
+            }
+          }
+
           final detail = MaterialDetail(
             id: freshMaterial.id,
             classId: freshMaterial.classId,
@@ -70,7 +86,7 @@ mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
             description: freshMaterial.description,
             contentText: freshMaterial.contentText,
             orderIndex: freshMaterial.orderIndex,
-            files: const [],
+            files: freshMaterial.files,
             createdAt: freshMaterial.createdAt,
             updatedAt: freshMaterial.updatedAt,
           );
@@ -122,6 +138,36 @@ mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
       final l = localById[r.id];
       if (l == null) return true;
       if (l.updatedAt.isBefore(r.updatedAt)) return true;
+    }
+    return false;
+  }
+
+  /// Silently refreshes file metadata for a specific material.
+  /// Updates local cache only if files have changed.
+  /// Emits a DataEventBus event so the detail page can reload if needed.
+  /// All errors are swallowed.
+  void _backgroundRefreshMaterialFiles(String materialId, String classId) {
+    Future.microtask(() async {
+      try {
+        final fresh = await remoteDataSource.getMaterialDetail(materialId: materialId);
+        final cached = await localDataSource.getCachedMaterialFiles(materialId);
+
+        if (_materialFilesHaveChanged(cached, fresh.files)) {
+          await localDataSource.cacheMaterialFiles(materialId, fresh.files);
+          dataEventBus.notifyMaterialsChanged(classId);
+        }
+      } catch (_) {}
+    });
+  }
+
+  bool _materialFilesHaveChanged(
+    List<MaterialFile> cached,
+    List<MaterialFile> fresh,
+  ) {
+    if (cached.length != fresh.length) return true;
+    final cachedIds = {for (final f in cached) f.id};
+    for (final f in fresh) {
+      if (!cachedIds.contains(f.id)) return true;
     }
     return false;
   }

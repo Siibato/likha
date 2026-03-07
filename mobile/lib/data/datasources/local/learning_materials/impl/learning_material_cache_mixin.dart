@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/utils/compression_util.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
+import 'package:likha/domain/learning_materials/entities/material_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import '../learning_material_local_datasource_base.dart';
@@ -118,6 +119,59 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
       return results.isNotEmpty;
     } catch (e) {
       return false;
+    }
+  }
+
+  @override
+  Future<void> cacheMaterialFiles(String materialId, List<MaterialFile> files) async {
+    try {
+      final db = await localDatabase.database;
+      for (final file in files) {
+        // Preserve local cache state if row already exists
+        final existing = await db.query(
+          'material_files',
+          columns: ['is_cached', 'local_path', 'is_compressed'],
+          where: 'id = ?',
+          whereArgs: [file.id],
+        );
+
+        if (existing.isEmpty) {
+          await db.insert(
+            'material_files',
+            {
+              'id': file.id,
+              'local_id': file.id,
+              'material_id': materialId,
+              'file_name': file.fileName,
+              'file_type': file.fileType,
+              'file_size': file.fileSize,
+              'uploaded_at': file.uploadedAt.toIso8601String(),
+              'local_path': null,
+              'is_cached': 0,
+              'is_compressed': 0,
+              'deleted_at': null,
+              'cached_at': DateTime.now().toIso8601String(),
+            },
+            conflictAlgorithm: ConflictAlgorithm.ignore,
+          );
+        } else {
+          // Only update server-side metadata — preserve is_cached, local_path, is_compressed
+          await db.update(
+            'material_files',
+            {
+              'file_name': file.fileName,
+              'file_type': file.fileType,
+              'file_size': file.fileSize,
+              'uploaded_at': file.uploadedAt.toIso8601String(),
+              'cached_at': DateTime.now().toIso8601String(),
+            },
+            where: 'id = ?',
+            whereArgs: [file.id],
+          );
+        }
+      }
+    } catch (e) {
+      throw CacheException('Failed to cache material files: $e');
     }
   }
 

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/data/models/learning_materials/material_file_model.dart';
@@ -50,6 +51,21 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
         whereArgs: [materialId],
         orderBy: 'uploaded_at ASC',
       );
+
+      // Log what we loaded from the database
+      debugPrint('═══════════════════════════════════════════════════════════');
+      debugPrint('[DB_LOAD] getCachedMaterialFiles for materialId: $materialId');
+      debugPrint('[DB_LOAD] Found ${results.length} file(s)');
+      for (var i = 0; i < results.length; i++) {
+        final row = results[i];
+        debugPrint('[DB_LOAD] File $i: ${row['file_name']}');
+        debugPrint('[DB_LOAD]   - id: ${row['id']}');
+        debugPrint('[DB_LOAD]   - user_save_path: ${row['user_save_path']}');
+        debugPrint('[DB_LOAD]   - is_cached: ${row['is_cached']}');
+        debugPrint('[DB_LOAD]   - local_path: ${row['local_path']}');
+      }
+      debugPrint('═══════════════════════════════════════════════════════════');
+
       return results.map((row) => MaterialFileModel.fromMap(row)).toList();
     } catch (e) {
       throw CacheException('Failed to fetch material files: $e');

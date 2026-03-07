@@ -7,6 +7,7 @@ class MaterialFileModel extends MaterialFile {
     required super.fileType,
     required super.fileSize,
     required super.uploadedAt,
+    super.isCached = false,
   });
 
   factory MaterialFileModel.fromJson(Map<String, dynamic> json) {
@@ -26,6 +27,7 @@ class MaterialFileModel extends MaterialFile {
       fileType: map['file_type'] as String,
       fileSize: map['file_size'] as int,
       uploadedAt: DateTime.parse(map['uploaded_at'] as String),
+      isCached: (map['is_cached'] as int? ?? 0) == 1,
     );
   }
 

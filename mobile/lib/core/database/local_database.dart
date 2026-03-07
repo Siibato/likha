@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 12,
+      version: 13,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onOpen: (db) async {
@@ -763,6 +763,17 @@ class LocalDatabase {
         await db.execute('ALTER TABLE users DROP COLUMN is_active');
       } catch (e) {
         // Column might already be dropped or not exist
+      }
+    }
+
+    if (oldVersion < 13) {
+      // Add user_save_path to material_files to track where user saved downloaded files
+      try {
+        await db.execute(
+          'ALTER TABLE material_files ADD COLUMN user_save_path TEXT'
+        );
+      } catch (e) {
+        // Column might already exist
       }
     }
   }

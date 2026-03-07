@@ -80,6 +80,15 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
       return;
     }
 
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Module created successfully!'),
+        backgroundColor: Color(0xFF4CAF50),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
     // Step 2: Upload files sequentially
     bool anyUploadFailed = false;
     for (int i = 0; i < _selectedFiles.length; i++) {
@@ -94,17 +103,16 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
         final uploadState = ref.read(learningMaterialProvider);
         if (uploadState.error != null) {
           anyUploadFailed = true;
-          if (mounted) {
-            ref.read(learningMaterialProvider.notifier).clearMessages();
-          }
+          // Don't clear messages here - let the error listener handle display
         }
       }
     }
 
     if (!mounted) return;
 
-    // Handle results
+    // Handle results - navigate back after brief delay to show message
     if (anyUploadFailed) {
+      await Future.delayed(const Duration(milliseconds: 100));
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -137,7 +145,10 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
         ),
       );
     } else {
-      Navigator.pop(context, true);
+      await Future.delayed(const Duration(milliseconds: 100));
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
     }
   }
 

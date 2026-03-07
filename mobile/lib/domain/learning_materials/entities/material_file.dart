@@ -6,6 +6,7 @@ class MaterialFile extends Equatable {
   final String fileType;
   final int fileSize;
   final DateTime uploadedAt;
+  final bool isCached;
 
   const MaterialFile({
     required this.id,
@@ -13,6 +14,7 @@ class MaterialFile extends Equatable {
     required this.fileType,
     required this.fileSize,
     required this.uploadedAt,
+    this.isCached = false,
   });
 
   @override
@@ -22,5 +24,6 @@ class MaterialFile extends Equatable {
         fileType,
         fileSize,
         uploadedAt,
+        isCached,
       ];
 }

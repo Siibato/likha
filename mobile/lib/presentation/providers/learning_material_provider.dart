@@ -77,6 +77,10 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     _refreshSub = sl<DataEventBus>().onMaterialsChanged.listen((classId) {
       if (_currentClassId != null && _currentClassId == classId) {
         loadMaterials(_currentClassId!);
+        // Also reload the current material detail if it belongs to this class
+        if (state.currentMaterial != null && state.currentMaterial!.classId == classId) {
+          loadMaterialDetail(state.currentMaterial!.id);
+        }
       }
     });
   }
@@ -121,6 +125,18 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
           isLoading: false,
           materials: updatedMaterials,
           successMessage: 'Material created successfully',
+          // Store the created material so create_material_page can access its ID
+          currentMaterial: MaterialDetail(
+            id: material.id,
+            classId: material.classId,
+            title: material.title,
+            description: material.description,
+            contentText: material.contentText,
+            orderIndex: material.orderIndex,
+            files: const [],
+            createdAt: material.createdAt,
+            updatedAt: material.updatedAt,
+          ),
         );
       },
     );

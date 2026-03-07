@@ -55,28 +55,68 @@ class _StudentMaterialListPageState extends ConsumerState<StudentMaterialListPag
                         strokeWidth: 2.5,
                       ),
                     )
-                  : state.materials.isEmpty
-                      ? const Center(
+                  : state.error != null && state.materials.isEmpty
+                      ? Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
-                                Icons.library_books_outlined,
+                                Icons.wifi_off_rounded,
                                 size: 64,
-                                color: Color(0xFFCCCCCC),
+                                color: const Color(0xFFCCCCCC),
                               ),
-                              SizedBox(height: 16),
-                              Text(
-                                'No modules yet',
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Learning modules unavailable',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Color(0xFF999999),
+                                  color: Color(0xFF666666),
                                 ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 32),
+                                child: Text(
+                                  'Connect to the internet to view modules',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF999999),
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              OutlinedButton(
+                                onPressed: () => ref
+                                    .read(learningMaterialProvider.notifier)
+                                    .loadMaterials(widget.classId),
+                                child: const Text('Retry'),
                               ),
                             ],
                           ),
                         )
-                      : RefreshIndicator(
+                      : state.materials.isEmpty
+                          ? const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.library_books_outlined,
+                                    size: 64,
+                                    color: Color(0xFFCCCCCC),
+                                  ),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    'No modules yet',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Color(0xFF999999),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : RefreshIndicator(
                         onRefresh: () => ref
                             .read(learningMaterialProvider.notifier)
                             .loadMaterials(widget.classId),
