@@ -485,6 +485,7 @@ impl ManifestRepository {
                 "auto_score": r.auto_score,
                 "final_score": r.final_score,
                 "is_submitted": r.is_submitted,
+                "created_at": r.created_at.to_string(),
                 "updated_at": r.updated_at.to_string(),
                 "deleted_at": r.deleted_at.map(|d| d.to_string()),
             })
@@ -819,6 +820,7 @@ impl ManifestRepository {
                     "auto_score": r.auto_score,
                     "final_score": r.final_score,
                     "is_submitted": r.is_submitted,
+                    "created_at": r.created_at.to_string(),
                     "updated_at": r.updated_at.to_string(),
                     "deleted_at": r.deleted_at.map(|d| d.to_string()),
                 })
@@ -913,6 +915,7 @@ impl ManifestRepository {
                 "auto_score": r.auto_score,
                 "final_score": r.final_score,
                 "is_submitted": r.is_submitted,
+                "created_at": r.created_at.to_string(),
                 "updated_at": r.updated_at.to_string(),
                 "deleted_at": r.deleted_at.map(|d| d.to_string()),
             })
@@ -970,6 +973,7 @@ impl ManifestRepository {
                 "auto_score": r.auto_score,
                 "final_score": r.final_score,
                 "is_submitted": r.is_submitted,
+                "created_at": r.created_at.to_string(),
                 "updated_at": r.updated_at.to_string(),
                 "deleted_at": r.deleted_at.map(|d| d.to_string()),
             })

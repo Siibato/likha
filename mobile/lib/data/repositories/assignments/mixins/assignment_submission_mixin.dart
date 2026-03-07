@@ -297,8 +297,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
           entityType: SyncEntityType.assignmentSubmission,
           operation: SyncOperation.submit,
           payload: {
-            'id': submissionId,
-            'submitted_at': DateTime.now().toIso8601String(),
+            'submission_id': submissionId,
           },
           status: SyncStatus.pending,
           retryCount: 0,

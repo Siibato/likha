@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 13,
+      version: 14,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onOpen: (db) async {
@@ -160,6 +160,7 @@ class LocalDatabase {
           student_username TEXT NOT NULL,
           started_at TEXT NOT NULL,
           submitted_at TEXT,
+          created_at TEXT,
           auto_score INTEGER,
           final_score INTEGER,
           is_submitted INTEGER NOT NULL DEFAULT 0,
@@ -774,6 +775,18 @@ class LocalDatabase {
         );
       } catch (e) {
         // Column might already exist
+      }
+    }
+
+    if (oldVersion < 14) {
+      // Add created_at column to assessment_submissions to align with server entity
+      // and fix full/delta sync crash (column was missing but sync code inserted it)
+      try {
+        await db.execute(
+          'ALTER TABLE assessment_submissions ADD COLUMN created_at TEXT'
+        );
+      } catch (e) {
+        // Column might already exist on fresh installs at v14+
       }
     }
   }
