@@ -172,7 +172,9 @@ class _StudentMaterialListPageState extends ConsumerState<StudentMaterialListPag
                                       materialId: material.id,
                                     ),
                                   ),
-                                ),
+                                ).then((_) {
+                                  ref.read(learningMaterialProvider.notifier).loadMaterials(widget.classId);
+                                }),
                               ),
                             );
                           },

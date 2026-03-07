@@ -17,29 +17,21 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
       );
       if (results.isEmpty) throw CacheException('No cached materials for class $classId');
 
-      // Compute actual file counts from material_files table instead of using cached value
-      final materials = <LearningMaterialModel>[];
-      for (final r in results) {
-        final materialId = r['id'] as String;
-        final fileCountResult = await db.query(
-          'material_files',
-          where: 'material_id = ? AND deleted_at IS NULL',
-          whereArgs: [materialId],
-        );
-
-        final model = LearningMaterialModel(
+      // Use file_count from server (already cached in DB)
+      // This value comes from the manifest API and is accurate
+      final materials = results.map((r) {
+        return LearningMaterialModel(
           id: r['id'] as String,
           classId: r['class_id'] as String,
           title: r['title'] as String,
           description: r['description'] as String?,
           contentText: r['content_text'] as String?,
           orderIndex: r['order_index'] as int,
-          fileCount: fileCountResult.length,
+          fileCount: r['file_count'] as int? ?? 0,
           createdAt: DateTime.parse(r['created_at'] as String),
           updatedAt: DateTime.parse(r['updated_at'] as String),
         );
-        materials.add(model);
-      }
+      }).toList();
 
       return materials;
     } catch (e) {
@@ -57,16 +49,10 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
         where: 'id = ? AND deleted_at IS NULL',
         whereArgs: [materialId],
       );
+
       if (results.isEmpty) throw CacheException('Material $materialId not cached');
 
       final r = results.first;
-      // Count actual files from material_files table
-      final fileCountResult = await db.query(
-        'material_files',
-        where: 'material_id = ? AND deleted_at IS NULL',
-        whereArgs: [materialId],
-      );
-
       return LearningMaterialModel(
         id: r['id'] as String,
         classId: r['class_id'] as String,
@@ -74,7 +60,7 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
         description: r['description'] as String?,
         contentText: r['content_text'] as String?,
         orderIndex: r['order_index'] as int,
-        fileCount: fileCountResult.length,
+        fileCount: r['file_count'] as int? ?? 0,
         createdAt: DateTime.parse(r['created_at'] as String),
         updatedAt: DateTime.parse(r['updated_at'] as String),
       );

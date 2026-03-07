@@ -144,7 +144,11 @@ class _TeacherMaterialListPageState extends ConsumerState<TeacherMaterialListPag
                                     MaterialPageRoute(
                                       builder: (_) => MaterialDetailPage(materialId: material.id),
                                     ),
-                                  ),
+                                  ).then((_) {
+                                    // Reload materials when returning from detail page
+                                    // to pick up any file count changes
+                                    ref.read(learningMaterialProvider.notifier).loadMaterials(widget.classId);
+                                  }),
                                 ),
                               );
                             },
