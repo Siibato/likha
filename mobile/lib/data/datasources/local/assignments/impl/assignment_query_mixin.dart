@@ -122,4 +122,29 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
       throw CacheException(e.toString());
     }
   }
+
+  @override
+  Future<(String submissionId, String status, int? score)?> getStudentSubmissionForAssignment(
+    String assignmentId,
+    String studentId,
+  ) async {
+    try {
+      final db = await localDatabase.database;
+      final results = await db.query(
+        'assignment_submissions',
+        columns: ['id', 'status', 'score'],
+        where: 'assignment_id = ? AND student_id = ? AND deleted_at IS NULL',
+        whereArgs: [assignmentId, studentId],
+      );
+      if (results.isEmpty) return null;
+      final sub = results.first;
+      return (
+        sub['id'] as String,
+        sub['status'] as String,
+        sub['score'] as int?,
+      );
+    } catch (e) {
+      throw CacheException('Failed to get student submission: $e');
+    }
+  }
 }

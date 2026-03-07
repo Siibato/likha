@@ -46,4 +46,8 @@ abstract class AssignmentLocalDataSource {
   Future<void> cacheSubmissionDetail(AssignmentSubmissionModel submission);
   Future<void> markAssignmentPublishedLocally({required String assignmentId});
   Future<void> clearAllCache();
+  Future<(String submissionId, String status, int? score)?> getStudentSubmissionForAssignment(
+    String assignmentId,
+    String studentId,
+  );
 }

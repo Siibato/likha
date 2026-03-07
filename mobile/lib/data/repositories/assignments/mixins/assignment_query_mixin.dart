@@ -18,13 +18,76 @@ mixin AssignmentQueryMixin on AssignmentRepositoryBase {
         final cachedAssignments =
             await localDataSource.getCachedAssignments(classId, publishedOnly: publishedOnly);
 
+        // STEP 1b: Get current student ID for submission state check
+        String? currentStudentId;
+        try {
+          currentStudentId = await storageService.getUserId();
+          print('📚 [AssignmentQueryMixin] getAssignments() - got currentStudentId: $currentStudentId');
+        } catch (e) {
+          print('⚠️  [AssignmentQueryMixin] getAssignments() - could not get current student ID: $e');
+        }
+
+        // STEP 1c: Populate submissionId and submissionStatus from assignment_submissions table
+        print('📚 [AssignmentQueryMixin] getAssignments() - loading ${cachedAssignments.length} assignments');
+        final assignmentsWithSubmissions = <Assignment>[];
+        for (final assignment in cachedAssignments) {
+          try {
+            Assignment assignmentWithSubmission = assignment;
+
+            // If we have student ID, look up their submission for this assignment
+            if (currentStudentId != null) {
+              try {
+                final submission = await localDataSource.getStudentSubmissionForAssignment(
+                  assignment.id,
+                  currentStudentId,
+                );
+
+                if (submission != null) {
+                  final (submissionId, status, score) = submission;
+                  print('📚 [AssignmentQueryMixin]   - ${assignment.title}: submissionId=$submissionId, status=$status, score=$score');
+                  // Create new assignment with submission data populated
+                  assignmentWithSubmission = Assignment(
+                    id: assignment.id,
+                    classId: assignment.classId,
+                    title: assignment.title,
+                    instructions: assignment.instructions,
+                    totalPoints: assignment.totalPoints,
+                    submissionType: assignment.submissionType,
+                    allowedFileTypes: assignment.allowedFileTypes,
+                    maxFileSizeMb: assignment.maxFileSizeMb,
+                    dueAt: assignment.dueAt,
+                    isPublished: assignment.isPublished,
+                    submissionCount: assignment.submissionCount,
+                    gradedCount: assignment.gradedCount,
+                    submissionId: submissionId,
+                    submissionStatus: status,
+                    score: score ?? assignment.score,
+                    createdAt: assignment.createdAt,
+                    updatedAt: assignment.updatedAt,
+                  );
+                } else {
+                  print('📚 [AssignmentQueryMixin]   - ${assignment.title}: no submission found');
+                }
+              } catch (e) {
+                print('⚠️  [AssignmentQueryMixin]   - ${assignment.title}: error getting submission: $e');
+                // If lookup fails, keep the original assignment without submission data
+              }
+            }
+
+            assignmentsWithSubmissions.add(assignmentWithSubmission);
+          } catch (e) {
+            print('⚠️  [AssignmentQueryMixin]   - ${assignment.title}: unexpected error: $e');
+            assignmentsWithSubmissions.add(assignment);
+          }
+        }
+
         // STEP 2: If cache hit, trigger background fetch to check for updates
         if (!skipBackgroundRefresh) {
           _backgroundFetchAssignments(classId, publishedOnly: publishedOnly);
         }
 
         // STEP 3: Return cache immediately (don't wait for remote)
-        return Right(cachedAssignments);
+        return Right(assignmentsWithSubmissions);
       } on CacheException {
         // Cache miss: return empty immediately, trigger background fetch to populate cache
         // Don't block on remote fetch — offline-first means immediate return
