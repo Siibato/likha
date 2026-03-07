@@ -320,3 +320,21 @@ pub async fn get_assessments_metadata(
         Err(e) => e.into_response(),
     }
 }
+
+pub async fn reorder_assessments(
+    State(service): State<Arc<AssessmentService>>,
+    auth_user: AuthUser,
+    Path(class_id): Path<Uuid>,
+    Json(request): Json<ReorderAssessmentsRequest>,
+) -> impl IntoResponse {
+    if auth_user.role != "teacher" {
+        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    }
+    match service.reorder_assessments(class_id, request, auth_user.user_id).await {
+        Ok(()) => success_response(
+            MessageResponse { message: "Assessments reordered".to_string() },
+            StatusCode::OK,
+        ).into_response(),
+        Err(e) => e.into_response(),
+    }
+}

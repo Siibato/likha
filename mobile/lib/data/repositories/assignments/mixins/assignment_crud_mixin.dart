@@ -55,6 +55,7 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
           maxFileSizeMb: maxFileSizeMb,
           dueAt: DateTime.parse(dueAt),
           isPublished: false,
+          orderIndex: 0,
           submissionCount: 0,
           gradedCount: 0,
           createdAt: DateTime.now(),
@@ -75,6 +76,7 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
             maxFileSizeMb: maxFileSizeMb,
             dueAt: DateTime.parse(dueAt),
             isPublished: false,
+            orderIndex: 0,
             submissionCount: 0,
             gradedCount: 0,
             createdAt: DateTime.now(),
@@ -153,6 +155,7 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
           maxFileSizeMb: maxFileSizeMb,
           dueAt: dueAt != null ? DateTime.parse(dueAt) : DateTime.now(),
           isPublished: false,
+          orderIndex: 0,
           submissionCount: 0,
           gradedCount: 0,
           createdAt: DateTime.now(),
@@ -241,6 +244,7 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
           maxFileSizeMb: null,
           dueAt: DateTime.now(),
           isPublished: true,
+          orderIndex: 0,
           submissionCount: 0,
           gradedCount: 0,
           createdAt: DateTime.now(),
@@ -252,6 +256,41 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
         assignmentId: assignmentId,
       );
       return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  ResultVoid reorderAllAssignments({
+    required String classId,
+    required List<String> assignmentIds,
+  }) async {
+    try {
+      if (!serverReachabilityService.isServerReachable) {
+        for (int i = 0; i < assignmentIds.length; i++) {
+          await syncQueue.enqueue(SyncQueueEntry(
+            id: const Uuid().v4(),
+            entityType: SyncEntityType.assignment,
+            operation: SyncOperation.update,
+            payload: {'id': assignmentIds[i], 'order_index': i},
+            status: SyncStatus.pending,
+            retryCount: 0,
+            maxRetries: 5,
+            createdAt: DateTime.now(),
+          ));
+        }
+        return const Right(null);
+      }
+      await remoteDataSource.reorderAllAssignments(
+        classId: classId,
+        assignmentIds: assignmentIds,
+      );
+      return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } on NetworkException catch (e) {

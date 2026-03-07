@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 14,
+      version: 15,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onOpen: (db) async {
@@ -112,6 +112,7 @@ class LocalDatabase {
           show_results_immediately INTEGER NOT NULL DEFAULT 0,
           results_released INTEGER NOT NULL DEFAULT 0,
           is_published INTEGER NOT NULL DEFAULT 0,
+          order_index INTEGER NOT NULL DEFAULT 0,
           total_points INTEGER NOT NULL DEFAULT 0,
           question_count INTEGER NOT NULL DEFAULT 0,
           submission_count INTEGER NOT NULL DEFAULT 0,
@@ -190,6 +191,7 @@ class LocalDatabase {
           max_file_size_mb INTEGER,
           due_at TEXT,
           is_published INTEGER NOT NULL DEFAULT 0,
+          order_index INTEGER NOT NULL DEFAULT 0,
           submission_count INTEGER NOT NULL DEFAULT 0,
           graded_count INTEGER NOT NULL DEFAULT 0,
           submission_status TEXT,
@@ -787,6 +789,24 @@ class LocalDatabase {
         );
       } catch (e) {
         // Column might already exist on fresh installs at v14+
+      }
+    }
+
+    if (oldVersion < 15) {
+      // Add order_index columns to assignments and assessments for reordering support
+      try {
+        await db.execute(
+          'ALTER TABLE assignments ADD COLUMN order_index INTEGER NOT NULL DEFAULT 0'
+        );
+      } catch (e) {
+        // Column might already exist
+      }
+      try {
+        await db.execute(
+          'ALTER TABLE assessments ADD COLUMN order_index INTEGER NOT NULL DEFAULT 0'
+        );
+      } catch (e) {
+        // Column might already exist
       }
     }
   }

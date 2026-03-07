@@ -35,6 +35,11 @@ abstract class AssignmentRepository {
 
   ResultFuture<Assignment> publishAssignment({required String assignmentId});
 
+  ResultVoid reorderAllAssignments({
+    required String classId,
+    required List<String> assignmentIds,
+  });
+
   // Teacher: Submissions & Grading
   ResultFuture<List<SubmissionListItem>> getSubmissions({
     required String assignmentId,

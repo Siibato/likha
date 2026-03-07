@@ -83,6 +83,16 @@ pub struct OverrideAnswerRequest {
     pub is_correct: bool,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ReorderAssessmentRequest {
+    pub new_order_index: i32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ReorderAssessmentsRequest {
+    pub assessment_ids: Vec<Uuid>,
+}
+
 // ===== RESPONSE SCHEMAS =====
 
 #[derive(Debug, Serialize)]
@@ -97,6 +107,7 @@ pub struct AssessmentResponse {
     pub show_results_immediately: bool,
     pub results_released: bool,
     pub is_published: bool,
+    pub order_index: i32,
     pub total_points: i32,
     pub question_count: usize,
     pub submission_count: usize,
@@ -121,6 +132,7 @@ pub struct AssessmentDetailResponse {
     pub show_results_immediately: bool,
     pub results_released: bool,
     pub is_published: bool,
+    pub order_index: i32,
     pub total_points: i32,
     pub questions: Vec<QuestionResponse>,
     pub created_at: String,

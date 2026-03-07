@@ -40,6 +40,7 @@ import 'package:likha/domain/assessments/usecases/submit_assessment.dart';
 import 'package:likha/domain/assessments/usecases/update_assessment.dart';
 import 'package:likha/domain/assessments/usecases/update_question.dart';
 import 'package:likha/domain/assessments/usecases/delete_question.dart';
+import 'package:likha/domain/assessments/usecases/reorder_assessment.dart';
 import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
 import 'package:likha/data/datasources/local/assignments/impl/assignment_local_datasource_impl.dart';
 import 'package:likha/data/datasources/remote/assignment_remote_datasource.dart';
@@ -60,6 +61,7 @@ import 'package:likha/domain/assignments/usecases/return_submission.dart';
 import 'package:likha/domain/assignments/usecases/submit_assignment.dart';
 import 'package:likha/domain/assignments/usecases/update_assignment.dart';
 import 'package:likha/domain/assignments/usecases/upload_file.dart';
+import 'package:likha/domain/assignments/usecases/reorder_assignment.dart';
 import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
 import 'package:likha/data/datasources/local/auth/impl/auth_local_datasource_impl.dart';
 import 'package:likha/data/datasources/remote/auth_remote_datasource.dart';
@@ -349,6 +351,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => UpdateAssessment(sl()));
   sl.registerLazySingleton(() => UpdateQuestion(sl()));
   sl.registerLazySingleton(() => DeleteQuestion(sl()));
+  sl.registerLazySingleton(() => ReorderAllAssessments(sl()));
 
   // Assignment use cases
   sl.registerLazySingleton(() => CreateAssignment(sl()));
@@ -366,6 +369,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => DeleteFile(sl()));
   sl.registerLazySingleton(() => SubmitAssignment(sl()));
   sl.registerLazySingleton(() => DownloadFile(sl()));
+  sl.registerLazySingleton(() => ReorderAllAssignments(sl()));
 
   // Learning Material use cases
   sl.registerLazySingleton(() => CreateMaterial(sl()));

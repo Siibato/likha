@@ -30,6 +30,9 @@ impl super::AssessmentService {
             return Err(AppError::BadRequest("Close date must be after open date".to_string()));
         }
 
+        let max_order = self.assessment_repo.get_max_order_index(class_id).await?;
+        let order_index = max_order + 1;
+
         let assessment = self.assessment_repo.create_assessment(
             class_id,
             request.title.trim().to_string(),
@@ -38,6 +41,7 @@ impl super::AssessmentService {
             open_at,
             close_at,
             request.show_results_immediately.unwrap_or(true),
+            order_index,
             client_id,
         ).await?;
 
@@ -72,6 +76,7 @@ impl super::AssessmentService {
             show_results_immediately: assessment.show_results_immediately,
             results_released: assessment.results_released,
             is_published: assessment.is_published,
+            order_index: assessment.order_index,
             total_points: assessment.total_points,
             question_count: 0,
             submission_count: 0,
@@ -114,6 +119,7 @@ impl super::AssessmentService {
                 show_results_immediately: a.show_results_immediately,
                 results_released: a.results_released,
                 is_published: a.is_published,
+                order_index: a.order_index,
                 total_points: a.total_points,
                 question_count,
                 submission_count,
@@ -165,6 +171,7 @@ impl super::AssessmentService {
             show_results_immediately: assessment.show_results_immediately,
             results_released: assessment.results_released,
             is_published: assessment.is_published,
+            order_index: assessment.order_index,
             total_points: assessment.total_points,
             questions: question_responses,
             created_at: assessment.created_at.to_string(),
@@ -238,6 +245,7 @@ impl super::AssessmentService {
             show_results_immediately: updated.show_results_immediately,
             results_released: updated.results_released,
             is_published: updated.is_published,
+            order_index: updated.order_index,
             total_points: updated.total_points,
             question_count,
             submission_count,
@@ -360,6 +368,7 @@ impl super::AssessmentService {
             show_results_immediately: published.show_results_immediately,
             results_released: published.results_released,
             is_published: published.is_published,
+            order_index: published.order_index,
             total_points: published.total_points,
             question_count,
             submission_count,
@@ -415,6 +424,7 @@ impl super::AssessmentService {
             show_results_immediately: released.show_results_immediately,
             results_released: released.results_released,
             is_published: released.is_published,
+            order_index: released.order_index,
             total_points: released.total_points,
             question_count,
             submission_count,
@@ -445,5 +455,31 @@ impl super::AssessmentService {
             record_count: count,
             etag,
         })
+    }
+
+    pub async fn reorder_assessments(
+        &self,
+        class_id: Uuid,
+        request: ReorderAssessmentsRequest,
+        teacher_id: Uuid,
+    ) -> AppResult<()> {
+        let _class = self.class_repo.find_by_id(class_id).await?
+            .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
+
+        if !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
+            return Err(AppError::Forbidden(
+                "You can only reorder assessments in your own classes".to_string(),
+            ));
+        }
+
+        if request.assessment_ids.is_empty() {
+            return Ok(());
+        }
+
+        self.assessment_repo
+            .reorder_assessments(class_id, request.assessment_ids)
+            .await?;
+
+        Ok(())
     }
 }

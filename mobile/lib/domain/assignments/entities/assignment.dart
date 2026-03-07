@@ -11,6 +11,7 @@ class Assignment extends Equatable {
   final int? maxFileSizeMb;
   final DateTime dueAt;
   final bool isPublished;
+  final int orderIndex;
   final int submissionCount;
   final int gradedCount;
   final String? submissionStatus; // Student's own submission status
@@ -30,6 +31,7 @@ class Assignment extends Equatable {
     this.maxFileSizeMb,
     required this.dueAt,
     required this.isPublished,
+    required this.orderIndex,
     required this.submissionCount,
     required this.gradedCount,
     this.submissionStatus,
@@ -51,6 +53,7 @@ class Assignment extends Equatable {
         maxFileSizeMb,
         dueAt,
         isPublished,
+        orderIndex,
         submissionCount,
         gradedCount,
         submissionStatus,

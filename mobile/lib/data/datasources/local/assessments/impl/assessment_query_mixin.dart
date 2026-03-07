@@ -16,7 +16,7 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
         'assessments',
         where: where,
         whereArgs: [classId],
-        orderBy: 'created_at DESC',
+        orderBy: 'order_index ASC',
       );
       if (results.isEmpty) throw CacheException('No cached assessments for class $classId');
 
@@ -43,6 +43,7 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
           showResultsImmediately: assessment.showResultsImmediately,
           resultsReleased: assessment.resultsReleased,
           isPublished: assessment.isPublished,
+          orderIndex: assessment.orderIndex,
           totalPoints: assessment.totalPoints,
           questionCount: actualCount > 0 ? actualCount : assessment.questionCount,
           submissionCount: assessment.submissionCount,
@@ -112,6 +113,7 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
         showResultsImmediately: assessment.showResultsImmediately,
         resultsReleased: assessment.resultsReleased,
         isPublished: assessment.isPublished,
+        orderIndex: assessment.orderIndex,
         totalPoints: assessment.totalPoints,
         questionCount: questions.length,
         submissionCount: assessment.submissionCount,

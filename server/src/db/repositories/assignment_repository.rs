@@ -26,6 +26,7 @@ impl AssignmentRepository {
         allowed_file_types: Option<String>,
         max_file_size_mb: Option<i32>,
         due_at: chrono::NaiveDateTime,
+        order_index: i32,
         client_id: Option<Uuid>,
     ) -> AppResult<assignments_hw::Model> {
         let assignment = assignments_hw::ActiveModel {
@@ -39,6 +40,7 @@ impl AssignmentRepository {
             max_file_size_mb: Set(max_file_size_mb),
             due_at: Set(due_at),
             is_published: Set(false),
+            order_index: Set(order_index),
             created_at: Set(Utc::now().naive_utc()),
             updated_at: Set(Utc::now().naive_utc()),
             deleted_at: Set(None),
@@ -60,7 +62,8 @@ impl AssignmentRepository {
     pub async fn find_by_class_id(&self, class_id: Uuid) -> AppResult<Vec<assignments_hw::Model>> {
         assignments_hw::Entity::find()
             .filter(assignments_hw::Column::ClassId.eq(class_id))
-            .order_by_desc(assignments_hw::Column::CreatedAt)
+            .filter(assignments_hw::Column::DeletedAt.is_null())
+            .order_by_asc(assignments_hw::Column::OrderIndex)
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
@@ -70,7 +73,8 @@ impl AssignmentRepository {
         assignments_hw::Entity::find()
             .filter(assignments_hw::Column::ClassId.eq(class_id))
             .filter(assignments_hw::Column::IsPublished.eq(true))
-            .order_by_desc(assignments_hw::Column::CreatedAt)
+            .filter(assignments_hw::Column::DeletedAt.is_null())
+            .order_by_asc(assignments_hw::Column::OrderIndex)
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
@@ -405,6 +409,54 @@ impl AssignmentRepository {
             .exec(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Failed to delete assignment: {}", e)))?;
+
+        Ok(())
+    }
+
+    pub async fn get_max_order_index(&self, class_id: Uuid) -> AppResult<i32> {
+        let result = assignments_hw::Entity::find()
+            .select_only()
+            .column_as(assignments_hw::Column::OrderIndex.max(), "max_order")
+            .filter(assignments_hw::Column::ClassId.eq(class_id))
+            .filter(assignments_hw::Column::DeletedAt.is_null())
+            .into_tuple::<Option<i32>>()
+            .one(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        Ok(result.flatten().unwrap_or(-1))
+    }
+
+    pub async fn update_order_index(&self, id: Uuid, order_index: i32) -> AppResult<()> {
+        let assignment = assignments_hw::ActiveModel {
+            id: Set(id),
+            order_index: Set(order_index),
+            updated_at: Set(Utc::now().naive_utc()),
+            ..Default::default()
+        };
+
+        assignments_hw::Entity::update(assignment)
+            .exec(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to update order index: {}", e)))?;
+
+        Ok(())
+    }
+
+    pub async fn reorder_assignments(&self, class_id: Uuid, assignment_ids: Vec<Uuid>) -> AppResult<()> {
+        for (index, id) in assignment_ids.iter().enumerate() {
+            let assignment = assignments_hw::ActiveModel {
+                id: Set(*id),
+                order_index: Set(index as i32),
+                updated_at: Set(Utc::now().naive_utc()),
+                ..Default::default()
+            };
+
+            assignments_hw::Entity::update(assignment)
+                .exec(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Failed to reorder assignment: {}", e)))?;
+        }
 
         Ok(())
     }

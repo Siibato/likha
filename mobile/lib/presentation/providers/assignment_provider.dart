@@ -18,6 +18,7 @@ import 'package:likha/domain/assignments/usecases/return_submission.dart';
 import 'package:likha/domain/assignments/usecases/submit_assignment.dart';
 import 'package:likha/domain/assignments/usecases/update_assignment.dart';
 import 'package:likha/domain/assignments/usecases/upload_file.dart';
+import 'package:likha/domain/assignments/usecases/reorder_assignment.dart';
 import 'package:likha/injection_container.dart';
 
 class AssignmentState {
@@ -85,6 +86,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   final DeleteFile _deleteFile;
   final SubmitAssignment _submitAssignment;
   final DownloadFile _downloadFile;
+  final ReorderAllAssignments _reorderAllAssignments;
 
   String? _currentClassId;
   bool _currentPublishedOnly = false;
@@ -106,6 +108,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     this._deleteFile,
     this._submitAssignment,
     this._downloadFile,
+    this._reorderAllAssignments,
   ) : super(AssignmentState()) {
     _refreshSub = sl<DataEventBus>().onAssignmentsChanged.listen((classId) {
       if (_currentClassId != null && _currentClassId == classId) {
@@ -204,6 +207,23 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
           clearAssignment: true,
         );
       },
+    );
+  }
+
+  Future<void> reorderAllAssignments({
+    required String classId,
+    required List<String> assignmentIds,
+    required List<Assignment> orderedAssignments,
+  }) async {
+    // Optimistic update
+    state = state.copyWith(assignments: orderedAssignments);
+    final result = await _reorderAllAssignments(
+      classId: classId,
+      assignmentIds: assignmentIds,
+    );
+    result.fold(
+      (failure) => state = state.copyWith(error: failure.message),
+      (_) {},
     );
   }
 
@@ -363,5 +383,6 @@ final assignmentProvider =
     sl<DeleteFile>(),
     sl<SubmitAssignment>(),
     sl<DownloadFile>(),
+    sl<ReorderAllAssignments>(),
   );
 });

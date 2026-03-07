@@ -36,6 +36,11 @@ abstract class AssessmentRepository {
 
   ResultFuture<Assessment> releaseResults({required String assessmentId});
 
+  ResultVoid reorderAllAssessments({
+    required String classId,
+    required List<String> assessmentIds,
+  });
+
   // Teacher: Questions
   ResultFuture<List<Question>> addQuestions({
     required String assessmentId,

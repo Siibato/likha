@@ -154,6 +154,9 @@ class ApiEndpoints {
             .toList(),
       );
 
+  static ApiEndpoint<void> classAssessmentsReorder(String classId) =>
+      ApiEndpoint('/api/v1/classes/$classId/assessments/reorder', (_) {});
+
   static ApiEndpoint<AssessmentModel> assessmentDetail(String assessmentId) =>
       ApiEndpoint<AssessmentModel>.fromModel(
         '/api/v1/assessments/$assessmentId',
@@ -275,6 +278,9 @@ class ApiEndpoints {
             .map((e) => AssignmentModel.fromJson(e as Map<String, dynamic>))
             .toList(),
       );
+
+  static ApiEndpoint<void> classAssignmentsReorder(String classId) =>
+      ApiEndpoint('/api/v1/classes/$classId/assignments/reorder', (_) {});
 
   static ApiEndpoint<AssignmentModel> assignmentDetail(String assignmentId) =>
       ApiEndpoint<AssignmentModel>.fromModel(

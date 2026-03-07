@@ -15,6 +15,7 @@ pub struct Model {
     pub show_results_immediately: bool,
     pub results_released: bool,
     pub is_published: bool,
+    pub order_index: i32,
     pub total_points: i32,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,

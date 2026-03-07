@@ -36,6 +36,16 @@ pub struct SubmitTextRequest {
     pub text_content: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ReorderAssignmentRequest {
+    pub new_order_index: i32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ReorderAssignmentsRequest {
+    pub assignment_ids: Vec<Uuid>,
+}
+
 // ===== RESPONSE SCHEMAS =====
 
 #[derive(Debug, Serialize)]
@@ -50,6 +60,7 @@ pub struct AssignmentResponse {
     pub max_file_size_mb: Option<i32>,
     pub due_at: String,
     pub is_published: bool,
+    pub order_index: i32,
     pub submission_count: usize,
     pub graded_count: usize,
     pub submission_status: Option<String>,

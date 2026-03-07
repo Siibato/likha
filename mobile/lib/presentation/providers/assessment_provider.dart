@@ -24,6 +24,7 @@ import 'package:likha/domain/assessments/usecases/submit_assessment.dart';
 import 'package:likha/domain/assessments/usecases/update_assessment.dart';
 import 'package:likha/domain/assessments/usecases/update_question.dart';
 import 'package:likha/domain/assessments/usecases/delete_question.dart';
+import 'package:likha/domain/assessments/usecases/reorder_assessment.dart';
 import 'package:likha/injection_container.dart';
 
 class AssessmentState {
@@ -123,6 +124,7 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
   final UpdateAssessment _updateAssessment;
   final UpdateQuestion _updateQuestion;
   final DeleteQuestion _deleteQuestion;
+  final ReorderAllAssessments _reorderAllAssessments;
 
   String? _currentClassId;
   late StreamSubscription<String?> _refreshSub;
@@ -147,6 +149,7 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
     this._updateAssessment,
     this._updateQuestion,
     this._deleteQuestion,
+    this._reorderAllAssessments,
   ) : super(AssessmentState()) {
     _refreshSub = sl<DataEventBus>().onAssessmentsChanged.listen((classId) {
       // Only reload if this notifier is currently showing that classId
@@ -242,6 +245,23 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
           clearAssessment: true,
         );
       },
+    );
+  }
+
+  Future<void> reorderAllAssessments({
+    required String classId,
+    required List<String> assessmentIds,
+    required List<Assessment> orderedAssessments,
+  }) async {
+    // Optimistic update
+    state = state.copyWith(assessments: orderedAssessments);
+    final result = await _reorderAllAssessments(
+      classId: classId,
+      assessmentIds: assessmentIds,
+    );
+    result.fold(
+      (failure) => state = state.copyWith(error: failure.message),
+      (_) {},
     );
   }
 
@@ -512,5 +532,6 @@ final assessmentProvider =
     sl<UpdateAssessment>(),
     sl<UpdateQuestion>(),
     sl<DeleteQuestion>(),
+    sl<ReorderAllAssessments>(),
   );
 });

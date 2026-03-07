@@ -17,7 +17,7 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
         'assignments',
         where: where,
         whereArgs: [classId],
-        orderBy: 'created_at DESC',
+        orderBy: 'order_index ASC',
       );
       if (results.isEmpty) throw CacheException('No cached assignments for class $classId');
       return results.map(AssignmentModel.fromMap).toList();

@@ -18,6 +18,7 @@ mod add_processed_operations;
 mod add_updated_at_to_questions;
 mod add_updated_at_to_assessment_submissions;
 mod m20260305_000001_schema_v2;
+mod m20260308_000001_add_order_index;
 
 pub struct Migrator;
 
@@ -43,6 +44,7 @@ impl MigratorTrait for Migrator {
             Box::new(add_updated_at_to_questions::Migration),
             Box::new(add_updated_at_to_assessment_submissions::Migration),
             Box::new(m20260305_000001_schema_v2::Migration),
+            Box::new(m20260308_000001_add_order_index::Migration),
         ]
     }
 }

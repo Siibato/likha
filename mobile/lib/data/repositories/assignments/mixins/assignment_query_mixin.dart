@@ -57,6 +57,7 @@ mixin AssignmentQueryMixin on AssignmentRepositoryBase {
                     maxFileSizeMb: assignment.maxFileSizeMb,
                     dueAt: assignment.dueAt,
                     isPublished: assignment.isPublished,
+                    orderIndex: assignment.orderIndex,
                     submissionCount: assignment.submissionCount,
                     gradedCount: assignment.gradedCount,
                     submissionId: submissionId,

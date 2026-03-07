@@ -1,6 +1,8 @@
+import 'package:animated_reorderable_list/animated_reorderable_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/sync/sync_manager.dart';
+import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/teacher/assessment_detail_page.dart';
 import 'package:likha/presentation/pages/teacher/create_assessment_page.dart';
@@ -8,6 +10,7 @@ import 'package:likha/presentation/pages/teacher/widgets/empty_assessment_list_s
 import 'package:likha/presentation/pages/teacher/widgets/teacher_assessment_card.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
+import 'package:likha/presentation/widgets/styled_dialog.dart';
 
 class TeacherAssessmentListPage extends ConsumerStatefulWidget {
   final String classId;
@@ -19,13 +22,236 @@ class TeacherAssessmentListPage extends ConsumerStatefulWidget {
       _TeacherAssessmentListPageState();
 }
 
-class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentListPage> {
+class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentListPage>
+    with TickerProviderStateMixin {
+  bool _isReorderMode = false;
+  List<Assessment> _reorderBuffer = [];
+  late AnimationController _animController;
+  final Map<String, int> _animatingIndices = {};
+
   @override
   void initState() {
     super.initState();
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(assessmentProvider.notifier).loadAssessments(widget.classId);
     });
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  void _enterReorderMode(List<Assessment> assessments) {
+    setState(() {
+      _isReorderMode = true;
+      _reorderBuffer = List.of(assessments);
+    });
+  }
+
+  void _exitReorderMode() {
+    final notifier = ref.read(assessmentProvider.notifier);
+    notifier.reorderAllAssessments(
+      classId: widget.classId,
+      assessmentIds: _reorderBuffer.map((a) => a.id).toList(),
+      orderedAssessments: _reorderBuffer,
+    );
+    setState(() => _isReorderMode = false);
+  }
+
+  void _showMoveToPositionDialog(int currentIndex) {
+    final controller = TextEditingController(text: (currentIndex + 1).toString());
+    showDialog(
+      context: context,
+      builder: (ctx) => StyledDialog(
+        title: 'Move to Position',
+        subtitle: 'Reorder assessment',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Total assessments: ${_reorderBuffer.length}',
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF666666),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF202020),
+              ),
+              decoration: StyledTextFieldDecoration.styled(
+                labelText: 'Position (1-${_reorderBuffer.length})',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          StyledDialogAction(
+            label: 'Cancel',
+            onPressed: () => Navigator.pop(ctx),
+          ),
+          StyledDialogAction(
+            label: 'Move',
+            isPrimary: true,
+            onPressed: () {
+              final newPosition = int.tryParse(controller.text);
+              if (newPosition != null && newPosition >= 1 && newPosition <= _reorderBuffer.length) {
+                Navigator.pop(ctx);
+                _animateReorder(currentIndex, newPosition - 1);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Please enter a number between 1 and ${_reorderBuffer.length}'),
+                    backgroundColor: const Color(0xFFEF5350),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _animateReorder(int fromIndex, int toIndex) {
+    if (fromIndex == toIndex) return;
+
+    // Capture old indices for ALL assessments before reordering
+    _animatingIndices.clear();
+    for (int i = 0; i < _reorderBuffer.length; i++) {
+      _animatingIndices[_reorderBuffer[i].id] = i;
+    }
+
+    // Update the list
+    setState(() {
+      final assessment = _reorderBuffer.removeAt(fromIndex);
+      _reorderBuffer.insert(toIndex, assessment);
+    });
+
+    // Run the animation
+    _animController.forward(from: 0.0).then((_) {
+      setState(() {
+        _animatingIndices.clear();
+      });
+    });
+  }
+
+  Widget _buildAssessmentCard(Assessment assessment, int index, {bool isAnimated = false, double animOffset = 0}) {
+    final card = GestureDetector(
+      onTap: _isReorderMode ? () => _showMoveToPositionDialog(index) : () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AssessmentDetailPage(assessmentId: assessment.id),
+        ),
+      ).then((_) {
+        ref.read(assessmentProvider.notifier).loadAssessments(widget.classId);
+      }),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE0E0E0),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(1, 1, 1, 2.5),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: Row(
+            children: [
+              if (_isReorderMode)
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: const Color(0xFF2B2B2B),
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${index + 1}',
+                      style: const TextStyle(
+                        color: Color(0xFF2B2B2B),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                )
+              else
+                const Icon(
+                  Icons.quiz_outlined,
+                  color: Color(0xFF2B2B2B),
+                  size: 20,
+                ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      assessment.title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF202020),
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${assessment.questionCount} question(s)',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF999999),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Color(0xFFCCCCCC),
+                size: 22,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (isAnimated) {
+      return Transform.translate(
+        key: ValueKey(assessment.id),
+        offset: Offset(0, animOffset),
+        child: card,
+      );
+    }
+    return card;
   }
 
   @override
@@ -55,38 +281,61 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  ElevatedButton.icon(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => CreateAssessmentPage(classId: widget.classId),
+                  if (_isReorderMode) ...[
+                    TextButton(
+                      onPressed: () => setState(() { _isReorderMode = false; }),
+                      child: const Text('Cancel'),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: _exitReorderMode,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2B2B2B),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                    ).then((result) {
-                      if (result == true) {
-                        ref.read(assessmentProvider.notifier).loadAssessments(widget.classId);
-                      }
-                    }),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2B2B2B),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
+                      child: const Text('Done', style: TextStyle(fontWeight: FontWeight.w600)),
+                    ),
+                  ] else ...[
+                    OutlinedButton.icon(
+                      onPressed: () => _enterReorderMode(assessmentState.assessments),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF2B2B2B),
+                        side: const BorderSide(color: Color(0xFF2B2B2B)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                      icon: const Icon(Icons.reorder_rounded, size: 18),
+                      label: const Text('Reorder', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CreateAssessmentPage(classId: widget.classId),
+                        ),
+                      ).then((result) {
+                        if (result == true) {
+                          ref.read(assessmentProvider.notifier).loadAssessments(widget.classId);
+                        }
+                      }),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2B2B2B),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: const Text(
+                        'Create',
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                       ),
                     ),
-                    icon: const Icon(Icons.add_rounded, size: 18),
-                    label: const Text(
-                      'Create',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -100,32 +349,64 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
                     )
                   : assessmentState.assessments.isEmpty
                       ? const EmptyAssessmentListState()
-                      : RefreshIndicator(
-                          onRefresh: () => ref
-                              .read(assessmentProvider.notifier)
-                              .loadAssessments(widget.classId),
-                          color: const Color(0xFF2B2B2B),
-                          child: ListView.builder(
-                            padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                            itemCount: assessmentState.assessments.length,
-                            itemBuilder: (context, index) {
-                              final assessment = assessmentState.assessments[index];
-                              return TeacherAssessmentCard(
-                                assessment: assessment,
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => AssessmentDetailPage(
-                                      assessmentId: assessment.id,
-                                    ),
-                                  ),
-                                ).then((_) => ref
-                                    .read(assessmentProvider.notifier)
-                                    .loadAssessments(widget.classId)),
-                              );
-                            },
-                          ),
-                        ),
+                      : _isReorderMode
+                          ? AnimatedBuilder(
+                              animation: _animController,
+                              builder: (context, _) {
+                                return ListView.builder(
+                                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                                  itemCount: _reorderBuffer.length,
+                                  itemBuilder: (context, index) {
+                                    final assessment = _reorderBuffer[index];
+                                    final oldIndex = _animatingIndices[assessment.id];
+
+                                    // Calculate animation offset based on old position
+                                    double animOffset = 0;
+                                    if (oldIndex != null && oldIndex != index) {
+                                      const cardHeight = 92.0;
+                                      animOffset = (oldIndex - index) * cardHeight;
+                                    }
+
+                                    // Interpolate from old position to current position
+                                    final tween = Tween<double>(begin: animOffset, end: 0);
+                                    final currentOffset = tween.evaluate(_animController);
+
+                                    return _buildAssessmentCard(
+                                      assessment,
+                                      index,
+                                      isAnimated: true,
+                                      animOffset: currentOffset,
+                                    );
+                                  },
+                                );
+                              },
+                            )
+                          : RefreshIndicator(
+                              onRefresh: () => ref
+                                  .read(assessmentProvider.notifier)
+                                  .loadAssessments(widget.classId),
+                              color: const Color(0xFF2B2B2B),
+                              child: ListView.builder(
+                                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                                itemCount: assessmentState.assessments.length,
+                                itemBuilder: (context, index) {
+                                  final assessment = assessmentState.assessments[index];
+                                  return TeacherAssessmentCard(
+                                    assessment: assessment,
+                                    onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => AssessmentDetailPage(
+                                          assessmentId: assessment.id,
+                                        ),
+                                      ),
+                                    ).then((_) => ref
+                                        .read(assessmentProvider.notifier)
+                                        .loadAssessments(widget.classId)),
+                                  );
+                                },
+                              ),
+                            ),
             ),
           ],
         ),

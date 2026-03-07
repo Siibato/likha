@@ -42,6 +42,7 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           showResultsImmediately: showResultsImmediately ?? false,
           resultsReleased: false,
           isPublished: false,
+          orderIndex: 0,
           totalPoints: 0,
           questionCount: 0,
           submissionCount: 0,
@@ -119,6 +120,7 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           showResultsImmediately: showResultsImmediately ?? false,
           resultsReleased: false,
           isPublished: false,
+          orderIndex: 0,
           totalPoints: 0,
           questionCount: 0,
           submissionCount: 0,
@@ -171,6 +173,41 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
 
       await remoteDataSource.deleteAssessment(assessmentId: assessmentId);
       await localDataSource.deleteAssessmentLocally(assessmentId: assessmentId);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  ResultVoid reorderAllAssessments({
+    required String classId,
+    required List<String> assessmentIds,
+  }) async {
+    try {
+      if (!serverReachabilityService.isServerReachable) {
+        for (int i = 0; i < assessmentIds.length; i++) {
+          await syncQueue.enqueue(SyncQueueEntry(
+            id: const Uuid().v4(),
+            entityType: SyncEntityType.assessment,
+            operation: SyncOperation.update,
+            payload: {'id': assessmentIds[i], 'order_index': i},
+            status: SyncStatus.pending,
+            retryCount: 0,
+            maxRetries: 5,
+            createdAt: DateTime.now(),
+          ));
+        }
+        return const Right(null);
+      }
+      await remoteDataSource.reorderAllAssessments(
+        classId: classId,
+        assessmentIds: assessmentIds,
+      );
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

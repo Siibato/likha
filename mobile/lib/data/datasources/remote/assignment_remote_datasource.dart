@@ -24,6 +24,11 @@ abstract class AssignmentRemoteDataSource {
 
   Future<AssignmentModel> publishAssignment({required String assignmentId});
 
+  Future<void> reorderAllAssignments({
+    required String classId,
+    required List<String> assignmentIds,
+  });
+
   Future<List<SubmissionListItemModel>> getSubmissions({
     required String assignmentId,
   });
@@ -141,6 +146,21 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
     try {
       return await _dioClient.postTyped(
         ApiEndpoints.assignmentPublish(assignmentId),
+      );
+    } on DioException catch (e) {
+      throw _dioClient.handleError(e);
+    }
+  }
+
+  @override
+  Future<void> reorderAllAssignments({
+    required String classId,
+    required List<String> assignmentIds,
+  }) async {
+    try {
+      await _dioClient.postTyped(
+        ApiEndpoints.classAssignmentsReorder(classId),
+        data: {'assignment_ids': assignmentIds},
       );
     } on DioException catch (e) {
       throw _dioClient.handleError(e);

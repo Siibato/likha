@@ -29,6 +29,11 @@ abstract class AssessmentRemoteDataSource {
 
   Future<AssessmentModel> releaseResults({required String assessmentId});
 
+  Future<void> reorderAllAssessments({
+    required String classId,
+    required List<String> assessmentIds,
+  });
+
   Future<List<QuestionModel>> addQuestions({
     required String assessmentId,
     required List<Map<String, dynamic>> questions,
@@ -182,6 +187,21 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
     try {
       return await _dioClient.postTyped(
         ApiEndpoints.assessmentReleaseResults(assessmentId),
+      );
+    } on DioException catch (e) {
+      throw _dioClient.handleError(e);
+    }
+  }
+
+  @override
+  Future<void> reorderAllAssessments({
+    required String classId,
+    required List<String> assessmentIds,
+  }) async {
+    try {
+      await _dioClient.postTyped(
+        ApiEndpoints.classAssessmentsReorder(classId),
+        data: {'assessment_ids': assessmentIds},
       );
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
