@@ -16,8 +16,8 @@ use crate::services::class::ClassService;
 use crate::services::learning_material::LearningMaterialService;
 use crate::services::sync_push::SyncPushService;
 use crate::services::sync_conflict_service::SyncConflictService;
-use crate::services::sync_full_service::SyncFullService;
-use crate::services::sync_delta_service::SyncDeltaService;
+use crate::services::sync_full::SyncFullService;
+use crate::services::sync_delta::SyncDeltaService;
 
 pub fn api_routes(
     auth_service: Arc<AuthService>,

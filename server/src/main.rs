@@ -26,8 +26,8 @@ use crate::services::learning_material::LearningMaterialService;
 use crate::services::entitlement::EntitlementService;
 use crate::services::sync_push::SyncPushService;
 use crate::services::sync_conflict_service::SyncConflictService;
-use crate::services::sync_full_service::SyncFullService;
-use crate::services::sync_delta_service::SyncDeltaService;
+use crate::services::sync_full::SyncFullService;
+use crate::services::sync_delta::SyncDeltaService;
 use crate::db::repositories::{
     manifest_repository::ManifestRepository,
     sync_conflict_repository::SyncConflictRepository,

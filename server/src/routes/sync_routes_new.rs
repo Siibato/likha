@@ -9,8 +9,8 @@ use crate::handlers::{
     sync_push_handler,
 };
 use crate::services::{
-    sync_conflict_service::SyncConflictService, sync_delta_service::SyncDeltaService,
-    sync_full_service::SyncFullService,
+    sync_conflict_service::SyncConflictService, sync_delta::SyncDeltaService,
+    sync_full::SyncFullService,
     sync_push::SyncPushService,
 };
 

@@ -7,6 +7,7 @@ use crate::utils::{AppError, AppResult};
 use ::entity::{
     classes, class_participants, assessments, assessment_questions, assessment_submissions,
     assignments_hw, assignment_submissions, learning_materials, activity_logs, users,
+    material_files, submission_files,
 };
 
 /// Record entry in the manifest (id + updated_at + deleted flag)
@@ -66,6 +67,12 @@ impl ManifestRepository {
 
         Ok(map)
     }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // SECTION A: Manifest Queries
+    // Used by: EntitlementService::get_user_manifest()
+    // Returns lightweight ManifestEntry (id + updated_at + deleted flag only)
+    // ─────────────────────────────────────────────────────────────────────────────
 
     /// Get manifest entries for classes (with timestamps for delta sync)
     pub async fn get_classes_manifest(
@@ -296,6 +303,12 @@ impl ManifestRepository {
             })
             .collect())
     }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // SECTION B: Paginated Full-Data Queries
+    // Used by: SyncFullService (batch request branch)
+    // Returns full JSON records with all fields
+    // ─────────────────────────────────────────────────────────────────────────────
 
     /// Get full paginated records for a set of IDs
     /// limit: max records per page (capped at 500)
@@ -574,6 +587,12 @@ impl ManifestRepository {
         })
         .await
     }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // SECTION C: Delta / "Since" Queries
+    // Used by: SyncDeltaService::get_deltas()
+    // Returns records modified after a given timestamp (for incremental sync)
+    // ─────────────────────────────────────────────────────────────────────────────
 
     /// Get classes that have been updated since a given time
     pub async fn get_classes_since(
@@ -894,6 +913,11 @@ impl ManifestRepository {
         Ok(records)
     }
 
+    // ─────────────────────────────────────────────────────────────────────────────
+    // SECTION D: Role-Aware Submission Queries
+    // Used by: SyncFullService (submission fetch, role-based branching)
+    // ─────────────────────────────────────────────────────────────────────────────
+
     /// Get assessment submissions for a student filtered by assessment IDs (for batch full sync)
     /// Used when a student requests full sync for specific classes (assessments)
     pub async fn get_student_submissions_for_assessments(
@@ -1033,6 +1057,54 @@ impl ManifestRepository {
             })
         })
         .await
+    }
+
+    /// Fetch all material files for the given material IDs.
+    /// Used by full sync to include file metadata with learning materials.
+    pub async fn get_material_files_for_materials(
+        &self,
+        material_ids: Vec<Uuid>,
+    ) -> AppResult<Vec<Value>> {
+        let files = material_files::Entity::find()
+            .filter(material_files::Column::MaterialId.is_in(material_ids))
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to fetch material files: {}", e)))?;
+        Ok(files
+            .into_iter()
+            .map(|f| json!({
+                "id": f.id.to_string(),
+                "material_id": f.material_id.to_string(),
+                "file_name": f.file_name,
+                "file_type": f.file_type,
+                "file_size": f.file_size,
+                "uploaded_at": f.uploaded_at.to_string(),
+            }))
+            .collect())
+    }
+
+    /// Fetch all submission files for the given submission IDs.
+    /// Used by full sync to include file metadata with assessment submissions.
+    pub async fn get_submission_files_for_submissions(
+        &self,
+        submission_ids: Vec<Uuid>,
+    ) -> AppResult<Vec<Value>> {
+        let files = submission_files::Entity::find()
+            .filter(submission_files::Column::SubmissionId.is_in(submission_ids))
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to fetch submission files: {}", e)))?;
+        Ok(files
+            .into_iter()
+            .map(|f| json!({
+                "id": f.id.to_string(),
+                "submission_id": f.submission_id.to_string(),
+                "file_name": f.file_name,
+                "file_type": f.file_type,
+                "file_size": f.file_size,
+                "uploaded_at": f.uploaded_at.to_string(),
+            }))
+            .collect())
     }
 
     /// Generic pagination helper — handles limit capping, has_more detection, and record collection
