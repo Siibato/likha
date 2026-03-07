@@ -17,21 +17,29 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
       );
       if (results.isEmpty) throw CacheException('No cached materials for class $classId');
 
-      // Use file_count from server (already cached in DB)
-      // This value comes from the manifest API and is accurate
-      final materials = results.map((r) {
-        return LearningMaterialModel(
-          id: r['id'] as String,
-          classId: r['class_id'] as String,
-          title: r['title'] as String,
-          description: r['description'] as String?,
-          contentText: r['content_text'] as String?,
-          orderIndex: r['order_index'] as int,
-          fileCount: r['file_count'] as int? ?? 0,
-          createdAt: DateTime.parse(r['created_at'] as String),
-          updatedAt: DateTime.parse(r['updated_at'] as String),
+      final materials = <LearningMaterialModel>[];
+
+      // Compute actual file count from the material_files table for each material
+      for (final result in results) {
+        final materialId = result['id'] as String;
+        final countResult = await db.rawQuery(
+          'SELECT COUNT(*) as count FROM material_files WHERE material_id = ? AND deleted_at IS NULL',
+          [materialId],
         );
-      }).toList();
+        final actualCount = countResult.first['count'] as int? ?? 0;
+
+        materials.add(LearningMaterialModel(
+          id: materialId,
+          classId: result['class_id'] as String,
+          title: result['title'] as String,
+          description: result['description'] as String?,
+          contentText: result['content_text'] as String?,
+          orderIndex: result['order_index'] as int,
+          fileCount: actualCount,
+          createdAt: DateTime.parse(result['created_at'] as String),
+          updatedAt: DateTime.parse(result['updated_at'] as String),
+        ));
+      }
 
       return materials;
     } catch (e) {
@@ -53,6 +61,14 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
       if (results.isEmpty) throw CacheException('Material $materialId not cached');
 
       final r = results.first;
+
+      // Compute actual file count from the material_files table
+      final countResult = await db.rawQuery(
+        'SELECT COUNT(*) as count FROM material_files WHERE material_id = ? AND deleted_at IS NULL',
+        [materialId],
+      );
+      final actualCount = countResult.first['count'] as int? ?? 0;
+
       return LearningMaterialModel(
         id: r['id'] as String,
         classId: r['class_id'] as String,
@@ -60,7 +76,7 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
         description: r['description'] as String?,
         contentText: r['content_text'] as String?,
         orderIndex: r['order_index'] as int,
-        fileCount: r['file_count'] as int? ?? 0,
+        fileCount: actualCount,
         createdAt: DateTime.parse(r['created_at'] as String),
         updatedAt: DateTime.parse(r['updated_at'] as String),
       );
