@@ -281,9 +281,18 @@ pub async fn submit_assessment(
         return AppError::Forbidden("Student access required".to_string()).into_response();
     }
 
+    println!("📤 [HANDLER] submit_assessment() START - submission_id: {}, student_id: {}", submission_id, auth_user.user_id);
+
     match service.submit_assessment(submission_id, auth_user.user_id).await {
-        Ok(response) => success_response(response, StatusCode::OK).into_response(),
-        Err(e) => e.into_response(),
+        Ok(response) => {
+            println!("📤 [HANDLER] submit_assessment() SUCCESS - returning response: is_submitted={}, submitted_at={:?}, auto_score={}, final_score={}",
+                response.is_submitted, response.submitted_at, response.auto_score, response.final_score);
+            success_response(response, StatusCode::OK).into_response()
+        },
+        Err(e) => {
+            println!("📤 [HANDLER] submit_assessment() ERROR - {:?}", e);
+            e.into_response()
+        },
     }
 }
 

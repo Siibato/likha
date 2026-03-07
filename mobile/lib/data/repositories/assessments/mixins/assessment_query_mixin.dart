@@ -18,7 +18,72 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
     try {
       try {
         // STEP 1: Try cache first (immediate, non-blocking)
+        print('📚 [QueryMixin] getAssessments() - loading from cache for classId: $classId');
         final cachedAssessments = await localDataSource.getCachedAssessments(classId, publishedOnly: publishedOnly);
+        print('📚 [QueryMixin] getAssessments() - loaded ${cachedAssessments.length} cached assessments (before dynamic computation)');
+        for (final a in cachedAssessments) {
+          print('📚 [QueryMixin]   - ${a.title}: submissionCount=${a.submissionCount}');
+        }
+
+        // STEP 1b: Get current student ID for submission state check
+        String? currentStudentId;
+        try {
+          currentStudentId = await storageService.getUserId();
+          print('📚 [QueryMixin] getAssessments() - got currentStudentId: $currentStudentId');
+        } catch (e) {
+          print('⚠️  [QueryMixin] getAssessments() - could not get current student ID: $e');
+        }
+
+        // STEP 1c: Compute submissionCount dynamically from actual submissions in DB
+        print('📚 [QueryMixin] getAssessments() - computing dynamic submission counts and isSubmitted flags...');
+        final assessmentsWithDynamicCounts = <Assessment>[];
+        for (final assessment in cachedAssessments) {
+          try {
+            final actualSubmissionCount = await localDataSource.getCachedSubmissionCount(assessment.id);
+            bool? isSubmitted;
+
+            // Check if current student has submitted (if we have their ID)
+            if (currentStudentId != null) {
+              try {
+                isSubmitted = await localDataSource.hasStudentSubmittedAssessment(
+                  assessment.id,
+                  currentStudentId,
+                );
+                print('📚 [QueryMixin]   - ${assessment.title}: isSubmitted=$isSubmitted');
+              } catch (e) {
+                print('⚠️  [QueryMixin]   - ${assessment.title}: error getting submission status: $e');
+              }
+            }
+
+            print('📚 [QueryMixin]   - ${assessment.title}: cached=${assessment.submissionCount}, actual=$actualSubmissionCount, isSubmitted=$isSubmitted');
+            if (actualSubmissionCount != assessment.submissionCount || isSubmitted != null) {
+              // Create new assessment with updated submissionCount and isSubmitted
+              assessmentsWithDynamicCounts.add(Assessment(
+                id: assessment.id,
+                classId: assessment.classId,
+                title: assessment.title,
+                description: assessment.description,
+                timeLimitMinutes: assessment.timeLimitMinutes,
+                openAt: assessment.openAt,
+                closeAt: assessment.closeAt,
+                showResultsImmediately: assessment.showResultsImmediately,
+                resultsReleased: assessment.resultsReleased,
+                isPublished: assessment.isPublished,
+                totalPoints: assessment.totalPoints,
+                questionCount: assessment.questionCount,
+                submissionCount: actualSubmissionCount,
+                isSubmitted: isSubmitted,
+                createdAt: assessment.createdAt,
+                updatedAt: assessment.updatedAt,
+              ));
+            } else {
+              assessmentsWithDynamicCounts.add(assessment);
+            }
+          } catch (e) {
+            print('⚠️  [QueryMixin]   - ${assessment.title}: error getting submission count/status, using cached: $e');
+            assessmentsWithDynamicCounts.add(assessment);
+          }
+        }
 
         // STEP 2: If cache hit, trigger background fetch to check for updates
         if (!skipBackgroundRefresh) {
@@ -26,7 +91,7 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
         }
 
         // STEP 3: Return cache immediately (don't wait for remote)
-        return Right(cachedAssessments);
+        return Right(assessmentsWithDynamicCounts);
       } on CacheException {
         // Cache miss: return empty immediately, trigger background fetch to populate cache
         // Don't block on remote fetch — offline-first means immediate return
@@ -226,16 +291,23 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
   void _backgroundFetchAssessments(String classId, {bool publishedOnly = false}) {
     Future.microtask(() async {
       try {
+        print('🔄 [QueryMixin] _backgroundFetchAssessments() - fetching fresh assessments for classId: $classId');
         final fresh =
             await remoteDataSource.getAssessments(classId: classId);
+        print('🔄 [QueryMixin] _backgroundFetchAssessments() - received ${fresh.length} fresh assessments');
+        for (final a in fresh) {
+          print('🔄 [QueryMixin]   - ${a.title}: submissionCount=${a.submissionCount}');
+        }
 
         // Try to read current cache
         final List<Assessment> cached;
         try {
           cached = await localDataSource.getCachedAssessments(classId, publishedOnly: publishedOnly);
+          print('🔄 [QueryMixin] _backgroundFetchAssessments() - cached ${cached.length} assessments found');
         } on CacheException {
           // Cache miss: initial sync may not have completed yet
           // Write fresh data and notify page to reload with populated cache
+          print('🔄 [QueryMixin] _backgroundFetchAssessments() - cache miss, writing fresh data');
           await localDataSource.cacheAssessments(fresh);
           dataEventBus.notifyAssessmentsChanged(classId);
           return;
@@ -243,16 +315,22 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
 
         // Cache hit: compare and update only if changed
         if (_assessmentsHaveChanged(cached, fresh)) {
+          print('🔄 [QueryMixin] _backgroundFetchAssessments() - assessments changed, updating cache');
           await localDataSource.cacheAssessments(fresh);
           dataEventBus.notifyAssessmentsChanged(classId);
+        } else {
+          print('🔄 [QueryMixin] _backgroundFetchAssessments() - no changes detected, skipping cache update');
         }
         // If nothing changed, do nothing (no DB write, no notification)
       } on NetworkException {
         // Network failure during background fetch: silent fail, cache persists
+        print('❌ [QueryMixin] _backgroundFetchAssessments() - network error, cache persists');
       } on ServerException {
         // Server error during background fetch: silent fail, cache persists
-      } catch (_) {
+        print('❌ [QueryMixin] _backgroundFetchAssessments() - server error, cache persists');
+      } catch (e) {
         // Other errors — silent fail, stale cache stays
+        print('❌ [QueryMixin] _backgroundFetchAssessments() - unexpected error: $e, cache persists');
       }
     });
   }

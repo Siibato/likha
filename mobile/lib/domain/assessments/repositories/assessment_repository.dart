@@ -75,6 +75,11 @@ abstract class AssessmentRepository {
     required String studentUsername,
   });
 
+  ResultFuture<SubmissionSummary?> getStudentSubmission({
+    required String assessmentId,
+    required String studentId,
+  });
+
   ResultVoid saveAnswers({
     required String submissionId,
     required List<Map<String, dynamic>> answers,

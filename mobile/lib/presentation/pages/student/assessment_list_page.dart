@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
-import 'package:likha/presentation/pages/student/take_assessment_page.dart';
-import 'package:likha/presentation/pages/student/assessment_results_page.dart';
+import 'package:likha/presentation/pages/student/assessment_detail_page.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/student/widgets/assessment_card.dart';
 import 'package:likha/presentation/pages/student/widgets/empty_assessment_state.dart';
@@ -30,45 +29,63 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
 
   AssessmentStatus _getStatus(Assessment assessment) {
     final now = DateTime.now();
+    print('📋 [ListPage] _getStatus() - assessment: ${assessment.title}, submissionCount: ${assessment.submissionCount}, isSubmitted: ${assessment.isSubmitted}, resultsReleased: ${assessment.resultsReleased}, showResultsImmediately: ${assessment.showResultsImmediately}');
+    print('📋 [ListPage] _getStatus() - openAt: ${assessment.openAt}, closeAt: ${assessment.closeAt}, now: $now');
+
     if (assessment.submissionCount > 0) {
+      final resultsAccessible =
+          assessment.resultsReleased || assessment.showResultsImmediately;
+      final isSubmitted = assessment.isSubmitted ?? false;
+
+      print('📋 [ListPage] _getStatus() - has submissions! resultsAccessible: $resultsAccessible, isSubmitted: $isSubmitted');
+
+      // Results are out → show "Submitted" so user knows to go view them
+      if (resultsAccessible) {
+        print('📋 [ListPage] _getStatus() - returning SUBMITTED (results released)');
+        return AssessmentStatus.submitted;
+      }
+
+      // Student has submitted, awaiting results → show "Submitted"
+      if (isSubmitted) {
+        print('📋 [ListPage] _getStatus() - returning SUBMITTED (student submitted)');
+        return AssessmentStatus.submitted;
+      }
+
+      // Started but not submitted — check if still within window
+      final withinWindow =
+          now.isAfter(assessment.openAt) && now.isBefore(assessment.closeAt);
+      print('📋 [ListPage] _getStatus() - started but not submitted, withinWindow: $withinWindow');
+      if (withinWindow) {
+        print('📋 [ListPage] _getStatus() - returning IN_PROGRESS (can resume)');
+        return AssessmentStatus.inProgress;
+      }
+      // Past window, not submitted → show "Submitted" (too late)
+      print('📋 [ListPage] _getStatus() - returning SUBMITTED (past window, not submitted)');
       return AssessmentStatus.submitted;
     }
+
+    print('📋 [ListPage] _getStatus() - no submissions, checking time window');
     if (now.isBefore(assessment.openAt)) {
+      print('📋 [ListPage] _getStatus() - returning NOT_YET_OPEN');
       return AssessmentStatus.notYetOpen;
     }
     if (now.isAfter(assessment.closeAt)) {
+      print('📋 [ListPage] _getStatus() - returning CLOSED');
       return AssessmentStatus.closed;
     }
+    print('📋 [ListPage] _getStatus() - returning AVAILABLE');
     return AssessmentStatus.available;
   }
 
   void _onAssessmentTap(Assessment assessment) {
-    final status = _getStatus(assessment);
-    
-    if (status == AssessmentStatus.available) {
-      // Start assessment directly
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => TakeAssessmentPage(
-            assessmentId: assessment.id,
-            timeLimitMinutes: assessment.timeLimitMinutes,
-          ),
-        ),
-      ).then((_) {
-        ref
-            .read(assessmentProvider.notifier)
-            .loadAssessments(widget.classId, publishedOnly: true);
-      });
-    } else if (status == AssessmentStatus.submitted &&
-        (assessment.resultsReleased || assessment.showResultsImmediately)) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => AssessmentResultsPage(assessmentId: assessment.id),
-        ),
-      );
-    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AssessmentDetailPage(assessment: assessment),
+      ),
+    ).then((_) {
+      ref.read(assessmentProvider.notifier).loadAssessments(widget.classId, publishedOnly: true);
+    });
   }
 
   @override

@@ -34,6 +34,23 @@ class SubmissionSummaryModel extends SubmissionSummary {
       isSubmitted: json['is_submitted'] as bool,
     );
   }
+
+  /// Maps SQLite row to model (used by local datasource)
+  factory SubmissionSummaryModel.fromMap(Map<String, dynamic> map) {
+    return SubmissionSummaryModel(
+      id: map['id'] as String,
+      studentId: map['student_id'] as String? ?? '',
+      studentName: map['student_name'] as String? ?? '',
+      studentUsername: map['student_username'] as String? ?? '',
+      startedAt: DateTime.parse(map['started_at'] as String),
+      submittedAt: map['submitted_at'] != null
+          ? DateTime.parse(map['submitted_at'] as String)
+          : null,
+      autoScore: (map['auto_score'] as int?)?.toDouble() ?? 0.0,
+      finalScore: (map['final_score'] as int?)?.toDouble() ?? 0.0,
+      isSubmitted: (map['is_submitted'] as int?) == 1,
+    );
+  }
 }
 
 class SubmissionDetailModel extends SubmissionDetail {

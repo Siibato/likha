@@ -1107,6 +1107,32 @@ class SyncManager {
   ) async {
     for (final record in records) {
       final data = record as Map<String, dynamic>;
+      final id = data['id'] as String?;
+      final serverIsSubmitted = data['is_submitted'] == true;
+
+      // ✅ Guard: never let the server un-submit a locally-submitted pending row.
+      // When sync_status='pending', the student submitted offline and the op hasn't
+      // reached the server yet. The server's stale is_submitted=false must NOT
+      // overwrite local is_submitted=1.
+      // When server confirms is_submitted=true (after outbound sync), the server
+      // value matches local — the guard condition is false → REPLACE proceeds normally.
+      if (id != null && !serverIsSubmitted) {
+        final existing = await db.query(
+          'assessment_submissions',
+          columns: ['is_submitted', 'sync_status'],
+          where: 'id = ?',
+          whereArgs: [id],
+        );
+        if (existing.isNotEmpty) {
+          final localIsSubmitted = (existing.first['is_submitted'] as int?) == 1;
+          final localSyncStatus = existing.first['sync_status'] as String?;
+          if (localIsSubmitted && localSyncStatus == 'pending') {
+            // Local has submitted state, server has stale not-submitted state → skip
+            continue;
+          }
+        }
+      }
+
       final student = studentMap[data['student_id']] ?? {};
 
       final answersJson = data.containsKey('answers') && data['answers'] != null

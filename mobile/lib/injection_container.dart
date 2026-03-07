@@ -28,6 +28,7 @@ import 'package:likha/domain/assessments/usecases/get_assessment_detail.dart';
 import 'package:likha/domain/assessments/usecases/get_assessments.dart';
 import 'package:likha/domain/assessments/usecases/get_statistics.dart';
 import 'package:likha/domain/assessments/usecases/get_student_results.dart';
+import 'package:likha/domain/assessments/usecases/get_student_submission.dart';
 import 'package:likha/domain/assessments/usecases/get_submission_detail.dart';
 import 'package:likha/domain/assessments/usecases/get_submissions.dart';
 import 'package:likha/domain/assessments/usecases/override_answer.dart';
@@ -344,6 +345,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SaveAnswers(sl()));
   sl.registerLazySingleton(() => SubmitAssessment(sl()));
   sl.registerLazySingleton(() => GetStudentResults(sl()));
+  sl.registerLazySingleton(() => GetStudentSubmission(sl()));
   sl.registerLazySingleton(() => UpdateAssessment(sl()));
   sl.registerLazySingleton(() => UpdateQuestion(sl()));
   sl.registerLazySingleton(() => DeleteQuestion(sl()));

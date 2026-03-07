@@ -46,6 +46,10 @@ abstract class AssessmentLocalDataSource {
     required String studentUsername,
   });
   Future<StartSubmissionResultModel?> getCachedStartResult(String submissionId);
+  Future<SubmissionSummaryModel?> getCachedStudentSubmission(
+    String assessmentId,
+    String studentId,
+  );
   Future<void> submitAssessmentLocally({
     required String submissionId,
     required String assessmentId,
@@ -72,6 +76,8 @@ abstract class AssessmentLocalDataSource {
     required List<QuestionModel> questions,
   });
   Future<List<SubmissionSummaryModel>> getCachedSubmissions(String assessmentId);
+  Future<int> getCachedSubmissionCount(String assessmentId);
+  Future<bool> hasStudentSubmittedAssessment(String assessmentId, String studentId);
   Future<void> cacheSubmissions(String assessmentId, List<SubmissionSummaryModel> submissions);
   Future<AssessmentStatisticsModel?> getCachedStatistics(String assessmentId);
   Future<void> cacheStatistics(AssessmentStatisticsModel statistics);

@@ -62,6 +62,10 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
             'show_results_immediately': showResultsImmediately,
         },
       );
+
+      // Cache the assessment locally so subsequent operations (like addQuestions) can reference it
+      await localDataSource.cacheAssessments([result]);
+
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
