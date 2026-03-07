@@ -102,7 +102,7 @@ import 'package:likha/domain/learning_materials/usecases/delete_material.dart';
 import 'package:likha/domain/learning_materials/usecases/download_file.dart' as material;
 import 'package:likha/domain/learning_materials/usecases/get_material_detail.dart';
 import 'package:likha/domain/learning_materials/usecases/get_materials.dart';
-import 'package:likha/domain/learning_materials/usecases/reorder_material.dart';
+import 'package:likha/domain/learning_materials/usecases/reorder_material.dart' as reorder;
 import 'package:likha/domain/learning_materials/usecases/update_material.dart';
 import 'package:likha/domain/learning_materials/usecases/upload_file.dart' as material;
 import 'package:likha/services/storage_service.dart';
@@ -373,7 +373,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetMaterialDetail(sl()));
   sl.registerLazySingleton(() => UpdateMaterial(sl()));
   sl.registerLazySingleton(() => DeleteMaterial(sl()));
-  sl.registerLazySingleton(() => ReorderMaterial(sl()));
+  sl.registerLazySingleton(() => reorder.ReorderMaterial(sl()));
+  sl.registerLazySingleton(() => reorder.ReorderAllMaterials(sl()));
   sl.registerLazySingleton(() => material.UploadFile(sl()));
   sl.registerLazySingleton(() => material.DeleteFile(sl()));
   sl.registerLazySingleton(() => material.DownloadFile(sl()));

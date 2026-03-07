@@ -392,6 +392,9 @@ class ApiEndpoints {
         LearningMaterialModel.fromJson,
       );
 
+  static ApiEndpoint<void> classMaterialsReorder(String classId) =>
+      ApiEndpoint('/api/v1/classes/$classId/materials/reorder', (_) {});
+
   static ApiEndpoint<MaterialFileModel> materialUploadFile(String materialId) =>
       ApiEndpoint<MaterialFileModel>.fromModel(
         '/api/v1/materials/$materialId/files',

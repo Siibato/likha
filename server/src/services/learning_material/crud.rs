@@ -1,7 +1,7 @@
 use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
 use crate::schema::learning_material_schema::{
-    CreateMaterialRequest, UpdateMaterialRequest, MaterialResponse, MaterialListResponse, MaterialDetailResponse, FileMetadataResponse, ReorderMaterialRequest,
+    CreateMaterialRequest, UpdateMaterialRequest, MaterialResponse, MaterialListResponse, MaterialDetailResponse, FileMetadataResponse, ReorderMaterialRequest, ReorderMaterialsRequest,
 };
 
 impl super::LearningMaterialService {
@@ -233,7 +233,7 @@ impl super::LearningMaterialService {
         self.verify_teacher_owns_class(material.class_id, teacher_id)
             .await?;
 
-        self.material_repo.delete_material(material_id).await?;
+        self.material_repo.soft_delete(material_id).await?;
 
         let _ = self
             .activity_log_repo
@@ -329,6 +329,20 @@ impl super::LearningMaterialService {
             None,
         ).await;
 
+        Ok(())
+    }
+
+    pub async fn reorder_materials(
+        &self,
+        class_id: Uuid,
+        request: ReorderMaterialsRequest,
+        teacher_id: Uuid,
+    ) -> AppResult<()> {
+        self.verify_teacher_owns_class(class_id, teacher_id).await?;
+        if request.material_ids.is_empty() {
+            return Ok(());
+        }
+        self.material_repo.reorder_materials(class_id, request.material_ids).await?;
         Ok(())
     }
 }

@@ -111,6 +111,21 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
   }
 
   @override
+  Future<void> deleteMaterialLocally(String materialId) async {
+    try {
+      final db = await localDatabase.database;
+      await db.update(
+        'learning_materials',
+        {'deleted_at': DateTime.now().toIso8601String()},
+        where: 'id = ?',
+        whereArgs: [materialId],
+      );
+    } catch (e) {
+      throw CacheException('Failed to delete material locally: $e');
+    }
+  }
+
+  @override
   Future<void> stageMaterialFileForUpload({
     required String materialId,
     required String fileName,

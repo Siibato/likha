@@ -162,6 +162,11 @@ mixin LearningMaterialCrudMixin on LearningMaterialRepositoryBase {
       }
 
       await remoteDataSource.deleteMaterial(materialId: materialId);
+      try {
+        await localDataSource.deleteMaterialLocally(materialId);
+      } catch (_) {
+        // Non-critical: cleaned up on next sync
+      }
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -211,6 +216,43 @@ mixin LearningMaterialCrudMixin on LearningMaterialRepositoryBase {
         newOrderIndex: newOrderIndex,
       );
       return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  ResultVoid reorderAllMaterials({
+    required String classId,
+    required List<String> materialIds,
+  }) async {
+    try {
+      if (!serverReachabilityService.isServerReachable) {
+        // Enqueue one update entry per material with its new order_index
+        for (int i = 0; i < materialIds.length; i++) {
+          await syncQueue.enqueue(SyncQueueEntry(
+            id: const Uuid().v4(),
+            entityType: SyncEntityType.learningMaterial,
+            operation: SyncOperation.update,
+            payload: {'id': materialIds[i], 'order_index': i},
+            status: SyncStatus.pending,
+            retryCount: 0,
+            maxRetries: 5,
+            createdAt: DateTime.now(),
+          ));
+        }
+        return const Right(null);
+      }
+
+      await remoteDataSource.reorderAllMaterials(
+        classId: classId,
+        materialIds: materialIds,
+      );
+      return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } on NetworkException catch (e) {

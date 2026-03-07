@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
+import 'package:likha/presentation/widgets/styled_dialog.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -291,6 +292,40 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
     );
   }
 
+  void _confirmDeleteMaterial() {
+    final title = ref.read(learningMaterialProvider).currentMaterial?.title ?? 'this module';
+    showDialog(
+      context: context,
+      builder: (ctx) => StyledDialog(
+        title: 'Delete Module',
+        subtitle: 'This action cannot be undone',
+        content: Text(
+          'Are you sure you want to permanently delete "$title" and all of its contents?',
+          style: const TextStyle(
+            fontSize: 13,
+            color: Color(0xFF666666),
+            height: 1.5,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        actions: [
+          StyledDialogAction(
+            label: 'Cancel',
+            onPressed: () => Navigator.pop(ctx),
+          ),
+          StyledDialogAction(
+            label: 'Delete',
+            isPrimary: true,
+            onPressed: () {
+              Navigator.pop(ctx);
+              ref.read(learningMaterialProvider.notifier).deleteMaterial(widget.materialId);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(learningMaterialProvider);
@@ -299,6 +334,13 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
     final isTeacher = user?.role == 'teacher' || user?.role == 'admin';
 
     ref.listen<LearningMaterialState>(learningMaterialProvider, (prev, next) {
+      // Intercept delete success before showing snackbar
+      if (next.successMessage == 'Material deleted successfully') {
+        ref.read(learningMaterialProvider.notifier).clearMessages();
+        if (mounted) Navigator.pop(context, true);
+        return;
+      }
+
       if (next.error != null && prev?.error != next.error) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -337,6 +379,17 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
             color: Color(0xFF2B2B2B),
           ),
         ),
+        actions: [
+          if (isTeacher)
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'delete') _confirmDeleteMaterial();
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'delete', child: Text('Delete Module')),
+              ],
+            ),
+        ],
       ),
       body: material == null
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF2B2B2B)))

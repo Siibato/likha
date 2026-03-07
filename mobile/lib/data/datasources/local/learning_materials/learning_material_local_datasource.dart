@@ -24,6 +24,7 @@ abstract class LearningMaterialLocalDataSource {
     required String description,
     required String contentText,
   });
+  Future<void> deleteMaterialLocally(String materialId);
   Future<void> stageMaterialFileForUpload({
     required String materialId,
     required String fileName,

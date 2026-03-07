@@ -9,7 +9,7 @@ import 'package:likha/domain/learning_materials/usecases/delete_material.dart';
 import 'package:likha/domain/learning_materials/usecases/download_file.dart' as material;
 import 'package:likha/domain/learning_materials/usecases/get_material_detail.dart';
 import 'package:likha/domain/learning_materials/usecases/get_materials.dart';
-import 'package:likha/domain/learning_materials/usecases/reorder_material.dart';
+import 'package:likha/domain/learning_materials/usecases/reorder_material.dart' as material;
 import 'package:likha/domain/learning_materials/usecases/update_material.dart';
 import 'package:likha/domain/learning_materials/usecases/upload_file.dart' as material;
 import 'package:likha/injection_container.dart';
@@ -55,7 +55,8 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
   final GetMaterialDetail _getMaterialDetail;
   final UpdateMaterial _updateMaterial;
   final DeleteMaterial _deleteMaterial;
-  final ReorderMaterial _reorderMaterial;
+  final material.ReorderMaterial _reorderMaterial;
+  final material.ReorderAllMaterials _reorderAllMaterials;
   final material.UploadFile _uploadFile;
   final material.DeleteFile _deleteFile;
   final material.DownloadFile _downloadFile;
@@ -70,6 +71,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     this._updateMaterial,
     this._deleteMaterial,
     this._reorderMaterial,
+    this._reorderAllMaterials,
     this._uploadFile,
     this._deleteFile,
     this._downloadFile,
@@ -193,12 +195,35 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     );
     result.fold(
       (failure) => state = state.copyWith(error: failure.message),
-      (material) {
+      (mat) {
         final updatedMaterials = state.materials
-            .map((m) => m.id == materialId ? material : m)
+            .map((m) => m.id == materialId ? mat : m)
             .toList();
         updatedMaterials.sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
         state = state.copyWith(materials: updatedMaterials);
+      },
+    );
+  }
+
+  Future<void> reorderAllMaterials({
+    required String classId,
+    required List<String> materialIds,
+    required List<LearningMaterial> orderedMaterials,
+  }) async {
+    // Optimistic update: apply new order immediately from the provided list
+    state = state.copyWith(materials: orderedMaterials);
+
+    final result = await _reorderAllMaterials(
+      classId: classId,
+      materialIds: materialIds,
+    );
+    result.fold(
+      (failure) {
+        // On error: state already updated optimistically; show error
+        state = state.copyWith(error: failure.message);
+      },
+      (_) {
+        // Success: state was already updated optimistically, nothing more to do
       },
     );
   }
@@ -273,7 +298,8 @@ final learningMaterialProvider =
     sl<GetMaterialDetail>(),
     sl<UpdateMaterial>(),
     sl<DeleteMaterial>(),
-    sl<ReorderMaterial>(),
+    sl<material.ReorderMaterial>(),
+    sl<material.ReorderAllMaterials>(),
     sl<material.UploadFile>(),
     sl<material.DeleteFile>(),
     sl<material.DownloadFile>(),

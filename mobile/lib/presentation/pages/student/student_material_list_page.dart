@@ -117,73 +117,91 @@ class _StudentMaterialListPageState extends ConsumerState<StudentMaterialListPag
                               ),
                             )
                           : RefreshIndicator(
-                        onRefresh: () => ref
-                            .read(learningMaterialProvider.notifier)
-                            .loadMaterials(widget.classId),
-                        color: const Color(0xFF2B2B2B),
-                        child: ListView.builder(
-                          padding: const EdgeInsets.all(24),
-                          itemCount: state.materials.length,
-                          itemBuilder: (context, index) {
-                            final material = state.materials[index];
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                side: const BorderSide(color: Color(0xFFE0E0E0)),
-                              ),
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                leading: Icon(
-                                  material.fileCount > 0
-                                      ? Icons.attach_file_rounded
-                                      : Icons.article_outlined,
-                                  color: const Color(0xFF2B2B2B),
-                                ),
-                                title: Text(
-                                  material.title,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                subtitle: material.description != null
-                                    ? Text(
-                                        material.description!,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      )
-                                    : null,
-                                trailing: Text(
-                                  '${material.fileCount} file(s)',
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    color: Color(0xFF999999),
-                                  ),
-                                ),
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => MaterialDetailPage(
-                                      materialId: material.id,
+                              onRefresh: () => ref
+                                  .read(learningMaterialProvider.notifier)
+                                  .loadMaterials(widget.classId),
+                              color: const Color(0xFF2B2B2B),
+                              child: ListView.builder(
+                                padding: const EdgeInsets.all(24),
+                                itemCount: state.materials.length,
+                                itemBuilder: (context, index) {
+                                  final material = state.materials[index];
+                                  return GestureDetector(
+                                    onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => MaterialDetailPage(
+                                          materialId: material.id,
+                                        ),
+                                      ),
+                                    ).then((_) {
+                                      ref.read(learningMaterialProvider.notifier).loadMaterials(widget.classId);
+                                    }),
+                                    child: Container(
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFE0E0E0),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Container(
+                                        margin: const EdgeInsets.fromLTRB(1, 1, 1, 2.5),
+                                        padding: const EdgeInsets.all(14),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(11),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              material.fileCount > 0
+                                                  ? Icons.attach_file_rounded
+                                                  : Icons.article_outlined,
+                                              color: const Color(0xFF2B2B2B),
+                                              size: 20,
+                                            ),
+                                            const SizedBox(width: 14),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    material.title,
+                                                    style: const TextStyle(
+                                                      fontSize: 15,
+                                                      fontWeight: FontWeight.w700,
+                                                      color: Color(0xFF202020),
+                                                      letterSpacing: -0.3,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    '${material.fileCount} file(s)',
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: Color(0xFF999999),
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const Icon(
+                                              Icons.chevron_right_rounded,
+                                              color: Color(0xFFCCCCCC),
+                                              size: 22,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ).then((_) {
-                                  ref.read(learningMaterialProvider.notifier).loadMaterials(widget.classId);
-                                }),
+                                  );
+                                },
                               ),
-                            );
-                          },
-                        ),
-                      ),
-          ),
-        ],
-      ),
+                            ),
+            ),
+          ],
         ),
+      ),
     );
   }
 }
