@@ -4,6 +4,7 @@ import 'package:likha/data/models/classes/class_model.dart';
 
 abstract class ClassLocalDataSource {
   Future<List<ClassModel>> getCachedClasses({String? teacherId});
+  Future<List<ClassModel>> getCachedClassesForUser(String userId);
   Future<ClassDetailModel> getCachedClassDetail(String classId);
   Future<void> cacheClasses(List<ClassModel> classes);
   Future<void> cacheClassDetail(ClassDetailModel classDetail);

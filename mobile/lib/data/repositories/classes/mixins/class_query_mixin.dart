@@ -33,14 +33,12 @@ mixin ClassQueryMixin on ClassRepositoryBase {
   ResultFuture<List<ClassEntity>> getMyClasses() async {
     try {
       final currentUserId = await getCurrentUserId();
+      if (currentUserId == null) return const Right([]);
 
       try {
-        final cachedClasses = await localDataSource.getCachedClasses(
-          teacherId: currentUserId,
-        );
-
-        // Return cached data without background fetch. Sync already provides fresh data.
-        // Manual pull-to-refresh works if user wants to refresh.
+        // Works for both students (enrolled via class_participants) and
+        // teachers (also present in class_participants with role='teacher')
+        final cachedClasses = await localDataSource.getCachedClassesForUser(currentUserId);
         return Right(cachedClasses);
       } on CacheException {
         final freshClasses = await remoteDataSource.getMyClasses();
@@ -100,9 +98,10 @@ mixin ClassQueryMixin on ClassRepositoryBase {
       try {
         final fresh = await remoteDataSource.getMyClasses();
         final currentUserId = await getCurrentUserId();
+        if (currentUserId == null) return;
         final List<ClassEntity> cached;
         try {
-          cached = await localDataSource.getCachedClasses(teacherId: currentUserId);
+          cached = await localDataSource.getCachedClassesForUser(currentUserId);
         } on CacheException {
           await localDataSource.cacheClasses(fresh);
           dataEventBus.notifyClassesChanged();

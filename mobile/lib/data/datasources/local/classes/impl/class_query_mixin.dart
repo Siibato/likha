@@ -36,6 +36,29 @@ mixin ClassQueryMixin on ClassLocalDataSourceBase {
   }
 
   @override
+  Future<List<ClassModel>> getCachedClassesForUser(String userId) async {
+    try {
+      final db = await localDatabase.database;
+      // Join classes with class_participants to find all classes for this user
+      final results = await db.rawQuery('''
+        SELECT DISTINCT c.*
+        FROM classes c
+        JOIN class_participants cp ON c.id = cp.class_id
+        WHERE cp.user_id = ? AND cp.removed_at IS NULL AND c.deleted_at IS NULL
+        ORDER BY c.title ASC
+      ''', [userId]);
+
+      if (results.isEmpty) {
+        throw CacheException('No cached classes found for user $userId');
+      }
+      return results.map(ClassModel.fromMap).toList();
+    } catch (e) {
+      if (e is CacheException) rethrow;
+      throw CacheException(e.toString());
+    }
+  }
+
+  @override
   Future<ClassDetailModel> getCachedClassDetail(String classId) async {
     try {
       final db = await localDatabase.database;
