@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 
 class ActivateAccountPage extends ConsumerStatefulWidget {
@@ -40,16 +41,7 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
     if (mounted) {
       final state = ref.read(authProvider);
       if (state.error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(state.error!),
-            backgroundColor: const Color(0xFFDC3545),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
+        context.showErrorSnackBar(state.error!);
       }
     }
   }

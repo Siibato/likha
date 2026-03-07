@@ -2,6 +2,7 @@ import 'package:animated_reorderable_list/animated_reorderable_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/sync/sync_manager.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/teacher/assessment_detail_page.dart';
@@ -113,16 +114,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
                 Navigator.pop(ctx);
                 _animateReorder(currentIndex, newPosition - 1);
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Please enter a number between 1 and ${_reorderBuffer.length}'),
-                    backgroundColor: const Color(0xFFEF5350),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                );
+                context.showErrorSnackBar('Please enter a number between 1 and ${_reorderBuffer.length}');
               }
             },
           ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/presentation/pages/admin/widgets/styled_button.dart';
 import 'package:likha/presentation/pages/admin/widgets/styled_dropdown.dart';
 import 'package:likha/presentation/pages/admin/widgets/styled_text_field.dart';
@@ -37,13 +38,7 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
   Future<void> _handleCreate() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedTeacherId == null || _selectedTeacherId!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a teacher'),
-          backgroundColor: Color(0xFFEF5350),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      context.showErrorSnackBar('Please select a teacher');
       return;
     }
 
@@ -64,28 +59,10 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
     if (mounted) {
       final state = ref.read(classProvider);
       if (state.successMessage != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(state.successMessage!),
-            backgroundColor: const Color(0xFF4CAF50),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        context.showSuccessSnackBar(state.successMessage!);
         Navigator.pop(context);
       } else if (state.error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(state.error!),
-            backgroundColor: const Color(0xFFEF5350),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        context.showErrorSnackBar(state.error!);
       }
     }
   }

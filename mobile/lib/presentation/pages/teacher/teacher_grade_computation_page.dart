@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
@@ -63,12 +64,7 @@ class _TeacherGradeComputationPageState
     final assessmentWeight = int.tryParse(_assessmentWeightController.text) ?? 50;
 
     if (assignmentWeight + assessmentWeight != 100) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Weights must sum to 100%'),
-          backgroundColor: Color(0xFFE57373),
-        ),
-      );
+      context.showErrorSnackBar('Weights must sum to 100%');
       return;
     }
 
@@ -77,12 +73,7 @@ class _TeacherGradeComputationPageState
     await prefs.setInt('assessment_weight_${widget.classId}', assessmentWeight);
 
     setState(() => _isSaved = true);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Weights saved'),
-        backgroundColor: Color(0xFF4CAF50),
-      ),
-    );
+    context.showSuccessSnackBar('Weights saved');
   }
 
   @override

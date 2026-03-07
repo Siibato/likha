@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
 import 'package:likha/domain/assessments/usecases/create_assessment.dart';
 import 'package:likha/presentation/pages/teacher/widgets/question_draft.dart';
@@ -109,7 +110,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
   Future<void> _saveDraftWithFeedback() async {
     await _persistDraft();
     if (mounted) {
-      _showSnackBar('Draft saved', isSuccess: true, duration: 1500);
+      context.showSuccessSnackBar('Draft saved', durationMs: 1500);
     }
   }
 
@@ -151,12 +152,12 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
 
     final timeLimit = int.tryParse(_timeLimitController.text.trim());
     if (timeLimit == null || timeLimit <= 0) {
-      _showErrorSnackBar('Please enter a valid time limit');
+      context.showErrorSnackBar('Please enter a valid time limit');
       return false;
     }
 
     if (_closeAt.isBefore(_openAt)) {
-      _showErrorSnackBar('Close date must be after open date');
+      context.showErrorSnackBar('Close date must be after open date');
       return false;
     }
 
@@ -164,23 +165,23 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
     for (int i = 0; i < _questions.length; i++) {
       final q = _questions[i];
       if (q.questionText.trim().isEmpty) {
-        _showErrorSnackBar('Question ${i + 1} text is empty');
+        context.showErrorSnackBar('Question ${i + 1} text is empty');
         return false;
       }
       if (q.type == 'multiple_choice' && q.choices.length < 2) {
-        _showErrorSnackBar('Question ${i + 1} needs at least 2 choices');
+        context.showErrorSnackBar('Question ${i + 1} needs at least 2 choices');
         return false;
       }
       if (q.type == 'multiple_choice' && !q.choices.any((c) => c.isCorrect)) {
-        _showErrorSnackBar('Question ${i + 1} needs at least one correct choice');
+        context.showErrorSnackBar('Question ${i + 1} needs at least one correct choice');
         return false;
       }
       if (q.type == 'identification' && q.acceptableAnswers.isEmpty) {
-        _showErrorSnackBar('Question ${i + 1} needs at least one acceptable answer');
+        context.showErrorSnackBar('Question ${i + 1} needs at least one acceptable answer');
         return false;
       }
       if (q.type == 'enumeration' && q.enumerationItems.isEmpty) {
-        _showErrorSnackBar('Question ${i + 1} needs at least one enumeration item');
+        context.showErrorSnackBar('Question ${i + 1} needs at least one enumeration item');
         return false;
       }
     }
@@ -221,7 +222,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
       if (assessment == null) {
         debugPrint('[CreateAssessmentPage] _handleSave: Assessment is null, showing error');
         final state = ref.read(assessmentProvider);
-        _showErrorSnackBar(
+        context.showErrorSnackBar(
             state.error ?? 'Failed to create assessment');
         setState(() => _isSaving = false);
         return;
@@ -287,7 +288,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
         final state = ref.read(assessmentProvider);
         if (state.error != null) {
           debugPrint('[CreateAssessmentPage] _handleSave: Error after addQuestions: ${state.error}');
-          _showErrorSnackBar(state.error ?? 'Failed to add questions');
+          context.showErrorSnackBar(state.error ?? 'Failed to add questions');
           setState(() => _isSaving = false);
           return;
         }
@@ -299,40 +300,17 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
       ref.read(assessmentProvider.notifier).clearMessages();
       if (mounted) {
         debugPrint('[CreateAssessmentPage] _handleSave: Success! Showing snackbar and navigating');
-        _showSnackBar('Assessment created successfully', isSuccess: true);
+        context.showSuccessSnackBar('Assessment created successfully');
         await Future.delayed(const Duration(milliseconds: 500));
         if (mounted) Navigator.pop(context, true);
       }
     } catch (e) {
       debugPrint('[CreateAssessmentPage] _handleSave: Exception caught: $e');
       if (mounted) {
-        _showErrorSnackBar('An error occurred: $e');
+        context.showErrorSnackBar('An error occurred: $e');
         setState(() => _isSaving = false);
       }
     }
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: const Color(0xFFEF5350),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
-  }
-
-  void _showSnackBar(String message, {bool isSuccess = false, int duration = 2000}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isSuccess ? const Color(0xFF4CAF50) : const Color(0xFFEF5350),
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(milliseconds: duration),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
   }
 
   @override

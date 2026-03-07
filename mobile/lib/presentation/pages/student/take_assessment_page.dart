@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/data/models/assessments/question_model.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/domain/assessments/usecases/save_answers.dart';
@@ -217,13 +218,7 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
     }
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Time is up! Assessment auto-submitted.'),
-          backgroundColor: Color(0xFFFFBD59),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      context.showWarningSnackBar('Time is up! Assessment auto-submitted.');
       Navigator.pop(context);
     }
   }
@@ -253,27 +248,12 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
     if (mounted) {
       if (state.error != null) {
         setState(() => _isSubmitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(state.error!),
-            backgroundColor: const Color(0xFFEA4335),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        context.showErrorSnackBar(state.error!);
         ref.read(assessmentProvider.notifier).clearMessages();
         _startCountdown();
         _startAutoSave();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Assessment submitted successfully!'),
-            backgroundColor: Color(0xFF34A853),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        context.showSuccessSnackBar('Assessment submitted successfully!');
         Navigator.pop(context);
       }
     }
@@ -292,16 +272,7 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
       if (next.error != null &&
           prev?.error != next.error &&
           !_isSubmitting) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: const Color(0xFFEA4335),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        context.showErrorSnackBar(next.error!);
         ref.read(assessmentProvider.notifier).clearMessages();
       }
     });

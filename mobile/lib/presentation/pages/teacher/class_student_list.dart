@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/presentation/pages/teacher/widgets/empty_student_state.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
@@ -38,16 +39,7 @@ class _ClassStudentListPageState extends ConsumerState<ClassStudentListPage> {
       }
       // Show error messages
       if (next.error != null && prev?.error != next.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: const Color(0xFFEF5350),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        context.showErrorSnackBar(next.error!);
         ref.read(classProvider.notifier).clearMessages();
       }
     });

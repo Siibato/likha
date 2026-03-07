@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/presentation/pages/teacher/assessment_submissions_page.dart';
@@ -334,16 +335,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
     ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.successMessage!),
-            backgroundColor: const Color(0xFF4CAF50),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        context.showSuccessSnackBar(next.successMessage!);
         ref.read(assessmentProvider.notifier).clearMessages();
         if (next.successMessage == 'Assessment deleted') {
           Navigator.pop(context, true);
@@ -356,16 +348,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
         }
       }
       if (next.error != null && prev?.error != next.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: const Color(0xFFEF5350),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        context.showErrorSnackBar(next.error!);
         ref.read(assessmentProvider.notifier).clearMessages();
       }
     });

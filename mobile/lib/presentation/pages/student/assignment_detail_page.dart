@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assignments/usecases/create_submission.dart';
 import 'package:likha/domain/assignments/usecases/upload_file.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
@@ -132,17 +133,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       final fileSizeMb = file.size / (1024 * 1024);
       if (fileSizeMb > widget.maxFileSizeMb!) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'File too large. Max size is ${widget.maxFileSizeMb} MB'),
-            backgroundColor: const Color(0xFFEA4335),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
+        context.showErrorSnackBar('File too large. Max size is ${widget.maxFileSizeMb} MB');
         return;
       }
     }
@@ -193,28 +184,10 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       await file.writeAsBytes(bytes);
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('File saved to ${file.path}'),
-          backgroundColor: const Color(0xFF34A853),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-      );
+      context.showSuccessSnackBar('File saved to ${file.path}');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to save file: $e'),
-          backgroundColor: const Color(0xFFEA4335),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-      );
+      context.showErrorSnackBar('Failed to save file: $e');
     }
   }
 
@@ -264,32 +237,14 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     ref.listen<AssignmentState>(assignmentProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.successMessage!),
-            backgroundColor: const Color(0xFF34A853),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
+        context.showSuccessSnackBar(next.successMessage!);
         ref.read(assignmentProvider.notifier).clearMessages();
         if (next.successMessage == 'Assignment submitted') {
           Navigator.pop(context, true);
         }
       }
       if (next.error != null && prev?.error != next.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: const Color(0xFFEA4335),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
+        context.showErrorSnackBar(next.error!);
         ref.read(assignmentProvider.notifier).clearMessages();
       }
     });

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/constants/file_types.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assignments/usecases/create_assignment.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assignment_due_date_picker.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assignment_instructions_field.dart';
@@ -325,13 +326,7 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
 
     final totalPoints = int.tryParse(_totalPointsController.text.trim());
     if (totalPoints == null || totalPoints <= 0 || totalPoints > 1000) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Total points must be between 1 and 1000'),
-          backgroundColor: Color(0xFFEF5350),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      context.showErrorSnackBar('Total points must be between 1 and 1000');
       return;
     }
 
@@ -364,25 +359,10 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
     if (!mounted) return;
     final state = ref.read(assignmentProvider);
     if (state.error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(state.error!),
-          backgroundColor: const Color(0xFFEF5350),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-      );
+      context.showErrorSnackBar(state.error!);
       ref.read(assignmentProvider.notifier).clearMessages();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Assignment created as draft'),
-          backgroundColor: Color(0xFF4CAF50),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      context.showSuccessSnackBar('Assignment created as draft');
       ref.read(assignmentProvider.notifier).clearMessages();
       Navigator.pop(context, true);
     }

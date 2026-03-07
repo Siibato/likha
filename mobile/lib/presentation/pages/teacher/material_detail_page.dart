@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
@@ -130,25 +131,14 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
         await OpenFile.open(found.path);
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error opening file: $e'),
-            backgroundColor: const Color(0xFFEF5350),
-          ),
-        );
+        context.showErrorSnackBar('Error opening file: $e');
       }
       return;
     }
 
     // File not found — re-download
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('File not found on device. Re-downloading...'),
-        backgroundColor: Color(0xFFFF9800),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    context.showWarningSnackBar('File not found on device. Re-downloading...', durationMs: 2000);
     await _saveFile(file);
   }
 
@@ -159,13 +149,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
 
       // Show download started indicator
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Downloading ${file.fileName}...'),
-            backgroundColor: const Color(0xFF2B2B2B),
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        context.showInfoSnackBar('Downloading ${file.fileName}...', durationMs: 3000);
       }
 
       // Download bytes from server
@@ -174,13 +158,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
 
       if (bytes == null) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to download file'),
-            backgroundColor: Color(0xFFEF5350),
-            duration: Duration(seconds: 3),
-          ),
-        );
+        context.showErrorSnackBar('Failed to download file', durationMs: 3000);
         return;
       }
 
@@ -192,13 +170,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
         await File(savePath).writeAsBytes(bytes);
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save: $e'),
-            backgroundColor: const Color(0xFFEF5350),
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        context.showErrorSnackBar('Failed to save: $e', durationMs: 3000);
         return;
       }
 
@@ -210,22 +182,10 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('✓ Saved: ${file.fileName}'),
-          backgroundColor: const Color(0xFF4CAF50),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      context.showSuccessSnackBar('✓ Saved: ${file.fileName}', durationMs: 3000);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: const Color(0xFFEF5350),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      context.showErrorSnackBar('Error: $e', durationMs: 3000);
     }
   }
 
@@ -240,13 +200,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
       downloadedCount++;
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Downloading $downloadedCount of $totalFiles: ${file.fileName}'),
-            backgroundColor: const Color(0xFF2B2B2B),
-            duration: const Duration(seconds: 60),
-          ),
-        );
+        context.showInfoSnackBar('Downloading $downloadedCount of $totalFiles: ${file.fileName}', durationMs: 60000);
       }
 
       await _saveFile(file);
@@ -260,13 +214,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
     }
 
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Downloaded $downloadedCount file(s)'),
-        backgroundColor: const Color(0xFF4CAF50),
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    context.showSuccessSnackBar('Downloaded $downloadedCount file(s)', durationMs: 3000);
   }
 
   void _deleteFile(String fileId) {
@@ -342,21 +290,11 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
       }
 
       if (next.error != null && prev?.error != next.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: const Color(0xFFEF5350),
-          ),
-        );
+        context.showErrorSnackBar(next.error!);
         ref.read(learningMaterialProvider.notifier).clearMessages();
       }
       if (next.successMessage != null && prev?.successMessage != next.successMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.successMessage!),
-            backgroundColor: const Color(0xFF4CAF50),
-          ),
-        );
+        context.showSuccessSnackBar(next.successMessage!);
         ref.read(learningMaterialProvider.notifier).clearMessages();
       }
       // Check file existence when material finishes loading

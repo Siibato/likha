@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/presentation/pages/teacher/assignment_submissions_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assignment_info_card.dart';
@@ -135,32 +136,14 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     ref.listen<AssignmentState>(assignmentProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.successMessage!),
-            backgroundColor: const Color(0xFF4CAF50),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        context.showSuccessSnackBar(next.successMessage!);
         ref.read(assignmentProvider.notifier).clearMessages();
         if (next.successMessage == 'Assignment deleted') {
           Navigator.pop(context, true);
         }
       }
       if (next.error != null && prev?.error != next.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: const Color(0xFFEF5350),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        context.showErrorSnackBar(next.error!);
         ref.read(assignmentProvider.notifier).clearMessages();
       }
     });

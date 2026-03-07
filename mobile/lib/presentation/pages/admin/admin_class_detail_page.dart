@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/presentation/pages/admin/widgets/student_action_card.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
@@ -64,31 +65,13 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
     ref.listen<ClassState>(classProvider, (prev, next) {
       // Success snackbar
       if (next.successMessage != null && prev?.successMessage != next.successMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.successMessage!),
-            backgroundColor: const Color(0xFF4CAF50),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        context.showSuccessSnackBar(next.successMessage!);
         ref.read(classProvider.notifier).clearMessages();
       }
 
       // Error snackbar
       if (next.error != null && prev?.error != next.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: const Color(0xFFEF5350),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        context.showErrorSnackBar(next.error!);
         ref.read(classProvider.notifier).clearMessages();
       }
     });

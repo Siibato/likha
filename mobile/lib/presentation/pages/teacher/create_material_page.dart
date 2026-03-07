@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/pages/teacher/material_detail_page.dart';
 
@@ -51,12 +52,7 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
   Future<void> _createMaterial() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedFiles.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one file'),
-          backgroundColor: Color(0xFFEF5350),
-        ),
-      );
+      context.showErrorSnackBar('Please select at least one file');
       return;
     }
 
@@ -81,13 +77,7 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
     }
 
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Module created successfully!'),
-        backgroundColor: Color(0xFF4CAF50),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    context.showSuccessSnackBar('Module created successfully!', durationMs: 2000);
 
     // Step 2: Upload files sequentially
     bool anyUploadFailed = false;
@@ -158,12 +148,7 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
 
     ref.listen<LearningMaterialState>(learningMaterialProvider, (prev, next) {
       if (next.error != null && prev?.error != next.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: const Color(0xFFEF5350),
-          ),
-        );
+        context.showErrorSnackBar(next.error!);
         ref.read(learningMaterialProvider.notifier).clearMessages();
       }
     });
