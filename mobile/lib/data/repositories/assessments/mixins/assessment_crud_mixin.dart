@@ -17,6 +17,7 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
     required String openAt,
     required String closeAt,
     bool? showResultsImmediately,
+    bool isPublished = true,
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
@@ -28,6 +29,7 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           openAt: openAt,
           closeAt: closeAt,
           showResultsImmediately: showResultsImmediately,
+          isPublished: isPublished,
         );
 
         final now = DateTime.now();
@@ -41,7 +43,7 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           closeAt: DateTime.parse(closeAt),
           showResultsImmediately: showResultsImmediately ?? false,
           resultsReleased: false,
-          isPublished: false,
+          isPublished: isPublished,
           orderIndex: 0,
           totalPoints: 0,
           questionCount: 0,
@@ -61,6 +63,7 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           'close_at': closeAt,
           if (showResultsImmediately != null)
             'show_results_immediately': showResultsImmediately,
+          if (isPublished) 'is_published': true,
         },
       );
 

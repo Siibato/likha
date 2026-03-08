@@ -28,6 +28,7 @@ impl AssessmentRepository {
         show_results_immediately: bool,
         order_index: i32,
         client_id: Option<Uuid>,
+        is_published: bool,
     ) -> AppResult<assessments::Model> {
         let assessment = assessments::ActiveModel {
             id: Set(client_id.unwrap_or_else(Uuid::new_v4)),
@@ -39,7 +40,7 @@ impl AssessmentRepository {
             close_at: Set(close_at),
             show_results_immediately: Set(show_results_immediately),
             results_released: Set(false),
-            is_published: Set(false),
+            is_published: Set(is_published),
             order_index: Set(order_index),
             total_points: Set(0),
             created_at: Set(Utc::now().naive_utc()),

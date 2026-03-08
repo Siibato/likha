@@ -43,6 +43,7 @@ impl super::AssessmentService {
             request.show_results_immediately.unwrap_or(true),
             order_index,
             client_id,
+            request.is_published.unwrap_or(false),
         ).await?;
 
         let _ = self.change_log_repo.log_change(

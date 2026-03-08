@@ -89,6 +89,7 @@ impl super::AssignmentService {
                 due_at,
                 order_index,
                 client_id,
+                request.is_published.unwrap_or(false),
             )
             .await?;
 

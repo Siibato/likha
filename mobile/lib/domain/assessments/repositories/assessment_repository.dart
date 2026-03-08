@@ -14,6 +14,7 @@ abstract class AssessmentRepository {
     required String openAt,
     required String closeAt,
     bool? showResultsImmediately,
+    bool isPublished = true,
   });
 
   ResultFuture<List<Assessment>> getAssessments({required String classId, bool publishedOnly = false, bool skipBackgroundRefresh = false});

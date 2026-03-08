@@ -28,6 +28,7 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
   Set<String> _selectedFileTypes = {};
   String _submissionType = 'text_or_file';
   DateTime _dueAt = DateTime.now().add(const Duration(days: 7));
+  bool _isPublished = true;
 
   @override
   void dispose() {
@@ -353,6 +354,7 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
             allowedFileTypes: allowedFileTypes,
             maxFileSizeMb: maxFileSizeMb,
             dueAt: _formatDateTimeForApi(_dueAt),
+            isPublished: _isPublished,
           ),
         );
 
@@ -362,7 +364,10 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
       context.showErrorSnackBar(state.error!);
       ref.read(assignmentProvider.notifier).clearMessages();
     } else {
-      context.showSuccessSnackBar('Assignment created as draft');
+      final message = _isPublished
+          ? 'Assignment created and published'
+          : 'Assignment saved as draft';
+      context.showSuccessSnackBar(message);
       ref.read(assignmentProvider.notifier).clearMessages();
       Navigator.pop(context, true);
     }
@@ -437,6 +442,43 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
                 dueAt: _dueAt,
                 onTap: _pickDateTime,
                 enabled: !assignState.isLoading,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFFE0E0E0),
+                    width: 1,
+                  ),
+                ),
+                child: SwitchListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  title: const Text(
+                    'Publish immediately',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2B2B2B),
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'Students can see this assignment right away',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF999999),
+                    ),
+                  ),
+                  value: _isPublished,
+                  activeColor: const Color(0xFF2B2B2B),
+                  onChanged: assignState.isLoading
+                      ? null
+                      : (value) => setState(() => _isPublished = value),
+                ),
               ),
               const SizedBox(height: 32),
               ElevatedButton(

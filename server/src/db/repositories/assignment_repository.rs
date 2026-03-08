@@ -28,6 +28,7 @@ impl AssignmentRepository {
         due_at: chrono::NaiveDateTime,
         order_index: i32,
         client_id: Option<Uuid>,
+        is_published: bool,
     ) -> AppResult<assignments_hw::Model> {
         let assignment = assignments_hw::ActiveModel {
             id: Set(client_id.unwrap_or_else(Uuid::new_v4)),
@@ -39,7 +40,7 @@ impl AssignmentRepository {
             allowed_file_types: Set(allowed_file_types),
             max_file_size_mb: Set(max_file_size_mb),
             due_at: Set(due_at),
-            is_published: Set(false),
+            is_published: Set(is_published),
             order_index: Set(order_index),
             created_at: Set(Utc::now().naive_utc()),
             updated_at: Set(Utc::now().naive_utc()),

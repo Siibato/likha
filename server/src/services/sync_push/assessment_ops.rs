@@ -30,6 +30,7 @@ impl super::SyncPushService {
                     open_at,
                     close_at,
                     show_results_immediately: None,
+                    is_published: op.payload.get("is_published").and_then(|v| v.as_bool()),
                 };
 
                 match self.assessment_service.create_assessment(class_id, request, user_id, client_id).await {

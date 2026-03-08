@@ -12,6 +12,8 @@ pub struct CreateAssignmentRequest {
     pub allowed_file_types: Option<String>,
     pub max_file_size_mb: Option<i32>,
     pub due_at: String,
+    #[serde(default)]
+    pub is_published: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]

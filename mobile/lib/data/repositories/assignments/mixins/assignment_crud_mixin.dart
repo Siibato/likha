@@ -19,6 +19,7 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
     String? allowedFileTypes,
     int? maxFileSizeMb,
     required String dueAt,
+    bool isPublished = true,
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
@@ -37,6 +38,7 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
             if (allowedFileTypes != null) 'allowed_file_types': allowedFileTypes,
             if (maxFileSizeMb != null) 'max_file_size_mb': maxFileSizeMb,
             'due_at': dueAt,
+            'is_published': isPublished,
           },
           status: SyncStatus.pending,
           retryCount: 0,
@@ -54,7 +56,7 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
           allowedFileTypes: allowedFileTypes,
           maxFileSizeMb: maxFileSizeMb,
           dueAt: DateTime.parse(dueAt),
-          isPublished: false,
+          isPublished: isPublished,
           orderIndex: 0,
           submissionCount: 0,
           gradedCount: 0,
@@ -75,7 +77,7 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
             allowedFileTypes: allowedFileTypes,
             maxFileSizeMb: maxFileSizeMb,
             dueAt: DateTime.parse(dueAt),
-            isPublished: false,
+            isPublished: isPublished,
             orderIndex: 0,
             submissionCount: 0,
             gradedCount: 0,
@@ -99,6 +101,7 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
           if (allowedFileTypes != null) 'allowed_file_types': allowedFileTypes,
           if (maxFileSizeMb != null) 'max_file_size_mb': maxFileSizeMb,
           'due_at': dueAt,
+          'is_published': isPublished,
         },
       );
       return Right(result);

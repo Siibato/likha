@@ -64,6 +64,7 @@ abstract class AssessmentLocalDataSource {
     required String openAt,
     required String closeAt,
     bool? showResultsImmediately,
+    bool isPublished = true,
   });
   Future<String> createAssessmentWithQuestionsLocally({
     required String classId,
@@ -74,6 +75,7 @@ abstract class AssessmentLocalDataSource {
     required String closeAt,
     bool? showResultsImmediately,
     required List<QuestionModel> questions,
+    bool isPublished = true,
   });
   Future<List<SubmissionSummaryModel>> getCachedSubmissions(String assessmentId);
   Future<int> getCachedSubmissionCount(String assessmentId);

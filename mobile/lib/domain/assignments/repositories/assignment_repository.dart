@@ -14,6 +14,7 @@ abstract class AssignmentRepository {
     String? allowedFileTypes,
     int? maxFileSizeMb,
     required String dueAt,
+    bool isPublished = true,
   });
 
   ResultFuture<List<Assignment>> getAssignments({required String classId, bool publishedOnly = false, bool skipBackgroundRefresh = false});

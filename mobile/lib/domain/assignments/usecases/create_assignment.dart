@@ -17,6 +17,7 @@ class CreateAssignment {
       allowedFileTypes: params.allowedFileTypes,
       maxFileSizeMb: params.maxFileSizeMb,
       dueAt: params.dueAt,
+      isPublished: params.isPublished,
     );
   }
 }
@@ -30,6 +31,7 @@ class CreateAssignmentParams {
   final String? allowedFileTypes;
   final int? maxFileSizeMb;
   final String dueAt;
+  final bool isPublished;
 
   CreateAssignmentParams({
     required this.classId,
@@ -40,5 +42,6 @@ class CreateAssignmentParams {
     this.allowedFileTypes,
     this.maxFileSizeMb,
     required this.dueAt,
+    this.isPublished = true,
   });
 }

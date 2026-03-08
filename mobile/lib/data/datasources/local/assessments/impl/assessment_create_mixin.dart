@@ -15,6 +15,7 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
     required String openAt,
     required String closeAt,
     bool? showResultsImmediately,
+    bool isPublished = true,
   }) async {
     try {
       final db = await localDatabase.database;
@@ -35,7 +36,7 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
             'close_at': closeAt,
             'show_results_immediately': (showResultsImmediately ?? false) ? 1 : 0,
             'results_released': 0,
-            'is_published': 0,
+            'is_published': isPublished ? 1 : 0,
             'total_points': 0,
             'question_count': 0,
             'submission_count': 0,
@@ -61,6 +62,7 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
               'open_at': openAt,
               'close_at': closeAt,
               if (showResultsImmediately != null) 'show_results_immediately': showResultsImmediately,
+              'is_published': isPublished,
             },
             status: SyncStatus.pending,
             retryCount: 0,
@@ -99,6 +101,7 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
     required String closeAt,
     bool? showResultsImmediately,
     required List<QuestionModel> questions,
+    bool isPublished = true,
   }) async {
     try {
       final db = await localDatabase.database;
@@ -120,7 +123,7 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
             'close_at': closeAt,
             'show_results_immediately': (showResultsImmediately ?? false) ? 1 : 0,
             'results_released': 0,
-            'is_published': 0,
+            'is_published': isPublished ? 1 : 0,
             'total_points': 0,
             'question_count': 0,
             'submission_count': 0,
@@ -192,6 +195,7 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
               'open_at': openAt,
               'close_at': closeAt,
               if (showResultsImmediately != null) 'show_results_immediately': showResultsImmediately,
+              'is_published': isPublished,
             },
             status: SyncStatus.pending,
             retryCount: 0,

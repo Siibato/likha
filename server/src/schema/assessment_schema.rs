@@ -11,6 +11,8 @@ pub struct CreateAssessmentRequest {
     pub open_at: String,
     pub close_at: String,
     pub show_results_immediately: Option<bool>,
+    #[serde(default)]
+    pub is_published: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]

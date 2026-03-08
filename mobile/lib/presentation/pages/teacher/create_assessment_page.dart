@@ -32,6 +32,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
   DateTime _openAt = DateTime.now();
   DateTime _closeAt = DateTime.now().add(const Duration(days: 7));
   bool _showResultsImmediately = false;
+  bool _isPublished = true;
   final List<QuestionDraft> _questions = [];
   bool _isSaving = false;
   bool _draftLoaded = false;
@@ -68,6 +69,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
         _openAt = DateTime.parse(draft['openAt'] as String? ?? DateTime.now().toIso8601String());
         _closeAt = DateTime.parse(draft['closeAt'] as String? ?? DateTime.now().add(const Duration(days: 7)).toIso8601String());
         _showResultsImmediately = draft['showResultsImmediately'] as bool? ?? false;
+        _isPublished = draft['isPublished'] as bool? ?? true;
 
         final questions = draft['questions'] as List?;
         if (questions != null) {
@@ -94,6 +96,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
         'openAt': _openAt.toIso8601String(),
         'closeAt': _closeAt.toIso8601String(),
         'showResultsImmediately': _showResultsImmediately,
+        'isPublished': _isPublished,
         'questions': _questions.map((q) => q.toJson()).toList(),
       };
       await prefs.setString('assessment_draft_${widget.classId}', jsonEncode(draft));
@@ -133,6 +136,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
       _openAt = DateTime.now();
       _closeAt = DateTime.now().add(const Duration(days: 7));
       _showResultsImmediately = false;
+      _isPublished = true;
       _questions.clear();
     }
   }
@@ -212,6 +216,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
               openAt: _formatDateTimeForApi(_openAt),
               closeAt: _formatDateTimeForApi(_closeAt),
               showResultsImmediately: _showResultsImmediately,
+              isPublished: _isPublished,
             ),
           );
 
@@ -300,7 +305,10 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
       ref.read(assessmentProvider.notifier).clearMessages();
       if (mounted) {
         debugPrint('[CreateAssessmentPage] _handleSave: Success! Showing snackbar and navigating');
-        context.showSuccessSnackBar('Assessment created successfully');
+        final message = _isPublished
+            ? 'Assessment created and published'
+            : 'Assessment saved as draft';
+        context.showSuccessSnackBar(message);
         await Future.delayed(const Duration(milliseconds: 500));
         if (mounted) Navigator.pop(context, true);
       }
@@ -391,10 +399,12 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                             openAt: _openAt,
                             closeAt: _closeAt,
                             showResultsImmediately: _showResultsImmediately,
+                            isPublished: _isPublished,
                             isLoading: _isSaving,
                             onOpenAtChanged: (dt) => setState(() => _openAt = dt),
                             onCloseAtChanged: (dt) => setState(() => _closeAt = dt),
                             onShowResultsChanged: (value) => setState(() => _showResultsImmediately = value),
+                            onIsPublishedChanged: (value) => setState(() => _isPublished = value),
                             onCreateAssessment: null, // Remove the old button
                           ),
                         ),
