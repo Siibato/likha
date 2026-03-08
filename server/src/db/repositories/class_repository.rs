@@ -369,4 +369,57 @@ impl ClassRepository {
 
         Ok(())
     }
+
+    pub async fn reassign_teacher(
+        &self,
+        class_id: Uuid,
+        new_teacher_id: Uuid,
+    ) -> AppResult<()> {
+        let txn = self.db.begin().await
+            .map_err(|e| AppError::InternalServerError(format!("Transaction error: {}", e)))?;
+
+        // Soft-remove current teacher
+        let old_teacher = class_participants::Entity::find()
+            .filter(class_participants::Column::ClassId.eq(class_id))
+            .filter(class_participants::Column::Role.eq("teacher"))
+            .filter(class_participants::Column::RemovedAt.is_null())
+            .one(&txn)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        if let Some(old_teacher_participant) = old_teacher {
+            let update = class_participants::ActiveModel {
+                id: Set(old_teacher_participant.id),
+                removed_at: Set(Some(Utc::now().naive_utc())),
+                updated_at: Set(Utc::now().naive_utc()),
+                ..Default::default()
+            };
+
+            update
+                .update(&txn)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Failed to remove old teacher: {}", e)))?;
+        }
+
+        // Add new teacher
+        let new_participant = class_participants::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            class_id: Set(class_id),
+            user_id: Set(new_teacher_id),
+            role: Set("teacher".to_string()),
+            joined_at: Set(Utc::now().naive_utc()),
+            updated_at: Set(Utc::now().naive_utc()),
+            removed_at: Set(None),
+        };
+
+        new_participant
+            .insert(&txn)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to add new teacher: {}", e)))?;
+
+        txn.commit().await
+            .map_err(|e| AppError::InternalServerError(format!("Transaction commit error: {}", e)))?;
+
+        Ok(())
+    }
 }

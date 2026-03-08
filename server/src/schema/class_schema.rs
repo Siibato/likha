@@ -16,6 +16,7 @@ pub struct CreateClassRequest {
 pub struct UpdateClassRequest {
     pub title: Option<String>,
     pub description: Option<String>,
+    pub teacher_id: Option<Uuid>,
 }
 
 #[derive(Debug, Deserialize)]

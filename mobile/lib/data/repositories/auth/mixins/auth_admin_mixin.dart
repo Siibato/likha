@@ -186,6 +186,7 @@ mixin AuthAdminMixin on AuthRepositoryBase {
   ResultFuture<User> lockAccount({
     required String userId,
     required bool locked,
+    String? reason,
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
@@ -193,7 +194,12 @@ mixin AuthAdminMixin on AuthRepositoryBase {
           id: const Uuid().v4(),
           entityType: SyncEntityType.adminUser,
           operation: SyncOperation.update,
-          payload: {'id': userId, 'action': 'lock', 'locked': locked},
+          payload: {
+            'id': userId,
+            'action': 'lock',
+            'locked': locked,
+            if (reason != null) 'reason': reason,
+          },
           status: SyncStatus.pending,
           retryCount: 0,
           maxRetries: 5,
@@ -215,6 +221,7 @@ mixin AuthAdminMixin on AuthRepositoryBase {
       final result = await remoteDataSource.lockAccount(
         userId: userId,
         locked: locked,
+        reason: reason,
       );
       return Right(result);
     } on ServerException catch (e) {
@@ -229,7 +236,6 @@ mixin AuthAdminMixin on AuthRepositoryBase {
   @override
   ResultFuture<User> updateAccount({
     required String userId,
-    String? username,
     String? fullName,
     String? role,
   }) async {
@@ -242,7 +248,6 @@ mixin AuthAdminMixin on AuthRepositoryBase {
           payload: {
             'id': userId,
             'action': 'update',
-            if (username != null) 'username': username,
             if (fullName != null) 'full_name': fullName,
             if (role != null) 'role': role,
           },
@@ -263,7 +268,7 @@ mixin AuthAdminMixin on AuthRepositoryBase {
         final optimisticUser = existingUser != null
             ? UserModel(
                 id: existingUser.id,
-                username: username ?? existingUser.username,
+                username: existingUser.username,
                 fullName: fullName ?? existingUser.fullName,
                 role: role ?? existingUser.role,
                 accountStatus: existingUser.accountStatus,
@@ -273,7 +278,7 @@ mixin AuthAdminMixin on AuthRepositoryBase {
               )
             : UserModel(
                 id: userId,
-                username: username ?? '',
+                username: '',
                 fullName: fullName ?? '',
                 role: role ?? '',
                 accountStatus: 'activated',
@@ -292,7 +297,6 @@ mixin AuthAdminMixin on AuthRepositoryBase {
 
       final result = await remoteDataSource.updateAccount(
         userId: userId,
-        username: username,
         fullName: fullName,
         role: role,
       );

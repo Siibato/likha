@@ -12,6 +12,7 @@ class UpdateClass {
       classId: params.classId,
       title: params.title,
       description: params.description,
+      teacherId: params.teacherId,
     );
   }
 }
@@ -20,10 +21,12 @@ class UpdateClassParams {
   final String classId;
   final String? title;
   final String? description;
+  final String? teacherId;
 
   UpdateClassParams({
     required this.classId,
     this.title,
     this.description,
+    this.teacherId,
   });
 }

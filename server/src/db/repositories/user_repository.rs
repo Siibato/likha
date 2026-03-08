@@ -97,7 +97,6 @@ impl UserRepository {
     pub async fn update_account(
         &self,
         user_id: Uuid,
-        username: Option<String>,
         full_name: Option<String>,
         role: Option<String>,
     ) -> AppResult<users::Model> {
@@ -108,9 +107,6 @@ impl UserRepository {
             .ok_or_else(|| AppError::NotFound("User not found".to_string()))?
             .into();
 
-        if let Some(username) = username {
-            user.username = Set(username);
-        }
         if let Some(full_name) = full_name {
             user.full_name = Set(full_name);
         }
@@ -211,5 +207,17 @@ impl UserRepository {
             .map_err(|e| AppError::InternalServerError(format!("Failed to revoke token: {}", e)))?;
 
         Ok(())
+    }
+
+    pub async fn revoke_all_tokens_for_user(&self, user_id: Uuid) -> AppResult<u64> {
+        let now = Utc::now().naive_utc();
+        let result = refresh_tokens::Entity::update_many()
+            .col_expr(refresh_tokens::Column::RevokedAt, Expr::value(now))
+            .filter(refresh_tokens::Column::UserId.eq(user_id))
+            .filter(refresh_tokens::Column::RevokedAt.is_null())
+            .exec(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to revoke tokens: {}", e)))?;
+        Ok(result.rows_affected)
     }
 }

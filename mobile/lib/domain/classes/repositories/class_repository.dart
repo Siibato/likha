@@ -22,6 +22,7 @@ abstract class ClassRepository {
     required String classId,
     String? title,
     String? description,
+    String? teacherId,
   });
 
   ResultFuture<Enrollment> addStudent({

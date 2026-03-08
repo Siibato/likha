@@ -85,6 +85,7 @@ impl super::ClassService {
         class_id: Uuid,
         request: UpdateClassRequest,
         teacher_id: Uuid,
+        caller_role: &str,
     ) -> AppResult<ClassResponse> {
         let class = self
             .class_repo
@@ -92,7 +93,8 @@ impl super::ClassService {
             .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
+        // Allow admin to update any class, otherwise check ownership
+        if caller_role != "admin" && !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
             return Err(AppError::Forbidden(
                 "You can only update your own classes".to_string(),
             ));
@@ -121,6 +123,26 @@ impl super::ClassService {
                 description,
             )
             .await?;
+
+        // Handle teacher reassignment if requested
+        if let Some(new_teacher_id) = request.teacher_id {
+            let new_teacher = self
+                .user_repo
+                .find_by_id(new_teacher_id)
+                .await?
+                .ok_or_else(|| AppError::NotFound("New teacher not found".to_string()))?;
+
+            if new_teacher.role != "teacher" {
+                return Err(AppError::BadRequest("User must have teacher role".to_string()));
+            }
+
+            // Check that new teacher is not already assigned
+            if self.class_repo.is_teacher_of_class(new_teacher_id, class_id).await? {
+                return Err(AppError::BadRequest("Teacher is already assigned to this class".to_string()));
+            }
+
+            self.class_repo.reassign_teacher(class_id, new_teacher_id).await?;
+        }
 
         let teacher_model = self
             .class_repo

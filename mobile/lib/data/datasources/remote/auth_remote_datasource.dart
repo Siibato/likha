@@ -40,13 +40,12 @@ abstract class AuthRemoteDataSource {
 
   Future<UserModel> resetAccount({required String userId});
 
-  Future<UserModel> lockAccount({required String userId, required bool locked});
+  Future<UserModel> lockAccount({required String userId, required bool locked, String? reason});
 
   Future<List<ActivityLogModel>> getActivityLogs({required String userId});
 
   Future<UserModel> updateAccount({
     required String userId,
-    String? username,
     String? fullName,
     String? role,
   });
@@ -247,11 +246,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<UserModel> lockAccount({
     required String userId,
     required bool locked,
+    String? reason,
   }) async {
     try {
+      final data = <String, dynamic>{'user_id': userId, 'locked': locked};
+      if (reason != null) data['reason'] = reason;
       return await _dioClient.postTyped(
         ApiEndpoints.accountsLock,
-        data: {'user_id': userId, 'locked': locked},
+        data: data,
       );
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
@@ -271,13 +273,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<UserModel> updateAccount({
     required String userId,
-    String? username,
     String? fullName,
     String? role,
   }) async {
     try {
       final data = <String, dynamic>{};
-      if (username != null) data['username'] = username;
       if (fullName != null) data['full_name'] = fullName;
       if (role != null) data['role'] = role;
 

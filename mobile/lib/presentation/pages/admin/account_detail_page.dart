@@ -7,6 +7,7 @@ import 'package:likha/presentation/pages/admin/widgets/action_buttons.dart';
 import 'package:likha/presentation/pages/admin/widgets/activity_log_list.dart';
 import 'package:likha/presentation/pages/admin/widgets/edit_dialog.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
+import 'package:likha/presentation/providers/auth_provider.dart';
 
 class AccountDetailPage extends ConsumerStatefulWidget {
   final User user;
@@ -29,9 +30,11 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
   @override
   Widget build(BuildContext context) {
     final adminState = ref.watch(adminProvider);
+    final authState = ref.watch(authProvider);
     final User user = adminState.accounts
         .cast<User>()
         .firstWhere((a) => a.id == widget.user.id, orElse: () => widget.user);
+    final currentUserId = authState.user?.id;
 
     ref.listen<AdminState>(adminProvider, (prev, next) {
       if (next.successMessage != null &&
@@ -76,17 +79,6 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
             UserInfoCard(
               user: user,
               isLoading: adminState.isLoading,
-              onEditUsername: () => _showEditDialog(
-                context,
-                title: 'Edit Username',
-                currentValue: user.username,
-                onSave: (value) {
-                  ref.read(adminProvider.notifier).updateAccount(
-                        userId: user.id,
-                        username: value,
-                      );
-                },
-              ),
               onEditFullName: () => _showEditDialog(
                 context,
                 title: 'Edit Full Name',
@@ -98,7 +90,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
                       );
                 },
               ),
-              onEditRole: () => _showRoleDialog(context, user),
+              onEditRole: currentUserId != user.id ? () => _showRoleDialog(context, user) : null,
             ),
             const SizedBox(height: 24),
             const Text(
@@ -114,9 +106,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
             ActionButtons(
               user: user,
               isLoading: adminState.isLoading,
-              onLock: () => ref
-                  .read(adminProvider.notifier)
-                  .lockAccount(user.id, true),
+              onLock: () => _showLockDialog(context, user),
               onUnlock: () => ref
                   .read(adminProvider.notifier)
                   .lockAccount(user.id, false),
@@ -287,6 +277,77 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showLockDialog(BuildContext context, User user) {
+    String? reasonText;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text(
+          'Lock Account',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF202020),
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'This will prevent the user from accessing their account.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF666666),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              onChanged: (value) => reasonText = value.isEmpty ? null : value,
+              decoration: InputDecoration(
+                labelText: 'Reason (optional)',
+                border: const OutlineInputBorder(),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              maxLines: 2,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF999999),
+            ),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              ref.read(adminProvider.notifier).lockAccount(
+                user.id,
+                true,
+                reason: reasonText,
+              );
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFDC3545),
+            ),
+            child: const Text(
+              'Lock',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
       ),
     );
   }

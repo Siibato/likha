@@ -62,17 +62,8 @@ impl super::AuthService {
         request: UpdateAccountRequest,
         admin_id: Uuid,
     ) -> AppResult<UserResponse> {
-        if request.username.is_none() && request.full_name.is_none() && request.role.is_none() {
+        if request.full_name.is_none() && request.role.is_none() {
             return Err(AppError::BadRequest("No fields to update".to_string()));
-        }
-
-        if let Some(ref username) = request.username {
-            Validator::validate_username(username)?;
-            if let Some(existing) = self.user_repo.find_by_username(username).await? {
-                if existing.id != user_id {
-                    return Err(AppError::BadRequest("Username already taken".to_string()));
-                }
-            }
         }
 
         if let Some(ref full_name) = request.full_name {
@@ -83,26 +74,40 @@ impl super::AuthService {
 
         if let Some(ref role) = request.role {
             Validator::validate_role(role)?;
+            if user_id == admin_id {
+                return Err(AppError::Forbidden(
+                    "Admins cannot change their own role".to_string(),
+                ));
+            }
         }
 
         let has_role_update = request.role.is_some();
 
         let user = self
             .user_repo
-            .update_account(user_id, request.username, request.full_name.map(|n| n.trim().to_string()), request.role)
+            .update_account(user_id, request.full_name.map(|n| n.trim().to_string()), request.role)
             .await?;
+
+        if has_role_update {
+            let _ = self.user_repo.revoke_all_tokens_for_user(user_id).await;
+        }
+
+        let log_message = if has_role_update {
+            "Account role updated; sessions revoked"
+        } else {
+            "Account details updated"
+        };
 
         self.activity_log_repo
             .create_log(
                 user.id,
                 "account_updated",
                 Some(admin_id),
-                Some("Account details updated".to_string()),
+                Some(log_message.to_string()),
             )
             .await?;
 
         let mut change_log_data = serde_json::json!({
-            "username": user.username,
             "full_name": user.full_name,
         });
         if has_role_update {
@@ -152,6 +157,15 @@ impl super::AuthService {
             })).unwrap_or_default()),
         ).await;
 
+        Ok(Self::user_to_response(&user))
+    }
+
+    pub async fn get_account(&self, user_id: Uuid) -> AppResult<UserResponse> {
+        let user = self
+            .user_repo
+            .find_by_id(user_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("User not found".to_string()))?;
         Ok(Self::user_to_response(&user))
     }
 }

@@ -10,7 +10,6 @@ class UpdateAccount {
   ResultFuture<User> call(UpdateAccountParams params) {
     return _repository.updateAccount(
       userId: params.userId,
-      username: params.username,
       fullName: params.fullName,
       role: params.role,
     );
@@ -19,13 +18,11 @@ class UpdateAccount {
 
 class UpdateAccountParams {
   final String userId;
-  final String? username;
   final String? fullName;
   final String? role;
 
   UpdateAccountParams({
     required this.userId,
-    this.username,
     this.fullName,
     this.role,
   });

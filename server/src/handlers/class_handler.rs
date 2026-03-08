@@ -40,7 +40,7 @@ pub async fn update_class(
         return AppError::Forbidden("Teacher or admin access required".to_string()).into_response();
     }
 
-    match class_service.update_class(class_id, request, auth_user.user_id).await {
+    match class_service.update_class(class_id, request, auth_user.user_id, &auth_user.role).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }

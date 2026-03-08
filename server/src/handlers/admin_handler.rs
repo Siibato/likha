@@ -109,3 +109,18 @@ pub async fn get_activity_logs(
         Err(e) => e.into_response(),
     }
 }
+
+pub async fn get_account(
+    State(auth_service): State<Arc<AuthService>>,
+    auth_user: AuthUser,
+    Path(user_id): Path<Uuid>,
+) -> impl IntoResponse {
+    if let Err(e) = require_admin(&auth_user) {
+        return e.into_response();
+    }
+
+    match auth_service.get_account(user_id).await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
