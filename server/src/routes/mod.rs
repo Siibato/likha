@@ -5,6 +5,7 @@ pub mod class_routes;
 pub mod health_routes;
 pub mod learning_material_routes;
 pub mod sync_routes_new;
+pub mod tasks_routes;
 
 use axum::Router;
 use std::sync::Arc;
@@ -34,9 +35,10 @@ pub fn api_routes(
         .merge(health_routes::routes())
         .merge(auth_routes::routes(auth_service.clone()))
         .merge(class_routes::routes(class_service, auth_service))
-        .merge(assessment_routes::routes(assessment_service))
-        .merge(assignment_routes::routes(assignment_service))
+        .merge(assessment_routes::routes(assessment_service.clone()))
+        .merge(assignment_routes::routes(assignment_service.clone()))
         .merge(learning_material_routes::routes(material_service))
+        .merge(tasks_routes::routes(assignment_service, assessment_service))
         .merge(sync_routes_new::routes(
             sync_push_service,
             sync_conflict_service,

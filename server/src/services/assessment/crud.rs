@@ -180,6 +180,37 @@ impl super::AssessmentService {
         })
     }
 
+    pub async fn get_student_assessments(
+        &self,
+        class_id: Uuid,
+        student_id: Uuid,
+    ) -> AppResult<Vec<crate::schema::tasks_schema::StudentAssessmentListItem>> {
+        let assessments = self
+            .assessment_repo
+            .find_published_by_class_id(class_id)
+            .await?;
+
+        let mut items = Vec::new();
+        for a in assessments {
+            let submission = self
+                .submission_repo
+                .find_by_student_and_assessment(student_id, a.id)
+                .await?;
+
+            items.push(crate::schema::tasks_schema::StudentAssessmentListItem {
+                id: a.id,
+                title: a.title,
+                total_points: a.total_points,
+                open_at: a.open_at.to_string(),
+                close_at: a.close_at.to_string(),
+                time_limit_minutes: a.time_limit_minutes,
+                is_submitted: submission.map(|s| s.is_submitted),
+            });
+        }
+
+        Ok(items)
+    }
+
     pub async fn update_assessment(
         &self,
         assessment_id: Uuid,

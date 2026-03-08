@@ -9,6 +9,16 @@ class TaskCard extends StatelessWidget {
   final TaskStatus status;
   final int? score;
   final VoidCallback? onTap;
+  final TaskType type;
+  final DateTime? openAt;
+  final DateTime? closeAt;
+
+  // 5-color palette
+  static const _kBlack = Color(0xFF1A1A1A);
+  static const _kWhite = Colors.white;
+  static const _kBlue = Color(0xFF4A90D9);
+  static const _kGreen = Color(0xFF4CAF50);
+  static const _kRed = Color(0xFFE57373);
 
   const TaskCard({
     super.key,
@@ -19,6 +29,9 @@ class TaskCard extends StatelessWidget {
     required this.status,
     this.score,
     this.onTap,
+    this.type = TaskType.assignment,
+    this.openAt,
+    this.closeAt,
   });
 
   String _formatTime(DateTime dateTime) {
@@ -28,16 +41,21 @@ class TaskCard extends StatelessWidget {
     return '$hour:$minute $period';
   }
 
+  String _formatDate(DateTime dateTime) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[dateTime.month - 1]} ${dateTime.day}';
+  }
+
   Color _getStatusColor() {
     switch (status) {
       case TaskStatus.pending:
-        return const Color(0xFF2B2B2B);
+        return _kBlack;
       case TaskStatus.submitted:
-        return const Color(0xFF4A90D9);
+        return _kBlue;
       case TaskStatus.graded:
-        return const Color(0xFF4CAF50);
+        return _kGreen;
       case TaskStatus.missing:
-        return const Color(0xFFE57373);
+        return _kRed;
     }
   }
 
@@ -62,13 +80,13 @@ class TaskCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
+        color: _kBlack.withOpacity(0.08),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Container(
         margin: const EdgeInsets.fromLTRB(1, 1, 1, 3.5),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: _kWhite,
           borderRadius: BorderRadius.circular(15),
         ),
         child: Material(
@@ -97,7 +115,7 @@ class TaskCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Title + Points
+                        // Title + Points + Type Chip
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -107,7 +125,7 @@ class TaskCard extends StatelessWidget {
                                 style: const TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF202020),
+                                  color: _kBlack,
                                   letterSpacing: -0.3,
                                 ),
                                 maxLines: 2,
@@ -118,50 +136,76 @@ class TaskCard extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF8F9FA),
+                                color: _kBlack.withOpacity(0.06),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
                                 '${totalPoints}pts',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF666666),
+                                  color: _kBlack.withOpacity(0.5),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: _kBlue.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                type == TaskType.assignment ? 'Assignment' : 'Quiz',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: _kBlue,
                                 ),
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 6),
-                        // Class name + Due time
+                        // Class name + Due/Opens time
                         Row(
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF8F9FA),
+                                color: _kBlack.withOpacity(0.06),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
                                 className,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w500,
-                                  color: Color(0xFF666666),
+                                  color: _kBlack.withOpacity(0.5),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              'Due: $dueTime',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF999999),
+                            if (type == TaskType.assignment)
+                              Text(
+                                'Due: $dueTime',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: _kBlack.withOpacity(0.4),
+                                ),
+                              )
+                            else
+                              Text(
+                                'Opens: ${_formatDate(openAt!)} · Closes: ${_formatDate(closeAt!)}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: _kBlack.withOpacity(0.4),
+                                ),
                               ),
-                            ),
                           ],
                         ),
                       ],
@@ -181,10 +225,10 @@ class TaskCard extends StatelessWidget {
                         if (status == TaskStatus.graded && score != null)
                           Text(
                             '$score/$totalPoints',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: _kWhite,
                               height: 1,
                             ),
                             textAlign: TextAlign.center,
@@ -192,10 +236,10 @@ class TaskCard extends StatelessWidget {
                         else
                           Text(
                             _getStatusLabel(),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: _kWhite,
                               height: 1,
                             ),
                             textAlign: TextAlign.center,

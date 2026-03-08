@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
+import 'package:likha/presentation/pages/student/assignment_detail_page.dart';
+import 'package:likha/presentation/pages/student/assessment_detail_page.dart';
 import 'package:likha/presentation/pages/student/widgets/task_card.dart';
 import 'package:likha/presentation/providers/student_tasks_provider.dart';
 
@@ -120,6 +122,40 @@ class _StudentTasksPageState extends ConsumerState<StudentTasksPage> {
     );
   }
 
+  Future<void> _navigateToTask(TaskItem task) async {
+    if (task.type == TaskType.assignment && task.assignment != null) {
+      final a = task.assignment!;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AssignmentDetailPage(
+            assignmentId: a.id,
+            assignmentTitle: a.title,
+            instructions: a.instructions,
+            submissionType: a.submissionType,
+            totalPoints: a.totalPoints,
+            allowedFileTypes: a.allowedFileTypes,
+            maxFileSizeMb: a.maxFileSizeMb,
+            submissionId: a.submissionId,
+            score: a.score,
+            submissionStatus: a.submissionStatus,
+          ),
+        ),
+      );
+    } else if (task.type == TaskType.assessment && task.assessment != null) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AssessmentDetailPage(assessment: task.assessment!),
+        ),
+      );
+    }
+    // After returning from detail, reload tasks
+    if (mounted) {
+      ref.read(studentTasksProvider.notifier).loadAllTasks(skipBackgroundRefresh: true);
+    }
+  }
+
   List<Widget> _buildDateGroupedTasks(List<TaskItem> tasks) {
     if (tasks.isEmpty) return [];
 
@@ -165,9 +201,10 @@ class _StudentTasksPageState extends ConsumerState<StudentTasksPage> {
                 totalPoints: task.totalPoints,
                 status: task.status,
                 score: task.score,
-                onTap: () {
-                  // Can add navigation to task detail here if needed
-                },
+                type: task.type,
+                openAt: task.openAt,
+                closeAt: task.closeAt,
+                onTap: () => _navigateToTask(task),
               );
             },
           ),
