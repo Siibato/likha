@@ -66,6 +66,18 @@ impl super::AssessmentService {
             })).unwrap_or_default()),
         ).await;
 
+        // NEW: if questions provided in the request, insert them atomically
+        let question_count = if let Some(questions) = request.questions {
+            if !questions.is_empty() {
+                let created = self.insert_questions_for_assessment(assessment.id, questions, teacher_id).await?;
+                created.len() as usize
+            } else {
+                0
+            }
+        } else {
+            0
+        };
+
         Ok(AssessmentResponse {
             id: assessment.id,
             class_id: assessment.class_id,
@@ -79,7 +91,7 @@ impl super::AssessmentService {
             is_published: assessment.is_published,
             order_index: assessment.order_index,
             total_points: assessment.total_points,
-            question_count: 0,
+            question_count,
             submission_count: 0,
             created_at: assessment.created_at.to_string(),
             updated_at: assessment.updated_at.to_string(),

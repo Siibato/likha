@@ -23,9 +23,22 @@ impl super::AssessmentService {
             return Err(AppError::BadRequest("Cannot add questions to a published assessment".to_string()));
         }
 
+        // Delegate to internal helper (guard is preserved above)
+        self.insert_questions_for_assessment(assessment_id, request.questions, teacher_id).await
+    }
+
+    /// Inserts questions for an assessment WITHOUT checking is_published.
+    /// Used for initial atomic creation on published assessments.
+    /// The public add_questions() keeps the guard that prevents editing published assessments.
+    pub(crate) async fn insert_questions_for_assessment(
+        &self,
+        assessment_id: Uuid,
+        questions: Vec<AddQuestionRequest>,
+        teacher_id: Uuid,
+    ) -> AppResult<Vec<QuestionResponse>> {
         let mut responses = Vec::new();
 
-        for q_request in request.questions {
+        for q_request in questions {
             let valid_types = ["multiple_choice", "identification", "enumeration"];
             if !valid_types.contains(&q_request.question_type.as_str()) {
                 return Err(AppError::BadRequest(format!(

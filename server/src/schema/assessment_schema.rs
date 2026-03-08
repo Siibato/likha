@@ -13,6 +13,8 @@ pub struct CreateAssessmentRequest {
     pub show_results_immediately: Option<bool>,
     #[serde(default)]
     pub is_published: Option<bool>,
+    // NEW: optional questions for atomic creation when publishing
+    pub questions: Option<Vec<AddQuestionRequest>>,
 }
 
 #[derive(Debug, Deserialize)]

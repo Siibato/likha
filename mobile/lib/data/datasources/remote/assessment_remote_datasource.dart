@@ -199,7 +199,7 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
     required List<String> assessmentIds,
   }) async {
     try {
-      await _dioClient.postTyped(
+      await _dioClient.postVoid(
         ApiEndpoints.classAssessmentsReorder(classId),
         data: {'assessment_ids': assessmentIds},
       );
@@ -325,7 +325,7 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
   }) async {
     print('💾 [RemoteDS] saveAnswers() START - submissionId: $submissionId, answerCount: ${answers.length}');
     try {
-      await _dioClient.putTyped(
+      await _dioClient.putVoid(
         ApiEndpoints.submissionAnswers(submissionId),
         data: {'answers': answers},
       );

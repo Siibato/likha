@@ -17,7 +17,8 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
     required String openAt,
     required String closeAt,
     bool? showResultsImmediately,
-    bool isPublished = true,
+    bool isPublished = false,
+    List<Map<String, dynamic>>? questions,
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
@@ -64,6 +65,9 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           if (showResultsImmediately != null)
             'show_results_immediately': showResultsImmediately,
           if (isPublished) 'is_published': true,
+          // NEW: include questions atomically when publishing
+          if (isPublished && questions != null && questions.isNotEmpty)
+            'questions': questions,
         },
       );
 

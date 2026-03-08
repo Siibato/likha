@@ -15,6 +15,7 @@ abstract class AssessmentRepository {
     required String closeAt,
     bool? showResultsImmediately,
     bool isPublished = true,
+    List<Map<String, dynamic>>? questions,
   });
 
   ResultFuture<List<Assessment>> getAssessments({required String classId, bool publishedOnly = false, bool skipBackgroundRefresh = false});

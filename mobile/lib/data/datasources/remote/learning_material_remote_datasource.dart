@@ -108,7 +108,7 @@ class LearningMaterialRemoteDataSourceImpl implements LearningMaterialRemoteData
     required String classId,
     required List<String> materialIds,
   }) async {
-    await _dioClient.postTyped(
+    await _dioClient.postVoid(
       ApiEndpoints.classMaterialsReorder(classId),
       data: {'material_ids': materialIds},
     );

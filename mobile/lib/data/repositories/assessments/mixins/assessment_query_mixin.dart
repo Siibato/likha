@@ -215,6 +215,8 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
 
       final result =
           await remoteDataSource.publishAssessment(assessmentId: assessmentId);
+      // Fix: persist published state to local DB (mirrors the offline path)
+      await localDataSource.markAssessmentPublishedLocally(assessmentId: assessmentId);
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -278,6 +280,8 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
 
       final result =
           await remoteDataSource.releaseResults(assessmentId: assessmentId);
+      // Fix: also cache the updated assessment (results_released = true)
+      await localDataSource.cacheAssessments([result]);
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

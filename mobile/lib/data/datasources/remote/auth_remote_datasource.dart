@@ -189,7 +189,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> logout(String refreshToken) async {
     try {
-      await _dioClient.postTyped(
+      await _dioClient.postVoid(
         ApiEndpoints.logout,
         data: {'refresh_token': refreshToken},
       );

@@ -221,11 +221,40 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),
-      (assessment) => state = state.copyWith(
-        isLoading: false,
-        currentAssessment: assessment,
-        successMessage: 'Assessment published',
-      ),
+      (assessment) {
+        // Only replace in list if we got a real response (has classId populated)
+        final updatedList = assessment.classId.isEmpty
+            ? state.assessments.map((a) {
+                if (a.id == assessmentId) {
+                  return Assessment(
+                    id: a.id,
+                    classId: a.classId,
+                    title: a.title,
+                    description: a.description,
+                    timeLimitMinutes: a.timeLimitMinutes,
+                    openAt: a.openAt,
+                    closeAt: a.closeAt,
+                    showResultsImmediately: a.showResultsImmediately,
+                    resultsReleased: a.resultsReleased,
+                    isPublished: true,  // optimistic
+                    orderIndex: a.orderIndex,
+                    totalPoints: a.totalPoints,
+                    questionCount: a.questionCount,
+                    submissionCount: a.submissionCount,
+                    createdAt: a.createdAt,
+                    updatedAt: DateTime.now(),
+                  );
+                }
+                return a;
+              }).toList()
+            : state.assessments.map((a) => a.id == assessmentId ? assessment : a).toList();
+        state = state.copyWith(
+          isLoading: false,
+          currentAssessment: assessment,
+          assessments: updatedList,
+          successMessage: 'Assessment published',
+        );
+      },
     );
   }
 
@@ -330,11 +359,18 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),
-      (assessment) => state = state.copyWith(
-        isLoading: false,
-        currentAssessment: assessment,
-        successMessage: 'Results released',
-      ),
+      (assessment) {
+        // Update the assessment in the list
+        final updatedList = state.assessments
+            .map((a) => a.id == assessmentId ? assessment : a)
+            .toList();
+        state = state.copyWith(
+          isLoading: false,
+          currentAssessment: assessment,
+          assessments: updatedList,
+          successMessage: 'Results released',
+        );
+      },
     );
   }
 

@@ -34,7 +34,9 @@ class AssessmentModel extends Assessment {
       isPublished: _parseBool(json['is_published']),
       orderIndex: json['order_index'] as int? ?? 0,
       totalPoints: json['total_points'] as int,
-      questionCount: json['question_count'] as int? ?? 0,
+      questionCount: (json['questions'] as List<dynamic>?)?.length
+          ?? json['question_count'] as int?
+          ?? 0,
       submissionCount: json['submission_count'] as int? ?? 0,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),

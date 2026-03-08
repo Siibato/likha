@@ -158,7 +158,7 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
     required List<String> assignmentIds,
   }) async {
     try {
-      await _dioClient.postTyped(
+      await _dioClient.postVoid(
         ApiEndpoints.classAssignmentsReorder(classId),
         data: {'assignment_ids': assignmentIds},
       );

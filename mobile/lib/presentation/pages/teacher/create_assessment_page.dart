@@ -193,6 +193,47 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
     return true;
   }
 
+  List<Map<String, dynamic>> _buildQuestionsData() {
+    return _questions.asMap().entries.map((entry) {
+      final i = entry.key;
+      final q = entry.value;
+      final map = <String, dynamic>{
+        'question_type': q.type,
+        'question_text': q.questionText.trim(),
+        'points': q.points,
+        'order_index': i,
+      };
+
+      if (q.type == 'multiple_choice') {
+        map['is_multi_select'] = q.isMultiSelect;
+        map['choices'] = q.choices.asMap().entries.map((ce) {
+          return {
+            'choice_text': ce.value.text.trim(),
+            'is_correct': ce.value.isCorrect,
+            'order_index': ce.key,
+          };
+        }).toList();
+      } else if (q.type == 'identification') {
+        map['correct_answers'] = q.acceptableAnswers
+            .where((a) => a.trim().isNotEmpty)
+            .map((a) => a.trim())
+            .toList();
+      } else if (q.type == 'enumeration') {
+        map['enumeration_items'] = q.enumerationItems.asMap().entries.map((ie) {
+          return {
+            'order_index': ie.key,
+            'acceptable_answers': ie.value.answers
+                .where((a) => a.trim().isNotEmpty)
+                .map((a) => a.trim())
+                .toList(),
+          };
+        }).toList();
+      }
+
+      return map;
+    }).toList();
+  }
+
   Future<void> _handleSave() async {
     if (!_validateAll()) return;
 
@@ -201,7 +242,12 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
     try {
       debugPrint('[CreateAssessmentPage] _handleSave: Starting assessment creation');
 
-      // Step 1: Create assessment and wait for state update
+      // Build questionsData for use in both paths
+      final questionsData = _buildQuestionsData();
+
+      // Step 1: Create assessment
+      // When published: pass questions for atomic creation
+      // When draft: pass null (questions added in Step 2)
       debugPrint('[CreateAssessmentPage] _handleSave: Calling createAssessment provider method');
       final assessment = await ref
           .read(assessmentProvider.notifier)
@@ -217,6 +263,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
               closeAt: _formatDateTimeForApi(_closeAt),
               showResultsImmediately: _showResultsImmediately,
               isPublished: _isPublished,
+              questions: _isPublished ? questionsData : null,
             ),
           );
 
@@ -236,50 +283,10 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
       final assessmentId = assessment.id;
       debugPrint('[CreateAssessmentPage] _handleSave: Assessment created with ID=$assessmentId');
 
-      // Step 2: Add questions (if any)
-      debugPrint('[CreateAssessmentPage] _handleSave: Questions count=${_questions.length}');
-      if (_questions.isNotEmpty) {
-        debugPrint('[CreateAssessmentPage] _handleSave: Adding ${_questions.length} questions');
-        final questionsData = _questions.asMap().entries.map((entry) {
-          final i = entry.key;
-          final q = entry.value;
-          final map = <String, dynamic>{
-            'question_type': q.type,
-            'question_text': q.questionText.trim(),
-            'points': q.points,
-            'order_index': i,
-          };
-
-          if (q.type == 'multiple_choice') {
-            map['is_multi_select'] = q.isMultiSelect;
-            map['choices'] = q.choices.asMap().entries.map((ce) {
-              return {
-                'choice_text': ce.value.text.trim(),
-                'is_correct': ce.value.isCorrect,
-                'order_index': ce.key,
-              };
-            }).toList();
-          } else if (q.type == 'identification') {
-            map['correct_answers'] = q.acceptableAnswers
-                .where((a) => a.trim().isNotEmpty)
-                .map((a) => a.trim())
-                .toList();
-          } else if (q.type == 'enumeration') {
-            map['enumeration_items'] = q.enumerationItems.asMap().entries.map((ie) {
-              return {
-                'order_index': ie.key,
-                'acceptable_answers': ie.value.answers
-                    .where((a) => a.trim().isNotEmpty)
-                    .map((a) => a.trim())
-                    .toList(),
-              };
-            }).toList();
-          }
-
-          return map;
-        }).toList();
-
-        debugPrint('[CreateAssessmentPage] _handleSave: Calling addQuestions');
+      // Step 2: Add questions only when DRAFT (published used atomic path above)
+      debugPrint('[CreateAssessmentPage] _handleSave: isPublished=$_isPublished, questions count=${_questions.length}');
+      if (!_isPublished && _questions.isNotEmpty) {
+        debugPrint('[CreateAssessmentPage] _handleSave: Adding ${_questions.length} questions (draft flow)');
         await ref.read(assessmentProvider.notifier).addQuestions(
           AddQuestionsParams(
             assessmentId: assessmentId,

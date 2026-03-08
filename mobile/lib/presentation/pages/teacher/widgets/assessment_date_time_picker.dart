@@ -66,6 +66,7 @@ class AssessmentDateTimePicker extends StatelessWidget {
     final time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(dateTime),
+      initialEntryMode: TimePickerEntryMode.input,
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -74,6 +75,9 @@ class AssessmentDateTimePicker extends StatelessWidget {
               onPrimary: Colors.white,
               surface: Colors.white,
               onSurface: Color(0xFF2B2B2B),
+              secondary: Color(0xFF2B2B2B),
+              tertiary: Color(0xFF2B2B2B),
+              onTertiary: Colors.white,
             ),
           ),
           child: child!,
