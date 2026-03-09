@@ -211,13 +211,21 @@ impl UserRepository {
 
     pub async fn revoke_all_tokens_for_user(&self, user_id: Uuid) -> AppResult<u64> {
         let now = Utc::now().naive_utc();
-        let result = refresh_tokens::Entity::update_many()
-            .col_expr(refresh_tokens::Column::RevokedAt, Expr::value(now))
-            .filter(refresh_tokens::Column::UserId.eq(user_id))
-            .filter(refresh_tokens::Column::RevokedAt.is_null())
-            .exec(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to revoke tokens: {}", e)))?;
-        Ok(result.rows_affected)
+        let now_str = now.to_string();
+        let user_id_str = user_id.to_string();
+
+        let query = format!(
+            "UPDATE refresh_tokens SET revoked_at = '{}' WHERE user_id = '{}' AND revoked_at IS NULL",
+            now_str, user_id_str
+        );
+
+        let result = self.db.execute(sea_orm::Statement::from_string(
+            sea_orm::DbBackend::Sqlite,
+            query,
+        ))
+        .await
+        .map_err(|e| AppError::InternalServerError(format!("Failed to revoke tokens: {}", e)))?;
+
+        Ok(result.rows_affected())
     }
 }

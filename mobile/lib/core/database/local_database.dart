@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 15,
+      version: 16,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onOpen: (db) async {
@@ -805,6 +805,34 @@ class LocalDatabase {
         await db.execute(
           'ALTER TABLE assessments ADD COLUMN order_index INTEGER NOT NULL DEFAULT 0'
         );
+      } catch (e) {
+        // Column might already exist
+      }
+    }
+
+    if (oldVersion < 16) {
+      // Fix: Create sync_metadata table if it doesn't exist (was missing from upgrade path for v15 and earlier)
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS sync_metadata (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+          )
+        ''');
+      } catch (e) {
+        // Table might already exist
+      }
+
+      // Create index for sync_metadata if it doesn't exist
+      try {
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_sync_metadata_key ON sync_metadata(key)');
+      } catch (e) {
+        // Index might already exist
+      }
+
+      // Fix: Add updated_at column to users table if it doesn't exist (was missing from v1-v14 upgrade path)
+      try {
+        await db.execute('ALTER TABLE users ADD COLUMN updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP');
       } catch (e) {
         // Column might already exist
       }

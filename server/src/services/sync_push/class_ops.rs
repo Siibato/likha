@@ -31,9 +31,13 @@ impl super::SyncPushService {
                 };
                 let title = op.payload.get("title").and_then(|v| v.as_str()).map(|s| s.to_string());
                 let description = op.payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
-                let request = UpdateClassRequest { title, description };
+                let teacher_id = op.payload
+                    .get("teacher_id")
+                    .and_then(|v| v.as_str())
+                    .and_then(|s| Uuid::parse_str(s).ok());
+                let request = UpdateClassRequest { title, description, teacher_id };
 
-                match self.class_service.update_class(class_id, request, user_id).await {
+                match self.class_service.update_class(class_id, request, user_id, user_role).await {
                     Ok(r) => self.success_result(op, None, Some(r.updated_at)),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }

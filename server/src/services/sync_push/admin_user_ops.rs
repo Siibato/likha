@@ -36,7 +36,6 @@ impl super::SyncPushService {
                 match action {
                     "update" => {
                         let request = UpdateAccountRequest {
-                            username: op.payload.get("username").and_then(|v| v.as_str()).map(|s| s.to_string()),
                             full_name: op.payload.get("full_name").and_then(|v| v.as_str()).map(|s| s.to_string()),
                             role: op.payload.get("role").and_then(|v| v.as_str()).map(|s| s.to_string()),
                         };
@@ -53,7 +52,8 @@ impl super::SyncPushService {
                     }
                     "lock" => {
                         let locked = op.payload.get("locked").and_then(|v| v.as_bool()).unwrap_or(true);
-                        match self.auth_service.lock_account(LockAccountRequest { user_id: target_user_id, locked }, user_id).await {
+                        let reason = op.payload.get("reason").and_then(|v| v.as_str()).map(|s| s.to_string());
+                        match self.auth_service.lock_account(LockAccountRequest { user_id: target_user_id, locked, reason }, user_id).await {
                             Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
                             Err(e) => self.error_result(op, &e.to_string()),
                         }
