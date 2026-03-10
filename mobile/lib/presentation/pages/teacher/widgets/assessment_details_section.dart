@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_field.dart';
-import 'package:likha/presentation/pages/teacher/widgets/assessment_date_time_picker.dart';
+import 'package:likha/presentation/pages/teacher/widgets/shared_due_date_time_picker.dart';
 
 class AssessmentDetailsSection extends StatelessWidget {
   final GlobalKey<FormState> formKey;
@@ -82,7 +82,7 @@ class AssessmentDetailsSection extends StatelessWidget {
             enabled: !isLoading,
           ),
           const SizedBox(height: 16),
-          AssessmentDateTimePicker(
+          SharedDueDateTimePicker(
             label: 'Open Date',
             dateTime: openAt,
             icon: Icons.calendar_today_rounded,
@@ -90,7 +90,7 @@ class AssessmentDetailsSection extends StatelessWidget {
             onChanged: onOpenAtChanged,
           ),
           const SizedBox(height: 16),
-          AssessmentDateTimePicker(
+          SharedDueDateTimePicker(
             label: 'Close Date',
             dateTime: closeAt,
             icon: Icons.event_rounded,

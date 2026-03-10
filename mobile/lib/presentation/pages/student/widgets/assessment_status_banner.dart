@@ -39,7 +39,7 @@ class AssessmentStatusBanner extends StatelessWidget {
     switch (status) {
       case DetailStatus.notYetOpen:
         return (
-          const Color(0xFF5C8EFF),
+          const Color(0xFF808080),
           Icons.schedule_rounded,
           'Not Yet Open',
           openAt != null ? 'Opens on ${_formatDateTime(openAt!)}' : 'Opening soon',

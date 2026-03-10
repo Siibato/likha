@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/pages/teacher/widgets/question_type_dropdown.dart';
 
 class AddQuestionPage extends ConsumerStatefulWidget {
   final String assessmentId;
@@ -164,29 +165,10 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              DropdownButtonFormField<String>(
+              QuestionTypeDropdown(
                 value: _questionType,
-                decoration: InputDecoration(
-                  labelText: 'Question Type',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'multiple_choice',
-                    child: Text('Multiple Choice'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'identification',
-                    child: Text('Identification'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'enumeration',
-                    child: Text('Enumeration'),
-                  ),
-                ],
-                onChanged: state.isLoading ? null : _onTypeChanged,
+                onChanged: state.isLoading ? (_) {} : _onTypeChanged,
+                enabled: !state.isLoading,
               ),
               const SizedBox(height: 16),
               TextFormField(

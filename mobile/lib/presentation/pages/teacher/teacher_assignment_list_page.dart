@@ -8,10 +8,10 @@ import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/teacher/assignment_detail_page.dart';
 import 'package:likha/presentation/pages/teacher/create_assignment_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/empty_assignment_list_state.dart';
+import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
 import 'package:likha/presentation/pages/teacher/widgets/teacher_assignment_card.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
-import 'package:likha/presentation/widgets/styled_dialog.dart';
 
 class TeacherAssignmentListPage extends ConsumerStatefulWidget {
   final String classId;
@@ -66,59 +66,13 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
   }
 
   void _showMoveToPositionDialog(int currentIndex) {
-    final controller = TextEditingController(text: (currentIndex + 1).toString());
     showDialog(
       context: context,
-      builder: (ctx) => StyledDialog(
-        title: 'Move to Position',
-        subtitle: 'Reorder assignment',
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Total assignments: ${_reorderBuffer.length}',
-              style: const TextStyle(
-                fontSize: 13,
-                color: Color(0xFF666666),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              autofocus: true,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF202020),
-              ),
-              decoration: StyledTextFieldDecoration.styled(
-                labelText: 'Position (1-${_reorderBuffer.length})',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          StyledDialogAction(
-            label: 'Cancel',
-            onPressed: () => Navigator.pop(ctx),
-          ),
-          StyledDialogAction(
-            label: 'Move',
-            isPrimary: true,
-            onPressed: () {
-              final newPosition = int.tryParse(controller.text);
-              if (newPosition != null && newPosition >= 1 && newPosition <= _reorderBuffer.length) {
-                Navigator.pop(ctx);
-                _animateReorder(currentIndex, newPosition - 1);
-              } else {
-                context.showErrorSnackBar('Please enter a number between 1 and ${_reorderBuffer.length}');
-              }
-            },
-          ),
-        ],
+      builder: (ctx) => ReorderPositionDialog(
+        resourceType: 'assignments',
+        totalCount: _reorderBuffer.length,
+        currentPosition: currentIndex,
+        onReorder: _animateReorder,
       ),
     );
   }

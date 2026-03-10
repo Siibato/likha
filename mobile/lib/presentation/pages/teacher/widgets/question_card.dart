@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/presentation/pages/teacher/widgets/question_draft.dart';
+import 'package:likha/presentation/pages/teacher/widgets/question_type_dropdown.dart';
 
 class QuestionCard extends StatelessWidget {
   final int index;
@@ -329,56 +330,8 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
             ],
           ),
           const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
+          QuestionTypeDropdown(
             value: widget.question.type,
-            decoration: InputDecoration(
-              labelText: 'Question Type',
-              labelStyle: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF999999),
-              ),
-              filled: true,
-              fillColor: const Color(0xFFFAFAFA),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: Color(0xFFE0E0E0),
-                  width: 1,
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: Color(0xFFE0E0E0),
-                  width: 1,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: Color(0xFF2B2B2B),
-                  width: 1.5,
-                ),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-            ),
-            items: const [
-              DropdownMenuItem(
-                value: 'multiple_choice',
-                child: Text('Multiple Choice'),
-              ),
-              DropdownMenuItem(
-                value: 'identification',
-                child: Text('Identification'),
-              ),
-              DropdownMenuItem(
-                value: 'enumeration',
-                child: Text('Enumeration'),
-              ),
-            ],
             onChanged: (value) {
               if (value != null) {
                 setState(() {
