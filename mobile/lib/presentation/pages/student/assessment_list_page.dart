@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/injection_container.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/presentation/pages/student/assessment_detail_page.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
@@ -29,7 +31,7 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
   }
 
   AssessmentStatus _getStatus(Assessment assessment) {
-    final now = DateTime.now();
+    final now = sl<ServerClockService>().now();
     print('📋 [ListPage] _getStatus() - assessment: ${assessment.title}, submissionCount: ${assessment.submissionCount}, isSubmitted: ${assessment.isSubmitted}, resultsReleased: ${assessment.resultsReleased}, showResultsImmediately: ${assessment.showResultsImmediately}');
     print('📋 [ListPage] _getStatus() - openAt: ${assessment.openAt}, closeAt: ${assessment.closeAt}, now: $now');
 

@@ -45,7 +45,7 @@ class SharedDueDateTimePicker extends StatelessWidget {
     final date = await showDatePicker(
       context: context,
       initialDate: dateTime,
-      firstDate: DateTime.now().subtract(const Duration(days: 1)),
+      firstDate: DateTime.now().subtract(const Duration(days: 7)),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (context, child) {
         return Theme(

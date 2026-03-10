@@ -43,21 +43,10 @@ class _AssessmentResultsPageState
 
   Future<void> _loadViaAssessment() async {
     final user = ref.read(authProvider).user;
-
+    if (user == null) return;
     await ref
         .read(assessmentProvider.notifier)
-        .startAssessment(
-          widget.assessmentId!,
-          user?.id       ?? '',
-          user?.fullName ?? '',
-          user?.username ?? '',
-        );
-    final state = ref.read(assessmentProvider);
-    if (state.startResult != null) {
-      ref
-          .read(assessmentProvider.notifier)
-          .loadStudentResults(state.startResult!.submissionId);
-    }
+        .loadStudentResultsByAssessment(widget.assessmentId!, user.id);
   }
 
   @override

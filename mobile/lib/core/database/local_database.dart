@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 16,
+      version: 17,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onOpen: (db) async {
@@ -833,6 +833,18 @@ class LocalDatabase {
       // Fix: Add updated_at column to users table if it doesn't exist (was missing from v1-v14 upgrade path)
       try {
         await db.execute('ALTER TABLE users ADD COLUMN updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP');
+      } catch (e) {
+        // Column might already exist
+      }
+    }
+
+    if (oldVersion < 17) {
+      // Fix: Add updated_at column to assessment_submissions table
+      // Was missing from the migration path for v1-v16, causing sync crashes
+      try {
+        await db.execute(
+          'ALTER TABLE assessment_submissions ADD COLUMN updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP'
+        );
       } catch (e) {
         // Column might already exist
       }

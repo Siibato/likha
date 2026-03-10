@@ -8,6 +8,7 @@ import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/connectivity_service.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/network/dio_client.dart';
+import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/sync_logger.dart';
@@ -295,6 +296,9 @@ Future<void> init() async {
   // Sync Logger
   sl.registerSingleton<SyncLogger>(SyncLogger());
 
+  // Server Clock Service (must be registered before SyncManager)
+  sl.registerSingleton<ServerClockService>(ServerClockService());
+
   // SyncManager (depends on all repositories)
   sl.registerSingleton<SyncManager>(
     SyncManager(
@@ -306,6 +310,7 @@ Future<void> init() async {
       sl<AssessmentLocalDataSource>(), // AssessmentLocalDataSource
       sl<SyncLogger>(), // SyncLogger
       sl<StorageService>(), // StorageService
+      sl<ServerClockService>(), // ServerClockService
     ),
   );
 

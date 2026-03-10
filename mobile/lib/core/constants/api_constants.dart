@@ -4,7 +4,7 @@ class ApiConstants {
   ApiConstants._();
 
   static String get baseUrl =>
-      dotenv.env['API_BASE_URL'] ?? 'http://10.0.2.2:8080';
+      dotenv.env['API_BASE_URL'] ?? 'http://192.168.1.1:8080';
 
   static const Duration connectTimeout = Duration(seconds: 10);
   static const Duration receiveTimeout = Duration(seconds: 10);

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/injection_container.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/presentation/pages/student/assessment_results_page.dart';
 import 'package:likha/presentation/pages/student/take_assessment_page.dart';
@@ -36,7 +38,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
 
   DetailStatus _computeDetailStatus() {
     final a = widget.assessment;
-    final now = DateTime.now();
+    final now = sl<ServerClockService>().now();
     final hasSubmission = a.submissionCount > 0;
     final withinWindow = now.isAfter(a.openAt) && now.isBefore(a.closeAt);
     final resultsAccessible = a.resultsReleased || a.showResultsImmediately;
@@ -162,10 +164,14 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
   }
 
   void _onViewResultsPressed() {
+    final submissionId = ref.read(assessmentProvider).currentStudentSubmission?.id;
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => AssessmentResultsPage(assessmentId: widget.assessment.id),
+        builder: (_) => AssessmentResultsPage(
+          submissionId: submissionId,
+          assessmentId: submissionId == null ? widget.assessment.id : null,
+        ),
       ),
     );
   }
@@ -540,16 +546,18 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
   }
 
   String _formatDateTime(DateTime dt) {
-    final month = dt.month.toString().padLeft(2, '0');
-    final day = dt.day.toString().padLeft(2, '0');
-    final year = dt.year;
-    final hour = dt.hour > 12
-        ? dt.hour - 12
-        : dt.hour == 0
+    // Convert UTC to device local time before formatting
+    final local = dt.toLocal();
+    final month = local.month.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    final year = local.year;
+    final hour = local.hour > 12
+        ? local.hour - 12
+        : local.hour == 0
             ? 12
-            : dt.hour;
-    final minute = dt.minute.toString().padLeft(2, '0');
-    final period = dt.hour >= 12 ? 'PM' : 'AM';
+            : local.hour;
+    final minute = local.minute.toString().padLeft(2, '0');
+    final period = local.hour >= 12 ? 'PM' : 'AM';
     return '$month/$day/$year $hour:$minute $period';
   }
 }

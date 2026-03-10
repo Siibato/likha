@@ -42,6 +42,7 @@ class StyledDropdown<T> extends StatelessWidget {
           ),
           child: DropdownButtonFormField<T>(
             initialValue: value,
+            isExpanded: true,
             items: items.map((item) {
               return DropdownMenuItem<T>(
                 value: item.value,

@@ -186,6 +186,7 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
                             value: teacher.id,
                             child: Text(
                               '${teacher.fullName} (@${teacher.username})',
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         )

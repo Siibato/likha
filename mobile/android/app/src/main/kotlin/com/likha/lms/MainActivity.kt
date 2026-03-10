@@ -1,4 +1,4 @@
-package com.example.mobile
+package com.likha.lms
 
 import io.flutter.embedding.android.FlutterActivity
 

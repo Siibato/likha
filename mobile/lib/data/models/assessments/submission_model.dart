@@ -1,10 +1,16 @@
 import 'package:likha/domain/assessments/entities/submission.dart';
 
-/// Server sends NaiveDateTime (UTC without Z suffix).
+/// Server sends datetime strings in various formats. Normalize to UTC.
 /// Dart's DateTime.parse treats bare strings as local time, causing
-/// wrong elapsed-time calculations. Appending 'Z' forces UTC parsing.
-DateTime _parseUtc(String s) =>
-    DateTime.parse(s.endsWith('Z') ? s : '${s}Z');
+/// wrong elapsed-time calculations. This parser ensures UTC interpretation.
+/// Handles: "2026-03-10T15:41:38" → "2026-03-10T15:41:38Z"
+///          "2026-03-10T15:41:38Z" → "2026-03-10T15:41:38Z"
+///          "2026-03-10T15:41:38+00:00Z" → "2026-03-10T15:41:38Z" (malformed, but handled)
+DateTime _parseUtc(String s) {
+  // Remove trailing Z and any timezone offset info, then re-add Z to force UTC
+  String normalized = s.replaceAll(RegExp(r'(Z|[+-]\d{2}:\d{2}(Z)?)$'), '');
+  return DateTime.parse('${normalized}Z');
+}
 
 class SubmissionSummaryModel extends SubmissionSummary {
   const SubmissionSummaryModel({
@@ -42,9 +48,9 @@ class SubmissionSummaryModel extends SubmissionSummary {
       studentId: map['student_id'] as String? ?? '',
       studentName: map['student_name'] as String? ?? '',
       studentUsername: map['student_username'] as String? ?? '',
-      startedAt: DateTime.parse(map['started_at'] as String),
+      startedAt: _parseUtc(map['started_at'] as String),
       submittedAt: map['submitted_at'] != null
-          ? DateTime.parse(map['submitted_at'] as String)
+          ? _parseUtc(map['submitted_at'] as String)
           : null,
       autoScore: (map['auto_score'] as int?)?.toDouble() ?? 0.0,
       finalScore: (map['final_score'] as int?)?.toDouble() ?? 0.0,

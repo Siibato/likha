@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/core/sync/sync_manager.dart';
+import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/student/assignment_detail_page.dart';
 import 'package:likha/presentation/pages/student/widgets/assignment_card.dart';
@@ -70,7 +72,7 @@ class _StudentAssignmentListPageState extends ConsumerState<StudentAssignmentLis
                             itemBuilder: (context, index) {
                               final assignment = state.assignments[index];
                               final isPastDue =
-                                  DateTime.now().isAfter(assignment.dueAt);
+                                  sl<ServerClockService>().now().isAfter(assignment.dueAt);
 
                             return AssignmentCard(
                               title: assignment.title,

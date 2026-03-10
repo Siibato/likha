@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "190733289173",
+    "project_id": "likha-c440b",
+    "storage_bucket": "likha-c440b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:190733289173:android:650fde10cc73a8a112045c",
+        "android_client_info": {
+          "package_name": "com.likha.lms"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDOtXArHIdRQA-5ulDszRRF2H-JARw66NU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

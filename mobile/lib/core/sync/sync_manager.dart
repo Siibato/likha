@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/sync_logger.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
@@ -78,6 +79,7 @@ class SyncManager {
   final AssessmentLocalDataSource _assessmentLocalDataSource;
   final SyncLogger _log;
   final StorageService _storageService;
+  final ServerClockService _serverClockService;
 
   bool _isSyncing = false;
   StreamSubscription<bool>? _reachabilitySubscription;
@@ -100,6 +102,7 @@ class SyncManager {
     this._assessmentLocalDataSource,
     this._log,
     this._storageService,
+    this._serverClockService,
   );
 
   /// Start sync manager - listen for server reachability changes
@@ -149,6 +152,11 @@ class SyncManager {
 
       // STEP 2: Fetch and merge server changes
       final serverTime = await _inboundSync();
+
+      // Update server-aligned clock offset for UI time comparisons
+      if (serverTime != null) {
+        _serverClockService.updateOffset(serverTime);
+      }
 
       // STEP 3: Save last sync time (use server time, not device time)
       final syncTime = serverTime ?? DateTime.now().toIso8601String();

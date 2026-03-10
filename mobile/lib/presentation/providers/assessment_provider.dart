@@ -491,14 +491,29 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
     state = state.copyWith(isLoading: true, clearError: true);
     final result = await _getStudentResults(submissionId);
     result.fold(
-      (failure) {
-        // Silent fail: don't show error snackbar
-        // Status banner shows "Results Pending" — that's enough
-        print('⚠️ [Provider] loadStudentResults() SILENT FAIL - ${failure.message}');
-        state = state.copyWith(isLoading: false);
-      },
+      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
       (studentResult) =>
           state = state.copyWith(isLoading: false, studentResult: studentResult),
+    );
+  }
+
+  Future<void> loadStudentResultsByAssessment(String assessmentId, String studentId) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    final submResult = await _getStudentSubmission(GetStudentSubmissionParams(
+      assessmentId: assessmentId,
+      studentId: studentId,
+    ));
+    await submResult.fold(
+      (failure) async {
+        state = state.copyWith(isLoading: false, error: 'Could not find your submission');
+      },
+      (submission) async {
+        if (submission == null) {
+          state = state.copyWith(isLoading: false, error: 'No submission found for this assessment');
+          return;
+        }
+        await loadStudentResults(submission.id);
+      },
     );
   }
 
