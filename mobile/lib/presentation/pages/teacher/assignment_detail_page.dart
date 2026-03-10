@@ -8,6 +8,7 @@ import 'package:likha/presentation/pages/teacher/widgets/assignment_instructions
 import 'package:likha/presentation/pages/teacher/widgets/assignment_status_card.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assignment_submissions_card.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
 
 class AssignmentDetailPage extends ConsumerStatefulWidget {
   final String assignmentId;
@@ -31,100 +32,22 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
   }
 
   void _confirmPublish(Assignment assignment) {
-    showDialog(
+    AppDialogs.showConfirmation(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text(
-          'Publish Assignment',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
-        ),
-        content: Text(
-          'Publish "${assignment.title}"? Students will be able to see and submit to this assignment.',
-          style: const TextStyle(fontSize: 15),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                color: Color(0xFF666666),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ref
-                  .read(assignmentProvider.notifier)
-                  .publishAssignment(widget.assignmentId);
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF2B2B2B),
-            ),
-            child: const Text(
-              'Publish',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
+      title: 'Publish Assignment',
+      body: 'Publish "${assignment.title}"? Students will be able to see and submit to this assignment.',
+      confirmLabel: 'Publish',
+      onConfirm: () => ref.read(assignmentProvider.notifier).publishAssignment(widget.assignmentId),
     );
   }
 
   void _confirmDelete(Assignment assignment) {
-    showDialog(
+    AppDialogs.showDestructive(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text(
-          'Delete Assignment',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
-        ),
-        content: Text(
-          'Delete "${assignment.title}"? This cannot be undone.',
-          style: const TextStyle(fontSize: 15),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                color: Color(0xFF666666),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ref
-                  .read(assignmentProvider.notifier)
-                  .deleteAssignment(widget.assignmentId);
-            },
-            child: const Text(
-              'Delete',
-              style: TextStyle(
-                color: Color(0xFFEF5350),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
+      title: 'Delete Assignment',
+      body: 'Delete "${assignment.title}"? This cannot be undone.',
+      confirmLabel: 'Delete',
+      onConfirm: () => ref.read(assignmentProvider.notifier).deleteAssignment(widget.assignmentId),
     );
   }
 

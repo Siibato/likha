@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assignments/usecases/grade_submission.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/styled_button.dart';
 import 'package:path_provider/path_provider.dart';
 
 class GradeSubmissionPage extends ConsumerStatefulWidget {
@@ -260,78 +262,43 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
                                 ?.copyWith(fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 12),
-                          TextFormField(
+                          StyledTextField(
                             controller: _scoreController,
+                            label: 'Score (out of ${widget.totalPoints})',
+                            icon: Icons.star_outline_rounded,
                             keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText:
-                                  'Score (out of ${widget.totalPoints})',
-                              prefixIcon: const Icon(Icons.star),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) return 'Score is required';
+                              final score = num.tryParse(value.trim());
+                              if (score == null) return 'Must be a valid number';
+                              if (score < 0 || score > widget.totalPoints) return 'Score must be between 0 and ${widget.totalPoints}';
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 12),
-                          TextFormField(
+                          StyledTextField(
                             controller: _feedbackController,
+                            label: 'Feedback (optional)',
+                            icon: Icons.comment_outlined,
                             maxLines: 3,
-                            decoration: InputDecoration(
-                              labelText: 'Feedback (optional)',
-                              prefixIcon: const Icon(Icons.comment),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              alignLabelWithHint: true,
-                            ),
                           ),
                           const SizedBox(height: 16),
                           Row(
                             children: [
                               Expanded(
-                                child: OutlinedButton(
-                                  onPressed: state.isLoading
-                                      ? null
-                                      : _handleReturn,
-                                  style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 14),
-                                    foregroundColor: Colors.orange,
-                                    side: const BorderSide(
-                                        color: Colors.orange),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  child: const Text('Return'),
+                                child: StyledButton(
+                                  text: 'Return',
+                                  isLoading: state.isLoading,
+                                  onPressed: _handleReturn,
+                                  variant: StyledButtonVariant.outlined,
                                 ),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
-                                child: ElevatedButton(
-                                  onPressed: state.isLoading
-                                      ? null
-                                      : _handleGrade,
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 14),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  child: state.isLoading
-                                      ? const SizedBox(
-                                          height: 20,
-                                          width: 20,
-                                          child:
-                                              CircularProgressIndicator(
-                                                  strokeWidth: 2),
-                                        )
-                                      : Text(submission.status == 'graded'
-                                          ? 'Update Grade'
-                                          : 'Grade'),
+                                child: StyledButton(
+                                  text: submission.status == 'graded' ? 'Update Grade' : 'Grade',
+                                  isLoading: state.isLoading,
+                                  onPressed: _handleGrade,
                                 ),
                               ),
                             ],

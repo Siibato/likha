@@ -7,6 +7,7 @@ import 'package:likha/domain/learning_materials/entities/material_file.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/widgets/styled_dialog.dart';
+import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -217,26 +218,13 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
     context.showSuccessSnackBar('Downloaded $downloadedCount file(s)', durationMs: 3000);
   }
 
-  void _deleteFile(String fileId) {
-    showDialog(
+  void _deleteFile(MaterialFile file) {
+    AppDialogs.showDestructive(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete File'),
-        content: const Text('Are you sure you want to delete this file?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ref.read(learningMaterialProvider.notifier).deleteFile(fileId, widget.materialId);
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+      title: 'Delete File',
+      body: 'Are you sure you want to delete "${file.fileName}"?',
+      confirmLabel: 'Delete',
+      onConfirm: () => ref.read(learningMaterialProvider.notifier).deleteFile(file.id, widget.materialId),
     );
   }
 
@@ -264,6 +252,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
           StyledDialogAction(
             label: 'Delete',
             isPrimary: true,
+            isDestructive: true,
             onPressed: () {
               Navigator.pop(ctx);
               ref.read(learningMaterialProvider.notifier).deleteMaterial(widget.materialId);
@@ -480,7 +469,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                                         : const Color(0xFFEF5350),
                                     tooltip:
                                         state.isLoading ? 'Downloading...' : 'Delete file',
-                                    onPressed: state.isLoading ? null : () => _deleteFile(file.id),
+                                    onPressed: state.isLoading ? null : () => _deleteFile(file),
                                   ),
                               ],
                             ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
+import 'package:likha/presentation/pages/shared/widgets/cards/base_card_sm.dart';
 
 class TeacherAssignmentCard extends StatelessWidget {
   final Assignment assignment;
@@ -13,34 +14,19 @@ class TeacherAssignmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return BaseCardSm(
       onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFFE0E0E0),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(1, 1, 1, 2.5),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(11),
+      child: Row(
+        children: [
+          _buildIcon(),
+          const SizedBox(width: 14),
+          Expanded(child: _buildContent()),
+          const Icon(
+            Icons.chevron_right_rounded,
+            color: Color(0xFFCCCCCC),
+            size: 22,
           ),
-          child: Row(
-            children: [
-              _buildIcon(),
-              const SizedBox(width: 14),
-              Expanded(child: _buildContent()),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: Color(0xFFCCCCCC),
-                size: 22,
-              ),
-            ],
-          ),
-        ),
+        ],
       ),
     );
   }

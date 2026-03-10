@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/presentation/widgets/styled_dialog.dart';
 
 class EditDialog extends StatefulWidget {
   final String title;
@@ -33,28 +34,13 @@ class _EditDialogState extends State<EditDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      title: Text(
-        widget.title,
-        style: const TextStyle(
-          fontWeight: FontWeight.w700,
-          color: Color(0xFF202020),
-        ),
-      ),
+    return StyledDialog(
+      title: widget.title,
       content: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFFE0E0E0),
-          borderRadius: BorderRadius.circular(14),
-        ),
+        decoration: BoxDecoration(color: const Color(0xFFE0E0E0), borderRadius: BorderRadius.circular(14)),
         child: Container(
           margin: const EdgeInsets.fromLTRB(1, 1, 1, 3),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(13),
-          ),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(13)),
           child: TextField(
             controller: _controller,
             autofocus: true,
@@ -88,17 +74,10 @@ class _EditDialogState extends State<EditDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF999999),
-          ),
-          child: const Text(
-            'Cancel',
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ),
-        ),
-        TextButton(
+        StyledDialogAction(label: 'Cancel', onPressed: () => Navigator.pop(context)),
+        StyledDialogAction(
+          label: 'Save',
+          isPrimary: true,
           onPressed: () {
             final value = _controller.text.trim();
             if (value.isNotEmpty && value != widget.currentValue) {
@@ -106,13 +85,6 @@ class _EditDialogState extends State<EditDialog> {
               widget.onSave(value);
             }
           },
-          style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF2B2B2B),
-          ),
-          child: const Text(
-            'Save',
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ),
         ),
       ],
     );

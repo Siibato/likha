@@ -5,6 +5,7 @@ import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:likha/domain/assessments/usecases/override_answer.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
 
 class SubmissionReviewPage extends ConsumerStatefulWidget {
   final String submissionId;
@@ -51,25 +52,12 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
 
   void _confirmOverride(SubmissionAnswer answer, bool isCorrect) {
     final action = isCorrect ? 'correct' : 'incorrect';
-    showDialog(
+    AppDialogs.showConfirmation(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Override Grade'),
-        content: Text('Mark this answer as $action?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _overrideAnswer(answer.id, isCorrect);
-            },
-            child: const Text('Confirm'),
-          ),
-        ],
-      ),
+      title: 'Override Grade',
+      body: 'Mark this answer as $action?',
+      confirmLabel: 'Confirm',
+      onConfirm: () => _overrideAnswer(answer.id, isCorrect),
     );
   }
 

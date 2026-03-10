@@ -8,6 +8,9 @@ import 'package:likha/presentation/pages/admin/widgets/activity_log_list.dart';
 import 'package:likha/presentation/pages/admin/widgets/edit_dialog.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
+import 'package:likha/presentation/widgets/styled_dialog.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/styled_dropdown.dart';
+import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
 
 class AccountDetailPage extends ConsumerStatefulWidget {
   final User user;
@@ -150,52 +153,12 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
   }
 
   void _confirmReset(BuildContext context, User user) {
-    showDialog(
+    AppDialogs.showDestructive(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text(
-          'Reset Password',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF202020),
-          ),
-        ),
-        content: Text(
-          'This will clear ${user.fullName}\'s password and set the account back to pending activation. Continue?',
-          style: const TextStyle(
-            fontSize: 15,
-            color: Color(0xFF404040),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF999999),
-            ),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ref.read(adminProvider.notifier).resetAccount(user.id);
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFFDC3545),
-            ),
-            child: const Text(
-              'Reset',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
+      title: 'Reset Password',
+      body: "This will clear ${user.fullName}'s password and set the account back to pending activation. Continue?",
+      confirmLabel: 'Reset',
+      onConfirm: () => ref.read(adminProvider.notifier).resetAccount(user.id),
     );
   }
 
@@ -204,76 +167,39 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: const Text(
-            'Change Role',
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF202020),
-            ),
-          ),
+        builder: (ctx, setDialogState) => StyledDialog(
+          title: 'Change Role',
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Changing a user\'s role affects their access to features. This change will sync when connected.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF666666),
-                ),
+                "Changing a user's role affects their access to features. This change will sync when connected.",
+                style: TextStyle(fontSize: 14, color: Color(0xFF666666)),
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
+              StyledDropdown<String>(
                 value: selectedRole,
-                decoration: const InputDecoration(
-                  labelText: 'Role',
-                  border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-                items: ['student', 'teacher', 'admin']
-                    .map((r) => DropdownMenuItem(
-                          value: r,
-                          child: Text(r),
-                        ))
-                    .toList(),
-                onChanged: (v) {
-                  if (v != null) setDialogState(() => selectedRole = v);
-                },
+                label: 'Role',
+                icon: Icons.work_outline_rounded,
+                items: const [
+                  DropdownMenuItem(value: 'student', child: Text('Student')),
+                  DropdownMenuItem(value: 'teacher', child: Text('Teacher')),
+                  DropdownMenuItem(value: 'admin', child: Text('Admin')),
+                ],
+                onChanged: (v) { if (v != null) setDialogState(() => selectedRole = v); },
               ),
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF999999),
-              ),
-              child: const Text(
-                'Cancel',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-            TextButton(
-              onPressed: selectedRole == user.role
-                  ? null
-                  : () {
-                      Navigator.pop(ctx);
-                      ref.read(adminProvider.notifier).updateAccount(
-                            userId: user.id,
-                            role: selectedRole,
-                          );
-                    },
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF007AFF),
-              ),
-              child: const Text(
-                'Change',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
+            StyledDialogAction(label: 'Cancel', onPressed: () => Navigator.pop(ctx)),
+            StyledDialogAction(
+              label: 'Change',
+              isPrimary: true,
+              onPressed: selectedRole == user.role ? () {} : () {
+                Navigator.pop(ctx);
+                ref.read(adminProvider.notifier).updateAccount(userId: user.id, role: selectedRole);
+              },
             ),
           ],
         ),
@@ -282,72 +208,16 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
   }
 
   void _showLockDialog(BuildContext context, User user) {
-    String? reasonText;
-    showDialog(
+    final controller = TextEditingController();
+    AppDialogs.showInput(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text(
-          'Lock Account',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF202020),
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'This will prevent the user from accessing their account.',
-              style: TextStyle(
-                fontSize: 14,
-                color: Color(0xFF666666),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              onChanged: (value) => reasonText = value.isEmpty ? null : value,
-              decoration: InputDecoration(
-                labelText: 'Reason (optional)',
-                border: const OutlineInputBorder(),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              ),
-              maxLines: 2,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF999999),
-            ),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ref.read(adminProvider.notifier).lockAccount(
-                user.id,
-                true,
-                reason: reasonText,
-              );
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFFDC3545),
-            ),
-            child: const Text(
-              'Lock',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
+      title: 'Lock Account',
+      subtitle: 'This will prevent the user from accessing their account.',
+      controller: controller,
+      labelText: 'Reason (optional)',
+      confirmLabel: 'Lock',
+      onConfirm: () => ref.read(adminProvider.notifier).lockAccount(
+        user.id, true, reason: controller.text.isEmpty ? null : controller.text,
       ),
     );
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/shared/class_navigation_card.dart';
+import 'package:likha/presentation/pages/shared/widgets/cards/navigation_card.dart';
 import 'package:likha/presentation/pages/teacher/teacher_grade_computation_page.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
@@ -79,7 +79,7 @@ class _TeacherGradesPageState extends ConsumerState<TeacherGradesPage> {
                               ),
                             ),
                             ...classState.classes.map(
-                              (cls) => ClassNavigationCard(
+                              (cls) => NavigationCard(
                                 icon: Icons.grading_outlined,
                                 title: cls.title,
                                 subtitle: '${cls.studentCount} students',

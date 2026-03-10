@@ -11,6 +11,7 @@ import 'package:likha/presentation/pages/teacher/edit_question_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_info_card.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_status_card.dart';
 import 'package:likha/presentation/pages/teacher/widgets/questions_section.dart';
+import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
 
 class AssessmentDetailPage extends ConsumerStatefulWidget {
@@ -35,276 +36,94 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
   }
 
   void _confirmPublish(Assessment assessment) {
-    showDialog(
+    AppDialogs.showConfirmation(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text(
-          'Publish Assessment',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
-        ),
-        content: Text(
-          'Publish "${assessment.title}"? Once published, questions can no longer be edited.',
-          style: const TextStyle(fontSize: 15),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                color: Color(0xFF666666),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ref
-                  .read(assessmentProvider.notifier)
-                  .publishAssessment(widget.assessmentId);
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF2B2B2B),
-            ),
-            child: const Text(
-              'Publish',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
+      title: 'Publish Assessment',
+      body: 'Publish "${assessment.title}"? Once published, questions can no longer be edited.',
+      confirmLabel: 'Publish',
+      onConfirm: () => ref.read(assessmentProvider.notifier).publishAssessment(widget.assessmentId),
     );
   }
 
   void _confirmDelete(Assessment assessment) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text(
-          'Delete Assessment',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Delete "${assessment.title}"? This cannot be undone.',
-              style: const TextStyle(fontSize: 15),
+    final hasWarning = assessment.isPublished || assessment.submissionCount > 0;
+    final warningBox = hasWarning
+        ? Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFEBEE),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFFFCDD2)),
             ),
-            if (assessment.isPublished || assessment.submissionCount > 0) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFEBEE),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: const Color(0xFFFFCDD2),
+            child: Row(
+              children: [
+                const Icon(Icons.warning_rounded, color: Color(0xFFEF5350), size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    assessment.isPublished
+                        ? 'This assessment is published and has ${assessment.submissionCount} submission(s). All data will be lost.'
+                        : 'This assessment has ${assessment.submissionCount} submission(s). All data will be lost.',
+                    style: const TextStyle(fontSize: 13, color: Color(0xFFC62828)),
                   ),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.warning_amber_rounded,
-                      color: Color(0xFFEF5350),
-                      size: 20,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        assessment.isPublished
-                            ? 'This assessment is published and has ${assessment.submissionCount} submission(s). All data will be lost.'
-                            : 'This assessment has ${assessment.submissionCount} submission(s). All data will be lost.',
-                        style: const TextStyle(
-                          color: Color(0xFFC62828),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                color: Color(0xFF666666),
-                fontWeight: FontWeight.w600,
-              ),
+              ],
             ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ref
-                  .read(assessmentProvider.notifier)
-                  .deleteAssessment(widget.assessmentId);
-            },
-            child: const Text(
-              'Delete',
-              style: TextStyle(
-                color: Color(0xFFEF5350),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
+          )
+        : null;
+
+    AppDialogs.showDestructive(
+      context: context,
+      title: 'Delete Assessment',
+      body: 'Delete "${assessment.title}"? This cannot be undone.',
+      confirmLabel: 'Delete',
+      onConfirm: () => ref.read(assessmentProvider.notifier).deleteAssessment(widget.assessmentId),
+      warningBox: warningBox,
     );
   }
 
   void _confirmReleaseResults(Assessment assessment) {
-    showDialog(
+    AppDialogs.showConfirmation(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text(
-          'Release Results',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
-        ),
-        content: Text(
-          'Release results for "${assessment.title}"? Students will be able to see their scores.',
-          style: const TextStyle(fontSize: 15),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                color: Color(0xFF666666),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ref
-                  .read(assessmentProvider.notifier)
-                  .releaseResults(widget.assessmentId);
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF2B2B2B),
-            ),
-            child: const Text(
-              'Release',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
+      title: 'Release Results',
+      body: 'Release results for "${assessment.title}"? Students will be able to see their scores.',
+      confirmLabel: 'Release',
+      onConfirm: () => ref.read(assessmentProvider.notifier).releaseResults(widget.assessmentId),
     );
   }
 
   void _confirmDeleteQuestion(Question question, bool hasSubmissions) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text(
-          'Delete Question',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Delete this question?',
-              style: TextStyle(fontSize: 15),
+    final assessment = ref.read(assessmentProvider).currentAssessment;
+    final warningBox = hasSubmissions && assessment != null
+        ? Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF3E0),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFFFE0B2)),
             ),
-            if (hasSubmissions) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF3E0),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: const Color(0xFFFFE0B2),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline_rounded, color: Color(0xFFFFA726), size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'This assessment has ${assessment.submissionCount} submission(s). Deleting a question may affect existing scores.',
+                    style: const TextStyle(fontSize: 13, color: Color(0xFFE65100)),
                   ),
                 ),
-                child: const Row(
-                  children: [
-                    Icon(
-                      Icons.warning_amber_rounded,
-                      color: Color(0xFFFFA726),
-                      size: 20,
-                    ),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'This assessment has submissions. Deleting this question will affect existing scores.',
-                        style: TextStyle(
-                          color: Color(0xFFE65100),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                color: Color(0xFF666666),
-                fontWeight: FontWeight.w600,
-              ),
+              ],
             ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ref.read(assessmentProvider.notifier).deleteQuestion(question.id);
-            },
-            child: const Text(
-              'Delete',
-              style: TextStyle(
-                color: Color(0xFFEF5350),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
+          )
+        : null;
+
+    AppDialogs.showDestructive(
+      context: context,
+      title: 'Delete Question',
+      body: 'Delete this question? This cannot be undone.',
+      confirmLabel: 'Delete',
+      onConfirm: () => ref.read(assessmentProvider.notifier).deleteQuestion(question.id),
+      warningBox: warningBox,
     );
   }
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/admin/admin_class_detail_page.dart';
 import 'package:likha/presentation/pages/admin/admin_create_class_page.dart';
-import 'package:likha/presentation/pages/student/widgets/class_card.dart';
+import 'package:likha/presentation/pages/shared/widgets/cards/class_card.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
 class AdminClassesPage extends ConsumerStatefulWidget {
@@ -72,7 +72,7 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
                       final cls = classState.classes[index];
                       return ClassCard(
                         title: cls.title,
-                        teacher: cls.teacherFullName.isEmpty
+                        subtitle: cls.teacherFullName.isEmpty
                             ? cls.teacherUsername
                             : cls.teacherFullName,
                         onTap: () => Navigator.push(

@@ -6,7 +6,8 @@ import 'package:flutter/material.dart';
 /// - Professional visual hierarchy with colors and typography
 /// - Dark theme support
 /// - Proper spacing and padding
-/// - Styled action buttons (primary/secondary)
+/// - Styled action buttons (primary/secondary, including destructive variants)
+/// - Optional warning box for critical actions
 /// - Better visual depth and polish
 ///
 /// Usage:
@@ -14,11 +15,11 @@ import 'package:flutter/material.dart';
 /// showDialog(
 ///   context: context,
 ///   builder: (ctx) => StyledDialog(
-///     title: 'Move to Position',
-///     content: ContentWidget(),
+///     title: 'Delete Item',
+///     content: Text('Are you sure?'),
 ///     actions: [
 ///       StyledDialogAction(label: 'Cancel', onPressed: () => Navigator.pop(ctx)),
-///       StyledDialogAction(label: 'Move', isPrimary: true, onPressed: () => ...),
+///       StyledDialogAction(label: 'Delete', isPrimary: true, isDestructive: true, onPressed: () => ...),
 ///     ],
 ///   ),
 /// );
@@ -28,6 +29,7 @@ class StyledDialog extends StatelessWidget {
   final String? subtitle;
   final Widget content;
   final List<StyledDialogAction> actions;
+  final Widget? warningBox;
 
   const StyledDialog({
     super.key,
@@ -35,6 +37,7 @@ class StyledDialog extends StatelessWidget {
     this.subtitle,
     required this.content,
     required this.actions,
+    this.warningBox,
   });
 
   @override
@@ -88,6 +91,13 @@ class StyledDialog extends StatelessWidget {
                 ],
               ),
             ),
+            // Warning Box (optional)
+            if (warningBox != null) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+                child: warningBox,
+              ),
+            ],
             // Content Section with styled background
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
@@ -134,10 +144,12 @@ class StyledDialog extends StatelessWidget {
   }
 
   Widget _buildPrimaryButton(StyledDialogAction action) {
+    final bgColor = action.isDestructive ? const Color(0xFFEF5350) : const Color(0xFF2B2B2B);
+
     return FilledButton(
       onPressed: action.onPressed,
       style: FilledButton.styleFrom(
-        backgroundColor: const Color(0xFF2B2B2B),
+        backgroundColor: bgColor,
         foregroundColor: Colors.white,
         elevation: 0,
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -187,11 +199,13 @@ class StyledDialogAction {
   final String label;
   final VoidCallback onPressed;
   final bool isPrimary;
+  final bool isDestructive;
 
   const StyledDialogAction({
     required this.label,
     required this.onPressed,
     this.isPrimary = false,
+    this.isDestructive = false,
   });
 }
 

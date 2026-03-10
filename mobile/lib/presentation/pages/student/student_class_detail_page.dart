@@ -4,7 +4,7 @@ import 'package:likha/presentation/pages/student/assessment_list_page.dart';
 import 'package:likha/presentation/pages/student/student_assignment_list_page.dart';
 import 'package:likha/presentation/pages/student/student_material_list_page.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/shared/class_navigation_card.dart';
+import 'package:likha/presentation/pages/shared/widgets/cards/navigation_card.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
@@ -33,7 +33,7 @@ class StudentClassDetailPage extends ConsumerWidget {
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   children: [
-                    ClassNavigationCard(
+                    NavigationCard(
                       icon: Icons.quiz_outlined,
                       title: 'Assessments',
                       subtitle: 'View and manage quizzes',
@@ -47,7 +47,7 @@ class StudentClassDetailPage extends ConsumerWidget {
                           ),
                     ),
                     const SizedBox(height: 16),
-                    ClassNavigationCard(
+                    NavigationCard(
                       icon: Icons.assignment_outlined,
                       title: 'Assignments',
                       subtitle: 'View and manage homework',
@@ -61,7 +61,7 @@ class StudentClassDetailPage extends ConsumerWidget {
                           ),
                     ),
                     const SizedBox(height: 16),
-                    ClassNavigationCard(
+                    NavigationCard(
                       icon: Icons.library_books_outlined,
                       title: 'Learning Modules',
                       subtitle: 'Browse class materials',
