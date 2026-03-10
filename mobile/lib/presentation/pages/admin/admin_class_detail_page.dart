@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/presentation/pages/admin/widgets/student_action_card.dart';
+import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
+import 'package:likha/presentation/pages/shared/widgets/primitives/info_row.dart';
+import 'package:likha/presentation/pages/shared/widgets/tokens/app_text_styles.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
 class AdminClassDetailPage extends ConsumerStatefulWidget {
@@ -114,52 +117,36 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Class Info Card
-                  Card(
-                    margin: const EdgeInsets.all(24),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: const BorderSide(color: Color(0xFFE0E0E0)),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
+                  // Class Info Panel
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: InfoPanel(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             detail.title,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF2B2B2B),
-                            ),
+                            style: AppTextStyles.cardTitleLg,
                           ),
                           if (detail.description != null) ...[
                             const SizedBox(height: 8),
                             Text(
                               detail.description!,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF666666),
-                              ),
+                              style: AppTextStyles.cardSubtitleMd,
                             ),
                           ],
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF5F5F5),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              'Teacher: $teacherName',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey[600],
-                              ),
-                            ),
+                          const SizedBox(height: 16),
+                          InfoRow(
+                            label: 'Teacher',
+                            value: teacherName,
                           ),
+                          if (classInfo != null && classInfo.teacherUsername.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            InfoRow(
+                              label: 'Username',
+                              value: classInfo.teacherUsername,
+                            ),
+                          ],
                         ],
                       ),
                     ),
