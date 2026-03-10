@@ -364,7 +364,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
       body: SafeArea(
         child: Column(
           children: [
-            ClassSectionHeader(
+            const ClassSectionHeader(
               title: 'Create Assessment',
               showBackButton: true,
             ),
@@ -411,9 +411,9 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                           ),
 
                         // Details section
-                        Text(
+                        const Text(
                           'Assessment Details',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF2B2B2B),
@@ -479,9 +479,9 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                     left: 0,
                     right: 0,
                     child: Container(
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: Colors.white,
-                        border: Border(top: BorderSide(color: const Color(0xFFE0E0E0))),
+                        border: Border(top: BorderSide(color: Color(0xFFE0E0E0))),
                       ),
                       padding: EdgeInsets.fromLTRB(
                         24,

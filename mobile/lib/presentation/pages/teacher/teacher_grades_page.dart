@@ -39,10 +39,10 @@ class _TeacherGradesPageState extends ConsumerState<TeacherGradesPage> {
                     ),
                   )
                 : classState.classes.isEmpty
-                    ? Center(
+                    ? const Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
+                          children: [
                             Icon(
                               Icons.school_outlined,
                               size: 64,
@@ -66,14 +66,14 @@ class _TeacherGradesPageState extends ConsumerState<TeacherGradesPage> {
                         child: ListView(
                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: 16),
                               child: Text(
                                 'Select a class to compute grades',
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
-                                  color: const Color(0xFF999999),
+                                  color: Color(0xFF999999),
                                   letterSpacing: 0.2,
                                 ),
                               ),

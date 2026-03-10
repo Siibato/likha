@@ -1,4 +1,3 @@
-import 'package:likha/core/database/local_database.dart';
 import 'package:likha/data/repositories/auth/auth_repository_base.dart';
 import 'mixins/auth_login_mixin.dart';
 import 'mixins/auth_admin_mixin.dart';

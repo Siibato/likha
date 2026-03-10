@@ -222,7 +222,6 @@ Future<void> init() async {
       assessmentLocal: sl<AssessmentLocalDataSource>(),
       assignmentLocal: sl<AssignmentLocalDataSource>(),
       materialLocal: sl<LearningMaterialLocalDataSource>(),
-      classRemote: sl<ClassRemoteDataSource>(),
       assessmentRemote: sl<AssessmentRemoteDataSource>(),
       assignmentRemote: sl<AssignmentRemoteDataSource>(),
       materialRemote: sl<LearningMaterialRemoteDataSource>(),

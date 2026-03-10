@@ -51,32 +51,34 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
   }
 
   /// Calculate category selection state: 0 = none, 1 = partial, 2 = all
-  int _getCategorySelectionState(FileTypeCategory category) {
-    final selectedCount = category.types
-        .where((type) => _selectedFileTypes.contains(type))
-        .length;
-    if (selectedCount == 0) return 0;
-    if (selectedCount == category.types.length) return 2;
-    return 1;
-  }
+  // COMMENTED OUT: Only called by _toggleCategory which is also commented out
+  // int _getCategorySelectionState(FileTypeCategory category) {
+  //   final selectedCount = category.types
+  //       .where((type) => _selectedFileTypes.contains(type))
+  //       .length;
+  //   if (selectedCount == 0) return 0;
+  //   if (selectedCount == category.types.length) return 2;
+  //   return 1;
+  // }
 
   /// Toggle all types in a category
-  void _toggleCategory(FileTypeCategory category) {
-    setState(() {
-      final state = _getCategorySelectionState(category);
-      if (state == 2) {
-        // All selected → deselect all
-        for (final type in category.types) {
-          _selectedFileTypes.remove(type);
-        }
-      } else {
-        // None or partial → select all
-        for (final type in category.types) {
-          _selectedFileTypes.add(type);
-        }
-      }
-    });
-  }
+  // COMMENTED OUT: Unused - no callers found
+  // void _toggleCategory(FileTypeCategory category) {
+  //   setState(() {
+  //     final state = _getCategorySelectionState(category);
+  //     if (state == 2) {
+  //       // All selected → deselect all
+  //       for (final type in category.types) {
+  //         _selectedFileTypes.remove(type);
+  //       }
+  //     } else {
+  //       // None or partial → select all
+  //       for (final type in category.types) {
+  //         _selectedFileTypes.add(type);
+  //       }
+  //     }
+  //   });
+  // }
 
 
   Future<void> _showFileTypesPicker() async {

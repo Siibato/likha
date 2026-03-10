@@ -93,37 +93,38 @@ mixin ClassQueryMixin on ClassRepositoryBase {
   /// Updates local cache only if any record has a newer [updatedAt].
   /// Emits a DataEventBus event so the page can reload from updated cache.
   /// All errors are swallowed — users keep seeing stale cache without error.
-  void _backgroundFetchMyClasses() {
-    Future.microtask(() async {
-      try {
-        final fresh = await remoteDataSource.getMyClasses();
-        final currentUserId = await getCurrentUserId();
-        if (currentUserId == null) return;
-        final List<ClassEntity> cached;
-        try {
-          cached = await localDataSource.getCachedClassesForUser(currentUserId);
-        } on CacheException {
-          await localDataSource.cacheClasses(fresh);
-          dataEventBus.notifyClassesChanged();
-          return;
-        }
-        if (_classesHaveChanged(cached, fresh)) {
-          await localDataSource.cacheClasses(fresh);
-          dataEventBus.notifyClassesChanged();
-        }
-      } catch (_) {}
-    });
-  }
-
-  bool _classesHaveChanged(List<ClassEntity> local, List<ClassEntity> remote) {
-    if (local.length != remote.length) return true;
-    final localById = {for (final c in local) c.id: c};
-    for (final r in remote) {
-      final l = localById[r.id];
-      if (l == null) return true;
-      if (l.updatedAt.isBefore(r.updatedAt)) return true;
-    }
-    return false;
-  }
+  // COMMENTED OUT: Unused - no callers found
+  // void _backgroundFetchMyClasses() {
+  //   Future.microtask(() async {
+  //     try {
+  //       final fresh = await remoteDataSource.getMyClasses();
+  //       final currentUserId = await getCurrentUserId();
+  //       if (currentUserId == null) return;
+  //       final List<ClassEntity> cached;
+  //       try {
+  //         cached = await localDataSource.getCachedClassesForUser(currentUserId);
+  //       } on CacheException {
+  //         await localDataSource.cacheClasses(fresh);
+  //         dataEventBus.notifyClassesChanged();
+  //         return;
+  //       }
+  //       if (_classesHaveChanged(cached, fresh)) {
+  //         await localDataSource.cacheClasses(fresh);
+  //         dataEventBus.notifyClassesChanged();
+  //       }
+  //     } catch (_) {}
+  //   });
+  // }
+  //
+  // bool _classesHaveChanged(List<ClassEntity> local, List<ClassEntity> remote) {
+  //   if (local.length != remote.length) return true;
+  //   final localById = {for (final c in local) c.id: c};
+  //   for (final r in remote) {
+  //     final l = localById[r.id];
+  //     if (l == null) return true;
+  //     if (l.updatedAt.isBefore(r.updatedAt)) return true;
+  //   }
+  //   return false;
+  // }
 
 }

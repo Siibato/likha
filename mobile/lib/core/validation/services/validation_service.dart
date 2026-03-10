@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:likha/core/validation/services/data_validator.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
-import 'package:likha/data/datasources/remote/class_remote_datasource.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';
 import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
@@ -15,7 +14,6 @@ class ValidationService {
   final AssessmentLocalDataSource _assessmentLocal;
   final AssignmentLocalDataSource _assignmentLocal;
   final LearningMaterialLocalDataSource _materialLocal;
-  final ClassRemoteDataSource _classRemote;
   final AssessmentRemoteDataSource _assessmentRemote;
   final AssignmentRemoteDataSource _assignmentRemote;
   final LearningMaterialRemoteDataSource _materialRemote;
@@ -26,7 +24,6 @@ class ValidationService {
     required AssessmentLocalDataSource assessmentLocal,
     required AssignmentLocalDataSource assignmentLocal,
     required LearningMaterialLocalDataSource materialLocal,
-    required ClassRemoteDataSource classRemote,
     required AssessmentRemoteDataSource assessmentRemote,
     required AssignmentRemoteDataSource assignmentRemote,
     required LearningMaterialRemoteDataSource materialRemote,
@@ -35,7 +32,6 @@ class ValidationService {
         _assessmentLocal = assessmentLocal,
         _assignmentLocal = assignmentLocal,
         _materialLocal = materialLocal,
-        _classRemote = classRemote,
         _assessmentRemote = assessmentRemote,
         _assignmentRemote = assignmentRemote,
         _materialRemote = materialRemote;

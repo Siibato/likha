@@ -26,7 +26,6 @@ class _TeacherGradeComputationPageState
     extends ConsumerState<TeacherGradeComputationPage> {
   late TextEditingController _assignmentWeightController;
   late TextEditingController _assessmentWeightController;
-  bool _isSaved = false;
 
   @override
   void initState() {
@@ -72,15 +71,12 @@ class _TeacherGradeComputationPageState
     await prefs.setInt('assignment_weight_${widget.classId}', assignmentWeight);
     await prefs.setInt('assessment_weight_${widget.classId}', assessmentWeight);
 
-    setState(() => _isSaved = true);
     context.showSuccessSnackBar('Weights saved');
   }
 
   @override
   Widget build(BuildContext context) {
     final classState = ref.watch(classProvider);
-    final assignmentState = ref.watch(assignmentProvider);
-    final assessmentState = ref.watch(assessmentProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),

@@ -272,7 +272,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
               )
             : CustomScrollView(
                 slivers: [
-                  SliverToBoxAdapter(
+                  const SliverToBoxAdapter(
                     child: ClassSectionHeader(
                       title: 'Assignment Details',
                       showBackButton: true,
@@ -386,7 +386,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       padding: const EdgeInsets.all(28),
       child: Column(
         children: [
-          Text(
+          const Text(
             'Your Score',
             style: TextStyle(
               fontSize: 14,

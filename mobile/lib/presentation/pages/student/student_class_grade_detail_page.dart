@@ -70,12 +70,12 @@ class _StudentClassGradeDetailPageState
 
                     // Assignments section
                     if (widget.classGrade.assignments.isNotEmpty) ...[
-                      SliverToBoxAdapter(
+                      const SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+                          padding: EdgeInsets.fromLTRB(24, 16, 24, 8),
                           child: Text(
                             'Assignments',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF2B2B2B),
@@ -98,12 +98,12 @@ class _StudentClassGradeDetailPageState
 
                     // Assessments section
                     if (assessmentState.assessments.isNotEmpty) ...[
-                      SliverToBoxAdapter(
+                      const SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+                          padding: EdgeInsets.fromLTRB(24, 24, 24, 8),
                           child: Text(
                             'Assessments',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF2B2B2B),
@@ -130,12 +130,12 @@ class _StudentClassGradeDetailPageState
                           },
                         ),
                       ),
-                      SliverToBoxAdapter(
+                      const SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.all(24),
+                          padding: EdgeInsets.all(24),
                           child: Text(
                             'Assessment scores are shown when released by your teacher',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               color: Color(0xFF999999),
                               fontStyle: FontStyle.italic,
@@ -163,7 +163,7 @@ class _StudentClassGradeDetailPageState
 class _OverallGradeBanner extends StatelessWidget {
   final int reportGrade;
 
-  const _OverallGradeBanner({required this.reportGrade});
+  const _OverallGradeBanner({required this.reportGrade}) : super();
 
   @override
   Widget build(BuildContext context) {

@@ -2,7 +2,6 @@ import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/utils/typedef.dart';
-import 'package:likha/data/models/auth/activity_log_model.dart';
 import 'package:likha/data/repositories/auth/auth_repository_base.dart';
 import 'package:likha/domain/auth/entities/activity_log.dart';
 
@@ -23,7 +22,7 @@ mixin AuthActivityLogMixin on AuthRepositoryBase {
 
         final freshLogs = await remoteDataSource.getActivityLogs(userId: userId);
         await localDataSource.cacheActivityLogs(
-          freshLogs as List<ActivityLogModel>,
+          freshLogs,
           userId,
         );
         return Right(freshLogs);
@@ -42,7 +41,7 @@ mixin AuthActivityLogMixin on AuthRepositoryBase {
 
     remoteDataSource.getActivityLogs(userId: userId).then((logs) {
       localDataSource.cacheActivityLogs(
-        logs as List<ActivityLogModel>,
+        logs,
         userId,
       );
     }).catchError((_) {

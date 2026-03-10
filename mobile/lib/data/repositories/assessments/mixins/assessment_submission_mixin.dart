@@ -247,7 +247,7 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
       // ✅ If submission exists AND is submitted, don't hit server
       if (existingSubmission != null && existingSubmission.isSubmitted) {
         print('🚀 [Repo] startAssessment() - ONLINE PATH - SUBMISSION ALREADY SUBMITTED');
-        return Left(ServerFailure('Assessment already submitted'));
+        return Left(const ServerFailure('Assessment already submitted'));
       }
 
       print('🚀 [Repo] startAssessment() - ONLINE PATH - NO EXISTING SUBMISSION, CALLING SERVER');

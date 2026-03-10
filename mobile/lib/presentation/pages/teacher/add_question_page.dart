@@ -678,9 +678,9 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
 
 class _ChoiceEdit {
   final TextEditingController controller;
-  bool isCorrect;
+  bool isCorrect = false;
 
-  _ChoiceEdit({TextEditingController? controller, this.isCorrect = false})
+  _ChoiceEdit({TextEditingController? controller})
       : controller = controller ?? TextEditingController();
 }
 

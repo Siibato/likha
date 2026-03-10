@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
@@ -73,7 +72,9 @@ class SyncManager {
   final SyncQueue _syncQueue;
   final SyncRemoteDataSource _syncRemoteDataSource;
   final LocalDatabase _localDatabase;
+  // ignore: unused_field
   final AssessmentRemoteDataSource _assessmentRemoteDataSource;
+  // ignore: unused_field
   final AssessmentLocalDataSource _assessmentLocalDataSource;
   final SyncLogger _log;
   final StorageService _storageService;
@@ -1652,71 +1653,73 @@ class SyncManager {
   }
 
   /// Warm-up statistics cache for first 30 assessments
-  void _warmUpStatisticsCache() {
-    Future.microtask(() async {
-      try {
-        final db = await _localDatabase.database;
-        final assessments = await db.query(
-          'assessments',
-          limit: 30,
-          orderBy: 'created_at DESC',
-        );
-        for (final assessment in assessments) {
-          final assessmentId = assessment['id'] as String;
-          try {
-            final result = await _assessmentRemoteDataSource.getStatistics(
-              assessmentId: assessmentId,
-            );
-            await _assessmentLocalDataSource.cacheStatistics(result);
-          } catch (_) {
-            // Silently fail — warm-up is non-critical
-          }
-        }
-      } catch (_) {
-        // Silently fail
-      }
-    });
-  }
+  // COMMENTED OUT: Unused - no callers found
+  // void _warmUpStatisticsCache() {
+  //   Future.microtask(() async {
+  //     try {
+  //       final db = await _localDatabase.database;
+  //       final assessments = await db.query(
+  //         'assessments',
+  //         limit: 30,
+  //         orderBy: 'created_at DESC',
+  //       );
+  //       for (final assessment in assessments) {
+  //         final assessmentId = assessment['id'] as String;
+  //         try {
+  //           final result = await _assessmentRemoteDataSource.getStatistics(
+  //             assessmentId: assessmentId,
+  //           );
+  //           await _assessmentLocalDataSource.cacheStatistics(result);
+  //         } catch (_) {
+  //           // Silently fail — warm-up is non-critical
+  //         }
+  //       }
+  //     } catch (_) {
+  //       // Silently fail
+  //     }
+  //   });
+  // }
 
   /// Warm-up student results cache for released assessments
-  void _warmUpStudentResultsCache() {
-    Future.microtask(() async {
-      try {
-        final db = await _localDatabase.database;
-        final releasedAssessments = await db.query(
-          'assessments',
-          where: '(results_released = 1 OR show_results_immediately = 1)',
-          limit: 30,
-        );
-        final releasedIds = releasedAssessments
-            .map((a) => a['id'] as String)
-            .toSet();
-
-        final submissions = await db.query(
-          'assessment_submissions',
-          where: 'is_submitted = 1',
-          limit: 30,
-        );
-
-        for (final submission in submissions) {
-          final assessmentId = submission['assessment_id'] as String;
-          if (!releasedIds.contains(assessmentId)) continue;
-
-          final submissionId = submission['id'] as String;
-          try {
-            final result = await _assessmentRemoteDataSource.getStudentResults(
-              submissionId: submissionId,
-            );
-            await _assessmentLocalDataSource.cacheStudentResults(result);
-          } catch (_) {
-            // Silently fail — warm-up is non-critical
-          }
-        }
-      } catch (_) {
-        // Silently fail
-      }
-    });
-  }
+  // COMMENTED OUT: Unused - no callers found
+  // void _warmUpStudentResultsCache() {
+  //   Future.microtask(() async {
+  //     try {
+  //       final db = await _localDatabase.database;
+  //       final releasedAssessments = await db.query(
+  //         'assessments',
+  //         where: '(results_released = 1 OR show_results_immediately = 1)',
+  //         limit: 30,
+  //       );
+  //       final releasedIds = releasedAssessments
+  //           .map((a) => a['id'] as String)
+  //           .toSet();
+  //
+  //       final submissions = await db.query(
+  //         'assessment_submissions',
+  //         where: 'is_submitted = 1',
+  //         limit: 30,
+  //       );
+  //
+  //       for (final submission in submissions) {
+  //         final assessmentId = submission['assessment_id'] as String;
+  //         if (!releasedIds.contains(assessmentId)) continue;
+  //
+  //         final submissionId = submission['id'] as String;
+  //         try {
+  //           final result = await _assessmentRemoteDataSource.getStudentResults(
+  //             submissionId: submissionId,
+  //           );
+  //           await _assessmentLocalDataSource.cacheStudentResults(result);
+  //         } catch (_) {
+  //           // Silently fail — warm-up is non-critical
+  //         }
+  //       }
+  //     } catch (_) {
+  //       // Silently fail
+  //     }
+  //   });
+  // }
 
   /// Handles a single file upload operation by calling the multipart endpoint directly.
   /// References pattern in: mobile/lib/data/datasources/remote/assignment_remote_datasource.dart

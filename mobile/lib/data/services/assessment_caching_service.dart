@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:likha/core/errors/exceptions.dart';
-import 'package:likha/core/network/connectivity_service.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';

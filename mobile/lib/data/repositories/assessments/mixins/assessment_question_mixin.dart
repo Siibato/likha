@@ -91,12 +91,11 @@ mixin AssessmentQuestionMixin on AssessmentRepositoryBase {
                 final origItem = originalItems[j];
                 final enumItem = model.enumerationItems![j];
                 final item = {...origItem, 'id': enumItem.id};
-                if (enumItem.acceptableAnswers != null) {
-                  item['acceptable_answers'] = List.generate(
-                    enumItem.acceptableAnswers!.length,
-                    (k) => {'id': enumItem.acceptableAnswers![k].id, 'answer_text': enumItem.acceptableAnswers![k].answerText},
-                  );
-                }
+                final answers = enumItem.acceptableAnswers;
+                item['acceptable_answers'] = List.generate(
+                  answers.length,
+                  (k) => {'id': answers[k].id, 'answer_text': answers[k].answerText},
+                );
                 return item;
               },
             );
