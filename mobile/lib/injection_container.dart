@@ -304,6 +304,7 @@ Future<void> init() async {
       sl<AssessmentRemoteDataSource>(), // AssessmentRemoteDataSource
       sl<AssessmentLocalDataSource>(), // AssessmentLocalDataSource
       sl<SyncLogger>(), // SyncLogger
+      sl<StorageService>(), // StorageService
     ),
   );
 

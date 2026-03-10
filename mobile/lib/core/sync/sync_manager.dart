@@ -10,6 +10,7 @@ import 'package:likha/data/datasources/local/assessments/assessment_local_dataso
 import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';
 import 'package:likha/data/models/sync/push_response_model.dart';
+import 'package:likha/services/storage_service.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
@@ -75,6 +76,7 @@ class SyncManager {
   final AssessmentRemoteDataSource _assessmentRemoteDataSource;
   final AssessmentLocalDataSource _assessmentLocalDataSource;
   final SyncLogger _log;
+  final StorageService _storageService;
 
   bool _isSyncing = false;
   StreamSubscription<bool>? _reachabilitySubscription;
@@ -96,17 +98,19 @@ class SyncManager {
     this._assessmentRemoteDataSource,
     this._assessmentLocalDataSource,
     this._log,
+    this._storageService,
   );
 
   /// Start sync manager - listen for server reachability changes
   void start() {
+    stop(); // cancel any existing subscription to prevent duplicates
     _reachabilitySubscription =
         _serverReachabilityService.onServerReachabilityChanged.listen((isReachable) {
       if (isReachable && !_isSyncing) {
         _runSync();
       }
     });
-    
+
     if (_serverReachabilityService.isServerReachable && !_isSyncing) {
       _runSync();
     }
@@ -132,6 +136,7 @@ class SyncManager {
 
   /// Main sync orchestration: outbound then inbound
   Future<void> _runSync() async {
+    if (!await _storageService.isAuthenticated()) return;
     if (_isSyncing) return;
     _isSyncing = true;
 
@@ -1776,6 +1781,7 @@ class SyncManager {
   /// Resets the in-memory sync state to idle, clearing stale data after logout.
   /// This ensures that the singleton instance doesn't carry over state from previous sessions.
   void reset() {
+    stop(); // cancel reachability subscription so no post-logout triggers
     _isSyncing = false;
     _state = const SyncState(
       phase: SyncPhase.idle,

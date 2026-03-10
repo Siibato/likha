@@ -66,7 +66,7 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
       if (_lastSyncedUserId != authState.user?.id) {
         _lastSyncedUserId = authState.user?.id;
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          di.sl<SyncManager>().sync();
+          di.sl<SyncManager>().start();
 
           if (authState.user?.role == 'admin') {
             ref.read(adminProvider.notifier).cacheAccountsOffline();
