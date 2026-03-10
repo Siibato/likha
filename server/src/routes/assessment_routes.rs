@@ -97,5 +97,9 @@ pub fn routes(assessment_service: Arc<AssessmentService>) -> Router {
             "/submissions/{id}/results",
             get(assessment_handler::get_student_results),
         )
+        .route(
+            "/classes/{class_id}/students/{student_id}/assessment-submissions",
+            get(assessment_handler::get_student_assessment_submissions),
+        )
         .with_state(assessment_service)
 }

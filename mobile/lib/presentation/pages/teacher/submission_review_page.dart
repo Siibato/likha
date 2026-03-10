@@ -6,6 +6,9 @@ import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:likha/domain/assessments/usecases/override_answer.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
+import 'package:likha/presentation/pages/shared/widgets/primitives/status_badge.dart';
+import 'package:likha/presentation/pages/shared/widgets/tokens/app_text_styles.dart';
 
 class SubmissionReviewPage extends ConsumerStatefulWidget {
   final String submissionId;
@@ -97,27 +100,52 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
     });
 
     return Scaffold(
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
-        title: Text(detail != null ? detail.studentName : 'Submission Review'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AppColors.foregroundPrimary),
+        title: Text(
+          detail != null ? detail.studentName : 'Submission Review',
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: AppColors.foregroundPrimary,
+            letterSpacing: -0.4,
+          ),
+        ),
       ),
       body: state.isLoading && detail == null
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: AppColors.foregroundPrimary,
+                strokeWidth: 2.5,
+              ),
+            )
           : detail == null
-              ? const Center(child: Text('Submission not found'))
+              ? const Center(
+                  child: Text(
+                    'Submission not found',
+                    style: TextStyle(color: AppColors.foregroundTertiary),
+                  ),
+                )
               : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _buildSummaryCard(detail),
                       const SizedBox(height: 16),
                       Text(
                         'Answers',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.foregroundDark,
+                          letterSpacing: -0.3,
+                        ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 12),
                       ...detail.answers.asMap().entries.map(
                             (entry) => _buildAnswerCard(entry.value, entry.key),
                           ),
@@ -129,66 +157,62 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
   }
 
   Widget _buildSummaryCard(SubmissionDetail detail) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  child: Text(detail.studentName.isNotEmpty
-                      ? detail.studentName[0].toUpperCase()
-                      : '?'),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        detail.studentName,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 16),
-                      ),
-                      Text(
-                        detail.isSubmitted ? 'Submitted' : 'In Progress',
-                        style: const TextStyle(
-                          color: AppColors.foregroundSecondary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+    return BaseCard(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: AppColors.backgroundTertiary,
+                child: Text(
+                  detail.studentName.isNotEmpty ? detail.studentName[0].toUpperCase() : '?',
+                  style: const TextStyle(
+                    color: AppColors.foregroundPrimary,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ],
-            ),
-            const Divider(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _scoreColumn(
-                  'Auto Score',
-                  detail.autoScore,
-                  AppColors.foregroundSecondary,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(detail.studentName, style: AppTextStyles.cardTitleMd),
+                    const SizedBox(height: 4),
+                    StatusBadge(
+                      label: detail.isSubmitted ? 'Submitted' : 'In Progress',
+                      color: detail.isSubmitted
+                          ? AppColors.semanticSuccess
+                          : AppColors.foregroundSecondary,
+                      variant: BadgeVariant.filled,
+                    ),
+                  ],
                 ),
-                _scoreColumn(
-                  'Final Score',
-                  detail.finalScore,
-                  AppColors.foregroundPrimary,
-                ),
-              ],
-            ),
-            if (detail.submittedAt != null) ...[
-              const Divider(height: 24),
-              Text(
-                'Submitted: ${_formatDateTime(detail.submittedAt!)}',
-                style: const TextStyle(fontSize: 13, color: AppColors.foregroundTertiary),
               ),
             ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1, color: AppColors.borderLight),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _scoreColumn('Auto Score', detail.autoScore, AppColors.foregroundSecondary),
+              _scoreColumn('Final Score', detail.finalScore, AppColors.foregroundPrimary),
+            ],
+          ),
+          if (detail.submittedAt != null) ...[
+            const SizedBox(height: 16),
+            const Divider(height: 1, color: AppColors.borderLight),
+            const SizedBox(height: 12),
+            Text(
+              'Submitted: ${_formatDateTime(detail.submittedAt!)}',
+              style: AppTextStyles.cardSubtitleMd,
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -214,110 +238,91 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
     final isAutoCorrect = answer.isAutoCorrect == true;
     final isOverrideCorrect = answer.isOverrideCorrect;
     final effectiveCorrect = isOverrideCorrect ?? isAutoCorrect;
-    final isPartial = answer.pointsAwarded > 0 &&
-        answer.pointsAwarded < answer.points;
+    final isPartial = answer.pointsAwarded > 0 && answer.pointsAwarded < answer.points;
 
     Color statusColor;
     IconData statusIcon;
     if (effectiveCorrect) {
-      statusColor = AppColors.foregroundPrimary;
+      statusColor = AppColors.semanticSuccess;
       statusIcon = Icons.check_circle;
     } else if (isPartial) {
       statusColor = AppColors.foregroundSecondary;
       statusIcon = Icons.remove_circle;
     } else {
-      statusColor = AppColors.foregroundTertiary;
+      statusColor = AppColors.semanticError;
       statusIcon = Icons.cancel;
     }
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(statusIcon, color: statusColor, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Q${index + 1}. ${answer.questionText}',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w500, fontSize: 14),
+    return BaseCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(statusIcon, color: statusColor, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Q${index + 1}. ${answer.questionText}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: AppColors.foregroundDark,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${_questionTypeLabel(answer.questionType)} - ${answer.points} pt${answer.points != 1 ? 's' : ''}',
-                        style: const TextStyle(fontSize: 12, color: AppColors.foregroundTertiary),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '${answer.pointsAwarded % 1 == 0 ? answer.pointsAwarded.toInt() : answer.pointsAwarded.toStringAsFixed(1)} / ${answer.points}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: statusColor,
-                      fontSize: 13,
                     ),
-                  ),
-                ),
-              ],
-            ),
-            const Divider(height: 20),
-            _buildAnswerContent(answer),
-            if (isOverrideCorrect != null) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.foregroundSecondary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text(
-                  'Grade overridden',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.foregroundSecondary,
-                    fontWeight: FontWeight.w500,
-                  ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${_questionTypeLabel(answer.questionType)} - ${answer.points} pt${answer.points != 1 ? 's' : ''}',
+                      style: AppTextStyles.cardSubtitleSm,
+                    ),
+                  ],
                 ),
               ),
+              const SizedBox(width: 8),
+              StatusBadge(
+                label: '${answer.pointsAwarded % 1 == 0 ? answer.pointsAwarded.toInt() : answer.pointsAwarded.toStringAsFixed(1)} / ${answer.points}',
+                color: statusColor,
+                variant: BadgeVariant.filled,
+              ),
             ],
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton.icon(
-                  onPressed: () => _confirmOverride(answer, true),
-                  icon: const Icon(Icons.check, size: 18),
-                  label: const Text('Mark Correct'),
-                  style: TextButton.styleFrom(foregroundColor: AppColors.foregroundPrimary),
-                ),
-                const SizedBox(width: 8),
-                TextButton.icon(
-                  onPressed: () => _confirmOverride(answer, false),
-                  icon: const Icon(Icons.close, size: 18),
-                  label: const Text('Mark Incorrect'),
-                  style: TextButton.styleFrom(foregroundColor: AppColors.foregroundTertiary),
-                ),
-              ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(height: 1, color: AppColors.borderLight),
+          const SizedBox(height: 12),
+          _buildAnswerContent(answer),
+          if (isOverrideCorrect != null) ...[
+            const SizedBox(height: 8),
+            StatusBadge(
+              label: 'Grade overridden',
+              color: AppColors.deprecatedWarningYellow,
+              icon: Icons.edit_outlined,
+              variant: BadgeVariant.filled,
             ),
           ],
-        ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton.icon(
+                onPressed: () => _confirmOverride(answer, true),
+                icon: const Icon(Icons.check, size: 18),
+                label: const Text('Mark Correct'),
+                style: TextButton.styleFrom(foregroundColor: AppColors.semanticSuccess),
+              ),
+              const SizedBox(width: 8),
+              TextButton.icon(
+                onPressed: () => _confirmOverride(answer, false),
+                icon: const Icon(Icons.close, size: 18),
+                label: const Text('Mark Incorrect'),
+                style: TextButton.styleFrom(foregroundColor: AppColors.semanticError),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -338,7 +343,7 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
   Widget _buildMCContent(SubmissionAnswer answer) {
     final choices = answer.selectedChoices ?? [];
     if (choices.isEmpty) {
-      return const Text('No answer', style: TextStyle(color: Colors.grey));
+      return const Text('No answer', style: TextStyle(color: AppColors.foregroundTertiary));
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -350,10 +355,18 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
                     Icon(
                       c.isCorrect ? Icons.check_circle : Icons.cancel,
                       size: 16,
-                      color: c.isCorrect ? Colors.green : Colors.red,
+                      color: c.isCorrect ? AppColors.semanticSuccess : AppColors.semanticError,
                     ),
                     const SizedBox(width: 6),
-                    Expanded(child: Text(c.choiceText, style: const TextStyle(fontSize: 14))),
+                    Expanded(
+                      child: Text(
+                        c.choiceText,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.foregroundPrimary,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ))
@@ -368,7 +381,9 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
           : 'No answer',
       style: TextStyle(
         fontSize: 14,
-        color: answer.answerText?.isNotEmpty == true ? null : Colors.grey,
+        color: answer.answerText?.isNotEmpty == true
+            ? AppColors.foregroundPrimary
+            : AppColors.foregroundTertiary,
       ),
     );
   }
@@ -376,7 +391,7 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
   Widget _buildEnumerationContent(SubmissionAnswer answer) {
     final enumAnswers = answer.enumerationAnswers ?? [];
     if (enumAnswers.isEmpty) {
-      return const Text('No answers', style: TextStyle(color: Colors.grey));
+      return const Text('No answers', style: TextStyle(color: AppColors.foregroundTertiary));
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -391,18 +406,18 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
               SizedBox(
                 width: 24,
                 child: Text('${idx + 1}.',
-                    style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                    style: const TextStyle(fontSize: 13, color: AppColors.foregroundTertiary)),
               ),
               Icon(
                 isCorrect ? Icons.check : Icons.close,
                 size: 16,
-                color: isCorrect ? Colors.green : Colors.red,
+                color: isCorrect ? AppColors.semanticSuccess : AppColors.semanticError,
               ),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   ea.answerText.isNotEmpty ? ea.answerText : '(blank)',
-                  style: const TextStyle(fontSize: 14),
+                  style: const TextStyle(fontSize: 14, color: AppColors.foregroundPrimary),
                 ),
               ),
             ],

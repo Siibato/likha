@@ -63,6 +63,7 @@ import 'package:likha/domain/assignments/usecases/submit_assignment.dart';
 import 'package:likha/domain/assignments/usecases/update_assignment.dart';
 import 'package:likha/domain/assignments/usecases/upload_file.dart';
 import 'package:likha/domain/assignments/usecases/reorder_assignment.dart';
+import 'package:likha/domain/assignments/usecases/get_student_assignment_submission.dart';
 import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
 import 'package:likha/data/datasources/local/auth/impl/auth_local_datasource_impl.dart';
 import 'package:likha/data/datasources/remote/auth_remote_datasource.dart';
@@ -373,6 +374,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SubmitAssignment(sl()));
   sl.registerLazySingleton(() => DownloadFile(sl()));
   sl.registerLazySingleton(() => ReorderAllAssignments(sl()));
+  sl.registerLazySingleton(() => GetStudentAssignmentSubmission(sl()));
 
   // Learning Material use cases
   sl.registerLazySingleton(() => CreateMaterial(sl()));

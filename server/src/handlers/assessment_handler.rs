@@ -356,3 +356,17 @@ pub async fn reorder_assessments(
         Err(e) => e.into_response(),
     }
 }
+
+pub async fn get_student_assessment_submissions(
+    State(service): State<Arc<AssessmentService>>,
+    auth_user: AuthUser,
+    Path((class_id, student_id)): Path<(Uuid, Uuid)>,
+) -> impl IntoResponse {
+    if auth_user.role != "teacher" {
+        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    }
+    match service.get_student_assessment_submissions(class_id, student_id, auth_user.user_id).await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}

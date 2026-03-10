@@ -47,7 +47,7 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
     try {
       final cached =
           await localDataSource.getCachedSubmissionDetail(submissionId);
-      if (cached != null) {
+      if (cached != null && cached.answers.isNotEmpty) {
         unawaited(validationService.validateAndSync('assessments'));
         return Right(cached);
       }

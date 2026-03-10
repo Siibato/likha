@@ -375,4 +375,23 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  ResultFuture<StudentAssignmentStatus?> getStudentAssignmentSubmission({
+    required String assignmentId,
+    required String studentId,
+  }) async {
+    try {
+      final record = await localDataSource
+          .getStudentSubmissionForAssignment(assignmentId, studentId);
+      if (record == null) return Right(null);
+      return Right(StudentAssignmentStatus(
+        submissionId: record.$1,
+        status: record.$2,
+        score: record.$3,
+      ));
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
 }

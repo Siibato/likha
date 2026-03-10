@@ -1,7 +1,7 @@
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
-import 'package:likha/domain/assignments/entities/submission_file.dart';
+import 'package:likha/domain/assignments/entities/submission_file.dart'; // StudentAssignmentStatus is in here
 
 abstract class AssignmentRepository {
   // Teacher: Assignment CRUD
@@ -58,6 +58,11 @@ abstract class AssignmentRepository {
 
   ResultFuture<AssignmentSubmission> returnSubmission({
     required String submissionId,
+  });
+
+  ResultFuture<StudentAssignmentStatus?> getStudentAssignmentSubmission({
+    required String assignmentId,
+    required String studentId,
   });
 
   // Student: Submission flow

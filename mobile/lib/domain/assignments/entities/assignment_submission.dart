@@ -110,3 +110,18 @@ class StudentAssignmentListItem extends Equatable {
         score,
       ];
 }
+
+class StudentAssignmentStatus extends Equatable {
+  final String submissionId;
+  final String status;   // draft | submitted | graded | returned
+  final int? score;
+
+  const StudentAssignmentStatus({
+    required this.submissionId,
+    required this.status,
+    this.score,
+  });
+
+  @override
+  List<Object?> get props => [submissionId, status, score];
+}

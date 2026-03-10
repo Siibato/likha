@@ -343,6 +343,27 @@ pub struct QuestionStatistics {
     pub correct_percentage: f64,
 }
 
+// ===== STUDENT SUBMISSION STATUS SCHEMAS =====
+
+#[derive(Debug, Serialize)]
+pub struct StudentAssessmentSubmissionItem {
+    pub assessment_id: Uuid,
+    pub id: Uuid,                       // submission id
+    pub student_id: Uuid,
+    pub student_name: String,
+    pub student_username: String,
+    pub started_at: String,
+    pub submitted_at: Option<String>,
+    pub is_submitted: bool,
+    pub auto_score: f64,
+    pub final_score: f64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct StudentAssessmentSubmissionsResponse {
+    pub submissions: Vec<StudentAssessmentSubmissionItem>,
+}
+
 // ===== METADATA SCHEMAS =====
 
 #[derive(Debug, Serialize)]

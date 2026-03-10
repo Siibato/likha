@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
+import 'package:likha/data/datasources/remote/models/student_assignment_submission_item_model.dart';
 import 'package:likha/data/models/assignments/assignment_model.dart';
 import 'package:likha/data/models/assignments/assignment_submission_model.dart';
 import 'package:likha/data/models/assignments/submission_file_model.dart';
@@ -65,6 +66,11 @@ abstract class AssignmentRemoteDataSource {
   });
 
   Future<List<int>> downloadFile({required String fileId});
+
+  Future<List<StudentAssignmentSubmissionItemModel>> getStudentAssignmentSubmissions({
+    required String classId,
+    required String studentId,
+  });
 }
 
 class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
@@ -289,6 +295,25 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
         options: Options(responseType: ResponseType.bytes),
       );
       return response.data;
+    } on DioException catch (e) {
+      throw _dioClient.handleError(e);
+    }
+  }
+
+  @override
+  Future<List<StudentAssignmentSubmissionItemModel>> getStudentAssignmentSubmissions({
+    required String classId,
+    required String studentId,
+  }) async {
+    try {
+      final response = await _dioClient.dio.get(
+        '/api/v1/classes/$classId/students/$studentId/assignment-submissions',
+      );
+      final items = (response.data['data']['submissions'] as List)
+          .cast<Map<String, dynamic>>();
+      return items
+          .map((item) => StudentAssignmentSubmissionItemModel.fromMap(item))
+          .toList();
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
