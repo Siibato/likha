@@ -1,12 +1,17 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
 import 'package:likha/domain/assessments/usecases/create_assessment.dart';
 import 'package:likha/presentation/pages/teacher/widgets/question_draft.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
-import 'package:likha/presentation/pages/teacher/widgets/assessment_details_step.dart';
-import 'package:likha/presentation/pages/teacher/widgets/assessment_questions_step.dart';
-import 'package:likha/presentation/pages/teacher/widgets/assessment_review_step.dart';
+import 'package:likha/presentation/pages/teacher/widgets/assessment_details_section.dart';
+import 'package:likha/presentation/pages/teacher/widgets/assessment_questions_section.dart';
+import 'package:likha/presentation/pages/shared/class_section_header.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CreateAssessmentPage extends ConsumerStatefulWidget {
   final String classId;
@@ -19,9 +24,7 @@ class CreateAssessmentPage extends ConsumerStatefulWidget {
 }
 
 class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
-  int _currentStep = 0;
-
-  // Step 1: Assessment details
+  // Form state
   final _detailsFormKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -29,17 +32,113 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
   DateTime _openAt = DateTime.now();
   DateTime _closeAt = DateTime.now().add(const Duration(days: 7));
   bool _showResultsImmediately = false;
-
+  bool _isPublished = true;
   final List<QuestionDraft> _questions = [];
+  bool _isSaving = false;
+  bool _draftLoaded = false;
+  Timer? _autoSaveTimer;
 
-  String? _createdAssessmentId;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDraft();
+    });
+  }
 
   @override
   void dispose() {
+    _autoSaveTimer?.cancel();
     _titleController.dispose();
     _descriptionController.dispose();
     _timeLimitController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadDraft() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final draftKey = 'assessment_draft_${widget.classId}';
+      final draftJson = prefs.getString(draftKey);
+
+      if (draftJson != null && mounted) {
+        final draft = jsonDecode(draftJson) as Map<String, dynamic>;
+        _titleController.text = draft['title'] as String? ?? '';
+        _descriptionController.text = draft['description'] as String? ?? '';
+        _timeLimitController.text = draft['timeLimitMinutes'].toString();
+        _openAt = DateTime.parse(draft['openAt'] as String? ?? DateTime.now().toIso8601String());
+        _closeAt = DateTime.parse(draft['closeAt'] as String? ?? DateTime.now().add(const Duration(days: 7)).toIso8601String());
+        _showResultsImmediately = draft['showResultsImmediately'] as bool? ?? false;
+        _isPublished = draft['isPublished'] as bool? ?? true;
+
+        final questions = draft['questions'] as List?;
+        if (questions != null) {
+          _questions.clear();
+          for (final q in questions) {
+            _questions.add(QuestionDraft.fromJson(q as Map<String, dynamic>));
+          }
+        }
+
+        setState(() => _draftLoaded = true);
+      }
+    } catch (e) {
+      // Ignore draft load errors, continue with empty form
+    }
+  }
+
+  Future<void> _persistDraft() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final draft = {
+        'title': _titleController.text,
+        'description': _descriptionController.text,
+        'timeLimitMinutes': int.tryParse(_timeLimitController.text) ?? 30,
+        'openAt': _openAt.toIso8601String(),
+        'closeAt': _closeAt.toIso8601String(),
+        'showResultsImmediately': _showResultsImmediately,
+        'isPublished': _isPublished,
+        'questions': _questions.map((q) => q.toJson()).toList(),
+      };
+      await prefs.setString('assessment_draft_${widget.classId}', jsonEncode(draft));
+    } catch (e) {
+      // Ignore persistence errors for auto-save
+    }
+  }
+
+  void _scheduleAutoSave() {
+    _autoSaveTimer?.cancel();
+    _autoSaveTimer = Timer(const Duration(milliseconds: 800), _persistDraft);
+  }
+
+  Future<void> _saveDraftWithFeedback() async {
+    await _persistDraft();
+    if (mounted) {
+      context.showSuccessSnackBar('Draft saved', durationMs: 1500);
+    }
+  }
+
+  Future<void> _clearDraft() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('assessment_draft_${widget.classId}');
+    } catch (e) {
+      // Ignore clear errors
+    }
+  }
+
+  Future<void> _discardDraft() async {
+    await _clearDraft();
+    if (mounted) {
+      setState(() => _draftLoaded = false);
+      _titleController.clear();
+      _descriptionController.clear();
+      _timeLimitController.text = '30';
+      _openAt = DateTime.now();
+      _closeAt = DateTime.now().add(const Duration(days: 7));
+      _showResultsImmediately = false;
+      _isPublished = true;
+      _questions.clear();
+    }
   }
 
   String _formatDateTimeForApi(DateTime dt) {
@@ -52,79 +151,50 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
         '${utc.second.toString().padLeft(2, '0')}';
   }
 
-  Future<void> _handleCreateAssessment() async {
-    if (!_detailsFormKey.currentState!.validate()) return;
+  bool _validateAll() {
+    if (!_detailsFormKey.currentState!.validate()) return false;
 
     final timeLimit = int.tryParse(_timeLimitController.text.trim());
     if (timeLimit == null || timeLimit <= 0) {
-      _showErrorSnackBar('Please enter a valid time limit');
-      return;
+      context.showErrorSnackBar('Please enter a valid time limit');
+      return false;
     }
 
     if (_closeAt.isBefore(_openAt)) {
-      _showErrorSnackBar('Close date must be after open date');
-      return;
+      context.showErrorSnackBar('Close date must be after open date');
+      return false;
     }
 
-    await ref.read(assessmentProvider.notifier).createAssessment(
-          CreateAssessmentParams(
-            classId: widget.classId,
-            title: _titleController.text.trim(),
-            description: _descriptionController.text.trim().isEmpty
-                ? null
-                : _descriptionController.text.trim(),
-            timeLimitMinutes: timeLimit,
-            openAt: _formatDateTimeForApi(_openAt),
-            closeAt: _formatDateTimeForApi(_closeAt),
-            showResultsImmediately: _showResultsImmediately,
-          ),
-        );
-
-    if (!mounted) return;
-    final state = ref.read(assessmentProvider);
-    if (state.currentAssessment != null && state.error == null) {
-      _createdAssessmentId = state.currentAssessment!.id;
-      setState(() => _currentStep = 1);
-      _showSuccessSnackBar('Assessment created. Now add questions.');
-      ref.read(assessmentProvider.notifier).clearMessages();
-    } else if (state.error != null) {
-      _showErrorSnackBar(state.error!);
-      ref.read(assessmentProvider.notifier).clearMessages();
-    }
-  }
-
-  Future<void> _handleSaveQuestions() async {
-    if (_questions.isEmpty) {
-      _showErrorSnackBar('Please add at least one question');
-      return;
-    }
-
-    // Validation
+    // Validate questions
     for (int i = 0; i < _questions.length; i++) {
       final q = _questions[i];
       if (q.questionText.trim().isEmpty) {
-        _showErrorSnackBar('Question ${i + 1} text is empty');
-        return;
+        context.showErrorSnackBar('Question ${i + 1} text is empty');
+        return false;
       }
       if (q.type == 'multiple_choice' && q.choices.length < 2) {
-        _showErrorSnackBar('Question ${i + 1} needs at least 2 choices');
-        return;
+        context.showErrorSnackBar('Question ${i + 1} needs at least 2 choices');
+        return false;
       }
       if (q.type == 'multiple_choice' && !q.choices.any((c) => c.isCorrect)) {
-        _showErrorSnackBar('Question ${i + 1} needs at least one correct choice');
-        return;
+        context.showErrorSnackBar('Question ${i + 1} needs at least one correct choice');
+        return false;
       }
       if (q.type == 'identification' && q.acceptableAnswers.isEmpty) {
-        _showErrorSnackBar('Question ${i + 1} needs at least one acceptable answer');
-        return;
+        context.showErrorSnackBar('Question ${i + 1} needs at least one acceptable answer');
+        return false;
       }
       if (q.type == 'enumeration' && q.enumerationItems.isEmpty) {
-        _showErrorSnackBar('Question ${i + 1} needs at least one enumeration item');
-        return;
+        context.showErrorSnackBar('Question ${i + 1} needs at least one enumeration item');
+        return false;
       }
     }
 
-    final questionsData = _questions.asMap().entries.map((entry) {
+    return true;
+  }
+
+  List<Map<String, dynamic>> _buildQuestionsData() {
+    return _questions.asMap().entries.map((entry) {
       final i = entry.key;
       final q = entry.value;
       final map = <String, dynamic>{
@@ -162,135 +232,282 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
 
       return map;
     }).toList();
+  }
 
-    await ref.read(assessmentProvider.notifier).addQuestions(
+  Future<void> _handleSave() async {
+    if (!_validateAll()) return;
+
+    setState(() => _isSaving = true);
+
+    try {
+      debugPrint('[CreateAssessmentPage] _handleSave: Starting assessment creation');
+
+      // Build questionsData for use in both paths
+      final questionsData = _buildQuestionsData();
+
+      // Step 1: Create assessment
+      // When published: pass questions for atomic creation
+      // When draft: pass null (questions added in Step 2)
+      debugPrint('[CreateAssessmentPage] _handleSave: Calling createAssessment provider method');
+      final assessment = await ref
+          .read(assessmentProvider.notifier)
+          .createAssessment(
+            CreateAssessmentParams(
+              classId: widget.classId,
+              title: _titleController.text.trim(),
+              description: _descriptionController.text.trim().isEmpty
+                  ? null
+                  : _descriptionController.text.trim(),
+              timeLimitMinutes: int.parse(_timeLimitController.text.trim()),
+              openAt: _formatDateTimeForApi(_openAt),
+              closeAt: _formatDateTimeForApi(_closeAt),
+              showResultsImmediately: _showResultsImmediately,
+              isPublished: _isPublished,
+              questions: _isPublished ? questionsData : null,
+            ),
+          );
+
+      debugPrint('[CreateAssessmentPage] _handleSave: createAssessment returned assessment=${assessment?.id}');
+
+      if (!mounted) return;
+
+      if (assessment == null) {
+        debugPrint('[CreateAssessmentPage] _handleSave: Assessment is null, showing error');
+        final state = ref.read(assessmentProvider);
+        context.showErrorSnackBar(
+            state.error ?? 'Failed to create assessment');
+        setState(() => _isSaving = false);
+        return;
+      }
+
+      final assessmentId = assessment.id;
+      debugPrint('[CreateAssessmentPage] _handleSave: Assessment created with ID=$assessmentId');
+
+      // Step 2: Add questions only when DRAFT (published used atomic path above)
+      debugPrint('[CreateAssessmentPage] _handleSave: isPublished=$_isPublished, questions count=${_questions.length}');
+      if (!_isPublished && _questions.isNotEmpty) {
+        debugPrint('[CreateAssessmentPage] _handleSave: Adding ${_questions.length} questions (draft flow)');
+        await ref.read(assessmentProvider.notifier).addQuestions(
           AddQuestionsParams(
-            assessmentId: _createdAssessmentId!,
+            assessmentId: assessmentId,
             questions: questionsData,
           ),
         );
 
-    if (!mounted) return;
-    final state = ref.read(assessmentProvider);
-    if (state.error != null) {
-      _showErrorSnackBar(state.error!);
+        debugPrint('[CreateAssessmentPage] _handleSave: addQuestions completed');
+
+        if (!mounted) return;
+        final state = ref.read(assessmentProvider);
+        if (state.error != null) {
+          debugPrint('[CreateAssessmentPage] _handleSave: Error after addQuestions: ${state.error}');
+          context.showErrorSnackBar(state.error ?? 'Failed to add questions');
+          setState(() => _isSaving = false);
+          return;
+        }
+      }
+
+      // Success
+      debugPrint('[CreateAssessmentPage] _handleSave: Clearing draft');
+      await _clearDraft();
       ref.read(assessmentProvider.notifier).clearMessages();
-    } else {
-      setState(() => _currentStep = 2);
-      ref.read(assessmentProvider.notifier).clearMessages();
+      if (mounted) {
+        debugPrint('[CreateAssessmentPage] _handleSave: Success! Showing snackbar and navigating');
+        final message = _isPublished
+            ? 'Assessment created and published'
+            : 'Assessment saved as draft';
+        context.showSuccessSnackBar(message);
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (mounted) Navigator.pop(context, true);
+      }
+    } catch (e) {
+      debugPrint('[CreateAssessmentPage] _handleSave: Exception caught: $e');
+      if (mounted) {
+        context.showErrorSnackBar('An error occurred: $e');
+        setState(() => _isSaving = false);
+      }
     }
-  }
-
-  void _handleFinish() {
-    _showSuccessSnackBar('Assessment saved as draft');
-    Navigator.pop(context, true);
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: const Color(0xFFEF5350),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    );
-  }
-
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: const Color(0xFF4CAF50),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final assessmentState = ref.watch(assessmentProvider);
-
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF2B2B2B)),
-        title: Text(
-          _currentStep == 0
-              ? 'Create Assessment'
-              : _currentStep == 1
-                  ? 'Add Questions'
-                  : 'Review',
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
-            letterSpacing: -0.4,
-          ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            ClassSectionHeader(
+              title: 'Create Assessment',
+              showBackButton: true,
+            ),
+            Expanded(
+              child: Stack(
+                children: [
+                  SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Draft resume banner
+                        if (_draftLoaded)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF0F0F0),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.restore_rounded, size: 16, color: Color(0xFF666666)),
+                                const SizedBox(width: 8),
+                                const Expanded(
+                                  child: Text(
+                                    'Resuming draft',
+                                    style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: _discardDraft,
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: const Color(0xFFE57373),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  ),
+                                  child: const Text(
+                                    'Discard',
+                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                        // Details section
+                        Text(
+                          'Assessment Details',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF2B2B2B),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0xFFE0E0E0)),
+                          ),
+                          padding: const EdgeInsets.all(16),
+                          child: AssessmentDetailsSection(
+                            formKey: _detailsFormKey,
+                            titleController: _titleController,
+                            descriptionController: _descriptionController,
+                            timeLimitController: _timeLimitController,
+                            openAt: _openAt,
+                            closeAt: _closeAt,
+                            showResultsImmediately: _showResultsImmediately,
+                            isPublished: _isPublished,
+                            isLoading: _isSaving,
+                            onOpenAtChanged: (dt) => setState(() => _openAt = dt),
+                            onCloseAtChanged: (dt) => setState(() => _closeAt = dt),
+                            onShowResultsChanged: (value) => setState(() => _showResultsImmediately = value),
+                            onIsPublishedChanged: (value) => setState(() => _isPublished = value),
+                            onCreateAssessment: null, // Remove the old button
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Questions section
+                        Text(
+                          'Questions (${_questions.length})',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF2B2B2B),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        AssessmentQuestionsSection(
+                          questions: _questions,
+                          isLoading: _isSaving,
+                          onAddQuestion: () => setState(() => _questions.add(QuestionDraft())),
+                          onRemoveQuestion: (index) => setState(() => _questions.removeAt(index)),
+                          onQuestionsChanged: _scheduleAutoSave,
+                          onSaveQuestions: null, // Remove the old button
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
+
+                  // Bottom action bar
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border(top: BorderSide(color: const Color(0xFFE0E0E0))),
+                      ),
+                      padding: EdgeInsets.fromLTRB(
+                        24,
+                        12,
+                        24,
+                        24 + MediaQuery.of(context).viewInsets.bottom,
+                      ),
+                      child: Row(
+                        children: [
+                          OutlinedButton(
+                            onPressed: _isSaving ? null : _saveDraftWithFeedback,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF2B2B2B),
+                              side: const BorderSide(color: Color(0xFFE0E0E0)),
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              disabledForegroundColor: const Color(0xFFCCCCCC),
+                            ),
+                            child: const Text(
+                              'Save Draft',
+                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _isSaving ? null : _handleSave,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF2B2B2B),
+                                foregroundColor: Colors.white,
+                                disabledBackgroundColor: const Color(0xFFE0E0E0),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                elevation: 0,
+                              ),
+                              child: _isSaving
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Save Assessment',
+                                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-      ),
-      body: Stepper(
-        currentStep: _currentStep,
-        onStepContinue: null,
-        onStepCancel: null,
-        controlsBuilder: (context, details) => const SizedBox.shrink(),
-        steps: [
-          Step(
-            title: const Text('Assessment Details'),
-            isActive: _currentStep >= 0,
-            state: _currentStep > 0 ? StepState.complete : StepState.indexed,
-            content: AssessmentDetailsStep(
-              formKey: _detailsFormKey,
-              titleController: _titleController,
-              descriptionController: _descriptionController,
-              timeLimitController: _timeLimitController,
-              openAt: _openAt,
-              closeAt: _closeAt,
-              showResultsImmediately: _showResultsImmediately,
-              isLoading: assessmentState.isLoading,
-              onOpenAtChanged: (dt) => setState(() => _openAt = dt),
-              onCloseAtChanged: (dt) => setState(() => _closeAt = dt),
-              onShowResultsChanged: (value) =>
-                  setState(() => _showResultsImmediately = value),
-              onCreateAssessment: _handleCreateAssessment,
-            ),
-          ),
-          Step(
-            title: const Text('Questions'),
-            isActive: _currentStep >= 1,
-            state: _currentStep > 1 ? StepState.complete : StepState.indexed,
-            content: AssessmentQuestionsStep(
-              questions: _questions,
-              isLoading: assessmentState.isLoading,
-              onAddQuestion: () => setState(() => _questions.add(QuestionDraft())),
-              onRemoveQuestion: (index) => setState(() => _questions.removeAt(index)),
-              onQuestionsChanged: () => setState(() {}),
-              onSaveQuestions: _handleSaveQuestions,
-            ),
-          ),
-          Step(
-            title: const Text('Review'),
-            isActive: _currentStep >= 2,
-            state: _currentStep > 2 ? StepState.complete : StepState.indexed,
-            content: AssessmentReviewStep(
-              title: _titleController.text,
-              description: _descriptionController.text,
-              timeLimitMinutes: int.tryParse(_timeLimitController.text) ?? 0,
-              openAt: _openAt,
-              closeAt: _closeAt,
-              showResultsImmediately: _showResultsImmediately,
-              questions: _questions,
-              onFinish: _handleFinish,
-            ),
-          ),
-        ],
       ),
     );
   }

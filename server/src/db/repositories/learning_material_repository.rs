@@ -23,9 +23,10 @@ impl LearningMaterialRepository {
         description: Option<String>,
         content_text: Option<String>,
         order_index: i32,
+        client_id: Option<Uuid>,
     ) -> AppResult<learning_materials::Model> {
         let material = learning_materials::ActiveModel {
-            id: Set(Uuid::new_v4()),
+            id: Set(client_id.unwrap_or_else(Uuid::new_v4)),
             class_id: Set(class_id),
             title: Set(title),
             description: Set(description),
@@ -52,6 +53,7 @@ impl LearningMaterialRepository {
     pub async fn find_by_class_id(&self, class_id: Uuid) -> AppResult<Vec<learning_materials::Model>> {
         learning_materials::Entity::find()
             .filter(learning_materials::Column::ClassId.eq(class_id))
+            .filter(learning_materials::Column::DeletedAt.is_null())
             .order_by_asc(learning_materials::Column::OrderIndex)
             .all(&self.db)
             .await
@@ -208,6 +210,22 @@ impl LearningMaterialRepository {
             .await
             .map_err(|e| AppError::InternalServerError(format!("Failed to delete material: {}", e)))?;
 
+        Ok(())
+    }
+
+    pub async fn reorder_materials(&self, _class_id: Uuid, material_ids: Vec<Uuid>) -> AppResult<()> {
+        for (index, id) in material_ids.iter().enumerate() {
+            let material = learning_materials::ActiveModel {
+                id: Set(*id),
+                order_index: Set(index as i32),
+                updated_at: Set(Utc::now().naive_utc()),
+                ..Default::default()
+            };
+            learning_materials::Entity::update(material)
+                .exec(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Failed to reorder material: {}", e)))?;
+        }
         Ok(())
     }
 }

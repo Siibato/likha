@@ -26,9 +26,12 @@ impl AssessmentRepository {
         open_at: chrono::NaiveDateTime,
         close_at: chrono::NaiveDateTime,
         show_results_immediately: bool,
+        order_index: i32,
+        client_id: Option<Uuid>,
+        is_published: bool,
     ) -> AppResult<assessments::Model> {
         let assessment = assessments::ActiveModel {
-            id: Set(Uuid::new_v4()),
+            id: Set(client_id.unwrap_or_else(Uuid::new_v4)),
             class_id: Set(class_id),
             title: Set(title),
             description: Set(description),
@@ -37,7 +40,8 @@ impl AssessmentRepository {
             close_at: Set(close_at),
             show_results_immediately: Set(show_results_immediately),
             results_released: Set(false),
-            is_published: Set(false),
+            is_published: Set(is_published),
+            order_index: Set(order_index),
             total_points: Set(0),
             created_at: Set(Utc::now().naive_utc()),
             updated_at: Set(Utc::now().naive_utc()),
@@ -60,7 +64,8 @@ impl AssessmentRepository {
     pub async fn find_by_class_id(&self, class_id: Uuid) -> AppResult<Vec<assessments::Model>> {
         assessments::Entity::find()
             .filter(assessments::Column::ClassId.eq(class_id))
-            .order_by_desc(assessments::Column::CreatedAt)
+            .filter(assessments::Column::DeletedAt.is_null())
+            .order_by_asc(assessments::Column::OrderIndex)
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
@@ -70,7 +75,8 @@ impl AssessmentRepository {
         assessments::Entity::find()
             .filter(assessments::Column::ClassId.eq(class_id))
             .filter(assessments::Column::IsPublished.eq(true))
-            .order_by_desc(assessments::Column::CreatedAt)
+            .filter(assessments::Column::DeletedAt.is_null())
+            .order_by_asc(assessments::Column::OrderIndex)
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
@@ -193,9 +199,10 @@ impl AssessmentRepository {
         points: i32,
         order_index: i32,
         is_multi_select: bool,
+        client_id: Option<Uuid>,
     ) -> AppResult<assessment_questions::Model> {
         let question = assessment_questions::ActiveModel {
-            id: Set(Uuid::new_v4()),
+            id: Set(client_id.unwrap_or_else(Uuid::new_v4)),
             assessment_id: Set(assessment_id),
             question_type: Set(question_type),
             question_text: Set(question_text),
@@ -444,6 +451,54 @@ impl AssessmentRepository {
             .exec(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Failed to delete assessment: {}", e)))?;
+
+        Ok(())
+    }
+
+    pub async fn get_max_order_index(&self, class_id: Uuid) -> AppResult<i32> {
+        let result = assessments::Entity::find()
+            .select_only()
+            .column_as(assessments::Column::OrderIndex.max(), "max_order")
+            .filter(assessments::Column::ClassId.eq(class_id))
+            .filter(assessments::Column::DeletedAt.is_null())
+            .into_tuple::<Option<i32>>()
+            .one(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        Ok(result.flatten().unwrap_or(-1))
+    }
+
+    pub async fn update_order_index(&self, id: Uuid, order_index: i32) -> AppResult<()> {
+        let assessment = assessments::ActiveModel {
+            id: Set(id),
+            order_index: Set(order_index),
+            updated_at: Set(Utc::now().naive_utc()),
+            ..Default::default()
+        };
+
+        assessments::Entity::update(assessment)
+            .exec(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to update order index: {}", e)))?;
+
+        Ok(())
+    }
+
+    pub async fn reorder_assessments(&self, class_id: Uuid, assessment_ids: Vec<Uuid>) -> AppResult<()> {
+        for (index, id) in assessment_ids.iter().enumerate() {
+            let assessment = assessments::ActiveModel {
+                id: Set(*id),
+                order_index: Set(index as i32),
+                updated_at: Set(Utc::now().naive_utc()),
+                ..Default::default()
+            };
+
+            assessments::Entity::update(assessment)
+                .exec(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Failed to reorder assessment: {}", e)))?;
+        }
 
         Ok(())
     }

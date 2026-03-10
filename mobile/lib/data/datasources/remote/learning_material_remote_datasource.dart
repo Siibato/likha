@@ -28,6 +28,11 @@ abstract class LearningMaterialRemoteDataSource {
     required int newOrderIndex,
   });
 
+  Future<void> reorderAllMaterials({
+    required String classId,
+    required List<String> materialIds,
+  });
+
   Future<MaterialFileModel> uploadFile({
     required String materialId,
     required String filePath,
@@ -95,6 +100,17 @@ class LearningMaterialRemoteDataSourceImpl implements LearningMaterialRemoteData
     return await _dioClient.postTyped(
       ApiEndpoints.materialReorder(materialId),
       data: {'new_order_index': newOrderIndex},
+    );
+  }
+
+  @override
+  Future<void> reorderAllMaterials({
+    required String classId,
+    required List<String> materialIds,
+  }) async {
+    await _dioClient.postVoid(
+      ApiEndpoints.classMaterialsReorder(classId),
+      data: {'material_ids': materialIds},
     );
   }
 

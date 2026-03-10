@@ -158,6 +158,28 @@ impl SyncConflictRepository {
         Ok(())
     }
 
+    /// Get a conflict by ID
+    pub async fn get_conflict_by_id(&self, id: &str) -> AppResult<Option<SyncConflict>> {
+        let record = sync_conflicts::Entity::find_by_id(id.to_string())
+            .one(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        Ok(record.map(|r| SyncConflict {
+            id: r.id,
+            user_id: Uuid::parse_str(&r.user_id).unwrap_or_else(|_| Uuid::nil()),
+            entity_type: r.entity_type,
+            entity_id: Uuid::parse_str(&r.entity_id).unwrap_or_else(|_| Uuid::nil()),
+            client_updated_at: r.client_updated_at,
+            server_updated_at: r.server_updated_at,
+            client_data: r.client_data.and_then(|s| serde_json::from_str(&s).ok()),
+            server_data: r.server_data.and_then(|s| serde_json::from_str(&s).ok()),
+            resolution: r.resolution,
+            resolved_at: r.resolved_at,
+            created_at: r.created_at,
+        }))
+    }
+
     /// Cleanup resolved conflicts older than 30 days
     pub async fn cleanup_old_conflicts(&self) -> AppResult<usize> {
         let cutoff = Utc::now().naive_utc() - chrono::Duration::days(30);

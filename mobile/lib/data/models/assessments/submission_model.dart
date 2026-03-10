@@ -34,6 +34,23 @@ class SubmissionSummaryModel extends SubmissionSummary {
       isSubmitted: json['is_submitted'] as bool,
     );
   }
+
+  /// Maps SQLite row to model (used by local datasource)
+  factory SubmissionSummaryModel.fromMap(Map<String, dynamic> map) {
+    return SubmissionSummaryModel(
+      id: map['id'] as String,
+      studentId: map['student_id'] as String? ?? '',
+      studentName: map['student_name'] as String? ?? '',
+      studentUsername: map['student_username'] as String? ?? '',
+      startedAt: DateTime.parse(map['started_at'] as String),
+      submittedAt: map['submitted_at'] != null
+          ? DateTime.parse(map['submitted_at'] as String)
+          : null,
+      autoScore: (map['auto_score'] as int?)?.toDouble() ?? 0.0,
+      finalScore: (map['final_score'] as int?)?.toDouble() ?? 0.0,
+      isSubmitted: (map['is_submitted'] as int?) == 1,
+    );
+  }
 }
 
 class SubmissionDetailModel extends SubmissionDetail {
@@ -107,6 +124,24 @@ class SubmissionAnswerModel extends SubmissionAnswer {
       pointsAwarded: (json['points_awarded'] as num).toDouble(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'question_id': questionId,
+    'question_text': questionText,
+    'question_type': questionType,
+    'points': points,
+    'answer_text': answerText,
+    'selected_choices': selectedChoices
+        ?.map((c) => (c as SelectedChoiceModel).toJson())
+        .toList(),
+    'enumeration_answers': enumerationAnswers
+        ?.map((e) => (e as EnumerationAnswerModel).toJson())
+        .toList(),
+    'is_auto_correct': isAutoCorrect,
+    'is_override_correct': isOverrideCorrect,
+    'points_awarded': pointsAwarded,
+  };
 }
 
 class SelectedChoiceModel extends SelectedChoice {
@@ -123,6 +158,12 @@ class SelectedChoiceModel extends SelectedChoice {
       isCorrect: json['is_correct'] as bool,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'choice_id': choiceId,
+    'choice_text': choiceText,
+    'is_correct': isCorrect,
+  };
 }
 
 class EnumerationAnswerModel extends EnumerationAnswer {
@@ -143,6 +184,14 @@ class EnumerationAnswerModel extends EnumerationAnswer {
       isOverrideCorrect: json['is_override_correct'] as bool?,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'answer_text': answerText,
+    'matched_item_id': matchedItemId,
+    'is_auto_correct': isAutoCorrect,
+    'is_override_correct': isOverrideCorrect,
+  };
 }
 
 class StartSubmissionResultModel extends StartSubmissionResult {

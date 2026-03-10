@@ -16,6 +16,7 @@ class AssignmentModel extends Assignment {
     super.maxFileSizeMb,
     required super.dueAt,
     required super.isPublished,
+    required super.orderIndex,
     required super.submissionCount,
     required super.gradedCount,
     super.submissionStatus,
@@ -36,7 +37,8 @@ class AssignmentModel extends Assignment {
       allowedFileTypes: json['allowed_file_types'] as String?,
       maxFileSizeMb: json['max_file_size_mb'] as int?,
       dueAt: _parseUtc(json['due_at'] as String),
-      isPublished: json['is_published'] as bool,
+      isPublished: _parseBool(json['is_published']),
+      orderIndex: json['order_index'] as int? ?? 0,
       submissionCount: json['submission_count'] as int? ?? 0,
       gradedCount: json['graded_count'] as int? ?? 0,
       submissionStatus: json['submission_status'] as String?,
@@ -45,6 +47,13 @@ class AssignmentModel extends Assignment {
       createdAt: json['created_at'] != null ? _parseUtc(json['created_at'] as String) : DateTime.now(),
       updatedAt: json['updated_at'] != null ? _parseUtc(json['updated_at'] as String) : DateTime.now(),
     );
+  }
+
+  static bool _parseBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is int) return value == 1;
+    if (value is String) return value.toLowerCase() == 'true' || value == '1';
+    return false;
   }
 
   factory AssignmentModel.fromMap(Map<String, dynamic> map) {
@@ -57,8 +66,11 @@ class AssignmentModel extends Assignment {
       submissionType: map['submission_type'] as String,
       allowedFileTypes: map['allowed_file_types'] as String?,
       maxFileSizeMb: map['max_file_size_mb'] as int?,
-      dueAt: DateTime.parse(map['due_at'] as String),
+      dueAt: map['due_at'] != null
+          ? DateTime.parse(map['due_at'] as String)
+          : DateTime.now(),
       isPublished: (map['is_published'] as int?) == 1,
+      orderIndex: map['order_index'] as int? ?? 0,
       submissionCount: map['submission_count'] as int? ?? 0,
       gradedCount: map['graded_count'] as int? ?? 0,
       submissionStatus: map['submission_status'] as String?,
@@ -81,6 +93,7 @@ class AssignmentModel extends Assignment {
       'max_file_size_mb': maxFileSizeMb,
       'due_at': dueAt.toIso8601String(),
       'is_published': isPublished ? 1 : 0,
+      'order_index': orderIndex,
       'submission_count': submissionCount,
       'graded_count': gradedCount,
       'submission_status': submissionStatus,

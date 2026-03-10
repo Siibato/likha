@@ -151,12 +151,13 @@ class AdminNotifier extends StateNotifier<AdminState> {
     );
   }
 
-  Future<void> lockAccount(String userId, bool locked) async {
+  Future<void> lockAccount(String userId, bool locked, {String? reason}) async {
     state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
 
     final result = await _lockAccount(LockAccountParams(
       userId: userId,
       locked: locked,
+      reason: reason,
     ));
 
     result.fold(
@@ -196,7 +197,6 @@ class AdminNotifier extends StateNotifier<AdminState> {
 
   Future<void> updateAccount({
     required String userId,
-    String? username,
     String? fullName,
     String? role,
   }) async {
@@ -204,7 +204,6 @@ class AdminNotifier extends StateNotifier<AdminState> {
 
     final result = await _updateAccount(UpdateAccountParams(
       userId: userId,
-      username: username,
       fullName: fullName,
       role: role,
     ));

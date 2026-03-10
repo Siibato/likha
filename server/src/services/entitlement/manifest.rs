@@ -106,21 +106,35 @@ impl super::EntitlementService {
 
         let enrollments = self
             .manifest_repo
-            .get_enrollments_manifest(accessible_class_ids.clone())
+            .get_enrollments_manifest(accessible_class_ids.clone(), user_id, user_role)
             .await?;
 
-        let assessments = self
-            .manifest_repo
-            .get_assessments_manifest(accessible_class_ids.clone())
-            .await?;
-
-        let assessment_ids: Vec<Uuid> = assessments.iter().map(|a| a.id).collect();
-        let assessment_questions = if assessment_ids.is_empty() {
-            Vec::new()
+        let assessments = if user_role == "student" {
+            self.manifest_repo
+                .get_published_assessments_manifest(accessible_class_ids.clone())
+                .await?
         } else {
             self.manifest_repo
-                .get_questions_manifest(assessment_ids.clone())
+                .get_assessments_manifest(accessible_class_ids.clone())
                 .await?
+        };
+
+        let assessment_ids: Vec<Uuid> = assessments.iter().map(|a| a.id).collect();
+        tracing::debug!("Manifest building: Found {} assessments", assessment_ids.len());
+
+        let assessment_questions = if assessment_ids.is_empty() {
+            tracing::debug!("Manifest building: No assessments found, skipping questions");
+            Vec::new()
+        } else {
+            tracing::debug!("Manifest building: Fetching questions for {} assessments", assessment_ids.len());
+            let questions = self.manifest_repo
+                .get_questions_manifest(assessment_ids.clone())
+                .await?;
+            tracing::debug!("Manifest building: Found {} questions for {} assessments", questions.len(), assessment_ids.len());
+            if questions.is_empty() {
+                tracing::debug!("Manifest building: No questions found for assessments");
+            }
+            questions
         };
 
         let assessment_submissions = if assessment_ids.is_empty() {
@@ -131,10 +145,15 @@ impl super::EntitlementService {
                 .await?
         };
 
-        let assignments = self
-            .manifest_repo
-            .get_assignments_manifest(accessible_class_ids.clone())
-            .await?;
+        let assignments = if user_role == "student" {
+            self.manifest_repo
+                .get_published_assignments_manifest(accessible_class_ids.clone())
+                .await?
+        } else {
+            self.manifest_repo
+                .get_assignments_manifest(accessible_class_ids.clone())
+                .await?
+        };
 
         let assignment_ids: Vec<Uuid> = assignments.iter().map(|a| a.id).collect();
         let assignment_submissions = if assignment_ids.is_empty() {

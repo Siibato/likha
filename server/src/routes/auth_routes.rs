@@ -26,7 +26,7 @@ pub fn routes(auth_service: Arc<AuthService>) -> Router {
         .route("/auth/accounts/lock", post(admin_handler::lock_account))
         .route(
             "/auth/accounts/{id}",
-            put(admin_handler::update_account),
+            get(admin_handler::get_account).put(admin_handler::update_account),
         )
         .route(
             "/auth/accounts/{id}/logs",

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/presentation/pages/admin/widgets/styled_text_field.dart';
 import 'package:likha/presentation/pages/admin/widgets/styled_dropdown.dart';
 import 'package:likha/presentation/pages/admin/widgets/styled_button.dart';
@@ -41,28 +42,10 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
       if (mounted) {
         final state = ref.read(adminProvider);
         if (state.successMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.successMessage!),
-              backgroundColor: const Color(0xFF28A745),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
+          context.showSuccessSnackBar(state.successMessage!);
           Navigator.pop(context);
         } else if (state.error != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.error!),
-              backgroundColor: const Color(0xFFDC3545),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
+          context.showErrorSnackBar(state.error!);
         }
       }
     } finally {

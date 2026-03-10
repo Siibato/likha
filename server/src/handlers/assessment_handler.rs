@@ -26,7 +26,7 @@ pub async fn create_assessment(
         return AppError::Forbidden("Teacher access required".to_string()).into_response();
     }
 
-    match service.create_assessment(class_id, request, auth_user.user_id).await {
+    match service.create_assessment(class_id, request, auth_user.user_id, None).await {
         Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
         Err(e) => e.into_response(),
     }
@@ -281,9 +281,18 @@ pub async fn submit_assessment(
         return AppError::Forbidden("Student access required".to_string()).into_response();
     }
 
+    println!("📤 [HANDLER] submit_assessment() START - submission_id: {}, student_id: {}", submission_id, auth_user.user_id);
+
     match service.submit_assessment(submission_id, auth_user.user_id).await {
-        Ok(response) => success_response(response, StatusCode::OK).into_response(),
-        Err(e) => e.into_response(),
+        Ok(response) => {
+            println!("📤 [HANDLER] submit_assessment() SUCCESS - returning response: is_submitted={}, submitted_at={:?}, auto_score={}, final_score={}",
+                response.is_submitted, response.submitted_at, response.auto_score, response.final_score);
+            success_response(response, StatusCode::OK).into_response()
+        },
+        Err(e) => {
+            println!("📤 [HANDLER] submit_assessment() ERROR - {:?}", e);
+            e.into_response()
+        },
     }
 }
 
@@ -308,6 +317,24 @@ pub async fn get_assessments_metadata(
 ) -> impl IntoResponse {
     match service.get_assessments_metadata().await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+pub async fn reorder_assessments(
+    State(service): State<Arc<AssessmentService>>,
+    auth_user: AuthUser,
+    Path(class_id): Path<Uuid>,
+    Json(request): Json<ReorderAssessmentsRequest>,
+) -> impl IntoResponse {
+    if auth_user.role != "teacher" {
+        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    }
+    match service.reorder_assessments(class_id, request, auth_user.user_id).await {
+        Ok(()) => success_response(
+            MessageResponse { message: "Assessments reordered".to_string() },
+            StatusCode::OK,
+        ).into_response(),
         Err(e) => e.into_response(),
     }
 }

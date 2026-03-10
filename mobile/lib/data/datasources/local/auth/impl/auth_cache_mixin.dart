@@ -12,7 +12,7 @@ mixin AuthCacheMixin on AuthLocalDataSourceBase {
       final map = user.toMap();
       map['cached_at'] = DateTime.now().toIso8601String();
       map['sync_status'] = 'synced';
-      map['is_dirty'] = 0;
+      map['is_offline_mutation'] = 0;
       await db.insert('users', map, conflictAlgorithm: ConflictAlgorithm.replace);
     } catch (e) {
       throw CacheException('Failed to cache user: $e');
@@ -28,7 +28,7 @@ mixin AuthCacheMixin on AuthLocalDataSourceBase {
           final map = account.toMap();
           map['cached_at'] = DateTime.now().toIso8601String();
           map['sync_status'] = 'synced';
-          map['is_dirty'] = 0;
+          map['is_offline_mutation'] = 0;
           await txn.insert('users', map, conflictAlgorithm: ConflictAlgorithm.replace);
         }
       });
@@ -44,7 +44,7 @@ mixin AuthCacheMixin on AuthLocalDataSourceBase {
       final map = account.toMap();
       map['cached_at'] = DateTime.now().toIso8601String();
       map['sync_status'] = 'pending';
-      map['is_dirty'] = 1;
+      map['is_offline_mutation'] = 1;
       await db.insert('users', map, conflictAlgorithm: ConflictAlgorithm.replace);
     } catch (e) {
       throw CacheException('Failed to cache created account: $e');

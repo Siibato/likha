@@ -36,7 +36,7 @@ impl super::AuthService {
         let user = self.user_repo.update_account_status(user.id, status).await?;
 
         self.activity_log_repo
-            .create_log(user.id, action, Some(admin_id), None)
+            .create_log(user.id, action, Some(admin_id), request.reason.clone())
             .await?;
 
         let _ = self.change_log_repo.log_change(

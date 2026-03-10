@@ -13,7 +13,9 @@ use dotenv::dotenv;
 use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter, ColumnTrait, ActiveModelTrait, Set};
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
 use tower_http::cors::{Any, CorsLayer};
+use tower_http::timeout::TimeoutLayer;
 use uuid::Uuid;
 
 use crate::services::assessment::AssessmentService;
@@ -22,15 +24,12 @@ use crate::services::auth::AuthService;
 use crate::services::class::ClassService;
 use crate::services::learning_material::LearningMaterialService;
 use crate::services::entitlement::EntitlementService;
-use crate::services::sync_manifest_service::SyncManifestService;
-use crate::services::sync_fetch_service::SyncFetchService;
 use crate::services::sync_push::SyncPushService;
 use crate::services::sync_conflict_service::SyncConflictService;
-use crate::services::sync_full_service::SyncFullService;
-use crate::services::sync_delta_service::SyncDeltaService;
+use crate::services::sync_full::SyncFullService;
+use crate::services::sync_delta::SyncDeltaService;
 use crate::db::repositories::{
     manifest_repository::ManifestRepository,
-    sync_cursor_repository::SyncCursorRepository,
     sync_conflict_repository::SyncConflictRepository,
     processed_operations_repository::ProcessedOperationsRepository,
 };
@@ -42,6 +41,7 @@ async fn main() {
     tracing_subscriber::fmt()
         .with_target(false)
         .compact()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
     let config = config::ServerConfig::from_env();
@@ -166,17 +166,6 @@ async fn main() {
         manifest_repo.clone(),
     ));
 
-    let sync_manifest_service = Arc::new(SyncManifestService::new(
-        entitlement_service.clone(),
-    ));
-
-    let cursor_repo = SyncCursorRepository::new(db.clone());
-    let sync_fetch_service = Arc::new(SyncFetchService::new(
-        entitlement_service.clone(),
-        manifest_repo.clone(),
-        cursor_repo,
-    ));
-
     let processed_ops_repo = Arc::new(ProcessedOperationsRepository::new(db.clone()));
     let sync_push_service = Arc::new(SyncPushService::new(
         entitlement_service.clone(),
@@ -194,11 +183,13 @@ async fn main() {
     let sync_full_service = Arc::new(SyncFullService::new(
         entitlement_service.clone(),
         manifest_repo.clone(),
+        db.clone(),
     ));
 
     let sync_delta_service = Arc::new(SyncDeltaService::new(
         entitlement_service.clone(),
         manifest_repo.clone(),
+        db.clone(),
     ));
 
     let app = create_app(
@@ -207,8 +198,6 @@ async fn main() {
         assessment_service,
         assignment_service,
         material_service,
-        sync_manifest_service,
-        sync_fetch_service,
         sync_push_service,
         sync_conflict_service,
         sync_full_service,
@@ -234,8 +223,6 @@ fn create_app(
     assessment_service: Arc<AssessmentService>,
     assignment_service: Arc<AssignmentService>,
     material_service: Arc<LearningMaterialService>,
-    sync_manifest_service: Arc<SyncManifestService>,
-    sync_fetch_service: Arc<SyncFetchService>,
     sync_push_service: Arc<SyncPushService>,
     sync_conflict_service: Arc<SyncConflictService>,
     sync_full_service: Arc<SyncFullService>,
@@ -255,14 +242,13 @@ fn create_app(
                 assessment_service,
                 assignment_service,
                 material_service,
-                sync_manifest_service,
-                sync_fetch_service,
                 sync_push_service,
                 sync_conflict_service,
                 sync_full_service,
                 sync_delta_service,
             ),
         )
+        .layer(TimeoutLayer::new(Duration::from_secs(60)))
         .layer(cors)
         .layer(middleware::logging_middleware())
 }
@@ -299,9 +285,8 @@ async fn seed_admin(db: &DatabaseConnection) -> Result<(), sea_orm::DbErr> {
         full_name: Set("System Administrator".to_string()),
         role: Set("admin".to_string()),
         account_status: Set("pending_activation".to_string()),
-        is_active: Set(true),
         activated_at: Set(None),
-        created_by: Set(None),
+        deleted_at: Set(None),
         created_at: Set(Utc::now().naive_utc()),
         updated_at: Set(Utc::now().naive_utc()),
     };

@@ -97,7 +97,7 @@ impl super::AuthService {
             ));
         }
 
-        if user.account_status == "locked" || !user.is_active {
+        if user.account_status == "locked" || user.account_status == "deactivated" {
             return Err(AppError::Forbidden("Account is locked".to_string()));
         }
 
@@ -172,7 +172,7 @@ impl super::AuthService {
             .await?
             .ok_or_else(|| AppError::NotFound("User not found".to_string()))?;
 
-        if !user.is_active || user.account_status == "locked" {
+        if user.account_status == "locked" || user.account_status == "deactivated" {
             return Err(AppError::Forbidden("Account is locked".to_string()));
         }
 

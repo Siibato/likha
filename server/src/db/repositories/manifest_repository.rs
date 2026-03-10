@@ -5,8 +5,9 @@ use uuid::Uuid;
 
 use crate::utils::{AppError, AppResult};
 use ::entity::{
-    classes, class_enrollments, assessments, assessment_questions, assessment_submissions,
+    classes, class_participants, assessments, assessment_questions, assessment_submissions,
     assignments_hw, assignment_submissions, learning_materials, activity_logs, users,
+    material_files, submission_files,
 };
 
 /// Record entry in the manifest (id + updated_at + deleted flag)
@@ -35,6 +36,44 @@ impl ManifestRepository {
         Self { db }
     }
 
+    /// Build a map of class_id -> (teacher_id, teacher_username, teacher_full_name)
+    async fn build_teacher_map(
+        &self,
+        class_ids: &[Uuid],
+    ) -> AppResult<std::collections::HashMap<Uuid, (Uuid, String, String)>> {
+        // Fetch all teacher participants for these classes
+        let participants = class_participants::Entity::find()
+            .filter(class_participants::Column::ClassId.is_in(class_ids.to_vec()))
+            .filter(class_participants::Column::Role.eq("teacher"))
+            .filter(class_participants::Column::RemovedAt.is_null())
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        let mut map = std::collections::HashMap::new();
+
+        for participant in participants {
+            // Fetch the user details for this participant
+            if let Ok(Some(user)) = users::Entity::find_by_id(participant.user_id)
+                .one(&self.db)
+                .await
+            {
+                map.insert(
+                    participant.class_id,
+                    (user.id, user.username.clone(), user.full_name.clone()),
+                );
+            }
+        }
+
+        Ok(map)
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // SECTION A: Manifest Queries
+    // Used by: EntitlementService::get_user_manifest()
+    // Returns lightweight ManifestEntry (id + updated_at + deleted flag only)
+    // ─────────────────────────────────────────────────────────────────────────────
+
     /// Get manifest entries for classes (with timestamps for delta sync)
     pub async fn get_classes_manifest(
         &self,
@@ -56,14 +95,25 @@ impl ManifestRepository {
             .collect())
     }
 
-    /// Get manifest entries for enrollments
+    /// Get manifest entries for enrollments (class participants with student role)
+    /// For students, only returns their own enrollment records.
+    /// For teachers/admins, returns all student enrollments in their classes.
     pub async fn get_enrollments_manifest(
         &self,
         class_ids: Vec<Uuid>,
+        user_id: Uuid,
+        user_role: &str,
     ) -> AppResult<Vec<ManifestEntry>> {
-        let records = class_enrollments::Entity::find()
-            .filter(class_enrollments::Column::ClassId.is_in(class_ids))
-            .filter(class_enrollments::Column::RemovedAt.is_null())
+        let mut query = class_participants::Entity::find()
+            .filter(class_participants::Column::ClassId.is_in(class_ids))
+            .filter(class_participants::Column::Role.eq("student"))
+            .filter(class_participants::Column::RemovedAt.is_null());
+
+        if user_role == "student" {
+            query = query.filter(class_participants::Column::UserId.eq(user_id));
+        }
+
+        let records = query
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
@@ -72,7 +122,7 @@ impl ManifestRepository {
             .into_iter()
             .map(|r| ManifestEntry {
                 id: r.id,
-                updated_at: r.enrolled_at,
+                updated_at: r.joined_at,
                 deleted: r.removed_at.is_some(),
             })
             .collect())
@@ -137,7 +187,30 @@ impl ManifestRepository {
             .into_iter()
             .map(|r| ManifestEntry {
                 id: r.id,
-                updated_at: r.created_at, // Use created_at since updated_at doesn't exist
+                updated_at: r.updated_at,
+                deleted: false,
+            })
+            .collect())
+    }
+
+    /// Get manifest entries for assessments (published only)
+    pub async fn get_published_assessments_manifest(
+        &self,
+        class_ids: Vec<Uuid>,
+    ) -> AppResult<Vec<ManifestEntry>> {
+        let records = assessments::Entity::find()
+            .filter(assessments::Column::ClassId.is_in(class_ids))
+            .filter(assessments::Column::IsPublished.eq(true))
+            .filter(assessments::Column::DeletedAt.is_null())
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        Ok(records
+            .into_iter()
+            .map(|r| ManifestEntry {
+                id: r.id,
+                updated_at: r.updated_at,
                 deleted: false,
             })
             .collect())
@@ -160,6 +233,29 @@ impl ManifestRepository {
                 id: r.id,
                 updated_at: r.updated_at,
                 deleted: r.deleted_at.is_some(),
+            })
+            .collect())
+    }
+
+    /// Get manifest entries for assignments (published only)
+    pub async fn get_published_assignments_manifest(
+        &self,
+        class_ids: Vec<Uuid>,
+    ) -> AppResult<Vec<ManifestEntry>> {
+        let records = assignments_hw::Entity::find()
+            .filter(assignments_hw::Column::ClassId.is_in(class_ids))
+            .filter(assignments_hw::Column::IsPublished.eq(true))
+            .filter(assignments_hw::Column::DeletedAt.is_null())
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        Ok(records
+            .into_iter()
+            .map(|r| ManifestEntry {
+                id: r.id,
+                updated_at: r.updated_at,
+                deleted: false,
             })
             .collect())
     }
@@ -208,6 +304,12 @@ impl ManifestRepository {
             .collect())
     }
 
+    // ─────────────────────────────────────────────────────────────────────────────
+    // SECTION B: Paginated Full-Data Queries
+    // Used by: SyncFullService (batch request branch)
+    // Returns full JSON records with all fields
+    // ─────────────────────────────────────────────────────────────────────────────
+
     /// Get full paginated records for a set of IDs
     /// limit: max records per page (capped at 500)
     pub async fn get_classes_paginated(
@@ -215,33 +317,39 @@ impl ManifestRepository {
         class_ids: Vec<Uuid>,
         limit: i64,
     ) -> AppResult<PaginatedRecords> {
-        let effective_limit = std::cmp::min(limit, 500) as u64;
+        if class_ids.is_empty() {
+            // No classes, return empty result
+            return Ok(PaginatedRecords {
+                records: vec![],
+                has_more: false,
+            });
+        }
 
-        let records = classes::Entity::find()
-            .filter(classes::Column::Id.is_in(class_ids))
-            .limit(effective_limit + 1)
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+        let teacher_map = self.build_teacher_map(&class_ids).await?;
 
-        let has_more = records.len() > effective_limit as usize;
-        let records: Vec<Value> = records
-            .into_iter()
-            .take(effective_limit as usize)
-            .map(|r| {
-                json!({
-                    "id": r.id.to_string(),
-                    "title": r.title,
-                    "description": r.description,
-                    "teacher_id": r.teacher_id.to_string(),
-                    "is_archived": r.is_archived,
-                    "created_at": r.created_at.to_string(),
-                    "updated_at": r.updated_at.to_string(),
-                })
+        let query = classes::Entity::find()
+            .filter(classes::Column::Id.is_in(class_ids));
+        Self::paginate_query(&self.db, query, limit, move |r| {
+            let (teacher_id, teacher_username, teacher_full_name) = teacher_map
+                .get(&r.id)
+                .map(|t| (t.0.to_string(), t.1.clone(), t.2.clone()))
+                .unwrap_or_else(|| ("".to_string(), "".to_string(), "".to_string()));
+
+            json!({
+                "id": r.id.to_string(),
+                "title": r.title,
+                "description": r.description,
+                "is_archived": r.is_archived,
+                "teacher_id": teacher_id,
+                "teacher_username": teacher_username,
+                "teacher_full_name": teacher_full_name,
+                "created_at": r.created_at.to_string(),
+                "updated_at": r.updated_at.to_string(),
+                "deleted_at": r.deleted_at.map(|d| d.to_string()),
+                "student_count": 0,
             })
-            .collect();
-
-        Ok(PaginatedRecords { records, has_more })
+        })
+        .await
     }
 
     /// Get full paginated records for assessments
@@ -250,40 +358,28 @@ impl ManifestRepository {
         assessment_ids: Vec<Uuid>,
         limit: i64,
     ) -> AppResult<PaginatedRecords> {
-        let effective_limit = std::cmp::min(limit, 500) as u64;
-
-        let records = assessments::Entity::find()
-            .filter(assessments::Column::Id.is_in(assessment_ids))
-            .limit(effective_limit + 1)
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        let has_more = records.len() > effective_limit as usize;
-        let records: Vec<Value> = records
-            .into_iter()
-            .take(effective_limit as usize)
-            .map(|r| {
-                json!({
-                    "id": r.id.to_string(),
-                    "class_id": r.class_id.to_string(),
-                    "title": r.title,
-                    "description": r.description,
-                    "time_limit_minutes": r.time_limit_minutes,
-                    "open_at": r.open_at.to_string(),
-                    "close_at": r.close_at.to_string(),
-                    "show_results_immediately": r.show_results_immediately,
-                    "is_published": r.is_published,
-                    "results_released": r.results_released,
-                    "total_points": r.total_points,
-                    "created_at": r.created_at.to_string(),
-                    "updated_at": r.updated_at.to_string(),
-                    "deleted_at": r.deleted_at.map(|d| d.to_string()),
-                })
+        let query = assessments::Entity::find()
+            .filter(assessments::Column::Id.is_in(assessment_ids));
+        Self::paginate_query(&self.db, query, limit, |r| {
+            json!({
+                "id": r.id.to_string(),
+                "class_id": r.class_id.to_string(),
+                "title": r.title,
+                "description": r.description,
+                "time_limit_minutes": r.time_limit_minutes,
+                "open_at": r.open_at.to_string(),
+                "close_at": r.close_at.to_string(),
+                "show_results_immediately": r.show_results_immediately,
+                "is_published": r.is_published,
+                "results_released": r.results_released,
+                "order_index": r.order_index,
+                "total_points": r.total_points,
+                "created_at": r.created_at.to_string(),
+                "updated_at": r.updated_at.to_string(),
+                "deleted_at": r.deleted_at.map(|d| d.to_string()),
             })
-            .collect();
-
-        Ok(PaginatedRecords { records, has_more })
+        })
+        .await
     }
 
     /// Get full paginated records for assignments
@@ -292,39 +388,27 @@ impl ManifestRepository {
         assignment_ids: Vec<Uuid>,
         limit: i64,
     ) -> AppResult<PaginatedRecords> {
-        let effective_limit = std::cmp::min(limit, 500) as u64;
-
-        let records = assignments_hw::Entity::find()
-            .filter(assignments_hw::Column::Id.is_in(assignment_ids))
-            .limit(effective_limit + 1)
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        let has_more = records.len() > effective_limit as usize;
-        let records: Vec<Value> = records
-            .into_iter()
-            .take(effective_limit as usize)
-            .map(|r| {
-                json!({
-                    "id": r.id.to_string(),
-                    "class_id": r.class_id.to_string(),
-                    "title": r.title,
-                    "instructions": r.instructions,
-                    "total_points": r.total_points,
-                    "submission_type": r.submission_type,
-                    "allowed_file_types": r.allowed_file_types,
-                    "max_file_size_mb": r.max_file_size_mb,
-                    "due_at": r.due_at.to_string(),
-                    "is_published": r.is_published,
-                    "created_at": r.created_at.to_string(),
-                    "updated_at": r.updated_at.to_string(),
-                    "deleted_at": r.deleted_at.map(|d| d.to_string()),
-                })
+        let query = assignments_hw::Entity::find()
+            .filter(assignments_hw::Column::Id.is_in(assignment_ids));
+        Self::paginate_query(&self.db, query, limit, |r| {
+            json!({
+                "id": r.id.to_string(),
+                "class_id": r.class_id.to_string(),
+                "title": r.title,
+                "instructions": r.instructions,
+                "total_points": r.total_points,
+                "submission_type": r.submission_type,
+                "allowed_file_types": r.allowed_file_types,
+                "max_file_size_mb": r.max_file_size_mb,
+                "due_at": r.due_at.to_string(),
+                "is_published": r.is_published,
+                "order_index": r.order_index,
+                "created_at": r.created_at.to_string(),
+                "updated_at": r.updated_at.to_string(),
+                "deleted_at": r.deleted_at.map(|d| d.to_string()),
             })
-            .collect();
-
-        Ok(PaginatedRecords { records, has_more })
+        })
+        .await
     }
 
     /// Get full paginated records for learning materials
@@ -333,66 +417,43 @@ impl ManifestRepository {
         material_ids: Vec<Uuid>,
         limit: i64,
     ) -> AppResult<PaginatedRecords> {
-        let effective_limit = std::cmp::min(limit, 500) as u64;
-
-        let records = learning_materials::Entity::find()
-            .filter(learning_materials::Column::Id.is_in(material_ids))
-            .limit(effective_limit + 1)
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        let has_more = records.len() > effective_limit as usize;
-        let records: Vec<Value> = records
-            .into_iter()
-            .take(effective_limit as usize)
-            .map(|r| {
-                json!({
-                    "id": r.id.to_string(),
-                    "class_id": r.class_id.to_string(),
-                    "title": r.title,
-                    "description": r.description,
-                    "content_text": r.content_text,
-                    "order_index": r.order_index,
-                    "created_at": r.created_at.to_string(),
-                    "updated_at": r.updated_at.to_string(),
-                })
+        let query = learning_materials::Entity::find()
+            .filter(learning_materials::Column::Id.is_in(material_ids));
+        Self::paginate_query(&self.db, query, limit, |r| {
+            json!({
+                "id": r.id.to_string(),
+                "class_id": r.class_id.to_string(),
+                "title": r.title,
+                "description": r.description,
+                "content_text": r.content_text,
+                "order_index": r.order_index,
+                "created_at": r.created_at.to_string(),
+                "updated_at": r.updated_at.to_string(),
             })
-            .collect();
-
-        Ok(PaginatedRecords { records, has_more })
+        })
+        .await
     }
 
-    /// Get full paginated records for class enrollments
+    /// Get full paginated records for class enrollments (class participants with student role)
     pub async fn get_enrollments_paginated(
         &self,
         enrollment_ids: Vec<Uuid>,
         limit: i64,
     ) -> AppResult<PaginatedRecords> {
-        let effective_limit = std::cmp::min(limit, 500) as u64;
-
-        let records = class_enrollments::Entity::find()
-            .filter(class_enrollments::Column::Id.is_in(enrollment_ids))
-            .limit(effective_limit + 1)
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        let has_more = records.len() > effective_limit as usize;
-        let records: Vec<Value> = records
-            .into_iter()
-            .take(effective_limit as usize)
-            .map(|r| {
-                json!({
-                    "id": r.id.to_string(),
-                    "class_id": r.class_id.to_string(),
-                    "student_id": r.student_id.to_string(),
-                    "enrolled_at": r.enrolled_at.to_string(),
-                })
+        let query = class_participants::Entity::find()
+            .filter(class_participants::Column::Id.is_in(enrollment_ids))
+            .filter(class_participants::Column::Role.eq("student"));
+        Self::paginate_query(&self.db, query, limit, |r| {
+            json!({
+                "id": r.id.to_string(),
+                "class_id": r.class_id.to_string(),
+                "user_id": r.user_id.to_string(),
+                "student_id": r.user_id.to_string(),
+                "joined_at": r.joined_at.to_string(),
+                "enrolled_at": r.joined_at.to_string(),
             })
-            .collect();
-
-        Ok(PaginatedRecords { records, has_more })
+        })
+        .await
     }
 
     /// Get full paginated records for assessment questions
@@ -401,36 +462,22 @@ impl ManifestRepository {
         question_ids: Vec<Uuid>,
         limit: i64,
     ) -> AppResult<PaginatedRecords> {
-        let effective_limit = std::cmp::min(limit, 500) as u64;
-
-        let records = assessment_questions::Entity::find()
-            .filter(assessment_questions::Column::Id.is_in(question_ids))
-            .filter(assessment_questions::Column::DeletedAt.is_null())
-            .limit(effective_limit + 1)
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        let has_more = records.len() > effective_limit as usize;
-        let records: Vec<Value> = records
-            .into_iter()
-            .take(effective_limit as usize)
-            .map(|r| {
-                json!({
-                    "id": r.id.to_string(),
-                    "assessment_id": r.assessment_id.to_string(),
-                    "question_type": r.question_type,
-                    "question_text": r.question_text,
-                    "points": r.points,
-                    "order_index": r.order_index,
-                    "is_multi_select": r.is_multi_select,
-                    "updated_at": r.updated_at.to_string(),
-                    "deleted_at": r.deleted_at.map(|d| d.to_string()),
-                })
+        let query = assessment_questions::Entity::find()
+            .filter(assessment_questions::Column::Id.is_in(question_ids));
+        Self::paginate_query(&self.db, query, limit, |r| {
+            json!({
+                "id": r.id.to_string(),
+                "assessment_id": r.assessment_id.to_string(),
+                "question_type": r.question_type,
+                "question_text": r.question_text,
+                "points": r.points,
+                "order_index": r.order_index,
+                "is_multi_select": r.is_multi_select,
+                "updated_at": r.updated_at.to_string(),
+                "deleted_at": r.deleted_at.map(|d| d.to_string()),
             })
-            .collect();
-
-        Ok(PaginatedRecords { records, has_more })
+        })
+        .await
     }
 
     /// Get full paginated records for assessment submissions (user-specific)
@@ -440,36 +487,25 @@ impl ManifestRepository {
         submission_ids: Vec<Uuid>,
         limit: i64,
     ) -> AppResult<PaginatedRecords> {
-        let effective_limit = std::cmp::min(limit, 500) as u64;
-
-        let records = assessment_submissions::Entity::find()
+        let query = assessment_submissions::Entity::find()
             .filter(assessment_submissions::Column::StudentId.eq(user_id))
-            .filter(assessment_submissions::Column::Id.is_in(submission_ids))
-            .limit(effective_limit + 1)
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        let has_more = records.len() > effective_limit as usize;
-        let records: Vec<Value> = records
-            .into_iter()
-            .take(effective_limit as usize)
-            .map(|r| {
-                json!({
-                    "id": r.id.to_string(),
-                    "assessment_id": r.assessment_id.to_string(),
-                    "student_id": r.student_id.to_string(),
-                    "started_at": r.created_at.to_string(),
-                    "submitted_at": r.submitted_at.map(|d| d.to_string()),
-                    "auto_score": r.auto_score,
-                    "final_score": r.final_score,
-                    "is_submitted": r.is_submitted,
-                    "updated_at": r.updated_at.to_string(),
-                })
+            .filter(assessment_submissions::Column::Id.is_in(submission_ids));
+        Self::paginate_query(&self.db, query, limit, |r| {
+            json!({
+                "id": r.id.to_string(),
+                "assessment_id": r.assessment_id.to_string(),
+                "student_id": r.student_id.to_string(),
+                "started_at": r.started_at.to_string(),
+                "submitted_at": r.submitted_at.map(|d| d.to_string()),
+                "auto_score": r.auto_score,
+                "final_score": r.final_score,
+                "is_submitted": r.is_submitted,
+                "created_at": r.created_at.to_string(),
+                "updated_at": r.updated_at.to_string(),
+                "deleted_at": r.deleted_at.map(|d| d.to_string()),
             })
-            .collect();
-
-        Ok(PaginatedRecords { records, has_more })
+        })
+        .await
     }
 
     /// Get full paginated records for assignment submissions (user-specific)
@@ -479,34 +515,27 @@ impl ManifestRepository {
         submission_ids: Vec<Uuid>,
         limit: i64,
     ) -> AppResult<PaginatedRecords> {
-        let effective_limit = std::cmp::min(limit, 500) as u64;
-
-        let records = assignment_submissions::Entity::find()
+        let query = assignment_submissions::Entity::find()
             .filter(assignment_submissions::Column::StudentId.eq(user_id))
-            .filter(assignment_submissions::Column::Id.is_in(submission_ids))
-            .limit(effective_limit + 1)
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        let has_more = records.len() > effective_limit as usize;
-        let records: Vec<Value> = records
-            .into_iter()
-            .take(effective_limit as usize)
-            .map(|r| {
-                json!({
-                    "id": r.id.to_string(),
-                    "assignment_id": r.assignment_id.to_string(),
-                    "student_id": r.student_id.to_string(),
-                    "status": r.status,
-                    "submitted_at": r.submitted_at.map(|d| d.to_string()),
-                    "score": r.score,
-                    "updated_at": r.updated_at.to_string(),
-                })
+            .filter(assignment_submissions::Column::Id.is_in(submission_ids));
+        Self::paginate_query(&self.db, query, limit, |r| {
+            json!({
+                "id": r.id.to_string(),
+                "assignment_id": r.assignment_id.to_string(),
+                "student_id": r.student_id.to_string(),
+                "status": r.status,
+                "text_content": r.text_content,
+                "is_late": r.is_late,
+                "submitted_at": r.submitted_at.map(|d| d.to_string()),
+                "score": r.score,
+                "feedback": r.feedback,
+                "graded_at": r.graded_at.map(|d| d.to_string()),
+                "created_at": r.created_at.to_string(),
+                "updated_at": r.updated_at.to_string(),
+                "deleted_at": r.deleted_at.map(|d| d.to_string()),
             })
-            .collect();
-
-        Ok(PaginatedRecords { records, has_more })
+        })
+        .await
     }
 
     /// Get manifest for activity logs - admin can see all, users see their own
@@ -546,33 +575,26 @@ impl ManifestRepository {
         activity_log_ids: Vec<Uuid>,
         limit: i64,
     ) -> AppResult<PaginatedRecords> {
-        let effective_limit = std::cmp::min(limit, 500) as u64;
-
-        let records = activity_logs::Entity::find()
-            .filter(activity_logs::Column::Id.is_in(activity_log_ids))
-            .limit(effective_limit + 1)
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        let has_more = records.len() > effective_limit as usize;
-        let records: Vec<Value> = records
-            .into_iter()
-            .take(effective_limit as usize)
-            .map(|r| {
-                json!({
-                    "id": r.id.to_string(),
-                    "user_id": r.user_id.to_string(),
-                    "action": r.action,
-                    "performed_by": r.performed_by.map(|id| id.to_string()),
-                    "details": r.details,
-                    "created_at": r.created_at.to_string(),
-                })
+        let query = activity_logs::Entity::find()
+            .filter(activity_logs::Column::Id.is_in(activity_log_ids));
+        Self::paginate_query(&self.db, query, limit, |r| {
+            json!({
+                "id": r.id.to_string(),
+                "user_id": r.user_id.to_string(),
+                "action": r.action,
+                "performed_by": r.performed_by.map(|id| id.to_string()),
+                "details": r.details,
+                "created_at": r.created_at.to_string(),
             })
-            .collect();
-
-        Ok(PaginatedRecords { records, has_more })
+        })
+        .await
     }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // SECTION C: Delta / "Since" Queries
+    // Used by: SyncDeltaService::get_deltas()
+    // Returns records modified after a given timestamp (for incremental sync)
+    // ─────────────────────────────────────────────────────────────────────────────
 
     /// Get classes that have been updated since a given time
     pub async fn get_classes_since(
@@ -580,22 +602,35 @@ impl ManifestRepository {
         class_ids: Vec<Uuid>,
         since: NaiveDateTime,
     ) -> AppResult<Vec<Value>> {
+        if class_ids.is_empty() {
+            return Ok(vec![]);
+        }
+
         let records = classes::Entity::find()
-            .filter(classes::Column::Id.is_in(class_ids))
+            .filter(classes::Column::Id.is_in(class_ids.clone()))
             .filter(classes::Column::UpdatedAt.gt(since))
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
+        let teacher_map = self.build_teacher_map(&class_ids).await?;
+
         let records: Vec<Value> = records
             .into_iter()
-            .map(|r| {
+            .map(move |r| {
+                let (teacher_id, teacher_username, teacher_full_name) = teacher_map
+                    .get(&r.id)
+                    .map(|t| (t.0.to_string(), t.1.clone(), t.2.clone()))
+                    .unwrap_or_else(|| ("".to_string(), "".to_string(), "".to_string()));
+
                 json!({
                     "id": r.id.to_string(),
                     "title": r.title,
                     "description": r.description,
-                    "teacher_id": r.teacher_id.to_string(),
                     "is_archived": r.is_archived,
+                    "teacher_id": teacher_id,
+                    "teacher_username": teacher_username,
+                    "teacher_full_name": teacher_full_name,
                     "created_at": r.created_at.to_string(),
                     "updated_at": r.updated_at.to_string(),
                     "deleted_at": r.deleted_at.map(|d| d.to_string()),
@@ -633,6 +668,7 @@ impl ManifestRepository {
                     "show_results_immediately": r.show_results_immediately,
                     "is_published": r.is_published,
                     "results_released": r.results_released,
+                    "order_index": r.order_index,
                     "total_points": r.total_points,
                     "created_at": r.created_at.to_string(),
                     "updated_at": r.updated_at.to_string(),
@@ -671,6 +707,7 @@ impl ManifestRepository {
                     "max_file_size_mb": r.max_file_size_mb,
                     "due_at": r.due_at.to_string(),
                     "is_published": r.is_published,
+                    "order_index": r.order_index,
                     "created_at": r.created_at.to_string(),
                     "updated_at": r.updated_at.to_string(),
                     "deleted_at": r.deleted_at.map(|d| d.to_string()),
@@ -720,9 +757,10 @@ impl ManifestRepository {
         enrollment_ids: Vec<Uuid>,
         since: NaiveDateTime,
     ) -> AppResult<Vec<Value>> {
-        let records = class_enrollments::Entity::find()
-            .filter(class_enrollments::Column::Id.is_in(enrollment_ids))
-            .filter(class_enrollments::Column::EnrolledAt.gt(since))
+        let records = class_participants::Entity::find()
+            .filter(class_participants::Column::Id.is_in(enrollment_ids))
+            .filter(class_participants::Column::Role.eq("student"))
+            .filter(class_participants::Column::JoinedAt.gt(since))
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
@@ -733,8 +771,10 @@ impl ManifestRepository {
                 json!({
                     "id": r.id.to_string(),
                     "class_id": r.class_id.to_string(),
-                    "student_id": r.student_id.to_string(),
-                    "enrolled_at": r.enrolled_at.to_string(),
+                    "user_id": r.user_id.to_string(),
+                    "student_id": r.user_id.to_string(),
+                    "joined_at": r.joined_at.to_string(),
+                    "enrolled_at": r.joined_at.to_string(),
                     "removed_at": r.removed_at.map(|d| d.to_string()),
                 })
             })
@@ -798,12 +838,14 @@ impl ManifestRepository {
                     "id": r.id.to_string(),
                     "assessment_id": r.assessment_id.to_string(),
                     "student_id": r.student_id.to_string(),
-                    "started_at": r.created_at.to_string(),
+                    "started_at": r.started_at.to_string(),
                     "submitted_at": r.submitted_at.map(|d| d.to_string()),
                     "auto_score": r.auto_score,
                     "final_score": r.final_score,
                     "is_submitted": r.is_submitted,
+                    "created_at": r.created_at.to_string(),
                     "updated_at": r.updated_at.to_string(),
+                    "deleted_at": r.deleted_at.map(|d| d.to_string()),
                 })
             })
             .collect();
@@ -837,6 +879,7 @@ impl ManifestRepository {
                     "submitted_at": r.submitted_at.map(|d| d.to_string()),
                     "score": r.score,
                     "updated_at": r.updated_at.to_string(),
+                    "deleted_at": r.deleted_at.map(|d| d.to_string()),
                 })
             })
             .collect();
@@ -874,40 +917,224 @@ impl ManifestRepository {
         Ok(records)
     }
 
+    // ─────────────────────────────────────────────────────────────────────────────
+    // SECTION D: Role-Aware Submission Queries
+    // Used by: SyncFullService (submission fetch, role-based branching)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    /// Get assessment submissions for a student filtered by assessment IDs (for batch full sync)
+    /// Used when a student requests full sync for specific classes (assessments)
+    pub async fn get_student_submissions_for_assessments(
+        &self,
+        user_id: Uuid,
+        assessment_ids: Vec<Uuid>,
+        limit: i64,
+    ) -> AppResult<PaginatedRecords> {
+        let query = assessment_submissions::Entity::find()
+            .filter(assessment_submissions::Column::StudentId.eq(user_id))
+            .filter(assessment_submissions::Column::AssessmentId.is_in(assessment_ids));
+        Self::paginate_query(&self.db, query, limit, |r| {
+            json!({
+                "id": r.id.to_string(),
+                "assessment_id": r.assessment_id.to_string(),
+                "student_id": r.student_id.to_string(),
+                "started_at": r.started_at.to_string(),
+                "submitted_at": r.submitted_at.map(|d| d.to_string()),
+                "auto_score": r.auto_score,
+                "final_score": r.final_score,
+                "is_submitted": r.is_submitted,
+                "created_at": r.created_at.to_string(),
+                "updated_at": r.updated_at.to_string(),
+                "deleted_at": r.deleted_at.map(|d| d.to_string()),
+            })
+        })
+        .await
+    }
+
+    /// Get assignment submissions for a student filtered by assignment IDs (for batch full sync)
+    /// Used when a student requests full sync for specific classes (assignments)
+    pub async fn get_student_assignment_submissions_for_assignments(
+        &self,
+        user_id: Uuid,
+        assignment_ids: Vec<Uuid>,
+        limit: i64,
+    ) -> AppResult<PaginatedRecords> {
+        let query = assignment_submissions::Entity::find()
+            .filter(assignment_submissions::Column::StudentId.eq(user_id))
+            .filter(assignment_submissions::Column::AssignmentId.is_in(assignment_ids));
+        Self::paginate_query(&self.db, query, limit, |r| {
+            json!({
+                "id": r.id.to_string(),
+                "assignment_id": r.assignment_id.to_string(),
+                "student_id": r.student_id.to_string(),
+                "status": r.status,
+                "text_content": r.text_content,
+                "is_late": r.is_late,
+                "submitted_at": r.submitted_at.map(|d| d.to_string()),
+                "score": r.score,
+                "feedback": r.feedback,
+                "graded_at": r.graded_at.map(|d| d.to_string()),
+                "created_at": r.created_at.to_string(),
+                "updated_at": r.updated_at.to_string(),
+                "deleted_at": r.deleted_at.map(|d| d.to_string()),
+            })
+        })
+        .await
+    }
+
+    /// Get ALL assessment submissions for given assessments (not filtered by student_id)
+    /// Used by teachers/admins to fetch submissions for all students
+    pub async fn get_all_assessment_submissions_for_assessments(
+        &self,
+        assessment_ids: Vec<Uuid>,
+        limit: i64,
+    ) -> AppResult<PaginatedRecords> {
+        let query = assessment_submissions::Entity::find()
+            .filter(assessment_submissions::Column::AssessmentId.is_in(assessment_ids));
+        Self::paginate_query(&self.db, query, limit, |r| {
+            json!({
+                "id": r.id.to_string(),
+                "assessment_id": r.assessment_id.to_string(),
+                "student_id": r.student_id.to_string(),
+                "started_at": r.started_at.to_string(),
+                "submitted_at": r.submitted_at.map(|d| d.to_string()),
+                "auto_score": r.auto_score,
+                "final_score": r.final_score,
+                "is_submitted": r.is_submitted,
+                "created_at": r.created_at.to_string(),
+                "updated_at": r.updated_at.to_string(),
+                "deleted_at": r.deleted_at.map(|d| d.to_string()),
+            })
+        })
+        .await
+    }
+
+    /// Get ALL assignment submissions for given assignments (not filtered by student_id)
+    /// Used by teachers/admins to fetch submissions for all students
+    pub async fn get_all_assignment_submissions_for_assignments(
+        &self,
+        assignment_ids: Vec<Uuid>,
+        limit: i64,
+    ) -> AppResult<PaginatedRecords> {
+        let query = assignment_submissions::Entity::find()
+            .filter(assignment_submissions::Column::AssignmentId.is_in(assignment_ids));
+        Self::paginate_query(&self.db, query, limit, |r| {
+            json!({
+                "id": r.id.to_string(),
+                "assignment_id": r.assignment_id.to_string(),
+                "student_id": r.student_id.to_string(),
+                "status": r.status,
+                "text_content": r.text_content,
+                "is_late": r.is_late,
+                "submitted_at": r.submitted_at.map(|d| d.to_string()),
+                "score": r.score,
+                "feedback": r.feedback,
+                "graded_at": r.graded_at.map(|d| d.to_string()),
+                "created_at": r.created_at.to_string(),
+                "updated_at": r.updated_at.to_string(),
+                "deleted_at": r.deleted_at.map(|d| d.to_string()),
+            })
+        })
+        .await
+    }
+
     /// Get users by IDs with full profile data
     pub async fn get_users_paginated(
         &self,
         user_ids: Vec<Uuid>,
         limit: i64,
     ) -> AppResult<PaginatedRecords> {
-        let effective_limit = std::cmp::min(limit, 500) as u64;
+        let query = users::Entity::find()
+            .filter(users::Column::Id.is_in(user_ids));
+        Self::paginate_query(&self.db, query, limit, |r| {
+            let is_active = r.account_status != "locked" && r.account_status != "deactivated";
+            json!({
+                "id": r.id.to_string(),
+                "username": r.username,
+                "full_name": r.full_name,
+                "role": r.role,
+                "account_status": r.account_status,
+                "is_active": is_active,
+                "activated_at": r.activated_at.map(|d| d.to_string()),
+                "created_at": r.created_at.to_string(),
+                "updated_at": r.updated_at.to_string(),
+            })
+        })
+        .await
+    }
 
-        let records = users::Entity::find()
-            .filter(users::Column::Id.is_in(user_ids))
-            .limit(effective_limit + 1)
+    /// Fetch all material files for the given material IDs.
+    /// Used by full sync to include file metadata with learning materials.
+    pub async fn get_material_files_for_materials(
+        &self,
+        material_ids: Vec<Uuid>,
+    ) -> AppResult<Vec<Value>> {
+        let files = material_files::Entity::find()
+            .filter(material_files::Column::MaterialId.is_in(material_ids))
             .all(&self.db)
             .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+            .map_err(|e| AppError::InternalServerError(format!("Failed to fetch material files: {}", e)))?;
+        Ok(files
+            .into_iter()
+            .map(|f| json!({
+                "id": f.id.to_string(),
+                "material_id": f.material_id.to_string(),
+                "file_name": f.file_name,
+                "file_type": f.file_type,
+                "file_size": f.file_size,
+                "uploaded_at": f.uploaded_at.to_string(),
+            }))
+            .collect())
+    }
 
+    /// Fetch all submission files for the given submission IDs.
+    /// Used by full sync to include file metadata with assessment submissions.
+    pub async fn get_submission_files_for_submissions(
+        &self,
+        submission_ids: Vec<Uuid>,
+    ) -> AppResult<Vec<Value>> {
+        let files = submission_files::Entity::find()
+            .filter(submission_files::Column::SubmissionId.is_in(submission_ids))
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to fetch submission files: {}", e)))?;
+        Ok(files
+            .into_iter()
+            .map(|f| json!({
+                "id": f.id.to_string(),
+                "submission_id": f.submission_id.to_string(),
+                "file_name": f.file_name,
+                "file_type": f.file_type,
+                "file_size": f.file_size,
+                "uploaded_at": f.uploaded_at.to_string(),
+            }))
+            .collect())
+    }
+
+    /// Generic pagination helper — handles limit capping, has_more detection, and record collection
+    async fn paginate_query<E, F>(
+        db: &DatabaseConnection,
+        query: Select<E>,
+        limit: i64,
+        mapper: F,
+    ) -> AppResult<PaginatedRecords>
+    where
+        E: EntityTrait,
+        E::Model: Send + Sync,
+        F: Fn(E::Model) -> Value,
+    {
+        let effective_limit = std::cmp::min(limit, 500) as u64;
+        let records = query
+            .limit(effective_limit + 1)
+            .all(db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
         let has_more = records.len() > effective_limit as usize;
         let records: Vec<Value> = records
             .into_iter()
             .take(effective_limit as usize)
-            .map(|r| {
-                json!({
-                    "id": r.id.to_string(),
-                    "username": r.username,
-                    "full_name": r.full_name,
-                    "role": r.role,
-                    "account_status": r.account_status,
-                    "is_active": r.is_active,
-                    "activated_at": r.activated_at.map(|d| d.to_string()),
-                    "created_at": r.created_at.to_string(),
-                    "updated_at": r.updated_at.to_string(),
-                })
-            })
+            .map(mapper)
             .collect();
-
         Ok(PaginatedRecords { records, has_more })
     }
 }

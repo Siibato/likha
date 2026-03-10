@@ -14,9 +14,10 @@ abstract class AssignmentRepository {
     String? allowedFileTypes,
     int? maxFileSizeMb,
     required String dueAt,
+    bool isPublished = true,
   });
 
-  ResultFuture<List<Assignment>> getAssignments({required String classId});
+  ResultFuture<List<Assignment>> getAssignments({required String classId, bool publishedOnly = false, bool skipBackgroundRefresh = false});
 
   ResultFuture<Assignment> getAssignmentDetail({required String assignmentId});
 
@@ -34,6 +35,11 @@ abstract class AssignmentRepository {
   ResultVoid deleteAssignment({required String assignmentId});
 
   ResultFuture<Assignment> publishAssignment({required String assignmentId});
+
+  ResultVoid reorderAllAssignments({
+    required String classId,
+    required List<String> assignmentIds,
+  });
 
   // Teacher: Submissions & Grading
   ResultFuture<List<SubmissionListItem>> getSubmissions({

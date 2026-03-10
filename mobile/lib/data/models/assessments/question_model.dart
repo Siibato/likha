@@ -20,7 +20,7 @@ class QuestionModel extends Question {
       questionText: json['question_text'] as String,
       points: json['points'] as int,
       orderIndex: json['order_index'] as int,
-      isMultiSelect: json['is_multi_select'] as bool? ?? false,
+      isMultiSelect: _parseBool(json['is_multi_select']) ?? false,
       choices: (json['choices'] as List<dynamic>?)
           ?.map((e) => ChoiceModel.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -32,6 +32,13 @@ class QuestionModel extends Question {
               (e) => EnumerationItemModel.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
+  }
+
+  static bool? _parseBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is int) return value == 1;
+    if (value is String) return value.toLowerCase() == 'true' || value == '1';
+    return null;
   }
 }
 
@@ -47,9 +54,16 @@ class ChoiceModel extends Choice {
     return ChoiceModel(
       id: json['id'] as String,
       choiceText: json['choice_text'] as String,
-      isCorrect: json['is_correct'] as bool,
+      isCorrect: _parseBool(json['is_correct']) ?? false,
       orderIndex: json['order_index'] as int,
     );
+  }
+
+  static bool? _parseBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is int) return value == 1;
+    if (value is String) return value.toLowerCase() == 'true' || value == '1';
+    return null;
   }
 }
 

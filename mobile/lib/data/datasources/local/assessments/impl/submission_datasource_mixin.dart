@@ -37,7 +37,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
           retryCount: 0,
           maxRetries: 5,
           createdAt: now,
-        ));
+        ), txn: txn);
       });
     } catch (e) {
       throw CacheException('Failed to save answers locally: $e');
@@ -114,7 +114,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
           retryCount: 0,
           maxRetries: 5,
           createdAt: now,
-        ));
+        ), txn: txn);
       });
       return localId;
     } catch (e) {
@@ -136,6 +136,41 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
       );
     } catch (e) {
       throw CacheException('Failed to get cached start result: $e');
+    }
+  }
+
+  @override
+  Future<SubmissionSummaryModel?> getCachedStudentSubmission(
+    String assessmentId,
+    String studentId,
+  ) async {
+    try {
+      final db = await localDatabase.database;
+      print('🔎 [DataSource] getCachedStudentSubmission() START - assessmentId: $assessmentId, studentId: $studentId');
+      final results = await db.query(
+        'assessment_submissions',
+        where: 'assessment_id = ? AND student_id = ? AND deleted_at IS NULL',
+        whereArgs: [assessmentId, studentId],
+        orderBy: 'started_at DESC',
+        limit: 1,
+      );
+      print('🔎 [DataSource] getCachedStudentSubmission() - database query returned ${results.length} submission(s)');
+
+      if (results.isEmpty) {
+        print('🔎 [DataSource] getCachedStudentSubmission() - NO SUBMISSIONS FOUND in DB');
+        return null;
+      }
+
+      final rawRow = results.first;
+      print('🔎 [DataSource] getCachedStudentSubmission() - raw DB row: id=${rawRow['id']}, is_submitted=${rawRow['is_submitted']}, submitted_at=${rawRow['submitted_at']}, started_at=${rawRow['started_at']}');
+
+      final submission = SubmissionSummaryModel.fromMap(rawRow);
+      print('🔎 [DataSource] getCachedStudentSubmission() RESULT - id: ${submission.id}, isSubmitted: ${submission.isSubmitted}, submittedAt: ${submission.submittedAt}, startedAt: ${submission.startedAt}');
+      return submission;
+    } catch (e, st) {
+      print('❌ [DataSource] getCachedStudentSubmission() EXCEPTION: $e');
+      print('❌ [DataSource] getCachedStudentSubmission() STACK: $st');
+      throw CacheException('Failed to get student submission: $e');
     }
   }
 
@@ -169,7 +204,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
           retryCount: 0,
           maxRetries: 5,
           createdAt: now,
-        ));
+        ), txn: txn);
       });
     } catch (e) {
       throw CacheException('Failed to submit assessment locally: $e');
@@ -228,6 +263,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
           'final_score': submission.finalScore.toInt(),
           'is_submitted': submission.isSubmitted ? 1 : 0,
           'answers_json': jsonEncode(submission.answers),
+          'updated_at': submission.submittedAt?.toIso8601String() ?? submission.startedAt.toIso8601String(),
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
           'is_offline_mutation': 0,
@@ -268,6 +304,46 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
   }
 
   @override
+  Future<int> getCachedSubmissionCount(String assessmentId) async {
+    try {
+      final db = await localDatabase.database;
+      final result = await db.rawQuery(
+        'SELECT COUNT(*) as count FROM assessment_submissions WHERE assessment_id = ? AND deleted_at IS NULL',
+        [assessmentId],
+      );
+      final count = (result.first['count'] as int?) ?? 0;
+      print('📊 [DataSource] getCachedSubmissionCount() - assessmentId: $assessmentId, count: $count');
+      return count;
+    } catch (e) {
+      print('❌ [DataSource] getCachedSubmissionCount() ERROR: $e');
+      throw CacheException('Failed to get submission count: $e');
+    }
+  }
+
+  @override
+  Future<bool> hasStudentSubmittedAssessment(String assessmentId, String studentId) async {
+    try {
+      final db = await localDatabase.database;
+      final result = await db.query(
+        'assessment_submissions',
+        columns: ['is_submitted'],
+        where: 'assessment_id = ? AND student_id = ? AND deleted_at IS NULL',
+        whereArgs: [assessmentId, studentId],
+      );
+      if (result.isEmpty) {
+        print('📋 [DataSource] hasStudentSubmittedAssessment() - assessmentId: $assessmentId, studentId: $studentId → no submission');
+        return false;
+      }
+      final isSubmitted = (result.first['is_submitted'] as int?) == 1;
+      print('📋 [DataSource] hasStudentSubmittedAssessment() - assessmentId: $assessmentId, studentId: $studentId → $isSubmitted');
+      return isSubmitted;
+    } catch (e) {
+      print('❌ [DataSource] hasStudentSubmittedAssessment() ERROR: $e');
+      throw CacheException('Failed to check submission status: $e');
+    }
+  }
+
+  @override
   Future<void> cacheSubmissions(String assessmentId, List<SubmissionSummaryModel> submissions) async {
     try {
       final db = await localDatabase.database;
@@ -297,6 +373,64 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
       });
     } catch (e) {
       throw CacheException('Failed to cache submissions: $e');
+    }
+  }
+
+  @override
+  Future<void> overrideAnswerLocally({
+    required String answerId,
+    required bool isCorrect,
+  }) async {
+    try {
+      final db = await localDatabase.database;
+      final now = DateTime.now();
+
+      final rows = await db.query(
+        'assessment_submissions',
+        columns: ['id', 'answers_json'],
+        where: "answers_json LIKE ?",
+        whereArgs: ['%"$answerId"%'],
+      );
+
+      await db.transaction((txn) async {
+        if (rows.isNotEmpty) {
+          final submissionId = rows.first['id'] as String;
+          final rawJson = rows.first['answers_json'] as String?;
+          if (rawJson != null) {
+            final answers = (jsonDecode(rawJson) as List<dynamic>)
+                .cast<Map<String, dynamic>>();
+            for (final answer in answers) {
+              if (answer['id'] == answerId) {
+                answer['is_override_correct'] = isCorrect;
+                break;
+              }
+            }
+            await txn.update(
+              'assessment_submissions',
+              {
+                'answers_json': jsonEncode(answers),
+                'is_offline_mutation': 1,
+                'sync_status': 'pending',
+                'updated_at': now.toIso8601String(),
+              },
+              where: 'id = ?',
+              whereArgs: [submissionId],
+            );
+          }
+        }
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assessmentSubmission,
+          operation: SyncOperation.overrideAnswer,
+          payload: {'answer_id': answerId, 'is_correct': isCorrect},
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: now,
+        ), txn: txn);
+      });
+    } catch (e) {
+      throw CacheException('Failed to override answer locally: $e');
     }
   }
 }

@@ -13,11 +13,15 @@ mixin ClassQueryMixin on ClassLocalDataSourceBase {
       final results = teacherId != null
           ? await db.query(
               'classes',
-              where: 'teacher_id = ? OR teacher_id = ?',
-              whereArgs: [teacherId, ''],
+              where: 'teacher_id = ? AND deleted_at IS NULL',
+              whereArgs: [teacherId],
               orderBy: 'title ASC',
             )
-          : await db.query('classes', orderBy: 'title ASC');
+          : await db.query(
+              'classes',
+              where: 'deleted_at IS NULL',
+              orderBy: 'title ASC',
+            );
 
       if (results.isEmpty) {
         throw CacheException('No cached classes found');
@@ -32,16 +36,39 @@ mixin ClassQueryMixin on ClassLocalDataSourceBase {
   }
 
   @override
+  Future<List<ClassModel>> getCachedClassesForUser(String userId) async {
+    try {
+      final db = await localDatabase.database;
+      // Join classes with class_participants to find all classes for this user
+      final results = await db.rawQuery('''
+        SELECT DISTINCT c.*
+        FROM classes c
+        JOIN class_participants cp ON c.id = cp.class_id
+        WHERE cp.user_id = ? AND cp.removed_at IS NULL AND c.deleted_at IS NULL
+        ORDER BY c.title ASC
+      ''', [userId]);
+
+      if (results.isEmpty) {
+        throw CacheException('No cached classes found for user $userId');
+      }
+      return results.map(ClassModel.fromMap).toList();
+    } catch (e) {
+      if (e is CacheException) rethrow;
+      throw CacheException(e.toString());
+    }
+  }
+
+  @override
   Future<ClassDetailModel> getCachedClassDetail(String classId) async {
     try {
       final db = await localDatabase.database;
       final classResult = await db.query('classes', where: 'id = ?', whereArgs: [classId]);
       if (classResult.isEmpty) throw CacheException('Class $classId not cached');
 
-      final enrollmentResults = await db.query(
-        'class_enrollments',
-        where: 'class_id = ?',
-        whereArgs: [classId],
+      final participantResults = await db.query(
+        'class_participants',
+        where: 'class_id = ? AND role = ? AND removed_at IS NULL',
+        whereArgs: [classId, 'student'],
         orderBy: 'username ASC',
       );
 
@@ -52,7 +79,7 @@ mixin ClassQueryMixin on ClassLocalDataSourceBase {
         description: classMap['description'] as String?,
         teacherId: classMap['teacher_id'] as String,
         isArchived: (classMap['is_archived'] as int?) == 1,
-        students: _mapEnrollments(enrollmentResults),
+        students: _mapEnrollments(participantResults),
         createdAt: DateTime.parse(classMap['created_at'] as String),
         updatedAt: DateTime.parse(classMap['updated_at'] as String),
       );
@@ -74,10 +101,10 @@ mixin ClassQueryMixin on ClassLocalDataSourceBase {
       );
       if (classResults.isEmpty) return null;
 
-      final enrollmentResults = await db.query(
-        'class_enrollments',
-        where: 'class_id = ?',
-        whereArgs: [classId],
+      final participantResults = await db.query(
+        'class_participants',
+        where: 'class_id = ? AND role = ? AND removed_at IS NULL',
+        whereArgs: [classId, 'student'],
         orderBy: 'username ASC',
       );
 
@@ -88,7 +115,7 @@ mixin ClassQueryMixin on ClassLocalDataSourceBase {
         description: classMap['description'] as String?,
         teacherId: classMap['teacher_id'] as String,
         isArchived: (classMap['is_archived'] as int?) == 1,
-        students: _mapEnrollments(enrollmentResults),
+        students: _mapEnrollments(participantResults),
         createdAt: DateTime.parse(classMap['created_at'] as String),
         updatedAt: DateTime.parse(classMap['updated_at'] as String),
       );
@@ -98,18 +125,25 @@ mixin ClassQueryMixin on ClassLocalDataSourceBase {
   }
 
   List<EnrollmentModel> _mapEnrollments(List<Map<String, Object?>> rows) {
-    return rows.map((e) => EnrollmentModel(
-      id: e['id'] as String,
-      student: UserModel(
-        id: e['student_id'] as String,
-        username: e['username'] as String,
-        fullName: e['full_name'] as String,
-        role: e['role'] as String,
-        accountStatus: e['account_status'] as String,
-        isActive: (e['is_active'] as int?) == 1,
-        createdAt: DateTime.parse(e['enrolled_at'] as String),
-      ),
-      enrolledAt: DateTime.parse(e['enrolled_at'] as String),
-    )).toList();
+    return rows.map((e) {
+      final accountStatus = e['account_status'] as String?;
+      final isActive = accountStatus != null &&
+          accountStatus != 'locked' &&
+          accountStatus != 'deactivated';
+
+      return EnrollmentModel(
+        id: e['id'] as String,
+        student: UserModel(
+          id: e['user_id'] as String,
+          username: e['username'] as String,
+          fullName: e['full_name'] as String,
+          role: e['role'] as String,
+          accountStatus: accountStatus ?? 'active',
+          isActive: isActive,
+          createdAt: DateTime.parse(e['joined_at'] as String),
+        ),
+        joinedAt: DateTime.parse(e['joined_at'] as String),
+      );
+    }).toList();
   }
 }

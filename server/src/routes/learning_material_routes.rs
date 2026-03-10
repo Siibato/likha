@@ -38,6 +38,10 @@ pub fn routes(material_service: Arc<LearningMaterialService>) -> Router {
             "/materials/{id}/reorder",
             post(learning_material_handler::reorder_material),
         )
+        .route(
+            "/classes/{class_id}/materials/reorder",
+            post(learning_material_handler::reorder_materials),
+        )
         // File management
         .route(
             "/materials/{id}/files",

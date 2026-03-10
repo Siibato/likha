@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assignments/usecases/grade_submission.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 import 'package:path_provider/path_provider.dart';
@@ -76,13 +77,7 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
   Future<void> _handleGrade() async {
     final score = int.tryParse(_scoreController.text.trim());
     if (score == null || score < 0 || score > widget.totalPoints) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content:
-              Text('Score must be between 0 and ${widget.totalPoints}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      context.showErrorSnackBar('Score must be between 0 and ${widget.totalPoints}');
       return;
     }
 
@@ -112,20 +107,10 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
       final file = File('${dir.path}/$fileName');
       await file.writeAsBytes(bytes);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('File saved to ${file.path}'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      context.showSuccessSnackBar('File saved to ${file.path}');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to save file: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      context.showErrorSnackBar('Failed to save file: $e');
     }
   }
 
@@ -142,12 +127,7 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
     ref.listen<AssignmentState>(assignmentProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.successMessage!),
-            backgroundColor: Colors.green,
-          ),
-        );
+        context.showSuccessSnackBar(next.successMessage!);
         ref.read(assignmentProvider.notifier).clearMessages();
         if (next.successMessage == 'Submission graded' ||
             next.successMessage == 'Submission returned for revision') {
@@ -157,9 +137,7 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
         }
       }
       if (next.error != null && prev?.error != next.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.error!), backgroundColor: Colors.red),
-        );
+        context.showErrorSnackBar(next.error!);
         ref.read(assignmentProvider.notifier).clearMessages();
       }
     });

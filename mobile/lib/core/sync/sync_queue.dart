@@ -1,26 +1,61 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 
 import 'package:sqflite/sqflite.dart';
 import 'package:likha/core/database/local_database.dart';
 
+// Re-export Transaction type from sqflite for convenience
+export 'package:sqflite/sqflite.dart' show Transaction;
+
 enum SyncEntityType {
-  user,
-  classEntity,
-  assessment,
-  question,
-  assessmentSubmission,
-  assignment,
-  assignmentSubmission,
-  submissionFile,
-  learningMaterial,
-  materialFile,
-  adminUser,
-  activityLog
+  user('user'),
+  classEntity('class'),
+  assessment('assessment'),
+  question('question'),
+  assessmentSubmission('assessment_submission'),
+  assignment('assignment'),
+  assignmentSubmission('assignment_submission'),
+  submissionFile('submission_file'),
+  learningMaterial('learning_material'),
+  materialFile('material_file'),
+  adminUser('admin_user'),
+  activityLog('activityLog');
+
+  const SyncEntityType(this.serverValue);
+  final String serverValue;
+
+  /// DB-stored value — matches Dart .name (camelCase). Stable: existing SQLite rows use this format.
+  String get dbValue => name;
 }
 
-enum SyncOperation { create, update, delete, submit, grade, publish, upload, saveAnswers, releaseResults, overrideAnswer, addEnrollment, removeEnrollment }
+enum SyncOperation {
+  create('create'),
+  update('update'),
+  delete('delete'),
+  submit('submit'),
+  grade('grade'),
+  publish('publish'),
+  upload('upload'),
+  saveAnswers('save_answers'),
+  releaseResults('release_results'),
+  overrideAnswer('override_answer'),
+  addEnrollment('add_enrollment'),
+  removeEnrollment('remove_enrollment');
 
-enum SyncStatus { pending, failed }
+  const SyncOperation(this.serverValue);
+  final String serverValue;
+
+  /// DB-stored value — matches Dart .name (camelCase). Stable: existing SQLite rows use this format.
+  String get dbValue => name;
+}
+
+enum SyncStatus {
+  pending,
+  failed;
+
+  /// DB-stored value — matches Dart .name.
+  String get dbValue => name;
+}
 
 class SyncQueueEntry {
   final String id;
@@ -51,14 +86,14 @@ class SyncQueueEntry {
     return SyncQueueEntry(
       id: map['id'] as String,
       entityType: SyncEntityType.values.firstWhere(
-        (e) => e.toString().split('.').last == map['entity_type'],
+        (e) => e.dbValue == map['entity_type'],
       ),
       operation: SyncOperation.values.firstWhere(
-        (e) => e.toString().split('.').last == map['operation'],
+        (e) => e.dbValue == map['operation'],
       ),
       payload: _parseJsonString(map['payload'] as String),
       status: SyncStatus.values.firstWhere(
-        (e) => e.toString().split('.').last == map['status'],
+        (e) => e.dbValue == map['status'],
       ),
       retryCount: map['retry_count'] as int,
       maxRetries: map['max_retries'] as int,
@@ -73,10 +108,10 @@ class SyncQueueEntry {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'entity_type': entityType.toString().split('.').last,
-      'operation': operation.toString().split('.').last,
+      'entity_type': entityType.dbValue,
+      'operation': operation.dbValue,
       'payload': _stringifyJson(payload),
-      'status': status.toString().split('.').last,
+      'status': status.dbValue,
       'retry_count': retryCount,
       'max_retries': maxRetries,
       'created_at': createdAt.toIso8601String(),
@@ -87,7 +122,7 @@ class SyncQueueEntry {
 }
 
 abstract class SyncQueue {
-  Future<void> enqueue(SyncQueueEntry entry);
+  Future<void> enqueue(SyncQueueEntry entry, {Transaction? txn});
   Future<List<SyncQueueEntry>> getAllRetriable();
   Future<List<SyncQueueEntry>> getByEntityAndOperation(SyncEntityType entityType, SyncOperation operation);
   Future<void> markSucceeded(String id);
@@ -104,13 +139,27 @@ class SyncQueueImpl implements SyncQueue {
   SyncQueueImpl(this._localDatabase);
 
   @override
-  Future<void> enqueue(SyncQueueEntry entry) async {
-    final db = await _localDatabase.database;
-    await db.insert(
-      'sync_queue',
-      entry.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+  Future<void> enqueue(SyncQueueEntry entry, {Transaction? txn}) async {
+    debugPrint('[SyncQueue] enqueue: Adding ${entry.entityType.dbValue} ${entry.operation.dbValue} to queue, ID=${entry.id}');
+
+    if (txn != null) {
+      debugPrint('[SyncQueue] enqueue: Using provided transaction object');
+      await txn.insert(
+        'sync_queue',
+        entry.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } else {
+      debugPrint('[SyncQueue] enqueue: Getting database connection');
+      final db = await _localDatabase.database;
+      await db.insert(
+        'sync_queue',
+        entry.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+
+    debugPrint('[SyncQueue] enqueue: Entry added to queue successfully');
   }
 
   @override
@@ -194,8 +243,8 @@ class SyncQueueImpl implements SyncQueue {
       'sync_queue',
       where: 'entity_type = ? AND operation = ?',
       whereArgs: [
-        entityType.toString().split('.').last,
-        operation.toString().split('.').last,
+        entityType.dbValue,
+        operation.dbValue,
       ],
       orderBy: 'created_at ASC',
     );

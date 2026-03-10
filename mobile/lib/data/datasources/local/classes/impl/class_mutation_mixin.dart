@@ -41,12 +41,12 @@ mixin ClassMutationMixin on ClassLocalDataSourceBase {
           id: const Uuid().v4(),
           entityType: SyncEntityType.classEntity,
           operation: SyncOperation.create,
-          payload: {'local_id': id, 'title': title, 'description': description},
+          payload: {'id': id, 'title': title, 'description': description},
           status: SyncStatus.pending,
           retryCount: 0,
           maxRetries: 5,
           createdAt: now,
-        ));
+        ), txn: txn);
       });
 
       return classModel;
@@ -87,7 +87,7 @@ mixin ClassMutationMixin on ClassLocalDataSourceBase {
           retryCount: 0,
           maxRetries: 5,
           createdAt: now,
-        ));
+        ), txn: txn);
       });
     } catch (e) {
       throw CacheException('Failed to update class locally: $e');

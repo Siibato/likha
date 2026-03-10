@@ -17,6 +17,8 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
     required String openAt,
     required String closeAt,
     bool? showResultsImmediately,
+    bool isPublished = false,
+    List<Map<String, dynamic>>? questions,
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
@@ -28,27 +30,8 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           openAt: openAt,
           closeAt: closeAt,
           showResultsImmediately: showResultsImmediately,
+          isPublished: isPublished,
         );
-
-        await syncQueue.enqueue(SyncQueueEntry(
-          id: const Uuid().v4(),
-          entityType: SyncEntityType.assessment,
-          operation: SyncOperation.create,
-          payload: {
-            'class_id': classId,
-            'title': title,
-            if (description != null) 'description': description,
-            'time_limit_minutes': timeLimitMinutes,
-            'open_at': openAt,
-            'close_at': closeAt,
-            if (showResultsImmediately != null)
-              'show_results_immediately': showResultsImmediately,
-          },
-          status: SyncStatus.pending,
-          retryCount: 0,
-          maxRetries: 5,
-          createdAt: DateTime.now(),
-        ));
 
         final now = DateTime.now();
         return Right(Assessment(
@@ -61,7 +44,8 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           closeAt: DateTime.parse(closeAt),
           showResultsImmediately: showResultsImmediately ?? false,
           resultsReleased: false,
-          isPublished: false,
+          isPublished: isPublished,
+          orderIndex: 0,
           totalPoints: 0,
           questionCount: 0,
           submissionCount: 0,
@@ -80,8 +64,16 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           'close_at': closeAt,
           if (showResultsImmediately != null)
             'show_results_immediately': showResultsImmediately,
+          if (isPublished) 'is_published': true,
+          // NEW: include questions atomically when publishing
+          if (isPublished && questions != null && questions.isNotEmpty)
+            'questions': questions,
         },
       );
+
+      // Cache the assessment locally so subsequent operations (like addQuestions) can reference it
+      await localDataSource.cacheAssessments([result]);
+
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -135,6 +127,7 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           showResultsImmediately: showResultsImmediately ?? false,
           resultsReleased: false,
           isPublished: false,
+          orderIndex: 0,
           totalPoints: 0,
           questionCount: 0,
           submissionCount: 0,
@@ -181,10 +174,47 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           maxRetries: 5,
           createdAt: DateTime.now(),
         ));
+        await localDataSource.deleteAssessmentLocally(assessmentId: assessmentId);
         return const Right(null);
       }
 
       await remoteDataSource.deleteAssessment(assessmentId: assessmentId);
+      await localDataSource.deleteAssessmentLocally(assessmentId: assessmentId);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  ResultVoid reorderAllAssessments({
+    required String classId,
+    required List<String> assessmentIds,
+  }) async {
+    try {
+      if (!serverReachabilityService.isServerReachable) {
+        for (int i = 0; i < assessmentIds.length; i++) {
+          await syncQueue.enqueue(SyncQueueEntry(
+            id: const Uuid().v4(),
+            entityType: SyncEntityType.assessment,
+            operation: SyncOperation.update,
+            payload: {'id': assessmentIds[i], 'order_index': i},
+            status: SyncStatus.pending,
+            retryCount: 0,
+            maxRetries: 5,
+            createdAt: DateTime.now(),
+          ));
+        }
+        return const Right(null);
+      }
+      await remoteDataSource.reorderAllAssessments(
+        classId: classId,
+        assessmentIds: assessmentIds,
+      );
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

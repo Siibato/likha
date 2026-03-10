@@ -36,10 +36,14 @@ dependencies:
   # File compression
   archive: ^3.4.0
 
+  # Animated list reordering
+  animated_reorderable_list: ^1.3.0
+
   # Environment configuration
   flutter_dotenv: ^5.1.0
   file_picker: ^10.3.10
   path_provider: ^2.1.0
+  open_file: ^3.3.2
 
 dev_dependencies:
   flutter_test:

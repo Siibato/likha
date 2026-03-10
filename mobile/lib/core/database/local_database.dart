@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 9,
+      version: 16,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onOpen: (db) async {
@@ -45,12 +45,12 @@ class LocalDatabase {
           full_name TEXT NOT NULL,
           role TEXT NOT NULL,
           account_status TEXT NOT NULL,
-          is_active INTEGER NOT NULL DEFAULT 1,
           activated_at TEXT,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
+          deleted_at TEXT,
           cached_at TEXT NOT NULL,
-          is_dirty INTEGER NOT NULL DEFAULT 0,
+          is_offline_mutation INTEGER NOT NULL DEFAULT 0,
           sync_status TEXT NOT NULL DEFAULT 'synced'
         )
       ''');
@@ -77,23 +77,23 @@ class LocalDatabase {
         )
       ''');
 
-      // Class enrollments table
+      // Class participants table (v12 schema)
       await txn.execute('''
-        CREATE TABLE IF NOT EXISTS class_enrollments (
+        CREATE TABLE IF NOT EXISTS class_participants (
           id TEXT PRIMARY KEY,
           local_id TEXT,
           class_id TEXT NOT NULL,
-          student_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
           username TEXT NOT NULL,
           full_name TEXT NOT NULL,
           role TEXT NOT NULL,
           account_status TEXT NOT NULL,
-          is_active INTEGER NOT NULL DEFAULT 1,
-          enrolled_at TEXT NOT NULL,
+          joined_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
-          deleted_at TEXT,
+          removed_at TEXT,
           cached_at TEXT NOT NULL,
           sync_status TEXT NOT NULL DEFAULT 'synced',
+          is_offline_mutation INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
         )
       ''');
@@ -112,6 +112,7 @@ class LocalDatabase {
           show_results_immediately INTEGER NOT NULL DEFAULT 0,
           results_released INTEGER NOT NULL DEFAULT 0,
           is_published INTEGER NOT NULL DEFAULT 0,
+          order_index INTEGER NOT NULL DEFAULT 0,
           total_points INTEGER NOT NULL DEFAULT 0,
           question_count INTEGER NOT NULL DEFAULT 0,
           submission_count INTEGER NOT NULL DEFAULT 0,
@@ -144,6 +145,7 @@ class LocalDatabase {
           deleted_at TEXT,
           cached_at TEXT NOT NULL,
           sync_status TEXT NOT NULL DEFAULT 'synced',
+          is_offline_mutation INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY(assessment_id) REFERENCES assessments(id) ON DELETE CASCADE
         )
       ''');
@@ -159,6 +161,7 @@ class LocalDatabase {
           student_username TEXT NOT NULL,
           started_at TEXT NOT NULL,
           submitted_at TEXT,
+          created_at TEXT,
           auto_score INTEGER,
           final_score INTEGER,
           is_submitted INTEGER NOT NULL DEFAULT 0,
@@ -188,6 +191,7 @@ class LocalDatabase {
           max_file_size_mb INTEGER,
           due_at TEXT,
           is_published INTEGER NOT NULL DEFAULT 0,
+          order_index INTEGER NOT NULL DEFAULT 0,
           submission_count INTEGER NOT NULL DEFAULT 0,
           graded_count INTEGER NOT NULL DEFAULT 0,
           submission_status TEXT,
@@ -342,11 +346,31 @@ class LocalDatabase {
         )
       ''');
 
+      // Assessment statistics cache table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS assessment_statistics_cache (
+          assessment_id TEXT PRIMARY KEY,
+          statistics_json TEXT NOT NULL,
+          cached_at TEXT NOT NULL
+        )
+      ''');
+
+      // Student results cache table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS student_results_cache (
+          submission_id TEXT PRIMARY KEY,
+          results_json TEXT NOT NULL,
+          cached_at TEXT NOT NULL
+        )
+      ''');
+
       // Create indexes for common queries
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_classes_teacher_id ON classes(teacher_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_classes_updated_at ON classes(updated_at)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_classes_deleted_at ON classes(deleted_at)');
-      await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_enrollments_class_id ON class_enrollments(class_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_class_id ON class_participants(class_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_user_id ON class_participants(user_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_removed_at ON class_participants(removed_at)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_assessments_class_id ON assessments(class_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_assessments_updated_at ON assessments(updated_at)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_assessments_deleted_at ON assessments(deleted_at)');
@@ -592,6 +616,223 @@ class LocalDatabase {
       // Add completed_at column to sync_queue for audit trail of completed operations
       try {
         await db.execute('ALTER TABLE sync_queue ADD COLUMN completed_at TEXT');
+      } catch (e) {
+        // Column might already exist
+      }
+    }
+
+    if (oldVersion < 10) {
+      // Standardize users table: add is_offline_mutation column (copy from is_dirty)
+      try {
+        await db.execute(
+          'ALTER TABLE users ADD COLUMN is_offline_mutation INTEGER NOT NULL DEFAULT 0'
+        );
+      } catch (e) {
+        // Column already exists
+      }
+      try {
+        await db.execute('UPDATE users SET is_offline_mutation = is_dirty');
+      } catch (e) {
+        // Ignore — is_dirty not present on fresh installs
+      }
+
+      // Fix crash bug: questions table was missing is_offline_mutation
+      try {
+        await db.execute(
+          'ALTER TABLE questions ADD COLUMN is_offline_mutation INTEGER NOT NULL DEFAULT 0'
+        );
+      } catch (e) {
+        // Column already exists
+      }
+
+      // Fix crash bug: class_enrollments table was missing is_offline_mutation
+      try {
+        await db.execute(
+          'ALTER TABLE class_enrollments ADD COLUMN is_offline_mutation INTEGER NOT NULL DEFAULT 0'
+        );
+      } catch (e) {
+        // Column already exists
+      }
+    }
+
+    if (oldVersion < 11) {
+      // Create missing cache tables for existing installs that were fresh-installed at v8+
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS assessment_statistics_cache (
+            assessment_id TEXT PRIMARY KEY,
+            statistics_json TEXT NOT NULL,
+            cached_at TEXT NOT NULL
+          )
+        ''');
+      } catch (_) {}
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS student_results_cache (
+            submission_id TEXT PRIMARY KEY,
+            results_json TEXT NOT NULL,
+            cached_at TEXT NOT NULL
+          )
+        ''');
+      } catch (_) {}
+    }
+
+    if (oldVersion < 12) {
+      // Migrate from class_enrollments to class_participants
+      // 1. Create class_participants table
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS class_participants (
+            id TEXT PRIMARY KEY,
+            local_id TEXT,
+            class_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            username TEXT NOT NULL,
+            full_name TEXT NOT NULL,
+            role TEXT NOT NULL,
+            account_status TEXT NOT NULL,
+            joined_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            removed_at TEXT,
+            cached_at TEXT NOT NULL,
+            sync_status TEXT NOT NULL DEFAULT 'synced',
+            is_offline_mutation INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
+          )
+        ''');
+      } catch (e) {
+        // Table might already exist
+      }
+
+      // 2. Create indexes for class_participants
+      try {
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_class_participants_class_id ON class_participants(class_id)'
+        );
+      } catch (e) {
+        // Index might already exist
+      }
+
+      try {
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_class_participants_user_id ON class_participants(user_id)'
+        );
+      } catch (e) {
+        // Index might already exist
+      }
+
+      try {
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_class_participants_removed_at ON class_participants(removed_at)'
+        );
+      } catch (e) {
+        // Index might already exist
+      }
+
+      // 3. Migrate students from class_enrollments
+      try {
+        await db.execute('''
+          INSERT INTO class_participants
+          (id, local_id, class_id, user_id, username, full_name, role,
+           account_status, joined_at, updated_at, removed_at, cached_at,
+           sync_status, is_offline_mutation)
+          SELECT
+            ce.id, ce.local_id, ce.class_id, ce.student_id, ce.username,
+            ce.full_name, 'student', ce.account_status,
+            ce.enrolled_at, ce.updated_at, ce.deleted_at, ce.cached_at,
+            ce.sync_status, ce.is_offline_mutation
+          FROM class_enrollments ce
+        ''');
+      } catch (e) {
+        // Might already be migrated
+      }
+
+      // 4. Drop old class_enrollments table
+      try {
+        await db.execute('DROP TABLE IF EXISTS class_enrollments');
+      } catch (e) {
+        // Table might not exist
+      }
+
+      // 5. Add deleted_at column to users table
+      try {
+        await db.execute('ALTER TABLE users ADD COLUMN deleted_at TEXT');
+      } catch (e) {
+        // Column might already exist
+      }
+
+      // 6. Drop vestigial is_active column from users table
+      try {
+        await db.execute('ALTER TABLE users DROP COLUMN is_active');
+      } catch (e) {
+        // Column might already be dropped or not exist
+      }
+    }
+
+    if (oldVersion < 13) {
+      // Add user_save_path to material_files to track where user saved downloaded files
+      try {
+        await db.execute(
+          'ALTER TABLE material_files ADD COLUMN user_save_path TEXT'
+        );
+      } catch (e) {
+        // Column might already exist
+      }
+    }
+
+    if (oldVersion < 14) {
+      // Add created_at column to assessment_submissions to align with server entity
+      // and fix full/delta sync crash (column was missing but sync code inserted it)
+      try {
+        await db.execute(
+          'ALTER TABLE assessment_submissions ADD COLUMN created_at TEXT'
+        );
+      } catch (e) {
+        // Column might already exist on fresh installs at v14+
+      }
+    }
+
+    if (oldVersion < 15) {
+      // Add order_index columns to assignments and assessments for reordering support
+      try {
+        await db.execute(
+          'ALTER TABLE assignments ADD COLUMN order_index INTEGER NOT NULL DEFAULT 0'
+        );
+      } catch (e) {
+        // Column might already exist
+      }
+      try {
+        await db.execute(
+          'ALTER TABLE assessments ADD COLUMN order_index INTEGER NOT NULL DEFAULT 0'
+        );
+      } catch (e) {
+        // Column might already exist
+      }
+    }
+
+    if (oldVersion < 16) {
+      // Fix: Create sync_metadata table if it doesn't exist (was missing from upgrade path for v15 and earlier)
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS sync_metadata (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+          )
+        ''');
+      } catch (e) {
+        // Table might already exist
+      }
+
+      // Create index for sync_metadata if it doesn't exist
+      try {
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_sync_metadata_key ON sync_metadata(key)');
+      } catch (e) {
+        // Index might already exist
+      }
+
+      // Fix: Add updated_at column to users table if it doesn't exist (was missing from v1-v14 upgrade path)
+      try {
+        await db.execute('ALTER TABLE users ADD COLUMN updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP');
       } catch (e) {
         // Column might already exist
       }

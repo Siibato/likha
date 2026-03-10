@@ -14,9 +14,11 @@ abstract class AssessmentRepository {
     required String openAt,
     required String closeAt,
     bool? showResultsImmediately,
+    bool isPublished = true,
+    List<Map<String, dynamic>>? questions,
   });
 
-  ResultFuture<List<Assessment>> getAssessments({required String classId});
+  ResultFuture<List<Assessment>> getAssessments({required String classId, bool publishedOnly = false, bool skipBackgroundRefresh = false});
 
   ResultFuture<(Assessment, List<Question>)> getAssessmentDetail({required String assessmentId});
 
@@ -35,6 +37,11 @@ abstract class AssessmentRepository {
   ResultFuture<Assessment> publishAssessment({required String assessmentId});
 
   ResultFuture<Assessment> releaseResults({required String assessmentId});
+
+  ResultVoid reorderAllAssessments({
+    required String classId,
+    required List<String> assessmentIds,
+  });
 
   // Teacher: Questions
   ResultFuture<List<Question>> addQuestions({
@@ -73,6 +80,11 @@ abstract class AssessmentRepository {
     required String studentId,
     required String studentName,
     required String studentUsername,
+  });
+
+  ResultFuture<SubmissionSummary?> getStudentSubmission({
+    required String assessmentId,
+    required String studentId,
   });
 
   ResultVoid saveAnswers({

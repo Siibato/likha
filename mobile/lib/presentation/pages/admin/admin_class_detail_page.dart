@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/presentation/pages/teacher/add_student_page.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/presentation/pages/admin/widgets/student_action_card.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
 class AdminClassDetailPage extends ConsumerStatefulWidget {
@@ -13,12 +16,45 @@ class AdminClassDetailPage extends ConsumerStatefulWidget {
 }
 
 class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
+  late TextEditingController _searchController;
+  String _searchQuery = '';
+  Timer? _debounce;
+
   @override
   void initState() {
     super.initState();
+    _searchController = TextEditingController();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(classProvider.notifier).loadClassDetail(widget.classId);
+      ref.read(classProvider.notifier).searchStudents(query: null);
     });
+
+    // Add search listener with debounce
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      final query = _searchController.text.trim();
+      setState(() {
+        _searchQuery = query;
+      });
+
+      if (query.isNotEmpty) {
+        ref.read(classProvider.notifier).searchStudents(query: query);
+      } else {
+        ref.read(classProvider.notifier).clearSearch();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
   }
 
   @override
@@ -27,26 +63,24 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
     final detail = classState.currentClassDetail;
 
     ref.listen<ClassState>(classProvider, (prev, next) {
+      // Success snackbar
       if (next.successMessage != null && prev?.successMessage != next.successMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.successMessage!),
-            backgroundColor: const Color(0xFF4CAF50),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        context.showSuccessSnackBar(next.successMessage!);
+        ref.read(classProvider.notifier).clearMessages();
+      }
+
+      // Error snackbar
+      if (next.error != null && prev?.error != next.error) {
+        context.showErrorSnackBar(next.error!);
         ref.read(classProvider.notifier).clearMessages();
       }
     });
 
     // Get class and teacher name from classState
-    final classInfo = classState.classes.cast<dynamic?>().firstWhere(
-      (c) => c?.id == widget.classId,
-      orElse: () => null,
-    );
+    final classInfo = classState.classes.cast<dynamic>().firstWhere(
+          (c) => c?.id == widget.classId,
+          orElse: () => null,
+        );
     final teacherName = classInfo != null
         ? (classInfo.teacherFullName.isNotEmpty
             ? classInfo.teacherFullName
@@ -131,118 +165,154 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                     ),
                   ),
 
-                  // Students Section
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Students Enrolled',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF2B2B2B),
-                          ),
-                        ),
-                        ElevatedButton.icon(
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => AddStudentPage(classId: widget.classId),
-                            ),
-                          ).then((_) => ref.read(classProvider.notifier).loadClassDetail(widget.classId)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2B2B2B),
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          icon: const Icon(Icons.person_add_rounded, size: 16),
-                          label: const Text(
-                            'Add/Remove',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Students List
+                  // Search Bar
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: detail.students.isEmpty
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(vertical: 32),
-                            child: Center(
-                              child: Column(
-                                children: const [
-                                  Icon(
-                                    Icons.person_outline_rounded,
-                                    size: 48,
-                                    color: Color(0xFFCCCCCC),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE0E0E0)),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.search_rounded,
+                              color: Color(0xFF999999),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: TextField(
+                                controller: _searchController,
+                                decoration: const InputDecoration(
+                                  hintText: 'Search students...',
+                                  hintStyle: TextStyle(
+                                    color: Color(0xFF999999),
+                                    fontSize: 14,
                                   ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    'No students enrolled',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Color(0xFF999999),
-                                    ),
-                                  ),
-                                ],
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.symmetric(vertical: 12),
+                                ),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF2B2B2B),
+                                ),
                               ),
                             ),
-                          )
-                        : ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: detail.students.length,
-                            itemBuilder: (context, index) {
-                              final enrollment = detail.students[index];
-                              return Card(
-                                margin: const EdgeInsets.only(bottom: 8),
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  side: const BorderSide(color: Color(0xFFE0E0E0)),
+                            if (_searchQuery.isNotEmpty)
+                              GestureDetector(
+                                onTap: () {
+                                  _searchController.clear();
+                                  _searchQuery = '';
+                                  ref.read(classProvider.notifier).clearSearch();
+                                },
+                                child: const Icon(
+                                  Icons.clear_rounded,
+                                  color: Color(0xFF999999),
+                                  size: 20,
                                 ),
-                                child: ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  leading: const Icon(
-                                    Icons.person_outline_rounded,
-                                    color: Color(0xFF2B2B2B),
-                                  ),
-                                  title: Text(
-                                    enrollment.student.fullName,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  subtitle: Text(
-                                    '@${enrollment.student.username}',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Color(0xFF999999),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Students Section - Show all students from search (loaded on init)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                    child: Text(
+                      _searchQuery.isEmpty
+                          ? 'All Students (${classState.searchResults.length})'
+                          : 'Search Results (${classState.searchResults.length})',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2B2B2B),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: () {
+                      if (classState.isLoading && classState.searchResults.isEmpty) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(vertical: 32),
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFF2B2B2B),
+                              strokeWidth: 2.5,
+                            ),
                           ),
+                        );
+                      }
+
+                      if (classState.searchResults.isEmpty) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(vertical: 32),
+                          child: Center(
+                            child: Column(
+                              children: [
+                                Icon(
+                                  _searchQuery.isEmpty
+                                      ? Icons.person_outline_rounded
+                                      : Icons.person_search_rounded,
+                                  size: 48,
+                                  color: const Color(0xFFCCCCCC),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _searchQuery.isEmpty
+                                      ? 'No students available'
+                                      : 'No students found',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF999999),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: classState.searchResults.length,
+                        itemBuilder: (context, index) {
+                          final student = classState.searchResults[index];
+                          final isEnrolled = classState.enrolledStudentIds.contains(student.id);
+                          final isLoading = classState.loadingStudentIds.contains(student.id);
+
+                          return StudentActionCard(
+                            student: student,
+                            isEnrolled: isEnrolled,
+                            isLoading: isLoading,
+                            onAdd: isEnrolled
+                                ? null
+                                : () {
+                                    ref.read(classProvider.notifier).addStudent(
+                                          classId: widget.classId,
+                                          studentId: student.id,
+                                        );
+                                  },
+                            onRemove: isEnrolled
+                                ? () {
+                                    ref.read(classProvider.notifier).removeStudent(
+                                          classId: widget.classId,
+                                          studentId: student.id,
+                                        );
+                                  }
+                                : null,
+                          );
+                        },
+                      );
+                    }(),
                   ),
                   const SizedBox(height: 32),
                 ],

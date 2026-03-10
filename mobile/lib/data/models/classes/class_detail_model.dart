@@ -34,14 +34,20 @@ class EnrollmentModel extends Enrollment {
   const EnrollmentModel({
     required super.id,
     required super.student,
-    required super.enrolledAt,
+    required super.joinedAt,
   });
 
   factory EnrollmentModel.fromJson(Map<String, dynamic> json) {
+    // Accept both new field name (joined_at) and old field name (enrolled_at) for backward compat
+    final joinedAtStr = (json['joined_at'] ?? json['enrolled_at']) as String?;
+    if (joinedAtStr == null) {
+      throw ArgumentError('Missing joined_at or enrolled_at field');
+    }
+
     return EnrollmentModel(
       id: json['id'] as String,
       student: UserModel.fromJson(json['student'] as Map<String, dynamic>),
-      enrolledAt: DateTime.parse(json['enrolled_at'] as String),
+      joinedAt: DateTime.parse(joinedAtStr),
     );
   }
 }

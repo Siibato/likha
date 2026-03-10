@@ -1,7 +1,7 @@
 use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
 use crate::schema::learning_material_schema::{
-    CreateMaterialRequest, UpdateMaterialRequest, MaterialResponse, MaterialListResponse, MaterialDetailResponse, FileMetadataResponse, ReorderMaterialRequest,
+    CreateMaterialRequest, UpdateMaterialRequest, MaterialResponse, MaterialListResponse, MaterialDetailResponse, FileMetadataResponse, ReorderMaterialRequest, ReorderMaterialsRequest,
 };
 
 impl super::LearningMaterialService {
@@ -10,6 +10,7 @@ impl super::LearningMaterialService {
         class_id: Uuid,
         request: CreateMaterialRequest,
         teacher_id: Uuid,
+        client_id: Option<Uuid>,
     ) -> AppResult<MaterialResponse> {
         self.verify_teacher_owns_class(class_id, teacher_id).await?;
 
@@ -22,7 +23,7 @@ impl super::LearningMaterialService {
 
         let material = self
             .material_repo
-            .create_material(class_id, title, description, content_text, order_index)
+            .create_material(class_id, title, description, content_text, order_index, client_id)
             .await?;
 
         let _ = self
@@ -232,7 +233,7 @@ impl super::LearningMaterialService {
         self.verify_teacher_owns_class(material.class_id, teacher_id)
             .await?;
 
-        self.material_repo.delete_material(material_id).await?;
+        self.material_repo.soft_delete(material_id).await?;
 
         let _ = self
             .activity_log_repo
@@ -312,7 +313,7 @@ impl super::LearningMaterialService {
             .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        if !self.class_repo.is_teacher_of_class(teacher_id, material.class_id).await? {
             return Err(AppError::Forbidden(
                 "You can only delete materials from your own classes".to_string(),
             ));
@@ -328,6 +329,20 @@ impl super::LearningMaterialService {
             None,
         ).await;
 
+        Ok(())
+    }
+
+    pub async fn reorder_materials(
+        &self,
+        class_id: Uuid,
+        request: ReorderMaterialsRequest,
+        teacher_id: Uuid,
+    ) -> AppResult<()> {
+        self.verify_teacher_owns_class(class_id, teacher_id).await?;
+        if request.material_ids.is_empty() {
+            return Ok(());
+        }
+        self.material_repo.reorder_materials(class_id, request.material_ids).await?;
         Ok(())
     }
 }

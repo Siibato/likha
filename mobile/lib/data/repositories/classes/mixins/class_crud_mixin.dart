@@ -26,7 +26,7 @@ mixin ClassCrudMixin on ClassRepositoryBase {
           entityType: SyncEntityType.classEntity,
           operation: SyncOperation.create,
           payload: {
-            'local_id': localId,
+            'id': localId,
             'title': title,
             'description': description,
             if (teacherId != null) 'teacher_id': teacherId,
@@ -93,6 +93,7 @@ mixin ClassCrudMixin on ClassRepositoryBase {
     required String classId,
     String? title,
     String? description,
+    String? teacherId,
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
@@ -102,8 +103,9 @@ mixin ClassCrudMixin on ClassRepositoryBase {
           operation: SyncOperation.update,
           payload: {
             'id': classId,
-            'title': title,
-            'description': description,
+            if (title != null) 'title': title,
+            if (description != null) 'description': description,
+            if (teacherId != null) 'teacher_id': teacherId,
           },
           status: SyncStatus.pending,
           retryCount: 0,
@@ -123,7 +125,7 @@ mixin ClassCrudMixin on ClassRepositoryBase {
             id: current.id,
             title: title ?? current.title,
             description: description ?? current.description,
-            teacherId: current.teacherId,
+            teacherId: teacherId ?? current.teacherId,
             teacherUsername: current.teacherUsername,
             teacherFullName: current.teacherFullName,
             isArchived: current.isArchived,
@@ -140,6 +142,7 @@ mixin ClassCrudMixin on ClassRepositoryBase {
         classId: classId,
         title: title,
         description: description,
+        teacherId: teacherId,
       );
 
       syncInBackgroundForClass(classId);

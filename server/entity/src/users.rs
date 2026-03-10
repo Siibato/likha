@@ -12,11 +12,10 @@ pub struct Model {
     pub full_name: String,
     pub role: String,
     pub account_status: String,
-    pub is_active: bool,
     pub activated_at: Option<chrono::NaiveDateTime>,
-    pub created_by: Option<Uuid>,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
+    pub deleted_at: Option<chrono::NaiveDateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -25,10 +24,6 @@ pub enum Relation {
     RefreshTokens,
     #[sea_orm(has_many = "super::activity_logs::Entity")]
     ActivityLogs,
-    #[sea_orm(has_many = "super::classes::Entity")]
-    Classes,
-    #[sea_orm(has_many = "super::class_enrollments::Entity")]
-    ClassEnrollments,
 }
 
 impl Related<super::refresh_tokens::Entity> for Entity {
@@ -40,18 +35,6 @@ impl Related<super::refresh_tokens::Entity> for Entity {
 impl Related<super::activity_logs::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::ActivityLogs.def()
-    }
-}
-
-impl Related<super::classes::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::Classes.def()
-    }
-}
-
-impl Related<super::class_enrollments::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::ClassEnrollments.def()
     }
 }
 

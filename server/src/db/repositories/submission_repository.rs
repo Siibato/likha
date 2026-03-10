@@ -223,6 +223,8 @@ impl SubmissionRepository {
     }
 
     pub async fn mark_submitted(&self, submission_id: Uuid) -> AppResult<assessment_submissions::Model> {
+        println!("💾 [REPO] mark_submitted() START - submission_id: {}", submission_id);
+
         let mut submission: assessment_submissions::ActiveModel =
             assessment_submissions::Entity::find_by_id(submission_id)
                 .one(&self.db)
@@ -231,13 +233,24 @@ impl SubmissionRepository {
                 .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?
                 .into();
 
-        submission.is_submitted = Set(true);
-        submission.submitted_at = Set(Some(Utc::now().naive_utc()));
+        println!("💾 [REPO] mark_submitted() - BEFORE UPDATE: is_submitted={:?}, submitted_at={:?}",
+            submission.is_submitted, submission.submitted_at);
 
-        submission
+        let now = Utc::now().naive_utc();
+        submission.is_submitted = Set(true);
+        submission.submitted_at = Set(Some(now));
+
+        println!("💾 [REPO] mark_submitted() - SETTING: is_submitted=true, submitted_at={}", now);
+
+        let result = submission
             .update(&self.db)
             .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to submit: {}", e)))
+            .map_err(|e| AppError::InternalServerError(format!("Failed to submit: {}", e)))?;
+
+        println!("💾 [REPO] mark_submitted() SUCCESS - AFTER UPDATE: is_submitted={}, submitted_at={:?}",
+            result.is_submitted, result.submitted_at);
+
+        Ok(result)
     }
 
     // ===== ANSWER CHOICES (MC selections) =====

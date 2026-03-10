@@ -22,6 +22,11 @@ pub struct ReorderMaterialRequest {
     pub new_order_index: i32,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ReorderMaterialsRequest {
+    pub material_ids: Vec<Uuid>,
+}
+
 // ===== RESPONSE SCHEMAS =====
 
 #[derive(Debug, Serialize)]

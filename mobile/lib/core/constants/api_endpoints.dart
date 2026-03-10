@@ -1,5 +1,4 @@
 import 'package:likha/core/constants/api_endpoint.dart';
-import 'package:likha/core/sync/change_log_model.dart';
 import 'package:likha/data/models/auth/activity_log_model.dart';
 import 'package:likha/data/models/auth/auth_response_model.dart';
 import 'package:likha/data/models/auth/check_username_result_model.dart';
@@ -155,6 +154,9 @@ class ApiEndpoints {
             .toList(),
       );
 
+  static ApiEndpoint<void> classAssessmentsReorder(String classId) =>
+      ApiEndpoint('/api/v1/classes/$classId/assessments/reorder', (_) {});
+
   static ApiEndpoint<AssessmentModel> assessmentDetail(String assessmentId) =>
       ApiEndpoint<AssessmentModel>.fromModel(
         '/api/v1/assessments/$assessmentId',
@@ -277,6 +279,9 @@ class ApiEndpoints {
             .toList(),
       );
 
+  static ApiEndpoint<void> classAssignmentsReorder(String classId) =>
+      ApiEndpoint('/api/v1/classes/$classId/assignments/reorder', (_) {});
+
   static ApiEndpoint<AssignmentModel> assignmentDetail(String assignmentId) =>
       ApiEndpoint<AssignmentModel>.fromModel(
         '/api/v1/assignments/$assignmentId',
@@ -393,6 +398,9 @@ class ApiEndpoints {
         LearningMaterialModel.fromJson,
       );
 
+  static ApiEndpoint<void> classMaterialsReorder(String classId) =>
+      ApiEndpoint('/api/v1/classes/$classId/materials/reorder', (_) {});
+
   static ApiEndpoint<MaterialFileModel> materialUploadFile(String materialId) =>
       ApiEndpoint<MaterialFileModel>.fromModel(
         '/api/v1/materials/$materialId/files',
@@ -416,29 +424,12 @@ class ApiEndpoints {
     (json) => json as Map<String, dynamic>,
   );
 
-  // ===== Sync Endpoints (Legacy) =====
-  static ApiEndpoint<ChangesResponse> changes =
-      ApiEndpoint<ChangesResponse>.fromModel(
-    '/api/v1/changes',
-    ChangesResponse.fromJson,
-  );
-
   static final databaseId = ApiEndpoint<Map<String, dynamic>>(
     '/api/v1/database-id',
     (json) => json as Map<String, dynamic>,
   );
 
-  // ===== Manifest-Driven Sync Endpoints (New) =====
-  static final syncManifest = ApiEndpoint<Map<String, dynamic>>(
-    '/api/v1/sync/manifest',
-    (json) => json as Map<String, dynamic>,
-  );
-
-  static final syncFetch = ApiEndpoint<Map<String, dynamic>>(
-    '/api/v1/sync/fetch',
-    (json) => json as Map<String, dynamic>,
-  );
-
+  // ===== Sync Endpoints (Full/Delta Optimized) =====
   static final syncPush = ApiEndpoint<Map<String, dynamic>>(
     '/api/v1/sync/push',
     (json) => json as Map<String, dynamic>,

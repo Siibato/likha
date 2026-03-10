@@ -22,6 +22,7 @@ abstract class ClassRemoteDataSource {
     required String classId,
     String? title,
     String? description,
+    String? teacherId,
   });
 
   Future<EnrollmentModel> addStudent({
@@ -94,6 +95,7 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
     required String classId,
     String? title,
     String? description,
+    String? teacherId,
   }) async {
     try {
       return await _dioClient.putTyped(
@@ -101,6 +103,7 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
         data: {
           if (title != null) 'title': title,
           if (description != null) 'description': description,
+          if (teacherId != null) 'teacher_id': teacherId,
         },
       );
     } on DioException catch (e) {

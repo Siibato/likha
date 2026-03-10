@@ -4,7 +4,6 @@ import 'package:likha/domain/auth/entities/user.dart';
 class UserInfoCard extends StatelessWidget {
   final User user;
   final bool isLoading;
-  final VoidCallback onEditUsername;
   final VoidCallback onEditFullName;
   final VoidCallback? onEditRole;
 
@@ -12,7 +11,6 @@ class UserInfoCard extends StatelessWidget {
     super.key,
     required this.user,
     required this.isLoading,
-    required this.onEditUsername,
     required this.onEditFullName,
     this.onEditRole,
   });
@@ -34,11 +32,7 @@ class UserInfoCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _EditableInfoRow(
-              label: 'Username',
-              value: user.username,
-              onEdit: isLoading ? null : onEditUsername,
-            ),
+            _InfoRow(label: 'Username', value: user.username),
             const Divider(height: 24, color: Color(0xFFF0F0F0)),
             _EditableInfoRow(
               label: 'Full Name',

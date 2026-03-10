@@ -12,6 +12,7 @@ class AssessmentModel extends Assessment {
     required super.showResultsImmediately,
     required super.resultsReleased,
     required super.isPublished,
+    required super.orderIndex,
     required super.totalPoints,
     required super.questionCount,
     required super.submissionCount,
@@ -28,15 +29,25 @@ class AssessmentModel extends Assessment {
       timeLimitMinutes: json['time_limit_minutes'] as int,
       openAt: DateTime.parse(json['open_at'] as String),
       closeAt: DateTime.parse(json['close_at'] as String),
-      showResultsImmediately: json['show_results_immediately'] as bool,
-      resultsReleased: json['results_released'] as bool,
-      isPublished: json['is_published'] as bool,
+      showResultsImmediately: _parseBool(json['show_results_immediately']),
+      resultsReleased: _parseBool(json['results_released']),
+      isPublished: _parseBool(json['is_published']),
+      orderIndex: json['order_index'] as int? ?? 0,
       totalPoints: json['total_points'] as int,
-      questionCount: json['question_count'] as int? ?? 0,
+      questionCount: (json['questions'] as List<dynamic>?)?.length
+          ?? json['question_count'] as int?
+          ?? 0,
       submissionCount: json['submission_count'] as int? ?? 0,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
+  }
+
+  static bool _parseBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is int) return value == 1;
+    if (value is String) return value.toLowerCase() == 'true' || value == '1';
+    return false;
   }
 
   factory AssessmentModel.fromMap(Map<String, dynamic> map) {
@@ -51,6 +62,7 @@ class AssessmentModel extends Assessment {
       showResultsImmediately: (map['show_results_immediately'] as int?) == 1,
       resultsReleased: (map['results_released'] as int?) == 1,
       isPublished: (map['is_published'] as int?) == 1,
+      orderIndex: map['order_index'] as int? ?? 0,
       totalPoints: map['total_points'] as int,
       questionCount: map['question_count'] as int? ?? 0,
       submissionCount: map['submission_count'] as int? ?? 0,
@@ -71,6 +83,7 @@ class AssessmentModel extends Assessment {
       'show_results_immediately': showResultsImmediately ? 1 : 0,
       'results_released': resultsReleased ? 1 : 0,
       'is_published': isPublished ? 1 : 0,
+      'order_index': orderIndex,
       'total_points': totalPoints,
       'question_count': questionCount,
       'submission_count': submissionCount,

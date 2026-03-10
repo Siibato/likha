@@ -2,24 +2,10 @@ import 'package:dio/dio.dart';
 import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/models/sync/conflict_model.dart';
-import 'package:likha/data/models/sync/fetch_response_model.dart';
-import 'package:likha/data/models/sync/manifest_response_model.dart';
 import 'package:likha/data/models/sync/push_response_model.dart';
 
-/// Remote datasource for manifest-driven sync operations
+/// Remote datasource for offline sync operations
 abstract class SyncRemoteDataSource {
-  /// Fetch the complete manifest of user's accessible data
-  Future<ManifestResponseModel> getManifest();
-
-  /// Fetch paginated full records with cursor support
-  ///
-  /// Returns paginated records that can be resumed with cursor
-  /// if network connection is lost mid-fetch
-  Future<FetchResponseModel> fetchRecords({
-    required Map<String, List<String>> entities,
-    String? cursor,
-  });
-
   /// Push offline mutations to server
   ///
   /// Returns results per operation: success indicators and server IDs
@@ -34,7 +20,14 @@ abstract class SyncRemoteDataSource {
   });
 
   /// Fetch full sync data on first login
-  Future<Map<String, dynamic>> fullSync({required String deviceId});
+  ///
+  /// [classIds] - List of class IDs to sync (empty = base request only)
+  /// [receiveTimeout] - Custom timeout for receiving the response
+  Future<Map<String, dynamic>> fullSync({
+    required String deviceId,
+    List<String> classIds = const [],
+    Duration? receiveTimeout,
+  });
 
   /// Fetch delta sync data on app restart
   Future<Map<String, dynamic>> deltaSync({
@@ -65,54 +58,6 @@ class SyncRemoteDataSourceImpl implements SyncRemoteDataSource {
   SyncRemoteDataSourceImpl({required this.dioClient});
 
   Dio get _dio => dioClient.dio;
-
-  @override
-  Future<ManifestResponseModel> getManifest() async {
-    try {
-      final response = await _dio.postUri(
-        Uri.parse(ApiEndpoints.syncManifest.path),
-        data: {},
-      );
-
-      if (response.statusCode != 200) {
-        throw Exception('Failed to get manifest');
-      }
-
-      return ManifestResponseModel.fromJson(response.data);
-    } on DioException catch (e) {
-      throw Exception('Network error getting manifest: ${e.message}');
-    } catch (e) {
-      throw Exception('Error getting manifest: $e');
-    }
-  }
-
-  @override
-  Future<FetchResponseModel> fetchRecords({
-    required Map<String, List<String>> entities,
-    String? cursor,
-  }) async {
-    try {
-      final data = {
-        'entities': entities,
-        if (cursor != null) 'cursor': cursor,
-      };
-
-      final response = await _dio.postUri(
-        Uri.parse(ApiEndpoints.syncFetch.path),
-        data: data,
-      );
-
-      if (response.statusCode != 200) {
-        throw Exception('Failed to fetch records');
-      }
-
-      return FetchResponseModel.fromJson(response.data);
-    } on DioException catch (e) {
-      throw Exception('Network error fetching records: ${e.message}');
-    } catch (e) {
-      throw Exception('Error fetching records: $e');
-    }
-  }
 
   @override
   Future<PushResponseModel> pushOperations({
@@ -208,11 +153,25 @@ class SyncRemoteDataSourceImpl implements SyncRemoteDataSource {
   }
 
   @override
-  Future<Map<String, dynamic>> fullSync({required String deviceId}) async {
+  Future<Map<String, dynamic>> fullSync({
+    required String deviceId,
+    List<String> classIds = const [],
+    Duration? receiveTimeout,
+  }) async {
     try {
+      final data = {
+        'device_id': deviceId,
+        if (classIds.isNotEmpty) 'class_ids': classIds,
+      };
+
+      final options = receiveTimeout != null
+          ? Options(receiveTimeout: receiveTimeout)
+          : null;
+
       final response = await _dio.postUri(
         Uri.parse(ApiEndpoints.syncFull.path),
-        data: {'device_id': deviceId},
+        data: data,
+        options: options,
       );
 
       if (response.statusCode != 200) {

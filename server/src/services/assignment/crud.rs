@@ -21,14 +21,15 @@ impl super::AssignmentService {
         class_id: Uuid,
         request: CreateAssignmentRequest,
         teacher_id: Uuid,
+        client_id: Option<Uuid>,
     ) -> AppResult<AssignmentResponse> {
-        let class = self
+        let _ = self
             .class_repo
             .find_by_id(class_id)
             .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        if !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
             return Err(AppError::Forbidden(
                 "You can only create assignments in your own classes".to_string(),
             ));
@@ -72,6 +73,9 @@ impl super::AssignmentService {
 
         let due_at = Self::parse_datetime(&request.due_at)?;
 
+        let max_order = self.assignment_repo.get_max_order_index(class_id).await?;
+        let order_index = max_order + 1;
+
         let assignment = self
             .assignment_repo
             .create_assignment(
@@ -83,6 +87,9 @@ impl super::AssignmentService {
                 request.allowed_file_types,
                 request.max_file_size_mb,
                 due_at,
+                order_index,
+                client_id,
+                request.is_published.unwrap_or(false),
             )
             .await?;
 
@@ -118,6 +125,7 @@ impl super::AssignmentService {
             max_file_size_mb: assignment.max_file_size_mb,
             due_at: assignment.due_at.to_string(),
             is_published: assignment.is_published,
+            order_index: assignment.order_index,
             submission_count: 0,
             graded_count: 0,
             submission_status: None,
@@ -134,13 +142,14 @@ impl super::AssignmentService {
         user_id: Uuid,
         role: &str,
     ) -> AppResult<AssignmentListResponse> {
-        let class = self
+        let _ = self
             .class_repo
             .find_by_id(class_id)
             .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        let assignments = if role == "teacher" && class.teacher_id == user_id {
+        let is_teacher_of_class = role == "teacher" && self.class_repo.is_teacher_of_class(user_id, class_id).await?;
+        let assignments = if is_teacher_of_class {
             self.assignment_repo.find_by_class_id(class_id).await?
         } else {
             self.assignment_repo
@@ -184,6 +193,7 @@ impl super::AssignmentService {
                 max_file_size_mb: a.max_file_size_mb,
                 due_at: a.due_at.to_string(),
                 is_published: a.is_published,
+                order_index: a.order_index,
                 submission_count,
                 graded_count,
                 submission_status,
@@ -254,7 +264,7 @@ impl super::AssignmentService {
             return Err(AppError::NotFound("Assignment not found".to_string()));
         }
 
-        if role == "teacher" && class.teacher_id != user_id {
+        if role == "teacher" && !self.class_repo.is_teacher_of_class(user_id, assignment.class_id).await? {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
@@ -278,6 +288,7 @@ impl super::AssignmentService {
             max_file_size_mb: assignment.max_file_size_mb,
             due_at: assignment.due_at.to_string(),
             is_published: assignment.is_published,
+            order_index: assignment.order_index,
             submission_count,
             graded_count,
             submission_status: None,
@@ -300,13 +311,13 @@ impl super::AssignmentService {
             .await?
             .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
 
-        let class = self
+        let _class = self
             .class_repo
             .find_by_id(assignment.class_id)
             .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        if !self.class_repo.is_teacher_of_class(teacher_id, assignment.class_id).await? {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
@@ -411,6 +422,7 @@ impl super::AssignmentService {
             max_file_size_mb: updated.max_file_size_mb,
             due_at: updated.due_at.to_string(),
             is_published: updated.is_published,
+            order_index: updated.order_index,
             submission_count,
             graded_count,
             submission_status: None,
@@ -432,13 +444,13 @@ impl super::AssignmentService {
             .await?
             .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
 
-        let class = self
+        let _class = self
             .class_repo
             .find_by_id(assignment.class_id)
             .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        if !self.class_repo.is_teacher_of_class(teacher_id, assignment.class_id).await? {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
@@ -488,13 +500,13 @@ impl super::AssignmentService {
             .await?
             .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
 
-        let class = self
+        let _class = self
             .class_repo
             .find_by_id(assignment.class_id)
             .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        if !self.class_repo.is_teacher_of_class(teacher_id, assignment.class_id).await? {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
@@ -540,6 +552,7 @@ impl super::AssignmentService {
             max_file_size_mb: published.max_file_size_mb,
             due_at: published.due_at.to_string(),
             is_published: published.is_published,
+            order_index: published.order_index,
             submission_count: 0,
             graded_count: 0,
             submission_status: None,
@@ -563,7 +576,7 @@ impl super::AssignmentService {
             .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        if !self.class_repo.is_teacher_of_class(teacher_id, assignment.class_id).await? {
             return Err(AppError::Forbidden(
                 "You can only delete assignments from your own classes".to_string(),
             ));
@@ -581,6 +594,35 @@ impl super::AssignmentService {
                 "title": assignment.title,
             })).unwrap_or_default()),
         ).await;
+
+        Ok(())
+    }
+
+    pub async fn reorder_assignments(
+        &self,
+        class_id: Uuid,
+        request: ReorderAssignmentsRequest,
+        teacher_id: Uuid,
+    ) -> AppResult<()> {
+        let _class = self
+            .class_repo
+            .find_by_id(class_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
+
+        if !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
+            return Err(AppError::Forbidden(
+                "You can only reorder assignments in your own classes".to_string(),
+            ));
+        }
+
+        if request.assignment_ids.is_empty() {
+            return Ok(());
+        }
+
+        self.assignment_repo
+            .reorder_assignments(class_id, request.assignment_ids)
+            .await?;
 
         Ok(())
     }

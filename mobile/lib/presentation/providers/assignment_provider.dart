@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
 import 'package:likha/domain/assignments/usecases/create_assignment.dart';
@@ -16,6 +18,7 @@ import 'package:likha/domain/assignments/usecases/return_submission.dart';
 import 'package:likha/domain/assignments/usecases/submit_assignment.dart';
 import 'package:likha/domain/assignments/usecases/update_assignment.dart';
 import 'package:likha/domain/assignments/usecases/upload_file.dart';
+import 'package:likha/domain/assignments/usecases/reorder_assignment.dart';
 import 'package:likha/injection_container.dart';
 
 class AssignmentState {
@@ -83,6 +86,11 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   final DeleteFile _deleteFile;
   final SubmitAssignment _submitAssignment;
   final DownloadFile _downloadFile;
+  final ReorderAllAssignments _reorderAllAssignments;
+
+  String? _currentClassId;
+  bool _currentPublishedOnly = false;
+  late StreamSubscription<String?> _refreshSub;
 
   AssignmentNotifier(
     this._createAssignment,
@@ -100,11 +108,20 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     this._deleteFile,
     this._submitAssignment,
     this._downloadFile,
-  ) : super(AssignmentState());
+    this._reorderAllAssignments,
+  ) : super(AssignmentState()) {
+    _refreshSub = sl<DataEventBus>().onAssignmentsChanged.listen((classId) {
+      if (_currentClassId != null && _currentClassId == classId) {
+        loadAssignments(_currentClassId!, publishedOnly: _currentPublishedOnly, skipBackgroundRefresh: true);
+      }
+    });
+  }
 
-  Future<void> loadAssignments(String classId) async {
+  Future<void> loadAssignments(String classId, {bool publishedOnly = false, bool skipBackgroundRefresh = false}) async {
+    _currentClassId = classId;
+    _currentPublishedOnly = publishedOnly;
     state = state.copyWith(isLoading: true, clearError: true);
-    final result = await _getAssignments(classId);
+    final result = await _getAssignments(classId, publishedOnly: publishedOnly, skipBackgroundRefresh: skipBackgroundRefresh);
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),
@@ -190,6 +207,23 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
           clearAssignment: true,
         );
       },
+    );
+  }
+
+  Future<void> reorderAllAssignments({
+    required String classId,
+    required List<String> assignmentIds,
+    required List<Assignment> orderedAssignments,
+  }) async {
+    // Optimistic update
+    state = state.copyWith(assignments: orderedAssignments);
+    final result = await _reorderAllAssignments(
+      classId: classId,
+      assignmentIds: assignmentIds,
+    );
+    result.fold(
+      (failure) => state = state.copyWith(error: failure.message),
+      (_) {},
     );
   }
 
@@ -323,6 +357,12 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   void clearMessages() {
     state = state.copyWith(clearError: true, clearSuccess: true);
   }
+
+  @override
+  void dispose() {
+    _refreshSub.cancel();
+    super.dispose();
+  }
 }
 
 final assignmentProvider =
@@ -343,5 +383,6 @@ final assignmentProvider =
     sl<DeleteFile>(),
     sl<SubmitAssignment>(),
     sl<DownloadFile>(),
+    sl<ReorderAllAssignments>(),
   );
 });

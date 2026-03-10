@@ -23,16 +23,14 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
           if (alreadyEnrolled.contains(studentId)) {
             final cachedStudent = await localDataSource.getStudentById(studentId);
             final s = cachedStudent ?? _skeletonStudent(studentId);
-            return Right(Enrollment(id: '', student: s, enrolledAt: DateTime.now()));
+            return Right(Enrollment(id: '', student: s, joinedAt: DateTime.now()));
           }
         } catch (_) {}
 
         UserModel? cachedStudent;
         try {
           cachedStudent = await localDataSource.getStudentById(studentId);
-        } catch (e) {
-          print('WARNING: Failed to get cached student $studentId: $e');
-        }
+        } catch (_) {}
 
         final studentModel = cachedStudent ?? _skeletonStudent(studentId);
 
@@ -42,9 +40,7 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
             classId: classId,
             student: studentModel,
           );
-        } catch (e) {
-          print('WARNING: Failed to add student locally to class $classId: $e');
-        }
+        } catch (_) {}
 
         await syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),
@@ -69,7 +65,7 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
           // Non-critical
         }
 
-        return Right(Enrollment(id: '', student: studentModel, enrolledAt: DateTime.now()));
+        return Right(Enrollment(id: '', student: studentModel, joinedAt: DateTime.now()));
       }
 
       final result = await remoteDataSource.addStudent(
@@ -157,11 +153,23 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
     } on NetworkException catch (e) {
       try {
         final cached = await localDataSource.searchCachedStudents(query ?? '');
-        if (cached.isNotEmpty) return Right(cached);
+        return Right(cached);
       } catch (_) {
         // Fall through to network error
       }
       return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  ResultFuture<List<User>> getEnrolledStudents({required String classId}) async {
+    try {
+      final students = await localDataSource.getCachedEnrolledStudents(classId);
+      return Right(students.cast<User>());
+    } on CacheException catch (e) {
+      return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

@@ -30,6 +30,11 @@ abstract class LearningMaterialRepository {
     required int newOrderIndex,
   });
 
+  ResultVoid reorderAllMaterials({
+    required String classId,
+    required List<String> materialIds,
+  });
+
   // File management
   ResultFuture<MaterialFile> uploadFile({
     required String materialId,

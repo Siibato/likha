@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/usecases/update_assessment.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
@@ -81,22 +82,12 @@ class _EditAssessmentPageState extends ConsumerState<EditAssessmentPage> {
 
     final timeLimit = int.tryParse(_timeLimitController.text.trim());
     if (timeLimit == null || timeLimit <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid time limit'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      context.showErrorSnackBar('Please enter a valid time limit');
       return;
     }
 
     if (_closeAt.isBefore(_openAt)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Close date must be after open date'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      context.showErrorSnackBar('Close date must be after open date');
       return;
     }
 
@@ -127,19 +118,12 @@ class _EditAssessmentPageState extends ConsumerState<EditAssessmentPage> {
 
     ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
       if (next.error != null && prev?.error != next.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.error!), backgroundColor: Colors.red),
-        );
+        context.showErrorSnackBar(next.error!);
         ref.read(assessmentProvider.notifier).clearMessages();
       }
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.successMessage!),
-            backgroundColor: Colors.green,
-          ),
-        );
+        context.showSuccessSnackBar(next.successMessage!);
         ref.read(assessmentProvider.notifier).clearMessages();
       }
     });

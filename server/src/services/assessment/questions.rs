@@ -15,7 +15,7 @@ impl super::AssessmentService {
         let class = self.class_repo.find_by_id(assessment.class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        if !self.class_repo.is_teacher_of_class(teacher_id, assessment.class_id).await? {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
@@ -23,9 +23,22 @@ impl super::AssessmentService {
             return Err(AppError::BadRequest("Cannot add questions to a published assessment".to_string()));
         }
 
+        // Delegate to internal helper (guard is preserved above)
+        self.insert_questions_for_assessment(assessment_id, request.questions, teacher_id).await
+    }
+
+    /// Inserts questions for an assessment WITHOUT checking is_published.
+    /// Used for initial atomic creation on published assessments.
+    /// The public add_questions() keeps the guard that prevents editing published assessments.
+    pub(crate) async fn insert_questions_for_assessment(
+        &self,
+        assessment_id: Uuid,
+        questions: Vec<AddQuestionRequest>,
+        teacher_id: Uuid,
+    ) -> AppResult<Vec<QuestionResponse>> {
         let mut responses = Vec::new();
 
-        for q_request in request.questions {
+        for q_request in questions {
             let valid_types = ["multiple_choice", "identification", "enumeration"];
             if !valid_types.contains(&q_request.question_type.as_str()) {
                 return Err(AppError::BadRequest(format!(
@@ -41,6 +54,7 @@ impl super::AssessmentService {
                 q_request.points,
                 q_request.order_index,
                 q_request.is_multi_select.unwrap_or(false),
+                q_request.id,
             ).await?;
 
             let _ = self.change_log_repo.log_change(
@@ -80,7 +94,7 @@ impl super::AssessmentService {
         let class = self.class_repo.find_by_id(assessment.class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        if !self.class_repo.is_teacher_of_class(teacher_id, assessment.class_id).await? {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
@@ -160,7 +174,7 @@ impl super::AssessmentService {
         let class = self.class_repo.find_by_id(assessment.class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if class.teacher_id != teacher_id {
+        if !self.class_repo.is_teacher_of_class(teacher_id, assessment.class_id).await? {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 

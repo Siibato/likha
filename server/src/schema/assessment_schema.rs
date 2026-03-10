@@ -11,6 +11,10 @@ pub struct CreateAssessmentRequest {
     pub open_at: String,
     pub close_at: String,
     pub show_results_immediately: Option<bool>,
+    #[serde(default)]
+    pub is_published: Option<bool>,
+    // NEW: optional questions for atomic creation when publishing
+    pub questions: Option<Vec<AddQuestionRequest>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -25,6 +29,7 @@ pub struct UpdateAssessmentRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct AddQuestionRequest {
+    pub id: Option<Uuid>,
     pub question_type: String,
     pub question_text: String,
     pub points: i32,
@@ -82,6 +87,16 @@ pub struct OverrideAnswerRequest {
     pub is_correct: bool,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ReorderAssessmentRequest {
+    pub new_order_index: i32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ReorderAssessmentsRequest {
+    pub assessment_ids: Vec<Uuid>,
+}
+
 // ===== RESPONSE SCHEMAS =====
 
 #[derive(Debug, Serialize)]
@@ -96,6 +111,7 @@ pub struct AssessmentResponse {
     pub show_results_immediately: bool,
     pub results_released: bool,
     pub is_published: bool,
+    pub order_index: i32,
     pub total_points: i32,
     pub question_count: usize,
     pub submission_count: usize,
@@ -120,6 +136,7 @@ pub struct AssessmentDetailResponse {
     pub show_results_immediately: bool,
     pub results_released: bool,
     pub is_published: bool,
+    pub order_index: i32,
     pub total_points: i32,
     pub questions: Vec<QuestionResponse>,
     pub created_at: String,

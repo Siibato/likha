@@ -29,6 +29,11 @@ abstract class AssessmentRemoteDataSource {
 
   Future<AssessmentModel> releaseResults({required String assessmentId});
 
+  Future<void> reorderAllAssessments({
+    required String classId,
+    required List<String> assessmentIds,
+  });
+
   Future<List<QuestionModel>> addQuestions({
     required String assessmentId,
     required List<Map<String, dynamic>> questions,
@@ -189,6 +194,21 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
   }
 
   @override
+  Future<void> reorderAllAssessments({
+    required String classId,
+    required List<String> assessmentIds,
+  }) async {
+    try {
+      await _dioClient.postVoid(
+        ApiEndpoints.classAssessmentsReorder(classId),
+        data: {'assessment_ids': assessmentIds},
+      );
+    } on DioException catch (e) {
+      throw _dioClient.handleError(e);
+    }
+  }
+
+  @override
   Future<List<QuestionModel>> addQuestions({
     required String assessmentId,
     required List<Map<String, dynamic>> questions,
@@ -285,11 +305,15 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
   Future<StartSubmissionResultModel> startAssessment({
     required String assessmentId,
   }) async {
+    print('🚀 [RemoteDS] startAssessment() START - assessmentId: $assessmentId');
     try {
-      return await _dioClient.postTyped(
+      final result = await _dioClient.postTyped(
         ApiEndpoints.assessmentStart(assessmentId),
       );
+      print('🚀 [RemoteDS] startAssessment() SUCCESS - submissionId: ${result.submissionId}, startedAt: ${result.startedAt}, questionCount: ${result.questions.length}');
+      return result;
     } on DioException catch (e) {
+      print('🚀 [RemoteDS] startAssessment() ERROR - DioException: ${e.message}, statusCode: ${e.response?.statusCode}');
       throw _dioClient.handleError(e);
     }
   }
@@ -299,12 +323,15 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
     required String submissionId,
     required List<Map<String, dynamic>> answers,
   }) async {
+    print('💾 [RemoteDS] saveAnswers() START - submissionId: $submissionId, answerCount: ${answers.length}');
     try {
-      await _dioClient.putTyped(
+      await _dioClient.putVoid(
         ApiEndpoints.submissionAnswers(submissionId),
         data: {'answers': answers},
       );
+      print('💾 [RemoteDS] saveAnswers() SUCCESS');
     } on DioException catch (e) {
+      print('💾 [RemoteDS] saveAnswers() ERROR - DioException: ${e.message}, statusCode: ${e.response?.statusCode}');
       throw _dioClient.handleError(e);
     }
   }
@@ -313,12 +340,20 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
   Future<SubmissionSummaryModel> submitAssessment({
     required String submissionId,
   }) async {
+    print('📤 [RemoteDS] submitAssessment() START - submissionId: $submissionId');
     try {
-      return await _dioClient.postTyped(
+      final result = await _dioClient.postTyped<SubmissionSummaryModel>(
         ApiEndpoints.submissionSubmit(submissionId),
       );
+      print('📤 [RemoteDS] submitAssessment() SUCCESS - received: id=${result.id}, isSubmitted=${result.isSubmitted}, submittedAt=${result.submittedAt}, autoScore=${result.autoScore}, finalScore=${result.finalScore}');
+      return result;
     } on DioException catch (e) {
+      print('📤 [RemoteDS] submitAssessment() ERROR - DioException: ${e.message}, statusCode: ${e.response?.statusCode}');
+      print('📤 [RemoteDS] submitAssessment() - Response body: ${e.response?.data}');
       throw _dioClient.handleError(e);
+    } catch (e) {
+      print('📤 [RemoteDS] submitAssessment() ERROR - Unexpected exception: $e');
+      rethrow;
     }
   }
 

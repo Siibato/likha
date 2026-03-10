@@ -16,6 +16,8 @@ class CreateAssessment {
       openAt: params.openAt,
       closeAt: params.closeAt,
       showResultsImmediately: params.showResultsImmediately,
+      isPublished: params.isPublished,
+      questions: params.questions,
     );
   }
 }
@@ -28,6 +30,8 @@ class CreateAssessmentParams {
   final String openAt;
   final String closeAt;
   final bool? showResultsImmediately;
+  final bool isPublished;
+  final List<Map<String, dynamic>>? questions;
 
   CreateAssessmentParams({
     required this.classId,
@@ -37,5 +41,7 @@ class CreateAssessmentParams {
     required this.openAt,
     required this.closeAt,
     this.showResultsImmediately,
+    this.isPublished = true,
+    this.questions,
   });
 }

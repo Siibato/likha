@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use crate::middleware::auth_middleware::AuthUser;
 use crate::schema::common::success_response;
-use crate::services::sync_full_service::{FullSyncRequest, SyncFullService};
+use crate::services::sync_full::{FullSyncRequest, SyncFullService};
 
 /// POST /sync/full - Full sync on login
 pub async fn full_sync(

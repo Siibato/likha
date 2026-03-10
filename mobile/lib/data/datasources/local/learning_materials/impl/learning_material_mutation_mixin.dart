@@ -43,7 +43,7 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
           entityType: SyncEntityType.learningMaterial,
           operation: SyncOperation.create,
           payload: {
-            'local_id': id,
+            'id': id,
             'class_id': classId,
             'title': title,
             'description': description,
@@ -53,7 +53,7 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
           retryCount: 0,
           maxRetries: 5,
           createdAt: now,
-        ));
+        ), txn: txn);
       });
 
       return material;
@@ -103,10 +103,25 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
           retryCount: 0,
           maxRetries: 5,
           createdAt: now,
-        ));
+        ), txn: txn);
       });
     } catch (e) {
       throw CacheException('Failed to update material locally: $e');
+    }
+  }
+
+  @override
+  Future<void> deleteMaterialLocally(String materialId) async {
+    try {
+      final db = await localDatabase.database;
+      await db.update(
+        'learning_materials',
+        {'deleted_at': DateTime.now().toIso8601String()},
+        where: 'id = ?',
+        whereArgs: [materialId],
+      );
+    } catch (e) {
+      throw CacheException('Failed to delete material locally: $e');
     }
   }
 

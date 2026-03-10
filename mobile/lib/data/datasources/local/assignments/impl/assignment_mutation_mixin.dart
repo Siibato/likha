@@ -35,12 +35,12 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
           id: const Uuid().v4(),
           entityType: SyncEntityType.assignmentSubmission,
           operation: SyncOperation.create,
-          payload: {'local_id': submissionId, 'assignment_id': assignmentId, 'student_id': studentId},
+          payload: {'id': submissionId, 'assignment_id': assignmentId, 'student_id': studentId},
           status: SyncStatus.pending,
           retryCount: 0,
           maxRetries: 5,
           createdAt: now,
-        ));
+        ), txn: txn);
       });
     } catch (e) {
       throw CacheException('Failed to create submission locally: $e');
@@ -77,7 +77,7 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
           retryCount: 0,
           maxRetries: 5,
           createdAt: now,
-        ));
+        ), txn: txn);
       });
     } catch (e) {
       throw CacheException('Failed to update submission text: $e');
@@ -114,10 +114,110 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
           retryCount: 0,
           maxRetries: 5,
           createdAt: now,
-        ));
+        ), txn: txn);
       });
     } catch (e) {
       throw CacheException('Failed to submit assignment locally: $e');
+    }
+  }
+
+  @override
+  Future<void> gradeSubmissionLocally({
+    required String submissionId,
+    required int score,
+    String? feedback,
+  }) async {
+    try {
+      final db = await localDatabase.database;
+      final now = DateTime.now();
+      await db.transaction((txn) async {
+        await txn.update(
+          'assignment_submissions',
+          {
+            'score': score,
+            'feedback': feedback,
+            'graded_at': now.toIso8601String(),
+            'status': 'graded',
+            'is_offline_mutation': 1,
+            'sync_status': 'pending',
+            'updated_at': now.toIso8601String(),
+            'cached_at': now.toIso8601String(),
+          },
+          where: 'id = ?',
+          whereArgs: [submissionId],
+        );
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assignmentSubmission,
+          operation: SyncOperation.grade,
+          payload: {
+            'id': submissionId,
+            'score': score,
+            if (feedback != null) 'feedback': feedback,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: now,
+        ), txn: txn);
+      });
+    } catch (e) {
+      throw CacheException('Failed to grade submission locally: $e');
+    }
+  }
+
+  @override
+  Future<void> returnSubmissionLocally({
+    required String submissionId,
+  }) async {
+    try {
+      final db = await localDatabase.database;
+      final now = DateTime.now();
+      await db.transaction((txn) async {
+        await txn.update(
+          'assignment_submissions',
+          {
+            'status': 'returned',
+            'is_offline_mutation': 1,
+            'sync_status': 'pending',
+            'updated_at': now.toIso8601String(),
+            'cached_at': now.toIso8601String(),
+          },
+          where: 'id = ?',
+          whereArgs: [submissionId],
+        );
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assignmentSubmission,
+          operation: SyncOperation.update,
+          payload: {'id': submissionId, 'action': 'return'},
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: now,
+        ), txn: txn);
+      });
+    } catch (e) {
+      throw CacheException('Failed to return submission locally: $e');
+    }
+  }
+
+  @override
+  Future<void> markAssignmentPublishedLocally({required String assignmentId}) async {
+    try {
+      final db = await localDatabase.database;
+      await db.update(
+        'assignments',
+        {
+          'is_published': 1,
+          'updated_at': DateTime.now().toIso8601String(),
+          'cached_at': DateTime.now().toIso8601String(),
+        },
+        where: 'id = ?',
+        whereArgs: [assignmentId],
+      );
+    } catch (e) {
+      throw CacheException('Failed to mark assignment as published locally: $e');
     }
   }
 }

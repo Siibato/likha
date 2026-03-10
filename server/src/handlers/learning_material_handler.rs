@@ -28,7 +28,7 @@ pub async fn create_material(
     }
 
     match service
-        .create_material(class_id, request, auth_user.user_id)
+        .create_material(class_id, request, auth_user.user_id, None)
         .await
     {
         Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
@@ -115,6 +115,24 @@ pub async fn reorder_material(
         .await
     {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+pub async fn reorder_materials(
+    State(service): State<Arc<LearningMaterialService>>,
+    auth_user: AuthUser,
+    Path(class_id): Path<Uuid>,
+    Json(request): Json<ReorderMaterialsRequest>,
+) -> impl IntoResponse {
+    if auth_user.role != "teacher" {
+        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    }
+
+    match service.reorder_materials(class_id, request, auth_user.user_id).await {
+        Ok(()) => success_response(MessageResponse {
+            message: "Materials reordered".to_string(),
+        }, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }

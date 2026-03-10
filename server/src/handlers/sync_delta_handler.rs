@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use crate::middleware::auth_middleware::AuthUser;
 use crate::schema::common::success_response;
-use crate::services::sync_delta_service::{DeltaRequest, SyncDeltaService};
+use crate::services::sync_delta::{DeltaRequest, SyncDeltaService};
 
 /// POST /sync/deltas - Delta sync on app restart
 pub async fn get_deltas(

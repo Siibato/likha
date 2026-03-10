@@ -35,10 +35,26 @@ impl super::EntitlementService {
                 }
                 Ok(())
             }
-            ("assessment_submission", "create" | "update") => {
+            ("assessment", "publish" | "release_results") => {
+                if user_role != "teacher" && user_role != "admin" {
+                    return Err(AppError::Forbidden(
+                        "Only teachers can publish assessments or release results".to_string(),
+                    ));
+                }
+                Ok(())
+            }
+            ("assessment_submission", "create" | "save_answers" | "submit") => {
                 if user_role != "student" {
                     return Err(AppError::Forbidden(
                         "Only students can submit assessments".to_string(),
+                    ));
+                }
+                Ok(())
+            }
+            ("assessment_submission", "override_answer") => {
+                if user_role != "teacher" && user_role != "admin" {
+                    return Err(AppError::Forbidden(
+                        "Only teachers can override assessment answers".to_string(),
                     ));
                 }
                 Ok(())
@@ -51,10 +67,26 @@ impl super::EntitlementService {
                 }
                 Ok(())
             }
-            ("assignment_submission", "create" | "update") => {
+            ("assignment", "publish") => {
+                if user_role != "teacher" && user_role != "admin" {
+                    return Err(AppError::Forbidden(
+                        "Only teachers can publish assignments".to_string(),
+                    ));
+                }
+                Ok(())
+            }
+            ("assignment_submission", "create" | "submit") => {
                 if user_role != "student" {
                     return Err(AppError::Forbidden(
                         "Only students can submit assignments".to_string(),
+                    ));
+                }
+                Ok(())
+            }
+            ("assignment_submission", "grade" | "update") => {
+                if user_role != "teacher" && user_role != "admin" {
+                    return Err(AppError::Forbidden(
+                        "Only teachers can grade or return assignment submissions".to_string(),
                     ));
                 }
                 Ok(())
@@ -67,12 +99,36 @@ impl super::EntitlementService {
                 }
                 Ok(())
             }
+            ("question", "create" | "update" | "delete") => {
+                if user_role != "teacher" {
+                    return Err(AppError::Forbidden(
+                        "Only teachers can create/update/delete questions".to_string(),
+                    ));
+                }
+                Ok(())
+            }
             ("admin_user", "create" | "update" | "delete") => Ok(()),
             ("class", "add_enrollment" | "remove_enrollment") => {
                 if let Some(class_id) = class_id {
                     self.entitlement_repo
                         .assert_can_modify_class(user_id, user_role, class_id)
                         .await?;
+                }
+                Ok(())
+            }
+            ("submission_file", "delete") => {
+                if user_role != "student" {
+                    return Err(AppError::Forbidden(
+                        "Only students can delete submission files".to_string(),
+                    ));
+                }
+                Ok(())
+            }
+            ("material_file", "delete") => {
+                if user_role != "teacher" && user_role != "admin" {
+                    return Err(AppError::Forbidden(
+                        "Only teachers can delete material files".to_string(),
+                    ));
                 }
                 Ok(())
             }

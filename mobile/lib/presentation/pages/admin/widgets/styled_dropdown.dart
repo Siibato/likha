@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-class StyledDropdown extends StatelessWidget {
-  final String value;
+class StyledDropdown<T> extends StatelessWidget {
+  final T? value;
   final String label;
   final IconData icon;
   final bool enabled;
-  final List<DropdownMenuItem<String>> items;
-  final ValueChanged<String?>? onChanged;
+  final List<DropdownMenuItem<T>> items;
+  final ValueChanged<T?>? onChanged;
 
   const StyledDropdown({
     super.key,
@@ -31,8 +31,8 @@ class StyledDropdown extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(13),
         ),
-        child: DropdownButtonFormField<String>(
-          value: value,
+        child: DropdownButtonFormField<T>(
+          initialValue: value,
           decoration: InputDecoration(
             labelText: label,
             labelStyle: const TextStyle(

@@ -28,7 +28,7 @@ pub async fn create_assignment(
     }
 
     match service
-        .create_assignment(class_id, request, auth_user.user_id)
+        .create_assignment(class_id, request, auth_user.user_id, None)
         .await
     {
         Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
@@ -323,6 +323,24 @@ pub async fn get_assignments_metadata(
 ) -> impl IntoResponse {
     match service.get_assignments_metadata().await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+pub async fn reorder_assignments(
+    State(service): State<Arc<AssignmentService>>,
+    auth_user: AuthUser,
+    Path(class_id): Path<Uuid>,
+    Json(request): Json<ReorderAssignmentsRequest>,
+) -> impl IntoResponse {
+    if auth_user.role != "teacher" {
+        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    }
+    match service.reorder_assignments(class_id, request, auth_user.user_id).await {
+        Ok(()) => success_response(
+            MessageResponse { message: "Assignments reordered".to_string() },
+            StatusCode::OK,
+        ).into_response(),
         Err(e) => e.into_response(),
     }
 }

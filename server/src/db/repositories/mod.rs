@@ -10,5 +10,4 @@ pub mod manifest_repository;
 pub mod processed_operations_repository;
 pub mod submission_repository;
 pub mod sync_conflict_repository;
-pub mod sync_cursor_repository;
 pub mod user_repository;

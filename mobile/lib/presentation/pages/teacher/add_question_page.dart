@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
 
@@ -60,12 +61,7 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
 
     final points = int.tryParse(_pointsController.text.trim());
     if (points == null || points <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter valid points'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      context.showErrorSnackBar('Please enter valid points');
       return;
     }
 
@@ -78,21 +74,11 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
 
     if (_questionType == 'multiple_choice') {
       if (_choices.length < 2) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('At least 2 choices are required'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        context.showErrorSnackBar('At least 2 choices are required');
         return;
       }
       if (!_choices.any((c) => c.isCorrect)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('At least one choice must be correct'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        context.showErrorSnackBar('At least one choice must be correct');
         return;
       }
       questionData['is_multi_select'] = _isMultiSelect;
@@ -108,24 +94,14 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
           .where((c) => c.text.trim().isNotEmpty)
           .toList();
       if (answers.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('At least one acceptable answer is required'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        context.showErrorSnackBar('At least one acceptable answer is required');
         return;
       }
       questionData['correct_answers'] =
           answers.map((c) => c.text.trim()).toList();
     } else if (_questionType == 'enumeration') {
       if (_enumerationItems.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('At least one enumeration item is required'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        context.showErrorSnackBar('At least one enumeration item is required');
         return;
       }
       questionData['enumeration_items'] =
@@ -160,9 +136,7 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
 
     ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
       if (next.error != null && prev?.error != next.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.error!), backgroundColor: Colors.red),
-        );
+        context.showErrorSnackBar(next.error!);
         ref.read(assessmentProvider.notifier).clearMessages();
       }
     });

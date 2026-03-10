@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/pages/teacher/material_detail_page.dart';
 
@@ -51,12 +52,7 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
   Future<void> _createMaterial() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedFiles.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one file'),
-          backgroundColor: Color(0xFFEF5350),
-        ),
-      );
+      context.showErrorSnackBar('Please select at least one file');
       return;
     }
 
@@ -80,6 +76,9 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
       return;
     }
 
+    if (!mounted) return;
+    context.showSuccessSnackBar('Module created successfully!', durationMs: 2000);
+
     // Step 2: Upload files sequentially
     bool anyUploadFailed = false;
     for (int i = 0; i < _selectedFiles.length; i++) {
@@ -94,17 +93,16 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
         final uploadState = ref.read(learningMaterialProvider);
         if (uploadState.error != null) {
           anyUploadFailed = true;
-          if (mounted) {
-            ref.read(learningMaterialProvider.notifier).clearMessages();
-          }
+          // Don't clear messages here - let the error listener handle display
         }
       }
     }
 
     if (!mounted) return;
 
-    // Handle results
+    // Handle results - navigate back after brief delay to show message
     if (anyUploadFailed) {
+      await Future.delayed(const Duration(milliseconds: 100));
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -137,7 +135,10 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
         ),
       );
     } else {
-      Navigator.pop(context, true);
+      await Future.delayed(const Duration(milliseconds: 100));
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
     }
   }
 
@@ -147,12 +148,7 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
 
     ref.listen<LearningMaterialState>(learningMaterialProvider, (prev, next) {
       if (next.error != null && prev?.error != next.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: const Color(0xFFEF5350),
-          ),
-        );
+        context.showErrorSnackBar(next.error!);
         ref.read(learningMaterialProvider.notifier).clearMessages();
       }
     });

@@ -37,13 +37,12 @@ abstract class AuthRepository {
 
   ResultFuture<User> resetAccount({required String userId});
 
-  ResultFuture<User> lockAccount({required String userId, required bool locked});
+  ResultFuture<User> lockAccount({required String userId, required bool locked, String? reason});
 
   ResultFuture<List<ActivityLog>> getActivityLogs({required String userId});
 
   ResultFuture<User> updateAccount({
     required String userId,
-    String? username,
     String? fullName,
     String? role,
   });

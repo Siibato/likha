@@ -16,6 +16,7 @@ pub struct CreateClassRequest {
 pub struct UpdateClassRequest {
     pub title: Option<String>,
     pub description: Option<String>,
+    pub teacher_id: Option<Uuid>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -60,7 +61,7 @@ pub struct ClassDetailResponse {
 pub struct EnrollmentResponse {
     pub id: Uuid,
     pub student: UserResponse,
-    pub enrolled_at: String,
+    pub joined_at: String,
 }
 
 #[derive(Debug, Serialize)]

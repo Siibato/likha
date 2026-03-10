@@ -55,15 +55,64 @@ mixin AssessmentQuestionMixin on AssessmentRepositoryBase {
           );
         }).toList();
 
-        await localDataSource.cacheQuestions(questionModels);
+        // Cache questions with explicit transaction to ensure FK constraints work
+        await localDataSource.cacheQuestions(assessmentId, questionModels);
 
+        // Build payload questions with client-generated IDs
+        final payloadQuestions = List.generate(questionModels.length, (i) {
+          final q = questions[i];
+          final model = questionModels[i];
+          final payload = {...q, 'id': model.id};
+
+          // Add choice IDs if present (in same order as created)
+          if (model.choices != null && q['choices'] is List) {
+            final originalChoices = q['choices'] as List;
+            payload['choices'] = List.generate(
+              originalChoices.length,
+              (j) => {...originalChoices[j], 'id': model.choices![j].id},
+            );
+          }
+
+          // Add correct answer IDs if present (in same order as created)
+          if (model.correctAnswers != null && q['correct_answers'] is List) {
+            final originalAnswers = q['correct_answers'] as List;
+            payload['correct_answers'] = List.generate(
+              originalAnswers.length,
+              (j) => {...(originalAnswers[j] is String ? {'answer_text': originalAnswers[j]} : originalAnswers[j]), 'id': model.correctAnswers![j].id},
+            );
+          }
+
+          // Add enumeration item IDs if present (in same order as created)
+          if (model.enumerationItems != null && q['enumeration_items'] is List) {
+            final originalItems = q['enumeration_items'] as List;
+            payload['enumeration_items'] = List.generate(
+              originalItems.length,
+              (j) {
+                final origItem = originalItems[j];
+                final enumItem = model.enumerationItems![j];
+                final item = {...origItem, 'id': enumItem.id};
+                if (enumItem.acceptableAnswers != null) {
+                  item['acceptable_answers'] = List.generate(
+                    enumItem.acceptableAnswers!.length,
+                    (k) => {'id': enumItem.acceptableAnswers![k].id, 'answer_text': enumItem.acceptableAnswers![k].answerText},
+                  );
+                }
+                return item;
+              },
+            );
+          }
+
+          return payload;
+        });
+
+        // Enqueue sync separately to avoid transaction nesting
         await syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),
           entityType: SyncEntityType.question,
           operation: SyncOperation.create,
           payload: {
             'assessment_id': assessmentId,
-            'questions': questions,
+            'questions': payloadQuestions,
           },
           status: SyncStatus.pending,
           retryCount: 0,
@@ -78,6 +127,7 @@ mixin AssessmentQuestionMixin on AssessmentRepositoryBase {
         assessmentId: assessmentId,
         questions: questions,
       );
+      await localDataSource.cacheQuestions(assessmentId, result, isServerConfirmed: true);
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -155,6 +205,7 @@ mixin AssessmentQuestionMixin on AssessmentRepositoryBase {
       }
 
       await remoteDataSource.deleteQuestion(questionId: questionId);
+      await localDataSource.deleteQuestionLocally(questionId: questionId);
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

@@ -2,18 +2,22 @@ import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/assignments/assignment_model.dart';
 import 'package:likha/data/models/assignments/assignment_submission_model.dart'
     show AssignmentSubmissionModel, SubmissionListItemModel;
+import 'package:likha/data/models/assignments/submission_file_model.dart';
 import '../assignment_local_datasource_base.dart';
 
 mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
   @override
-  Future<List<AssignmentModel>> getCachedAssignments(String classId) async {
+  Future<List<AssignmentModel>> getCachedAssignments(String classId, {bool publishedOnly = false}) async {
     try {
       final db = await localDatabase.database;
+      final where = publishedOnly
+          ? 'class_id = ? AND is_published = 1 AND deleted_at IS NULL'
+          : 'class_id = ? AND deleted_at IS NULL';
       final results = await db.query(
         'assignments',
-        where: 'class_id = ?',
+        where: where,
         whereArgs: [classId],
-        orderBy: 'created_at DESC',
+        orderBy: 'order_index ASC',
       );
       if (results.isEmpty) throw CacheException('No cached assignments for class $classId');
       return results.map(AssignmentModel.fromMap).toList();
@@ -29,7 +33,7 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
       final db = await localDatabase.database;
       final results = await db.query(
         'assignments',
-        where: 'id = ?',
+        where: 'id = ? AND deleted_at IS NULL',
         whereArgs: [assignmentId],
       );
       if (results.isEmpty) throw CacheException('Assignment $assignmentId not cached');
@@ -51,6 +55,10 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
       );
       if (results.isEmpty) return null;
       final sub = results.first;
+
+      // NEW: Query files from submission_files table
+      final files = await getCachedSubmissionFiles(submissionId);
+
       return AssignmentSubmissionModel(
         id: sub['id'] as String,
         assignmentId: sub['assignment_id'] as String,
@@ -63,12 +71,29 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
         score: sub['score'] as int?,
         feedback: sub['feedback'] as String?,
         gradedAt: sub['graded_at'] != null ? DateTime.parse(sub['graded_at'] as String) : null,
-        files: const [],
+        files: files,
         createdAt: DateTime.parse(sub['created_at'] as String),
         updatedAt: DateTime.parse(sub['updated_at'] as String),
       );
     } catch (e) {
       throw CacheException('Failed to get cached submission: $e');
+    }
+  }
+
+  /// NEW: Get cached submission files from SQLite
+  @override
+  Future<List<SubmissionFileModel>> getCachedSubmissionFiles(String submissionId) async {
+    try {
+      final db = await localDatabase.database;
+      final results = await db.query(
+        'submission_files',
+        where: 'submission_id = ? AND deleted_at IS NULL',
+        whereArgs: [submissionId],
+        orderBy: 'uploaded_at ASC',
+      );
+      return results.map((row) => SubmissionFileModel.fromMap(row)).toList();
+    } catch (e) {
+      throw CacheException('Failed to fetch submission files: $e');
     }
   }
 
@@ -95,6 +120,31 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
     } catch (e) {
       if (e is CacheException) rethrow;
       throw CacheException(e.toString());
+    }
+  }
+
+  @override
+  Future<(String submissionId, String status, int? score)?> getStudentSubmissionForAssignment(
+    String assignmentId,
+    String studentId,
+  ) async {
+    try {
+      final db = await localDatabase.database;
+      final results = await db.query(
+        'assignment_submissions',
+        columns: ['id', 'status', 'score'],
+        where: 'assignment_id = ? AND student_id = ? AND deleted_at IS NULL',
+        whereArgs: [assignmentId, studentId],
+      );
+      if (results.isEmpty) return null;
+      final sub = results.first;
+      return (
+        sub['id'] as String,
+        sub['status'] as String,
+        sub['score'] as int?,
+      );
+    } catch (e) {
+      throw CacheException('Failed to get student submission: $e');
     }
   }
 }

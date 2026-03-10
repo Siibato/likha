@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/core/sync/id_reconciler.dart';
+import 'package:likha/core/sync/sync_logger.dart';
+import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
+import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';
 import 'package:likha/data/models/sync/push_response_model.dart';
 import 'package:sqflite/sqflite.dart';
@@ -18,6 +21,11 @@ class SyncState {
   final int failedCount;
   final String? lastError;
   final DateTime? lastSyncAt;
+  final double progress;
+  final String? currentStep;
+  final bool assessmentsReady;
+  final bool assignmentsReady;
+  final bool materialsReady;
 
   const SyncState({
     required this.phase,
@@ -25,6 +33,11 @@ class SyncState {
     required this.failedCount,
     this.lastError,
     this.lastSyncAt,
+    this.progress = 0.0,
+    this.currentStep,
+    this.assessmentsReady = false,
+    this.assignmentsReady = false,
+    this.materialsReady = false,
   });
 
   SyncState copyWith({
@@ -33,6 +46,11 @@ class SyncState {
     int? failedCount,
     String? lastError,
     DateTime? lastSyncAt,
+    double? progress,
+    String? currentStep,
+    bool? assessmentsReady,
+    bool? assignmentsReady,
+    bool? materialsReady,
   }) {
     return SyncState(
       phase: phase ?? this.phase,
@@ -40,6 +58,11 @@ class SyncState {
       failedCount: failedCount ?? this.failedCount,
       lastError: lastError ?? this.lastError,
       lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+      progress: progress ?? this.progress,
+      currentStep: currentStep ?? this.currentStep,
+      assessmentsReady: assessmentsReady ?? this.assessmentsReady,
+      assignmentsReady: assignmentsReady ?? this.assignmentsReady,
+      materialsReady: materialsReady ?? this.materialsReady,
     );
   }
 }
@@ -49,6 +72,9 @@ class SyncManager {
   final SyncQueue _syncQueue;
   final SyncRemoteDataSource _syncRemoteDataSource;
   final LocalDatabase _localDatabase;
+  final AssessmentRemoteDataSource _assessmentRemoteDataSource;
+  final AssessmentLocalDataSource _assessmentLocalDataSource;
+  final SyncLogger _log;
 
   bool _isSyncing = false;
   StreamSubscription<bool>? _reachabilitySubscription;
@@ -67,6 +93,9 @@ class SyncManager {
     this._syncQueue,
     this._syncRemoteDataSource,
     this._localDatabase,
+    this._assessmentRemoteDataSource,
+    this._assessmentLocalDataSource,
+    this._log,
   );
 
   /// Start sync manager - listen for server reachability changes
@@ -144,60 +173,101 @@ class SyncManager {
         lastSyncAt: DateTime.now(),
         pendingCount: finalPendingCount,
       );
-    } catch (e) {
+    } catch (e, st) {
+      final errorMsg = _formatError(e, st);
+      _log.syncError(errorMsg);
       _updateState(
         phase: SyncPhase.failed,
-        lastError: e.toString(),
+        lastError: errorMsg,
       );
     } finally {
       _isSyncing = false;
     }
   }
 
-  /// OUTBOUND SYNC: Push queued mutations to server
+  /// Format error with stack trace for better debugging
+  String _formatError(Object error, StackTrace stackTrace) {
+    if (error is Exception) {
+      return error.toString();
+    }
+    return 'Unexpected error: ${error.toString()}\n${stackTrace.toString()}';
+  }
+
   Future<void> _outboundSync() async {
-    // Get all pending operations from queue
     final pending = await _syncQueue.getAllRetriable();
     if (pending.isEmpty) return;
 
-    // Split: upload ops need direct multipart POST, not JSON batch
-    final uploadOps   = pending.where((e) => e.operation == SyncOperation.upload).toList();
-    final regularOps  = pending.where((e) => e.operation != SyncOperation.upload).toList();
+    // Split uploads: material files run AFTER regular ops, others run FIRST
+    final nonMaterialFileUploads = pending
+        .where((e) => e.operation == SyncOperation.upload && e.entityType != SyncEntityType.materialFile)
+        .toList();
+    final materialFileUploads = pending
+        .where((e) => e.operation == SyncOperation.upload && e.entityType == SyncEntityType.materialFile)
+        .toList();
+    final regularOps = pending
+        .where((e) => e.operation != SyncOperation.upload)
+        .toList();
 
-    // Handle file uploads directly via multipart endpoint
-    for (final op in uploadOps) {
+    final opsByType = <String, int>{};
+    for (final op in regularOps) {
+      opsByType[op.entityType.serverValue] = (opsByType[op.entityType.serverValue] ?? 0) + 1;
+    }
+
+    _log.pushStarting(
+      uploadOpsCount: nonMaterialFileUploads.length + materialFileUploads.length,
+      regularOpsCount: regularOps.length,
+      operationsByType: opsByType,
+    );
+
+    final pushStartTime = DateTime.now();
+
+    // Step 1: Run non-material file uploads first (submission files, etc.)
+    for (final op in nonMaterialFileUploads) {
       await _handleFileUpload(op);
     }
 
-    // Handle all other operations via the batch push endpoint
+    // Step 2: Run all regular operations in one batch (no two-phase split)
     if (regularOps.isNotEmpty) {
-      _updateState(pendingCount: regularOps.length);
+      await _syncRegularBatch(regularOps, pushStartTime);
+    }
 
-      final operations = regularOps.map((entry) {
-        return {
-          'id':          entry.id,
-          'entity_type': _entityTypeToServer(entry.entityType),
-          'operation':   _operationToServer(entry.operation),
-          'payload':     entry.payload,
-        };
-      }).toList();
+    // Step 3: Run material file uploads AFTER regular ops (material now exists on server)
+    for (final op in materialFileUploads) {
+      await _handleFileUpload(op);
+    }
+  }
 
-      final response = await _syncRemoteDataSource.pushOperations(
-        operations: operations,
-      );
+  /// Sync a batch of operations
+  Future<void> _syncRegularBatch(List<SyncQueueEntry> regularOps, DateTime pushStartTime) async {
+    _updateState(pendingCount: regularOps.length);
 
-      try {
-        await _processPushResults(response);
-      } catch (e) {
-        rethrow;
-      }
+    final operations = regularOps.map((entry) {
+      return {
+        'id':          entry.id,
+        'entity_type': entry.entityType.serverValue,
+        'operation':   entry.operation.serverValue,
+        'payload':     entry.payload,
+      };
+    }).toList();
+
+    final response = await _syncRemoteDataSource.pushOperations(
+      operations: operations,
+    );
+
+    try {
+      await _processPushResults(response, pushStartTime);
+    } catch (e) {
+      rethrow;
     }
   }
 
   /// Process push results and update local state
-  Future<void> _processPushResults(PushResponseModel response) async {
+  Future<void> _processPushResults(PushResponseModel response, DateTime startTime) async {
     final db = await _localDatabase.database;
-    final idMappings = <({String entityType, String localId, String serverId})>[];
+
+    // Track success/failure by entity type for logging
+    final successByType = <String, int>{};
+    final failedByType = <String, int>{};
 
     for (final result in response.results) {
       final opId = result.id;
@@ -206,200 +276,59 @@ class SyncManager {
       final entityType = result.entityType;
       final operation = result.operation;
 
-      // Fetch entry BEFORE marking succeeded (entry is hard-deleted on succeed)
-      final entry = await _syncQueue.getById(opId);
+      // Log individual operation result
+      _log.pushOperationResult(
+        entityType: entityType,
+        operation: operation,
+        opId: opId,
+        success: success,
+        serverId: serverId,
+        error: result.error,
+      );
 
       if (success) {
-        // Mark as succeeded and remove from queue
-        await _syncQueue.markSucceeded(opId);
+        successByType[entityType] = (successByType[entityType] ?? 0) + 1;
 
-        if (entityType == 'adminUser' && operation == 'create') {
-          try {
-            await db.delete(
-              'users',
-              where: 'id = ? AND sync_status = ?',
-              whereArgs: ['', 'pending'],
-            );
-          } catch (e) {
-            // 
-          }
-        }
+        // Fetch entry BEFORE marking succeeded (entry is hard-deleted on succeed)
+        final entry = await _syncQueue.getById(opId);
 
-        // If this was a create operation, map local ID to server ID
+        // Minimal fallback: if server returned a different ID (class dedup edge case only),
+        // update the local database to use the server's ID instead
         if (serverId != null && operation == 'create' && entry != null) {
-          final localId = entry.payload['local_id'] as String?;
-          if (localId != null) {
-            idMappings.add(
-              (entityType: entityType, localId: localId, serverId: serverId),
-            );
-
-            // Special handling for classes: update main ID from local UUID to server UUID
-            if (entityType == 'classEntity') {
+          final payloadId = entry.payload['id'] as String?;
+          if (payloadId != null && payloadId != serverId) {
+            // Server returned different ID (likely due to class title dedup)
+            // Update the entity table to use the server ID
+            if (entityType == SyncEntityType.classEntity.serverValue) {
               await db.update(
                 'classes',
                 {'id': serverId},
                 where: 'id = ?',
-                whereArgs: [localId],
+                whereArgs: [payloadId],
               );
-
-              // Update any pending enrollment operations that reference this class
-              // (e.g., add_enrollment/remove_enrollment operations queued while class was offline)
-              final pendingEnrollments = await db.query(
-                'sync_queue',
-                where: 'status = ? AND (operation = ? OR operation = ?) AND payload LIKE ?',
-                whereArgs: [
-                  'pending',
-                  'add_enrollment',
-                  'remove_enrollment',
-                  '%"class_id":"$localId"%',
-                ],
-              );
-
-              for (final entry in pendingEnrollments) {
-                final payloadStr = entry['payload'] as String?;
-                if (payloadStr != null) {
-                  // Replace local class_id with server class_id in the payload
-                  final updatedPayload = payloadStr.replaceAll('"class_id":"$localId"', '"class_id":"$serverId"');
-                  await db.update(
-                    'sync_queue',
-                    {'payload': updatedPayload},
-                    where: 'id = ?',
-                    whereArgs: [entry['id']],
-                  );
-                }
-              }
-            }
-
-            // Special handling for questions: update main ID and reconcile nested IDs
-            if (entityType == 'question') {
-              // Update the question's main ID from local UUID to server UUID
-              await db.update(
-                'questions',
-                {'id': serverId},
-                where: 'id = ?',
-                whereArgs: [localId],
-              );
-              // Then reconcile nested choice and answer IDs
-              await _reconcileQuestionNestedIds(db, serverId, result);
             }
           }
         }
 
-        // Handle enrollment ID reconciliation for add_enrollment operations
-        if (serverId != null && operation == 'add_enrollment' && entry != null) {
-          final localEnrollmentId = entry.payload['local_enrollment_id'] as String?;
-          if (localEnrollmentId != null) {
-            // Update the enrollment record from local UUID to server UUID
-            await db.update(
-              'class_enrollments',
-              {'id': serverId, 'sync_status': 'synced'},
-              where: 'id = ?',
-              whereArgs: [localEnrollmentId],
-            );
-          }
-        }
+        // Mark as succeeded and remove from queue
+        await _syncQueue.markSucceeded(opId);
       } else {
+        failedByType[entityType] = (failedByType[entityType] ?? 0) + 1;
+
         // Mark as failed
         final error = result.error ?? 'Unknown error';
         await _syncQueue.markFailed(opId, error);
       }
     }
 
-    // Apply ID reconciliations using IdReconciler
-    if (idMappings.isNotEmpty) {
-      await IdReconciler.applyToDatabase(db, idMappings);
-    }
-  }
-
-  /// Reconcile nested IDs for questions (choices, correct_answers)
-  Future<void> _reconcileQuestionNestedIds(
-    Database db,
-    String serverQuestionId,
-    OperationResultModel result,
-  ) async {
-    // Extract metadata containing ID mappings from server response
-    final metadata = result.metadata;
-    if (metadata == null) return;
-
-    // Update choice IDs in the questions table
-    final choiceMapping = metadata['choice_id_mapping'] as List<dynamic>?;
-    if (choiceMapping != null && choiceMapping.isNotEmpty) {
-      await _updateNestedIdsInJson(
-        db,
-        'questions',
-        serverQuestionId,
-        'choices_json',
-        choiceMapping,
-      );
-    }
-
-    // Update correct answer IDs in the questions table
-    final answerMapping = metadata['answer_id_mapping'] as List<dynamic>?;
-    if (answerMapping != null && answerMapping.isNotEmpty) {
-      await _updateNestedIdsInJson(
-        db,
-        'questions',
-        serverQuestionId,
-        'correct_answers_json',
-        answerMapping,
-      );
-    }
-  }
-
-  /// Update nested IDs within a JSON field (for choices or correct answers)
-  Future<void> _updateNestedIdsInJson(
-    Database db,
-    String tableName,
-    String questionId,
-    String jsonField,
-    List<dynamic> idMappings,
-  ) async {
-    try {
-      // Query the current JSON data
-      final results = await db.query(
-        tableName,
-        columns: [jsonField],
-        where: 'id = ?',
-        whereArgs: [questionId],
-      );
-
-      if (results.isEmpty) return;
-
-      final jsonStr = results.first[jsonField] as String?;
-      if (jsonStr == null || jsonStr.isEmpty) return;
-
-      // Parse JSON
-      final List<dynamic> items = jsonDecode(jsonStr) as List<dynamic>;
-
-      // Build ID mapping from list of [local_id, server_id] pairs
-      final Map<String, String> mapping = {};
-      for (final pair in idMappings) {
-        if (pair is List && pair.length == 2) {
-          mapping[pair[0] as String] = pair[1] as String;
-        }
-      }
-
-      // Update IDs in items
-      for (final item in items) {
-        if (item is Map<String, dynamic>) {
-          final oldId = item['id'] as String?;
-          if (oldId != null && mapping.containsKey(oldId)) {
-            item['id'] = mapping[oldId];
-          }
-        }
-      }
-
-      // Write back to database
-      await db.update(
-        tableName,
-        {jsonField: jsonEncode(items)},
-        where: 'id = ?',
-        whereArgs: [questionId],
-      );
-    } catch (e) {
-      // Log but don't throw - ID reconciliation failure shouldn't block sync
-      // In production, this would go to a logger
-    }
+    // Log summary of push results
+    final duration = DateTime.now().difference(startTime).inMilliseconds;
+    _log.pushResults(
+      successByType: successByType,
+      failedByType: failedByType,
+      idMappingsByType: const {},
+      totalDuration: duration,
+    );
   }
 
   /// INBOUND SYNC: Fetch server changes (full or delta)
@@ -449,41 +378,274 @@ class SyncManager {
         ? deviceIdRows.first['value'] as String
         : _generateAndStoreDeviceId(db);
 
-    // Fetch full sync data
-    final response = await _syncRemoteDataSource.fullSync(deviceId: deviceId);
+    // STEP 0: Initialize progress
+    _updateState(progress: 0.0, currentStep: 'Preparing Likha for you…');
 
-    // Extract the data wrapper (response structure: {success, status_code, data: {...}, error})
-    final data = response['data'] as Map<String, dynamic>?;
-    if (data == null) {
-      throw Exception('No data in full sync response');
+    // STEP 1: Make base request (empty classIds) to get user, classes, enrollments, enrolled_students
+    _updateState(currentStep: 'Fetching classes and enrollments…');
+
+    final baseResponse = await _syncRemoteDataSource.fullSync(
+      deviceId: deviceId,
+      receiveTimeout: const Duration(seconds: 30),
+    );
+
+    _log.warn('Full sync response keys: ${baseResponse.keys.join(", ")}');
+
+    final baseData = baseResponse['data'] as Map<String, dynamic>?;
+    if (baseData == null) {
+      _log.error('No data in full sync response', 'Response: $baseResponse');
+      throw Exception('No data in full sync response. Response: $baseResponse');
     }
 
-    final syncToken = data['sync_token'] as String?;
-    final serverTime = data['server_time'] as String?;
+    final syncToken = baseData['sync_token'] as String?;
+    final serverTime = baseData['server_time'] as String?;
 
     if (syncToken == null) {
       throw Exception('No sync_token in full sync response');
     }
 
-    // Upsert all entity data
-    final enrolledStudents = (data['enrolled_students'] as List?) ?? [];
+    // Upsert base response data (user, classes, enrollments, enrolled_students)
+    final enrolledStudents = (baseData['enrolled_students'] as List?) ?? [];
+    final userData = baseData['user'] as Map<String, dynamic>?;
 
-    // Build studentMap for submission enrichment
-    final studentMap = <String, dynamic>{};
-    for (final s in enrolledStudents) {
-      final student = s as Map<String, dynamic>;
-      studentMap[student['id'] as String] = student;
+    // Track students per class
+    final rawEnrollments = (baseData['enrollments'] as List?) ?? [];
+    final studentsPerClassCount = <String, int>{};
+    for (final e in rawEnrollments) {
+      if (e is! Map<String, dynamic>) continue;
+      final cid = e['class_id']?.toString();
+      if (cid != null) studentsPerClassCount[cid] = (studentsPerClassCount[cid] ?? 0) + 1;
     }
 
-    await _upsertClasses(db, data['classes'] ?? []);
+    // Upsert all base response data sequentially (proper await ensures committed before verification)
+    _log.warn('Starting base response data upsert (classes, enrollments, students)...');
+    await _upsertClasses(db, baseData['classes'] ?? []);
     await _upsertEnrolledStudents(db, enrolledStudents);
-    await _upsertEnrollments(db, data['enrollments'] ?? [], enrolledStudents);
-    await _upsertAssessments(db, data['assessments'] ?? []);
-    await _upsertQuestions(db, data['questions'] ?? []);
-    await _upsertAssessmentSubmissions(db, data['assessment_submissions'] ?? [], studentMap);
-    await _upsertAssignments(db, data['assignments'] ?? []);
-    await _upsertAssignmentSubmissions(db, data['assignment_submissions'] ?? [], studentMap);
-    await _upsertLearningMaterials(db, data['learning_materials'] ?? []);
+    await _upsertEnrollments(db, baseData['enrollments'] ?? [], enrolledStudents);
+
+    _log.baseResponse(
+      classes: (baseData['classes'] as List?)?.length ?? 0,
+      enrollments: rawEnrollments.length,
+      students: enrolledStudents.length,
+    );
+
+    // Log per-class student counts
+    final classes = (baseData['classes'] as List?)?.whereType<Map<String, dynamic>>().toList() ?? [];
+    for (final cls in classes) {
+      final clsId = cls['id']?.toString() ?? '';
+      _log.studentsPerClass(cls, studentsPerClassCount[clsId] ?? 0);
+    }
+
+    // Cache the logged-in user from sync response
+    if (userData != null) {
+      await db.insert(
+        'users',
+        {
+          'id': userData['id'],
+          'username': userData['username'],
+          'full_name': userData['full_name'],
+          'role': userData['role'],
+          'account_status': userData['account_status'],
+          'activated_at': userData['activated_at'],
+          'created_at': userData['created_at'],
+          'updated_at': userData['updated_at'] ?? userData['created_at'],
+          'deleted_at': userData['deleted_at'],
+          'cached_at': DateTime.now().toIso8601String(),
+          'sync_status': 'synced',
+          'is_offline_mutation': 0,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+
+    // VERIFICATION: Check what was actually stored in SQLite (after all awaits complete)
+    _log.warn('Starting SQLite verification for class_participants...');
+    try {
+      final countResult = await db.rawQuery('SELECT COUNT(*) FROM class_participants');
+      _log.warn('Count query returned ${countResult.length} result row(s)');
+
+      final totalRows = Sqflite.firstIntValue(countResult) ?? 0;
+      _log.warn('Verified $totalRows total rows in class_participants');
+
+      final byClassQuery = await db.rawQuery(
+        'SELECT class_id, COUNT(*) as count FROM class_participants WHERE role = ? AND removed_at IS NULL GROUP BY class_id ORDER BY class_id',
+        ['student'],
+      );
+
+      _log.warn('Per-class breakdown query returned ${byClassQuery.length} row(s)');
+
+      final byClass = <String, int>{};
+      for (final row in byClassQuery) {
+        final classId = row['class_id']?.toString() ?? '?';
+        var count = row['count'];
+        final countInt = count is int ? count : (int.tryParse(count.toString()) ?? 0);
+        byClass[classId] = countInt;
+        _log.warn('  class_id $classId: $countInt students');
+      }
+
+      _log.sqliteVerification(totalClassParticipants: totalRows, participantsByClass: byClass);
+      _log.warn('SQLite verification completed successfully');
+    } catch (e) {
+      _log.warn('SQLite verification failed: $e');
+      _log.error('class_participants verification error', e.toString());
+    }
+    _log.warn('Base response data upsert completed');
+
+    // STEP 2: Extract classes and create batches of 2
+    final classesForBatching = (baseData['classes'] as List?)
+        ?.whereType<Map<String, dynamic>>()
+        .toList() ?? [];
+    final classBatches = <List<String>>[];
+    final classMap = <String, String>{};
+    for (final cls in classesForBatching) {
+      final id = cls['id']?.toString();
+      final title = cls['title'] as String?;
+      if (id != null && id.isNotEmpty && title != null) {
+        classMap[id] = title;
+      }
+    }
+
+    for (int i = 0; i < classesForBatching.length; i += 2) {
+      final batch = classesForBatching.skip(i).take(2)
+          .map((c) => c['id']?.toString() ?? '')
+          .where((id) => id.isNotEmpty)
+          .toList();
+      classBatches.add(batch);
+    }
+
+    _log.fullSyncStart(classesForBatching.length, classBatches.length);
+
+    // STEP 3: Update progress to 0.1 and start batch loading
+    _updateState(progress: 0.1, currentStep: 'Loading your classes…');
+
+    // Build student map for submission enrichment
+    final studentMap = <String, dynamic>{};
+    for (final s in enrolledStudents) {
+      if (s is! Map<String, dynamic>) continue;
+      final id = s['id']?.toString();
+      if (id != null && id.isNotEmpty) {
+        studentMap[id] = s;
+      }
+    }
+
+    // STEP 4: Iterate through batches with progress updates
+    if (classBatches.isNotEmpty) {
+      for (int batchIndex = 0; batchIndex < classBatches.length; batchIndex++) {
+        final batch = classBatches[batchIndex];
+        final progressBase = 0.1;
+        final progressRange = 0.85;
+        final batchProgress = progressBase + (progressRange * (batchIndex / classBatches.length));
+
+        // Create step description with batch titles
+        final batchTitles = batch.map((id) => classMap[id] ?? id).join(' & ');
+        final currentStepText = 'Getting $batchTitles ready… (${batchIndex + 1}/${classBatches.length})';
+        _updateState(progress: batchProgress, currentStep: currentStepText);
+
+        _log.batchStart(batchIndex, classBatches.length, batch);
+
+        // Make batch request with receiveTimeout
+        final batchResponse = await _syncRemoteDataSource.fullSync(
+          deviceId: deviceId,
+          classIds: batch,
+          receiveTimeout: const Duration(seconds: 30),
+        );
+
+        final batchData = batchResponse['data'] as Map<String, dynamic>?;
+        if (batchData == null) {
+          continue;
+        }
+
+        // Upsert all entities from batch response
+        final assessments = batchData['assessments'] ?? [];
+        final questions = batchData['questions'] ?? [];
+        final assessmentSubmissions = batchData['assessment_submissions'] ?? [];
+        final assignments = batchData['assignments'] ?? [];
+        final assignmentSubmissions = batchData['assignment_submissions'] ?? [];
+        final submissionFiles = batchData['submission_files'] ?? [];
+        final learningMaterials = batchData['learning_materials'] ?? [];
+        final materialFiles = batchData['material_files'] ?? [];
+        final assessmentStatistics = batchData['assessment_statistics'] ?? [];
+        final studentResults = batchData['student_results'] ?? [];
+
+        // NEW: Extract enrolled_students and enrollments from batch (for full offline support)
+        final batchEnrolledStudents = (batchData['enrolled_students'] as List?) ?? [];
+        final batchEnrollments = (batchData['enrollments'] as List?) ?? [];
+
+        _log.batchReceived(batchIndex, classBatches.length, {
+          'assessments': assessments.length,
+          'questions': questions.length,
+          'assessment_submissions': assessmentSubmissions.length,
+          'assignments': assignments.length,
+          'assignment_submissions': assignmentSubmissions.length,
+          'learning_materials': learningMaterials.length,
+          'material_files': materialFiles.length,
+          'submission_files': submissionFiles.length,
+          'assessment_statistics': assessmentStatistics.length,
+          'student_results': studentResults.length,
+          'enrolled_students': batchEnrolledStudents.length,  // NEW: for offline support
+          'enrollments': batchEnrollments.length,              // NEW: for offline support
+        });
+
+        // Log questions per assessment
+        final questionsByAssessment = <String, int>{};
+        for (final q in questions) {
+          if (q is Map<String, dynamic>) {
+            final assessmentId = q['assessment_id'] as String?;
+            if (assessmentId != null) {
+              questionsByAssessment[assessmentId] = (questionsByAssessment[assessmentId] ?? 0) + 1;
+            }
+          }
+        }
+        for (final assessment in assessments) {
+          if (assessment is Map<String, dynamic>) {
+            final assessmentId = assessment['id'] as String?;
+            final title = assessment['title'] as String? ?? 'unknown';
+            final qCount = questionsByAssessment[assessmentId] ?? 0;
+            _log.questionsPerAssessment(title, assessmentId ?? '?', qCount);
+          }
+        }
+
+        // NEW: Upsert batch enrolled_students and enrollments (for full offline support)
+        await _upsertEnrolledStudents(db, batchEnrolledStudents);
+        await _upsertEnrollments(db, batchEnrollments, batchEnrolledStudents);
+
+        // Update in-memory studentMap with batch students so submissions can reference them
+        for (final s in batchEnrolledStudents) {
+          if (s is! Map<String, dynamic>) continue;
+          final id = s['id']?.toString();
+          if (id != null && id.isNotEmpty) {
+            studentMap[id] = s;
+          }
+        }
+
+        await _upsertAssessments(db, assessments);
+        await _upsertQuestions(db, questions);
+        await _upsertAssessmentSubmissions(db, assessmentSubmissions, studentMap);
+        await _upsertAssignments(db, assignments);
+        await _upsertAssignmentSubmissions(db, assignmentSubmissions, studentMap);
+        await _upsertSubmissionFiles(db, submissionFiles);
+        await _upsertLearningMaterials(db, learningMaterials);
+        await _upsertMaterialFiles(db, materialFiles);
+
+        _log.upsertSummary('assessment_statistics', assessmentStatistics.length);
+        await _upsertStatistics(db, assessmentStatistics);
+        _log.upsertSummary('student_results', studentResults.length);
+        await _upsertStudentResults(db, studentResults);
+      }
+    }
+
+    // STEP 5: Signal that entity data is now in the local DB
+    _updateState(
+      assessmentsReady: true,
+      assignmentsReady: true,
+      materialsReady: true,
+    );
+
+    // STEP 6: After all batches, set progress to 0.95 with "Almost there…"
+    _updateState(progress: 0.95, currentStep: 'Almost there…');
+
+    // STEP 7: Set progress to 1.0 with "Likha is ready!"
+    _updateState(progress: 1.0, currentStep: 'Likha is ready!');
 
     // Save sync metadata
     final expiryAt = DateTime.now().add(const Duration(days: 30)).toIso8601String();
@@ -523,21 +685,36 @@ class SyncManager {
       dataExpiryAt: dataExpiryAt,
     );
 
+    // Extract the actual data from the wrapper
+    final data = response['data'] as Map<String, dynamic>?;
+    if (data == null) {
+      _log.error('No data in delta sync response', 'Response: $response');
+      throw Exception('Invalid delta sync response: no data field');
+    }
+
     // Check if data is expired
     if (response['status'] == 'data_expired') {
       return null; // Caller will fall back to full sync
     }
 
-    final syncToken = response['sync_token'] as String?;
-    final serverTime = response['server_time'] as String?;
-    final deltas = response['deltas'] as Map<String, dynamic>?;
+    final syncToken = data['sync_token'] as String?;
+    final serverTime = data['server_time'] as String?;
+    final deltas = data['deltas'] as Map<String, dynamic>?;
 
     if (syncToken == null || deltas == null) {
-      throw Exception('Invalid delta sync response');
+      _log.error('Missing fields in delta sync response', 'sync_token=$syncToken, deltas=$deltas');
+      throw Exception('Invalid delta sync response: missing sync_token or deltas');
     }
 
     // Process deltas: upsert updated, delete removed
     await _processDeltaPayload(db, deltas);
+
+    // Signal that delta data is now merged into local DB
+    _updateState(
+      assessmentsReady: true,
+      assignmentsReady: true,
+      materialsReady: true,
+    );
 
     // Update sync metadata
     final expiryAt = DateTime.now().add(const Duration(days: 30)).toIso8601String();
@@ -559,20 +736,47 @@ class SyncManager {
     Database db,
     List<dynamic> records,
   ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
     for (final record in records) {
-      final data = record as Map<String, dynamic>;
-      await db.insert(
-        'classes',
-        {
-          ...data,
-          'teacher_username': data['teacher_username'] ?? '',
-          'teacher_full_name': data['teacher_full_name'] ?? '',
-          'cached_at': DateTime.now().toIso8601String(),
-          'sync_status': 'synced',
-          'is_archived': (data['is_archived'] == true) ? 1 : 0,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      try {
+        if (record is! Map<String, dynamic>) continue;
+
+        final teacherId = record['teacher_id'] ?? '';
+        if (teacherId.isEmpty) {
+          _log.warn('Class ${record['id']} has missing teacher_id', record);
+        }
+
+        await db.insert(
+          'classes',
+          {
+            'id': record['id'],
+            'title': record['title'],
+            'description': record['description'],
+            'teacher_id': teacherId,
+            'teacher_username': record['teacher_username'] ?? '',
+            'teacher_full_name': record['teacher_full_name'] ?? '',
+            'is_archived': (record['is_archived'] == true) ? 1 : 0,
+            'student_count': record['student_count'] ?? 0,
+            'created_at': record['created_at'],
+            'updated_at': record['updated_at'] ?? record['created_at'],
+            'cached_at': DateTime.now().toIso8601String(),
+            'sync_status': 'synced',
+            'is_offline_mutation': 0,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert class', e);
+      }
+    }
+
+    _log.upsertSummary('classes', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert classes', failedCount);
     }
 
     await _populateTeacherInfoFromAccounts(db);
@@ -587,6 +791,8 @@ class SyncManager {
       );
 
       if (classesNeedingTeacher.isEmpty) return;
+
+      _log.warn('Found ${classesNeedingTeacher.length} classes missing teacher info, attempting fallback');
 
       // Get cached user accounts
       final cachedUsers = await db.query('users');
@@ -605,6 +811,7 @@ class SyncManager {
         }
       }
 
+      int updatedCount = 0;
       for (final cls in classesNeedingTeacher) {
         final teacherId = cls['teacher_id'] as String?;
         if (teacherId != null && teacherMap.containsKey(teacherId)) {
@@ -618,10 +825,12 @@ class SyncManager {
             where: 'id = ?',
             whereArgs: [cls['id']],
           );
+          updatedCount++;
         }
       }
-    } catch (e) {
-      // Silently fail
+      _log.warn('Fallback populated $updatedCount/${classesNeedingTeacher.length} class teacher info');
+    } catch (e, st) {
+      _log.error('Error populating teacher info from accounts', '$e\n$st');
     }
   }
 
@@ -630,33 +839,41 @@ class SyncManager {
     List<dynamic> enrollments,
     List<dynamic> enrolledStudents,
   ) async {
-    // Build lookup map: student_id -> student data
+    // Build lookup map: user_id -> student data
     final studentMap = <String, Map<String, dynamic>>{};
     for (final s in enrolledStudents) {
-      final student = s as Map<String, dynamic>;
-      studentMap[student['id'] as String] = student;
+      if (s is! Map<String, dynamic>) continue;
+      final id = s['id']?.toString();
+      if (id != null && id.isNotEmpty) {
+        studentMap[id] = s;
+      }
     }
 
     for (final enrollment in enrollments) {
-      final e = enrollment as Map<String, dynamic>;
-      final studentId = e['student_id'] as String;
-      final student = studentMap[studentId] ?? {};
+      if (enrollment is! Map<String, dynamic>) continue;
+      final e = enrollment;
+      // Accept both user_id (new) and student_id (old) for backward compat
+      final userId = (e['user_id'] ?? e['student_id'])?.toString();
+      if (userId == null || userId.isEmpty) continue;
+      final student = studentMap[userId] ?? {};
 
       await db.insert(
-        'class_enrollments',
+        'class_participants',
         {
           'id': e['id'],
+          'local_id': e['id'],
           'class_id': e['class_id'],
-          'student_id': studentId,
+          'user_id': userId,
           'username': student['username'] ?? '',
           'full_name': student['full_name'] ?? '',
-          'role': student['role'] ?? 'student',
+          'role': 'student',
           'account_status': student['account_status'] ?? 'active',
-          'is_active': (student['is_active'] == true) ? 1 : 0,
-          'enrolled_at': e['enrolled_at'],
-          'updated_at': e['enrolled_at'],
+          'joined_at': e['joined_at'] ?? e['enrolled_at'],
+          'updated_at': e['joined_at'] ?? e['enrolled_at'],
+          'removed_at': e['removed_at'],
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
+          'is_offline_mutation': 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -669,21 +886,23 @@ class SyncManager {
     List<dynamic> records,
   ) async {
     for (final record in records) {
-      final data = record as Map<String, dynamic>;
+      if (record is! Map<String, dynamic>) continue;
       // Only insert columns that exist in the users table
       await db.insert(
         'users',
         {
-          'id': data['id'],
-          'username': data['username'],
-          'full_name': data['full_name'],
-          'role': data['role'],
-          'account_status': data['account_status'],
-          'is_active': (data['is_active'] == true) ? 1 : 0,
-          'activated_at': data['activated_at'],
-          'created_at': data['created_at'],
+          'id': record['id'],
+          'username': record['username'],
+          'full_name': record['full_name'],
+          'role': record['role'],
+          'account_status': record['account_status'],
+          'activated_at': record['activated_at'],
+          'created_at': record['created_at'],
+          'updated_at': record['updated_at'] ?? record['created_at'],
+          'deleted_at': record['deleted_at'],
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
+          'is_offline_mutation': 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -718,6 +937,7 @@ class SyncManager {
           'deleted_at': data['deleted_at'],
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
+          'is_offline_mutation': 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -725,8 +945,8 @@ class SyncManager {
   }
 
   /// Explicit upsert handler for questions with proper field mapping
-  /// CRITICAL: Preserves existing choices_json/correct_answers_json/enumeration_items_json
-  /// from REST API cache path (server manifest doesn't include choices)
+  /// NEW: Server now sends nested choices/correct_answers/enumeration_items
+  /// Backward compat: Preserves existing if server doesn't send them
   Future<void> _upsertQuestions(
     Database db,
     List<dynamic> records,
@@ -734,34 +954,80 @@ class SyncManager {
     for (final record in records) {
       final data = record as Map<String, dynamic>;
 
-      // Preserve existing cached choices (choices come from REST API, not from sync)
-      final existing = await db.query(
-        'questions',
-        columns: ['choices_json', 'correct_answers_json', 'enumeration_items_json'],
-        where: 'id = ?',
-        whereArgs: [data['id']],
-      );
-      final existingChoices = existing.isNotEmpty ? existing.first['choices_json'] : null;
-      final existingAnswers = existing.isNotEmpty ? existing.first['correct_answers_json'] : null;
-      final existingEnum = existing.isNotEmpty ? existing.first['enumeration_items_json'] : null;
+      // Check if server sent nested data
+      final serverSentChoices = data.containsKey('choices');
+      final serverSentCorrectAnswers = data.containsKey('correct_answers');
+      final serverSentEnumItems = data.containsKey('enumeration_items');
+
+      // Resolve: use server value if sent, otherwise preserve existing
+      String? choicesJson;
+      String? correctAnswersJson;
+      String? enumItemsJson;
+
+      if (serverSentChoices || serverSentCorrectAnswers || serverSentEnumItems) {
+        // Server sent at least some nested data; resolve each field
+        if (serverSentChoices && data['choices'] is List && (data['choices'] as List).isNotEmpty) {
+          choicesJson = jsonEncode(data['choices']);
+        } else if (serverSentChoices) {
+          choicesJson = null;
+        } else {
+          // Use existing
+          final existing = await db.query('questions',
+              columns: ['choices_json'], where: 'id = ?', whereArgs: [data['id']]);
+          choicesJson = existing.isNotEmpty ? existing.first['choices_json'] as String? : null;
+        }
+
+        if (serverSentCorrectAnswers && data['correct_answers'] is List && (data['correct_answers'] as List).isNotEmpty) {
+          correctAnswersJson = jsonEncode(data['correct_answers']);
+        } else if (serverSentCorrectAnswers) {
+          correctAnswersJson = null;
+        } else {
+          final existing = await db.query('questions',
+              columns: ['correct_answers_json'], where: 'id = ?', whereArgs: [data['id']]);
+          correctAnswersJson = existing.isNotEmpty ? existing.first['correct_answers_json'] as String? : null;
+        }
+
+        if (serverSentEnumItems && data['enumeration_items'] is List && (data['enumeration_items'] as List).isNotEmpty) {
+          enumItemsJson = jsonEncode(data['enumeration_items']);
+        } else if (serverSentEnumItems) {
+          enumItemsJson = null;
+        } else {
+          final existing = await db.query('questions',
+              columns: ['enumeration_items_json'], where: 'id = ?', whereArgs: [data['id']]);
+          enumItemsJson = existing.isNotEmpty ? existing.first['enumeration_items_json'] as String? : null;
+        }
+      } else {
+        // Server didn't send nested data; preserve existing (backward compat)
+        final existing = await db.query(
+          'questions',
+          columns: ['choices_json', 'correct_answers_json', 'enumeration_items_json'],
+          where: 'id = ?',
+          whereArgs: [data['id']],
+        );
+        choicesJson = existing.isNotEmpty ? existing.first['choices_json'] as String? : null;
+        correctAnswersJson = existing.isNotEmpty ? existing.first['correct_answers_json'] as String? : null;
+        enumItemsJson = existing.isNotEmpty ? existing.first['enumeration_items_json'] as String? : null;
+      }
 
       await db.insert(
         'questions',
         {
           'id': data['id'],
+          'local_id': data['id'],
           'assessment_id': data['assessment_id'],
           'question_type': data['question_type'],
           'question_text': data['question_text'],
           'points': data['points'] ?? 0,
           'order_index': data['order_index'] ?? 0,
           'is_multi_select': (data['is_multi_select'] == true) ? 1 : 0,
-          'choices_json': existingChoices,
-          'correct_answers_json': existingAnswers,
-          'enumeration_items_json': existingEnum,
+          'choices_json': choicesJson,
+          'correct_answers_json': correctAnswersJson,
+          'enumeration_items_json': enumItemsJson,
           'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
           'deleted_at': data['deleted_at'],
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
+          'is_offline_mutation': 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -786,7 +1052,10 @@ class SyncManager {
           'submission_type': data['submission_type'] ?? 'file',
           'allowed_file_types': data['allowed_file_types'],
           'max_file_size_mb': data['max_file_size_mb'],
-          'due_at': data['due_at'],
+          'due_at': data['due_at'] ?? '',
+          'submission_status': data['submission_status'],
+          'submission_id': data['submission_id'],
+          'score': data['score'],
           'is_published': (data['is_published'] == true) ? 1 : 0,
           'submission_count': data['submission_count'] ?? 0,
           'graded_count': data['graded_count'] ?? 0,
@@ -823,13 +1092,14 @@ class SyncManager {
           'deleted_at': data['deleted_at'],
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
+          'is_offline_mutation': 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
     }
   }
 
-  /// Explicit upsert handler for assessment submissions with student enrichment
+  /// Explicit upsert handler for assessment submissions with nested answers
   Future<void> _upsertAssessmentSubmissions(
     Database db,
     List<dynamic> records,
@@ -837,24 +1107,59 @@ class SyncManager {
   ) async {
     for (final record in records) {
       final data = record as Map<String, dynamic>;
+      final id = data['id'] as String?;
+      final serverIsSubmitted = data['is_submitted'] == true;
+
+      // ✅ Guard: never let the server un-submit a locally-submitted pending row.
+      // When sync_status='pending', the student submitted offline and the op hasn't
+      // reached the server yet. The server's stale is_submitted=false must NOT
+      // overwrite local is_submitted=1.
+      // When server confirms is_submitted=true (after outbound sync), the server
+      // value matches local — the guard condition is false → REPLACE proceeds normally.
+      if (id != null && !serverIsSubmitted) {
+        final existing = await db.query(
+          'assessment_submissions',
+          columns: ['is_submitted', 'sync_status'],
+          where: 'id = ?',
+          whereArgs: [id],
+        );
+        if (existing.isNotEmpty) {
+          final localIsSubmitted = (existing.first['is_submitted'] as int?) == 1;
+          final localSyncStatus = existing.first['sync_status'] as String?;
+          if (localIsSubmitted && localSyncStatus == 'pending') {
+            // Local has submitted state, server has stale not-submitted state → skip
+            continue;
+          }
+        }
+      }
+
       final student = studentMap[data['student_id']] ?? {};
+
+      final answersJson = data.containsKey('answers') && data['answers'] != null
+          ? jsonEncode(data['answers'] as List<dynamic>)
+          : null;
 
       await db.insert(
         'assessment_submissions',
         {
           'id': data['id'],
+          'local_id': data['id'],
           'assessment_id': data['assessment_id'],
           'student_id': data['student_id'],
           'student_name': (student['full_name'] as String?) ?? '',
           'student_username': (student['username'] as String?) ?? '',
           'started_at': data['started_at'] ?? DateTime.now().toIso8601String(),
           'submitted_at': data['submitted_at'],
+          'created_at': data['created_at'] ?? DateTime.now().toIso8601String(),
           'auto_score': data['auto_score'] ?? 0,
           'final_score': data['final_score'] ?? 0,
           'is_submitted': (data['is_submitted'] == true) ? 1 : 0,
+          'answers_json': answersJson,
           'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
+          'deleted_at': data['deleted_at'],
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
+          'is_offline_mutation': 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -881,14 +1186,165 @@ class SyncManager {
           'status': data['status'] ?? 'pending',
           'text_content': data['text_content'],
           'submitted_at': data['submitted_at'],
-          'is_late': 0,
+          'is_late': (data['is_late'] == true) ? 1 : 0,
           'score': data['score'],
           'feedback': data['feedback'],
           'graded_at': data['graded_at'],
-          'created_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
+          'created_at': data['created_at'] ?? DateTime.now().toIso8601String(),
           'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
+          'deleted_at': data['deleted_at'],
           'cached_at': DateTime.now().toIso8601String(),
           'sync_status': 'synced',
+          'is_offline_mutation': 0,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+  /// NEW: Upsert material files metadata (no binary data)
+  Future<void> _upsertMaterialFiles(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+
+      // Preserve local cache state (is_cached, local_path, is_compressed) if row exists
+      final existing = await db.query(
+        'material_files',
+        columns: ['is_cached', 'local_path', 'is_compressed'],
+        where: 'id = ?',
+        whereArgs: [data['id']],
+      );
+
+      if (existing.isEmpty) {
+        await db.insert(
+          'material_files',
+          {
+            'id': data['id'],
+            'local_id': data['id'],
+            'material_id': data['material_id'],
+            'file_name': data['file_name'],
+            'file_type': data['file_type'],
+            'file_size': data['file_size'] ?? 0,
+            'uploaded_at': data['uploaded_at'] ?? DateTime.now().toIso8601String(),
+            'local_path': null,
+            'is_cached': 0,
+            'is_compressed': 0,
+            'deleted_at': null,
+            'cached_at': DateTime.now().toIso8601String(),
+          },
+          conflictAlgorithm: ConflictAlgorithm.ignore,
+        );
+      } else {
+        // Only update server-side metadata — preserve local cache state
+        await db.update(
+          'material_files',
+          {
+            'file_name': data['file_name'],
+            'file_type': data['file_type'],
+            'file_size': data['file_size'] ?? 0,
+            'uploaded_at': data['uploaded_at'] ?? DateTime.now().toIso8601String(),
+            'cached_at': DateTime.now().toIso8601String(),
+          },
+          where: 'id = ?',
+          whereArgs: [data['id']],
+        );
+      }
+    }
+  }
+
+  /// NEW: Upsert submission files metadata (no binary data)
+  Future<void> _upsertSubmissionFiles(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+
+      final existing = await db.query(
+        'submission_files',
+        columns: ['is_local_only', 'local_path'],
+        where: 'id = ?',
+        whereArgs: [data['id']],
+      );
+
+      if (existing.isEmpty) {
+        await db.insert(
+          'submission_files',
+          {
+            'id': data['id'],
+            'local_id': data['id'],
+            'submission_id': data['submission_id'],
+            'file_name': data['file_name'],
+            'file_type': data['file_type'],
+            'file_size': data['file_size'] ?? 0,
+            'uploaded_at': data['uploaded_at'] ?? DateTime.now().toIso8601String(),
+            'local_path': null,
+            'is_local_only': 0,
+            'deleted_at': null,
+            'cached_at': DateTime.now().toIso8601String(),
+          },
+          conflictAlgorithm: ConflictAlgorithm.ignore,
+        );
+      } else {
+        // Only update if it's a server-synced file (not a locally-staged pending upload)
+        final isLocalOnly = (existing.first['is_local_only'] as int?) == 1;
+        if (!isLocalOnly) {
+          await db.update(
+            'submission_files',
+            {
+              'file_name': data['file_name'],
+              'file_type': data['file_type'],
+              'file_size': data['file_size'] ?? 0,
+              'uploaded_at': data['uploaded_at'] ?? DateTime.now().toIso8601String(),
+              'cached_at': DateTime.now().toIso8601String(),
+            },
+            where: 'id = ? AND is_local_only = 0',
+            whereArgs: [data['id']],
+          );
+        }
+      }
+    }
+  }
+
+  /// NEW: Upsert assessment statistics cache
+  Future<void> _upsertStatistics(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+      final assessmentId = data['assessment_id'] as String?;
+      _log.upsertRecord('assessment_statistics', assessmentId ?? '?');
+      await db.insert(
+        'assessment_statistics_cache',
+        {
+          'assessment_id': data['assessment_id'],
+          'statistics_json': jsonEncode(data),
+          'cached_at': DateTime.now().toIso8601String(),
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+  /// NEW: Upsert student results cache
+  Future<void> _upsertStudentResults(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    for (final record in records) {
+      final data = record as Map<String, dynamic>;
+      final submissionId = data['submission_id'] as String?;
+      _log.upsertRecord('student_results', submissionId ?? '?');
+      await db.insert(
+        'student_results_cache',
+        {
+          'submission_id': data['submission_id'],
+          'results_json': jsonEncode(data),
+          'cached_at': DateTime.now().toIso8601String(),
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -900,13 +1356,18 @@ class SyncManager {
     Database db,
     Map<String, dynamic> deltas,
   ) async {
+    final updatedCounts = <String, int>{};
+    final deletedCounts = <String, int>{};
+
     // Handle classes separately (requires mobile-only defaults)
     final classesDeltas = deltas['classes'] as Map<String, dynamic>?;
     if (classesDeltas != null) {
       final updated = classesDeltas['updated'] as List<dynamic>? ?? [];
       await _upsertClasses(db, updated);
+      updatedCounts['classes'] = updated.length;
 
       final deleted = classesDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['classes'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           'classes',
@@ -921,46 +1382,52 @@ class SyncManager {
     final enrollmentDeltas = deltas['enrollments'] as Map<String, dynamic>?;
     if (enrollmentDeltas != null) {
       final updated = enrollmentDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['enrollments'] = updated.length;
       // For delta, students should already be in the users table
       for (final enrollment in updated) {
         final e = enrollment as Map<String, dynamic>;
-        final studentId = e['student_id'] as String;
+        // Accept both user_id (new) and student_id (old) for backward compat
+        final userId = (e['user_id'] ?? e['student_id']) as String;
 
         // Look up student from local users table
         final studentRows = await db.query(
           'users',
           where: 'id = ?',
-          whereArgs: [studentId],
+          whereArgs: [userId],
         );
         final student = studentRows.isNotEmpty
             ? studentRows.first as Map<String, dynamic>
             : <String, dynamic>{};
 
         await db.insert(
-          'class_enrollments',
+          'class_participants',
           {
             'id': e['id'],
+            'local_id': e['id'],
             'class_id': e['class_id'],
-            'student_id': studentId,
+            'user_id': userId,
             'username': student['username'] ?? '',
             'full_name': student['full_name'] ?? '',
-            'role': student['role'] ?? 'student',
+            'role': 'student',
             'account_status': student['account_status'] ?? 'active',
-            'is_active': student['is_active'] ?? 1,
-            'enrolled_at': e['enrolled_at'],
-            'updated_at': e['enrolled_at'],
+            'joined_at': e['joined_at'] ?? e['enrolled_at'],
+            'updated_at': e['joined_at'] ?? e['enrolled_at'],
+            'removed_at': null,
             'cached_at': DateTime.now().toIso8601String(),
             'sync_status': 'synced',
+            'is_offline_mutation': 0,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
 
-      // Hard-delete removed enrollments (student was unenrolled)
+      // Soft-delete removed enrollments (student was unenrolled)
       final deleted = enrollmentDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['enrollments'] = deleted.length;
       for (final id in deleted) {
-        await db.delete(
-          'class_enrollments',
+        await db.update(
+          'class_participants',
+          {'removed_at': DateTime.now().toIso8601String()},
           where: 'id = ?',
           whereArgs: [id as String],
         );
@@ -978,9 +1445,11 @@ class SyncManager {
     final assessmentDeltas = deltas['assessments'] as Map<String, dynamic>?;
     if (assessmentDeltas != null) {
       final updated = assessmentDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['assessments'] = updated.length;
       await _upsertAssessments(db, updated);
 
       final deleted = assessmentDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['assessments'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           'assessments',
@@ -995,9 +1464,11 @@ class SyncManager {
     final questionDeltas = deltas['questions'] as Map<String, dynamic>?;
     if (questionDeltas != null) {
       final updated = questionDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['questions'] = updated.length;
       await _upsertQuestions(db, updated);
 
       final deleted = questionDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['questions'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           'questions',
@@ -1012,9 +1483,11 @@ class SyncManager {
     final assessmentSubmissionDeltas = deltas['assessment_submissions'] as Map<String, dynamic>?;
     if (assessmentSubmissionDeltas != null) {
       final updated = assessmentSubmissionDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['assessment_submissions'] = updated.length;
       await _upsertAssessmentSubmissions(db, updated, studentMap);
 
       final deleted = assessmentSubmissionDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['assessment_submissions'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           'assessment_submissions',
@@ -1029,9 +1502,11 @@ class SyncManager {
     final assignmentDeltas = deltas['assignments'] as Map<String, dynamic>?;
     if (assignmentDeltas != null) {
       final updated = assignmentDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['assignments'] = updated.length;
       await _upsertAssignments(db, updated);
 
       final deleted = assignmentDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['assignments'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           'assignments',
@@ -1046,9 +1521,11 @@ class SyncManager {
     final assignmentSubmissionDeltas = deltas['assignment_submissions'] as Map<String, dynamic>?;
     if (assignmentSubmissionDeltas != null) {
       final updated = assignmentSubmissionDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['assignment_submissions'] = updated.length;
       await _upsertAssignmentSubmissions(db, updated, studentMap);
 
       final deleted = assignmentSubmissionDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['assignment_submissions'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           'assignment_submissions',
@@ -1063,9 +1540,11 @@ class SyncManager {
     final materialDeltas = deltas['learning_materials'] as Map<String, dynamic>?;
     if (materialDeltas != null) {
       final updated = materialDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['learning_materials'] = updated.length;
       await _upsertLearningMaterials(db, updated);
 
       final deleted = materialDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['learning_materials'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           'learning_materials',
@@ -1076,14 +1555,55 @@ class SyncManager {
       }
     }
 
+    // NEW: Handle material files delta
+    final materialFilesDeltas = deltas['material_files'] as Map<String, dynamic>?;
+    if (materialFilesDeltas != null) {
+      final updated = materialFilesDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['material_files'] = updated.length;
+      await _upsertMaterialFiles(db, updated);
+
+      final deleted = materialFilesDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['material_files'] = deleted.length;
+      for (final id in deleted) {
+        await db.update(
+          'material_files',
+          {'deleted_at': DateTime.now().toIso8601String()},
+          where: 'id = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // NEW: Handle submission files delta
+    final submissionFilesDeltas = deltas['submission_files'] as Map<String, dynamic>?;
+    if (submissionFilesDeltas != null) {
+      final updated = submissionFilesDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['submission_files'] = updated.length;
+      await _upsertSubmissionFiles(db, updated);
+
+      final deleted = submissionFilesDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['submission_files'] = deleted.length;
+      for (final id in deleted) {
+        await db.update(
+          'submission_files',
+          {'deleted_at': DateTime.now().toIso8601String()},
+          where: 'id = ? AND is_local_only = 0',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
     final enrolledStudentsDeltas = deltas['enrolled_students'] as Map<String, dynamic>?;
     if (enrolledStudentsDeltas != null) {
       final updated = enrolledStudentsDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['enrolled_students'] = updated.length;
       await _upsertEnrolledStudents(db, updated);
 
       // Note: We don't soft-delete users - they are reusable across contexts
       // (current user, enrolled students, search results)
     }
+
+    _log.deltaSync(updatedCounts: updatedCounts, deletedCounts: deletedCounts);
   }
 
   /// Generate and store a device ID
@@ -1104,6 +1624,11 @@ class SyncManager {
     int? failedCount,
     String? lastError,
     DateTime? lastSyncAt,
+    double? progress,
+    String? currentStep,
+    bool? assessmentsReady,
+    bool? assignmentsReady,
+    bool? materialsReady,
   }) {
     _state = _state.copyWith(
       phase: phase,
@@ -1111,20 +1636,112 @@ class SyncManager {
       failedCount: failedCount,
       lastError: lastError,
       lastSyncAt: lastSyncAt,
+      progress: progress,
+      currentStep: currentStep,
+      assessmentsReady: assessmentsReady,
+      assignmentsReady: assignmentsReady,
+      materialsReady: materialsReady,
     );
 
     _stateListener?.call(_state);
   }
 
+  /// Warm-up statistics cache for first 30 assessments
+  void _warmUpStatisticsCache() {
+    Future.microtask(() async {
+      try {
+        final db = await _localDatabase.database;
+        final assessments = await db.query(
+          'assessments',
+          limit: 30,
+          orderBy: 'created_at DESC',
+        );
+        for (final assessment in assessments) {
+          final assessmentId = assessment['id'] as String;
+          try {
+            final result = await _assessmentRemoteDataSource.getStatistics(
+              assessmentId: assessmentId,
+            );
+            await _assessmentLocalDataSource.cacheStatistics(result);
+          } catch (_) {
+            // Silently fail — warm-up is non-critical
+          }
+        }
+      } catch (_) {
+        // Silently fail
+      }
+    });
+  }
+
+  /// Warm-up student results cache for released assessments
+  void _warmUpStudentResultsCache() {
+    Future.microtask(() async {
+      try {
+        final db = await _localDatabase.database;
+        final releasedAssessments = await db.query(
+          'assessments',
+          where: '(results_released = 1 OR show_results_immediately = 1)',
+          limit: 30,
+        );
+        final releasedIds = releasedAssessments
+            .map((a) => a['id'] as String)
+            .toSet();
+
+        final submissions = await db.query(
+          'assessment_submissions',
+          where: 'is_submitted = 1',
+          limit: 30,
+        );
+
+        for (final submission in submissions) {
+          final assessmentId = submission['assessment_id'] as String;
+          if (!releasedIds.contains(assessmentId)) continue;
+
+          final submissionId = submission['id'] as String;
+          try {
+            final result = await _assessmentRemoteDataSource.getStudentResults(
+              submissionId: submissionId,
+            );
+            await _assessmentLocalDataSource.cacheStudentResults(result);
+          } catch (_) {
+            // Silently fail — warm-up is non-critical
+          }
+        }
+      } catch (_) {
+        // Silently fail
+      }
+    });
+  }
+
   /// Handles a single file upload operation by calling the multipart endpoint directly.
   /// References pattern in: mobile/lib/data/datasources/remote/assignment_remote_datasource.dart
+  /// For material files, looks up correct (reconciled) material_id from DB instead of using payload.
   Future<void> _handleFileUpload(SyncQueueEntry op) async {
     try {
       final payload      = op.payload;
       final localPath    = payload['local_path']    as String;
       final fileName     = payload['file_name']     as String;
+      final fileId       = payload['file_id']       as String?;
       final submissionId = payload['submission_id'] as String?;
-      final materialId   = payload['material_id']   as String?;
+      var materialId     = payload['material_id']   as String?;
+
+      // For material file uploads, look up the correct (reconciled) material_id from DB
+      if (materialId != null && fileId != null) {
+        try {
+          final db = await _localDatabase.database;
+          final rows = await db.query(
+            'material_files',
+            columns: ['material_id'],
+            where: 'id = ?',
+            whereArgs: [fileId],
+          );
+          if (rows.isNotEmpty) {
+            materialId = rows.first['material_id'] as String?;
+          }
+        } catch (_) {
+          // If DB lookup fails, fall back to payload value
+        }
+      }
 
       if (submissionId != null) {
         await _syncRemoteDataSource.uploadSubmissionFile(
@@ -1156,27 +1773,19 @@ class SyncManager {
     }
   }
 
-  /// Maps Dart SyncEntityType enum to server-expected snake_case string
-  static String _entityTypeToServer(SyncEntityType type) {
-    switch (type) {
-      case SyncEntityType.assessmentSubmission: return 'assessment_submission';
-      case SyncEntityType.assignmentSubmission: return 'assignment_submission';
-      case SyncEntityType.classEntity:          return 'class';
-      case SyncEntityType.learningMaterial:     return 'learning_material';
-      case SyncEntityType.materialFile:         return 'material_file';
-      case SyncEntityType.submissionFile:       return 'submission_file';
-      case SyncEntityType.adminUser:            return 'admin_user';
-      default: return type.name; // user, assessment, assignment, question
-    }
+  /// Resets the in-memory sync state to idle, clearing stale data after logout.
+  /// This ensures that the singleton instance doesn't carry over state from previous sessions.
+  void reset() {
+    _isSyncing = false;
+    _state = const SyncState(
+      phase: SyncPhase.idle,
+      pendingCount: 0,
+      failedCount: 0,
+      assessmentsReady: false,
+      assignmentsReady: false,
+      materialsReady: false,
+    );
+    _stateListener?.call(_state);
   }
 
-  /// Maps Dart SyncOperation enum to server-expected string
-  static String _operationToServer(SyncOperation op) {
-    if (op == SyncOperation.saveAnswers) return 'save_answers';
-    if (op == SyncOperation.releaseResults) return 'release_results';
-    if (op == SyncOperation.overrideAnswer) return 'override_answer';
-    if (op == SyncOperation.addEnrollment) return 'add_enrollment';
-    if (op == SyncOperation.removeEnrollment) return 'remove_enrollment';
-    return op.name;
-  }
 }

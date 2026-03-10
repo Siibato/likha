@@ -16,6 +16,23 @@ impl super::SyncPushService {
             None => vec![],
         };
 
+        // Count operations by entity type for logging
+        let mut op_counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+        for op in &operations {
+            *op_counts.entry(op.entity_type.clone()).or_insert(0) += 1;
+        }
+
+        let op_summary = op_counts.iter()
+            .map(|(k, v)| format!("{}={}", k, v))
+            .collect::<Vec<_>>()
+            .join(", ");
+
+        tracing::debug!(
+            "Processing {} operations by type: [{}]",
+            operations.len(),
+            op_summary
+        );
+
         let mut results = Vec::new();
 
         for op in operations {
@@ -29,11 +46,34 @@ impl super::SyncPushService {
                 }
                 Err(e) => {
                     // Log the error, but process anyway (fail-open to avoid data loss)
-                    eprintln!("Warning: Failed to check processed operations for {}: {}", op.id, e);
+                    tracing::warn!(
+                        "Failed to check processed operations for {}: {}",
+                        op.id,
+                        e
+                    );
                 }
             }
 
             let result = self.process_single_operation(user_id, user_role, &op).await;
+
+            // Log operation result details
+            if !result.success {
+                tracing::warn!(
+                    "Operation failed: op_id={}, entity_type={}, operation={}, error={}",
+                    result.id,
+                    result.entity_type,
+                    result.operation,
+                    result.error.as_deref().unwrap_or("unknown")
+                );
+            } else {
+                tracing::debug!(
+                    "Operation succeeded: op_id={}, entity_type={}, operation={}, server_id={}",
+                    result.id,
+                    result.entity_type,
+                    result.operation,
+                    result.server_id.as_deref().unwrap_or("none")
+                );
+            }
 
             let _ = self.processed_ops_repo.save_processed(
                 &op.id,
@@ -122,5 +162,29 @@ impl super::SyncPushService {
             .and_then(|v| v.as_str())
             .ok_or_else(|| format!("Missing {} field", field))
             .and_then(|s| uuid::Uuid::parse_str(s).map_err(|_| format!("Invalid {}", field)))
+    }
+
+    pub(super) fn parse_str_field(
+        &self,
+        payload: &serde_json::Value,
+        field: &str,
+    ) -> Result<String, String> {
+        payload
+            .get(field)
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| format!("Missing {} field", field))
+            .map(String::from)
+    }
+
+    pub(super) fn parse_i32_field(
+        &self,
+        payload: &serde_json::Value,
+        field: &str,
+    ) -> Result<i32, String> {
+        payload
+            .get(field)
+            .and_then(|v| v.as_i64())
+            .ok_or_else(|| format!("Missing {} field", field))
+            .map(|v| v as i32)
     }
 }

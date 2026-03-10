@@ -102,6 +102,36 @@ class DioClient {
     }
   }
 
+  /// Void POST request — validates server's ApiResponse envelope but ignores data.
+  /// Use when the server returns a success/error envelope but no meaningful body.
+  /// Mirrors deleteTyped — does NOT call unwrap() to avoid "Response data is null".
+  Future<void> postVoid(ApiEndpoint<void> endpoint, {dynamic data}) async {
+    try {
+      final response = await _dio.post(endpoint.path, data: data);
+      final apiResponse = ApiResponse.fromJson(response.data, (_) {});
+      if (!apiResponse.success) {
+        throw ServerException(apiResponse.error ?? 'Request failed');
+      }
+    } on DioException catch (e) {
+      throw handleError(e);
+    }
+  }
+
+  /// Void PUT request — validates server's ApiResponse envelope but ignores data.
+  /// Use when the server returns a success/error envelope but no meaningful body.
+  /// Mirrors deleteTyped — does NOT call unwrap() to avoid "Response data is null".
+  Future<void> putVoid(ApiEndpoint<void> endpoint, {dynamic data}) async {
+    try {
+      final response = await _dio.put(endpoint.path, data: data);
+      final apiResponse = ApiResponse.fromJson(response.data, (_) {});
+      if (!apiResponse.success) {
+        throw ServerException(apiResponse.error ?? 'Request failed');
+      }
+    } on DioException catch (e) {
+      throw handleError(e);
+    }
+  }
+
   // Auth Interceptor - Attach token to requests
   Interceptor _authInterceptor() {
     return InterceptorsWrapper(

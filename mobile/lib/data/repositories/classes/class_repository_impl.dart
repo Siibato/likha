@@ -13,8 +13,8 @@ class ClassRepositoryImpl extends ClassRepositoryBase
     required super.localDataSource,
     required super.validationService,
     required super.serverReachabilityService,
-    required super.entitySyncHelper,
     required super.syncQueue,
     required super.storageService,
+    required super.dataEventBus,
   });
 }

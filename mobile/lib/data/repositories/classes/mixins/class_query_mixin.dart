@@ -12,23 +12,10 @@ mixin ClassQueryMixin on ClassRepositoryBase {
     try {
       try {
         final cachedClasses = await localDataSource.getCachedClasses();
-
-        _syncAllClassesInBackground();
-
         return Right(cachedClasses);
       } on CacheException {
         final freshClasses = await remoteDataSource.getAllClasses();
         await localDataSource.cacheClasses(freshClasses);
-
-        for (final cls in freshClasses) {
-          try {
-            final detail = await remoteDataSource.getClassDetail(classId: cls.id);
-            await localDataSource.cacheClassDetail(detail);
-          } catch (_) {
-            // Best-effort
-          }
-        }
-
         return Right(freshClasses);
       }
     } on ServerException catch (e) {
@@ -46,28 +33,16 @@ mixin ClassQueryMixin on ClassRepositoryBase {
   ResultFuture<List<ClassEntity>> getMyClasses() async {
     try {
       final currentUserId = await getCurrentUserId();
+      if (currentUserId == null) return const Right([]);
 
       try {
-        final cachedClasses = await localDataSource.getCachedClasses(
-          teacherId: currentUserId,
-        );
-
-        _syncClassesInBackground();
-
+        // Works for both students (enrolled via class_participants) and
+        // teachers (also present in class_participants with role='teacher')
+        final cachedClasses = await localDataSource.getCachedClassesForUser(currentUserId);
         return Right(cachedClasses);
       } on CacheException {
         final freshClasses = await remoteDataSource.getMyClasses();
         await localDataSource.cacheClasses(freshClasses);
-
-        for (final cls in freshClasses) {
-          try {
-            final detail = await remoteDataSource.getClassDetail(classId: cls.id);
-            await localDataSource.cacheClassDetail(detail);
-          } catch (_) {
-            // Best-effort
-          }
-        }
-
         return Right(freshClasses);
       }
     } on ServerException catch (e) {
@@ -84,20 +59,18 @@ mixin ClassQueryMixin on ClassRepositoryBase {
   @override
   ResultFuture<ClassDetail> getClassDetail({required String classId}) async {
     try {
-      // Try cache first (includes locally-added enrollments that haven't synced yet)
+      // API-first: always get fresh data when online (ensures enrollment data is current)
       try {
-        final cached = await localDataSource.getCachedClassDetail(classId);
-        // Fetch fresh in background to update cache silently
-        _fetchClassDetailInBackground(classId);
-        return Right(cached);
-      } on CacheException {
-        // No cache, fetch fresh from server
+        final fresh = await remoteDataSource.getClassDetail(classId: classId);
+        await localDataSource.cacheClassDetail(fresh);
+        return Right(fresh);
+      } on NetworkException {
+        // Offline: fall back to cache (which has enrollment data from prior online visit)
         try {
-          final fresh = await remoteDataSource.getClassDetail(classId: classId);
-          await localDataSource.cacheClassDetail(fresh);
-          return Right(fresh);
-        } on NetworkException {
-          // No cache and no network, try rebuilding from enrollments
+          final cached = await localDataSource.getCachedClassDetail(classId);
+          return Right(cached);
+        } on CacheException {
+          // No cache: try rebuilding from enrollments table
           try {
             final rebuilt = await localDataSource.buildClassDetailFromEnrollments(classId);
             if (rebuilt != null) return Right(rebuilt);
@@ -116,71 +89,41 @@ mixin ClassQueryMixin on ClassRepositoryBase {
     }
   }
 
-  // Fetch fresh class detail in background without blocking UI
-  Future<void> _fetchClassDetailInBackground(String classId) async {
-    try {
-      final fresh = await remoteDataSource.getClassDetail(classId: classId);
-      await localDataSource.cacheClassDetail(fresh);
-    } catch (_) {
-      // Best-effort - cache is already good, so silently ignore errors
-    }
-  }
-
-  Future<void> _syncAllClassesInBackground() async {
-    try {
-      final remoteClasses = await remoteDataSource.getAllClasses();
-
-      await entitySyncHelper.syncEntitiesByTimestamp(
-        entityType: 'class',
-        remoteEntities: remoteClasses
-            .map((e) => {
-                  'id': e.id,
-                  'updated_at': e.updatedAt.toIso8601String(),
-                })
-            .toList(),
-      );
-
-      await localDataSource.cacheClasses(remoteClasses);
-
-      for (final cls in remoteClasses) {
+  /// Silently fetches fresh classes from the server.
+  /// Updates local cache only if any record has a newer [updatedAt].
+  /// Emits a DataEventBus event so the page can reload from updated cache.
+  /// All errors are swallowed — users keep seeing stale cache without error.
+  void _backgroundFetchMyClasses() {
+    Future.microtask(() async {
+      try {
+        final fresh = await remoteDataSource.getMyClasses();
+        final currentUserId = await getCurrentUserId();
+        if (currentUserId == null) return;
+        final List<ClassEntity> cached;
         try {
-          final detail = await remoteDataSource.getClassDetail(classId: cls.id);
-          await localDataSource.cacheClassDetail(detail);
-        } catch (_) {
-          // Best-effort
+          cached = await localDataSource.getCachedClassesForUser(currentUserId);
+        } on CacheException {
+          await localDataSource.cacheClasses(fresh);
+          dataEventBus.notifyClassesChanged();
+          return;
         }
-      }
-    } catch (_) {
-      // Best-effort sync — continue with cached data
-    }
+        if (_classesHaveChanged(cached, fresh)) {
+          await localDataSource.cacheClasses(fresh);
+          dataEventBus.notifyClassesChanged();
+        }
+      } catch (_) {}
+    });
   }
 
-  Future<void> _syncClassesInBackground() async {
-    try {
-      final remoteClasses = await remoteDataSource.getMyClasses();
-
-      await entitySyncHelper.syncEntitiesByTimestamp(
-        entityType: 'class',
-        remoteEntities: remoteClasses
-            .map((e) => {
-                  'id': e.id,
-                  'updated_at': e.updatedAt.toIso8601String(),
-                })
-            .toList(),
-      );
-
-      await localDataSource.cacheClasses(remoteClasses);
-
-      for (final cls in remoteClasses) {
-        try {
-          final detail = await remoteDataSource.getClassDetail(classId: cls.id);
-          await localDataSource.cacheClassDetail(detail);
-        } catch (_) {
-          // Best-effort
-        }
-      }
-    } catch (_) {
-      // Best-effort sync — continue with cached data
+  bool _classesHaveChanged(List<ClassEntity> local, List<ClassEntity> remote) {
+    if (local.length != remote.length) return true;
+    final localById = {for (final c in local) c.id: c};
+    for (final r in remote) {
+      final l = localById[r.id];
+      if (l == null) return true;
+      if (l.updatedAt.isBefore(r.updatedAt)) return true;
     }
+    return false;
   }
+
 }

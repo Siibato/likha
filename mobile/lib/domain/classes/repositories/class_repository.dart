@@ -22,6 +22,7 @@ abstract class ClassRepository {
     required String classId,
     String? title,
     String? description,
+    String? teacherId,
   });
 
   ResultFuture<Enrollment> addStudent({
@@ -35,4 +36,6 @@ abstract class ClassRepository {
   });
 
   ResultFuture<List<User>> searchStudents({String? query});
+
+  ResultFuture<List<User>> getEnrolledStudents({required String classId});
 }

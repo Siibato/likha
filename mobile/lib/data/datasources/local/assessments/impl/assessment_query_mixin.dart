@@ -6,17 +6,54 @@ import '../assessment_local_datasource_base.dart';
 
 mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
   @override
-  Future<List<AssessmentModel>> getCachedAssessments(String classId) async {
+  Future<List<AssessmentModel>> getCachedAssessments(String classId, {bool publishedOnly = false}) async {
     try {
       final db = await localDatabase.database;
+      final where = publishedOnly
+          ? 'class_id = ? AND is_published = 1 AND deleted_at IS NULL'
+          : 'class_id = ? AND deleted_at IS NULL';
       final results = await db.query(
         'assessments',
-        where: 'class_id = ?',
+        where: where,
         whereArgs: [classId],
-        orderBy: 'created_at DESC',
+        orderBy: 'order_index ASC',
       );
       if (results.isEmpty) throw CacheException('No cached assessments for class $classId');
-      return results.map(AssessmentModel.fromMap).toList();
+
+      final assessments = <AssessmentModel>[];
+
+      // Compute actual question count from the questions table for each assessment
+      for (final result in results) {
+        final assessment = AssessmentModel.fromMap(result);
+        final countResult = await db.rawQuery(
+          'SELECT COUNT(*) as count FROM questions WHERE assessment_id = ? AND deleted_at IS NULL',
+          [assessment.id],
+        );
+        final actualCount = countResult.first['count'] as int? ?? 0;
+
+        // Create new assessment with the actual count (or fallback to stored count if none cached)
+        final updatedAssessment = AssessmentModel(
+          id: assessment.id,
+          classId: assessment.classId,
+          title: assessment.title,
+          description: assessment.description,
+          timeLimitMinutes: assessment.timeLimitMinutes,
+          openAt: assessment.openAt,
+          closeAt: assessment.closeAt,
+          showResultsImmediately: assessment.showResultsImmediately,
+          resultsReleased: assessment.resultsReleased,
+          isPublished: assessment.isPublished,
+          orderIndex: assessment.orderIndex,
+          totalPoints: assessment.totalPoints,
+          questionCount: actualCount > 0 ? actualCount : assessment.questionCount,
+          submissionCount: assessment.submissionCount,
+          createdAt: assessment.createdAt,
+          updatedAt: assessment.updatedAt,
+        );
+        assessments.add(updatedAssessment);
+      }
+
+      return assessments;
     } catch (e) {
       if (e is CacheException) rethrow;
       throw CacheException(e.toString());
@@ -29,7 +66,7 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
       final db = await localDatabase.database;
       final assessmentResults = await db.query(
         'assessments',
-        where: 'id = ?',
+        where: 'id = ? AND deleted_at IS NULL',
         whereArgs: [assessmentId],
       );
       if (assessmentResults.isEmpty) throw CacheException('Assessment $assessmentId not cached');
@@ -37,7 +74,7 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
       final assessment = AssessmentModel.fromMap(assessmentResults.first);
       final questionResults = await db.query(
         'questions',
-        where: 'assessment_id = ?',
+        where: 'assessment_id = ? AND deleted_at IS NULL',
         whereArgs: [assessmentId],
         orderBy: 'order_index ASC',
       );
@@ -64,7 +101,27 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
           })
           .toList();
 
-      return (assessment, questions);
+      // Create new assessment with the actual question count
+      final updatedAssessment = AssessmentModel(
+        id: assessment.id,
+        classId: assessment.classId,
+        title: assessment.title,
+        description: assessment.description,
+        timeLimitMinutes: assessment.timeLimitMinutes,
+        openAt: assessment.openAt,
+        closeAt: assessment.closeAt,
+        showResultsImmediately: assessment.showResultsImmediately,
+        resultsReleased: assessment.resultsReleased,
+        isPublished: assessment.isPublished,
+        orderIndex: assessment.orderIndex,
+        totalPoints: assessment.totalPoints,
+        questionCount: questions.length,
+        submissionCount: assessment.submissionCount,
+        createdAt: assessment.createdAt,
+        updatedAt: assessment.updatedAt,
+      );
+
+      return (updatedAssessment, questions);
     } catch (e) {
       if (e is CacheException) rethrow;
       throw CacheException(e.toString());

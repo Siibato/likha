@@ -4,6 +4,7 @@ import 'package:likha/data/models/classes/class_model.dart';
 
 abstract class ClassLocalDataSource {
   Future<List<ClassModel>> getCachedClasses({String? teacherId});
+  Future<List<ClassModel>> getCachedClassesForUser(String userId);
   Future<ClassDetailModel> getCachedClassDetail(String classId);
   Future<void> cacheClasses(List<ClassModel> classes);
   Future<void> cacheClassDetail(ClassDetailModel classDetail);
@@ -30,6 +31,7 @@ abstract class ClassLocalDataSource {
   Future<UserModel?> getStudentById(String studentId);
   Future<void> cacheSearchStudents(List<UserModel> students);
   Future<List<UserModel>> searchCachedStudents(String query);
+  Future<List<UserModel>> getCachedEnrolledStudents(String classId);
   Future<Set<String>> getEnrolledStudentIds(String classId);
   Future<ClassDetailModel?> buildClassDetailFromEnrollments(String classId);
   Future<void> clearAllCache();

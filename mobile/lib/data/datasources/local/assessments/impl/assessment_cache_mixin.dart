@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:likha/core/errors/exceptions.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/assessments/assessment_model.dart';
 import 'package:likha/data/models/assessments/question_model.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:uuid/uuid.dart';
 import '../assessment_local_datasource_base.dart';
 
 mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
@@ -36,6 +38,7 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
         await txn.insert('assessments', assessmentMap, conflictAlgorithm: ConflictAlgorithm.replace);
 
         for (final question in questions) {
+          final now = DateTime.now().toIso8601String();
           await txn.insert(
             'questions',
             {
@@ -63,7 +66,9 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
               'enumeration_items_json': question.enumerationItems != null
                   ? jsonEncode(question.enumerationItems)
                   : null,
-              'cached_at': DateTime.now().toIso8601String(),
+              'updated_at': now,
+              'deleted_at': null,
+              'cached_at': now,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
@@ -75,24 +80,70 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
   }
 
   @override
-  Future<void> cacheQuestions(List<QuestionModel> questions) async {
+  Future<void> cacheQuestions(
+    String assessmentId,
+    List<QuestionModel> questions, {
+    bool isServerConfirmed = false,
+  }) async {
     try {
       final db = await localDatabase.database;
+
+      // Verify assessment exists before inserting questions (FK constraint check)
+      // This ensures the transaction can see the assessment record
+      final assessmentExists = await db.rawQuery(
+        'SELECT id FROM assessments WHERE id = ? LIMIT 1',
+        [assessmentId],
+      );
+
+      if (assessmentExists.isEmpty) {
+        throw CacheException(
+          'Assessment with ID $assessmentId not found in database. '
+          'Cannot insert questions without a valid assessment reference.'
+        );
+      }
+
       await db.transaction((txn) async {
         for (final question in questions) {
+          final now = DateTime.now().toIso8601String();
           await txn.insert(
             'questions',
             {
               'id': question.id,
-              'assessment_id': '',
+              'local_id': question.id,
+              'assessment_id': assessmentId,
               'question_type': question.questionType,
               'question_text': question.questionText,
               'points': question.points,
               'order_index': question.orderIndex,
               'is_multi_select': question.isMultiSelect ? 1 : 0,
-              'cached_at': DateTime.now().toIso8601String(),
-              'is_offline_mutation': 0,
-              'sync_status': 'synced',
+              'choices_json': question.choices != null
+                  ? jsonEncode(question.choices!.map((c) => {
+                        'id': c.id,
+                        'choice_text': c.choiceText,
+                        'is_correct': c.isCorrect,
+                        'order_index': c.orderIndex,
+                      }).toList())
+                  : null,
+              'correct_answers_json': question.correctAnswers != null
+                  ? jsonEncode(question.correctAnswers!.map((a) => {
+                        'id': a.id,
+                        'answer_text': a.answerText,
+                      }).toList())
+                  : null,
+              'enumeration_items_json': question.enumerationItems != null
+                  ? jsonEncode(question.enumerationItems!.map((e) => {
+                        'id': e.id,
+                        'order_index': e.orderIndex,
+                        'acceptable_answers': e.acceptableAnswers.map((a) => {
+                              'id': a.id,
+                              'answer_text': a.answerText,
+                            }).toList(),
+                      }).toList())
+                  : null,
+              'updated_at': now,
+              'cached_at': now,
+              'is_offline_mutation': isServerConfirmed ? 0 : 1,
+              'sync_status': isServerConfirmed ? 'synced' : 'pending',
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
@@ -100,6 +151,59 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
       });
     } catch (e) {
       throw CacheException('Failed to cache questions: $e');
+    }
+  }
+
+  @override
+  Future<void> releaseResultsLocally({required String assessmentId}) async {
+    try {
+      final db = await localDatabase.database;
+      final now = DateTime.now();
+      await db.transaction((txn) async {
+        await txn.update(
+          'assessments',
+          {
+            'results_released': 1,
+            'is_offline_mutation': 1,
+            'sync_status': 'pending',
+            'updated_at': now.toIso8601String(),
+            'cached_at': now.toIso8601String(),
+          },
+          where: 'id = ?',
+          whereArgs: [assessmentId],
+        );
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assessment,
+          operation: SyncOperation.releaseResults,
+          payload: {'id': assessmentId},
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: now,
+        ), txn: txn);
+      });
+    } catch (e) {
+      throw CacheException('Failed to release results locally: $e');
+    }
+  }
+
+  @override
+  Future<void> deleteAssessmentLocally({required String assessmentId}) async {
+    try {
+      final db = await localDatabase.database;
+      await db.update(
+        'assessments',
+        {
+          'deleted_at': DateTime.now().toIso8601String(),
+          'is_offline_mutation': 1,
+          'sync_status': 'pending',
+        },
+        where: 'id = ?',
+        whereArgs: [assessmentId],
+      );
+    } catch (e) {
+      throw CacheException('Failed to delete assessment locally: $e');
     }
   }
 

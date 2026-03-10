@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/presentation/pages/admin/widgets/styled_button.dart';
 import 'package:likha/presentation/pages/admin/widgets/styled_dropdown.dart';
 import 'package:likha/presentation/pages/admin/widgets/styled_text_field.dart';
@@ -17,7 +18,7 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  String _selectedTeacherId = '';
+  String? _selectedTeacherId;
 
   @override
   void initState() {
@@ -36,20 +37,14 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
 
   Future<void> _handleCreate() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedTeacherId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a teacher'),
-          backgroundColor: Color(0xFFEF5350),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+    if (_selectedTeacherId == null || _selectedTeacherId!.isEmpty) {
+      context.showErrorSnackBar('Please select a teacher');
       return;
     }
 
     final adminState = ref.read(adminProvider);
     final teachers = adminState.accounts.where((u) => u.isTeacher).toList();
-    final selectedTeacher = teachers.firstWhere((t) => t.id == _selectedTeacherId);
+    final selectedTeacher = teachers.firstWhere((t) => t.id == _selectedTeacherId!);
 
     await ref.read(classProvider.notifier).createClass(
           title: _titleController.text.trim(),
@@ -64,28 +59,10 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
     if (mounted) {
       final state = ref.read(classProvider);
       if (state.successMessage != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(state.successMessage!),
-            backgroundColor: const Color(0xFF4CAF50),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        context.showSuccessSnackBar(state.successMessage!);
         Navigator.pop(context);
       } else if (state.error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(state.error!),
-            backgroundColor: const Color(0xFFEF5350),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        context.showErrorSnackBar(state.error!);
       }
     }
   }
@@ -193,19 +170,19 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
                   validator: null,
                 ),
                 const SizedBox(height: 16),
-                StyledDropdown(
+                StyledDropdown<String?>(
                   value: _selectedTeacherId,
                   label: 'Assign Teacher',
                   icon: Icons.person_outline_rounded,
                   items: [
-                    const DropdownMenuItem<String>(
-                      value: '',
+                    const DropdownMenuItem<String?>(
+                      value: null,
                       child: Text('Select a teacher'),
                       enabled: false,
                     ),
                     ...teachers
                         .map(
-                          (teacher) => DropdownMenuItem<String>(
+                          (teacher) => DropdownMenuItem<String?>(
                             value: teacher.id,
                             child: Text(
                               '${teacher.fullName} (@${teacher.username})',
@@ -216,7 +193,7 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
                   ],
                   onChanged: (value) {
                     setState(() {
-                      _selectedTeacherId = value ?? '';
+                      _selectedTeacherId = value;
                     });
                   },
                   enabled: !classState.isLoading,

@@ -17,3 +17,19 @@ class ReorderMaterial {
     );
   }
 }
+
+class ReorderAllMaterials {
+  final LearningMaterialRepository _repository;
+
+  ReorderAllMaterials(this._repository);
+
+  ResultVoid call({
+    required String classId,
+    required List<String> materialIds,
+  }) {
+    return _repository.reorderAllMaterials(
+      classId: classId,
+      materialIds: materialIds,
+    );
+  }
+}

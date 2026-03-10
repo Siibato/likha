@@ -2,7 +2,7 @@ use chrono::NaiveDateTime;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::{classes, class_enrollments, users};
+use ::entity::{classes, class_participants, users};
 use crate::utils::{AppError, AppResult};
 
 /// Verifies user authorization and scopes queries by entitlement
@@ -25,25 +25,27 @@ impl EntitlementRepository {
         match user_role {
             "student" => {
                 // Students can see classes they're enrolled in
-                let enrollments = class_enrollments::Entity::find()
-                    .filter(class_enrollments::Column::StudentId.eq(user_id))
-                    .filter(class_enrollments::Column::RemovedAt.is_null())
+                let participants = class_participants::Entity::find()
+                    .filter(class_participants::Column::UserId.eq(user_id))
+                    .filter(class_participants::Column::Role.eq("student"))
+                    .filter(class_participants::Column::RemovedAt.is_null())
                     .all(&self.db)
                     .await
                     .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-                Ok(enrollments.iter().map(|e| e.class_id).collect())
+                Ok(participants.iter().map(|p| p.class_id).collect())
             }
             "teacher" => {
                 // Teachers can see classes they teach
-                let classes = classes::Entity::find()
-                    .filter(classes::Column::TeacherId.eq(user_id))
-                    .filter(classes::Column::IsArchived.eq(false))
+                let participants = class_participants::Entity::find()
+                    .filter(class_participants::Column::UserId.eq(user_id))
+                    .filter(class_participants::Column::Role.eq("teacher"))
+                    .filter(class_participants::Column::RemovedAt.is_null())
                     .all(&self.db)
                     .await
                     .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-                Ok(classes.iter().map(|c| c.id).collect())
+                Ok(participants.iter().map(|p| p.class_id).collect())
             }
             "admin" => {
                 // Admins can see all classes
@@ -63,15 +65,16 @@ impl EntitlementRepository {
         student_id: Uuid,
         class_id: Uuid,
     ) -> AppResult<bool> {
-        let enrollment = class_enrollments::Entity::find()
-            .filter(class_enrollments::Column::StudentId.eq(student_id))
-            .filter(class_enrollments::Column::ClassId.eq(class_id))
-            .filter(class_enrollments::Column::RemovedAt.is_null())
+        let participant = class_participants::Entity::find()
+            .filter(class_participants::Column::UserId.eq(student_id))
+            .filter(class_participants::Column::ClassId.eq(class_id))
+            .filter(class_participants::Column::Role.eq("student"))
+            .filter(class_participants::Column::RemovedAt.is_null())
             .one(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-        Ok(enrollment.is_some())
+        Ok(participant.is_some())
     }
 
     /// Check if user teaches a specific class
@@ -80,12 +83,16 @@ impl EntitlementRepository {
         teacher_id: Uuid,
         class_id: Uuid,
     ) -> AppResult<bool> {
-        let class = classes::Entity::find_by_id(class_id)
+        let participant = class_participants::Entity::find()
+            .filter(class_participants::Column::UserId.eq(teacher_id))
+            .filter(class_participants::Column::ClassId.eq(class_id))
+            .filter(class_participants::Column::Role.eq("teacher"))
+            .filter(class_participants::Column::RemovedAt.is_null())
             .one(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-        Ok(class.map(|c| c.teacher_id == teacher_id).unwrap_or(false))
+        Ok(participant.is_some())
     }
 
     /// Verify user can perform an action on an entity
@@ -132,13 +139,14 @@ impl EntitlementRepository {
 
     /// Get all students in a class
     pub async fn get_class_students(&self, class_id: Uuid) -> AppResult<Vec<Uuid>> {
-        let enrollments = class_enrollments::Entity::find()
-            .filter(class_enrollments::Column::ClassId.eq(class_id))
-            .filter(class_enrollments::Column::RemovedAt.is_null())
+        let participants = class_participants::Entity::find()
+            .filter(class_participants::Column::ClassId.eq(class_id))
+            .filter(class_participants::Column::Role.eq("student"))
+            .filter(class_participants::Column::RemovedAt.is_null())
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-        Ok(enrollments.iter().map(|e| e.student_id).collect())
+        Ok(participants.iter().map(|p| p.user_id).collect())
     }
 }
