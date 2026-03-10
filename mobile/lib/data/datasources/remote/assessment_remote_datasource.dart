@@ -46,6 +46,11 @@ abstract class AssessmentRemoteDataSource {
 
   Future<void> deleteQuestion({required String questionId});
 
+  Future<void> reorderAllQuestions({
+    required String assessmentId,
+    required List<String> questionIds,
+  });
+
   Future<List<SubmissionSummaryModel>> getSubmissions({
     required String assessmentId,
   });
@@ -242,6 +247,21 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
   Future<void> deleteQuestion({required String questionId}) async {
     try {
       await _dioClient.deleteTyped(ApiEndpoints.questionDetail(questionId));
+    } on DioException catch (e) {
+      throw _dioClient.handleError(e);
+    }
+  }
+
+  @override
+  Future<void> reorderAllQuestions({
+    required String assessmentId,
+    required List<String> questionIds,
+  }) async {
+    try {
+      await _dioClient.postVoid(
+        ApiEndpoints.assessmentQuestionsReorder(assessmentId),
+        data: {'question_ids': questionIds},
+      );
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }

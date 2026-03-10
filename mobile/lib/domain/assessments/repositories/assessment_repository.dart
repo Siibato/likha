@@ -56,6 +56,11 @@ abstract class AssessmentRepository {
 
   ResultVoid deleteQuestion({required String questionId});
 
+  ResultVoid reorderQuestions({
+    required String assessmentId,
+    required List<String> questionIds,
+  });
+
   // Teacher: Submissions & Grading
   ResultFuture<List<SubmissionSummary>> getSubmissions({
     required String assessmentId,

@@ -10,6 +10,7 @@ import 'package:likha/presentation/pages/teacher/widgets/question_draft.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_details_section.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_questions_section.dart';
+import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -37,6 +38,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
   bool _isSaving = false;
   bool _draftLoaded = false;
   Timer? _autoSaveTimer;
+  bool _isQuestionReorderMode = false;
 
   @override
   void initState() {
@@ -139,6 +141,33 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
       _isPublished = true;
       _questions.clear();
     }
+  }
+
+  void _enterQuestionReorderMode() {
+    setState(() => _isQuestionReorderMode = true);
+  }
+
+  void _exitQuestionReorderMode() {
+    setState(() => _isQuestionReorderMode = false);
+    _scheduleAutoSave();
+  }
+
+  void _showQuestionMoveDialog(int currentIndex) {
+    showDialog(
+      context: context,
+      builder: (ctx) => ReorderPositionDialog(
+        resourceType: 'questions',
+        totalCount: _questions.length,
+        currentPosition: currentIndex,
+        onReorder: (fromIndex, toIndex) {
+          setState(() {
+            final q = _questions.removeAt(fromIndex);
+            _questions.insert(toIndex, q);
+          });
+          _scheduleAutoSave();
+        },
+      ),
+    );
   }
 
   String _formatDateTimeForApi(DateTime dt) {
@@ -430,10 +459,14 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                         AssessmentQuestionsSection(
                           questions: _questions,
                           isLoading: _isSaving,
-                          onAddQuestion: () => setState(() => _questions.add(QuestionDraft())),
+                          isReorderMode: _isQuestionReorderMode,
+                          onAddQuestion: _isQuestionReorderMode ? null : () => setState(() => _questions.add(QuestionDraft())),
                           onRemoveQuestion: (index) => setState(() => _questions.removeAt(index)),
                           onQuestionsChanged: _scheduleAutoSave,
-                          onSaveQuestions: null, // Remove the old button
+                          onSaveQuestions: null,
+                          onEnterReorderMode: _questions.length > 1 && !_isQuestionReorderMode ? _enterQuestionReorderMode : null,
+                          onExitReorderMode: _isQuestionReorderMode ? _exitQuestionReorderMode : null,
+                          onReorderQuestion: _isQuestionReorderMode ? _showQuestionMoveDialog : null,
                         ),
                         const SizedBox(height: 24),
                       ],
@@ -475,7 +508,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: _isSaving ? null : _handleSave,
+                              onPressed: _isSaving || _isQuestionReorderMode ? null : _handleSave,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF2B2B2B),
                                 foregroundColor: Colors.white,

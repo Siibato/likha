@@ -4,6 +4,7 @@ import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
 import 'package:likha/presentation/pages/teacher/widgets/question_type_dropdown.dart';
+import 'package:likha/presentation/pages/teacher/widgets/assessment_field.dart';
 
 class AddQuestionPage extends ConsumerStatefulWidget {
   final String assessmentId;
@@ -143,23 +144,54 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
     });
 
     return Scaffold(
+      backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
-        title: const Text('Add Question'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close_rounded, color: Color(0xFF2B2B2B)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Add Question',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF2B2B2B),
+            letterSpacing: -0.3,
+          ),
+        ),
         actions: [
-          TextButton(
-            onPressed: state.isLoading ? null : _handleSave,
-            child: state.isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Save'),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: TextButton(
+              onPressed: state.isLoading ? null : _handleSave,
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF2B2B2B),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
+              child: state.isLoading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFF2B2B2B),
+                      ),
+                    )
+                  : const Text(
+                      'Save',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
@@ -171,15 +203,11 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
                 enabled: !state.isLoading,
               ),
               const SizedBox(height: 16),
-              TextFormField(
+              AssessmentField(
+                label: 'Question Text',
+                icon: Icons.help_outline_rounded,
                 controller: _questionTextController,
                 maxLines: 3,
-                decoration: InputDecoration(
-                  labelText: 'Question Text',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Question text is required';
@@ -189,15 +217,11 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
                 enabled: !state.isLoading,
               ),
               const SizedBox(height: 16),
-              TextFormField(
+              AssessmentField(
+                label: 'Points',
+                icon: Icons.star_outline_rounded,
                 controller: _pointsController,
                 keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Points',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Points are required';
@@ -228,27 +252,42 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: const Text('Allow multiple correct answers'),
-          value: _isMultiSelect,
-          onChanged: isLoading
-              ? null
-              : (value) {
-                  setState(() {
-                    _isMultiSelect = value;
-                    if (!value) {
-                      bool found = false;
-                      for (final c in _choices) {
-                        if (c.isCorrect && found) c.isCorrect = false;
-                        if (c.isCorrect) found = true;
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE0E0E0)),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          margin: const EdgeInsets.only(bottom: 16),
+          child: SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Allow multiple correct answers'),
+            value: _isMultiSelect,
+            activeColor: const Color(0xFF2B2B2B),
+            onChanged: isLoading
+                ? null
+                : (value) {
+                    setState(() {
+                      _isMultiSelect = value;
+                      if (!value) {
+                        bool found = false;
+                        for (final c in _choices) {
+                          if (c.isCorrect && found) c.isCorrect = false;
+                          if (c.isCorrect) found = true;
+                        }
                       }
-                    }
-                  });
-                },
+                    });
+                  },
+          ),
         ),
         const Text('Choices',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
+              color: Color(0xFF2B2B2B),
+              letterSpacing: -0.2,
+            )),
         const SizedBox(height: 8),
         ..._choices.asMap().entries.map((entry) {
           final index = entry.key;
@@ -259,6 +298,8 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
               children: [
                 Checkbox(
                   value: choice.isCorrect,
+                  activeColor: const Color(0xFF2B2B2B),
+                  checkColor: Colors.white,
                   onChanged: isLoading
                       ? null
                       : (value) {
@@ -277,8 +318,46 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
                     controller: choice.controller,
                     decoration: InputDecoration(
                       labelText: 'Choice ${index + 1}',
+                      labelStyle: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF999999),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Color(0xFFE0E0E0),
+                          width: 1,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Color(0xFFE0E0E0),
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF2B2B2B),
+                          width: 1.5,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Color(0xFFEF5350),
+                          width: 1,
+                        ),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Color(0xFFEF5350),
+                          width: 1.5,
+                        ),
                       ),
                       isDense: true,
                     ),
@@ -287,7 +366,7 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
                 ),
                 if (_choices.length > 2)
                   IconButton(
-                    icon: const Icon(Icons.close, size: 20),
+                    icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF666666)),
                     onPressed: isLoading
                         ? null
                         : () {
@@ -309,6 +388,9 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
                     _choices.add(_ChoiceEdit());
                   });
                 },
+          style: TextButton.styleFrom(
+            foregroundColor: const Color(0xFF2B2B2B),
+          ),
           icon: const Icon(Icons.add, size: 18),
           label: const Text('Add Choice'),
         ),
@@ -321,11 +403,16 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Acceptable Answers',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
+              color: Color(0xFF2B2B2B),
+              letterSpacing: -0.2,
+            )),
         const SizedBox(height: 4),
         Text(
           'Students can enter any of these answers (case-insensitive)',
-          style: TextStyle(color: Colors.grey[600], fontSize: 13),
+          style: const TextStyle(color: Color(0xFF999999), fontSize: 13),
         ),
         const SizedBox(height: 12),
         ..._acceptableAnswerControllers.asMap().entries.map((entry) {
@@ -339,8 +426,46 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
                     controller: entry.value,
                     decoration: InputDecoration(
                       labelText: 'Answer ${index + 1}',
+                      labelStyle: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF999999),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Color(0xFFE0E0E0),
+                          width: 1,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Color(0xFFE0E0E0),
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF2B2B2B),
+                          width: 1.5,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Color(0xFFEF5350),
+                          width: 1,
+                        ),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Color(0xFFEF5350),
+                          width: 1.5,
+                        ),
                       ),
                       isDense: true,
                     ),
@@ -349,7 +474,7 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
                 ),
                 if (_acceptableAnswerControllers.length > 1)
                   IconButton(
-                    icon: const Icon(Icons.close, size: 20),
+                    icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF666666)),
                     onPressed: isLoading
                         ? null
                         : () {
@@ -371,6 +496,9 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
                     _acceptableAnswerControllers.add(TextEditingController());
                   });
                 },
+          style: TextButton.styleFrom(
+            foregroundColor: const Color(0xFF2B2B2B),
+          ),
           icon: const Icon(Icons.add, size: 18),
           label: const Text('Add Acceptable Answer'),
         ),
@@ -383,99 +511,147 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Enumeration Items',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
+              color: Color(0xFF2B2B2B),
+              letterSpacing: -0.2,
+            )),
         const SizedBox(height: 4),
         Text(
           'Each item can have multiple acceptable answers',
-          style: TextStyle(color: Colors.grey[600], fontSize: 13),
+          style: const TextStyle(color: Color(0xFF999999), fontSize: 13),
         ),
         const SizedBox(height: 12),
         ..._enumerationItems.asMap().entries.map((entry) {
           final itemIndex = entry.key;
           final item = entry.value;
-          return Card(
-            color: Colors.grey[50],
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE0E0E0)),
+            ),
             margin: const EdgeInsets.only(bottom: 12),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        'Item ${itemIndex + 1}',
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline,
-                            size: 20, color: Colors.red),
-                        onPressed: isLoading
-                            ? null
-                            : () {
-                                setState(() {
-                                  for (final c in item.answerControllers) {
-                                    c.dispose();
-                                  }
-                                  _enumerationItems.removeAt(itemIndex);
-                                });
-                              },
-                      ),
-                    ],
-                  ),
-                  ...item.answerControllers.asMap().entries.map((ae) {
-                    final answerIndex = ae.key;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: ae.value,
-                              decoration: InputDecoration(
-                                labelText: 'Variant ${answerIndex + 1}',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                isDense: true,
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Item ${itemIndex + 1}',
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline_rounded,
+                          size: 20, color: Color(0xFFEA4335)),
+                      onPressed: isLoading
+                          ? null
+                          : () {
+                              setState(() {
+                                for (final c in item.answerControllers) {
+                                  c.dispose();
+                                }
+                                _enumerationItems.removeAt(itemIndex);
+                              });
+                            },
+                    ),
+                  ],
+                ),
+                ...item.answerControllers.asMap().entries.map((ae) {
+                  final answerIndex = ae.key;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: ae.value,
+                            decoration: InputDecoration(
+                              labelText: 'Variant ${answerIndex + 1}',
+                              labelStyle: const TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF999999),
                               ),
-                              enabled: !isLoading,
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFE0E0E0),
+                                  width: 1,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFE0E0E0),
+                                  width: 1,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF2B2B2B),
+                                  width: 1.5,
+                                ),
+                              ),
+                              errorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFEF5350),
+                                  width: 1,
+                                ),
+                              ),
+                              focusedErrorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFEF5350),
+                                  width: 1.5,
+                                ),
+                              ),
+                              isDense: true,
                             ),
+                            enabled: !isLoading,
                           ),
-                          if (item.answerControllers.length > 1)
-                            IconButton(
-                              icon: const Icon(Icons.close, size: 18),
-                              onPressed: isLoading
-                                  ? null
-                                  : () {
-                                      setState(() {
-                                        item.answerControllers[answerIndex]
-                                            .dispose();
-                                        item.answerControllers
-                                            .removeAt(answerIndex);
-                                      });
-                                    },
-                            ),
-                        ],
-                      ),
-                    );
-                  }),
-                  TextButton.icon(
-                    onPressed: isLoading
-                        ? null
-                        : () {
-                            setState(() {
-                              item.answerControllers
-                                  .add(TextEditingController());
-                            });
-                          },
-                    icon: const Icon(Icons.add, size: 16),
-                    label: const Text('Add Variant',
-                        style: TextStyle(fontSize: 13)),
+                        ),
+                        if (item.answerControllers.length > 1)
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF666666)),
+                            onPressed: isLoading
+                                ? null
+                                : () {
+                                    setState(() {
+                                      item.answerControllers[answerIndex]
+                                          .dispose();
+                                      item.answerControllers
+                                          .removeAt(answerIndex);
+                                    });
+                                  },
+                          ),
+                      ],
+                    ),
+                  );
+                }),
+                TextButton.icon(
+                  onPressed: isLoading
+                      ? null
+                      : () {
+                          setState(() {
+                            item.answerControllers
+                                .add(TextEditingController());
+                          });
+                        },
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF2B2B2B),
                   ),
-                ],
-              ),
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('Add Variant',
+                      style: TextStyle(fontSize: 13)),
+                ),
+              ],
             ),
           );
         }),
@@ -489,6 +665,9 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
                     ));
                   });
                 },
+          style: TextButton.styleFrom(
+            foregroundColor: const Color(0xFF2B2B2B),
+          ),
           icon: const Icon(Icons.add, size: 18),
           label: const Text('Add Enumeration Item'),
         ),

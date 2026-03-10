@@ -11,6 +11,7 @@ import 'package:likha/presentation/pages/teacher/edit_question_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_info_card.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_status_card.dart';
 import 'package:likha/presentation/pages/teacher/widgets/questions_section.dart';
+import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
 
@@ -24,15 +25,31 @@ class AssessmentDetailPage extends ConsumerStatefulWidget {
       _AssessmentDetailPageState();
 }
 
-class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
+class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
+    with TickerProviderStateMixin {
+  bool _isQuestionReorderMode = false;
+  List<Question> _questionReorderBuffer = [];
+  late AnimationController _questionAnimController;
+  final Map<String, int> _questionAnimatingIndices = {};
+
   @override
   void initState() {
     super.initState();
+    _questionAnimController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
           .read(assessmentProvider.notifier)
           .loadAssessmentDetail(widget.assessmentId);
     });
+  }
+
+  @override
+  void dispose() {
+    _questionAnimController.dispose();
+    super.dispose();
   }
 
   void _confirmPublish(Assessment assessment) {
@@ -143,6 +160,64 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
             .loadAssessmentDetail(widget.assessmentId);
       }
     });
+  }
+
+  void _enterQuestionReorderMode(List<Question> questions) {
+    setState(() {
+      _isQuestionReorderMode = true;
+      _questionReorderBuffer = List.from(questions);
+    });
+  }
+
+  void _cancelQuestionReorderMode() {
+    setState(() {
+      _isQuestionReorderMode = false;
+      _questionReorderBuffer = [];
+      _questionAnimatingIndices.clear();
+    });
+  }
+
+  void _exitQuestionReorderMode(String assessmentId) async {
+    setState(() {
+      _isQuestionReorderMode = false;
+      _questionAnimatingIndices.clear();
+    });
+
+    final questionIds = _questionReorderBuffer.map((q) => q.id).toList();
+    await ref.read(assessmentProvider.notifier).reorderAllQuestions(
+      assessmentId: assessmentId,
+      questionIds: questionIds,
+      orderedQuestions: _questionReorderBuffer,
+    );
+    _questionReorderBuffer = [];
+  }
+
+  void _showQuestionMoveDialog(int index) {
+    showDialog(
+      context: context,
+      builder: (ctx) => ReorderPositionDialog(
+        resourceType: 'questions',
+        totalCount: _questionReorderBuffer.length,
+        currentPosition: index,
+        onReorder: (fromIndex, toIndex) {
+          _animateQuestionReorder(fromIndex, toIndex);
+        },
+      ),
+    );
+  }
+
+  void _animateQuestionReorder(int fromIndex, int toIndex) {
+    _questionAnimatingIndices.clear();
+    for (int i = 0; i < _questionReorderBuffer.length; i++) {
+      _questionAnimatingIndices[_questionReorderBuffer[i].id] = i;
+    }
+
+    setState(() {
+      final q = _questionReorderBuffer.removeAt(fromIndex);
+      _questionReorderBuffer.insert(toIndex, q);
+    });
+
+    _questionAnimController.forward(from: 0);
   }
 
   @override
@@ -468,41 +543,183 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
                           ),
                           const SizedBox(height: 16),
                         ],
-                        QuestionsSection(
-                          questions: questions,
-                          canEdit: !assessment.isPublished,
-                          isPublished: assessment.isPublished,
-                          submissionCount: assessment.submissionCount,
-                          onAddQuestion: !assessment.isPublished
-                              ? () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => AddQuestionPage(
-                                        assessmentId: widget.assessmentId,
+                        if (_isQuestionReorderMode)
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFFE0E0E0),
+                                width: 1,
+                              ),
+                            ),
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      'Questions (${_questionReorderBuffer.length})',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF202020),
+                                        letterSpacing: -0.3,
                                       ),
                                     ),
-                                  ).then((result) {
-                                    if (result == true) {
-                                      ref
-                                          .read(assessmentProvider.notifier)
-                                          .loadAssessmentDetail(
-                                              widget.assessmentId);
-                                    }
-                                  })
-                              : null,
-                          onEditQuestion: !assessment.isPublished
-                              ? (question) => _navigateToEditQuestion(
-                                    question,
-                                    assessment.submissionCount > 0,
-                                  )
-                              : null,
-                          onDeleteQuestion: !assessment.isPublished
-                              ? (question) => _confirmDeleteQuestion(
-                                    question,
-                                    assessment.submissionCount > 0,
-                                  )
-                              : null,
-                        ),
+                                    const Spacer(),
+                                    TextButton(
+                                      onPressed: _cancelQuestionReorderMode,
+                                      child: const Text('Cancel'),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    ElevatedButton(
+                                      onPressed: () => _exitQuestionReorderMode(widget.assessmentId),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF2B2B2B),
+                                        foregroundColor: Colors.white,
+                                      ),
+                                      child: const Text('Done'),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                AnimatedBuilder(
+                                  animation: _questionAnimController,
+                                  builder: (context, _) => Column(
+                                    children: _questionReorderBuffer.asMap().entries.map((entry) {
+                                      final index = entry.key;
+                                      final question = entry.value;
+                                      final oldIndex = _questionAnimatingIndices[question.id];
+                                      double animOffset = 0;
+                                      if (oldIndex != null && oldIndex != index) {
+                                        const cardHeight = 92.0;
+                                        animOffset = (oldIndex - index) * cardHeight;
+                                      }
+                                      final currentOffset = Tween<double>(begin: animOffset, end: 0)
+                                          .evaluate(_questionAnimController);
+                                      return Transform.translate(
+                                        key: ValueKey(question.id),
+                                        offset: Offset(0, currentOffset),
+                                        child: GestureDetector(
+                                          onTap: () => _showQuestionMoveDialog(index),
+                                          child: Container(
+                                            margin: const EdgeInsets.only(bottom: 12),
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFFAFAFA),
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(
+                                                color: const Color(0xFFE0E0E0),
+                                              ),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Container(
+                                                  width: 32,
+                                                  height: 32,
+                                                  decoration: BoxDecoration(
+                                                    border: Border.all(
+                                                      color: const Color(0xFF2B2B2B),
+                                                      width: 1.5,
+                                                    ),
+                                                    borderRadius: BorderRadius.circular(4),
+                                                  ),
+                                                  child: Center(
+                                                    child: Text(
+                                                      '${index + 1}',
+                                                      style: const TextStyle(
+                                                        fontSize: 14,
+                                                        fontWeight: FontWeight.w600,
+                                                        color: Color(0xFF2B2B2B),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        question.questionText,
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis,
+                                                        style: const TextStyle(
+                                                          fontSize: 14,
+                                                          fontWeight: FontWeight.w500,
+                                                          color: Color(0xFF202020),
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 4),
+                                                      Chip(
+                                                        label: Text(
+                                                          question.questionType,
+                                                          style: const TextStyle(
+                                                            fontSize: 12,
+                                                          ),
+                                                        ),
+                                                        labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                                                        visualDensity: VisualDensity.compact,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                const Icon(
+                                                  Icons.chevron_right_rounded,
+                                                  color: Color(0xFF999999),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          QuestionsSection(
+                            questions: questions,
+                            canEdit: !assessment.isPublished,
+                            isPublished: assessment.isPublished,
+                            submissionCount: assessment.submissionCount,
+                            onAddQuestion: !assessment.isPublished
+                                ? () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => AddQuestionPage(
+                                          assessmentId: widget.assessmentId,
+                                        ),
+                                      ),
+                                    ).then((result) {
+                                      if (result == true) {
+                                        ref
+                                            .read(assessmentProvider.notifier)
+                                            .loadAssessmentDetail(
+                                                widget.assessmentId);
+                                      }
+                                    })
+                                : null,
+                            onEditQuestion: !assessment.isPublished
+                                ? (question) => _navigateToEditQuestion(
+                                      question,
+                                      assessment.submissionCount > 0,
+                                    )
+                                : null,
+                            onDeleteQuestion: !assessment.isPublished
+                                ? (question) => _confirmDeleteQuestion(
+                                      question,
+                                      assessment.submissionCount > 0,
+                                    )
+                                : null,
+                            onEnterReorderMode: !assessment.isPublished && questions.length > 1 && !_isQuestionReorderMode
+                                ? () => _enterQuestionReorderMode(questions)
+                                : null,
+                          ),
                         const SizedBox(height: 24),
                         SizedBox(
                           width: double.infinity,

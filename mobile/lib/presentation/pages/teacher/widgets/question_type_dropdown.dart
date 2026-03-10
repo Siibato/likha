@@ -22,7 +22,7 @@ class QuestionTypeDropdown extends StatelessWidget {
         splashColor: const Color(0xFFFAFAFA),
       ),
       child: DropdownButtonFormField<String>(
-        value: value,
+        initialValue: value,
         onChanged: enabled ? onChanged : null,
         decoration: InputDecoration(
           labelText: 'Question Type',
@@ -31,7 +31,7 @@ class QuestionTypeDropdown extends StatelessWidget {
             color: Color(0xFF999999),
           ),
           filled: true,
-          fillColor: const Color(0xFFFAFAFA),
+          fillColor: Colors.white,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(
@@ -55,7 +55,7 @@ class QuestionTypeDropdown extends StatelessWidget {
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
-            vertical: 14,
+            vertical: 16,
           ),
         ),
         style: const TextStyle(

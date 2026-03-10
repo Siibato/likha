@@ -41,6 +41,7 @@ import 'package:likha/domain/assessments/usecases/update_assessment.dart';
 import 'package:likha/domain/assessments/usecases/update_question.dart';
 import 'package:likha/domain/assessments/usecases/delete_question.dart';
 import 'package:likha/domain/assessments/usecases/reorder_assessment.dart';
+import 'package:likha/domain/assessments/usecases/reorder_questions.dart';
 import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
 import 'package:likha/data/datasources/local/assignments/impl/assignment_local_datasource_impl.dart';
 import 'package:likha/data/datasources/remote/assignment_remote_datasource.dart';
@@ -352,6 +353,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => UpdateAssessment(sl()));
   sl.registerLazySingleton(() => UpdateQuestion(sl()));
   sl.registerLazySingleton(() => DeleteQuestion(sl()));
+  sl.registerLazySingleton(() => ReorderAllQuestions(sl()));
   sl.registerLazySingleton(() => ReorderAllAssessments(sl()));
 
   // Assignment use cases

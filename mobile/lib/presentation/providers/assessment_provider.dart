@@ -25,6 +25,7 @@ import 'package:likha/domain/assessments/usecases/update_assessment.dart';
 import 'package:likha/domain/assessments/usecases/update_question.dart';
 import 'package:likha/domain/assessments/usecases/delete_question.dart';
 import 'package:likha/domain/assessments/usecases/reorder_assessment.dart';
+import 'package:likha/domain/assessments/usecases/reorder_questions.dart';
 import 'package:likha/injection_container.dart';
 
 class AssessmentState {
@@ -124,6 +125,7 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
   final UpdateAssessment _updateAssessment;
   final UpdateQuestion _updateQuestion;
   final DeleteQuestion _deleteQuestion;
+  final ReorderAllQuestions _reorderAllQuestions;
   final ReorderAllAssessments _reorderAllAssessments;
 
   String? _currentClassId;
@@ -149,6 +151,7 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
     this._updateAssessment,
     this._updateQuestion,
     this._deleteQuestion,
+    this._reorderAllQuestions,
     this._reorderAllAssessments,
   ) : super(AssessmentState()) {
     _refreshSub = sl<DataEventBus>().onAssessmentsChanged.listen((classId) {
@@ -287,6 +290,23 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
     final result = await _reorderAllAssessments(
       classId: classId,
       assessmentIds: assessmentIds,
+    );
+    result.fold(
+      (failure) => state = state.copyWith(error: failure.message),
+      (_) {},
+    );
+  }
+
+  Future<void> reorderAllQuestions({
+    required String assessmentId,
+    required List<String> questionIds,
+    required List<Question> orderedQuestions,
+  }) async {
+    // Optimistic update
+    state = state.copyWith(questions: orderedQuestions);
+    final result = await _reorderAllQuestions(
+      assessmentId: assessmentId,
+      questionIds: questionIds,
     );
     result.fold(
       (failure) => state = state.copyWith(error: failure.message),
@@ -568,6 +588,7 @@ final assessmentProvider =
     sl<UpdateAssessment>(),
     sl<UpdateQuestion>(),
     sl<DeleteQuestion>(),
+    sl<ReorderAllQuestions>(),
     sl<ReorderAllAssessments>(),
   );
 });

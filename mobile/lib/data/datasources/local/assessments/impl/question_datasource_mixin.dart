@@ -3,17 +3,34 @@ import 'package:likha/core/errors/exceptions.dart';
 import '../assessment_local_datasource_base.dart';
 
 mixin QuestionDataSourceMixin on AssessmentLocalDataSourceBase {
+  /// Transform API keys (choices, correct_answers, enumeration_items) to SQLite columns
+  static Map<String, dynamic> _toSqliteColumns(Map<String, dynamic> data) {
+    final result = Map<String, dynamic>.from(data);
+    if (result.containsKey('choices')) {
+      result['choices_json'] = jsonEncode(result.remove('choices'));
+    }
+    if (result.containsKey('correct_answers')) {
+      result['correct_answers_json'] = jsonEncode(result.remove('correct_answers'));
+    }
+    if (result.containsKey('enumeration_items')) {
+      result['enumeration_items_json'] = jsonEncode(result.remove('enumeration_items'));
+    }
+    return result;
+  }
+
   @override
   Future<void> updateQuestionLocally({
     required String questionId,
     required Map<String, dynamic> updates,
+    bool isOfflineMutation = true,
   }) async {
     try {
       final db = await localDatabase.database;
-      updates['updated_at'] = DateTime.now().toIso8601String();
-      updates['is_offline_mutation'] = 1;
-      updates['sync_status'] = 'pending';
-      await db.update('questions', updates, where: 'id = ?', whereArgs: [questionId]);
+      final sqlUpdates = _toSqliteColumns(Map.from(updates));
+      sqlUpdates['updated_at'] = DateTime.now().toIso8601String();
+      sqlUpdates['is_offline_mutation'] = isOfflineMutation ? 1 : 0;
+      sqlUpdates['sync_status'] = isOfflineMutation ? 'pending' : 'synced';
+      await db.update('questions', sqlUpdates, where: 'id = ?', whereArgs: [questionId]);
     } catch (e) {
       throw CacheException('Failed to update question locally: $e');
     }

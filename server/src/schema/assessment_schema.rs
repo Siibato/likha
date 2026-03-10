@@ -97,6 +97,11 @@ pub struct ReorderAssessmentsRequest {
     pub assessment_ids: Vec<Uuid>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ReorderQuestionsRequest {
+    pub question_ids: Vec<Uuid>,
+}
+
 // ===== RESPONSE SCHEMAS =====
 
 #[derive(Debug, Serialize)]

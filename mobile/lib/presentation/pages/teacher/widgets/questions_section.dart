@@ -10,6 +10,7 @@ class QuestionsSection extends StatelessWidget {
   final VoidCallback? onAddQuestion;
   final Function(Question)? onEditQuestion;
   final Function(Question)? onDeleteQuestion;
+  final VoidCallback? onEnterReorderMode;
 
   const QuestionsSection({
     super.key,
@@ -20,6 +21,7 @@ class QuestionsSection extends StatelessWidget {
     this.onAddQuestion,
     this.onEditQuestion,
     this.onDeleteQuestion,
+    this.onEnterReorderMode,
   });
 
   @override
@@ -50,7 +52,7 @@ class QuestionsSection extends StatelessWidget {
                   ),
                 ),
               ),
-              if (canEdit)
+              if (canEdit) ...[
                 ElevatedButton.icon(
                   onPressed: onAddQuestion,
                   style: ElevatedButton.styleFrom(
@@ -74,6 +76,33 @@ class QuestionsSection extends StatelessWidget {
                     ),
                   ),
                 ),
+                const SizedBox(width: 8),
+                if (questions.length > 1 && onEnterReorderMode != null)
+                  OutlinedButton.icon(
+                    onPressed: onEnterReorderMode,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF2B2B2B),
+                      side: const BorderSide(
+                        color: Color(0xFF2B2B2B),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: const Icon(Icons.reorder_rounded, size: 16),
+                    label: const Text(
+                      'Reorder',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+              ],
             ],
           ),
           if (submissionCount > 0 && canEdit) ...[

@@ -502,4 +502,21 @@ impl AssessmentRepository {
 
         Ok(())
     }
+
+    pub async fn reorder_questions(&self, assessment_id: Uuid, question_ids: Vec<Uuid>) -> AppResult<()> {
+        for (index, id) in question_ids.iter().enumerate() {
+            let question = assessment_questions::ActiveModel {
+                id: Set(*id),
+                order_index: Set(index as i32),
+                updated_at: Set(Utc::now().naive_utc()),
+                ..Default::default()
+            };
+            assessment_questions::Entity::update(question)
+                .exec(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Failed to reorder question: {}", e)))?;
+        }
+
+        Ok(())
+    }
 }

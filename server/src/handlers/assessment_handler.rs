@@ -174,6 +174,24 @@ pub async fn delete_question(
     }
 }
 
+pub async fn reorder_questions(
+    State(service): State<Arc<AssessmentService>>,
+    auth_user: AuthUser,
+    Path(assessment_id): Path<Uuid>,
+    Json(request): Json<ReorderQuestionsRequest>,
+) -> impl IntoResponse {
+    if auth_user.role != "teacher" {
+        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    }
+    match service.reorder_questions(assessment_id, request, auth_user.user_id).await {
+        Ok(()) => success_response(
+            MessageResponse { message: "Questions reordered".to_string() },
+            StatusCode::OK,
+        ).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
 // ===== TEACHER: SUBMISSIONS & GRADING =====
 
 pub async fn get_submissions(
