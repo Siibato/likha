@@ -8,10 +8,11 @@ abstract class AssignmentLocalDataSource {
   Future<AssignmentModel> getCachedAssignmentDetail(String assignmentId);
   Future<void> cacheAssignments(List<AssignmentModel> assignments);
   Future<void> cacheAssignmentDetail(AssignmentModel assignment);
-  Future<void> createSubmissionLocally({
+  Future<String> createSubmissionLocally({
     required String assignmentId,
     required String studentId,
-    required String studentName,
+    String studentName = '',
+    String? textContent,
   });
   Future<void> updateSubmissionTextLocally({
     required String submissionId,
@@ -44,6 +45,8 @@ abstract class AssignmentLocalDataSource {
     required String submissionId,
   });
   Future<void> cacheSubmissionDetail(AssignmentSubmissionModel submission);
+  Future<void> cacheSubmissionFile(String submissionId, SubmissionFileModel file);
+  Future<void> softDeleteSubmissionFile(String fileId);
   Future<void> markAssignmentPublishedLocally({required String assignmentId});
   Future<void> clearAllCache();
   Future<(String submissionId, String status, int? score)?> getStudentSubmissionForAssignment(

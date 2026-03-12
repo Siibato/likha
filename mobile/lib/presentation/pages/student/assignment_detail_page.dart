@@ -57,15 +57,16 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
   @override
   void initState() {
     super.initState();
-    // Load existing submission if submissionId is provided
-    if (widget.submissionId != null) {
-      _submissionId = widget.submissionId;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Always clear stale submission first, then load if submissionId exists
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(assignmentProvider.notifier).clearCurrentSubmission();
+      if (widget.submissionId != null) {
+        _submissionId = widget.submissionId;
         ref
             .read(assignmentProvider.notifier)
             .loadSubmissionDetail(widget.submissionId!);
-      });
-    }
+      }
+    });
   }
 
   @override
@@ -130,7 +131,11 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     if (result == null || result.files.isEmpty || !mounted) return;
 
     final file = result.files.first;
-    if (file.path == null) return;
+    if (file.path == null) {
+      // Fix 4: Show error instead of silent abort when file.path is null
+      context.showErrorSnackBar('Could not access file. Please try again.');
+      return;
+    }
 
     if (widget.maxFileSizeMb != null) {
       final fileSizeMb = file.size / (1024 * 1024);
@@ -228,7 +233,11 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(assignmentProvider);
-    final submission = state.currentSubmission;
+    final rawSubmission = state.currentSubmission;
+    // Guard: only use if it belongs to THIS assignment (prevents race conditions)
+    final submission = (rawSubmission?.assignmentId == widget.assignmentId)
+        ? rawSubmission
+        : null;
 
     // Prefill text content if submission exists
     if (submission != null &&

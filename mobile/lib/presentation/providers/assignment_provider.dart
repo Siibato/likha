@@ -358,6 +358,10 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     state = state.copyWith(clearError: true, clearSuccess: true);
   }
 
+  void clearCurrentSubmission() {
+    state = state.copyWith(clearSubmission: true);
+  }
+
   @override
   void dispose() {
     _refreshSub.cancel();

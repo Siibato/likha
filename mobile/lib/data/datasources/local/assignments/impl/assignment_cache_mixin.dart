@@ -1,6 +1,7 @@
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/assignments/assignment_model.dart';
 import 'package:likha/data/models/assignments/assignment_submission_model.dart';
+import 'package:likha/data/models/assignments/submission_file_model.dart';
 import 'package:sqflite/sqflite.dart';
 import '../assignment_local_datasource_base.dart';
 
@@ -125,6 +126,36 @@ mixin AssignmentCacheMixin on AssignmentLocalDataSourceBase {
       });
     } catch (e) {
       throw CacheException('Failed to cache submission detail: $e');
+    }
+  }
+
+  @override
+  Future<void> cacheSubmissionFile(String submissionId, SubmissionFileModel file) async {
+    try {
+      final db = await localDatabase.database;
+      final now = DateTime.now().toIso8601String();
+      final existing = await db.query(
+        'submission_files',
+        columns: ['is_local_only'],
+        where: 'id = ?',
+        whereArgs: [file.id],
+      );
+      if (existing.isEmpty) {
+        await db.insert('submission_files', {
+          'id': file.id,
+          'local_id': file.id,
+          'submission_id': submissionId,
+          'file_name': file.fileName,
+          'file_type': file.fileType,
+          'file_size': file.fileSize,
+          'uploaded_at': file.uploadedAt.toIso8601String(),
+          'local_path': null,
+          'is_local_only': 0,
+          'cached_at': now,
+        }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      }
+    } catch (e) {
+      throw CacheException('Failed to cache submission file: $e');
     }
   }
 }

@@ -304,23 +304,26 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
             ),
           ],
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton.icon(
-                onPressed: () => _confirmOverride(answer, true),
-                icon: const Icon(Icons.check, size: 18),
-                label: const Text('Mark Correct'),
-                style: TextButton.styleFrom(foregroundColor: AppColors.semanticSuccess),
-              ),
-              const SizedBox(width: 8),
-              TextButton.icon(
-                onPressed: () => _confirmOverride(answer, false),
-                icon: const Icon(Icons.close, size: 18),
-                label: const Text('Mark Incorrect'),
-                style: TextButton.styleFrom(foregroundColor: AppColors.semanticError),
-              ),
-            ],
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: () => _confirmOverride(answer, true),
+                  icon: const Icon(Icons.check, size: 18),
+                  label: const Text('Mark Correct'),
+                  style: TextButton.styleFrom(foregroundColor: AppColors.semanticSuccess),
+                ),
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: () => _confirmOverride(answer, false),
+                  icon: const Icon(Icons.close, size: 18),
+                  label: const Text('Mark Incorrect'),
+                  style: TextButton.styleFrom(foregroundColor: AppColors.semanticError),
+                ),
+              ],
+            ),
           ),
         ],
       ),

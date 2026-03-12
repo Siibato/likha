@@ -175,6 +175,16 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
               'points': q.points,
               'order_index': q.orderIndex,
               'is_multi_select': q.isMultiSelect,
+              if (q.choices != null)
+                'choices': q.choices!
+                    .map((c) => {
+                          'id': c.id,
+                          'choice_text': c.choiceText,
+                          'order_index': c.orderIndex,
+                        })
+                    .toList(),
+              if (q.enumerationItems != null)
+                'enumeration_count': q.enumerationItems!.length,
             }).toList();
             return Right(StartSubmissionResult(
               submissionId: existingSubmission.id,
@@ -201,6 +211,16 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
             'points': q.points,
             'order_index': q.orderIndex,
             'is_multi_select': q.isMultiSelect,
+            if (q.choices != null)
+              'choices': q.choices!
+                  .map((c) => {
+                        'id': c.id,
+                        'choice_text': c.choiceText,
+                        'order_index': c.orderIndex,
+                      })
+                  .toList(),
+            if (q.enumerationItems != null)
+              'enumeration_count': q.enumerationItems!.length,
           }).toList();
 
           return Right(StartSubmissionResult(
@@ -236,6 +256,16 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
           'points': q.points,
           'order_index': q.orderIndex,
           'is_multi_select': q.isMultiSelect,
+          if (q.choices != null)
+            'choices': q.choices!
+                .map((c) => {
+                      'id': c.id,
+                      'choice_text': c.choiceText,
+                      'order_index': c.orderIndex,
+                    })
+                .toList(),
+          if (q.enumerationItems != null)
+            'enumeration_count': q.enumerationItems!.length,
         }).toList();
         return Right(StartSubmissionResult(
           submissionId: existingSubmission.id,

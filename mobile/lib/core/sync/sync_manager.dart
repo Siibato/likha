@@ -211,14 +211,50 @@ class SyncManager {
     final pending = await _syncQueue.getAllRetriable();
     if (pending.isEmpty) return;
 
-    // Split uploads: material files run AFTER regular ops, others run FIRST
-    final nonMaterialFileUploads = pending
-        .where((e) => e.operation == SyncOperation.upload && e.entityType != SyncEntityType.materialFile)
+    // PASS 0: Process assessmentSubmission creates FIRST so dependent ops
+    // (submit) can reference the real server-assigned ID.
+    final assessmentSubmissionCreates = pending
+        .where((e) =>
+            e.entityType == SyncEntityType.assessmentSubmission &&
+            e.operation == SyncOperation.create)
         .toList();
-    final materialFileUploads = pending
-        .where((e) => e.operation == SyncOperation.upload && e.entityType == SyncEntityType.materialFile)
+
+    if (assessmentSubmissionCreates.isNotEmpty) {
+      await _syncAssessmentSubmissionCreates(assessmentSubmissionCreates);
+    }
+
+    // Re-fetch after reconciliation — creates are now 'succeeded',
+    // remaining pending entries have updated submission_ids in their payloads.
+    var remaining = await _syncQueue.getAllRetriable();
+    if (remaining.isEmpty) return;
+
+    // PASS 1: Process assignmentSubmission creates so dependent ops
+    // (submit, file uploads) can reference the real server-assigned ID.
+    final assignmentSubmissionCreates = remaining
+        .where((e) =>
+            e.entityType == SyncEntityType.assignmentSubmission &&
+            e.operation == SyncOperation.create)
         .toList();
-    final regularOps = pending
+
+    if (assignmentSubmissionCreates.isNotEmpty) {
+      await _syncAssignmentSubmissionCreates(assignmentSubmissionCreates);
+    }
+
+    // Re-fetch after reconciliation — creates are now 'succeeded',
+    // remaining pending entries have updated submission_ids in their payloads.
+    remaining = await _syncQueue.getAllRetriable();
+    if (remaining.isEmpty) return;
+
+    // Existing bucket-based logic (unchanged):
+    final nonMaterialFileUploads = remaining
+        .where((e) => e.operation == SyncOperation.upload &&
+                    e.entityType != SyncEntityType.materialFile)
+        .toList();
+    final materialFileUploads = remaining
+        .where((e) => e.operation == SyncOperation.upload &&
+                    e.entityType == SyncEntityType.materialFile)
+        .toList();
+    final regularOps = remaining
         .where((e) => e.operation != SyncOperation.upload)
         .toList();
 
@@ -240,7 +276,7 @@ class SyncManager {
       await _handleFileUpload(op);
     }
 
-    // Step 2: Run all regular operations in one batch (no two-phase split)
+    // Step 2: Run all regular operations in one batch
     if (regularOps.isNotEmpty) {
       await _syncRegularBatch(regularOps, pushStartTime);
     }
@@ -248,6 +284,98 @@ class SyncManager {
     // Step 3: Run material file uploads AFTER regular ops (material now exists on server)
     for (final op in materialFileUploads) {
       await _handleFileUpload(op);
+    }
+  }
+
+  /// Process assessmentSubmission creates first and reconcile local IDs with server IDs
+  Future<void> _syncAssessmentSubmissionCreates(
+      List<SyncQueueEntry> createOps) async {
+    final operations = createOps.map((entry) => {
+      'id':          entry.id,
+      'entity_type': entry.entityType.serverValue,
+      'operation':   entry.operation.serverValue,
+      'payload':     entry.payload,
+    }).toList();
+
+    final response =
+        await _syncRemoteDataSource.pushOperations(operations: operations);
+
+    final db = await _localDatabase.database;
+
+    for (final result in response.results) {
+      if (result.success) {
+        final entry = createOps.firstWhere((e) => e.id == result.id);
+        final localId = entry.payload['local_id'] as String?;
+        final serverId = result.serverId;
+
+        if (localId != null && serverId != null && localId != serverId) {
+          // Reconcile assessment_submissions table
+          await db.update(
+            'assessment_submissions',
+            {'id': serverId},
+            where: 'id = ?',
+            whereArgs: [localId],
+          );
+
+          // Rewrite submission_id in all remaining pending queue entries
+          // (covers submit op + save_answers op referencing the local UUID)
+          await _syncQueue.updatePendingSubmissionIds(localId, serverId);
+        }
+
+        await _syncQueue.markSucceeded(result.id);
+      } else {
+        await _syncQueue.markFailed(result.id, result.error ?? 'Unknown error');
+      }
+    }
+  }
+
+  /// Process assignmentSubmission creates first and reconcile local IDs with server IDs
+  Future<void> _syncAssignmentSubmissionCreates(
+      List<SyncQueueEntry> createOps) async {
+    final operations = createOps.map((entry) => {
+      'id':          entry.id,
+      'entity_type': entry.entityType.serverValue,
+      'operation':   entry.operation.serverValue,
+      'payload':     entry.payload,
+    }).toList();
+
+    final response =
+        await _syncRemoteDataSource.pushOperations(operations: operations);
+
+    final db = await _localDatabase.database;
+
+    for (final result in response.results) {
+      if (result.success) {
+        final entry = createOps.firstWhere((e) => e.id == result.id);
+        final localId = entry.payload['id'] as String?;
+        final serverId = result.serverId;
+
+        if (localId != null && serverId != null && localId != serverId) {
+          // Reconcile assignment_submissions table
+          await db.update(
+            'assignment_submissions',
+            {'id': serverId},
+            where: 'id = ?',
+            whereArgs: [localId],
+          );
+
+          // Reconcile submission_files staged under the local submission ID
+          await db.update(
+            'submission_files',
+            {'submission_id': serverId},
+            where: 'submission_id = ? AND is_local_only = 1',
+            whereArgs: [localId],
+          );
+
+          // Rewrite submission_id in all remaining pending queue entries
+          // (covers submit op + file upload ops referencing the local UUID)
+          await _syncQueue.updatePendingSubmissionIds(localId, serverId);
+        }
+
+        await _syncQueue.markSucceeded(result.id);
+      } else {
+        await _syncQueue.markFailed(result.id, result.error ?? 'Unknown error');
+      }
     }
   }
 
@@ -1760,11 +1888,35 @@ class SyncManager {
       }
 
       if (submissionId != null) {
-        await _syncRemoteDataSource.uploadSubmissionFile(
+        final response = await _syncRemoteDataSource.uploadSubmissionFile(
           submissionId: submissionId,
           localPath: localPath,
           fileName: fileName,
         );
+
+        // Fix 3: Reconcile server file ID with local UUID
+        if (response != null && fileId != null) {
+          final serverId = response['id'] as String?;
+          if (serverId != null && serverId != fileId) {
+            try {
+              final db = await _localDatabase.database;
+              // Rename row ID from local UUID to server UUID
+              await db.update(
+                'submission_files',
+                {
+                  'id': serverId,
+                  'is_local_only': 0,
+                  'local_path': null,
+                },
+                where: 'id = ?',
+                whereArgs: [fileId],
+              );
+            } catch (e) {
+              _log.error('Failed to reconcile file ID: $e');
+              // Continue — file is on server even if local reconciliation fails
+            }
+          }
+        }
       } else if (materialId != null) {
         await _syncRemoteDataSource.uploadMaterialFile(
           materialId: materialId,

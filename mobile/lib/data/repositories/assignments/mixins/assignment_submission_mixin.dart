@@ -47,19 +47,27 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
     required String submissionId,
   }) async {
     try {
-      final cached =
-          await localDataSource.getCachedSubmission(submissionId);
-      if (cached != null) {
-        unawaited(validationService.validateAndSync('assignments'));
-        return Right(cached);
+      // Fix 2: Server-primary when online (stale-while-revalidate pattern)
+      if (serverReachabilityService.isServerReachable) {
+        try {
+          final result = await remoteDataSource.getSubmissionDetail(
+              submissionId: submissionId);
+          unawaited(localDataSource.cacheSubmissionDetail(result));
+          unawaited(validationService.validateAndSync('assignments'));
+          return Right(result);
+        } on NetworkException {
+          // Server became unreachable mid-request — fall back to cache
+          final cached =
+              await localDataSource.getCachedSubmission(submissionId);
+          if (cached != null) return Right(cached);
+          rethrow;
+        }
       }
-    } catch (_) {}
 
-    try {
-      final result = await remoteDataSource.getSubmissionDetail(
-          submissionId: submissionId);
-      unawaited(localDataSource.cacheSubmissionDetail(result));
-      return Right(result);
+      // Offline: use cached data
+      final cached = await localDataSource.getCachedSubmission(submissionId);
+      if (cached != null) return Right(cached);
+      return Left(NetworkFailure('No connection and no cached submission'));
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } on NetworkException catch (e) {
@@ -169,24 +177,18 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
-        await syncQueue.enqueue(SyncQueueEntry(
-          id: const Uuid().v4(),
-          entityType: SyncEntityType.assignmentSubmission,
-          operation: SyncOperation.create,
-          payload: {
-            'assignment_id': assignmentId,
-            if (textContent != null) 'text_content': textContent,
-          },
-          status: SyncStatus.pending,
-          retryCount: 0,
-          maxRetries: 5,
-          createdAt: DateTime.now(),
-        ));
+        final studentId = await storageService.getUserId() ?? '';
+        final localId = await localDataSource.createSubmissionLocally(
+          assignmentId: assignmentId,
+          studentId: studentId,
+          textContent: textContent,
+        );
+        // No direct syncQueue.enqueue — createSubmissionLocally already enqueues atomically
 
         return Right(AssignmentSubmission(
-          id: '',
+          id: localId,
           assignmentId: assignmentId,
-          studentId: '',
+          studentId: studentId,
           studentName: '',
           status: 'draft',
           textContent: textContent,
@@ -205,6 +207,8 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
         assignmentId: assignmentId,
         textContent: textContent,
       );
+      // Cache submission for offline access (Fix 6)
+      unawaited(localDataSource.cacheSubmissionDetail(result));
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -248,6 +252,8 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
         filePath: filePath,
         fileName: fileName,
       );
+      // Fix 1: Cache uploaded file locally for immediate visibility
+      unawaited(localDataSource.cacheSubmissionFile(submissionId, result));
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -272,6 +278,8 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
           maxRetries: 5,
           createdAt: DateTime.now(),
         ));
+        // Fix 5: Soft-delete locally so file disappears from UI immediately
+        await localDataSource.softDeleteSubmissionFile(fileId);
         return const Right(null);
       }
 
@@ -292,30 +300,28 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
-        await syncQueue.enqueue(SyncQueueEntry(
-          id: const Uuid().v4(),
-          entityType: SyncEntityType.assignmentSubmission,
-          operation: SyncOperation.submit,
-          payload: {
-            'submission_id': submissionId,
-          },
-          status: SyncStatus.pending,
-          retryCount: 0,
-          maxRetries: 5,
-          createdAt: DateTime.now(),
-        ));
+        final cached = await localDataSource.getCachedSubmission(submissionId);
+        final assignmentId = cached?.assignmentId ?? '';
+        await localDataSource.submitAssignmentLocally(
+          submissionId: submissionId,
+          assignmentId: assignmentId,
+        );
+        // No direct syncQueue.enqueue — submitAssignmentLocally already enqueues atomically
 
+        // Read the freshly-updated cached row for a complete response
+        final updated = await localDataSource.getCachedSubmission(submissionId);
+        if (updated != null) return Right(updated);
         return Right(AssignmentSubmission(
           id: submissionId,
-          assignmentId: '',
+          assignmentId: assignmentId,
           studentId: '',
           studentName: '',
           status: 'submitted',
+          isLate: false,
+          files: const [],
           textContent: null,
           score: null,
           feedback: null,
-          isLate: false,
-          files: const [],
           submittedAt: DateTime.now(),
           gradedAt: null,
           createdAt: DateTime.now(),
