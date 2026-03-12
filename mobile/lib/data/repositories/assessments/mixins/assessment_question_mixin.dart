@@ -91,12 +91,11 @@ mixin AssessmentQuestionMixin on AssessmentRepositoryBase {
                 final origItem = originalItems[j];
                 final enumItem = model.enumerationItems![j];
                 final item = {...origItem, 'id': enumItem.id};
-                if (enumItem.acceptableAnswers != null) {
-                  item['acceptable_answers'] = List.generate(
-                    enumItem.acceptableAnswers!.length,
-                    (k) => {'id': enumItem.acceptableAnswers![k].id, 'answer_text': enumItem.acceptableAnswers![k].answerText},
-                  );
-                }
+                final answers = enumItem.acceptableAnswers;
+                item['acceptable_answers'] = List.generate(
+                  answers.length,
+                  (k) => {'id': answers[k].id, 'answer_text': answers[k].answerText},
+                );
                 return item;
               },
             );
@@ -175,6 +174,13 @@ mixin AssessmentQuestionMixin on AssessmentRepositoryBase {
         questionId: questionId,
         data: data,
       );
+      // Write confirmed server data back to local cache so next loadAssessmentDetail
+      // reads fresh data (without waiting for background fetch to detect the change).
+      await localDataSource.updateQuestionLocally(
+        questionId: questionId,
+        updates: data,
+        isOfflineMutation: false,  // mark as synced — no re-sync needed
+      );
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -206,6 +212,41 @@ mixin AssessmentQuestionMixin on AssessmentRepositoryBase {
 
       await remoteDataSource.deleteQuestion(questionId: questionId);
       await localDataSource.deleteQuestionLocally(questionId: questionId);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  ResultVoid reorderQuestions({
+    required String assessmentId,
+    required List<String> questionIds,
+  }) async {
+    try {
+      if (!serverReachabilityService.isServerReachable) {
+        for (int i = 0; i < questionIds.length; i++) {
+          await syncQueue.enqueue(SyncQueueEntry(
+            id: const Uuid().v4(),
+            entityType: SyncEntityType.question,
+            operation: SyncOperation.update,
+            payload: {'id': questionIds[i], 'order_index': i},
+            status: SyncStatus.pending,
+            retryCount: 0,
+            maxRetries: 5,
+            createdAt: DateTime.now(),
+          ));
+        }
+        return const Right(null);
+      }
+      await remoteDataSource.reorderAllQuestions(
+        assessmentId: assessmentId,
+        questionIds: questionIds,
+      );
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

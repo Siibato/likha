@@ -10,7 +10,12 @@ import 'package:likha/presentation/widgets/auth_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: '.env');
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (e) {
+    // .env not found - will use fallback URL
+    print('Warning: .env file not loaded: $e');
+  }
   await di.init();
 
   // Start offline sync manager

@@ -22,16 +22,18 @@ class AssessmentStatusBanner extends StatelessWidget {
   });
 
   String _formatDateTime(DateTime dt) {
-    final month = dt.month.toString().padLeft(2, '0');
-    final day = dt.day.toString().padLeft(2, '0');
-    final year = dt.year;
-    final hour = dt.hour > 12
-        ? dt.hour - 12
-        : dt.hour == 0
+    // Convert UTC to device local time before formatting
+    final local = dt.toLocal();
+    final month = local.month.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    final year = local.year;
+    final hour = local.hour > 12
+        ? local.hour - 12
+        : local.hour == 0
             ? 12
-            : dt.hour;
-    final minute = dt.minute.toString().padLeft(2, '0');
-    final period = dt.hour >= 12 ? 'PM' : 'AM';
+            : local.hour;
+    final minute = local.minute.toString().padLeft(2, '0');
+    final period = local.hour >= 12 ? 'PM' : 'AM';
     return '$month/$day/$year $hour:$minute $period';
   }
 
@@ -39,7 +41,7 @@ class AssessmentStatusBanner extends StatelessWidget {
     switch (status) {
       case DetailStatus.notYetOpen:
         return (
-          const Color(0xFF5C8EFF),
+          const Color(0xFF808080),
           Icons.schedule_rounded,
           'Not Yet Open',
           openAt != null ? 'Opens on ${_formatDateTime(openAt!)}' : 'Opening soon',

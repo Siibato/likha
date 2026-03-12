@@ -10,6 +10,7 @@ import 'package:likha/presentation/pages/teacher/widgets/question_draft.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_details_section.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_questions_section.dart';
+import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -37,6 +38,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
   bool _isSaving = false;
   bool _draftLoaded = false;
   Timer? _autoSaveTimer;
+  bool _isQuestionReorderMode = false;
 
   @override
   void initState() {
@@ -139,6 +141,33 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
       _isPublished = true;
       _questions.clear();
     }
+  }
+
+  void _enterQuestionReorderMode() {
+    setState(() => _isQuestionReorderMode = true);
+  }
+
+  void _exitQuestionReorderMode() {
+    setState(() => _isQuestionReorderMode = false);
+    _scheduleAutoSave();
+  }
+
+  void _showQuestionMoveDialog(int currentIndex) {
+    showDialog(
+      context: context,
+      builder: (ctx) => ReorderPositionDialog(
+        resourceType: 'questions',
+        totalCount: _questions.length,
+        currentPosition: currentIndex,
+        onReorder: (fromIndex, toIndex) {
+          setState(() {
+            final q = _questions.removeAt(fromIndex);
+            _questions.insert(toIndex, q);
+          });
+          _scheduleAutoSave();
+        },
+      ),
+    );
   }
 
   String _formatDateTimeForApi(DateTime dt) {
@@ -335,175 +364,158 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
       body: SafeArea(
         child: Column(
           children: [
-            ClassSectionHeader(
+            const ClassSectionHeader(
               title: 'Create Assessment',
               showBackButton: true,
             ),
             Expanded(
-              child: Stack(
-                children: [
-                  SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Draft resume banner
-                        if (_draftLoaded)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            margin: const EdgeInsets.only(bottom: 16),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF0F0F0),
-                              borderRadius: BorderRadius.circular(8),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Draft resume banner
+                    if (_draftLoaded)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0F0F0),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.restore_rounded, size: 16, color: Color(0xFF666666)),
+                            const SizedBox(width: 8),
+                            const Expanded(
+                              child: Text(
+                                'Resuming draft',
+                                style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
+                              ),
                             ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.restore_rounded, size: 16, color: Color(0xFF666666)),
-                                const SizedBox(width: 8),
-                                const Expanded(
-                                  child: Text(
-                                    'Resuming draft',
-                                    style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: _discardDraft,
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: const Color(0xFFE57373),
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  ),
-                                  child: const Text(
-                                    'Discard',
-                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                                  ),
-                                ),
-                              ],
+                            TextButton(
+                              onPressed: _discardDraft,
+                              style: TextButton.styleFrom(
+                                foregroundColor: const Color(0xFFE57373),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              ),
+                              child: const Text(
+                                'Discard',
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                              ),
                             ),
-                          ),
+                          ],
+                        ),
+                      ),
 
-                        // Details section
-                        Text(
-                          'Assessment Details',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF2B2B2B),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: const Color(0xFFE0E0E0)),
-                          ),
-                          padding: const EdgeInsets.all(16),
-                          child: AssessmentDetailsSection(
-                            formKey: _detailsFormKey,
-                            titleController: _titleController,
-                            descriptionController: _descriptionController,
-                            timeLimitController: _timeLimitController,
-                            openAt: _openAt,
-                            closeAt: _closeAt,
-                            showResultsImmediately: _showResultsImmediately,
-                            isPublished: _isPublished,
-                            isLoading: _isSaving,
-                            onOpenAtChanged: (dt) => setState(() => _openAt = dt),
-                            onCloseAtChanged: (dt) => setState(() => _closeAt = dt),
-                            onShowResultsChanged: (value) => setState(() => _showResultsImmediately = value),
-                            onIsPublishedChanged: (value) => setState(() => _isPublished = value),
-                            onCreateAssessment: null, // Remove the old button
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Questions section
-                        Text(
-                          'Questions (${_questions.length})',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF2B2B2B),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        AssessmentQuestionsSection(
-                          questions: _questions,
-                          isLoading: _isSaving,
-                          onAddQuestion: () => setState(() => _questions.add(QuestionDraft())),
-                          onRemoveQuestion: (index) => setState(() => _questions.removeAt(index)),
-                          onQuestionsChanged: _scheduleAutoSave,
-                          onSaveQuestions: null, // Remove the old button
-                        ),
-                        const SizedBox(height: 24),
-                      ],
+                    // Details section
+                    const Text(
+                      'Assessment Details',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2B2B2B),
+                      ),
                     ),
-                  ),
-
-                  // Bottom action bar
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
+                    const SizedBox(height: 12),
+                    Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        border: Border(top: BorderSide(color: const Color(0xFFE0E0E0))),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE0E0E0)),
                       ),
-                      padding: EdgeInsets.fromLTRB(
-                        24,
-                        12,
-                        24,
-                        24 + MediaQuery.of(context).viewInsets.bottom,
-                      ),
-                      child: Row(
-                        children: [
-                          OutlinedButton(
-                            onPressed: _isSaving ? null : _saveDraftWithFeedback,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF2B2B2B),
-                              side: const BorderSide(color: Color(0xFFE0E0E0)),
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              disabledForegroundColor: const Color(0xFFCCCCCC),
-                            ),
-                            child: const Text(
-                              'Save Draft',
-                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: _isSaving ? null : _handleSave,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF2B2B2B),
-                                foregroundColor: Colors.white,
-                                disabledBackgroundColor: const Color(0xFFE0E0E0),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                elevation: 0,
-                              ),
-                              child: _isSaving
-                                  ? const SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                      ),
-                                    )
-                                  : const Text(
-                                      'Save Assessment',
-                                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                                    ),
-                            ),
-                          ),
-                        ],
+                      padding: const EdgeInsets.all(16),
+                      child: AssessmentDetailsSection(
+                        formKey: _detailsFormKey,
+                        titleController: _titleController,
+                        descriptionController: _descriptionController,
+                        timeLimitController: _timeLimitController,
+                        openAt: _openAt,
+                        closeAt: _closeAt,
+                        showResultsImmediately: _showResultsImmediately,
+                        isPublished: _isPublished,
+                        isLoading: _isSaving,
+                        onOpenAtChanged: (dt) => setState(() => _openAt = dt),
+                        onCloseAtChanged: (dt) => setState(() => _closeAt = dt),
+                        onShowResultsChanged: (value) => setState(() => _showResultsImmediately = value),
+                        onIsPublishedChanged: (value) => setState(() => _isPublished = value),
+                        onCreateAssessment: null,
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 24),
+
+                    // Questions section
+                    Text(
+                      'Questions (${_questions.length})',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2B2B2B),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    AssessmentQuestionsSection(
+                      questions: _questions,
+                      isLoading: _isSaving,
+                      isReorderMode: _isQuestionReorderMode,
+                      onAddQuestion: _isQuestionReorderMode ? null : () => setState(() => _questions.add(QuestionDraft())),
+                      onRemoveQuestion: (index) => setState(() => _questions.removeAt(index)),
+                      onQuestionsChanged: _scheduleAutoSave,
+                      onSaveQuestions: null,
+                      onEnterReorderMode: _questions.length > 1 && !_isQuestionReorderMode ? _enterQuestionReorderMode : null,
+                      onExitReorderMode: _isQuestionReorderMode ? _exitQuestionReorderMode : null,
+                      onReorderQuestion: _isQuestionReorderMode ? _showQuestionMoveDialog : null,
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Bottom action bar (now inside scroll view)
+                    Row(
+                      children: [
+                        OutlinedButton(
+                          onPressed: _isSaving ? null : _saveDraftWithFeedback,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF2B2B2B),
+                            side: const BorderSide(color: Color(0xFFE0E0E0)),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            disabledForegroundColor: const Color(0xFFCCCCCC),
+                          ),
+                          child: const Text(
+                            'Save Draft',
+                            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: _isSaving || _isQuestionReorderMode ? null : _handleSave,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2B2B2B),
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: const Color(0xFFE0E0E0),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              elevation: 0,
+                            ),
+                            child: _isSaving
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : const Text(
+                                    'Save Assessment',
+                                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/shared/class_navigation_card.dart';
+import 'package:likha/presentation/pages/shared/widgets/cards/navigation_card.dart';
 import 'package:likha/presentation/pages/teacher/teacher_grade_computation_page.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
@@ -39,10 +39,10 @@ class _TeacherGradesPageState extends ConsumerState<TeacherGradesPage> {
                     ),
                   )
                 : classState.classes.isEmpty
-                    ? Center(
+                    ? const Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
+                          children: [
                             Icon(
                               Icons.school_outlined,
                               size: 64,
@@ -66,20 +66,20 @@ class _TeacherGradesPageState extends ConsumerState<TeacherGradesPage> {
                         child: ListView(
                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: 16),
                               child: Text(
                                 'Select a class to compute grades',
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
-                                  color: const Color(0xFF999999),
+                                  color: Color(0xFF999999),
                                   letterSpacing: 0.2,
                                 ),
                               ),
                             ),
                             ...classState.classes.map(
-                              (cls) => ClassNavigationCard(
+                              (cls) => NavigationCard(
                                 icon: Icons.grading_outlined,
                                 title: cls.title,
                                 subtitle: '${cls.studentCount} students',

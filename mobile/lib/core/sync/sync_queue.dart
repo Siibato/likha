@@ -131,6 +131,7 @@ abstract class SyncQueue {
   Future<void> clear();
   Future<SyncQueueEntry?> getById(String id);
   Future<int> getPendingCount();
+  Future<void> updatePendingSubmissionIds(String oldId, String newId);
 }
 
 class SyncQueueImpl implements SyncQueue {
@@ -249,6 +250,18 @@ class SyncQueueImpl implements SyncQueue {
       orderBy: 'created_at ASC',
     );
     return results.map(SyncQueueEntry.fromMap).toList();
+  }
+
+  @override
+  Future<void> updatePendingSubmissionIds(String oldId, String newId) async {
+    final db = await _localDatabase.database;
+    await db.rawUpdate(
+      '''UPDATE sync_queue
+         SET payload = json_replace(payload, '\$.submission_id', ?)
+         WHERE status = 'pending'
+           AND json_extract(payload, '\$.submission_id') = ?''',
+      [newId, oldId],
+    );
   }
 
   Future<void> deleteEntry(String id) async {

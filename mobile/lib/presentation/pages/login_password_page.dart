@@ -118,19 +118,10 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Container(
-                          width: 96,
-                          height: 96,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8F9FA),
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          child: const Icon(
-                            Icons.lock_outline_rounded,
-                            size: 56,
-                            color: Color(0xFF2B2B2B),
-                          ),
+                        Image.asset(
+                          'assets/images/likha-logo.png',
+                          width: 120,
+                          height: 120,
                         ),
                         const SizedBox(height: 32),
                         const Text(
@@ -343,19 +334,10 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Container(
-                          width: 96,
-                          height: 96,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8F9FA),
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          child: const Icon(
-                            Icons.lock_outline_rounded,
-                            size: 56,
-                            color: Color(0xFF2B2B2B),
-                          ),
+                        Image.asset(
+                          'assets/images/likha-logo.png',
+                          width: 120,
+                          height: 120,
                         ),
                         const SizedBox(height: 32),
                         const Text(

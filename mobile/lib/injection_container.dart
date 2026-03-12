@@ -8,6 +8,7 @@ import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/connectivity_service.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/network/dio_client.dart';
+import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/sync_logger.dart';
@@ -41,6 +42,7 @@ import 'package:likha/domain/assessments/usecases/update_assessment.dart';
 import 'package:likha/domain/assessments/usecases/update_question.dart';
 import 'package:likha/domain/assessments/usecases/delete_question.dart';
 import 'package:likha/domain/assessments/usecases/reorder_assessment.dart';
+import 'package:likha/domain/assessments/usecases/reorder_questions.dart';
 import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
 import 'package:likha/data/datasources/local/assignments/impl/assignment_local_datasource_impl.dart';
 import 'package:likha/data/datasources/remote/assignment_remote_datasource.dart';
@@ -62,6 +64,7 @@ import 'package:likha/domain/assignments/usecases/submit_assignment.dart';
 import 'package:likha/domain/assignments/usecases/update_assignment.dart';
 import 'package:likha/domain/assignments/usecases/upload_file.dart';
 import 'package:likha/domain/assignments/usecases/reorder_assignment.dart';
+import 'package:likha/domain/assignments/usecases/get_student_assignment_submission.dart';
 import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
 import 'package:likha/data/datasources/local/auth/impl/auth_local_datasource_impl.dart';
 import 'package:likha/data/datasources/remote/auth_remote_datasource.dart';
@@ -220,7 +223,6 @@ Future<void> init() async {
       assessmentLocal: sl<AssessmentLocalDataSource>(),
       assignmentLocal: sl<AssignmentLocalDataSource>(),
       materialLocal: sl<LearningMaterialLocalDataSource>(),
-      classRemote: sl<ClassRemoteDataSource>(),
       assessmentRemote: sl<AssessmentRemoteDataSource>(),
       assignmentRemote: sl<AssignmentRemoteDataSource>(),
       materialRemote: sl<LearningMaterialRemoteDataSource>(),
@@ -294,6 +296,9 @@ Future<void> init() async {
   // Sync Logger
   sl.registerSingleton<SyncLogger>(SyncLogger());
 
+  // Server Clock Service (must be registered before SyncManager)
+  sl.registerSingleton<ServerClockService>(ServerClockService());
+
   // SyncManager (depends on all repositories)
   sl.registerSingleton<SyncManager>(
     SyncManager(
@@ -304,6 +309,8 @@ Future<void> init() async {
       sl<AssessmentRemoteDataSource>(), // AssessmentRemoteDataSource
       sl<AssessmentLocalDataSource>(), // AssessmentLocalDataSource
       sl<SyncLogger>(), // SyncLogger
+      sl<StorageService>(), // StorageService
+      sl<ServerClockService>(), // ServerClockService
     ),
   );
 
@@ -351,6 +358,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => UpdateAssessment(sl()));
   sl.registerLazySingleton(() => UpdateQuestion(sl()));
   sl.registerLazySingleton(() => DeleteQuestion(sl()));
+  sl.registerLazySingleton(() => ReorderAllQuestions(sl()));
   sl.registerLazySingleton(() => ReorderAllAssessments(sl()));
 
   // Assignment use cases
@@ -370,6 +378,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SubmitAssignment(sl()));
   sl.registerLazySingleton(() => DownloadFile(sl()));
   sl.registerLazySingleton(() => ReorderAllAssignments(sl()));
+  sl.registerLazySingleton(() => GetStudentAssignmentSubmission(sl()));
 
   // Learning Material use cases
   sl.registerLazySingleton(() => CreateMaterial(sl()));

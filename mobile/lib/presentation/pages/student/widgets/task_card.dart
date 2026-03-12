@@ -170,40 +170,51 @@ class TaskCard extends StatelessWidget {
                         // Class name + Due/Opens time
                         Row(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: _kBlack.withOpacity(0.06),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                className,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                  color: _kBlack.withOpacity(0.5),
+                            Flexible(
+                              fit: FlexFit.loose,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: _kBlack.withOpacity(0.06),
+                                  borderRadius: BorderRadius.circular(6),
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                                child: Text(
+                                  className,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                    color: _kBlack.withOpacity(0.5),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 8),
                             if (type == TaskType.assignment)
-                              Text(
-                                'Due: $dueTime',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                  color: _kBlack.withOpacity(0.4),
+                              Expanded(
+                                child: Text(
+                                  'Due: $dueTime',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                    color: _kBlack.withOpacity(0.4),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
                                 ),
                               )
                             else
-                              Text(
-                                'Opens: ${_formatDate(openAt!)} · Closes: ${_formatDate(closeAt!)}',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                  color: _kBlack.withOpacity(0.4),
+                              Expanded(
+                                child: Text(
+                                  'Opens: ${_formatDate(openAt!)} · Closes: ${_formatDate(closeAt!)}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                    color: _kBlack.withOpacity(0.4),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
                                 ),
                               ),
                           ],

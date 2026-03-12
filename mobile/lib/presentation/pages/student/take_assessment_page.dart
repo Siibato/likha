@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/injection_container.dart';
 import 'package:likha/data/models/assessments/question_model.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/domain/assessments/usecases/save_answers.dart';
@@ -93,7 +95,7 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
         ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
 
       final elapsed =
-          DateTime.now().difference(startResult.startedAt).inSeconds;
+          sl<ServerClockService>().now().difference(startResult.startedAt).inSeconds;
       final totalSeconds = widget.timeLimitMinutes * 60;
       final remaining = totalSeconds - elapsed;
 

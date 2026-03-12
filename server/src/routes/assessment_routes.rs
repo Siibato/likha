@@ -52,6 +52,10 @@ pub fn routes(assessment_service: Arc<AssessmentService>) -> Router {
             post(assessment_handler::add_questions),
         )
         .route(
+            "/assessments/{id}/questions/reorder",
+            post(assessment_handler::reorder_questions),
+        )
+        .route(
             "/questions/{id}",
             put(assessment_handler::update_question),
         )
@@ -92,6 +96,10 @@ pub fn routes(assessment_service: Arc<AssessmentService>) -> Router {
         .route(
             "/submissions/{id}/results",
             get(assessment_handler::get_student_results),
+        )
+        .route(
+            "/classes/{class_id}/students/{student_id}/assessment-submissions",
+            get(assessment_handler::get_student_assessment_submissions),
         )
         .with_state(assessment_service)
 }

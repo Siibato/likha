@@ -4,6 +4,13 @@ use crate::utils::error::{AppError, AppResult};
 use crate::schema::assessment_schema::*;
 use md5;
 
+/// Format NaiveDateTime as ISO 8601 UTC with explicit Z suffix.
+/// Input: 2026-03-10 16:31:00 (stored as UTC, no tz marker)
+/// Output: "2026-03-10T16:31:00Z" (unambiguous UTC)
+fn fmt_utc(dt: NaiveDateTime) -> String {
+    dt.format("%Y-%m-%dT%H:%M:%SZ").to_string()
+}
+
 impl super::AssessmentService {
     pub async fn create_assessment(
         &self,
@@ -57,12 +64,12 @@ impl super::AssessmentService {
                 "title": assessment.title,
                 "description": assessment.description,
                 "time_limit_minutes": assessment.time_limit_minutes,
-                "open_at": assessment.open_at.to_string(),
-                "close_at": assessment.close_at.to_string(),
+                "open_at": fmt_utc(assessment.open_at),
+                "close_at": fmt_utc(assessment.close_at),
                 "show_results_immediately": assessment.show_results_immediately,
                 "is_published": assessment.is_published,
-                "created_at": assessment.created_at.to_string(),
-                "updated_at": assessment.updated_at.to_string(),
+                "created_at": fmt_utc(assessment.created_at),
+                "updated_at": fmt_utc(assessment.updated_at),
             })).unwrap_or_default()),
         ).await;
 
@@ -84,8 +91,8 @@ impl super::AssessmentService {
             title: assessment.title,
             description: assessment.description,
             time_limit_minutes: assessment.time_limit_minutes,
-            open_at: assessment.open_at.to_string(),
-            close_at: assessment.close_at.to_string(),
+            open_at: fmt_utc(assessment.open_at),
+            close_at: fmt_utc(assessment.close_at),
             show_results_immediately: assessment.show_results_immediately,
             results_released: assessment.results_released,
             is_published: assessment.is_published,
@@ -93,8 +100,8 @@ impl super::AssessmentService {
             total_points: assessment.total_points,
             question_count,
             submission_count: 0,
-            created_at: assessment.created_at.to_string(),
-            updated_at: assessment.updated_at.to_string(),
+            created_at: fmt_utc(assessment.created_at),
+            updated_at: fmt_utc(assessment.updated_at),
         })
     }
 
@@ -127,8 +134,8 @@ impl super::AssessmentService {
                 title: a.title,
                 description: a.description,
                 time_limit_minutes: a.time_limit_minutes,
-                open_at: a.open_at.to_string(),
-                close_at: a.close_at.to_string(),
+                open_at: fmt_utc(a.open_at),
+                close_at: fmt_utc(a.close_at),
                 show_results_immediately: a.show_results_immediately,
                 results_released: a.results_released,
                 is_published: a.is_published,
@@ -136,8 +143,8 @@ impl super::AssessmentService {
                 total_points: a.total_points,
                 question_count,
                 submission_count,
-                created_at: a.created_at.to_string(),
-                updated_at: a.updated_at.to_string(),
+                created_at: fmt_utc(a.created_at),
+                updated_at: fmt_utc(a.updated_at),
             });
         }
 
@@ -179,16 +186,16 @@ impl super::AssessmentService {
             title: assessment.title,
             description: assessment.description,
             time_limit_minutes: assessment.time_limit_minutes,
-            open_at: assessment.open_at.to_string(),
-            close_at: assessment.close_at.to_string(),
+            open_at: fmt_utc(assessment.open_at),
+            close_at: fmt_utc(assessment.close_at),
             show_results_immediately: assessment.show_results_immediately,
             results_released: assessment.results_released,
             is_published: assessment.is_published,
             order_index: assessment.order_index,
             total_points: assessment.total_points,
             questions: question_responses,
-            created_at: assessment.created_at.to_string(),
-            updated_at: assessment.updated_at.to_string(),
+            created_at: fmt_utc(assessment.created_at),
+            updated_at: fmt_utc(assessment.updated_at),
         })
     }
 
@@ -213,8 +220,8 @@ impl super::AssessmentService {
                 id: a.id,
                 title: a.title,
                 total_points: a.total_points,
-                open_at: a.open_at.to_string(),
-                close_at: a.close_at.to_string(),
+                open_at: fmt_utc(a.open_at),
+                close_at: fmt_utc(a.close_at),
                 time_limit_minutes: a.time_limit_minutes,
                 is_submitted: submission.map(|s| s.is_submitted),
             });
@@ -284,8 +291,8 @@ impl super::AssessmentService {
             title: updated.title,
             description: updated.description,
             time_limit_minutes: updated.time_limit_minutes,
-            open_at: updated.open_at.to_string(),
-            close_at: updated.close_at.to_string(),
+            open_at: fmt_utc(updated.open_at),
+            close_at: fmt_utc(updated.close_at),
             show_results_immediately: updated.show_results_immediately,
             results_released: updated.results_released,
             is_published: updated.is_published,
@@ -293,8 +300,8 @@ impl super::AssessmentService {
             total_points: updated.total_points,
             question_count,
             submission_count,
-            created_at: updated.created_at.to_string(),
-            updated_at: updated.updated_at.to_string(),
+            created_at: fmt_utc(updated.created_at),
+            updated_at: fmt_utc(updated.updated_at),
         })
     }
 
@@ -407,8 +414,8 @@ impl super::AssessmentService {
             title: published.title,
             description: published.description,
             time_limit_minutes: published.time_limit_minutes,
-            open_at: published.open_at.to_string(),
-            close_at: published.close_at.to_string(),
+            open_at: fmt_utc(published.open_at),
+            close_at: fmt_utc(published.close_at),
             show_results_immediately: published.show_results_immediately,
             results_released: published.results_released,
             is_published: published.is_published,
@@ -416,8 +423,8 @@ impl super::AssessmentService {
             total_points: published.total_points,
             question_count,
             submission_count,
-            created_at: published.created_at.to_string(),
-            updated_at: published.updated_at.to_string(),
+            created_at: fmt_utc(published.created_at),
+            updated_at: fmt_utc(published.updated_at),
         })
     }
 
@@ -463,8 +470,8 @@ impl super::AssessmentService {
             title: released.title,
             description: released.description,
             time_limit_minutes: released.time_limit_minutes,
-            open_at: released.open_at.to_string(),
-            close_at: released.close_at.to_string(),
+            open_at: fmt_utc(released.open_at),
+            close_at: fmt_utc(released.close_at),
             show_results_immediately: released.show_results_immediately,
             results_released: released.results_released,
             is_published: released.is_published,
@@ -472,8 +479,8 @@ impl super::AssessmentService {
             total_points: released.total_points,
             question_count,
             submission_count,
-            created_at: released.created_at.to_string(),
-            updated_at: released.updated_at.to_string(),
+            created_at: fmt_utc(released.created_at),
+            updated_at: fmt_utc(released.updated_at),
         })
     }
 
@@ -495,7 +502,7 @@ impl super::AssessmentService {
         let etag = format!("{:x}", md5::compute(etag_data.as_bytes()));
 
         Ok(AssessmentMetadataResponse {
-            last_modified: last_modified.to_string(),
+            last_modified: fmt_utc(last_modified),
             record_count: count,
             etag,
         })

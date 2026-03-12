@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/pages/shared/widgets/cards/base_card_sm.dart';
 
 class AssessmentSubmissionCard extends StatelessWidget {
   final String studentName;
@@ -36,130 +37,115 @@ class AssessmentSubmissionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return BaseCardSm(
       onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFFE0E0E0),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(1, 1, 1, 2.5),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(11),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: AppColors.backgroundTertiary,
+            child: Text(
+              studentName.isNotEmpty ? studentName[0].toUpperCase() : '?',
+              style: const TextStyle(
+                color: AppColors.foregroundPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: AppColors.backgroundTertiary,
-                child: Text(
-                  studentName.isNotEmpty ? studentName[0].toUpperCase() : '?',
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  studentName,
                   style: const TextStyle(
-                    color: AppColors.foregroundPrimary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: Color(0xFF202020),
+                    letterSpacing: -0.2,
                   ),
                 ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      studentName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                        color: Color(0xFF202020),
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                    Text(
-                      studentUsername,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.foregroundTertiary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      submittedAt != null
-                          ? 'Submitted: ${_formatDateTime(submittedAt!)}'
-                          : 'Started: ${_formatDateTime(startedAt)}',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.foregroundTertiary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+                Text(
+                  studentUsername,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.foregroundTertiary,
+                  ),
                 ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  isSubmitted
-                      ? Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.foregroundSecondary.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text(
-                            'Submitted',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.foregroundSecondary,
-                            ),
-                          ),
-                        )
-                      : Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.foregroundTertiary.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text(
-                            'In Progress',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.foregroundTertiary,
-                            ),
-                          ),
+                const SizedBox(height: 4),
+                Text(
+                  submittedAt != null
+                      ? 'Submitted: ${_formatDateTime(submittedAt!)}'
+                      : 'Started: ${_formatDateTime(startedAt)}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.foregroundTertiary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              isSubmitted
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.foregroundSecondary.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'Submitted',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.foregroundSecondary,
                         ),
-                  if (isSubmitted) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      '${finalScore % 1 == 0 ? finalScore.toInt() : finalScore.toStringAsFixed(1)} pts',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        color: AppColors.foregroundPrimary,
+                      ),
+                    )
+                  : Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.foregroundTertiary.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'In Progress',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.foregroundTertiary,
+                        ),
                       ),
                     ),
-                  ],
-                ],
-              ),
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: AppColors.borderLight,
-                size: 22,
-              ),
+              if (isSubmitted) ...[
+                const SizedBox(height: 6),
+                Text(
+                  '${finalScore % 1 == 0 ? finalScore.toInt() : finalScore.toStringAsFixed(1)} pts',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    color: AppColors.foregroundPrimary,
+                  ),
+                ),
+              ],
             ],
           ),
-        ),
+          const SizedBox(width: 8),
+          const Icon(
+            Icons.chevron_right_rounded,
+            color: AppColors.borderLight,
+            size: 22,
+          ),
+        ],
       ),
     );
   }

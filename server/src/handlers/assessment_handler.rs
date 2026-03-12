@@ -174,6 +174,24 @@ pub async fn delete_question(
     }
 }
 
+pub async fn reorder_questions(
+    State(service): State<Arc<AssessmentService>>,
+    auth_user: AuthUser,
+    Path(assessment_id): Path<Uuid>,
+    Json(request): Json<ReorderQuestionsRequest>,
+) -> impl IntoResponse {
+    if auth_user.role != "teacher" {
+        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    }
+    match service.reorder_questions(assessment_id, request, auth_user.user_id).await {
+        Ok(()) => success_response(
+            MessageResponse { message: "Questions reordered".to_string() },
+            StatusCode::OK,
+        ).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
 // ===== TEACHER: SUBMISSIONS & GRADING =====
 
 pub async fn get_submissions(
@@ -335,6 +353,20 @@ pub async fn reorder_assessments(
             MessageResponse { message: "Assessments reordered".to_string() },
             StatusCode::OK,
         ).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+pub async fn get_student_assessment_submissions(
+    State(service): State<Arc<AssessmentService>>,
+    auth_user: AuthUser,
+    Path((class_id, student_id)): Path<(Uuid, Uuid)>,
+) -> impl IntoResponse {
+    if auth_user.role != "teacher" {
+        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    }
+    match service.get_student_assessment_submissions(class_id, student_id, auth_user.user_id).await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }

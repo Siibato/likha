@@ -6,7 +6,7 @@ import 'package:likha/presentation/pages/teacher/teacher_assessment_list_page.da
 import 'package:likha/presentation/pages/teacher/teacher_assignment_list_page.dart';
 import 'package:likha/presentation/pages/teacher/teacher_material_list_page.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/shared/class_navigation_card.dart';
+import 'package:likha/presentation/pages/shared/widgets/cards/navigation_card.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
 class ClassDetailPage extends ConsumerStatefulWidget {
@@ -62,7 +62,7 @@ class _ClassDetailPageState extends ConsumerState<ClassDetailPage> {
                       padding: const EdgeInsets.all(24),
                       child: Column(
                         children: [
-                          ClassNavigationCard(
+                          NavigationCard(
                             icon: Icons.quiz_outlined,
                             title: 'Assessments',
                             subtitle: 'View and manage quizzes',
@@ -74,7 +74,7 @@ class _ClassDetailPageState extends ConsumerState<ClassDetailPage> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          ClassNavigationCard(
+                          NavigationCard(
                             icon: Icons.assignment_outlined,
                             title: 'Assignments',
                             subtitle: 'View and manage homework',
@@ -86,7 +86,7 @@ class _ClassDetailPageState extends ConsumerState<ClassDetailPage> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          ClassNavigationCard(
+                          NavigationCard(
                             icon: Icons.library_books_outlined,
                             title: 'Learning Modules',
                             subtitle: 'Browse class materials',
@@ -98,7 +98,7 @@ class _ClassDetailPageState extends ConsumerState<ClassDetailPage> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          ClassNavigationCard(
+                          NavigationCard(
                             icon: Icons.people_outline_rounded,
                             title: 'Students',
                             subtitle: 'View enrolled students',

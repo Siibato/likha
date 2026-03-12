@@ -5,10 +5,11 @@ import '../assignment_local_datasource_base.dart';
 
 mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
   @override
-  Future<void> createSubmissionLocally({
+  Future<String> createSubmissionLocally({
     required String assignmentId,
     required String studentId,
-    required String studentName,
+    String studentName = '',
+    String? textContent,
   }) async {
     try {
       final db = await localDatabase.database;
@@ -23,7 +24,7 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
             'student_id': studentId,
             'student_name': studentName,
             'status': 'draft',
-            'text_content': '',
+            'text_content': textContent ?? '',
             'created_at': now.toIso8601String(),
             'updated_at': now.toIso8601String(),
             'cached_at': now.toIso8601String(),
@@ -42,6 +43,7 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
           createdAt: now,
         ), txn: txn);
       });
+      return submissionId;
     } catch (e) {
       throw CacheException('Failed to create submission locally: $e');
     }
@@ -218,6 +220,23 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
       );
     } catch (e) {
       throw CacheException('Failed to mark assignment as published locally: $e');
+    }
+  }
+
+  @override
+  Future<void> softDeleteSubmissionFile(String fileId) async {
+    try {
+      final db = await localDatabase.database;
+      await db.update(
+        'submission_files',
+        {
+          'deleted_at': DateTime.now().toIso8601String(),
+        },
+        where: 'id = ?',
+        whereArgs: [fileId],
+      );
+    } catch (e) {
+      throw CacheException('Failed to soft-delete submission file: $e');
     }
   }
 }

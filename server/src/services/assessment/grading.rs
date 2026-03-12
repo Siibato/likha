@@ -184,4 +184,43 @@ impl super::AssessmentService {
             points_awarded: updated.points_awarded,
         })
     }
+
+    pub async fn get_student_assessment_submissions(
+        &self,
+        class_id: Uuid,
+        student_id: Uuid,
+        teacher_id: Uuid,
+    ) -> AppResult<StudentAssessmentSubmissionsResponse> {
+        // 1. Auth: teacher must own this class
+        if !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
+            return Err(AppError::Forbidden("Teacher access required".to_string()));
+        }
+
+        // 2. Fetch all published assessments in this class
+        let assessments = self.assessment_repo.find_published_by_class_id(class_id).await?;
+
+        // 3. For each assessment, look up the student's submission (may be None)
+        let mut items = Vec::new();
+        for assessment in assessments {
+            if let Some(sub) = self.submission_repo
+                .find_by_student_and_assessment(student_id, assessment.id).await? {
+                let student = self.user_repo.find_by_id(sub.student_id).await?
+                    .ok_or_else(|| AppError::NotFound("Student not found".to_string()))?;
+                items.push(StudentAssessmentSubmissionItem {
+                    assessment_id: assessment.id,
+                    id: sub.id,
+                    student_id: sub.student_id,
+                    student_name: student.full_name.clone(),
+                    student_username: student.username.clone(),
+                    started_at: sub.started_at.to_string(),
+                    submitted_at: sub.submitted_at.map(|dt| dt.to_string()),
+                    is_submitted: sub.is_submitted,
+                    auto_score: sub.auto_score,
+                    final_score: sub.final_score,
+                });
+            }
+        }
+
+        Ok(StudentAssessmentSubmissionsResponse { submissions: items })
+    }
 }

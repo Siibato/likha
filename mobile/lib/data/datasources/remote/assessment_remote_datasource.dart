@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
+import 'package:likha/data/datasources/remote/models/student_assessment_submission_item_model.dart';
 import 'package:likha/data/models/assessments/assessment_model.dart';
 import 'package:likha/data/models/assessments/question_model.dart';
 import 'package:likha/data/models/assessments/statistics_model.dart';
@@ -46,6 +47,11 @@ abstract class AssessmentRemoteDataSource {
 
   Future<void> deleteQuestion({required String questionId});
 
+  Future<void> reorderAllQuestions({
+    required String assessmentId,
+    required List<String> questionIds,
+  });
+
   Future<List<SubmissionSummaryModel>> getSubmissions({
     required String assessmentId,
   });
@@ -78,6 +84,11 @@ abstract class AssessmentRemoteDataSource {
 
   Future<StudentResultModel> getStudentResults({
     required String submissionId,
+  });
+
+  Future<List<StudentAssessmentSubmissionItemModel>> getStudentAssessmentSubmissions({
+    required String classId,
+    required String studentId,
   });
 }
 
@@ -248,6 +259,21 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
   }
 
   @override
+  Future<void> reorderAllQuestions({
+    required String assessmentId,
+    required List<String> questionIds,
+  }) async {
+    try {
+      await _dioClient.postVoid(
+        ApiEndpoints.assessmentQuestionsReorder(assessmentId),
+        data: {'question_ids': questionIds},
+      );
+    } on DioException catch (e) {
+      throw _dioClient.handleError(e);
+    }
+  }
+
+  @override
   Future<List<SubmissionSummaryModel>> getSubmissions({
     required String assessmentId,
   }) async {
@@ -365,6 +391,25 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
       return await _dioClient.getTyped(
         ApiEndpoints.submissionResults(submissionId),
       );
+    } on DioException catch (e) {
+      throw _dioClient.handleError(e);
+    }
+  }
+
+  @override
+  Future<List<StudentAssessmentSubmissionItemModel>> getStudentAssessmentSubmissions({
+    required String classId,
+    required String studentId,
+  }) async {
+    try {
+      final response = await _dioClient.dio.get(
+        '/api/v1/classes/$classId/students/$studentId/assessment-submissions',
+      );
+      final items = (response.data['data']['submissions'] as List)
+          .cast<Map<String, dynamic>>();
+      return items
+          .map((item) => StudentAssessmentSubmissionItemModel.fromMap(item))
+          .toList();
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }

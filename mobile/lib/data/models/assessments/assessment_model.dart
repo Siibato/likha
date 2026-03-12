@@ -1,5 +1,20 @@
 import 'package:likha/domain/assessments/entities/assessment.dart';
 
+/// Server sends datetime strings in various formats. Normalize to UTC.
+/// Dart's DateTime.parse treats bare strings as local time, causing
+/// assessment open/close window comparisons to fail when device timezone ≠ server timezone.
+/// This parser ensures UTC interpretation by stripping any timezone info and appending Z.
+/// Handles: "2026-03-10T15:41:38" → "2026-03-10T15:41:38Z"
+///          "2026-03-10T15:41:38Z" → "2026-03-10T15:41:38Z"
+///          "2026-03-10T15:41:38+00:00Z" → "2026-03-10T15:41:38Z" (malformed, but handled)
+DateTime _parseUtc(String s) {
+  // Remove trailing Z and any timezone offset info, then re-add Z to force UTC
+  String normalized = s.replaceAll(RegExp(r'(Z|[+-]\d{2}:\d{2}(Z)?)$'), '');
+  // Normalize space separator to T (server may send space, Dart parser expects T)
+  normalized = normalized.replaceFirst(' ', 'T');
+  return DateTime.parse('${normalized}Z');
+}
+
 class AssessmentModel extends Assessment {
   const AssessmentModel({
     required super.id,
@@ -27,8 +42,8 @@ class AssessmentModel extends Assessment {
       title: json['title'] as String,
       description: json['description'] as String?,
       timeLimitMinutes: json['time_limit_minutes'] as int,
-      openAt: DateTime.parse(json['open_at'] as String),
-      closeAt: DateTime.parse(json['close_at'] as String),
+      openAt: _parseUtc(json['open_at'] as String),
+      closeAt: _parseUtc(json['close_at'] as String),
       showResultsImmediately: _parseBool(json['show_results_immediately']),
       resultsReleased: _parseBool(json['results_released']),
       isPublished: _parseBool(json['is_published']),
@@ -57,8 +72,8 @@ class AssessmentModel extends Assessment {
       title: map['title'] as String,
       description: map['description'] as String?,
       timeLimitMinutes: map['time_limit_minutes'] as int,
-      openAt: DateTime.parse(map['open_at'] as String),
-      closeAt: DateTime.parse(map['close_at'] as String),
+      openAt: _parseUtc(map['open_at'] as String),
+      closeAt: _parseUtc(map['close_at'] as String),
       showResultsImmediately: (map['show_results_immediately'] as int?) == 1,
       resultsReleased: (map['results_released'] as int?) == 1,
       isPublished: (map['is_published'] as int?) == 1,

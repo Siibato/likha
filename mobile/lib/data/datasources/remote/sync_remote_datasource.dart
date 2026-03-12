@@ -37,7 +37,8 @@ abstract class SyncRemoteDataSource {
   });
 
   /// Upload a file for a submission (assignment or assessment)
-  Future<void> uploadSubmissionFile({
+  /// Returns server response with file metadata and ID for reconciliation
+  Future<Map<String, dynamic>?> uploadSubmissionFile({
     required String submissionId,
     required String localPath,
     required String fileName,
@@ -111,7 +112,7 @@ class SyncRemoteDataSourceImpl implements SyncRemoteDataSource {
   }
 
   @override
-  Future<void> uploadSubmissionFile({
+  Future<Map<String, dynamic>?> uploadSubmissionFile({
     required String submissionId,
     required String localPath,
     required String fileName,
@@ -120,10 +121,16 @@ class SyncRemoteDataSourceImpl implements SyncRemoteDataSource {
       final formData = FormData.fromMap({
         'file': await MultipartFile.fromFile(localPath, filename: fileName),
       });
-      await _dio.post(
+      final response = await _dio.post(
         ApiEndpoints.assignmentSubmissionUpload(submissionId).path,
         data: formData,
       );
+      // Fix 3: Parse and return server response for file ID reconciliation
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final data = response.data as Map<String, dynamic>?;
+        return data?['data'] as Map<String, dynamic>?;
+      }
+      return null;
     } on DioException catch (e) {
       throw Exception('Network error uploading submission file: ${e.message}');
     } catch (e) {

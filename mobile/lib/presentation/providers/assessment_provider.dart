@@ -25,6 +25,7 @@ import 'package:likha/domain/assessments/usecases/update_assessment.dart';
 import 'package:likha/domain/assessments/usecases/update_question.dart';
 import 'package:likha/domain/assessments/usecases/delete_question.dart';
 import 'package:likha/domain/assessments/usecases/reorder_assessment.dart';
+import 'package:likha/domain/assessments/usecases/reorder_questions.dart';
 import 'package:likha/injection_container.dart';
 
 class AssessmentState {
@@ -124,6 +125,7 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
   final UpdateAssessment _updateAssessment;
   final UpdateQuestion _updateQuestion;
   final DeleteQuestion _deleteQuestion;
+  final ReorderAllQuestions _reorderAllQuestions;
   final ReorderAllAssessments _reorderAllAssessments;
 
   String? _currentClassId;
@@ -149,6 +151,7 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
     this._updateAssessment,
     this._updateQuestion,
     this._deleteQuestion,
+    this._reorderAllQuestions,
     this._reorderAllAssessments,
   ) : super(AssessmentState()) {
     _refreshSub = sl<DataEventBus>().onAssessmentsChanged.listen((classId) {
@@ -287,6 +290,23 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
     final result = await _reorderAllAssessments(
       classId: classId,
       assessmentIds: assessmentIds,
+    );
+    result.fold(
+      (failure) => state = state.copyWith(error: failure.message),
+      (_) {},
+    );
+  }
+
+  Future<void> reorderAllQuestions({
+    required String assessmentId,
+    required List<String> questionIds,
+    required List<Question> orderedQuestions,
+  }) async {
+    // Optimistic update
+    state = state.copyWith(questions: orderedQuestions);
+    final result = await _reorderAllQuestions(
+      assessmentId: assessmentId,
+      questionIds: questionIds,
     );
     result.fold(
       (failure) => state = state.copyWith(error: failure.message),
@@ -471,14 +491,29 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
     state = state.copyWith(isLoading: true, clearError: true);
     final result = await _getStudentResults(submissionId);
     result.fold(
-      (failure) {
-        // Silent fail: don't show error snackbar
-        // Status banner shows "Results Pending" — that's enough
-        print('⚠️ [Provider] loadStudentResults() SILENT FAIL - ${failure.message}');
-        state = state.copyWith(isLoading: false);
-      },
+      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
       (studentResult) =>
           state = state.copyWith(isLoading: false, studentResult: studentResult),
+    );
+  }
+
+  Future<void> loadStudentResultsByAssessment(String assessmentId, String studentId) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    final submResult = await _getStudentSubmission(GetStudentSubmissionParams(
+      assessmentId: assessmentId,
+      studentId: studentId,
+    ));
+    await submResult.fold(
+      (failure) async {
+        state = state.copyWith(isLoading: false, error: 'Could not find your submission');
+      },
+      (submission) async {
+        if (submission == null) {
+          state = state.copyWith(isLoading: false, error: 'No submission found for this assessment');
+          return;
+        }
+        await loadStudentResults(submission.id);
+      },
     );
   }
 
@@ -568,6 +603,7 @@ final assessmentProvider =
     sl<UpdateAssessment>(),
     sl<UpdateQuestion>(),
     sl<DeleteQuestion>(),
+    sl<ReorderAllQuestions>(),
     sl<ReorderAllAssessments>(),
   );
 });

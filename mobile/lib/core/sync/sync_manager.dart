@@ -1,15 +1,16 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/sync_logger.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';
 import 'package:likha/data/models/sync/push_response_model.dart';
+import 'package:likha/services/storage_service.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
@@ -72,9 +73,13 @@ class SyncManager {
   final SyncQueue _syncQueue;
   final SyncRemoteDataSource _syncRemoteDataSource;
   final LocalDatabase _localDatabase;
+  // ignore: unused_field
   final AssessmentRemoteDataSource _assessmentRemoteDataSource;
+  // ignore: unused_field
   final AssessmentLocalDataSource _assessmentLocalDataSource;
   final SyncLogger _log;
+  final StorageService _storageService;
+  final ServerClockService _serverClockService;
 
   bool _isSyncing = false;
   StreamSubscription<bool>? _reachabilitySubscription;
@@ -96,17 +101,20 @@ class SyncManager {
     this._assessmentRemoteDataSource,
     this._assessmentLocalDataSource,
     this._log,
+    this._storageService,
+    this._serverClockService,
   );
 
   /// Start sync manager - listen for server reachability changes
   void start() {
+    stop(); // cancel any existing subscription to prevent duplicates
     _reachabilitySubscription =
         _serverReachabilityService.onServerReachabilityChanged.listen((isReachable) {
       if (isReachable && !_isSyncing) {
         _runSync();
       }
     });
-    
+
     if (_serverReachabilityService.isServerReachable && !_isSyncing) {
       _runSync();
     }
@@ -132,6 +140,7 @@ class SyncManager {
 
   /// Main sync orchestration: outbound then inbound
   Future<void> _runSync() async {
+    if (!await _storageService.isAuthenticated()) return;
     if (_isSyncing) return;
     _isSyncing = true;
 
@@ -143,6 +152,11 @@ class SyncManager {
 
       // STEP 2: Fetch and merge server changes
       final serverTime = await _inboundSync();
+
+      // Update server-aligned clock offset for UI time comparisons
+      if (serverTime != null) {
+        _serverClockService.updateOffset(serverTime);
+      }
 
       // STEP 3: Save last sync time (use server time, not device time)
       final syncTime = serverTime ?? DateTime.now().toIso8601String();
@@ -197,14 +211,50 @@ class SyncManager {
     final pending = await _syncQueue.getAllRetriable();
     if (pending.isEmpty) return;
 
-    // Split uploads: material files run AFTER regular ops, others run FIRST
-    final nonMaterialFileUploads = pending
-        .where((e) => e.operation == SyncOperation.upload && e.entityType != SyncEntityType.materialFile)
+    // PASS 0: Process assessmentSubmission creates FIRST so dependent ops
+    // (submit) can reference the real server-assigned ID.
+    final assessmentSubmissionCreates = pending
+        .where((e) =>
+            e.entityType == SyncEntityType.assessmentSubmission &&
+            e.operation == SyncOperation.create)
         .toList();
-    final materialFileUploads = pending
-        .where((e) => e.operation == SyncOperation.upload && e.entityType == SyncEntityType.materialFile)
+
+    if (assessmentSubmissionCreates.isNotEmpty) {
+      await _syncAssessmentSubmissionCreates(assessmentSubmissionCreates);
+    }
+
+    // Re-fetch after reconciliation — creates are now 'succeeded',
+    // remaining pending entries have updated submission_ids in their payloads.
+    var remaining = await _syncQueue.getAllRetriable();
+    if (remaining.isEmpty) return;
+
+    // PASS 1: Process assignmentSubmission creates so dependent ops
+    // (submit, file uploads) can reference the real server-assigned ID.
+    final assignmentSubmissionCreates = remaining
+        .where((e) =>
+            e.entityType == SyncEntityType.assignmentSubmission &&
+            e.operation == SyncOperation.create)
         .toList();
-    final regularOps = pending
+
+    if (assignmentSubmissionCreates.isNotEmpty) {
+      await _syncAssignmentSubmissionCreates(assignmentSubmissionCreates);
+    }
+
+    // Re-fetch after reconciliation — creates are now 'succeeded',
+    // remaining pending entries have updated submission_ids in their payloads.
+    remaining = await _syncQueue.getAllRetriable();
+    if (remaining.isEmpty) return;
+
+    // Existing bucket-based logic (unchanged):
+    final nonMaterialFileUploads = remaining
+        .where((e) => e.operation == SyncOperation.upload &&
+                    e.entityType != SyncEntityType.materialFile)
+        .toList();
+    final materialFileUploads = remaining
+        .where((e) => e.operation == SyncOperation.upload &&
+                    e.entityType == SyncEntityType.materialFile)
+        .toList();
+    final regularOps = remaining
         .where((e) => e.operation != SyncOperation.upload)
         .toList();
 
@@ -226,7 +276,7 @@ class SyncManager {
       await _handleFileUpload(op);
     }
 
-    // Step 2: Run all regular operations in one batch (no two-phase split)
+    // Step 2: Run all regular operations in one batch
     if (regularOps.isNotEmpty) {
       await _syncRegularBatch(regularOps, pushStartTime);
     }
@@ -234,6 +284,98 @@ class SyncManager {
     // Step 3: Run material file uploads AFTER regular ops (material now exists on server)
     for (final op in materialFileUploads) {
       await _handleFileUpload(op);
+    }
+  }
+
+  /// Process assessmentSubmission creates first and reconcile local IDs with server IDs
+  Future<void> _syncAssessmentSubmissionCreates(
+      List<SyncQueueEntry> createOps) async {
+    final operations = createOps.map((entry) => {
+      'id':          entry.id,
+      'entity_type': entry.entityType.serverValue,
+      'operation':   entry.operation.serverValue,
+      'payload':     entry.payload,
+    }).toList();
+
+    final response =
+        await _syncRemoteDataSource.pushOperations(operations: operations);
+
+    final db = await _localDatabase.database;
+
+    for (final result in response.results) {
+      if (result.success) {
+        final entry = createOps.firstWhere((e) => e.id == result.id);
+        final localId = entry.payload['local_id'] as String?;
+        final serverId = result.serverId;
+
+        if (localId != null && serverId != null && localId != serverId) {
+          // Reconcile assessment_submissions table
+          await db.update(
+            'assessment_submissions',
+            {'id': serverId},
+            where: 'id = ?',
+            whereArgs: [localId],
+          );
+
+          // Rewrite submission_id in all remaining pending queue entries
+          // (covers submit op + save_answers op referencing the local UUID)
+          await _syncQueue.updatePendingSubmissionIds(localId, serverId);
+        }
+
+        await _syncQueue.markSucceeded(result.id);
+      } else {
+        await _syncQueue.markFailed(result.id, result.error ?? 'Unknown error');
+      }
+    }
+  }
+
+  /// Process assignmentSubmission creates first and reconcile local IDs with server IDs
+  Future<void> _syncAssignmentSubmissionCreates(
+      List<SyncQueueEntry> createOps) async {
+    final operations = createOps.map((entry) => {
+      'id':          entry.id,
+      'entity_type': entry.entityType.serverValue,
+      'operation':   entry.operation.serverValue,
+      'payload':     entry.payload,
+    }).toList();
+
+    final response =
+        await _syncRemoteDataSource.pushOperations(operations: operations);
+
+    final db = await _localDatabase.database;
+
+    for (final result in response.results) {
+      if (result.success) {
+        final entry = createOps.firstWhere((e) => e.id == result.id);
+        final localId = entry.payload['id'] as String?;
+        final serverId = result.serverId;
+
+        if (localId != null && serverId != null && localId != serverId) {
+          // Reconcile assignment_submissions table
+          await db.update(
+            'assignment_submissions',
+            {'id': serverId},
+            where: 'id = ?',
+            whereArgs: [localId],
+          );
+
+          // Reconcile submission_files staged under the local submission ID
+          await db.update(
+            'submission_files',
+            {'submission_id': serverId},
+            where: 'submission_id = ? AND is_local_only = 1',
+            whereArgs: [localId],
+          );
+
+          // Rewrite submission_id in all remaining pending queue entries
+          // (covers submit op + file upload ops referencing the local UUID)
+          await _syncQueue.updatePendingSubmissionIds(localId, serverId);
+        }
+
+        await _syncQueue.markSucceeded(result.id);
+      } else {
+        await _syncQueue.markFailed(result.id, result.error ?? 'Unknown error');
+      }
     }
   }
 
@@ -1647,71 +1789,73 @@ class SyncManager {
   }
 
   /// Warm-up statistics cache for first 30 assessments
-  void _warmUpStatisticsCache() {
-    Future.microtask(() async {
-      try {
-        final db = await _localDatabase.database;
-        final assessments = await db.query(
-          'assessments',
-          limit: 30,
-          orderBy: 'created_at DESC',
-        );
-        for (final assessment in assessments) {
-          final assessmentId = assessment['id'] as String;
-          try {
-            final result = await _assessmentRemoteDataSource.getStatistics(
-              assessmentId: assessmentId,
-            );
-            await _assessmentLocalDataSource.cacheStatistics(result);
-          } catch (_) {
-            // Silently fail — warm-up is non-critical
-          }
-        }
-      } catch (_) {
-        // Silently fail
-      }
-    });
-  }
+  // COMMENTED OUT: Unused - no callers found
+  // void _warmUpStatisticsCache() {
+  //   Future.microtask(() async {
+  //     try {
+  //       final db = await _localDatabase.database;
+  //       final assessments = await db.query(
+  //         'assessments',
+  //         limit: 30,
+  //         orderBy: 'created_at DESC',
+  //       );
+  //       for (final assessment in assessments) {
+  //         final assessmentId = assessment['id'] as String;
+  //         try {
+  //           final result = await _assessmentRemoteDataSource.getStatistics(
+  //             assessmentId: assessmentId,
+  //           );
+  //           await _assessmentLocalDataSource.cacheStatistics(result);
+  //         } catch (_) {
+  //           // Silently fail — warm-up is non-critical
+  //         }
+  //       }
+  //     } catch (_) {
+  //       // Silently fail
+  //     }
+  //   });
+  // }
 
   /// Warm-up student results cache for released assessments
-  void _warmUpStudentResultsCache() {
-    Future.microtask(() async {
-      try {
-        final db = await _localDatabase.database;
-        final releasedAssessments = await db.query(
-          'assessments',
-          where: '(results_released = 1 OR show_results_immediately = 1)',
-          limit: 30,
-        );
-        final releasedIds = releasedAssessments
-            .map((a) => a['id'] as String)
-            .toSet();
-
-        final submissions = await db.query(
-          'assessment_submissions',
-          where: 'is_submitted = 1',
-          limit: 30,
-        );
-
-        for (final submission in submissions) {
-          final assessmentId = submission['assessment_id'] as String;
-          if (!releasedIds.contains(assessmentId)) continue;
-
-          final submissionId = submission['id'] as String;
-          try {
-            final result = await _assessmentRemoteDataSource.getStudentResults(
-              submissionId: submissionId,
-            );
-            await _assessmentLocalDataSource.cacheStudentResults(result);
-          } catch (_) {
-            // Silently fail — warm-up is non-critical
-          }
-        }
-      } catch (_) {
-        // Silently fail
-      }
-    });
-  }
+  // COMMENTED OUT: Unused - no callers found
+  // void _warmUpStudentResultsCache() {
+  //   Future.microtask(() async {
+  //     try {
+  //       final db = await _localDatabase.database;
+  //       final releasedAssessments = await db.query(
+  //         'assessments',
+  //         where: '(results_released = 1 OR show_results_immediately = 1)',
+  //         limit: 30,
+  //       );
+  //       final releasedIds = releasedAssessments
+  //           .map((a) => a['id'] as String)
+  //           .toSet();
+  //
+  //       final submissions = await db.query(
+  //         'assessment_submissions',
+  //         where: 'is_submitted = 1',
+  //         limit: 30,
+  //       );
+  //
+  //       for (final submission in submissions) {
+  //         final assessmentId = submission['assessment_id'] as String;
+  //         if (!releasedIds.contains(assessmentId)) continue;
+  //
+  //         final submissionId = submission['id'] as String;
+  //         try {
+  //           final result = await _assessmentRemoteDataSource.getStudentResults(
+  //             submissionId: submissionId,
+  //           );
+  //           await _assessmentLocalDataSource.cacheStudentResults(result);
+  //         } catch (_) {
+  //           // Silently fail — warm-up is non-critical
+  //         }
+  //       }
+  //     } catch (_) {
+  //       // Silently fail
+  //     }
+  //   });
+  // }
 
   /// Handles a single file upload operation by calling the multipart endpoint directly.
   /// References pattern in: mobile/lib/data/datasources/remote/assignment_remote_datasource.dart
@@ -1744,11 +1888,35 @@ class SyncManager {
       }
 
       if (submissionId != null) {
-        await _syncRemoteDataSource.uploadSubmissionFile(
+        final response = await _syncRemoteDataSource.uploadSubmissionFile(
           submissionId: submissionId,
           localPath: localPath,
           fileName: fileName,
         );
+
+        // Fix 3: Reconcile server file ID with local UUID
+        if (response != null && fileId != null) {
+          final serverId = response['id'] as String?;
+          if (serverId != null && serverId != fileId) {
+            try {
+              final db = await _localDatabase.database;
+              // Rename row ID from local UUID to server UUID
+              await db.update(
+                'submission_files',
+                {
+                  'id': serverId,
+                  'is_local_only': 0,
+                  'local_path': null,
+                },
+                where: 'id = ?',
+                whereArgs: [fileId],
+              );
+            } catch (e) {
+              _log.error('Failed to reconcile file ID: $e');
+              // Continue — file is on server even if local reconciliation fails
+            }
+          }
+        }
       } else if (materialId != null) {
         await _syncRemoteDataSource.uploadMaterialFile(
           materialId: materialId,
@@ -1776,6 +1944,7 @@ class SyncManager {
   /// Resets the in-memory sync state to idle, clearing stale data after logout.
   /// This ensures that the singleton instance doesn't carry over state from previous sessions.
   void reset() {
+    stop(); // cancel reachability subscription so no post-logout triggers
     _isSyncing = false;
     _state = const SyncState(
       phase: SyncPhase.idle,

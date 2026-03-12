@@ -185,6 +185,9 @@ class ApiEndpoints {
             .toList(),
       );
 
+  static ApiEndpoint<void> assessmentQuestionsReorder(String assessmentId) =>
+      ApiEndpoint('/api/v1/assessments/$assessmentId/questions/reorder', (_) {});
+
   static ApiEndpoint<QuestionModel> questionDetail(String questionId) =>
       ApiEndpoint<QuestionModel>.fromModel(
         '/api/v1/questions/$questionId',

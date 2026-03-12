@@ -3,10 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/constants/file_types.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assignments/usecases/create_assignment.dart';
-import 'package:likha/presentation/pages/teacher/widgets/assignment_due_date_picker.dart';
+import 'package:likha/presentation/pages/teacher/widgets/shared_due_date_time_picker.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assignment_instructions_field.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assignment_points_field.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assignment_title_field.dart';
+import 'package:likha/presentation/pages/teacher/widgets/submission_type_dropdown.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 
 class CreateAssignmentPage extends ConsumerStatefulWidget {
@@ -50,84 +51,35 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
   }
 
   /// Calculate category selection state: 0 = none, 1 = partial, 2 = all
-  int _getCategorySelectionState(FileTypeCategory category) {
-    final selectedCount = category.types
-        .where((type) => _selectedFileTypes.contains(type))
-        .length;
-    if (selectedCount == 0) return 0;
-    if (selectedCount == category.types.length) return 2;
-    return 1;
-  }
+  // COMMENTED OUT: Only called by _toggleCategory which is also commented out
+  // int _getCategorySelectionState(FileTypeCategory category) {
+  //   final selectedCount = category.types
+  //       .where((type) => _selectedFileTypes.contains(type))
+  //       .length;
+  //   if (selectedCount == 0) return 0;
+  //   if (selectedCount == category.types.length) return 2;
+  //   return 1;
+  // }
 
   /// Toggle all types in a category
-  void _toggleCategory(FileTypeCategory category) {
-    setState(() {
-      final state = _getCategorySelectionState(category);
-      if (state == 2) {
-        // All selected → deselect all
-        for (final type in category.types) {
-          _selectedFileTypes.remove(type);
-        }
-      } else {
-        // None or partial → select all
-        for (final type in category.types) {
-          _selectedFileTypes.add(type);
-        }
-      }
-    });
-  }
+  // COMMENTED OUT: Unused - no callers found
+  // void _toggleCategory(FileTypeCategory category) {
+  //   setState(() {
+  //     final state = _getCategorySelectionState(category);
+  //     if (state == 2) {
+  //       // All selected → deselect all
+  //       for (final type in category.types) {
+  //         _selectedFileTypes.remove(type);
+  //       }
+  //     } else {
+  //       // None or partial → select all
+  //       for (final type in category.types) {
+  //         _selectedFileTypes.add(type);
+  //       }
+  //     }
+  //   });
+  // }
 
-  Future<void> _pickDateTime() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _dueAt,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF2B2B2B),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Color(0xFF2B2B2B),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (date == null || !mounted) return;
-
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(_dueAt),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF2B2B2B),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Color(0xFF2B2B2B),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (time == null || !mounted) return;
-
-    setState(() {
-      _dueAt = DateTime(
-        date.year,
-        date.month,
-        date.day,
-        time.hour,
-        time.minute,
-      );
-    });
-  }
 
   Future<void> _showFileTypesPicker() async {
     showModalBottomSheet(
@@ -438,10 +390,12 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
                 ),
               ],
               const SizedBox(height: 16),
-              AssignmentDueDatePicker(
-                dueAt: _dueAt,
-                onTap: _pickDateTime,
+              SharedDueDateTimePicker(
+                label: 'Due Date',
+                dateTime: _dueAt,
+                icon: Icons.event_rounded,
                 enabled: !assignState.isLoading,
+                onChanged: (dt) => setState(() => _dueAt = dt),
               ),
               const SizedBox(height: 16),
               Container(
@@ -533,56 +487,10 @@ class _SubmissionTypeDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
+    return SubmissionTypeDropdown(
       value: value,
-      decoration: InputDecoration(
-        labelText: 'Submission Type',
-        labelStyle: const TextStyle(
-          fontSize: 14,
-          color: Color(0xFF999999),
-        ),
-        prefixIcon: const Icon(
-          Icons.upload_file_rounded,
-          color: Color(0xFF666666),
-          size: 20,
-        ),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: Color(0xFFE0E0E0),
-            width: 1,
-          ),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: Color(0xFFE0E0E0),
-            width: 1,
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: Color(0xFF2B2B2B),
-            width: 1.5,
-          ),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
-        ),
-      ),
-      items: const [
-        DropdownMenuItem(value: 'text', child: Text('Text Only')),
-        DropdownMenuItem(value: 'file', child: Text('File Only')),
-        DropdownMenuItem(
-          value: 'text_or_file',
-          child: Text('Text and/or File'),
-        ),
-      ],
-      onChanged: enabled ? onChanged : null,
+      enabled: enabled,
+      onChanged: onChanged,
     );
   }
 }

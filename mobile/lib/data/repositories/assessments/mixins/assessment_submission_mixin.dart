@@ -47,7 +47,7 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
     try {
       final cached =
           await localDataSource.getCachedSubmissionDetail(submissionId);
-      if (cached != null) {
+      if (cached != null && cached.answers.isNotEmpty) {
         unawaited(validationService.validateAndSync('assessments'));
         return Right(cached);
       }
@@ -175,6 +175,16 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
               'points': q.points,
               'order_index': q.orderIndex,
               'is_multi_select': q.isMultiSelect,
+              if (q.choices != null)
+                'choices': q.choices!
+                    .map((c) => {
+                          'id': c.id,
+                          'choice_text': c.choiceText,
+                          'order_index': c.orderIndex,
+                        })
+                    .toList(),
+              if (q.enumerationItems != null)
+                'enumeration_count': q.enumerationItems!.length,
             }).toList();
             return Right(StartSubmissionResult(
               submissionId: existingSubmission.id,
@@ -201,6 +211,16 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
             'points': q.points,
             'order_index': q.orderIndex,
             'is_multi_select': q.isMultiSelect,
+            if (q.choices != null)
+              'choices': q.choices!
+                  .map((c) => {
+                        'id': c.id,
+                        'choice_text': c.choiceText,
+                        'order_index': c.orderIndex,
+                      })
+                  .toList(),
+            if (q.enumerationItems != null)
+              'enumeration_count': q.enumerationItems!.length,
           }).toList();
 
           return Right(StartSubmissionResult(
@@ -236,6 +256,16 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
           'points': q.points,
           'order_index': q.orderIndex,
           'is_multi_select': q.isMultiSelect,
+          if (q.choices != null)
+            'choices': q.choices!
+                .map((c) => {
+                      'id': c.id,
+                      'choice_text': c.choiceText,
+                      'order_index': c.orderIndex,
+                    })
+                .toList(),
+          if (q.enumerationItems != null)
+            'enumeration_count': q.enumerationItems!.length,
         }).toList();
         return Right(StartSubmissionResult(
           submissionId: existingSubmission.id,
@@ -247,7 +277,7 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
       // ✅ If submission exists AND is submitted, don't hit server
       if (existingSubmission != null && existingSubmission.isSubmitted) {
         print('🚀 [Repo] startAssessment() - ONLINE PATH - SUBMISSION ALREADY SUBMITTED');
-        return Left(ServerFailure('Assessment already submitted'));
+        return Left(const ServerFailure('Assessment already submitted'));
       }
 
       print('🚀 [Repo] startAssessment() - ONLINE PATH - NO EXISTING SUBMISSION, CALLING SERVER');

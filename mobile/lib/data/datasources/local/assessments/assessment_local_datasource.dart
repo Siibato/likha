@@ -12,6 +12,7 @@ abstract class AssessmentLocalDataSource {
   Future<void> updateQuestionLocally({
     required String questionId,
     required Map<String, dynamic> updates,
+    bool isOfflineMutation = true,
   });
   Future<void> deleteQuestionLocally({required String questionId});
   Future<void> deleteAssessmentLocally({required String assessmentId});

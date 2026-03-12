@@ -4,7 +4,7 @@ import 'package:likha/presentation/pages/admin/account_management_page.dart';
 import 'package:likha/presentation/pages/admin/admin_classes_page.dart';
 import 'package:likha/presentation/pages/admin/create_account_page.dart';
 import 'package:likha/presentation/pages/admin/widgets/admin_header.dart';
-import 'package:likha/presentation/pages/admin/widgets/dashboard_card.dart';
+import 'package:likha/presentation/pages/shared/widgets/cards/navigation_card.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 import 'package:likha/presentation/utils/logout_helper.dart';
 
@@ -48,7 +48,7 @@ class AdminDashboardPage extends ConsumerWidget {
               fullName: authState.user?.fullName ?? 'Admin',
             ),
             const SizedBox(height: 32),
-            DashboardCard(
+            NavigationCard(
               icon: Icons.class_outlined,
               title: 'Class Management',
               subtitle: 'Create classes and manage student enrollment',
@@ -60,7 +60,7 @@ class AdminDashboardPage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 14),
-            DashboardCard(
+            NavigationCard(
               icon: Icons.people_outline_rounded,
               title: 'Account Management',
               subtitle: 'View and manage all user accounts',
@@ -72,7 +72,7 @@ class AdminDashboardPage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 14),
-            DashboardCard(
+            NavigationCard(
               icon: Icons.person_add_outlined,
               title: 'Create Account',
               subtitle: 'Create a new teacher or student account',

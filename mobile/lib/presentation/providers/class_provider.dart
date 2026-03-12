@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/events/data_event_bus.dart';
-import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
@@ -165,16 +164,6 @@ class ClassNotifier extends StateNotifier<ClassState> {
     state = state.copyWith(isLoading: true, clearError: true);
 
     final result = await _getClassDetail(classId);
-
-    // Always try to load cached students for offline display (even if online)
-    try {
-      final cachedStudents = await sl<ClassLocalDataSource>().getCachedEnrolledStudents(classId);
-      final ids = cachedStudents.map((u) => u.id).toSet();
-      // Store in searchResults for teacher page fallback when offline
-      state = state.copyWith(searchResults: cachedStudents, enrolledStudentIds: ids);
-    } catch (_) {
-      // If caching fails, continue with current state
-    }
 
     // Handle success case
     result.fold(

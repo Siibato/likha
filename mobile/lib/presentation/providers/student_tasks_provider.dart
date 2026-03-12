@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/usecases/get_assessments.dart';
@@ -86,7 +87,7 @@ class TaskItem {
     } else if (submissionStatus == 'submitted') {
       return TaskStatus.submitted;
     } else {
-      final now = DateTime.now();
+      final now = sl<ServerClockService>().now();
       if (dueAt.isBefore(now)) {
         return TaskStatus.missing;
       } else {
@@ -97,7 +98,7 @@ class TaskItem {
 
   // Derive status from assessment (for assessments)
   static TaskStatus _deriveAssessmentStatus(Assessment assessment) {
-    final now = DateTime.now();
+    final now = sl<ServerClockService>().now();
     if (assessment.isSubmitted == true) return TaskStatus.submitted;
     if (now.isAfter(assessment.closeAt)) return TaskStatus.missing;
     return TaskStatus.pending;

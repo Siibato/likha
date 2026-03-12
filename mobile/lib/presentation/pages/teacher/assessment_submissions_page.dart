@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/presentation/pages/teacher/submission_review_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_submission_card.dart';
@@ -40,17 +41,17 @@ class _AssessmentSubmissionsPageState
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF2B2B2B)),
+        iconTheme: const IconThemeData(color: AppColors.foregroundPrimary),
         title: const Text(
           'Submissions',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.foregroundPrimary,
             letterSpacing: -0.4,
           ),
         ),
@@ -58,7 +59,7 @@ class _AssessmentSubmissionsPageState
       body: state.isLoading && state.submissions.isEmpty
           ? const Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF2B2B2B),
+                color: AppColors.foregroundPrimary,
                 strokeWidth: 2.5,
               ),
             )
@@ -68,7 +69,7 @@ class _AssessmentSubmissionsPageState
                   onRefresh: () => ref
                       .read(assessmentProvider.notifier)
                       .loadSubmissions(widget.assessmentId),
-                  color: const Color(0xFF2B2B2B),
+                  color: AppColors.foregroundPrimary,
                   child: ListView.builder(
                     padding: const EdgeInsets.all(24),
                     itemCount: state.submissions.length,

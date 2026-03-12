@@ -1,146 +1,76 @@
 import 'package:flutter/material.dart';
+import 'package:likha/presentation/widgets/styled_dialog.dart';
 
 class AssessmentDialogs {
-  static void showExitWarning(
+  static Future<void> showExitWarning(
     BuildContext context, {
     required VoidCallback onLeave,
   }) {
-    showDialog(
+    return showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Leave Assessment?',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 20,
-            letterSpacing: -0.4,
-          ),
-        ),
+      builder: (ctx) => StyledDialog(
+        title: 'Leave Assessment?',
         content: const Text(
-          'If you leave, the timer will continue running. Your answers are saved periodically. Are you sure you want to leave?',
+          'Your progress will be saved, but the timer will continue running.',
           style: TextStyle(fontSize: 15, height: 1.4),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF666666),
-            ),
-            child: const Text('Stay'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              onLeave();
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFFEA4335),
-            ),
-            child: const Text('Leave'),
+          StyledDialogAction(label: 'Stay', onPressed: () => Navigator.pop(ctx)),
+          StyledDialogAction(
+            label: 'Leave',
+            isPrimary: true,
+            isDestructive: true,
+            onPressed: () { Navigator.pop(ctx); onLeave(); },
           ),
         ],
       ),
     );
   }
 
-  static void showSubmitConfirmation(
+  static Future<void> showSubmitConfirmation(
     BuildContext context, {
     required VoidCallback onSubmit,
   }) {
-    showDialog(
+    return showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Submit Assessment',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 20,
-            letterSpacing: -0.4,
-          ),
-        ),
+      builder: (ctx) => StyledDialog(
+        title: 'Submit Assessment',
         content: const Text(
-          'Are you sure you want to submit? You will not be able to change your answers after submission.',
+          'Are you sure you want to submit? You cannot change your answers after submission.',
           style: TextStyle(fontSize: 15, height: 1.4),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF666666),
-            ),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              onSubmit();
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF2B2B2B),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('Submit'),
+          StyledDialogAction(label: 'Cancel', onPressed: () => Navigator.pop(ctx)),
+          StyledDialogAction(
+            label: 'Submit',
+            isPrimary: true,
+            onPressed: () { Navigator.pop(ctx); onSubmit(); },
           ),
         ],
       ),
     );
   }
 
-  static void showStartConfirmation(
+  static Future<void> showStartConfirmation(
     BuildContext context, {
     required int timeLimitMinutes,
     required int questionCount,
     required VoidCallback onStart,
   }) {
-    // Format time label (e.g. "30 min", "1 hr 30 min")
-    final timeLabel = timeLimitMinutes >= 60
-        ? () {
-            final h = timeLimitMinutes ~/ 60;
-            final m = timeLimitMinutes % 60;
-            return m == 0
-                ? '$h hr${h > 1 ? 's' : ''}'
-                : '$h hr${h > 1 ? 's' : ''} $m min';
-          }()
-        : '$timeLimitMinutes min';
-
-    showDialog(
+    return showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Start Assessment?',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 20,
-            letterSpacing: -0.4,
-          ),
-        ),
+      builder: (ctx) => StyledDialog(
+        title: 'Start Assessment',
         content: Text(
-          'You have $questionCount question${questionCount != 1 ? 's' : ''} '
-          'and a time limit of $timeLabel. '
-          'Once started, the timer cannot be paused.',
+          'This assessment has $questionCount question${questionCount != 1 ? 's' : ''} with a $timeLimitMinutes-minute time limit. Once started, the timer cannot be paused.',
           style: const TextStyle(fontSize: 15, height: 1.4),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: TextButton.styleFrom(foregroundColor: const Color(0xFF666666)),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              onStart();
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF2B2B2B),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: const Text('Start'),
+          StyledDialogAction(label: 'Cancel', onPressed: () => Navigator.pop(ctx)),
+          StyledDialogAction(
+            label: 'Start',
+            isPrimary: true,
+            onPressed: () { Navigator.pop(ctx); onStart(); },
           ),
         ],
       ),

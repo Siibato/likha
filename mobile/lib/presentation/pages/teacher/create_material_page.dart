@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/pages/teacher/material_detail_page.dart';
+import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
 
 class CreateMaterialPage extends ConsumerStatefulWidget {
   final String classId;
@@ -103,36 +104,14 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
     // Handle results - navigate back after brief delay to show message
     if (anyUploadFailed) {
       await Future.delayed(const Duration(milliseconds: 100));
-      showDialog(
+      AppDialogs.showConfirmation(
         context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Upload Partially Complete'),
-          content: const Text(
-            'The module was created, but some files failed to upload. '
-            'You can retry uploading files in the module detail page.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => MaterialDetailPage(materialId: material.id),
-                  ),
-                );
-              },
-              child: const Text('Go to Module'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                Navigator.pop(context, true);
-              },
-              child: const Text('Back'),
-            ),
-          ],
-        ),
+        title: 'Upload Partially Complete',
+        body: 'The module was created, but some files failed to upload. You can try uploading them again from the module page.',
+        confirmLabel: 'Go to Module',
+        cancelLabel: 'Back',
+        onConfirm: () => Navigator.pushReplacement(context,
+            MaterialPageRoute(builder: (_) => MaterialDetailPage(materialId: material.id))),
       );
     } else {
       await Future.delayed(const Duration(milliseconds: 100));

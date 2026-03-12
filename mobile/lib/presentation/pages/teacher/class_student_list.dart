@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/presentation/pages/teacher/widgets/empty_student_state.dart';
+import 'package:likha/presentation/pages/teacher/teacher_student_detail_page.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
 class ClassStudentListPage extends ConsumerStatefulWidget {
@@ -105,7 +106,16 @@ class _ClassStudentListPageState extends ConsumerState<ClassStudentListPage> {
                     borderRadius: BorderRadius.circular(15),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(15),
-                      onTap: () {}, // No action for now
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => TeacherStudentDetailPage(
+                            student: user,
+                            classId: widget.classId,
+                            classTitle: currentClassDetail?.title ?? 'Class',
+                          ),
+                        ),
+                      ),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Row(

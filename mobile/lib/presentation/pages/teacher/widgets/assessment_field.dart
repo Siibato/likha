@@ -22,11 +22,13 @@ class AssessmentField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMultiLine = maxLines != null && maxLines! > 1;
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,
       enabled: enabled,
+      textAlignVertical: isMultiLine ? TextAlignVertical.top : TextAlignVertical.center,
       style: const TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w500,
@@ -38,11 +40,25 @@ class AssessmentField extends StatelessWidget {
           fontSize: 14,
           color: Color(0xFF999999),
         ),
-        prefixIcon: Icon(
-          icon,
-          color: Color(0xFF666666),
-          size: 20,
-        ),
+        prefixIcon: isMultiLine
+            ? Align(
+                widthFactor: 1.0,
+                heightFactor: 1.0,
+                alignment: Alignment.topCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Icon(
+                    icon,
+                    color: const Color(0xFF666666),
+                    size: 20,
+                  ),
+                ),
+              )
+            : Icon(
+                icon,
+                color: const Color(0xFF666666),
+                size: 20,
+              ),
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(

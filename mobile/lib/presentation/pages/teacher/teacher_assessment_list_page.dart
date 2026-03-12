@@ -1,17 +1,15 @@
-import 'package:animated_reorderable_list/animated_reorderable_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/sync/sync_manager.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/teacher/assessment_detail_page.dart';
 import 'package:likha/presentation/pages/teacher/create_assessment_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/empty_assessment_list_state.dart';
+import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
 import 'package:likha/presentation/pages/teacher/widgets/teacher_assessment_card.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
-import 'package:likha/presentation/widgets/styled_dialog.dart';
 
 class TeacherAssessmentListPage extends ConsumerStatefulWidget {
   final String classId;
@@ -66,59 +64,13 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
   }
 
   void _showMoveToPositionDialog(int currentIndex) {
-    final controller = TextEditingController(text: (currentIndex + 1).toString());
     showDialog(
       context: context,
-      builder: (ctx) => StyledDialog(
-        title: 'Move to Position',
-        subtitle: 'Reorder assessment',
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Total assessments: ${_reorderBuffer.length}',
-              style: const TextStyle(
-                fontSize: 13,
-                color: Color(0xFF666666),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              autofocus: true,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF202020),
-              ),
-              decoration: StyledTextFieldDecoration.styled(
-                labelText: 'Position (1-${_reorderBuffer.length})',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          StyledDialogAction(
-            label: 'Cancel',
-            onPressed: () => Navigator.pop(ctx),
-          ),
-          StyledDialogAction(
-            label: 'Move',
-            isPrimary: true,
-            onPressed: () {
-              final newPosition = int.tryParse(controller.text);
-              if (newPosition != null && newPosition >= 1 && newPosition <= _reorderBuffer.length) {
-                Navigator.pop(ctx);
-                _animateReorder(currentIndex, newPosition - 1);
-              } else {
-                context.showErrorSnackBar('Please enter a number between 1 and ${_reorderBuffer.length}');
-              }
-            },
-          ),
-        ],
+      builder: (ctx) => ReorderPositionDialog(
+        resourceType: 'assessments',
+        totalCount: _reorderBuffer.length,
+        currentPosition: currentIndex,
+        onReorder: _animateReorder,
       ),
     );
   }

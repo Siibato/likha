@@ -138,6 +138,25 @@ pub struct FileMetadataResponse {
     pub uploaded_at: String,
 }
 
+// ===== STUDENT SUBMISSION STATUS SCHEMAS =====
+
+#[derive(Debug, Serialize)]
+pub struct StudentAssignmentSubmissionItem {
+    pub assignment_id: Uuid,
+    pub id: Uuid,                       // submission id
+    pub student_id: Uuid,
+    pub student_name: String,
+    pub status: String,                 // "draft" | "submitted" | "graded" | "returned"
+    pub submitted_at: Option<String>,
+    pub is_late: bool,
+    pub score: Option<i32>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct StudentAssignmentSubmissionsResponse {
+    pub submissions: Vec<StudentAssignmentSubmissionItem>,
+}
+
 // ===== METADATA SCHEMAS =====
 
 #[derive(Debug, Serialize)]
