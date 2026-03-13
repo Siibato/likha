@@ -23,6 +23,35 @@ mixin ClassCacheMixin on ClassLocalDataSourceBase {
   }
 
   @override
+  Future<void> cacheStudentParticipation({
+    required String classId,
+    required String userId,
+    required DateTime joinedAt,
+  }) async {
+    try {
+      final db = await localDatabase.database;
+      final now = DateTime.now();
+      final syntheticId = 'local_${classId}_$userId';
+      await db.insert(
+        'class_participants',
+        {
+          'id': syntheticId,
+          'class_id': classId,
+          'user_id': userId,
+          'joined_at': joinedAt.toIso8601String(),
+          'updated_at': now.toIso8601String(),
+          'removed_at': null,
+          'cached_at': now.toIso8601String(),
+          'needs_sync': 0, 
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } catch (e) {
+      throw CacheException('Failed to cache student participation: $e');
+    }
+  }
+
+  @override
   Future<void> cacheClassDetail(ClassDetailModel classDetail) async {
     try {
       final db = await localDatabase.database;

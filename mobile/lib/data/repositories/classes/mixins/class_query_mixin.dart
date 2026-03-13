@@ -53,6 +53,7 @@ mixin ClassQueryMixin on ClassRepositoryBase {
         // Cache miss: blocking remote fetch (avoids empty-state flash)
         final freshClasses = await remoteDataSource.getMyClasses();
         await localDataSource.cacheClasses(freshClasses);
+        await _cacheStudentParticipations(freshClasses, currentUserId);
         return Right(freshClasses);
       }
     } on ServerException catch (e) {
@@ -99,6 +100,21 @@ mixin ClassQueryMixin on ClassRepositoryBase {
     }
   }
 
+  Future<void> _cacheStudentParticipations(
+    List<ClassEntity> classes,
+    String userId,
+  ) async {
+    for (final cls in classes) {
+      try {
+        await localDataSource.cacheStudentParticipation(
+          classId: cls.id,
+          userId: userId,
+          joinedAt: cls.createdAt,
+        );
+      } catch (_) {}
+    }
+  }
+
   /// Silently fetches fresh classes from the server in background.
   /// Updates local cache only if any record has a newer [updatedAt].
   /// Emits a DataEventBus event so the page can reload from updated cache.
@@ -114,11 +130,13 @@ mixin ClassQueryMixin on ClassRepositoryBase {
           cached = await localDataSource.getCachedClassesForUser(currentUserId);
         } on CacheException {
           await localDataSource.cacheClasses(fresh);
+          await _cacheStudentParticipations(fresh, currentUserId);
           dataEventBus.notifyClassesChanged();
           return;
         }
         if (_classesHaveChanged(cached, fresh)) {
           await localDataSource.cacheClasses(fresh);
+          await _cacheStudentParticipations(fresh, currentUserId);
           dataEventBus.notifyClassesChanged();
         }
       } catch (_) {}

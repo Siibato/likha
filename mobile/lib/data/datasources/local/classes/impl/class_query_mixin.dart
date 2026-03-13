@@ -38,14 +38,17 @@ mixin ClassQueryMixin on ClassLocalDataSourceBase {
   Future<List<ClassModel>> getCachedClassesForUser(String userId) async {
     try {
       final db = await localDatabase.database;
-      // Join classes with class_participants to find all classes for this user
       final results = await db.rawQuery('''
+        SELECT DISTINCT c.*
+        FROM classes c
+        WHERE c.teacher_id = ? AND c.deleted_at IS NULL
+        UNION
         SELECT DISTINCT c.*
         FROM classes c
         JOIN class_participants cp ON c.id = cp.class_id
         WHERE cp.user_id = ? AND cp.removed_at IS NULL AND c.deleted_at IS NULL
-        ORDER BY c.title ASC
-      ''', [userId]);
+        ORDER BY title ASC
+      ''', [userId, userId]); // userId bound twice: once per UNION leg
 
       if (results.isEmpty) {
         return [];
