@@ -130,6 +130,7 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
   @override
   Future<void> cacheMaterialFiles(String materialId, List<MaterialFile> files) async {
     try {
+      print('[CACHE_FILES] 💾 Starting cacheMaterialFiles with ${files.length} files for materialId=$materialId');
       final db = await localDatabase.database;
       for (final file in files) {
         // Preserve local cache state if row already exists
@@ -141,7 +142,8 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
         );
 
         if (existing.isEmpty) {
-          await db.insert(
+          print('[CACHE_FILES] ➕ Inserting new file: ${file.fileName} (${file.id})');
+          final rowsAffected = await db.insert(
             'material_files',
             {
               'id': file.id,
@@ -150,14 +152,16 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
               'file_type': file.fileType,
               'file_size': file.fileSize,
               'uploaded_at': file.uploadedAt.toIso8601String(),
-              'local_path': null,
+              'local_path': '',
               'cached_at': DateTime.now().toIso8601String(),
             },
             conflictAlgorithm: ConflictAlgorithm.ignore,
           );
+          print('[CACHE_FILES] ✅ Insert completed, rowsAffected=$rowsAffected');
         } else {
+          print('[CACHE_FILES] 🔄 Updating existing file: ${file.fileName} (${file.id})');
           // Only update server-side metadata — preserve local_path
-          await db.update(
+          final rowsAffected = await db.update(
             'material_files',
             {
               'file_name': file.fileName,
@@ -169,9 +173,12 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
             where: 'id = ?',
             whereArgs: [file.id],
           );
+          print('[CACHE_FILES] ✅ Update completed, rowsAffected=$rowsAffected');
         }
       }
+      print('[CACHE_FILES] ✅ cacheMaterialFiles completed successfully');
     } catch (e) {
+      print('[CACHE_FILES] ❌ Error in cacheMaterialFiles: $e');
       throw CacheException('Failed to cache material files: $e');
     }
   }

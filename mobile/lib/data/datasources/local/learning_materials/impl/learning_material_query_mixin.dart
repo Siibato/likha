@@ -27,6 +27,7 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
           [materialId],
         );
         final actualCount = countResult.first['count'] as int? ?? 0;
+        print('[GET_CACHED_MATERIALS] materialId=$materialId, fileCount=$actualCount');
 
         materials.add(LearningMaterialModel(
           id: materialId,
@@ -65,7 +66,6 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
 
       final r = results.first;
 
-      // Compute actual file count from the material_files table
       final countResult = await db.rawQuery(
         'SELECT COUNT(*) as count FROM material_files WHERE material_id = ?',
         [materialId],
@@ -92,7 +92,6 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
     }
   }
 
-  /// NEW: Get cached material files from SQLite
   @override
   Future<List<MaterialFileModel>> getCachedMaterialFiles(String materialId) async {
     try {

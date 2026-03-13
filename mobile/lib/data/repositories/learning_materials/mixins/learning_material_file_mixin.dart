@@ -45,6 +45,25 @@ mixin LearningMaterialFileMixin on LearningMaterialRepositoryBase {
         filePath: filePath,
         fileName: fileName,
       );
+
+      try {
+        print('[UPLOAD_POST] ✅ File uploaded successfully, fetching material detail...');
+        final materialDetail = await remoteDataSource.getMaterialDetail(materialId: materialId);
+        print('[UPLOAD_POST] 📄 Got material detail: ${materialDetail.files.length} files');
+
+        if (materialDetail.files.isNotEmpty) {
+          print('[UPLOAD_POST] 💾 Caching ${materialDetail.files.length} files to local DB...');
+          await localDataSource.cacheMaterialFiles(materialId, materialDetail.files);
+          print('[UPLOAD_POST] ✅ Cache complete, notifying event bus...');
+        } else {
+          print('[UPLOAD_POST] ⚠️  No files in response, skipping cache');
+        }
+
+        dataEventBus.notifyMaterialsChanged(materialDetail.classId);
+      } catch (e) {
+        print('[UPLOAD_POST] ❌ Error during post-upload caching: $e');
+      }
+
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

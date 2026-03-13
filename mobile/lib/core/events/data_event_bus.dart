@@ -28,7 +28,10 @@ class DataEventBus {
   void notifyAssessmentsChanged(String classId) => _assessments.add(classId);
   void notifyAssessmentDetailChanged(String assessmentId) => _assessmentDetail.add(assessmentId);
   void notifyAssignmentsChanged(String classId) => _assignments.add(classId);
-  void notifyMaterialsChanged(String classId)   => _materials.add(classId);
+  void notifyMaterialsChanged(String classId) {
+    print('[EVENT_BUS] 🔔 notifyMaterialsChanged fired with classId: $classId');
+    _materials.add(classId);
+  }
   void notifyClassesChanged()                    => _classes.add(null);
 
   void dispose() {
