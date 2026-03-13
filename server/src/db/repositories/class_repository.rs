@@ -3,7 +3,7 @@ use sea_orm::*;
 use uuid::Uuid;
 use md5;
 
-use ::entity::{class_participants, class_enrollments, classes, users};
+use ::entity::{class_participants, classes, users};
 use crate::utils::{AppError, AppResult};
 
 pub struct ClassRepository {
@@ -257,6 +257,38 @@ impl ClassRepository {
         self.find_participants_by_class_id(class_id, Some("student")).await
     }
 
+    pub async fn find_participants_by_user_id(
+        &self,
+        user_id: Uuid,
+        role: Option<&str>,
+    ) -> AppResult<Vec<class_participants::Model>> {
+        let mut participants = class_participants::Entity::find()
+            .filter(class_participants::Column::UserId.eq(user_id))
+            .filter(class_participants::Column::RemovedAt.is_null())
+            .order_by_asc(class_participants::Column::JoinedAt)
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        // Filter by user role if specified
+        if let Some(role_filter) = role {
+            let user = users::Entity::find_by_id(user_id)
+                .one(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+            if let Some(user) = user {
+                if user.role != role_filter {
+                    participants.clear();
+                }
+            } else {
+                participants.clear();
+            }
+        }
+
+        Ok(participants)
+    }
+
     pub async fn find_classes_by_student_id(
         &self,
         student_id: Uuid,
@@ -265,14 +297,8 @@ impl ClassRepository {
     }
 
     pub async fn count_students_in_class(&self, class_id: Uuid) -> AppResult<usize> {
-        let count = class_enrollments::Entity::find()
-            .filter(class_enrollments::Column::ClassId.eq(class_id))
-            .filter(class_enrollments::Column::RemovedAt.is_null())
-            .count(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        Ok(count as usize)
+        let students = self.find_participants_by_class_id(class_id, Some("student")).await?;
+        Ok(students.len())
     }
 
     pub async fn is_student_enrolled(
@@ -280,15 +306,23 @@ impl ClassRepository {
         class_id: Uuid,
         student_id: Uuid,
     ) -> AppResult<bool> {
-        let enrollment = class_enrollments::Entity::find()
-            .filter(class_enrollments::Column::ClassId.eq(class_id))
-            .filter(class_enrollments::Column::StudentId.eq(student_id))
-            .filter(class_enrollments::Column::RemovedAt.is_null())
+        let participant = class_participants::Entity::find()
+            .filter(class_participants::Column::ClassId.eq(class_id))
+            .filter(class_participants::Column::UserId.eq(student_id))
+            .filter(class_participants::Column::RemovedAt.is_null())
             .one(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-        Ok(enrollment.is_some())
+        if let Some(p) = participant {
+            let user = users::Entity::find_by_id(student_id)
+                .one(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+            Ok(user.is_some() && user.unwrap().role == "student")
+        } else {
+            Ok(false)
+        }
     }
 
     pub async fn is_user_participating(
@@ -370,28 +404,7 @@ impl ClassRepository {
     }
 
     pub async fn find_student_enrollments(&self, student_id: Uuid) -> AppResult<Vec<class_participants::Model>> {
-        let enrollments = class_enrollments::Entity::find()
-            .filter(class_enrollments::Column::StudentId.eq(student_id))
-            .filter(class_enrollments::Column::RemovedAt.is_null())
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        // Convert class_enrollments to class_participants for backward compatibility
-        let mut participants = Vec::new();
-        for enrollment in enrollments {
-            // Find the class_participants entry for this student in this class
-            if let Some(participant) = class_participants::Entity::find()
-                .filter(class_participants::Column::ClassId.eq(enrollment.class_id))
-                .filter(class_participants::Column::UserId.eq(student_id))
-                .filter(class_participants::Column::RemovedAt.is_null())
-                .one(&self.db)
-                .await
-                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))? {
-                participants.push(participant);
-            }
-        }
-        Ok(participants)
+        self.find_participants_by_user_id(student_id, Some("student")).await
     }
 
     pub async fn soft_delete(&self, id: Uuid) -> AppResult<()> {

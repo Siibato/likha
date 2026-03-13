@@ -7,7 +7,7 @@ class GetMyClasses {
 
   GetMyClasses(this._repository);
 
-  ResultFuture<List<ClassEntity>> call() {
-    return _repository.getMyClasses();
+  ResultFuture<List<ClassEntity>> call({bool skipBackgroundRefresh = false}) {
+    return _repository.getMyClasses(skipBackgroundRefresh: skipBackgroundRefresh);
   }
 }

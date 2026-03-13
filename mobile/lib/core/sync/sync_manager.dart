@@ -593,8 +593,7 @@ class SyncManager {
           'updated_at': userData['updated_at'] ?? userData['created_at'],
           'deleted_at': userData['deleted_at'],
           'cached_at': DateTime.now().toIso8601String(),
-          'sync_status': 'synced',
-          'is_offline_mutation': 0,
+          'needs_sync': 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -1483,32 +1482,17 @@ class SyncManager {
         final userId = (e['user_id'] ?? e['student_id']) as String;
 
         // Look up student from local users table
-        final studentRows = await db.query(
-          'users',
-          where: 'id = ?',
-          whereArgs: [userId],
-        );
-        final student = studentRows.isNotEmpty
-            ? studentRows.first as Map<String, dynamic>
-            : <String, dynamic>{};
-
         await db.insert(
           'class_participants',
           {
             'id': e['id'],
-            'local_id': e['id'],
             'class_id': e['class_id'],
             'user_id': userId,
-            'username': student['username'] ?? '',
-            'full_name': student['full_name'] ?? '',
-            'role': 'student',
-            'account_status': student['account_status'] ?? 'active',
             'joined_at': e['joined_at'] ?? e['enrolled_at'],
             'updated_at': e['joined_at'] ?? e['enrolled_at'],
             'removed_at': null,
             'cached_at': DateTime.now().toIso8601String(),
-            'sync_status': 'synced',
-            'is_offline_mutation': 0,
+            'needs_sync': 0,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );

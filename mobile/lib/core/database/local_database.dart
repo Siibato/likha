@@ -26,9 +26,9 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 23,
+      version: 1,
       onCreate: _createTables,
-      onUpgrade: _upgradeDatabase,
+      onDowngrade: _downgradeDatabase,
       onOpen: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -84,6 +84,7 @@ class LocalDatabase {
           id TEXT PRIMARY KEY,
           user_id TEXT NOT NULL,
           action TEXT NOT NULL,
+          performed_by TEXT,
           details TEXT,
           created_at TEXT NOT NULL,
           cached_at TEXT,
@@ -394,25 +395,7 @@ class LocalDatabase {
         )
       ''');
 
-      // Assessment statistics cache (re-add after v18 dropped it)
-      await txn.execute('''
-        CREATE TABLE IF NOT EXISTS assessment_statistics_cache (
-          assessment_id TEXT PRIMARY KEY,
-          statistics_json TEXT NOT NULL,
-          cached_at TEXT NOT NULL
-        )
-      ''');
-
-      // Student results cache (re-add after v18 dropped it)
-      await txn.execute('''
-        CREATE TABLE IF NOT EXISTS student_results_cache (
-          submission_id TEXT PRIMARY KEY,
-          results_json TEXT NOT NULL,
-          cached_at TEXT NOT NULL
-        )
-      ''');
-
-      // Create v2 indexes
+      // Create indexes
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_class_id ON class_participants(class_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_user_id ON class_participants(user_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_removed_at ON class_participants(removed_at)');
@@ -446,601 +429,44 @@ class LocalDatabase {
     });
   }
 
-  Future<void> _upgradeDatabase(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      // Create validation_metadata table if it doesn't exist
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS validation_metadata (
-          entity_type TEXT PRIMARY KEY,
-          last_modified TEXT NOT NULL,
-          record_count INTEGER NOT NULL,
-          etag TEXT,
-          validated_at TEXT NOT NULL,
-          database_id TEXT
-        )
-      ''');
+  Future<void> _downgradeDatabase(Database db, int oldVersion, int newVersion) async {
+    // Handle downgrade from higher versions to v1 by doing a nuclear reset
+    // Drop all tables in reverse FK order and recreate with v1 schema
+    await _dropAllTables(db);
+    await _createTables(db, newVersion);
+  }
 
-      // Try to add database_id column in case table already exists from old schema
+  Future<void> _dropAllTables(Database db) async {
+    // Drop tables in reverse FK order
+    final tables = [
+      'submission_answer_items',
+      'submission_answers',
+      'question_choices',
+      'answer_key_acceptable_answers',
+      'answer_keys',
+      'assessment_submissions',
+      'assessment_questions',
+      'assessments',
+      'submission_files',
+      'assignment_submissions',
+      'assignments',
+      'material_files',
+      'learning_materials',
+      'class_participants',
+      'activity_logs',
+      'login_attempts',
+      'refresh_tokens',
+      'classes',
+      'users',
+      'sync_queue',
+      'sync_metadata',
+    ];
+
+    for (final table in tables) {
       try {
-        await db.execute('''
-          ALTER TABLE validation_metadata ADD COLUMN database_id TEXT
-        ''');
-      } catch (e) {
-        // Column already exists, that's fine
-      }
-    }
-
-    if (oldVersion < 3) {
-      // Add synced_at and is_offline_mutation columns to entity tables
-      final tables = [
-        'classes',
-        'assessments',
-        'assignments',
-        'assessment_submissions',
-        'assignment_submissions',
-        'learning_materials',
-      ];
-
-      for (final table in tables) {
-        try {
-          await db.execute('ALTER TABLE $table ADD COLUMN synced_at TEXT');
-        } catch (e) {
-          // Column might already exist
-        }
-
-        try {
-          await db.execute(
-              'ALTER TABLE $table ADD COLUMN is_offline_mutation INTEGER NOT NULL DEFAULT 0');
-        } catch (e) {
-          // Column might already exist
-        }
-      }
-    }
-
-    if (oldVersion < 4) {
-      // Add local_id and deleted_at columns to syncable tables for ID reconciliation and tombstone handling
-      final syncableTables = [
-        'classes',
-        'class_enrollments',
-        'assessments',
-        'questions',
-        'assessment_submissions',
-        'assignments',
-        'assignment_submissions',
-        'submission_files',
-        'learning_materials',
-        'material_files',
-      ];
-
-      for (final table in syncableTables) {
-        try {
-          await db.execute('ALTER TABLE $table ADD COLUMN local_id TEXT');
-        } catch (e) {
-          // Column might already exist
-        }
-
-        try {
-          await db.execute('ALTER TABLE $table ADD COLUMN deleted_at TEXT');
-        } catch (e) {
-          // Column might already exist
-        }
-      }
-
-      // Create indexes for sync performance
-      final indexStatements = [
-        'CREATE INDEX IF NOT EXISTS idx_classes_updated_at ON classes(updated_at)',
-        'CREATE INDEX IF NOT EXISTS idx_classes_deleted_at ON classes(deleted_at)',
-        'CREATE INDEX IF NOT EXISTS idx_assessments_updated_at ON assessments(updated_at)',
-        'CREATE INDEX IF NOT EXISTS idx_assessments_deleted_at ON assessments(deleted_at)',
-        'CREATE INDEX IF NOT EXISTS idx_questions_updated_at ON questions(updated_at)',
-        'CREATE INDEX IF NOT EXISTS idx_questions_deleted_at ON questions(deleted_at)',
-        'CREATE INDEX IF NOT EXISTS idx_assessment_submissions_updated_at ON assessment_submissions(updated_at)',
-        'CREATE INDEX IF NOT EXISTS idx_assessment_submissions_deleted_at ON assessment_submissions(deleted_at)',
-        'CREATE INDEX IF NOT EXISTS idx_assignments_updated_at ON assignments(updated_at)',
-        'CREATE INDEX IF NOT EXISTS idx_assignments_deleted_at ON assignments(deleted_at)',
-        'CREATE INDEX IF NOT EXISTS idx_assignment_submissions_updated_at ON assignment_submissions(updated_at)',
-        'CREATE INDEX IF NOT EXISTS idx_assignment_submissions_deleted_at ON assignment_submissions(deleted_at)',
-        'CREATE INDEX IF NOT EXISTS idx_learning_materials_updated_at ON learning_materials(updated_at)',
-        'CREATE INDEX IF NOT EXISTS idx_learning_materials_deleted_at ON learning_materials(deleted_at)',
-      ];
-
-      for (final indexStatement in indexStatements) {
-        try {
-          await db.execute(indexStatement);
-        } catch (e) {
-          // Index might already exist
-        }
-      }
-    }
-
-    if (oldVersion < 5) {
-      // Add updated_at and sync_status to questions and class_enrollments tables
-      final tablesToMigrate = ['questions', 'class_enrollments'];
-
-      for (final table in tablesToMigrate) {
-        try {
-          await db.execute('ALTER TABLE $table ADD COLUMN updated_at TEXT');
-        } catch (e) {
-          // Column might already exist
-        }
-
-        try {
-          await db.execute('ALTER TABLE $table ADD COLUMN sync_status TEXT DEFAULT "synced"');
-        } catch (e) {
-          // Column might already exist
-        }
-      }
-
-      // Create indexes for updated_at on questions and class_enrollments
-      try {
-        await db.execute('CREATE INDEX IF NOT EXISTS idx_questions_updated_at ON questions(updated_at)');
-      } catch (e) {
-        // Index might already exist
-      }
-
-      try {
-        await db.execute('CREATE INDEX IF NOT EXISTS idx_class_enrollments_updated_at ON class_enrollments(updated_at)');
-      } catch (e) {
-        // Index might already exist
-      }
-    }
-
-    if (oldVersion < 6) {
-      // Create activity_logs table if it doesn't exist
-      try {
-        await db.execute('''
-          CREATE TABLE IF NOT EXISTS activity_logs (
-            id TEXT PRIMARY KEY,
-            user_id TEXT NOT NULL,
-            action TEXT NOT NULL,
-            performed_by TEXT,
-            details TEXT,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL,
-            deleted_at TEXT,
-            cached_at TEXT NOT NULL,
-            sync_status TEXT NOT NULL DEFAULT 'synced',
-            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-          )
-        ''');
-      } catch (e) {
-        // Table might already exist
-      }
-
-      // Create indexes for activity logs
-      try {
-        await db.execute('CREATE INDEX IF NOT EXISTS idx_activity_logs_user_id ON activity_logs(user_id)');
-      } catch (e) {
-        // Index might already exist
-      }
-
-      try {
-        await db.execute('CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created_at)');
-      } catch (e) {
-        // Index might already exist
-      }
-    }
-
-    if (oldVersion < 7) {
-      // Add is_compressed column to material_files for gzip compression support
-      try {
-        await db.execute('''
-          ALTER TABLE material_files ADD COLUMN is_compressed INTEGER NOT NULL DEFAULT 0
-        ''');
-      } catch (e) {
-        // Column might already exist
-      }
-    }
-
-    if (oldVersion < 8) {
-      // Create assessment_statistics_cache and student_results_cache tables for offline read caching
-      try {
-        await db.execute('''
-          CREATE TABLE IF NOT EXISTS assessment_statistics_cache (
-            assessment_id TEXT PRIMARY KEY,
-            statistics_json TEXT NOT NULL,
-            cached_at TEXT NOT NULL
-          )
-        ''');
-      } catch (e) {
-        // Table might already exist
-      }
-
-      try {
-        await db.execute('''
-          CREATE TABLE IF NOT EXISTS student_results_cache (
-            submission_id TEXT PRIMARY KEY,
-            results_json TEXT NOT NULL,
-            cached_at TEXT NOT NULL
-          )
-        ''');
-      } catch (e) {
-        // Table might already exist
-      }
-    }
-
-    if (oldVersion < 9) {
-      // Add completed_at column to sync_queue for audit trail of completed operations
-      try {
-        await db.execute('ALTER TABLE sync_queue ADD COLUMN completed_at TEXT');
-      } catch (e) {
-        // Column might already exist
-      }
-    }
-
-    if (oldVersion < 10) {
-      // Standardize users table: add is_offline_mutation column (copy from is_dirty)
-      try {
-        await db.execute(
-          'ALTER TABLE users ADD COLUMN is_offline_mutation INTEGER NOT NULL DEFAULT 0'
-        );
-      } catch (e) {
-        // Column already exists
-      }
-      try {
-        await db.execute('UPDATE users SET is_offline_mutation = is_dirty');
-      } catch (e) {
-        // Ignore — is_dirty not present on fresh installs
-      }
-
-      // Fix crash bug: questions table was missing is_offline_mutation
-      try {
-        await db.execute(
-          'ALTER TABLE questions ADD COLUMN is_offline_mutation INTEGER NOT NULL DEFAULT 0'
-        );
-      } catch (e) {
-        // Column already exists
-      }
-
-      // Fix crash bug: class_enrollments table was missing is_offline_mutation
-      try {
-        await db.execute(
-          'ALTER TABLE class_enrollments ADD COLUMN is_offline_mutation INTEGER NOT NULL DEFAULT 0'
-        );
-      } catch (e) {
-        // Column already exists
-      }
-    }
-
-    if (oldVersion < 11) {
-      // Create missing cache tables for existing installs that were fresh-installed at v8+
-      try {
-        await db.execute('''
-          CREATE TABLE IF NOT EXISTS assessment_statistics_cache (
-            assessment_id TEXT PRIMARY KEY,
-            statistics_json TEXT NOT NULL,
-            cached_at TEXT NOT NULL
-          )
-        ''');
-      } catch (_) {}
-      try {
-        await db.execute('''
-          CREATE TABLE IF NOT EXISTS student_results_cache (
-            submission_id TEXT PRIMARY KEY,
-            results_json TEXT NOT NULL,
-            cached_at TEXT NOT NULL
-          )
-        ''');
-      } catch (_) {}
-    }
-
-    if (oldVersion < 12) {
-      // Migrate from class_enrollments to class_participants
-      // 1. Create class_participants table
-      try {
-        await db.execute('''
-          CREATE TABLE IF NOT EXISTS class_participants (
-            id TEXT PRIMARY KEY,
-            local_id TEXT,
-            class_id TEXT NOT NULL,
-            user_id TEXT NOT NULL,
-            username TEXT NOT NULL,
-            full_name TEXT NOT NULL,
-            role TEXT NOT NULL,
-            account_status TEXT NOT NULL,
-            joined_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL,
-            removed_at TEXT,
-            cached_at TEXT NOT NULL,
-            sync_status TEXT NOT NULL DEFAULT 'synced',
-            is_offline_mutation INTEGER NOT NULL DEFAULT 0,
-            FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
-          )
-        ''');
-      } catch (e) {
-        // Table might already exist
-      }
-
-      // 2. Create indexes for class_participants
-      try {
-        await db.execute(
-          'CREATE INDEX IF NOT EXISTS idx_class_participants_class_id ON class_participants(class_id)'
-        );
-      } catch (e) {
-        // Index might already exist
-      }
-
-      try {
-        await db.execute(
-          'CREATE INDEX IF NOT EXISTS idx_class_participants_user_id ON class_participants(user_id)'
-        );
-      } catch (e) {
-        // Index might already exist
-      }
-
-      try {
-        await db.execute(
-          'CREATE INDEX IF NOT EXISTS idx_class_participants_removed_at ON class_participants(removed_at)'
-        );
-      } catch (e) {
-        // Index might already exist
-      }
-
-      // 3. Migrate students from class_enrollments
-      try {
-        await db.execute('''
-          INSERT INTO class_participants
-          (id, local_id, class_id, user_id, username, full_name, role,
-           account_status, joined_at, updated_at, removed_at, cached_at,
-           sync_status, is_offline_mutation)
-          SELECT
-            ce.id, ce.local_id, ce.class_id, ce.student_id, ce.username,
-            ce.full_name, 'student', ce.account_status,
-            ce.enrolled_at, ce.updated_at, ce.deleted_at, ce.cached_at,
-            ce.sync_status, ce.is_offline_mutation
-          FROM class_enrollments ce
-        ''');
-      } catch (e) {
-        // Might already be migrated
-      }
-
-      // 4. Drop old class_enrollments table
-      try {
-        await db.execute('DROP TABLE IF EXISTS class_enrollments');
+        await db.execute('DROP TABLE IF EXISTS $table');
       } catch (e) {
         // Table might not exist
-      }
-
-      // 5. Add deleted_at column to users table
-      try {
-        await db.execute('ALTER TABLE users ADD COLUMN deleted_at TEXT');
-      } catch (e) {
-        // Column might already exist
-      }
-
-      // 6. Drop vestigial is_active column from users table
-      try {
-        await db.execute('ALTER TABLE users DROP COLUMN is_active');
-      } catch (e) {
-        // Column might already be dropped or not exist
-      }
-    }
-
-    if (oldVersion < 13) {
-      // Add user_save_path to material_files to track where user saved downloaded files
-      try {
-        await db.execute(
-          'ALTER TABLE material_files ADD COLUMN user_save_path TEXT'
-        );
-      } catch (e) {
-        // Column might already exist
-      }
-    }
-
-    if (oldVersion < 14) {
-      // Add created_at column to assessment_submissions to align with server entity
-      // and fix full/delta sync crash (column was missing but sync code inserted it)
-      try {
-        await db.execute(
-          'ALTER TABLE assessment_submissions ADD COLUMN created_at TEXT'
-        );
-      } catch (e) {
-        // Column might already exist on fresh installs at v14+
-      }
-    }
-
-    if (oldVersion < 15) {
-      // Add order_index columns to assignments and assessments for reordering support
-      try {
-        await db.execute(
-          'ALTER TABLE assignments ADD COLUMN order_index INTEGER NOT NULL DEFAULT 0'
-        );
-      } catch (e) {
-        // Column might already exist
-      }
-      try {
-        await db.execute(
-          'ALTER TABLE assessments ADD COLUMN order_index INTEGER NOT NULL DEFAULT 0'
-        );
-      } catch (e) {
-        // Column might already exist
-      }
-    }
-
-    if (oldVersion < 16) {
-      // Fix: Create sync_metadata table if it doesn't exist (was missing from upgrade path for v15 and earlier)
-      try {
-        await db.execute('''
-          CREATE TABLE IF NOT EXISTS sync_metadata (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL
-          )
-        ''');
-      } catch (e) {
-        // Table might already exist
-      }
-
-      // Create index for sync_metadata if it doesn't exist
-      try {
-        await db.execute('CREATE INDEX IF NOT EXISTS idx_sync_metadata_key ON sync_metadata(key)');
-      } catch (e) {
-        // Index might already exist
-      }
-
-      // Fix: Add updated_at column to users table if it doesn't exist (was missing from v1-v14 upgrade path)
-      try {
-        await db.execute('ALTER TABLE users ADD COLUMN updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP');
-      } catch (e) {
-        // Column might already exist
-      }
-    }
-
-    if (oldVersion < 17) {
-      // Fix: Add updated_at column to assessment_submissions table
-      // Was missing from the migration path for v1-v16, causing sync crashes
-      try {
-        await db.execute(
-          'ALTER TABLE assessment_submissions ADD COLUMN updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP'
-        );
-      } catch (e) {
-        // Column might already exist
-      }
-    }
-
-    if (oldVersion < 18) {
-      // Nuclear reset to ERD_MOBILE_v2 schema
-      // Drop all tables in reverse FK order, then recreate with v2 schema
-      final dropOrder = [
-        'student_results_cache',
-        'assessment_statistics_cache',
-        'submission_answer_items',
-        'submission_answers',
-        'question_choices',
-        'answer_key_acceptable_answers',
-        'answer_keys',
-        'assessment_submissions',
-        'assessment_questions', // renamed from 'questions'
-        'assessments',
-        'submission_files',
-        'assignment_submissions',
-        'assignments',
-        'material_files',
-        'learning_materials',
-        'class_participants',
-        'activity_logs',
-        'login_attempts',
-        'refresh_tokens',
-        'classes',
-        'users',
-        'sync_queue',
-        'sync_metadata',
-        'validation_metadata',
-      ];
-
-      for (final table in dropOrder) {
-        try {
-          await db.execute('DROP TABLE IF EXISTS $table');
-        } catch (e) {
-          // Table might not exist
-        }
-      }
-
-      // Recreate all tables with v2 schema
-      await _createTables(db, 18);
-    }
-
-    if (oldVersion < 19) {
-      // Restore denormalized columns removed in v18 nuclear reset that models still reference
-
-      // assessments: restore total_points, question_count, submission_count
-      for (final col in [
-        'ALTER TABLE assessments ADD COLUMN total_points INTEGER NOT NULL DEFAULT 0',
-        'ALTER TABLE assessments ADD COLUMN question_count INTEGER NOT NULL DEFAULT 0',
-        'ALTER TABLE assessments ADD COLUMN submission_count INTEGER NOT NULL DEFAULT 0',
-      ]) {
-        try {
-          await db.execute(col);
-        } catch (_) {}
-      }
-
-      // classes: restore teacher info + student_count
-      for (final col in [
-        "ALTER TABLE classes ADD COLUMN teacher_id TEXT NOT NULL DEFAULT ''",
-        "ALTER TABLE classes ADD COLUMN teacher_username TEXT NOT NULL DEFAULT ''",
-        "ALTER TABLE classes ADD COLUMN teacher_full_name TEXT NOT NULL DEFAULT ''",
-        'ALTER TABLE classes ADD COLUMN student_count INTEGER NOT NULL DEFAULT 0',
-      ]) {
-        try {
-          await db.execute(col);
-        } catch (_) {}
-      }
-
-      // assessment_submissions: add earned_points to store actual student score separately
-      // from total_points (which is the assessment max)
-      try {
-        await db.execute(
-          'ALTER TABLE assessment_submissions ADD COLUMN earned_points REAL NOT NULL DEFAULT 0'
-        );
-      } catch (_) {}
-    }
-
-    if (oldVersion < 20) {
-      // Add submission_status, submission_id, score columns to assignments table
-      // to store per-student submission data (fixes E2 bug: grade always 60 offline)
-      final assignmentColumns = [
-        'ALTER TABLE assignments ADD COLUMN submission_status TEXT',
-        'ALTER TABLE assignments ADD COLUMN submission_id TEXT',
-        'ALTER TABLE assignments ADD COLUMN score INTEGER',
-      ];
-
-      for (final col in assignmentColumns) {
-        try {
-          await db.execute(col);
-        } catch (_) {}
-      }
-    }
-
-    if (oldVersion < 21) {
-      // Fix local_path NOT NULL constraint by migrating null values to empty strings
-      try {
-        await db.execute("UPDATE submission_files SET local_path = '' WHERE local_path IS NULL");
-      } catch (_) {}
-      try {
-        await db.execute("UPDATE material_files SET local_path = '' WHERE local_path IS NULL");
-      } catch (_) {}
-
-      // Add submission_count and graded_count to assignments table
-      for (final col in [
-        'ALTER TABLE assignments ADD COLUMN submission_count INTEGER NOT NULL DEFAULT 0',
-        'ALTER TABLE assignments ADD COLUMN graded_count INTEGER NOT NULL DEFAULT 0',
-      ]) {
-        try {
-          await db.execute(col);
-        } catch (_) {}
-      }
-    }
-
-    if (oldVersion < 22) {
-      // Re-create stats cache tables dropped in v18 nuclear reset
-      try {
-        await db.execute('''CREATE TABLE IF NOT EXISTS assessment_statistics_cache (
-          assessment_id TEXT PRIMARY KEY, statistics_json TEXT NOT NULL, cached_at TEXT NOT NULL
-        )''');
-      } catch (_) {}
-      try {
-        await db.execute('''CREATE TABLE IF NOT EXISTS student_results_cache (
-          submission_id TEXT PRIMARY KEY, results_json TEXT NOT NULL, cached_at TEXT NOT NULL
-        )''');
-      } catch (_) {}
-      // Add item_type discriminator to answer_keys
-      try {
-        await db.execute(
-          "ALTER TABLE answer_keys ADD COLUMN item_type TEXT NOT NULL DEFAULT 'correct_answer'"
-        );
-      } catch (_) {}
-    }
-
-    if (oldVersion < 23) {
-      // Add columns that were missing from _createTables at v22 (fresh install crash fix)
-      final assignmentCols = [
-        'ALTER TABLE assignments ADD COLUMN submission_status TEXT',
-        'ALTER TABLE assignments ADD COLUMN submission_id TEXT',
-        'ALTER TABLE assignments ADD COLUMN score INTEGER',
-      ];
-      for (final col in assignmentCols) {
-        try {
-          await db.execute(col);
-        } catch (_) {}
       }
     }
   }

@@ -94,18 +94,18 @@ class ClassNotifier extends StateNotifier<ClassState> {
   ) : super(ClassState()) {
     _refreshSub = sl<DataEventBus>().onClassesChanged.listen((_) {
       if (_isAdminMode) {
-        loadAllClasses();
+        loadAllClasses(skipBackgroundRefresh: true);
       } else {
-        loadClasses();
+        loadClasses(skipBackgroundRefresh: true);
       }
     });
   }
 
-  Future<void> loadClasses() async {
+  Future<void> loadClasses({bool skipBackgroundRefresh = false}) async {
     _isAdminMode = false;
     state = state.copyWith(isLoading: true, clearError: true);
 
-    final result = await _getMyClasses();
+    final result = await _getMyClasses(skipBackgroundRefresh: skipBackgroundRefresh);
 
     result.fold(
       (failure) => state = state.copyWith(
@@ -119,11 +119,11 @@ class ClassNotifier extends StateNotifier<ClassState> {
     );
   }
 
-  Future<void> loadAllClasses() async {
+  Future<void> loadAllClasses({bool skipBackgroundRefresh = false}) async {
     _isAdminMode = true;
     state = state.copyWith(isLoading: true, clearError: true);
 
-    final result = await _getAllClasses();
+    final result = await _getAllClasses(skipBackgroundRefresh: skipBackgroundRefresh);
 
     result.fold(
       (failure) => state = state.copyWith(
