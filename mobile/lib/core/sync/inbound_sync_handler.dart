@@ -123,6 +123,7 @@ class InboundSyncHandler {
     await _upsertHelpers.upsertClasses(db, baseData['classes'] ?? []);
     await _upsertHelpers.upsertEnrolledStudents(db, enrolledStudents);
     await _upsertHelpers.upsertEnrollments(db, baseData['enrollments'] ?? [], enrolledStudents);
+    await _upsertHelpers.recalculateClassStudentCounts(db);
 
     _log.baseResponse(
       classes: (baseData['classes'] as List?)?.length ?? 0,
@@ -337,6 +338,8 @@ class InboundSyncHandler {
       }
     }
 
+    await _upsertHelpers.recalculateClassStudentCounts(db);
+
     // STEP 5: Signal that entity data is now in the local DB
     _updateState(
       assessmentsReady: true,
@@ -411,6 +414,7 @@ class InboundSyncHandler {
 
     // Process deltas: upsert updated, delete removed
     await _upsertHelpers.processDeltaPayload(db, deltas);
+    await _upsertHelpers.recalculateClassStudentCounts(db);
 
     // Signal that delta data is now merged into local DB
     _updateState(

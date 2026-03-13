@@ -147,6 +147,22 @@ class SyncUpsertHelpers {
     }
   }
 
+  Future<void> recalculateClassStudentCounts(Database db) async {
+    try {
+      await db.rawUpdate('''
+        UPDATE classes
+        SET student_count = (
+          SELECT COUNT(*)
+          FROM class_participants
+          WHERE class_id = classes.id AND removed_at IS NULL
+        )
+        WHERE deleted_at IS NULL
+      ''');
+    } catch (e) {
+      _log.error('Failed to recalculate class student counts', e);
+    }
+  }
+
   /// This distinguishes enrolled students from search-cached students
   Future<void> upsertEnrolledStudents(
     Database db,
