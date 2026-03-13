@@ -109,6 +109,8 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
           gradedAt: DateTime.now(),
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          needsSync: true,
+          cachedAt: DateTime.now(),
         ));
       }
 
@@ -155,6 +157,8 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
           gradedAt: null,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          needsSync: true,
+          cachedAt: DateTime.now(),
         ));
       }
 
@@ -200,6 +204,8 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
           gradedAt: null,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          needsSync: true,
+          cachedAt: DateTime.now(),
         ));
       }
 
@@ -230,6 +236,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
         final size = await fileSize(filePath);
         final mime = mimeType(filePath);
 
+        final localFileId = const Uuid().v4();
         await localDataSource.stageFileForUpload(
           submissionId: submissionId,
           fileName: fileName,
@@ -239,11 +246,14 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
         );
 
         return Right(SubmissionFile(
-          id: '',
+          id: localFileId,
           fileName: fileName,
           fileType: mime,
           fileSize: size,
           uploadedAt: DateTime.now(),
+          localPath: filePath,
+          needsSync: true,
+          cachedAt: DateTime.now(),
         ));
       }
 
@@ -326,6 +336,8 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
           gradedAt: null,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          needsSync: true,
+          cachedAt: DateTime.now(),
         ));
       }
 

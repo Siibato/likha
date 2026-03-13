@@ -11,11 +11,11 @@ impl super::AssessmentService {
         let submission = self.submission_repo.find_by_id(submission_id).await?
             .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?;
 
-        if submission.student_id != student_id {
+        if submission.user_id != student_id {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
-        if !submission.is_submitted {
+        if submission.submitted_at.is_none() {
             return Err(AppError::BadRequest("Assessment not yet submitted".to_string()));
         }
 
@@ -37,13 +37,13 @@ impl super::AssessmentService {
                 None => continue,
             };
 
-            let is_correct = a.is_override_correct.or(a.is_auto_correct);
+            let is_correct = Some(a.points > 0.0);
 
             let selected_choices = if question.question_type == "multiple_choice" {
-                let selections = self.submission_repo.find_answer_choices(a.id).await?;
+                let choice_ids = self.submission_repo.find_answer_choices(a.id).await?;
                 let choices = self.assessment_repo.find_choices_by_question_id(question.id).await?;
-                let texts: Vec<String> = selections.iter().filter_map(|s| {
-                    choices.iter().find(|c| c.id == s.choice_id).map(|c| c.choice_text.clone())
+                let texts: Vec<String> = choice_ids.iter().filter_map(|choice_id| {
+                    choices.iter().find(|c| c.id == *choice_id).map(|c| c.choice_text.clone())
                 }).collect();
                 Some(texts)
             } else {
@@ -51,11 +51,10 @@ impl super::AssessmentService {
             };
 
             let enumeration_answers = if question.question_type == "enumeration" {
-                let enum_ans = self.submission_repo.find_enumeration_answers(a.id).await?;
-                Some(enum_ans.into_iter().map(|ea| {
-                    let is_correct = ea.is_override_correct.or(ea.is_auto_correct);
+                let enum_texts = self.submission_repo.find_enumeration_answers(a.id).await?;
+                Some(enum_texts.into_iter().map(|answer_text| {
                     StudentEnumAnswerResult {
-                        answer_text: ea.answer_text,
+                        answer_text,
                         is_correct,
                     }
                 }).collect())
@@ -69,19 +68,13 @@ impl super::AssessmentService {
                     Some(choices.iter().filter(|c| c.is_correct).map(|c| c.choice_text.clone()).collect())
                 }
                 "identification" => {
-                    let answers = self.assessment_repo.find_correct_answers_by_question_id(question.id).await?;
-                    Some(answers.iter().map(|a| a.answer_text.clone()).collect())
+                    let answer_keys = self.assessment_repo.find_correct_answers_by_question_id(question.id).await?;
+                    Some(answer_keys.iter().map(|a| a.answer_text.clone()).collect())
                 }
                 "enumeration" => {
-                    let items = self.assessment_repo.find_enumeration_items_by_question_id(question.id).await?;
-                    let mut all_answers = Vec::new();
-                    for item in items {
-                        let item_answers = self.assessment_repo.find_enumeration_item_answers(item.id).await?;
-                        if let Some(first) = item_answers.first() {
-                            all_answers.push(first.answer_text.clone());
-                        }
-                    }
-                    Some(all_answers)
+                    // New schema: use answer keys for enumeration
+                    let answer_keys = self.assessment_repo.find_correct_answers_by_question_id(question.id).await?;
+                    Some(answer_keys.iter().map(|a| a.answer_text.clone()).collect())
                 }
                 _ => None,
             };
@@ -91,9 +84,9 @@ impl super::AssessmentService {
                 question_text: question.question_text,
                 question_type: question.question_type,
                 points: question.points,
-                points_awarded: a.points_awarded,
+                points_awarded: a.points,
                 is_correct,
-                answer_text: a.answer_text,
+                answer_text: None, // Answer text is now in submission_answer_items
                 selected_choices,
                 enumeration_answers,
                 correct_answers,
@@ -102,9 +95,8 @@ impl super::AssessmentService {
 
         Ok(StudentResultResponse {
             submission_id: submission.id,
-            auto_score: submission.auto_score,
-            final_score: submission.final_score,
-            total_points: assessment.total_points,
+            total_earned: submission.total_points,
+            total_possible: assessment.total_points,
             submitted_at: submission.submitted_at.map(|dt| dt.to_string()),
             answers: answer_results,
         })

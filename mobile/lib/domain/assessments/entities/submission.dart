@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 class SubmissionSummary extends Equatable {
   final String id;
+  final String assessmentId;
   final String studentId;
   final String studentName;
   final String studentUsername;
@@ -9,10 +10,16 @@ class SubmissionSummary extends Equatable {
   final DateTime? submittedAt;
   final double autoScore;
   final double finalScore;
+  final int totalPoints;
   final bool isSubmitted;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final DateTime? cachedAt;
+  final bool needsSync;
 
   const SubmissionSummary({
     required this.id,
+    required this.assessmentId,
     required this.studentId,
     required this.studentName,
     required this.studentUsername,
@@ -20,11 +27,16 @@ class SubmissionSummary extends Equatable {
     this.submittedAt,
     required this.autoScore,
     required this.finalScore,
+    required this.totalPoints,
     required this.isSubmitted,
+    this.createdAt,
+    this.updatedAt,
+    this.cachedAt,
+    this.needsSync = false,
   });
 
   @override
-  List<Object?> get props => [id, studentId, isSubmitted];
+  List<Object?> get props => [id, assessmentId, studentId, totalPoints, isSubmitted, needsSync, cachedAt];
 }
 
 class SubmissionDetail extends Equatable {
@@ -37,6 +49,7 @@ class SubmissionDetail extends Equatable {
   final double autoScore;
   final double finalScore;
   final bool isSubmitted;
+  final int totalPoints;
   final List<SubmissionAnswer> answers;
 
   const SubmissionDetail({
@@ -49,6 +62,7 @@ class SubmissionDetail extends Equatable {
     required this.autoScore,
     required this.finalScore,
     required this.isSubmitted,
+    required this.totalPoints,
     required this.answers,
   });
 

@@ -6,20 +6,25 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
-    pub username: String,
-    pub ip_address: String,
-    pub attempt_count: i32,
-    pub first_attempt_at: chrono::NaiveDateTime,
-    pub last_attempt_at: chrono::NaiveDateTime,
-    pub locked_until: Option<chrono::NaiveDateTime>,
+    pub user_id: Option<Uuid>,
+    pub attempted_at: chrono::NaiveDateTime,
+    pub success: bool,
+    pub device_id: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {}
+pub enum Relation {
+    #[sea_orm(
+        belongs_to = "super::users::Entity",
+        from = "Column::UserId",
+        to = "super::users::Column::Id"
+    )]
+    User,
+}
 
 impl Related<super::users::Entity> for Entity {
     fn to() -> RelationDef {
-        unreachable!()
+        Relation::User.def()
     }
 }
 

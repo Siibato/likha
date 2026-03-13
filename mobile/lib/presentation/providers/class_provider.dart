@@ -79,6 +79,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
   final GetEnrolledStudents _getEnrolledStudents;
 
   late StreamSubscription<void> _refreshSub;
+  bool _isAdminMode = false;
 
   ClassNotifier(
     this._createClass,
@@ -92,11 +93,16 @@ class ClassNotifier extends StateNotifier<ClassState> {
     this._getEnrolledStudents,
   ) : super(ClassState()) {
     _refreshSub = sl<DataEventBus>().onClassesChanged.listen((_) {
-      loadClasses();
+      if (_isAdminMode) {
+        loadAllClasses();
+      } else {
+        loadClasses();
+      }
     });
   }
 
   Future<void> loadClasses() async {
+    _isAdminMode = false;
     state = state.copyWith(isLoading: true, clearError: true);
 
     final result = await _getMyClasses();
@@ -114,6 +120,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
   }
 
   Future<void> loadAllClasses() async {
+    _isAdminMode = true;
     state = state.copyWith(isLoading: true, clearError: true);
 
     final result = await _getAllClasses();
@@ -307,9 +314,9 @@ class ClassNotifier extends StateNotifier<ClassState> {
           );
           state = state.copyWith(
             currentClassDetail: revertedDetail,
-            enrolledStudentIds: state.enrolledStudentIds..remove(studentId),
+            enrolledStudentIds: Set<String>.from(state.enrolledStudentIds)..remove(studentId),
             error: failure.message,
-            loadingStudentIds: state.loadingStudentIds..remove(studentId),
+            loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
           );
         } else {
           state = state.copyWith(
@@ -340,12 +347,12 @@ class ClassNotifier extends StateNotifier<ClassState> {
           state = state.copyWith(
             currentClassDetail: updatedDetail,
             successMessage: 'Student added to class',
-            loadingStudentIds: state.loadingStudentIds..remove(studentId),
+            loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
           );
         } else {
           state = state.copyWith(
             successMessage: 'Student added to class',
-            loadingStudentIds: state.loadingStudentIds..remove(studentId),
+            loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
           );
         }
         // Reload class detail in background to sync with server
@@ -385,7 +392,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
       );
       state = state.copyWith(
         currentClassDetail: updatedDetail,
-        enrolledStudentIds: state.enrolledStudentIds..remove(studentId),
+        enrolledStudentIds: Set<String>.from(state.enrolledStudentIds)..remove(studentId),
       );
     }
 
@@ -401,14 +408,14 @@ class ClassNotifier extends StateNotifier<ClassState> {
         if (currentDetail != null && removedStudent != null) {
           state = state.copyWith(
             currentClassDetail: currentDetail, // Restore original detail
-            enrolledStudentIds: state.enrolledStudentIds..add(studentId),
+            enrolledStudentIds: Set<String>.from(state.enrolledStudentIds)..add(studentId),
             error: failure.message,
-            loadingStudentIds: state.loadingStudentIds..remove(studentId),
+            loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
           );
         } else {
           state = state.copyWith(
             error: failure.message,
-            loadingStudentIds: state.loadingStudentIds..remove(studentId),
+            loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
           );
         }
       },
@@ -416,7 +423,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
         // On success, confirm the removal
         state = state.copyWith(
           successMessage: 'Student removed from class',
-          loadingStudentIds: state.loadingStudentIds..remove(studentId),
+          loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
         );
         // Reload class detail in background to sync with server
         loadClassDetail(classId);

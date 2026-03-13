@@ -14,7 +14,6 @@ pub struct ActivityLogResponse {
     pub id: Uuid,
     pub user_id: Uuid,
     pub action: String,
-    pub performed_by: Option<Uuid>,
     pub details: Option<String>,
     pub created_at: String,
 }

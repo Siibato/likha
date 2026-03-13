@@ -73,14 +73,15 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
   Future<void> _startAssessment() async {
     // Read current user from auth state
     final user = ref.read(authProvider).user;
+    if (user == null) return;
 
     await ref
         .read(assessmentProvider.notifier)
         .startAssessment(
           widget.assessmentId,
-          user?.id       ?? '',
-          user?.fullName ?? '',
-          user?.username ?? '',
+          user.id,
+          user.fullName,
+          user.username,
         );
 
     final state = ref.read(assessmentProvider);
@@ -88,33 +89,47 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
       final startResult = state.startResult!;
       _submissionId = startResult.submissionId;
 
-      final parsedQuestions = startResult.questions
-          .map((q) =>
-              StudentQuestionModel.fromJson(q as Map<String, dynamic>))
-          .toList()
-        ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
+      try {
+        final parsedQuestions = startResult.questions
+            .map((q) =>
+                StudentQuestionModel.fromJson(q as Map<String, dynamic>))
+            .toList()
+          ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
 
-      final elapsed =
-          sl<ServerClockService>().now().difference(startResult.startedAt).inSeconds;
-      final totalSeconds = widget.timeLimitMinutes * 60;
-      final remaining = totalSeconds - elapsed;
+        final elapsed =
+            sl<ServerClockService>().now().difference(startResult.startedAt).inSeconds;
+        final totalSeconds = widget.timeLimitMinutes * 60;
+        final remaining = totalSeconds - elapsed;
 
-      if (remaining <= 0) {
+        if (remaining <= 0) {
+          if (mounted) {
+            _autoSubmit();
+          }
+          return;
+        }
+
+        setState(() {
+          _questions = parsedQuestions;
+          _remainingSeconds = remaining;
+          _hasStarted = true;
+        });
+
+        _initializeAnswerState();
+        _startCountdown();
+        _startAutoSave();
+      } catch (e) {
         if (mounted) {
-          _autoSubmit();
+          setState(() {
+            _hasStarted = false;
+          });
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              context.showErrorSnackBar('Failed to load questions. Please try again.');
+            }
+          });
         }
         return;
       }
-
-      setState(() {
-        _questions = parsedQuestions;
-        _remainingSeconds = remaining;
-        _hasStarted = true;
-      });
-
-      _initializeAnswerState();
-      _startCountdown();
-      _startAutoSave();
     }
   }
 

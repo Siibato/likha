@@ -11,9 +11,9 @@ class AssessmentTimerBadge extends StatelessWidget {
   });
 
   Color _timerColor() {
-    if (remainingSeconds <= 60) return AppColors.foregroundPrimary;
-    if (remainingSeconds <= 300) return AppColors.foregroundSecondary;
-    return AppColors.foregroundTertiary;
+    if (remainingSeconds <= 60) return const Color(0xFFEA4335);   // red (critical)
+    if (remainingSeconds <= 300) return const Color(0xFFFFBD59);  // amber (warning)
+    return AppColors.foregroundSecondary;                         // neutral (normal)
   }
 
   @override

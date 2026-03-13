@@ -21,7 +21,7 @@ pub async fn grade_multiple_choice(
         .collect();
 
     let selected_ids: std::collections::HashSet<Uuid> =
-        selected.iter().map(|s| s.choice_id).collect();
+        selected.iter().cloned().collect();
 
     if is_multi_select {
         let is_correct = correct_ids == selected_ids;

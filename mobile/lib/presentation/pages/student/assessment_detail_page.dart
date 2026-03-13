@@ -39,7 +39,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
   DetailStatus _computeDetailStatus() {
     final a = widget.assessment;
     final now = sl<ServerClockService>().now();
-    final hasSubmission = a.submissionCount > 0;
+    final hasSubmission = _submissionIsSubmitted != null;
     final withinWindow = now.isAfter(a.openAt) && now.isBefore(a.closeAt);
     final resultsAccessible = a.resultsReleased || a.showResultsImmediately;
 
@@ -123,12 +123,13 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
 
   Future<void> _loadScore() async {
     final user = ref.read(authProvider).user;
-    print('🔍 [DetailPage] _loadScore() START - assessmentId: ${widget.assessment.id}, studentId: ${user?.id}');
+    if (user == null) return;
+    print('🔍 [DetailPage] _loadScore() START - assessmentId: ${widget.assessment.id}, studentId: ${user.id}');
     setState(() => _isLoadingScore = true);
 
     await ref.read(assessmentProvider.notifier).loadScorePreview(
       widget.assessment.id,
-      user?.id ?? '',
+      user.id,
     );
 
     final state = ref.read(assessmentProvider);

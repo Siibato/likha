@@ -53,24 +53,12 @@ impl super::LearningMaterialService {
             .create_log(
                 teacher_id,
                 "material_file_uploaded",
-                Some(teacher_id),
                 Some(format!(
                     "File '{}' uploaded to material '{}'",
                     file.file_name, material.title
                 )),
             )
             .await;
-
-        let _ = self.change_log_repo.log_change(
-            "material_file",
-            file.id,
-            "create",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "file_name": file.file_name,
-                "material_id": material_id,
-            })).unwrap_or_default()),
-        ).await;
 
         Ok(FileMetadataResponse {
             id: file.id,
@@ -104,18 +92,9 @@ impl super::LearningMaterialService {
             .create_log(
                 teacher_id,
                 "material_file_deleted",
-                Some(teacher_id),
                 Some(format!("File '{}' deleted", file.file_name)),
             )
             .await;
-
-        let _ = self.change_log_repo.log_change(
-            "material_file",
-            file_id,
-            "delete",
-            teacher_id,
-            None,
-        ).await;
 
         Ok(())
     }

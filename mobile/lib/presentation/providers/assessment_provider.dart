@@ -246,6 +246,8 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
                     submissionCount: a.submissionCount,
                     createdAt: a.createdAt,
                     updatedAt: DateTime.now(),
+                    needsSync: true,
+                    cachedAt: DateTime.now(),
                   );
                 }
                 return a;

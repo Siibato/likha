@@ -53,25 +53,6 @@ impl super::AssessmentService {
             request.is_published.unwrap_or(false),
         ).await?;
 
-        let _ = self.change_log_repo.log_change(
-            "assessment",
-            assessment.id,
-            "create",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "id": assessment.id,
-                "class_id": assessment.class_id,
-                "title": assessment.title,
-                "description": assessment.description,
-                "time_limit_minutes": assessment.time_limit_minutes,
-                "open_at": fmt_utc(assessment.open_at),
-                "close_at": fmt_utc(assessment.close_at),
-                "show_results_immediately": assessment.show_results_immediately,
-                "is_published": assessment.is_published,
-                "created_at": fmt_utc(assessment.created_at),
-                "updated_at": fmt_utc(assessment.updated_at),
-            })).unwrap_or_default()),
-        ).await;
 
         // NEW: if questions provided in the request, insert them atomically
         let question_count = if let Some(questions) = request.questions {
@@ -223,7 +204,7 @@ impl super::AssessmentService {
                 open_at: fmt_utc(a.open_at),
                 close_at: fmt_utc(a.close_at),
                 time_limit_minutes: a.time_limit_minutes,
-                is_submitted: submission.map(|s| s.is_submitted),
+                is_submitted: submission.map(|s| s.submitted_at.is_some()),
             });
         }
 
@@ -274,16 +255,6 @@ impl super::AssessmentService {
         let submission_count = self.submission_repo
             .count_by_assessment_id(assessment_id).await?;
 
-        let _ = self.change_log_repo.log_change(
-            "assessment",
-            assessment_id,
-            "update",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "title": updated.title,
-                "description": updated.description,
-            })).unwrap_or_default()),
-        ).await;
 
         Ok(AssessmentResponse {
             id: updated.id,
@@ -327,13 +298,6 @@ impl super::AssessmentService {
 
         self.assessment_repo.delete_assessment(assessment_id).await?;
 
-        let _ = self.change_log_repo.log_change(
-            "assessment",
-            assessment_id,
-            "delete",
-            teacher_id,
-            None,
-        ).await;
 
         Ok(())
     }
@@ -356,13 +320,6 @@ impl super::AssessmentService {
 
         self.assessment_repo.soft_delete(assessment_id).await?;
 
-        let _ = self.change_log_repo.log_change(
-            "assessment",
-            assessment_id,
-            "soft_delete",
-            user_id,
-            None,
-        ).await;
 
         Ok(())
     }
@@ -398,15 +355,6 @@ impl super::AssessmentService {
         let question_count = questions.len();
         let submission_count = self.submission_repo.count_by_assessment_id(assessment_id).await?;
 
-        let _ = self.change_log_repo.log_change(
-            "assessment",
-            assessment_id,
-            "update",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "is_published": true,
-            })).unwrap_or_default()),
-        ).await;
 
         Ok(AssessmentResponse {
             id: published.id,
@@ -454,15 +402,6 @@ impl super::AssessmentService {
         let submission_count = self.submission_repo
             .count_by_assessment_id(assessment_id).await?;
 
-        let _ = self.change_log_repo.log_change(
-            "assessment",
-            assessment_id,
-            "update",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "results_released": true,
-            })).unwrap_or_default()),
-        ).await;
 
         Ok(AssessmentResponse {
             id: released.id,

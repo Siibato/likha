@@ -6,7 +6,9 @@ class MaterialFile extends Equatable {
   final String fileType;
   final int fileSize;
   final DateTime uploadedAt;
-  final bool isCached;
+  final String? localPath;
+  final DateTime? cachedAt;
+  final bool needsSync;
 
   const MaterialFile({
     required this.id,
@@ -14,8 +16,12 @@ class MaterialFile extends Equatable {
     required this.fileType,
     required this.fileSize,
     required this.uploadedAt,
-    this.isCached = false,
+    this.localPath,
+    this.cachedAt,
+    this.needsSync = false,
   });
+
+  bool get isCached => localPath != null && localPath!.isNotEmpty;
 
   @override
   List<Object?> get props => [
@@ -24,6 +30,8 @@ class MaterialFile extends Equatable {
         fileType,
         fileSize,
         uploadedAt,
-        isCached,
+        localPath,
+        cachedAt,
+        needsSync,
       ];
 }

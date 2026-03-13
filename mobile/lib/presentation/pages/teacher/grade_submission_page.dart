@@ -296,8 +296,8 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
                             keyboardType: TextInputType.number,
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) return 'Score is required';
-                              final score = num.tryParse(value.trim());
-                              if (score == null) return 'Must be a valid number';
+                              final score = int.tryParse(value.trim());
+                              if (score == null) return 'Score must be a whole number';
                               if (score < 0 || score > widget.totalPoints) return 'Score must be between 0 and ${widget.totalPoints}';
                               return null;
                             },

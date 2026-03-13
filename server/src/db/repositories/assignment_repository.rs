@@ -168,7 +168,8 @@ impl AssignmentRepository {
             text_content: Set(None),
             submitted_at: Set(None),
             is_late: Set(false),
-            score: Set(None),
+            points: Set(None),
+            graded_by: Set(None),
             feedback: Set(None),
             graded_at: Set(None),
             created_at: Set(Utc::now().naive_utc()),
@@ -269,8 +270,9 @@ impl AssignmentRepository {
     pub async fn grade_submission(
         &self,
         id: Uuid,
-        score: i32,
+        points: i32,
         feedback: Option<String>,
+        graded_by: Option<Uuid>,
     ) -> AppResult<assignment_submissions::Model> {
         let mut submission: assignment_submissions::ActiveModel =
             assignment_submissions::Entity::find_by_id(id)
@@ -281,7 +283,8 @@ impl AssignmentRepository {
                 .into();
 
         submission.status = Set("graded".to_string());
-        submission.score = Set(Some(score));
+        submission.points = Set(Some(points));
+        submission.graded_by = Set(graded_by);
         submission.feedback = Set(feedback);
         submission.graded_at = Set(Some(Utc::now().naive_utc()));
         submission.updated_at = Set(Utc::now().naive_utc());

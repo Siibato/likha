@@ -1,4 +1,3 @@
-use chrono::NaiveDateTime;
 use sea_orm::*;
 use uuid::Uuid;
 
@@ -23,23 +22,10 @@ impl EntitlementRepository {
         user_role: &str,
     ) -> AppResult<Vec<Uuid>> {
         match user_role {
-            "student" => {
-                // Students can see classes they're enrolled in
+            "student" | "teacher" => {
+                // Students and teachers can see their enrolled classes
                 let participants = class_participants::Entity::find()
                     .filter(class_participants::Column::UserId.eq(user_id))
-                    .filter(class_participants::Column::Role.eq("student"))
-                    .filter(class_participants::Column::RemovedAt.is_null())
-                    .all(&self.db)
-                    .await
-                    .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-                Ok(participants.iter().map(|p| p.class_id).collect())
-            }
-            "teacher" => {
-                // Teachers can see classes they teach
-                let participants = class_participants::Entity::find()
-                    .filter(class_participants::Column::UserId.eq(user_id))
-                    .filter(class_participants::Column::Role.eq("teacher"))
                     .filter(class_participants::Column::RemovedAt.is_null())
                     .all(&self.db)
                     .await
@@ -68,13 +54,21 @@ impl EntitlementRepository {
         let participant = class_participants::Entity::find()
             .filter(class_participants::Column::UserId.eq(student_id))
             .filter(class_participants::Column::ClassId.eq(class_id))
-            .filter(class_participants::Column::Role.eq("student"))
             .filter(class_participants::Column::RemovedAt.is_null())
             .one(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-        Ok(participant.is_some())
+        // Verify the user is actually a student
+        if let Some(p) = participant {
+            if let Some(user) = users::Entity::find_by_id(student_id)
+                .one(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))? {
+                return Ok(user.role == "student");
+            }
+        }
+        Ok(false)
     }
 
     /// Check if user teaches a specific class
@@ -86,13 +80,21 @@ impl EntitlementRepository {
         let participant = class_participants::Entity::find()
             .filter(class_participants::Column::UserId.eq(teacher_id))
             .filter(class_participants::Column::ClassId.eq(class_id))
-            .filter(class_participants::Column::Role.eq("teacher"))
             .filter(class_participants::Column::RemovedAt.is_null())
             .one(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-        Ok(participant.is_some())
+        // Verify the user is actually a teacher
+        if let Some(p) = participant {
+            if let Some(user) = users::Entity::find_by_id(teacher_id)
+                .one(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))? {
+                return Ok(user.role == "teacher");
+            }
+        }
+        Ok(false)
     }
 
     /// Verify user can perform an action on an entity
@@ -141,12 +143,23 @@ impl EntitlementRepository {
     pub async fn get_class_students(&self, class_id: Uuid) -> AppResult<Vec<Uuid>> {
         let participants = class_participants::Entity::find()
             .filter(class_participants::Column::ClassId.eq(class_id))
-            .filter(class_participants::Column::Role.eq("student"))
             .filter(class_participants::Column::RemovedAt.is_null())
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-        Ok(participants.iter().map(|p| p.user_id).collect())
+        // Filter to only students based on users.role
+        let mut students = Vec::new();
+        for p in participants {
+            if let Some(user) = users::Entity::find_by_id(p.user_id)
+                .one(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))? {
+                if user.role == "student" {
+                    students.push(p.user_id);
+                }
+            }
+        }
+        Ok(students)
     }
 }

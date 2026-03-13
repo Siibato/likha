@@ -201,9 +201,7 @@ pub struct SubmissionSummaryResponse {
     pub student_username: String,
     pub started_at: String,
     pub submitted_at: Option<String>,
-    pub auto_score: f64,
-    pub final_score: f64,
-    pub is_submitted: bool,
+    pub total_points: i32,
 }
 
 #[derive(Debug, Serialize)]
@@ -214,9 +212,7 @@ pub struct SubmissionDetailResponse {
     pub student_name: String,
     pub started_at: String,
     pub submitted_at: Option<String>,
-    pub auto_score: f64,
-    pub final_score: f64,
-    pub is_submitted: bool,
+    pub total_points: i32,
     pub answers: Vec<SubmissionAnswerResponse>,
 }
 
@@ -226,13 +222,12 @@ pub struct SubmissionAnswerResponse {
     pub question_id: Uuid,
     pub question_text: String,
     pub question_type: String,
-    pub points: i32,
-    pub answer_text: Option<String>,
+    pub question_points: i32,
     pub selected_choices: Option<Vec<SelectedChoiceResponse>>,
     pub enumeration_answers: Option<Vec<EnumerationAnswerResponse>>,
-    pub is_auto_correct: Option<bool>,
-    pub is_override_correct: Option<bool>,
-    pub points_awarded: f64,
+    pub points_earned: f64,
+    pub overridden_by: Option<Uuid>,
+    pub overridden_at: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -244,11 +239,7 @@ pub struct SelectedChoiceResponse {
 
 #[derive(Debug, Serialize)]
 pub struct EnumerationAnswerResponse {
-    pub id: Uuid,
     pub answer_text: String,
-    pub matched_item_id: Option<Uuid>,
-    pub is_auto_correct: Option<bool>,
-    pub is_override_correct: Option<bool>,
 }
 
 #[derive(Debug, Serialize)]
@@ -280,9 +271,8 @@ pub struct StudentChoiceResponse {
 #[derive(Debug, Serialize)]
 pub struct StudentResultResponse {
     pub submission_id: Uuid,
-    pub auto_score: f64,
-    pub final_score: f64,
-    pub total_points: i32,
+    pub total_earned: i32,
+    pub total_possible: i32,
     pub submitted_at: Option<String>,
     pub answers: Vec<StudentAnswerResultResponse>,
 }
@@ -354,9 +344,7 @@ pub struct StudentAssessmentSubmissionItem {
     pub student_username: String,
     pub started_at: String,
     pub submitted_at: Option<String>,
-    pub is_submitted: bool,
-    pub auto_score: f64,
-    pub final_score: f64,
+    pub total_points: i32,
 }
 
 #[derive(Debug, Serialize)]

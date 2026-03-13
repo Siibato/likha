@@ -44,7 +44,6 @@ impl ManifestRepository {
         // Fetch all teacher participants for these classes
         let participants = class_participants::Entity::find()
             .filter(class_participants::Column::ClassId.is_in(class_ids.to_vec()))
-            .filter(class_participants::Column::Role.eq("teacher"))
             .filter(class_participants::Column::RemovedAt.is_null())
             .all(&self.db)
             .await
@@ -58,10 +57,13 @@ impl ManifestRepository {
                 .one(&self.db)
                 .await
             {
-                map.insert(
-                    participant.class_id,
-                    (user.id, user.username.clone(), user.full_name.clone()),
-                );
+                // Only add if user is a teacher
+                if user.role == "teacher" {
+                    map.insert(
+                        participant.class_id,
+                        (user.id, user.username.clone(), user.full_name.clone()),
+                    );
+                }
             }
         }
 
@@ -106,26 +108,35 @@ impl ManifestRepository {
     ) -> AppResult<Vec<ManifestEntry>> {
         let mut query = class_participants::Entity::find()
             .filter(class_participants::Column::ClassId.is_in(class_ids))
-            .filter(class_participants::Column::Role.eq("student"))
             .filter(class_participants::Column::RemovedAt.is_null());
 
         if user_role == "student" {
             query = query.filter(class_participants::Column::UserId.eq(user_id));
         }
 
-        let records = query
+        let participants = query
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-        Ok(records
-            .into_iter()
-            .map(|r| ManifestEntry {
-                id: r.id,
-                updated_at: r.joined_at,
-                deleted: r.removed_at.is_some(),
-            })
-            .collect())
+        // Filter to only include students based on users.role
+        let mut result = Vec::new();
+        for p in participants {
+            if let Ok(Some(user)) = users::Entity::find_by_id(p.user_id)
+                .one(&self.db)
+                .await
+            {
+                if user.role == "student" {
+                    result.push(ManifestEntry {
+                        id: p.id,
+                        updated_at: p.joined_at,
+                        deleted: p.removed_at.is_some(),
+                    });
+                }
+            }
+        }
+
+        Ok(result)
     }
 
     /// Get manifest entries for assessments in classes
@@ -177,7 +188,7 @@ impl ManifestRepository {
         assessment_ids: Vec<Uuid>,
     ) -> AppResult<Vec<ManifestEntry>> {
         let records = assessment_submissions::Entity::find()
-            .filter(assessment_submissions::Column::StudentId.eq(user_id))
+            .filter(assessment_submissions::Column::UserId.eq(user_id))
             .filter(assessment_submissions::Column::AssessmentId.is_in(assessment_ids))
             .all(&self.db)
             .await
@@ -441,19 +452,38 @@ impl ManifestRepository {
         limit: i64,
     ) -> AppResult<PaginatedRecords> {
         let query = class_participants::Entity::find()
-            .filter(class_participants::Column::Id.is_in(enrollment_ids))
-            .filter(class_participants::Column::Role.eq("student"));
-        Self::paginate_query(&self.db, query, limit, |r| {
-            json!({
-                "id": r.id.to_string(),
-                "class_id": r.class_id.to_string(),
-                "user_id": r.user_id.to_string(),
-                "student_id": r.user_id.to_string(),
-                "joined_at": r.joined_at.to_string(),
-                "enrolled_at": r.joined_at.to_string(),
-            })
+            .filter(class_participants::Column::Id.is_in(enrollment_ids));
+
+        let all_records = query.all(&self.db).await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        // Filter to only students and build response
+        let mut result = Vec::new();
+        for r in all_records {
+            if let Ok(Some(user)) = users::Entity::find_by_id(r.user_id)
+                .one(&self.db)
+                .await
+            {
+                if user.role == "student" {
+                    result.push(json!({
+                        "id": r.id.to_string(),
+                        "class_id": r.class_id.to_string(),
+                        "user_id": r.user_id.to_string(),
+                        "student_id": r.user_id.to_string(),
+                        "joined_at": r.joined_at.to_string(),
+                        "enrolled_at": r.joined_at.to_string(),
+                    }));
+                    if result.len() >= limit as usize {
+                        break;
+                    }
+                }
+            }
+        }
+
+        Ok(PaginatedRecords {
+            records: result,
+            has_more: false,
         })
-        .await
     }
 
     /// Get full paginated records for assessment questions
@@ -488,18 +518,16 @@ impl ManifestRepository {
         limit: i64,
     ) -> AppResult<PaginatedRecords> {
         let query = assessment_submissions::Entity::find()
-            .filter(assessment_submissions::Column::StudentId.eq(user_id))
+            .filter(assessment_submissions::Column::UserId.eq(user_id))
             .filter(assessment_submissions::Column::Id.is_in(submission_ids));
         Self::paginate_query(&self.db, query, limit, |r| {
             json!({
                 "id": r.id.to_string(),
                 "assessment_id": r.assessment_id.to_string(),
-                "student_id": r.student_id.to_string(),
+                "user_id": r.user_id.to_string(),
                 "started_at": r.started_at.to_string(),
                 "submitted_at": r.submitted_at.map(|d| d.to_string()),
-                "auto_score": r.auto_score,
-                "final_score": r.final_score,
-                "is_submitted": r.is_submitted,
+                "total_points": r.total_points,
                 "created_at": r.created_at.to_string(),
                 "updated_at": r.updated_at.to_string(),
                 "deleted_at": r.deleted_at.map(|d| d.to_string()),
@@ -527,7 +555,7 @@ impl ManifestRepository {
                 "text_content": r.text_content,
                 "is_late": r.is_late,
                 "submitted_at": r.submitted_at.map(|d| d.to_string()),
-                "score": r.score,
+                "points": r.points,
                 "feedback": r.feedback,
                 "graded_at": r.graded_at.map(|d| d.to_string()),
                 "created_at": r.created_at.to_string(),
@@ -582,7 +610,6 @@ impl ManifestRepository {
                 "id": r.id.to_string(),
                 "user_id": r.user_id.to_string(),
                 "action": r.action,
-                "performed_by": r.performed_by.map(|id| id.to_string()),
                 "details": r.details,
                 "created_at": r.created_at.to_string(),
             })
@@ -757,28 +784,33 @@ impl ManifestRepository {
         enrollment_ids: Vec<Uuid>,
         since: NaiveDateTime,
     ) -> AppResult<Vec<Value>> {
-        let records = class_participants::Entity::find()
+        let participants = class_participants::Entity::find()
             .filter(class_participants::Column::Id.is_in(enrollment_ids))
-            .filter(class_participants::Column::Role.eq("student"))
             .filter(class_participants::Column::JoinedAt.gt(since))
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-        let records: Vec<Value> = records
-            .into_iter()
-            .map(|r| {
-                json!({
-                    "id": r.id.to_string(),
-                    "class_id": r.class_id.to_string(),
-                    "user_id": r.user_id.to_string(),
-                    "student_id": r.user_id.to_string(),
-                    "joined_at": r.joined_at.to_string(),
-                    "enrolled_at": r.joined_at.to_string(),
-                    "removed_at": r.removed_at.map(|d| d.to_string()),
-                })
-            })
-            .collect();
+        // Filter to only students based on users.role
+        let mut records: Vec<Value> = Vec::new();
+        for r in participants {
+            if let Ok(Some(user)) = users::Entity::find_by_id(r.user_id)
+                .one(&self.db)
+                .await
+            {
+                if user.role == "student" {
+                    records.push(json!({
+                        "id": r.id.to_string(),
+                        "class_id": r.class_id.to_string(),
+                        "user_id": r.user_id.to_string(),
+                        "student_id": r.user_id.to_string(),
+                        "joined_at": r.joined_at.to_string(),
+                        "enrolled_at": r.joined_at.to_string(),
+                        "removed_at": r.removed_at.map(|d| d.to_string()),
+                    }));
+                }
+            }
+        }
 
         Ok(records)
     }
@@ -824,7 +856,7 @@ impl ManifestRepository {
         since: NaiveDateTime,
     ) -> AppResult<Vec<Value>> {
         let records = assessment_submissions::Entity::find()
-            .filter(assessment_submissions::Column::StudentId.eq(user_id))
+            .filter(assessment_submissions::Column::UserId.eq(user_id))
             .filter(assessment_submissions::Column::Id.is_in(submission_ids))
             .filter(assessment_submissions::Column::UpdatedAt.gt(since))
             .all(&self.db)
@@ -837,12 +869,10 @@ impl ManifestRepository {
                 json!({
                     "id": r.id.to_string(),
                     "assessment_id": r.assessment_id.to_string(),
-                    "student_id": r.student_id.to_string(),
+                    "user_id": r.user_id.to_string(),
                     "started_at": r.started_at.to_string(),
                     "submitted_at": r.submitted_at.map(|d| d.to_string()),
-                    "auto_score": r.auto_score,
-                    "final_score": r.final_score,
-                    "is_submitted": r.is_submitted,
+                    "total_points": r.total_points,
                     "created_at": r.created_at.to_string(),
                     "updated_at": r.updated_at.to_string(),
                     "deleted_at": r.deleted_at.map(|d| d.to_string()),
@@ -877,7 +907,7 @@ impl ManifestRepository {
                     "student_id": r.student_id.to_string(),
                     "status": r.status,
                     "submitted_at": r.submitted_at.map(|d| d.to_string()),
-                    "score": r.score,
+                    "points": r.points,
                     "updated_at": r.updated_at.to_string(),
                     "deleted_at": r.deleted_at.map(|d| d.to_string()),
                 })
@@ -907,7 +937,6 @@ impl ManifestRepository {
                     "id": r.id.to_string(),
                     "user_id": r.user_id.to_string(),
                     "action": r.action,
-                    "performed_by": r.performed_by.map(|id| id.to_string()),
                     "details": r.details,
                     "created_at": r.created_at.to_string(),
                 })
@@ -931,18 +960,16 @@ impl ManifestRepository {
         limit: i64,
     ) -> AppResult<PaginatedRecords> {
         let query = assessment_submissions::Entity::find()
-            .filter(assessment_submissions::Column::StudentId.eq(user_id))
+            .filter(assessment_submissions::Column::UserId.eq(user_id))
             .filter(assessment_submissions::Column::AssessmentId.is_in(assessment_ids));
         Self::paginate_query(&self.db, query, limit, |r| {
             json!({
                 "id": r.id.to_string(),
                 "assessment_id": r.assessment_id.to_string(),
-                "student_id": r.student_id.to_string(),
+                "user_id": r.user_id.to_string(),
                 "started_at": r.started_at.to_string(),
                 "submitted_at": r.submitted_at.map(|d| d.to_string()),
-                "auto_score": r.auto_score,
-                "final_score": r.final_score,
-                "is_submitted": r.is_submitted,
+                "total_points": r.total_points,
                 "created_at": r.created_at.to_string(),
                 "updated_at": r.updated_at.to_string(),
                 "deleted_at": r.deleted_at.map(|d| d.to_string()),
@@ -971,7 +998,7 @@ impl ManifestRepository {
                 "text_content": r.text_content,
                 "is_late": r.is_late,
                 "submitted_at": r.submitted_at.map(|d| d.to_string()),
-                "score": r.score,
+                "points": r.points,
                 "feedback": r.feedback,
                 "graded_at": r.graded_at.map(|d| d.to_string()),
                 "created_at": r.created_at.to_string(),
@@ -995,12 +1022,10 @@ impl ManifestRepository {
             json!({
                 "id": r.id.to_string(),
                 "assessment_id": r.assessment_id.to_string(),
-                "student_id": r.student_id.to_string(),
+                "user_id": r.user_id.to_string(),
                 "started_at": r.started_at.to_string(),
                 "submitted_at": r.submitted_at.map(|d| d.to_string()),
-                "auto_score": r.auto_score,
-                "final_score": r.final_score,
-                "is_submitted": r.is_submitted,
+                "total_points": r.total_points,
                 "created_at": r.created_at.to_string(),
                 "updated_at": r.updated_at.to_string(),
                 "deleted_at": r.deleted_at.map(|d| d.to_string()),
@@ -1027,7 +1052,7 @@ impl ManifestRepository {
                 "text_content": r.text_content,
                 "is_late": r.is_late,
                 "submitted_at": r.submitted_at.map(|d| d.to_string()),
-                "score": r.score,
+                "points": r.points,
                 "feedback": r.feedback,
                 "graded_at": r.graded_at.map(|d| d.to_string()),
                 "created_at": r.created_at.to_string(),

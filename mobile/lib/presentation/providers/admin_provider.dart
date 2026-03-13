@@ -195,6 +195,10 @@ class AdminNotifier extends StateNotifier<AdminState> {
     );
   }
 
+  void clearActivityLogs() {
+    state = state.copyWith(activityLogs: []);
+  }
+
   Future<void> updateAccount({
     required String userId,
     String? fullName,

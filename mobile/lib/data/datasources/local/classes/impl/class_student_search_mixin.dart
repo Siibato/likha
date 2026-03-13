@@ -45,10 +45,10 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
               'account_status': student.accountStatus,
               'activated_at': student.activatedAt?.toIso8601String(),
               'created_at': student.createdAt.toIso8601String(),
+              'updated_at': DateTime.now().toIso8601String(),
               'deleted_at': student.deletedAt?.toIso8601String(),
               'cached_at': DateTime.now().toIso8601String(),
-              'is_offline_mutation': 0,
-              'sync_status': 'synced',
+              'needs_sync': 0,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
@@ -79,12 +79,16 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
   Future<List<UserModel>> getCachedEnrolledStudents(String classId) async {
     try {
       final db = await localDatabase.database;
-      final rows = await db.query(
-        'class_participants',
-        where: 'class_id = ? AND role = ? AND removed_at IS NULL',
-        whereArgs: [classId, 'student'],
-        orderBy: 'full_name ASC',
-      );
+      // v18: Join with users table to get student details
+      final rows = await db.rawQuery('''
+        SELECT cp.id, cp.class_id, cp.user_id, cp.joined_at,
+               u.username, u.full_name, u.role, u.account_status, u.activated_at, u.created_at
+        FROM class_participants cp
+        JOIN users u ON u.id = cp.user_id
+        WHERE cp.class_id = ? AND cp.removed_at IS NULL
+        ORDER BY u.full_name ASC
+      ''', [classId]);
+
       return rows.map((row) {
         final accountStatus = row['account_status'] as String?;
         final isActive = accountStatus != null &&
@@ -93,13 +97,17 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
 
         return UserModel(
           id: row['user_id'] as String,
-          username: row['username'] as String,
-          fullName: row['full_name'] as String,
-          role: row['role'] as String,
+          username: row['username'] as String? ?? '',
+          fullName: row['full_name'] as String? ?? '',
+          role: row['role'] as String? ?? '',
           accountStatus: accountStatus ?? 'active',
           isActive: isActive,
-          activatedAt: null,
-          createdAt: DateTime.parse(row['joined_at'] as String),
+          activatedAt: row['activated_at'] != null
+              ? DateTime.parse(row['activated_at'] as String)
+              : null,
+          createdAt: row['created_at'] != null
+              ? DateTime.parse(row['created_at'] as String)
+              : DateTime.parse(row['joined_at'] as String),
         );
       }).toList();
     } catch (e) {

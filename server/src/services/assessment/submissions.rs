@@ -46,7 +46,7 @@ impl super::AssessmentService {
         println!("🚀 [SERVICE] start_assessment() - creating new submission...");
         let submission = self.submission_repo
             .create_submission(assessment_id, student_id).await?;
-        println!("🚀 [SERVICE] start_assessment() - submission created: id={}, is_submitted={}", submission.id, submission.is_submitted);
+        println!("🚀 [SERVICE] start_assessment() - submission created: id={}, submitted={}", submission.id, submission.submitted_at.is_some());
 
         let questions = self.assessment_repo
             .find_questions_by_assessment_id(assessment_id).await?;
@@ -68,9 +68,9 @@ impl super::AssessmentService {
             };
 
             let enumeration_count = if q.question_type == "enumeration" {
-                let items = self.assessment_repo
-                    .find_enumeration_items_by_question_id(q.id).await?;
-                Some(items.len())
+                // Enumeration items not currently supported in schema
+                // TODO: Re-implement if schema is updated
+                None
             } else {
                 None
             };
@@ -105,12 +105,12 @@ impl super::AssessmentService {
         let submission = self.submission_repo.find_by_id(submission_id).await?
             .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?;
 
-        if submission.student_id != student_id {
+        if submission.user_id != student_id {
             println!("💾 [SERVICE] save_answers() ERROR - student mismatch");
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
-        if submission.is_submitted {
+        if submission.submitted_at.is_some() {
             println!("💾 [SERVICE] save_answers() ERROR - submission already submitted");
             return Err(AppError::BadRequest("Assessment already submitted".to_string()));
         }
@@ -147,15 +147,15 @@ impl super::AssessmentService {
         let submission = self.submission_repo.find_by_id(submission_id).await?
             .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?;
 
-        println!("📤 [SERVICE] submit_assessment() - submission found: is_submitted={}, submitted_at={:?}, assessment_id={}",
-            submission.is_submitted, submission.submitted_at, submission.assessment_id);
+        println!("📤 [SERVICE] submit_assessment() - submission found: submitted_at={:?}, assessment_id={}",
+            submission.submitted_at, submission.assessment_id);
 
-        if submission.student_id != student_id {
-            println!("📤 [SERVICE] submit_assessment() ERROR - student mismatch: expected {}, got {}", submission.student_id, student_id);
+        if submission.user_id != student_id {
+            println!("📤 [SERVICE] submit_assessment() ERROR - student mismatch: expected {}, got {}", submission.user_id, student_id);
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
-        if submission.is_submitted {
+        if submission.submitted_at.is_some() {
             println!("📤 [SERVICE] submit_assessment() ERROR - already submitted at {:?}", submission.submitted_at);
             return Err(AppError::BadRequest("Assessment already submitted".to_string()));
         }
@@ -171,26 +171,21 @@ impl super::AssessmentService {
         println!("📤 [SERVICE] submit_assessment() - marking as submitted...");
         let submitted = self.submission_repo.mark_submitted(submission_id).await?;
 
-        println!("📤 [SERVICE] submit_assessment() - mark_submitted() returned: is_submitted={}, submitted_at={:?}",
-            submitted.is_submitted, submitted.submitted_at);
+        println!("📤 [SERVICE] submit_assessment() - mark_submitted() returned: submitted_at={:?}",
+            submitted.submitted_at);
 
         let student = self.user_repo.find_by_id(student_id).await?
             .ok_or_else(|| AppError::NotFound("Student not found".to_string()))?;
 
         let response = SubmissionSummaryResponse {
             id: submitted.id,
-            student_id: submitted.student_id,
+            student_id: submitted.user_id,
             student_name: student.full_name,
             student_username: student.username,
             started_at: submitted.started_at.to_string(),
             submitted_at: submitted.submitted_at.map(|dt| dt.to_string()),
-            auto_score,
-            final_score,
-            is_submitted: submitted.is_submitted,
+            total_points: submitted.total_points,
         };
-
-        println!("📤 [SERVICE] submit_assessment() SUCCESS - response: id={}, is_submitted={}, submitted_at={:?}, auto_score={}, final_score={}",
-            response.id, response.is_submitted, response.submitted_at, response.auto_score, response.final_score);
 
         Ok(response)
     }

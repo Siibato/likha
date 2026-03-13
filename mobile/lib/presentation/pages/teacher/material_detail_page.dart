@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,7 +8,6 @@ import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/widgets/styled_dialog.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
 import 'package:open_file/open_file.dart';
-import 'package:path_provider/path_provider.dart';
 
 class MaterialDetailPage extends ConsumerStatefulWidget {
   final String materialId;
@@ -21,8 +19,6 @@ class MaterialDetailPage extends ConsumerStatefulWidget {
 }
 
 class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
-  final Map<String, bool> _fileExistsMap = {};
-
   @override
   void initState() {
     super.initState();
@@ -35,23 +31,6 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
       debugPrint('[PAGE_INIT] ▶ Now calling loadMaterialDetail()');
       ref.read(learningMaterialProvider.notifier).loadMaterialDetail(widget.materialId);
     });
-  }
-
-  /// Check all files in the material to see which ones exist on device
-  /// Populates _fileExistsMap with results and triggers a setState to update the UI
-  Future<void> _checkAllFilesExist(List<MaterialFile> files) async {
-    final results = <String, bool>{};
-    for (final file in files) {
-      final found = await _findFileOnDevice(file);
-      results[file.id] = found != null;
-    }
-    if (mounted) {
-      setState(() {
-        _fileExistsMap
-          ..clear()
-          ..addAll(results);
-      });
-    }
   }
 
   Future<void> _uploadFile() async {
@@ -70,123 +49,42 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
     }
   }
 
-  /// Compute device filename from material file: originalName-[first10charsOfId].ext
-  String _deviceFileName(MaterialFile file) {
-    final shortId = file.id.replaceAll('-', '').substring(0, 10);
-    final dotIndex = file.fileName.lastIndexOf('.');
-    if (dotIndex == -1) return '${file.fileName}-$shortId';
-    final name = file.fileName.substring(0, dotIndex);
-    final ext = file.fileName.substring(dotIndex); // includes the dot
-    return '$name-$shortId$ext';
-  }
-
-  /// Search directory for file by ID suffix (non-recursive)
-  File? _searchDirForFile(Directory dir, String fileId) {
-    final shortId = fileId.replaceAll('-', '').substring(0, 10);
-    debugPrint('[SEARCH] Searching in: ${dir.path}');
-    debugPrint('[SEARCH] Looking for files with suffix: -$shortId.');
-
-    try {
-      final entries = dir.listSync(recursive: false);
-      debugPrint('[SEARCH] Found ${entries.length} entries in directory');
-
-      for (final entry in entries) {
-        if (entry is File) {
-          final fileName = entry.path.split('/').last;
-          debugPrint('[SEARCH]   Checking file: $fileName');
-
-          if (entry.path.contains('-$shortId.')) {
-            debugPrint('[SEARCH] ✓ MATCH FOUND: ${entry.path}');
-            return entry;
-          }
-        }
-      }
-
-      debugPrint('[SEARCH] No matching files found in ${dir.path}');
-    } catch (e) {
-      debugPrint('[SEARCH] Error searching directory: $e');
-    }
-    return null;
-  }
-
-  /// Find file on device by searching Downloads, then app Documents by ID suffix
-  Future<File?> _findFileOnDevice(MaterialFile file) async {
-    // 1. Search Downloads directory
-    final downloadsDir = await getDownloadsDirectory();
-    if (downloadsDir != null) {
-      final found = _searchDirForFile(downloadsDir, file.id);
-      if (found != null) return found;
-    }
-
-    // 2. Search app Documents directory
-    final docsDir = await getApplicationDocumentsDirectory();
-    return _searchDirForFile(docsDir, file.id);
-  }
-
   /// Open file with system default app
   Future<void> _openFile(MaterialFile file) async {
-    final found = await _findFileOnDevice(file);
-
-    if (found != null) {
-      try {
-        await OpenFile.open(found.path);
-      } catch (e) {
-        if (!mounted) return;
-        context.showErrorSnackBar('Error opening file: $e');
-      }
+    if (file.localPath == null || file.localPath!.isEmpty) {
+      // File path not available, offer to download
+      if (!mounted) return;
+      context.showWarningSnackBar('File not cached. Downloading...', durationMs: 2000);
+      await _saveFile(file);
       return;
     }
 
-    // File not found — re-download
-    if (!mounted) return;
-    context.showWarningSnackBar('File not found on device. Re-downloading...', durationMs: 2000);
-    await _saveFile(file);
-  }
-
-  /// Auto-save file to Documents folder
-  Future<void> _saveFile(MaterialFile file) async {
     try {
-      final deviceName = _deviceFileName(file);
-
-      // Show download started indicator
-      if (mounted) {
-        context.showInfoSnackBar('Downloading ${file.fileName}...', durationMs: 3000);
-      }
-
-      // Download bytes from server
-      final bytes = await ref.read(learningMaterialProvider.notifier)
-          .downloadFile(file.id);
-
-      if (bytes == null) {
-        if (!mounted) return;
-        context.showErrorSnackBar('Failed to download file', durationMs: 3000);
-        return;
-      }
-
-      // Save to Documents folder
-      final appDocsDir = await getApplicationDocumentsDirectory();
-      final savePath = '${appDocsDir.path}/$deviceName';
-
-      try {
-        await File(savePath).writeAsBytes(bytes);
-      } catch (e) {
-        if (!mounted) return;
-        context.showErrorSnackBar('Failed to save: $e', durationMs: 3000);
-        return;
-      }
-
-      // Step 4: Refresh file existence map and show success
-      final material = ref.read(learningMaterialProvider).currentMaterial;
-      if (material != null && mounted) {
-        await _checkAllFilesExist(material.files);
-      }
-
-      if (!mounted) return;
-
-      context.showSuccessSnackBar('✓ Saved: ${file.fileName}', durationMs: 3000);
+      await OpenFile.open(file.localPath!);
     } catch (e) {
       if (!mounted) return;
-      context.showErrorSnackBar('Error: $e', durationMs: 3000);
+      context.showErrorSnackBar('Error opening file: $e');
+    }
+  }
+
+  /// Download file via provider (datasource handles caching)
+  Future<void> _saveFile(MaterialFile file) async {
+    if (mounted) {
+      context.showInfoSnackBar('Downloading ${file.fileName}...', durationMs: 3000);
+    }
+
+    // Provider's downloadFile() handles the download and calls loadMaterialDetail()
+    // to update file.localPath in the UI state
+    await ref.read(learningMaterialProvider.notifier).downloadFile(file.id);
+
+    if (!mounted) return;
+
+    // Check if download succeeded by looking at provider state
+    final providerState = ref.read(learningMaterialProvider);
+    if (providerState.error != null) {
+      context.showErrorSnackBar('Failed to download file', durationMs: 3000);
+    } else {
+      context.showSuccessSnackBar('✓ Downloaded: ${file.fileName}', durationMs: 3000);
     }
   }
 
@@ -207,11 +105,6 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
       await _saveFile(file);
 
       if (!mounted) return;
-    }
-
-    // Refresh all files after batch download completes
-    if (mounted && material.files.isNotEmpty) {
-      await _checkAllFilesExist(material.files);
     }
 
     if (!mounted) return;
@@ -286,10 +179,6 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
         context.showSuccessSnackBar(next.successMessage!);
         ref.read(learningMaterialProvider.notifier).clearMessages();
       }
-      // Check file existence when material finishes loading
-      if (!next.isLoading && next.currentMaterial != null) {
-        _checkAllFilesExist(next.currentMaterial!.files);
-      }
     });
 
     return Scaffold(
@@ -344,6 +233,19 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                         fontSize: 16,
                         color: Color(0xFF666666),
                         height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // Content Text
+                  if (material.contentText != null && material.contentText!.isNotEmpty) ...[
+                    Text(
+                      material.contentText!,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF333333),
+                        height: 1.6,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -446,7 +348,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                  icon: (_fileExistsMap[file.id] ?? false)
+                                  icon: file.isCached
                                       ? const Icon(Icons.folder_open_rounded)
                                       : const Icon(Icons.download_rounded),
                                   color: state.isLoading
@@ -454,10 +356,10 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                                       : const Color(0xFF2B2B2B),
                                   tooltip: state.isLoading
                                       ? 'Downloading...'
-                                      : ((_fileExistsMap[file.id] ?? false) ? 'Open file' : 'Save file'),
+                                      : (file.isCached ? 'Open file' : 'Save file'),
                                   onPressed: state.isLoading
                                       ? null
-                                      : () => (_fileExistsMap[file.id] ?? false)
+                                      : () => file.isCached
                                           ? _openFile(file)
                                           : _saveFile(file),
                                 ),

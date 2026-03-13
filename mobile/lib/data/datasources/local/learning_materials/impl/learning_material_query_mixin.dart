@@ -15,7 +15,7 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
         whereArgs: [classId],
         orderBy: 'order_index ASC',
       );
-      if (results.isEmpty) throw CacheException('No cached materials for class $classId');
+      if (results.isEmpty) return [];
 
       final materials = <LearningMaterialModel>[];
 
@@ -23,7 +23,7 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
       for (final result in results) {
         final materialId = result['id'] as String;
         final countResult = await db.rawQuery(
-          'SELECT COUNT(*) as count FROM material_files WHERE material_id = ? AND deleted_at IS NULL',
+          'SELECT COUNT(*) as count FROM material_files WHERE material_id = ?',
           [materialId],
         );
         final actualCount = countResult.first['count'] as int? ?? 0;
@@ -38,6 +38,9 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
           fileCount: actualCount,
           createdAt: DateTime.parse(result['created_at'] as String),
           updatedAt: DateTime.parse(result['updated_at'] as String),
+          cachedAt: result['cached_at'] != null ? DateTime.parse(result['cached_at'] as String) : null,
+          needsSync: (result['needs_sync'] as int?) == 1,
+          deletedAt: result['deleted_at'] != null ? DateTime.parse(result['deleted_at'] as String) : null,
         ));
       }
 
@@ -64,7 +67,7 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
 
       // Compute actual file count from the material_files table
       final countResult = await db.rawQuery(
-        'SELECT COUNT(*) as count FROM material_files WHERE material_id = ? AND deleted_at IS NULL',
+        'SELECT COUNT(*) as count FROM material_files WHERE material_id = ?',
         [materialId],
       );
       final actualCount = countResult.first['count'] as int? ?? 0;
@@ -79,6 +82,9 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
         fileCount: actualCount,
         createdAt: DateTime.parse(r['created_at'] as String),
         updatedAt: DateTime.parse(r['updated_at'] as String),
+        cachedAt: r['cached_at'] != null ? DateTime.parse(r['cached_at'] as String) : null,
+        needsSync: (r['needs_sync'] as int?) == 1,
+        deletedAt: r['deleted_at'] != null ? DateTime.parse(r['deleted_at'] as String) : null,
       );
     } catch (e) {
       if (e is CacheException) rethrow;
@@ -93,7 +99,7 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
       final db = await localDatabase.database;
       final results = await db.query(
         'material_files',
-        where: 'material_id = ? AND deleted_at IS NULL',
+        where: 'material_id = ?',
         whereArgs: [materialId],
         orderBy: 'uploaded_at ASC',
       );
@@ -107,7 +113,6 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
         debugPrint('[DB_LOAD] File $i: ${row['file_name']}');
         debugPrint('[DB_LOAD]   - id: ${row['id']}');
         debugPrint('[DB_LOAD]   - user_save_path: ${row['user_save_path']}');
-        debugPrint('[DB_LOAD]   - is_cached: ${row['is_cached']}');
         debugPrint('[DB_LOAD]   - local_path: ${row['local_path']}');
       }
       debugPrint('═══════════════════════════════════════════════════════════');

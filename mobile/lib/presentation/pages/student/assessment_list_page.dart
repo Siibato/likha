@@ -35,7 +35,7 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
     print('📋 [ListPage] _getStatus() - assessment: ${assessment.title}, submissionCount: ${assessment.submissionCount}, isSubmitted: ${assessment.isSubmitted}, resultsReleased: ${assessment.resultsReleased}, showResultsImmediately: ${assessment.showResultsImmediately}');
     print('📋 [ListPage] _getStatus() - openAt: ${assessment.openAt}, closeAt: ${assessment.closeAt}, now: $now');
 
-    if (assessment.submissionCount > 0) {
+    if (assessment.isSubmitted != null) {
       final resultsAccessible =
           assessment.resultsReleased || assessment.showResultsImmediately;
       final isSubmitted = assessment.isSubmitted ?? false;
@@ -123,7 +123,7 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
             : RefreshIndicator(
                 onRefresh: () => ref
                     .read(assessmentProvider.notifier)
-                    .loadAssessments(widget.classId),
+                    .loadAssessments(widget.classId, publishedOnly: true),
                 color: const Color(0xFF2B2B2B),
                 child: CustomScrollView(
                   slivers: [

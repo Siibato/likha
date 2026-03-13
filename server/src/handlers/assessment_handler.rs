@@ -303,8 +303,8 @@ pub async fn submit_assessment(
 
     match service.submit_assessment(submission_id, auth_user.user_id).await {
         Ok(response) => {
-            println!("📤 [HANDLER] submit_assessment() SUCCESS - returning response: is_submitted={}, submitted_at={:?}, auto_score={}, final_score={}",
-                response.is_submitted, response.submitted_at, response.auto_score, response.final_score);
+            println!("📤 [HANDLER] submit_assessment() SUCCESS - returning response: submitted_at={:?}, total_points={}",
+                response.submitted_at, response.total_points);
             success_response(response, StatusCode::OK).into_response()
         },
         Err(e) => {

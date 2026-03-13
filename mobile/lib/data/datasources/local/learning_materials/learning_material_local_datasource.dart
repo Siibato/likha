@@ -32,5 +32,6 @@ abstract class LearningMaterialLocalDataSource {
     required int fileSize,
     required String localPath,
   });
+  Future<void> deleteMaterialFileLocally(String fileId);
   Future<void> clearAllCache();
 }

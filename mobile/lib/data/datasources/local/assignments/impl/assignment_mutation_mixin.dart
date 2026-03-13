@@ -22,14 +22,12 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
             'id': submissionId,
             'assignment_id': assignmentId,
             'student_id': studentId,
-            'student_name': studentName,
             'status': 'draft',
             'text_content': textContent ?? '',
             'created_at': now.toIso8601String(),
             'updated_at': now.toIso8601String(),
             'cached_at': now.toIso8601String(),
-            'sync_status': 'pending',
-            'is_offline_mutation': 1,
+            'needs_sync': 1,
           },
         );
         await syncQueue.enqueue(SyncQueueEntry(
@@ -39,7 +37,7 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
           payload: {'id': submissionId, 'assignment_id': assignmentId, 'student_id': studentId},
           status: SyncStatus.pending,
           retryCount: 0,
-          maxRetries: 5,
+          maxRetries: 3,
           createdAt: now,
         ), txn: txn);
       });
@@ -63,8 +61,7 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
           {
             'text_content': textContent,
             'updated_at': now.toIso8601String(),
-            'is_offline_mutation': 1,
-            'sync_status': 'pending',
+            'needs_sync': 1,
             'cached_at': now.toIso8601String(),
           },
           where: 'id = ?',
@@ -77,7 +74,7 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
           payload: {'submission_id': submissionId, 'text_content': textContent},
           status: SyncStatus.pending,
           retryCount: 0,
-          maxRetries: 5,
+          maxRetries: 3,
           createdAt: now,
         ), txn: txn);
       });
@@ -100,8 +97,8 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
           {
             'status': 'submitted',
             'submitted_at': now.toIso8601String(),
-            'is_offline_mutation': 1,
-            'sync_status': 'pending',
+            'updated_at': now.toIso8601String(),
+            'needs_sync': 1,
             'cached_at': now.toIso8601String(),
           },
           where: 'id = ?',
@@ -114,7 +111,7 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
           payload: {'submission_id': submissionId, 'assignment_id': assignmentId},
           status: SyncStatus.pending,
           retryCount: 0,
-          maxRetries: 5,
+          maxRetries: 3,
           createdAt: now,
         ), txn: txn);
       });
@@ -136,12 +133,11 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
         await txn.update(
           'assignment_submissions',
           {
-            'score': score,
+            'points': score,
             'feedback': feedback,
             'graded_at': now.toIso8601String(),
             'status': 'graded',
-            'is_offline_mutation': 1,
-            'sync_status': 'pending',
+            'needs_sync': 1,
             'updated_at': now.toIso8601String(),
             'cached_at': now.toIso8601String(),
           },
@@ -159,7 +155,7 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
           },
           status: SyncStatus.pending,
           retryCount: 0,
-          maxRetries: 5,
+          maxRetries: 3,
           createdAt: now,
         ), txn: txn);
       });
@@ -180,8 +176,7 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
           'assignment_submissions',
           {
             'status': 'returned',
-            'is_offline_mutation': 1,
-            'sync_status': 'pending',
+            'needs_sync': 1,
             'updated_at': now.toIso8601String(),
             'cached_at': now.toIso8601String(),
           },
@@ -195,7 +190,7 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
           payload: {'id': submissionId, 'action': 'return'},
           status: SyncStatus.pending,
           retryCount: 0,
-          maxRetries: 5,
+          maxRetries: 3,
           createdAt: now,
         ), txn: txn);
       });
@@ -208,16 +203,30 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
   Future<void> markAssignmentPublishedLocally({required String assignmentId}) async {
     try {
       final db = await localDatabase.database;
-      await db.update(
-        'assignments',
-        {
-          'is_published': 1,
-          'updated_at': DateTime.now().toIso8601String(),
-          'cached_at': DateTime.now().toIso8601String(),
-        },
-        where: 'id = ?',
-        whereArgs: [assignmentId],
-      );
+      final now = DateTime.now();
+      await db.transaction((txn) async {
+        await txn.update(
+          'assignments',
+          {
+            'is_published': 1,
+            'updated_at': now.toIso8601String(),
+            'cached_at': now.toIso8601String(),
+            'needs_sync': 1,
+          },
+          where: 'id = ?',
+          whereArgs: [assignmentId],
+        );
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assignment,
+          operation: SyncOperation.update,
+          payload: {'id': assignmentId, 'action': 'publish'},
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 3,
+          createdAt: now,
+        ), txn: txn);
+      });
     } catch (e) {
       throw CacheException('Failed to mark assignment as published locally: $e');
     }
@@ -227,16 +236,13 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
   Future<void> softDeleteSubmissionFile(String fileId) async {
     try {
       final db = await localDatabase.database;
-      await db.update(
+      await db.delete(
         'submission_files',
-        {
-          'deleted_at': DateTime.now().toIso8601String(),
-        },
         where: 'id = ?',
         whereArgs: [fileId],
       );
     } catch (e) {
-      throw CacheException('Failed to soft-delete submission file: $e');
+      throw CacheException('Failed to delete submission file: $e');
     }
   }
 }

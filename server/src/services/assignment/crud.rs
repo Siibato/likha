@@ -98,21 +98,9 @@ impl super::AssignmentService {
             .create_log(
                 teacher_id,
                 "assignment_created",
-                Some(teacher_id),
                 Some(format!("Assignment '{}' created", assignment.title)),
             )
             .await;
-
-        let _ = self.change_log_repo.log_change(
-            "assignment",
-            assignment.id,
-            "create",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "title": assignment.title,
-                "total_points": assignment.total_points,
-            })).unwrap_or_default()),
-        ).await;
 
         Ok(AssignmentResponse {
             id: assignment.id,
@@ -176,7 +164,7 @@ impl super::AssignmentService {
                 (
                     submission.as_ref().map(|s| s.status.clone()),
                     submission.as_ref().map(|s| s.id),
-                    submission.and_then(|s| s.score),
+                    submission.and_then(|s| s.points),
                 )
             } else {
                 (None, None, None)
@@ -235,7 +223,7 @@ impl super::AssignmentService {
                 is_published: a.is_published,
                 submission_status: submission.as_ref().map(|s| s.status.clone()),
                 submission_id: submission.as_ref().map(|s| s.id),
-                score: submission.and_then(|s| s.score),
+                score: submission.and_then(|s| s.points),
             });
         }
 
@@ -400,17 +388,6 @@ impl super::AssignmentService {
             .count_graded_by_assignment(assignment_id)
             .await?;
 
-        let _ = self.change_log_repo.log_change(
-            "assignment",
-            assignment_id,
-            "update",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "title": updated.title,
-                "total_points": updated.total_points,
-            })).unwrap_or_default()),
-        ).await;
-
         Ok(AssignmentResponse {
             id: updated.id,
             class_id: updated.class_id,
@@ -473,18 +450,9 @@ impl super::AssignmentService {
             .create_log(
                 teacher_id,
                 "assignment_deleted",
-                Some(teacher_id),
                 Some(format!("Assignment '{}' deleted", assignment.title)),
             )
             .await;
-
-        let _ = self.change_log_repo.log_change(
-            "assignment",
-            assignment_id,
-            "delete",
-            teacher_id,
-            None,
-        ).await;
 
         Ok(())
     }
@@ -526,20 +494,9 @@ impl super::AssignmentService {
             .create_log(
                 teacher_id,
                 "assignment_published",
-                Some(teacher_id),
                 Some(format!("Assignment '{}' published", published.title)),
             )
             .await;
-
-        let _ = self.change_log_repo.log_change(
-            "assignment",
-            assignment_id,
-            "update",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "is_published": true,
-            })).unwrap_or_default()),
-        ).await;
 
         Ok(AssignmentResponse {
             id: published.id,
@@ -583,17 +540,6 @@ impl super::AssignmentService {
         }
 
         self.assignment_repo.soft_delete(assignment_id).await?;
-
-        let _ = self.change_log_repo.log_change(
-            "assignment",
-            assignment_id,
-            "delete",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "id": assignment_id,
-                "title": assignment.title,
-            })).unwrap_or_default()),
-        ).await;
 
         Ok(())
     }

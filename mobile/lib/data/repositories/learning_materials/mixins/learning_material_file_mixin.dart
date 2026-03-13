@@ -19,6 +19,7 @@ mixin LearningMaterialFileMixin on LearningMaterialRepositoryBase {
         final mime = mimeType(filePath);
         final size = await fileSize(filePath);
 
+        final localFileId = const Uuid().v4();
         await localDataSource.stageMaterialFileForUpload(
           materialId: materialId,
           fileName: fileName,
@@ -28,11 +29,14 @@ mixin LearningMaterialFileMixin on LearningMaterialRepositoryBase {
         );
 
         return Right(MaterialFile(
-          id: '',
+          id: localFileId,
           fileName: fileName,
           fileType: mime,
           fileSize: size,
           uploadedAt: DateTime.now(),
+          localPath: filePath,
+          needsSync: true,
+          cachedAt: DateTime.now(),
         ));
       }
 
@@ -55,6 +59,10 @@ mixin LearningMaterialFileMixin on LearningMaterialRepositoryBase {
   ResultVoid deleteFile({required String fileId}) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
+        try {
+          await localDataSource.deleteMaterialFileLocally(fileId);
+        } catch (_) {}
+
         await syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),
           entityType: SyncEntityType.materialFile,
@@ -90,7 +98,8 @@ mixin LearningMaterialFileMixin on LearningMaterialRepositoryBase {
       final result = await remoteDataSource.downloadFile(fileId: fileId);
 
       try {
-        await localDataSource.cacheFile(fileId, fileId, result);
+        // Pass empty fileName to let datasource look it up from material_files table
+        await localDataSource.cacheFile(fileId, '', result);
       } catch (_) {
         // Ignore caching errors — still return the file
       }

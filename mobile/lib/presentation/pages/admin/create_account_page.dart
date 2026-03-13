@@ -42,9 +42,11 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
       if (mounted) {
         final state = ref.read(adminProvider);
         if (state.successMessage != null) {
+          ref.read(adminProvider.notifier).clearMessages();
           context.showSuccessSnackBar(state.successMessage!);
           Navigator.pop(context);
         } else if (state.error != null) {
+          ref.read(adminProvider.notifier).clearMessages();
           context.showErrorSnackBar(state.error!);
         }
       }

@@ -60,12 +60,13 @@ class TeacherStudentDetailState extends Equatable {
     List<AssignmentWithStatus>? assignments,
     bool? isLoading,
     String? error,
+    bool clearError = false,
   }) {
     return TeacherStudentDetailState(
       assessments: assessments ?? this.assessments,
       assignments: assignments ?? this.assignments,
       isLoading: isLoading ?? this.isLoading,
-      error: error,
+      error: clearError ? null : (error ?? this.error),
     );
   }
 
@@ -108,7 +109,7 @@ class TeacherStudentDetailNotifier extends StateNotifier<TeacherStudentDetailSta
   }
 
   Future<void> _reloadFromCache({bool skipBackgroundRefresh = true}) async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true, clearError: true);
 
     try {
       // Load both lists in parallel

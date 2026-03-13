@@ -7,16 +7,17 @@ class ScoreSummaryCard extends StatelessWidget {
   const ScoreSummaryCard({super.key, required this.result});
 
   String _formatDateTime(DateTime dt) {
-    final month = dt.month.toString().padLeft(2, '0');
-    final day = dt.day.toString().padLeft(2, '0');
-    final year = dt.year;
-    final hour = dt.hour > 12
-        ? dt.hour - 12
-        : dt.hour == 0
+    final local = dt.toLocal();
+    final month = local.month.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    final year = local.year;
+    final hour = local.hour > 12
+        ? local.hour - 12
+        : local.hour == 0
             ? 12
-            : dt.hour;
-    final minute = dt.minute.toString().padLeft(2, '0');
-    final period = dt.hour >= 12 ? 'PM' : 'AM';
+            : local.hour;
+    final minute = local.minute.toString().padLeft(2, '0');
+    final period = local.hour >= 12 ? 'PM' : 'AM';
     return '$month/$day/$year $hour:$minute $period';
   }
 

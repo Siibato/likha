@@ -37,21 +37,9 @@ impl super::AuthService {
             .create_log(
                 user.id,
                 "account_created",
-                Some(admin_id),
                 Some(format!("Account created with role: {}", user.role)),
             )
             .await?;
-
-        let _ = self.change_log_repo.log_change(
-            "user",
-            user.id,
-            "create",
-            admin_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "username": user.username,
-                "role": user.role,
-            })).unwrap_or_default()),
-        ).await;
 
         Ok(Self::user_to_response(&user))
     }
@@ -102,25 +90,9 @@ impl super::AuthService {
             .create_log(
                 user.id,
                 "account_updated",
-                Some(admin_id),
                 Some(log_message.to_string()),
             )
             .await?;
-
-        let mut change_log_data = serde_json::json!({
-            "full_name": user.full_name,
-        });
-        if has_role_update {
-            change_log_data["role"] = serde_json::json!(user.role);
-        }
-
-        let _ = self.change_log_repo.log_change(
-            "user",
-            user_id,
-            "update",
-            admin_id,
-            Some(serde_json::to_string(&change_log_data).unwrap_or_default()),
-        ).await;
 
         Ok(Self::user_to_response(&user))
     }
@@ -142,20 +114,9 @@ impl super::AuthService {
             .create_log(
                 user.id,
                 "password_reset",
-                Some(admin_id),
                 Some("Account reset to pending activation".to_string()),
             )
             .await?;
-
-        let _ = self.change_log_repo.log_change(
-            "user",
-            request.user_id,
-            "update",
-            admin_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "account_status": "pending_activation",
-            })).unwrap_or_default()),
-        ).await;
 
         Ok(Self::user_to_response(&user))
     }

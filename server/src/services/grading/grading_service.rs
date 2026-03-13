@@ -37,8 +37,9 @@ impl GradingService {
                     .await?
                 }
                 "identification" => {
+                    // Answer text is now in submission_answer_items, pass None for now
                     super::identification::grade_identification(
-                        &answer.answer_text,
+                        &None,
                         question.id,
                         question.points,
                         assessment_repo,
@@ -66,7 +67,7 @@ impl GradingService {
         }
 
         submission_repo
-            .update_submission_scores(submission_id, auto_score, auto_score)
+            .update_submission_scores(submission_id, auto_score as i32)
             .await?;
 
         Ok((auto_score, auto_score))
@@ -77,12 +78,10 @@ impl GradingService {
         submission_repo: &SubmissionRepository,
     ) -> AppResult<f64> {
         let answers = submission_repo.find_answers_by_submission_id(submission_id).await?;
-        let final_score: f64 = answers.iter().map(|a| a.points_awarded).sum();
-        let submission = submission_repo.find_by_id(submission_id).await?;
-        let auto = submission.map(|s| s.auto_score).unwrap_or(0.0);
+        let final_score: f64 = answers.iter().map(|a| a.points).sum();
 
         submission_repo
-            .update_submission_scores(submission_id, auto, final_score)
+            .update_submission_scores(submission_id, final_score as i32)
             .await?;
 
         Ok(final_score)

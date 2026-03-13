@@ -27,10 +27,8 @@ pub enum Relation {
     Assessment,
     #[sea_orm(has_many = "super::question_choices::Entity")]
     Choices,
-    #[sea_orm(has_many = "super::question_correct_answers::Entity")]
-    CorrectAnswers,
-    #[sea_orm(has_many = "super::enumeration_items::Entity")]
-    EnumerationItems,
+    #[sea_orm(has_many = "super::answer_keys::Entity")]
+    AnswerKeys,
 }
 
 impl Related<super::assessments::Entity> for Entity {
@@ -45,15 +43,9 @@ impl Related<super::question_choices::Entity> for Entity {
     }
 }
 
-impl Related<super::question_correct_answers::Entity> for Entity {
+impl Related<super::answer_keys::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::CorrectAnswers.def()
-    }
-}
-
-impl Related<super::enumeration_items::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::EnumerationItems.def()
+        Relation::AnswerKeys.def()
     }
 }
 

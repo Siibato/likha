@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/domain/assignments/entities/assignment_submission.dart';
 import 'package:likha/domain/assignments/usecases/create_submission.dart';
 import 'package:likha/domain/assignments/usecases/upload_file.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
@@ -513,7 +514,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     );
   }
 
-  Widget _buildSubmissionCard(submission) {
+  Widget _buildSubmissionCard(AssignmentSubmission submission) {
     return BaseCard(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(18),

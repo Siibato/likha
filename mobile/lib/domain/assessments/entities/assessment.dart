@@ -18,6 +18,8 @@ class Assessment extends Equatable {
   final bool? isSubmitted; // null if no submission, true if submitted, false if started but not submitted
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? cachedAt;
+  final bool needsSync;
 
   const Assessment({
     required this.id,
@@ -37,6 +39,8 @@ class Assessment extends Equatable {
     this.isSubmitted,
     required this.createdAt,
     required this.updatedAt,
+    this.cachedAt,
+    this.needsSync = false,
   });
 
   @override
@@ -58,5 +62,7 @@ class Assessment extends Equatable {
         isSubmitted,
         createdAt,
         updatedAt,
+        cachedAt,
+        needsSync,
       ];
 }

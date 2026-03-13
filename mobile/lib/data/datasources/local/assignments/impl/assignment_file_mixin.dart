@@ -40,8 +40,8 @@ mixin AssignmentFileMixin on AssignmentLocalDataSourceBase {
             'file_size': fileSize,
             'uploaded_at': now.toIso8601String(),
             'local_path': stagedPath,
-            'is_local_only': 1,
             'cached_at': now.toIso8601String(),
+            'needs_sync': 1,
           },
         );
         await syncQueue.enqueue(SyncQueueEntry(
@@ -58,7 +58,7 @@ mixin AssignmentFileMixin on AssignmentLocalDataSourceBase {
           },
           status: SyncStatus.pending,
           retryCount: 0,
-          maxRetries: 5,
+          maxRetries: 3,
           createdAt: now,
         ), txn: txn);
       });

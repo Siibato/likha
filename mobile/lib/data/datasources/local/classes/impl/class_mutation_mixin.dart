@@ -33,18 +33,24 @@ mixin ClassMutationMixin on ClassLocalDataSourceBase {
       await db.transaction((txn) async {
         final map = classModel.toMap();
         map['cached_at'] = now.toIso8601String();
-        map['sync_status'] = 'pending';
-        map['is_offline_mutation'] = 1;
+        map['needs_sync'] = 1;
         await txn.insert('classes', map);
 
         await syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),
           entityType: SyncEntityType.classEntity,
           operation: SyncOperation.create,
-          payload: {'id': id, 'title': title, 'description': description},
+          payload: {
+            'id': id,
+            'title': title,
+            'description': description,
+            'teacher_id': teacherId,
+            'teacher_username': teacherUsername,
+            'teacher_full_name': teacherFullName,
+          },
           status: SyncStatus.pending,
           retryCount: 0,
-          maxRetries: 5,
+          maxRetries: 3,
           createdAt: now,
         ), txn: txn);
       });
@@ -71,8 +77,7 @@ mixin ClassMutationMixin on ClassLocalDataSourceBase {
             'title': title,
             'description': description,
             'updated_at': now.toIso8601String(),
-            'is_offline_mutation': 1,
-            'sync_status': 'pending',
+            'needs_sync': 1,
             'cached_at': now.toIso8601String(),
           },
           where: 'id = ?',
@@ -85,7 +90,7 @@ mixin ClassMutationMixin on ClassLocalDataSourceBase {
           payload: {'id': classId, 'title': title, 'description': description},
           status: SyncStatus.pending,
           retryCount: 0,
-          maxRetries: 5,
+          maxRetries: 3,
           createdAt: now,
         ), txn: txn);
       });

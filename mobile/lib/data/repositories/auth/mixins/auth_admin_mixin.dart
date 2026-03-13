@@ -159,16 +159,41 @@ mixin AuthAdminMixin on AuthRepositoryBase {
           createdAt: DateTime.now(),
         ));
 
-        return Right(User(
-          id: userId,
-          username: '',
-          fullName: '',
-          role: '',
-          accountStatus: 'pending_activation',
-          isActive: false,
-          activatedAt: null,
-          createdAt: DateTime.now(),
-        ));
+        // Read existing user to preserve all fields
+        UserModel? existingUser;
+        try {
+          existingUser = await localDataSource.getCachedUser(userId);
+        } on CacheException {
+          // User not in cache — fall back to minimal optimistic
+        }
+
+        final optimisticUser = existingUser != null
+            ? UserModel(
+                id: existingUser.id,
+                username: existingUser.username,
+                fullName: existingUser.fullName,
+                role: existingUser.role,
+                accountStatus: 'pending_activation',
+                isActive: false,
+                activatedAt: null,
+                createdAt: existingUser.createdAt,
+              )
+            : UserModel(
+                id: userId,
+                username: '',
+                fullName: '(Unknown)',
+                role: '',
+                accountStatus: 'pending_activation',
+                isActive: false,
+                activatedAt: null,
+                createdAt: DateTime.now(),
+              );
+
+        try {
+          await localDataSource.cacheAccounts([optimisticUser]);
+        } catch (_) {}
+
+        return Right(optimisticUser);
       }
 
       final result = await remoteDataSource.resetAccount(userId: userId);
@@ -206,16 +231,41 @@ mixin AuthAdminMixin on AuthRepositoryBase {
           createdAt: DateTime.now(),
         ));
 
-        return Right(User(
-          id: userId,
-          username: '',
-          fullName: '',
-          role: '',
-          accountStatus: locked ? 'locked' : 'active',
-          isActive: !locked,
-          activatedAt: null,
-          createdAt: DateTime.now(),
-        ));
+        // Read existing user to preserve all fields
+        UserModel? existingUser;
+        try {
+          existingUser = await localDataSource.getCachedUser(userId);
+        } on CacheException {
+          // User not in cache — fall back to minimal optimistic
+        }
+
+        final optimisticUser = existingUser != null
+            ? UserModel(
+                id: existingUser.id,
+                username: existingUser.username,
+                fullName: existingUser.fullName,
+                role: existingUser.role,
+                accountStatus: locked ? 'locked' : 'activated',
+                isActive: !locked,
+                activatedAt: existingUser.activatedAt,
+                createdAt: existingUser.createdAt,
+              )
+            : UserModel(
+                id: userId,
+                username: '',
+                fullName: '(Unknown)',
+                role: '',
+                accountStatus: locked ? 'locked' : 'activated',
+                isActive: !locked,
+                activatedAt: null,
+                createdAt: DateTime.now(),
+              );
+
+        try {
+          await localDataSource.cacheAccounts([optimisticUser]);
+        } catch (_) {}
+
+        return Right(optimisticUser);
       }
 
       final result = await remoteDataSource.lockAccount(

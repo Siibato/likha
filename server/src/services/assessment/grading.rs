@@ -24,19 +24,17 @@ impl super::AssessmentService {
 
         let mut responses = Vec::new();
         for s in submissions {
-            let student = self.user_repo.find_by_id(s.student_id).await?
+            let student = self.user_repo.find_by_id(s.user_id).await?
                 .ok_or_else(|| AppError::NotFound("Student not found".to_string()))?;
 
             responses.push(SubmissionSummaryResponse {
                 id: s.id,
-                student_id: s.student_id,
+                student_id: s.user_id,
                 student_name: student.full_name,
                 student_username: student.username,
                 started_at: s.started_at.to_string(),
                 submitted_at: s.submitted_at.map(|dt| dt.to_string()),
-                auto_score: s.auto_score,
-                final_score: s.final_score,
-                is_submitted: s.is_submitted,
+                total_points: s.total_points,
             });
         }
 
@@ -61,7 +59,7 @@ impl super::AssessmentService {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
-        let student = self.user_repo.find_by_id(submission.student_id).await?
+        let student = self.user_repo.find_by_id(submission.user_id).await?
             .ok_or_else(|| AppError::NotFound("Student not found".to_string()))?;
 
         let answers = self.submission_repo
@@ -76,11 +74,11 @@ impl super::AssessmentService {
             };
 
             let selected_choices = if question.question_type == "multiple_choice" {
-                let selections = self.submission_repo.find_answer_choices(a.id).await?;
+                let selection_ids = self.submission_repo.find_answer_choices(a.id).await?;
                 let mut choice_responses = Vec::new();
-                for sel in selections {
-                    let choices = self.assessment_repo.find_choices_by_question_id(question.id).await?;
-                    if let Some(choice) = choices.iter().find(|c| c.id == sel.choice_id) {
+                let choices = self.assessment_repo.find_choices_by_question_id(question.id).await?;
+                for choice_id in selection_ids {
+                    if let Some(choice) = choices.iter().find(|c| c.id == choice_id) {
                         choice_responses.push(SelectedChoiceResponse {
                             choice_id: choice.id,
                             choice_text: choice.choice_text.clone(),
@@ -94,14 +92,10 @@ impl super::AssessmentService {
             };
 
             let enumeration_answers = if question.question_type == "enumeration" {
-                let enum_answers = self.submission_repo.find_enumeration_answers(a.id).await?;
+                let enum_texts = self.submission_repo.find_enumeration_answers(a.id).await?;
                 Some(
-                    enum_answers.into_iter().map(|ea| EnumerationAnswerResponse {
-                        id: ea.id,
-                        answer_text: ea.answer_text,
-                        matched_item_id: ea.matched_item_id,
-                        is_auto_correct: ea.is_auto_correct,
-                        is_override_correct: ea.is_override_correct,
+                    enum_texts.into_iter().map(|answer_text| EnumerationAnswerResponse {
+                        answer_text,
                     }).collect()
                 )
             } else {
@@ -113,26 +107,23 @@ impl super::AssessmentService {
                 question_id: a.question_id,
                 question_text: question.question_text,
                 question_type: question.question_type,
-                points: question.points,
-                answer_text: a.answer_text,
+                question_points: question.points,
                 selected_choices,
                 enumeration_answers,
-                is_auto_correct: a.is_auto_correct,
-                is_override_correct: a.is_override_correct,
-                points_awarded: a.points_awarded,
+                points_earned: a.points,
+                overridden_by: a.overridden_by,
+                overridden_at: a.overridden_at.map(|dt| dt.to_string()),
             });
         }
 
         Ok(SubmissionDetailResponse {
             id: submission.id,
             assessment_id: submission.assessment_id,
-            student_id: submission.student_id,
+            student_id: submission.user_id,
             student_name: student.full_name,
             started_at: submission.started_at.to_string(),
             submitted_at: submission.submitted_at.map(|dt| dt.to_string()),
-            auto_score: submission.auto_score,
-            final_score: submission.final_score,
-            is_submitted: submission.is_submitted,
+            total_points: submission.total_points,
             answers: answer_responses,
         })
     }
@@ -175,13 +166,12 @@ impl super::AssessmentService {
             question_id: updated.question_id,
             question_text: question.question_text,
             question_type: question.question_type,
-            points: question.points,
-            answer_text: updated.answer_text,
+            question_points: question.points,
             selected_choices: None,
             enumeration_answers: None,
-            is_auto_correct: updated.is_auto_correct,
-            is_override_correct: updated.is_override_correct,
-            points_awarded: updated.points_awarded,
+            points_earned: updated.points,
+            overridden_by: updated.overridden_by,
+            overridden_at: updated.overridden_at.map(|dt| dt.to_string()),
         })
     }
 
@@ -204,19 +194,17 @@ impl super::AssessmentService {
         for assessment in assessments {
             if let Some(sub) = self.submission_repo
                 .find_by_student_and_assessment(student_id, assessment.id).await? {
-                let student = self.user_repo.find_by_id(sub.student_id).await?
+                let student = self.user_repo.find_by_id(sub.user_id).await?
                     .ok_or_else(|| AppError::NotFound("Student not found".to_string()))?;
                 items.push(StudentAssessmentSubmissionItem {
                     assessment_id: assessment.id,
                     id: sub.id,
-                    student_id: sub.student_id,
+                    student_id: sub.user_id,
                     student_name: student.full_name.clone(),
                     student_username: student.username.clone(),
                     started_at: sub.started_at.to_string(),
                     submitted_at: sub.submitted_at.map(|dt| dt.to_string()),
-                    is_submitted: sub.is_submitted,
-                    auto_score: sub.auto_score,
-                    final_score: sub.final_score,
+                    total_points: sub.total_points,
                 });
             }
         }

@@ -50,21 +50,6 @@ impl super::ClassService {
             .create_class(request.title.trim().to_string(), request.description, actual_teacher_id, client_id)
             .await?;
 
-        let _ = self.change_log_repo.log_change(
-            "class",
-            class.id,
-            "create",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "id": class.id,
-                "title": class.title,
-                "description": class.description,
-                "teacher_id": actual_teacher_id,
-                "is_archived": class.is_archived,
-                "created_at": class.created_at.to_string(),
-                "updated_at": class.updated_at.to_string(),
-            })).unwrap_or_default()),
-        ).await;
 
         Ok(ClassResponse {
             id: class.id,
@@ -152,21 +137,6 @@ impl super::ClassService {
 
         let student_count = self.class_repo.count_students_in_class(class_id).await?;
 
-        let _ = self.change_log_repo.log_change(
-            "class",
-            updated_class.id,
-            "update",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "id": updated_class.id,
-                "title": updated_class.title,
-                "description": updated_class.description,
-                "teacher_id": teacher_model.id,
-                "is_archived": updated_class.is_archived,
-                "created_at": updated_class.created_at.to_string(),
-                "updated_at": updated_class.updated_at.to_string(),
-            })).unwrap_or_default()),
-        ).await;
 
         Ok(ClassResponse {
             id: updated_class.id,
@@ -293,16 +263,6 @@ impl super::ClassService {
 
         self.class_repo.soft_delete(class_id).await?;
 
-        let _ = self.change_log_repo.log_change(
-            "class",
-            class_id,
-            "delete",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "id": class_id,
-                "title": class.title,
-            })).unwrap_or_default()),
-        ).await;
 
         Ok(())
     }

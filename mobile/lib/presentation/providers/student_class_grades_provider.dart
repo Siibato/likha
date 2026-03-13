@@ -1,9 +1,15 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/transmutation_util.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/domain/assignments/usecases/get_assignments.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
+
+// Status string constants for assignment submission status
+const String kStatusGraded = 'graded';
+const String kStatusReturned = 'returned';
 
 /// Per-class grade data with transmuted score
 class ClassGradeData {
@@ -44,23 +50,36 @@ class StudentClassGradesState {
     bool? isLoading,
     List<ClassGradeData>? classGrades,
     String? error,
+    bool clearError = false,
   }) {
     return StudentClassGradesState(
       isLoading: isLoading ?? this.isLoading,
       classGrades: classGrades ?? this.classGrades,
-      error: error ?? this.error,
+      error: clearError ? null : (error ?? this.error),
     );
   }
 }
 
 class StudentClassGradesNotifier extends StateNotifier<StudentClassGradesState> {
   StudentClassGradesNotifier(this._ref)
-      : super(StudentClassGradesState.initial());
+      : super(StudentClassGradesState.initial()) {
+    _setupEventSubscriptions();
+  }
 
   final Ref _ref;
+  late StreamSubscription<String?> _assignmentsChangedSub;
+
+  void _setupEventSubscriptions() {
+    // Reload grades when assignments change in any class
+    _assignmentsChangedSub = sl<DataEventBus>().onAssignmentsChanged.listen((_) {
+      if (state.classGrades.isNotEmpty) {
+        loadAllClassGrades();
+      }
+    });
+  }
 
   Future<void> loadAllClassGrades() async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true, clearError: true);
 
     try {
       // Get enrolled classes from classProvider
@@ -91,8 +110,8 @@ class StudentClassGradesNotifier extends StateNotifier<StudentClassGradesState> 
               final reportGrade = TransmutationUtil.transmute(rawScore);
               final gradedCount = assignments
                   .where((a) =>
-                      a.submissionStatus == 'graded' ||
-                      a.submissionStatus == 'returned')
+                      a.submissionStatus == kStatusGraded ||
+                      a.submissionStatus == kStatusReturned)
                   .length;
 
               allGrades.add(ClassGradeData(
@@ -120,6 +139,12 @@ class StudentClassGradesNotifier extends StateNotifier<StudentClassGradesState> 
         error: e.toString(),
       );
     }
+  }
+
+  @override
+  void dispose() {
+    _assignmentsChangedSub.cancel();
+    super.dispose();
   }
 }
 

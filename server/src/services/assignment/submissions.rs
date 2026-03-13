@@ -74,16 +74,6 @@ impl super::AssignmentService {
                     .create_submission(assignment_id, student_id)
                     .await?;
 
-                let _ = self.change_log_repo.log_change(
-                    "assignment_submission",
-                    sub.id,
-                    "create",
-                    student_id,
-                    Some(serde_json::to_string(&serde_json::json!({
-                        "assignment_id": assignment_id,
-                    })).unwrap_or_default()),
-                ).await;
-
                 if text_content.is_some() {
                     self.assignment_repo
                         .update_submission_text(sub.id, text_content)
@@ -249,7 +239,6 @@ impl super::AssignmentService {
             .create_log(
                 student_id,
                 "assignment_submitted",
-                Some(student_id),
                 Some(format!(
                     "Submitted assignment '{}'{}",
                     assignment.title,
@@ -257,17 +246,6 @@ impl super::AssignmentService {
                 )),
             )
             .await;
-
-        let _ = self.change_log_repo.log_change(
-            "assignment_submission",
-            submission_id,
-            "update",
-            student_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "status": "submitted",
-                "is_late": is_late,
-            })).unwrap_or_default()),
-        ).await;
 
         let student_name = self.assignment_repo.find_student_name(student_id).await?;
         let files = self

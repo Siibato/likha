@@ -42,9 +42,10 @@ mixin AuthQueryMixin on AuthLocalDataSourceBase {
       final db = await localDatabase.database;
       final results = await db.query(
         'users',
-        orderBy: 'username ASC'
-        );
-      if (results.isEmpty) throw CacheException('No cached accounts found');
+        where: 'deleted_at IS NULL',
+        orderBy: 'username ASC',
+      );
+      if (results.isEmpty) return [];
       return results.map(UserModel.fromMap).toList();
     } catch (e) {
       if (e is CacheException) rethrow;
@@ -80,8 +81,8 @@ mixin AuthQueryMixin on AuthLocalDataSourceBase {
         whereArgs: [userId],
         orderBy: 'created_at DESC',
       );
-      if (results.isEmpty) throw CacheException('No cached activity logs found for user: $userId');
-      return results.map((row) => ActivityLogModel.fromJson(row.cast<String, dynamic>())).toList();
+      if (results.isEmpty) return [];
+      return results.map((row) => ActivityLogModel.fromMap(row)).toList();
     } catch (e) {
       if (e is CacheException) rethrow;
       throw CacheException(e.toString());

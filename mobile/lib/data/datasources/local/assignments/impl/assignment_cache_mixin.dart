@@ -14,8 +14,7 @@ mixin AssignmentCacheMixin on AssignmentLocalDataSourceBase {
         for (final assignment in assignments) {
           final map = assignment.toMap();
           map['cached_at'] = DateTime.now().toIso8601String();
-          map['sync_status'] = 'synced';
-          map['is_offline_mutation'] = 0;
+          map['needs_sync'] = 0;
           await txn.insert('assignments', map, conflictAlgorithm: ConflictAlgorithm.replace);
         }
       });
@@ -30,8 +29,7 @@ mixin AssignmentCacheMixin on AssignmentLocalDataSourceBase {
       final db = await localDatabase.database;
       final map = assignment.toMap();
       map['cached_at'] = DateTime.now().toIso8601String();
-      map['sync_status'] = 'synced';
-      map['is_offline_mutation'] = 0;
+      map['needs_sync'] = 0;
       await db.insert('assignments', map, conflictAlgorithm: ConflictAlgorithm.replace);
     } catch (e) {
       throw CacheException('Failed to cache assignment detail: $e');
@@ -51,16 +49,14 @@ mixin AssignmentCacheMixin on AssignmentLocalDataSourceBase {
               'id': submission.id,
               'assignment_id': assignmentId,
               'student_id': submission.studentId,
-              'student_name': submission.studentName,
               'status': submission.status,
               'submitted_at': submission.submittedAt?.toIso8601String(),
               'is_late': submission.isLate ? 1 : 0,
-              'score': submission.score,
+              'points': submission.score,
               'created_at': now.toIso8601String(),
               'updated_at': now.toIso8601String(),
               'cached_at': now.toIso8601String(),
-              'sync_status': 'synced',
-              'is_offline_mutation': 0,
+              'needs_sync': 0,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
@@ -83,19 +79,17 @@ mixin AssignmentCacheMixin on AssignmentLocalDataSourceBase {
             'id': submission.id,
             'assignment_id': submission.assignmentId,
             'student_id': submission.studentId,
-            'student_name': submission.studentName,
             'status': submission.status,
             'text_content': submission.textContent,
             'submitted_at': submission.submittedAt?.toIso8601String(),
             'is_late': submission.isLate ? 1 : 0,
-            'score': submission.score,
+            'points': submission.score,
             'feedback': submission.feedback,
             'graded_at': submission.gradedAt?.toIso8601String(),
             'created_at': submission.createdAt.toIso8601String(),
             'updated_at': submission.updatedAt.toIso8601String(),
             'cached_at': now,
-            'sync_status': 'synced',
-            'is_offline_mutation': 0,
+            'needs_sync': 0,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
@@ -103,25 +97,21 @@ mixin AssignmentCacheMixin on AssignmentLocalDataSourceBase {
         for (final file in submission.files) {
           final existing = await txn.query(
             'submission_files',
-            columns: ['is_local_only'],
             where: 'id = ?',
             whereArgs: [file.id],
           );
           if (existing.isEmpty) {
             await txn.insert('submission_files', {
               'id': file.id,
-              'local_id': file.id,
               'submission_id': submission.id,
               'file_name': file.fileName,
               'file_type': file.fileType,
               'file_size': file.fileSize,
               'uploaded_at': file.uploadedAt.toIso8601String(),
               'local_path': null,
-              'is_local_only': 0,
               'cached_at': now,
             }, conflictAlgorithm: ConflictAlgorithm.ignore);
           }
-          // Don't overwrite server-side fields if is_local_only (pending upload)
         }
       });
     } catch (e) {
@@ -136,21 +126,18 @@ mixin AssignmentCacheMixin on AssignmentLocalDataSourceBase {
       final now = DateTime.now().toIso8601String();
       final existing = await db.query(
         'submission_files',
-        columns: ['is_local_only'],
         where: 'id = ?',
         whereArgs: [file.id],
       );
       if (existing.isEmpty) {
         await db.insert('submission_files', {
           'id': file.id,
-          'local_id': file.id,
           'submission_id': submissionId,
           'file_name': file.fileName,
           'file_type': file.fileType,
           'file_size': file.fileSize,
           'uploaded_at': file.uploadedAt.toIso8601String(),
           'local_path': null,
-          'is_local_only': 0,
           'cached_at': now,
         }, conflictAlgorithm: ConflictAlgorithm.ignore);
       }

@@ -7,7 +7,7 @@ import '../assignment_local_datasource_base.dart';
 
 mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
   @override
-  Future<List<AssignmentModel>> getCachedAssignments(String classId, {bool publishedOnly = false}) async {
+  Future<List<AssignmentModel>> getCachedAssignments(String classId, {bool publishedOnly = false, String? studentId}) async {
     try {
       final db = await localDatabase.database;
       final where = publishedOnly
@@ -19,8 +19,87 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
         whereArgs: [classId],
         orderBy: 'order_index ASC',
       );
-      if (results.isEmpty) throw CacheException('No cached assignments for class $classId');
-      return results.map(AssignmentModel.fromMap).toList();
+      if (results.isEmpty) return [];
+
+      // If no studentId provided (teacher path), enrich with submission counts
+      if (studentId == null) {
+        final enriched = <AssignmentModel>[];
+        for (final row in results) {
+          final base = AssignmentModel.fromMap(row);
+          // Compute dynamic submissionCount and gradedCount
+          final countRow = await db.rawQuery(
+            'SELECT COUNT(*) as total, SUM(CASE WHEN status IN ("graded","returned") THEN 1 ELSE 0 END) as graded FROM assignment_submissions WHERE assignment_id = ? AND deleted_at IS NULL',
+            [base.id],
+          );
+          final submissionCount = countRow.first['total'] as int? ?? 0;
+          final gradedCount = countRow.first['graded'] as int? ?? 0;
+
+          enriched.add(AssignmentModel(
+            id: base.id,
+            classId: base.classId,
+            title: base.title,
+            instructions: base.instructions,
+            totalPoints: base.totalPoints,
+            submissionType: base.submissionType,
+            allowedFileTypes: base.allowedFileTypes,
+            maxFileSizeMb: base.maxFileSizeMb,
+            dueAt: base.dueAt,
+            isPublished: base.isPublished,
+            orderIndex: base.orderIndex,
+            submissionCount: submissionCount,
+            gradedCount: gradedCount,
+            submissionStatus: base.submissionStatus,
+            submissionId: base.submissionId,
+            score: base.score,
+            createdAt: base.createdAt,
+            updatedAt: base.updatedAt,
+            cachedAt: base.cachedAt,
+            needsSync: base.needsSync,
+            deletedAt: base.deletedAt,
+          ));
+        }
+        return enriched;
+      }
+
+      // Enrich each assignment with per-student submission data and dynamic counts (E8, E2)
+      final enriched = <AssignmentModel>[];
+      for (final row in results) {
+        final base = AssignmentModel.fromMap(row);
+        final sub = await getStudentSubmissionForAssignment(base.id, studentId);
+
+        // Compute dynamic submissionCount and gradedCount (E8: fixes always-0 from cache)
+        final countRow = await db.rawQuery(
+          'SELECT COUNT(*) as total, SUM(CASE WHEN status IN ("graded","returned") THEN 1 ELSE 0 END) as graded FROM assignment_submissions WHERE assignment_id = ? AND deleted_at IS NULL',
+          [base.id],
+        );
+        final submissionCount = countRow.first['total'] as int? ?? 0;
+        final gradedCount = countRow.first['graded'] as int? ?? 0;
+
+        enriched.add(AssignmentModel(
+          id: base.id,
+          classId: base.classId,
+          title: base.title,
+          instructions: base.instructions,
+          totalPoints: base.totalPoints,
+          submissionType: base.submissionType,
+          allowedFileTypes: base.allowedFileTypes,
+          maxFileSizeMb: base.maxFileSizeMb,
+          dueAt: base.dueAt,
+          isPublished: base.isPublished,
+          orderIndex: base.orderIndex,
+          submissionCount: submissionCount,
+          gradedCount: gradedCount,
+          submissionStatus: sub?.$2,
+          submissionId: sub?.$1,
+          score: sub?.$3,
+          createdAt: base.createdAt,
+          updatedAt: base.updatedAt,
+          cachedAt: base.cachedAt,
+          needsSync: base.needsSync,
+          deletedAt: base.deletedAt,
+        ));
+      }
+      return enriched;
     } catch (e) {
       if (e is CacheException) rethrow;
       throw CacheException(e.toString());
@@ -37,7 +116,39 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
         whereArgs: [assignmentId],
       );
       if (results.isEmpty) throw CacheException('Assignment $assignmentId not cached');
-      return AssignmentModel.fromMap(results.first);
+      final base = AssignmentModel.fromMap(results.first);
+
+      // Enrich with submission counts
+      final countRow = await db.rawQuery(
+        'SELECT COUNT(*) as total, SUM(CASE WHEN status IN ("graded","returned") THEN 1 ELSE 0 END) as graded FROM assignment_submissions WHERE assignment_id = ? AND deleted_at IS NULL',
+        [base.id],
+      );
+      final submissionCount = countRow.first['total'] as int? ?? 0;
+      final gradedCount = countRow.first['graded'] as int? ?? 0;
+
+      return AssignmentModel(
+        id: base.id,
+        classId: base.classId,
+        title: base.title,
+        instructions: base.instructions,
+        totalPoints: base.totalPoints,
+        submissionType: base.submissionType,
+        allowedFileTypes: base.allowedFileTypes,
+        maxFileSizeMb: base.maxFileSizeMb,
+        dueAt: base.dueAt,
+        isPublished: base.isPublished,
+        orderIndex: base.orderIndex,
+        submissionCount: submissionCount,
+        gradedCount: gradedCount,
+        submissionStatus: base.submissionStatus,
+        submissionId: base.submissionId,
+        score: base.score,
+        createdAt: base.createdAt,
+        updatedAt: base.updatedAt,
+        cachedAt: base.cachedAt,
+        needsSync: base.needsSync,
+        deletedAt: base.deletedAt,
+      );
     } catch (e) {
       if (e is CacheException) rethrow;
       throw CacheException(e.toString());
@@ -48,11 +159,12 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
   Future<AssignmentSubmissionModel?> getCachedSubmission(String submissionId) async {
     try {
       final db = await localDatabase.database;
-      final results = await db.query(
-        'assignment_submissions',
-        where: 'id = ?',
-        whereArgs: [submissionId],
-      );
+      final results = await db.rawQuery('''
+        SELECT s.*, u.full_name as student_name
+        FROM assignment_submissions s
+        LEFT JOIN users u ON u.id = s.student_id
+        WHERE s.id = ?
+      ''', [submissionId]);
       if (results.isEmpty) return null;
       final sub = results.first;
 
@@ -68,7 +180,7 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
         textContent: sub['text_content'] as String?,
         submittedAt: sub['submitted_at'] != null ? DateTime.parse(sub['submitted_at'] as String) : null,
         isLate: (sub['is_late'] as int?) == 1,
-        score: sub['score'] as int?,
+        score: sub['points'] as int?,
         feedback: sub['feedback'] as String?,
         gradedAt: sub['graded_at'] != null ? DateTime.parse(sub['graded_at'] as String) : null,
         files: files,
@@ -87,7 +199,7 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
       final db = await localDatabase.database;
       final results = await db.query(
         'submission_files',
-        where: 'submission_id = ? AND deleted_at IS NULL',
+        where: 'submission_id = ?',
         whereArgs: [submissionId],
         orderBy: 'uploaded_at ASC',
       );
@@ -101,13 +213,14 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
   Future<List<SubmissionListItemModel>> getCachedSubmissions(String assignmentId) async {
     try {
       final db = await localDatabase.database;
-      final results = await db.query(
-        'assignment_submissions',
-        where: 'assignment_id = ?',
-        whereArgs: [assignmentId],
-        orderBy: 'created_at DESC',
-      );
-      if (results.isEmpty) throw CacheException('No cached submissions for assignment $assignmentId');
+      final results = await db.rawQuery('''
+        SELECT s.*, u.full_name as student_name
+        FROM assignment_submissions s
+        LEFT JOIN users u ON u.id = s.student_id
+        WHERE s.assignment_id = ? AND s.deleted_at IS NULL
+        ORDER BY s.created_at DESC
+      ''', [assignmentId]);
+      if (results.isEmpty) return [];
       return results.map((row) => SubmissionListItemModel(
         id: row['id'] as String,
         studentId: row['student_id'] as String,
@@ -115,7 +228,7 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
         status: row['status'] as String,
         submittedAt: row['submitted_at'] != null ? DateTime.parse(row['submitted_at'] as String) : null,
         isLate: (row['is_late'] as int?) == 1,
-        score: row['score'] as int?,
+        score: row['points'] as int?,
       )).toList();
     } catch (e) {
       if (e is CacheException) rethrow;
@@ -132,7 +245,7 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
       final db = await localDatabase.database;
       final results = await db.query(
         'assignment_submissions',
-        columns: ['id', 'status', 'score'],
+        columns: ['id', 'status', 'points'],
         where: 'assignment_id = ? AND student_id = ? AND deleted_at IS NULL',
         whereArgs: [assignmentId, studentId],
       );
@@ -141,7 +254,7 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
       return (
         sub['id'] as String,
         sub['status'] as String,
-        sub['score'] as int?,
+        sub['points'] as int?,
       );
     } catch (e) {
       throw CacheException('Failed to get student submission: $e');

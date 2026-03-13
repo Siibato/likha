@@ -1,8 +1,11 @@
 import 'package:likha/domain/assessments/entities/question.dart';
 
 class QuestionModel extends Question {
+  final DateTime? deletedAt;
+
   const QuestionModel({
     required super.id,
+    required super.assessmentId,
     required super.questionType,
     required super.questionText,
     required super.points,
@@ -11,11 +14,17 @@ class QuestionModel extends Question {
     super.choices,
     super.correctAnswers,
     super.enumerationItems,
+    super.createdAt,
+    super.updatedAt,
+    super.cachedAt,
+    super.needsSync = false,
+    this.deletedAt,
   });
 
   factory QuestionModel.fromJson(Map<String, dynamic> json) {
     return QuestionModel(
       id: json['id'] as String,
+      assessmentId: json['assessment_id'] as String? ?? '',
       questionType: json['question_type'] as String,
       questionText: json['question_text'] as String,
       points: json['points'] as int,
@@ -31,7 +40,58 @@ class QuestionModel extends Question {
           ?.map(
               (e) => EnumerationItemModel.fromJson(e as Map<String, dynamic>))
           .toList(),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : null,
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
+          : null,
+      deletedAt: json['deleted_at'] != null
+          ? DateTime.parse(json['deleted_at'] as String)
+          : null,
     );
+  }
+
+  factory QuestionModel.fromMap(Map<String, dynamic> map) {
+    return QuestionModel(
+      id: map['id'] as String,
+      assessmentId: map['assessment_id'] as String,
+      questionType: map['question_type'] as String,
+      questionText: map['question_text'] as String,
+      points: map['points'] as int,
+      orderIndex: map['order_index'] as int,
+      isMultiSelect: (map['is_multi_select'] as int?) == 1,
+      createdAt: map['created_at'] != null
+          ? DateTime.parse(map['created_at'] as String)
+          : null,
+      updatedAt: map['updated_at'] != null
+          ? DateTime.parse(map['updated_at'] as String)
+          : null,
+      deletedAt: map['deleted_at'] != null
+          ? DateTime.parse(map['deleted_at'] as String)
+          : null,
+      cachedAt: map['cached_at'] != null
+          ? DateTime.parse(map['cached_at'] as String)
+          : null,
+      needsSync: (map['needs_sync'] as int?) == 1,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'assessment_id': assessmentId,
+      'question_type': questionType,
+      'question_text': questionText,
+      'points': points,
+      'order_index': orderIndex,
+      'is_multi_select': isMultiSelect ? 1 : 0,
+      'created_at': createdAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
+      'deleted_at': deletedAt?.toIso8601String(),
+      'cached_at': cachedAt?.toIso8601String(),
+      'needs_sync': needsSync ? 1 : 0,
+    };
   }
 
   static bool? _parseBool(dynamic value) {

@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:likha/core/errors/exceptions.dart';
-import 'package:likha/core/utils/compression_util.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
 import 'package:path_provider/path_provider.dart';
@@ -16,8 +15,7 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
         for (final material in materials) {
           final map = material.toMap();
           map['cached_at'] = DateTime.now().toIso8601String();
-          map['sync_status'] = 'synced';
-          map['is_offline_mutation'] = 0;
+          map['needs_sync'] = 0;
           await txn.insert(
             'learning_materials',
             map,
@@ -36,8 +34,7 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
       final db = await localDatabase.database;
       final map = material.toMap();
       map['cached_at'] = DateTime.now().toIso8601String();
-      map['sync_status'] = 'synced';
-      map['is_offline_mutation'] = 0;
+      map['needs_sync'] = 0;
       await db.insert(
         'learning_materials',
         map,
@@ -57,17 +54,27 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
         await materialFilesDir.create(recursive: true);
       }
 
-      final (dataToWrite, wasCompressed) = CompressionUtil.compressIfNeeded(bytes);
-      final filePath = '${materialFilesDir.path}/$fileId.cache';
-      await File(filePath).writeAsBytes(dataToWrite);
-
+      // Query material_files for the canonical file_name to ensure correct extension
       final db = await localDatabase.database;
+      final rows = await db.query(
+        'material_files',
+        columns: ['file_name'],
+        where: 'id = ?',
+        whereArgs: [fileId],
+      );
+      final storedFileName = rows.isNotEmpty
+          ? rows.first['file_name'] as String?
+          : null;
+      final finalFileName = storedFileName ?? fileName;
+
+      // Store with fileId prefix and original filename to preserve extension
+      final filePath = '${materialFilesDir.path}/$fileId-$finalFileName';
+      await File(filePath).writeAsBytes(bytes);
+
       await db.update(
         'material_files',
         {
           'local_path': filePath,
-          'is_cached': 1,
-          'is_compressed': wasCompressed ? 1 : 0,
           'cached_at': DateTime.now().toIso8601String(),
         },
         where: 'id = ?',
@@ -92,15 +99,13 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
       }
 
       final filePath = results.first['local_path'] as String;
-      final wasCompressed = (results.first['is_compressed'] as int?) == 1;
       final file = File(filePath);
 
       if (!await file.exists()) {
         throw CacheException('Cached file does not exist: $filePath');
       }
 
-      final data = await file.readAsBytes();
-      return CompressionUtil.decompressIfNeeded(data, wasCompressed);
+      return await file.readAsBytes();
     } catch (e) {
       if (e is CacheException) rethrow;
       throw CacheException('Failed to get cached file: $e');
@@ -113,7 +118,7 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
       final db = await localDatabase.database;
       final results = await db.query(
         'material_files',
-        where: 'id = ? AND is_cached = 1',
+        where: 'id = ? AND local_path IS NOT NULL AND local_path != ""',
         whereArgs: [fileId],
       );
       return results.isNotEmpty;
@@ -130,7 +135,7 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
         // Preserve local cache state if row already exists
         final existing = await db.query(
           'material_files',
-          columns: ['is_cached', 'local_path', 'is_compressed'],
+          columns: ['local_path'],
           where: 'id = ?',
           whereArgs: [file.id],
         );
@@ -140,22 +145,18 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
             'material_files',
             {
               'id': file.id,
-              'local_id': file.id,
               'material_id': materialId,
               'file_name': file.fileName,
               'file_type': file.fileType,
               'file_size': file.fileSize,
               'uploaded_at': file.uploadedAt.toIso8601String(),
               'local_path': null,
-              'is_cached': 0,
-              'is_compressed': 0,
-              'deleted_at': null,
               'cached_at': DateTime.now().toIso8601String(),
             },
             conflictAlgorithm: ConflictAlgorithm.ignore,
           );
         } else {
-          // Only update server-side metadata — preserve is_cached, local_path, is_compressed
+          // Only update server-side metadata — preserve local_path
           await db.update(
             'material_files',
             {

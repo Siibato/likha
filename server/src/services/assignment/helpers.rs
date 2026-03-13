@@ -27,7 +27,7 @@ impl super::AssignmentService {
             text_content: submission.text_content,
             submitted_at: submission.submitted_at.map(|dt| dt.to_string()),
             is_late: submission.is_late,
-            score: submission.score,
+            score: submission.points,
             feedback: submission.feedback,
             graded_at: submission.graded_at.map(|dt| dt.to_string()),
             files: file_responses,

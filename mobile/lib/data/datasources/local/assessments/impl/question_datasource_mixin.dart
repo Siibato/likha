@@ -1,23 +1,8 @@
-import 'dart:convert';
 import 'package:likha/core/errors/exceptions.dart';
+import 'package:likha/data/models/assessments/question_model.dart';
 import '../assessment_local_datasource_base.dart';
 
 mixin QuestionDataSourceMixin on AssessmentLocalDataSourceBase {
-  /// Transform API keys (choices, correct_answers, enumeration_items) to SQLite columns
-  static Map<String, dynamic> _toSqliteColumns(Map<String, dynamic> data) {
-    final result = Map<String, dynamic>.from(data);
-    if (result.containsKey('choices')) {
-      result['choices_json'] = jsonEncode(result.remove('choices'));
-    }
-    if (result.containsKey('correct_answers')) {
-      result['correct_answers_json'] = jsonEncode(result.remove('correct_answers'));
-    }
-    if (result.containsKey('enumeration_items')) {
-      result['enumeration_items_json'] = jsonEncode(result.remove('enumeration_items'));
-    }
-    return result;
-  }
-
   @override
   Future<void> updateQuestionLocally({
     required String questionId,
@@ -26,11 +11,9 @@ mixin QuestionDataSourceMixin on AssessmentLocalDataSourceBase {
   }) async {
     try {
       final db = await localDatabase.database;
-      final sqlUpdates = _toSqliteColumns(Map.from(updates));
-      sqlUpdates['updated_at'] = DateTime.now().toIso8601String();
-      sqlUpdates['is_offline_mutation'] = isOfflineMutation ? 1 : 0;
-      sqlUpdates['sync_status'] = isOfflineMutation ? 'pending' : 'synced';
-      await db.update('questions', sqlUpdates, where: 'id = ?', whereArgs: [questionId]);
+      updates['updated_at'] = DateTime.now().toIso8601String();
+      updates['needs_sync'] = isOfflineMutation ? 1 : 0;
+      await db.update('assessment_questions', updates, where: 'id = ? AND deleted_at IS NULL', whereArgs: [questionId]);
     } catch (e) {
       throw CacheException('Failed to update question locally: $e');
     }
@@ -41,11 +24,11 @@ mixin QuestionDataSourceMixin on AssessmentLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       await db.update(
-        'questions',
+        'assessment_questions',
         {
           'deleted_at': DateTime.now().toIso8601String(),
-          'is_offline_mutation': 1,
-          'sync_status': 'pending',
+          'updated_at': DateTime.now().toIso8601String(),
+          'needs_sync': 1,
         },
         where: 'id = ?',
         whereArgs: [questionId],
@@ -56,10 +39,27 @@ mixin QuestionDataSourceMixin on AssessmentLocalDataSourceBase {
   }
 
   @override
+  Future<QuestionModel?> getCachedQuestion(String questionId) async {
+    try {
+      final db = await localDatabase.database;
+      final rows = await db.query(
+        'assessment_questions',
+        where: 'id = ? AND deleted_at IS NULL',
+        whereArgs: [questionId],
+        limit: 1,
+      );
+      if (rows.isEmpty) return null;
+      return QuestionModel.fromMap(rows.first);
+    } catch (e) {
+      throw CacheException('Failed to get cached question: $e');
+    }
+  }
+
+  @override
   Future<void> updateQuestionId({required String localId, required String serverId}) async {
     try {
       final db = await localDatabase.database;
-      await db.update('questions', {'id': serverId}, where: 'id = ?', whereArgs: [localId]);
+      await db.update('assessment_questions', {'id': serverId}, where: 'id = ?', whereArgs: [localId]);
     } catch (e) {
       throw CacheException('Failed to update question ID: $e');
     }
@@ -72,22 +72,15 @@ mixin QuestionDataSourceMixin on AssessmentLocalDataSourceBase {
   }) async {
     try {
       final db = await localDatabase.database;
-      final result = await db.query('questions', columns: ['choices_json'], where: 'id = ?', whereArgs: [questionId]);
-      if (result.isEmpty) return;
-      final choicesJson = result.first['choices_json'] as String?;
-      if (choicesJson == null || choicesJson.isEmpty) return;
-
-      final choices = jsonDecode(choicesJson) as List<dynamic>;
-      for (final choice in choices) {
-        final oldId = choice['id'] as String?;
-        if (oldId != null && idMapping.containsKey(oldId)) choice['id'] = idMapping[oldId];
+      // Update choice IDs in the question_choices table
+      for (final entry in idMapping.entries) {
+        await db.update(
+          'question_choices',
+          {'id': entry.value},
+          where: 'id = ?',
+          whereArgs: [entry.key],
+        );
       }
-      await db.update(
-        'questions',
-        {'choices_json': jsonEncode(choices), 'updated_at': DateTime.now().toIso8601String()},
-        where: 'id = ?',
-        whereArgs: [questionId],
-      );
     } catch (e) {
       throw CacheException('Failed to update choice IDs: $e');
     }
@@ -100,22 +93,15 @@ mixin QuestionDataSourceMixin on AssessmentLocalDataSourceBase {
   }) async {
     try {
       final db = await localDatabase.database;
-      final result = await db.query('questions', columns: ['correct_answers_json'], where: 'id = ?', whereArgs: [questionId]);
-      if (result.isEmpty) return;
-      final answersJson = result.first['correct_answers_json'] as String?;
-      if (answersJson == null || answersJson.isEmpty) return;
-
-      final answers = jsonDecode(answersJson) as List<dynamic>;
-      for (final answer in answers) {
-        final oldId = answer['id'] as String?;
-        if (oldId != null && idMapping.containsKey(oldId)) answer['id'] = idMapping[oldId];
+      // Update answer IDs in the answer_key_acceptable_answers table
+      for (final entry in idMapping.entries) {
+        await db.update(
+          'answer_key_acceptable_answers',
+          {'id': entry.value},
+          where: 'id = ?',
+          whereArgs: [entry.key],
+        );
       }
-      await db.update(
-        'questions',
-        {'correct_answers_json': jsonEncode(answers), 'updated_at': DateTime.now().toIso8601String()},
-        where: 'id = ?',
-        whereArgs: [questionId],
-      );
     } catch (e) {
       throw CacheException('Failed to update correct answer IDs: $e');
     }

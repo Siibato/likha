@@ -65,6 +65,8 @@ mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
           files: cachedFiles,
           createdAt: cachedMaterial.createdAt,
           updatedAt: cachedMaterial.updatedAt,
+          cachedAt: cachedMaterial.cachedAt,
+          needsSync: cachedMaterial.needsSync,
         ));
       } on CacheException {
         try {
@@ -89,6 +91,8 @@ mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
             files: freshMaterial.files,
             createdAt: freshMaterial.createdAt,
             updatedAt: freshMaterial.updatedAt,
+            cachedAt: null,
+            needsSync: false,
           );
           return Right(detail);
         } on NetworkException catch (e) {

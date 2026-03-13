@@ -26,6 +26,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(adminProvider.notifier).clearActivityLogs();
       ref.read(adminProvider.notifier).loadActivityLogs(widget.user.id);
     });
   }

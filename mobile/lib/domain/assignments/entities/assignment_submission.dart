@@ -13,9 +13,12 @@ class AssignmentSubmission extends Equatable {
   final int? score;
   final String? feedback;
   final DateTime? gradedAt;
+  final String? gradedBy;
   final List<SubmissionFile> files;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? cachedAt;
+  final bool needsSync;
 
   const AssignmentSubmission({
     required this.id,
@@ -29,9 +32,12 @@ class AssignmentSubmission extends Equatable {
     this.score,
     this.feedback,
     this.gradedAt,
+    this.gradedBy,
     required this.files,
     required this.createdAt,
     required this.updatedAt,
+    this.cachedAt,
+    this.needsSync = false,
   });
 
   @override
@@ -47,9 +53,12 @@ class AssignmentSubmission extends Equatable {
         score,
         feedback,
         gradedAt,
+        gradedBy,
         files,
         createdAt,
         updatedAt,
+        cachedAt,
+        needsSync,
       ];
 }
 

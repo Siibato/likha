@@ -16,6 +16,7 @@ abstract class AssessmentLocalDataSource {
   });
   Future<void> deleteQuestionLocally({required String questionId});
   Future<void> deleteAssessmentLocally({required String assessmentId});
+  Future<QuestionModel?> getCachedQuestion(String questionId);
   Future<void> updateQuestionId({
     required String localId,
     required String serverId,

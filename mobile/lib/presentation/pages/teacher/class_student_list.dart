@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/domain/classes/entities/class_detail.dart';
+import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/presentation/pages/teacher/widgets/empty_student_state.dart';
 import 'package:likha/presentation/pages/teacher/teacher_student_detail_page.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
@@ -87,7 +89,7 @@ class _ClassStudentListPageState extends ConsumerState<ClassStudentListPage> {
             itemBuilder: (context, index) {
               final item = students[index];
               // Handle both Enrollment (from API) and User (from offline)
-              final user = (item as dynamic).student ?? item;
+              final user = item is Enrollment ? item.student : item as User;
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 14),

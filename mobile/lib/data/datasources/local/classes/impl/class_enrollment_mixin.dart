@@ -20,35 +20,19 @@ mixin ClassEnrollmentMixin on ClassLocalDataSourceBase {
             'id': participantId,
             'class_id': classId,
             'user_id': student.id,
-            'username': student.username,
-            'full_name': student.fullName,
-            'role': 'student',
-            'account_status': student.accountStatus,
             'joined_at': now.toIso8601String(),
             'updated_at': now.toIso8601String(),
             'removed_at': null,
             'cached_at': now.toIso8601String(),
-            'sync_status': 'pending',
-            'is_offline_mutation': 1,
-            'local_id': participantId,
+            'needs_sync': 1,
           },
         );
-        await txn.update(
-          'classes',
-          {
-            'is_offline_mutation': 1,
-            'sync_status': 'pending',
-            'cached_at': now.toIso8601String(),
-          },
-          where: 'id = ?',
-          whereArgs: [classId],
+
+        await txn.rawUpdate(
+          'UPDATE classes SET student_count = (SELECT COUNT(*) FROM class_participants WHERE class_id = ? AND removed_at IS NULL), updated_at = ? WHERE id = ?',
+          [classId, now.toIso8601String(), classId],
         );
       });
-      // Increment student_count after transaction completes
-      await db.rawUpdate(
-        'UPDATE classes SET student_count = student_count + 1 WHERE id = ?',
-        [classId],
-      );
       return participantId;
     } catch (e) {
       throw CacheException('Failed to add student locally: $e');
@@ -69,31 +53,18 @@ mixin ClassEnrollmentMixin on ClassLocalDataSourceBase {
           'class_participants',
           {
             'removed_at': now.toIso8601String(),
-            'is_offline_mutation': 1,
-            'sync_status': 'pending',
+            'needs_sync': 1,
+            'updated_at': now.toIso8601String(),
           },
-          where: 'class_id = ? AND user_id = ? AND role = ?',
-          whereArgs: [classId, studentId, 'student'],
+          where: 'class_id = ? AND user_id = ? AND removed_at IS NULL',
+          whereArgs: [classId, studentId],
         );
-        await txn.update(
-          'classes',
-          {
-            'is_offline_mutation': 1,
-            'sync_status': 'pending',
-            'cached_at': now.toIso8601String(),
-          },
-          where: 'id = ?',
-          whereArgs: [classId],
+
+        await txn.rawUpdate(
+          'UPDATE classes SET student_count = (SELECT COUNT(*) FROM class_participants WHERE class_id = ? AND removed_at IS NULL), updated_at = ? WHERE id = ?',
+          [classId, now.toIso8601String(), classId],
         );
       });
-      // Recompute student_count from actual class_participants after removal
-      await db.rawUpdate(
-        '''UPDATE classes SET student_count = (
-          SELECT COUNT(*) FROM class_participants
-          WHERE class_id = ? AND role = 'student' AND removed_at IS NULL
-        ) WHERE id = ?''',
-        [classId, classId],
-      );
     } catch (e) {
       throw CacheException('Failed to remove student locally: $e');
     }
@@ -106,8 +77,8 @@ mixin ClassEnrollmentMixin on ClassLocalDataSourceBase {
       final results = await db.query(
         'class_participants',
         columns: ['user_id'],
-        where: 'class_id = ? AND role = ? AND removed_at IS NULL',
-        whereArgs: [classId, 'student'],
+        where: 'class_id = ? AND removed_at IS NULL',
+        whereArgs: [classId],
       );
       return results.map((row) => row['user_id'] as String).toSet();
     } catch (e) {

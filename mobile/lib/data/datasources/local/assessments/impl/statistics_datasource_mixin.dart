@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/assessments/statistics_model.dart';
 import 'package:likha/data/models/assessments/submission_model.dart';
 import 'package:sqflite/sqflite.dart';
@@ -10,12 +9,16 @@ mixin StatisticsDataSourceMixin on AssessmentLocalDataSourceBase {
   Future<AssessmentStatisticsModel?> getCachedStatistics(String assessmentId) async {
     try {
       final db = await localDatabase.database;
-      final results = await db.query('assessment_statistics_cache', where: 'assessment_id = ?', whereArgs: [assessmentId]);
+      final results = await db.query(
+        'assessment_statistics_cache',
+        where: 'assessment_id = ?',
+        whereArgs: [assessmentId],
+      );
       if (results.isEmpty) return null;
-      final statisticsJson = jsonDecode(results.first['statistics_json'] as String) as Map<String, dynamic>;
-      return AssessmentStatisticsModel.fromJson(statisticsJson);
+      final json = jsonDecode(results.first['statistics_json'] as String) as Map<String, dynamic>;
+      return AssessmentStatisticsModel.fromJson(json);
     } catch (e) {
-      throw CacheException('Failed to get cached statistics: $e');
+      return null;
     }
   }
 
@@ -23,37 +26,18 @@ mixin StatisticsDataSourceMixin on AssessmentLocalDataSourceBase {
   Future<void> cacheStatistics(AssessmentStatisticsModel statistics) async {
     try {
       final db = await localDatabase.database;
-      final statsJson = {
-        'assessment_id': statistics.assessmentId,
-        'title': statistics.title,
-        'total_points': statistics.totalPoints,
-        'submission_count': statistics.submissionCount,
-        'class_statistics': {
-          'mean': statistics.classStatistics.mean,
-          'median': statistics.classStatistics.median,
-          'highest': statistics.classStatistics.highest,
-          'lowest': statistics.classStatistics.lowest,
-          'score_distribution': statistics.classStatistics.scoreDistribution
-              .map((b) => {'range': b.range, 'count': b.count})
-              .toList(),
-        },
-        'question_statistics': statistics.questionStatistics.map((qs) => {
-          'question_id': qs.questionId,
-          'question_text': qs.questionText,
-          'question_type': qs.questionType,
-          'points': qs.points,
-          'correct_count': qs.correctCount,
-          'incorrect_count': qs.incorrectCount,
-          'correct_percentage': qs.correctPercentage,
-        }).toList(),
-      };
+      final now = DateTime.now().toIso8601String();
       await db.insert(
         'assessment_statistics_cache',
-        {'assessment_id': statistics.assessmentId, 'statistics_json': jsonEncode(statsJson), 'cached_at': DateTime.now().toIso8601String()},
+        {
+          'assessment_id': statistics.assessmentId,
+          'statistics_json': jsonEncode(statistics.toJson()),
+          'cached_at': now,
+        },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
     } catch (e) {
-      throw CacheException('Failed to cache statistics: $e');
+      // Non-fatal: statistics cache is optional
     }
   }
 
@@ -61,12 +45,16 @@ mixin StatisticsDataSourceMixin on AssessmentLocalDataSourceBase {
   Future<StudentResultModel?> getCachedStudentResults(String submissionId) async {
     try {
       final db = await localDatabase.database;
-      final results = await db.query('student_results_cache', where: 'submission_id = ?', whereArgs: [submissionId]);
+      final results = await db.query(
+        'student_results_cache',
+        where: 'submission_id = ?',
+        whereArgs: [submissionId],
+      );
       if (results.isEmpty) return null;
-      final resultsJson = jsonDecode(results.first['results_json'] as String) as Map<String, dynamic>;
-      return StudentResultModel.fromJson(resultsJson);
+      final json = jsonDecode(results.first['results_json'] as String) as Map<String, dynamic>;
+      return StudentResultModel.fromJson(json);
     } catch (e) {
-      throw CacheException('Failed to get cached student results: $e');
+      return null;
     }
   }
 
@@ -74,32 +62,18 @@ mixin StatisticsDataSourceMixin on AssessmentLocalDataSourceBase {
   Future<void> cacheStudentResults(StudentResultModel result) async {
     try {
       final db = await localDatabase.database;
-      final resultsJson = {
-        'submission_id': result.submissionId,
-        'auto_score': result.autoScore,
-        'final_score': result.finalScore,
-        'total_points': result.totalPoints,
-        'submitted_at': result.submittedAt?.toIso8601String(),
-        'answers': result.answers.map((ans) => {
-          'question_id': ans.questionId,
-          'question_text': ans.questionText,
-          'question_type': ans.questionType,
-          'points': ans.points,
-          'points_awarded': ans.pointsAwarded,
-          'is_correct': ans.isCorrect,
-          'answer_text': ans.answerText,
-          'selected_choices': ans.selectedChoices,
-          'enumeration_answers': ans.enumerationAnswers?.map((ea) => {'answer_text': ea.answerText, 'is_correct': ea.isCorrect}).toList(),
-          'correct_answers': ans.correctAnswers,
-        }).toList(),
-      };
+      final now = DateTime.now().toIso8601String();
       await db.insert(
         'student_results_cache',
-        {'submission_id': result.submissionId, 'results_json': jsonEncode(resultsJson), 'cached_at': DateTime.now().toIso8601String()},
+        {
+          'submission_id': result.submissionId,
+          'results_json': jsonEncode(result.toJson()),
+          'cached_at': now,
+        },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
     } catch (e) {
-      throw CacheException('Failed to cache student results: $e');
+      // Non-fatal: results cache is optional
     }
   }
 }

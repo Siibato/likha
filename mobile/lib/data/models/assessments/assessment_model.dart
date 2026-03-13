@@ -16,6 +16,8 @@ DateTime _parseUtc(String s) {
 }
 
 class AssessmentModel extends Assessment {
+  final DateTime? deletedAt;
+
   const AssessmentModel({
     required super.id,
     required super.classId,
@@ -31,8 +33,12 @@ class AssessmentModel extends Assessment {
     required super.totalPoints,
     required super.questionCount,
     required super.submissionCount,
+    super.isSubmitted,
     required super.createdAt,
     required super.updatedAt,
+    super.cachedAt,
+    super.needsSync = false,
+    this.deletedAt,
   });
 
   factory AssessmentModel.fromJson(Map<String, dynamic> json) {
@@ -55,6 +61,9 @@ class AssessmentModel extends Assessment {
       submissionCount: json['submission_count'] as int? ?? 0,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
+      deletedAt: json['deleted_at'] != null
+          ? DateTime.parse(json['deleted_at'] as String)
+          : null,
     );
   }
 
@@ -78,11 +87,18 @@ class AssessmentModel extends Assessment {
       resultsReleased: (map['results_released'] as int?) == 1,
       isPublished: (map['is_published'] as int?) == 1,
       orderIndex: map['order_index'] as int? ?? 0,
-      totalPoints: map['total_points'] as int,
+      totalPoints: map['total_points'] as int? ?? 0,
       questionCount: map['question_count'] as int? ?? 0,
       submissionCount: map['submission_count'] as int? ?? 0,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
+      deletedAt: map['deleted_at'] != null
+          ? DateTime.parse(map['deleted_at'] as String)
+          : null,
+      cachedAt: map['cached_at'] != null
+          ? DateTime.parse(map['cached_at'] as String)
+          : null,
+      needsSync: (map['needs_sync'] as int?) == 1,
     );
   }
 
@@ -104,6 +120,9 @@ class AssessmentModel extends Assessment {
       'submission_count': submissionCount,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'deleted_at': deletedAt?.toIso8601String(),
+      'cached_at': cachedAt?.toIso8601String(),
+      'needs_sync': needsSync ? 1 : 0,
     };
   }
 }

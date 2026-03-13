@@ -24,6 +24,17 @@ class AssessmentStatisticsModel extends AssessmentStatistics {
           .toList(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'assessment_id': assessmentId,
+    'title': title,
+    'total_points': totalPoints,
+    'submission_count': submissionCount,
+    'class_statistics': (classStatistics as ClassStatisticsModel).toJson(),
+    'question_statistics': (questionStatistics as List<QuestionStatisticsModel>)
+        .map((e) => e.toJson())
+        .toList(),
+  };
 }
 
 class ClassStatisticsModel extends ClassStatistics {
@@ -46,6 +57,16 @@ class ClassStatisticsModel extends ClassStatistics {
           .toList(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'mean': mean,
+    'median': median,
+    'highest': highest,
+    'lowest': lowest,
+    'score_distribution': (scoreDistribution as List<ScoreBucketModel>)
+        .map((e) => e.toJson())
+        .toList(),
+  };
 }
 
 class ScoreBucketModel extends ScoreBucket {
@@ -57,6 +78,11 @@ class ScoreBucketModel extends ScoreBucket {
       count: json['count'] as int,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'range': range,
+    'count': count,
+  };
 }
 
 class QuestionStatisticsModel extends QuestionStatistics {
@@ -81,4 +107,14 @@ class QuestionStatisticsModel extends QuestionStatistics {
       correctPercentage: (json['correct_percentage'] as num).toDouble(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'question_id': questionId,
+    'question_text': questionText,
+    'question_type': questionType,
+    'points': points,
+    'correct_count': correctCount,
+    'incorrect_count': incorrectCount,
+    'correct_percentage': correctPercentage,
+  };
 }
