@@ -16,11 +16,20 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
           final map = material.toMap();
           map['cached_at'] = DateTime.now().toIso8601String();
           map['needs_sync'] = 0;
-          await txn.insert(
+          // Manual UPSERT: UPDATE first, INSERT if rowsUpdated == 0
+          final rowsUpdated = await txn.update(
             'learning_materials',
             map,
-            conflictAlgorithm: ConflictAlgorithm.replace,
+            where: 'id = ?',
+            whereArgs: [map['id']],
           );
+          if (rowsUpdated == 0) {
+            await txn.insert(
+              'learning_materials',
+              map,
+              conflictAlgorithm: ConflictAlgorithm.ignore,
+            );
+          }
         }
       });
     } catch (e) {
@@ -35,11 +44,20 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
       final map = material.toMap();
       map['cached_at'] = DateTime.now().toIso8601String();
       map['needs_sync'] = 0;
-      await db.insert(
+      // Manual UPSERT: UPDATE first, INSERT if rowsUpdated == 0
+      final rowsUpdated = await db.update(
         'learning_materials',
         map,
-        conflictAlgorithm: ConflictAlgorithm.replace,
+        where: 'id = ?',
+        whereArgs: [map['id']],
       );
+      if (rowsUpdated == 0) {
+        await db.insert(
+          'learning_materials',
+          map,
+          conflictAlgorithm: ConflictAlgorithm.ignore,
+        );
+      }
     } catch (e) {
       throw CacheException('Failed to cache material detail: $e');
     }
@@ -48,9 +66,11 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
   @override
   Future<void> cacheFile(String fileId, String fileName, List<int> bytes) async {
     try {
+      print('[CACHE_FILE] 💾 Caching file $fileId (${bytes.length} bytes)');
       final appDirDoc = await getApplicationDocumentsDirectory();
       final materialFilesDir = Directory('${appDirDoc.path}/material_files');
       if (!await materialFilesDir.exists()) {
+        print('[CACHE_FILE] 📁 Creating directory: ${materialFilesDir.path}');
         await materialFilesDir.create(recursive: true);
       }
 
@@ -67,11 +87,19 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
           : null;
       final finalFileName = storedFileName ?? fileName;
 
-      // Store with fileId prefix and original filename to preserve extension
-      final filePath = '${materialFilesDir.path}/$fileId-$finalFileName';
+      // Apply naming convention: {nameWithoutExt}-{shortId}.{ext}
+      final shortId = fileId.substring(0, 8);
+      final dotIndex = finalFileName.lastIndexOf('.');
+      final localFileName = dotIndex > 0
+          ? '${finalFileName.substring(0, dotIndex)}-$shortId${finalFileName.substring(dotIndex)}'
+          : '$finalFileName-$shortId';
+      final filePath = '${materialFilesDir.path}/$localFileName';
+      print('[CACHE_FILE] 📝 Writing to: $filePath');
       await File(filePath).writeAsBytes(bytes);
+      print('[CACHE_FILE] ✅ File written successfully');
 
-      await db.update(
+      print('[CACHE_FILE] 🔄 Updating DB: local_path=$filePath');
+      final rowsAffected = await db.update(
         'material_files',
         {
           'local_path': filePath,
@@ -80,7 +108,13 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
         where: 'id = ?',
         whereArgs: [fileId],
       );
+      print('[CACHE_FILE] ✅ DB updated, rowsAffected=$rowsAffected');
+
+      if (rowsAffected == 0) {
+        print('[CACHE_FILE] ⚠️  WARNING: Update affected 0 rows (file might not exist in DB)');
+      }
     } catch (e) {
+      print('[CACHE_FILE] ❌ Error: $e');
       throw CacheException('Failed to cache file: $e');
     }
   }
@@ -94,17 +128,37 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
         where: 'id = ?',
         whereArgs: [fileId],
       );
-      if (results.isEmpty || results.first['local_path'] == null) {
-        throw CacheException('File $fileId not cached');
+
+      if (results.isEmpty) {
+        throw CacheException('File $fileId not found in database');
       }
 
-      final filePath = results.first['local_path'] as String;
-      final file = File(filePath);
+      final fileName = results.first['file_name'] as String?;
+      if (fileName == null || fileName.isEmpty) {
+        throw CacheException('File $fileId has no fileName in database');
+      }
+
+      // Use expected path based on naming convention
+      final expectedPath = await getExpectedFilePath(fileId, fileName);
+      if (expectedPath == null) {
+        throw CacheException('Could not construct expected path for file $fileId');
+      }
+
+      final file = File(expectedPath);
 
       if (!await file.exists()) {
-        throw CacheException('Cached file does not exist: $filePath');
+        print('[GET_CACHED] ⚠️  File $fileId not found at expected path: $expectedPath');
+        // Clean up DB entry
+        await db.update(
+          'material_files',
+          {'local_path': ''},
+          where: 'id = ?',
+          whereArgs: [fileId],
+        );
+        throw CacheException('File not found at: $expectedPath');
       }
 
+      print('[GET_CACHED] ✅ Retrieved cached file: $fileId from $expectedPath');
       return await file.readAsBytes();
     } catch (e) {
       if (e is CacheException) rethrow;
@@ -112,17 +166,76 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
     }
   }
 
+  /// Get expected file path based on fileId and fileName
+  /// Uses naming convention: {nameWithoutExt}-{shortId}.{ext}
+  /// Example: report.pdf with fileId cfa3d566-... → report-cfa3d566.pdf
+  Future<String?> getExpectedFilePath(String fileId, String fileName) async {
+    try {
+      final appDirDoc = await getApplicationDocumentsDirectory();
+      final materialFilesDir = Directory('${appDirDoc.path}/material_files');
+
+      final shortId = fileId.substring(0, 8);
+      final dotIndex = fileName.lastIndexOf('.');
+      final localFileName = dotIndex > 0
+          ? '${fileName.substring(0, dotIndex)}-$shortId${fileName.substring(dotIndex)}'
+          : '$fileName-$shortId';
+      final expectedPath = '${materialFilesDir.path}/$localFileName';
+      return expectedPath;
+    } catch (e) {
+      print('[GET_EXPECTED_PATH] Error: $e');
+      return null;
+    }
+  }
+
   @override
   Future<bool> isFileCached(String fileId) async {
     try {
       final db = await localDatabase.database;
+
+      // Get file metadata from DB to find the expected filename
       final results = await db.query(
         'material_files',
-        where: 'id = ? AND local_path IS NOT NULL AND local_path != ""',
+        where: 'id = ?',
         whereArgs: [fileId],
       );
-      return results.isNotEmpty;
+
+      if (results.isEmpty) {
+        print('[IS_CACHED] ❌ fileId=$fileId not found in DB');
+        return false;
+      }
+
+      final fileName = results.first['file_name'] as String?;
+      if (fileName == null || fileName.isEmpty) {
+        print('[IS_CACHED] ❌ fileId=$fileId has no fileName');
+        return false;
+      }
+
+      // Construct expected path using naming convention: {fileId}-{fileName}
+      final expectedPath = await getExpectedFilePath(fileId, fileName);
+      if (expectedPath == null) {
+        return false;
+      }
+
+      // Check if file actually exists at expected location
+      final file = File(expectedPath);
+      final exists = await file.exists();
+      print('[IS_CACHED] fileId=$fileId, fileName=$fileName, expectedPath=$expectedPath, exists=$exists');
+
+      // If exists but DB path is empty/stale, update it for next time
+      final storedPath = results.first['local_path'] as String?;
+      if (exists && (storedPath == null || storedPath.isEmpty)) {
+        print('[IS_CACHED] 🔄 Updating DB with found path');
+        await db.update(
+          'material_files',
+          {'local_path': expectedPath},
+          where: 'id = ?',
+          whereArgs: [fileId],
+        );
+      }
+
+      return exists;
     } catch (e) {
+      print('[IS_CACHED] ❌ Error: $e');
       return false;
     }
   }

@@ -117,10 +117,14 @@ mixin LearningMaterialFileMixin on LearningMaterialRepositoryBase {
       final result = await remoteDataSource.downloadFile(fileId: fileId);
 
       try {
+        print('[DL_FILE] ✅ Downloaded ${result.length} bytes, caching...');
         // Pass empty fileName to let datasource look it up from material_files table
         await localDataSource.cacheFile(fileId, '', result);
-      } catch (_) {
-        // Ignore caching errors — still return the file
+        print('[DL_FILE] ✅ File cached successfully');
+      } catch (e) {
+        // Log the error but still return file — user can open it from memory
+        // Next app start: file won't be cached, will need re-download
+        print('[DL_FILE] ⚠️  Cache write failed: $e (file still available in memory)');
       }
 
       return Right(result);
