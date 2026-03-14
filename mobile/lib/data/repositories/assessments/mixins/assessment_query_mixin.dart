@@ -72,7 +72,7 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
                 orderIndex: assessment.orderIndex,
                 totalPoints: assessment.totalPoints,
                 questionCount: assessment.questionCount,
-                submissionCount: actualSubmissionCount,
+                submissionCount: actualSubmissionCount > 0 ? actualSubmissionCount : assessment.submissionCount,
                 isSubmitted: isSubmitted,
                 createdAt: assessment.createdAt,
                 updatedAt: assessment.updatedAt,
@@ -427,6 +427,7 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
       final l = localById[r.id];
       if (l == null) return true;                           // New item
       if (l.updatedAt.isBefore(r.updatedAt)) return true;  // Updated item
+      if (l.submissionCount != r.submissionCount) return true;  // Submission count changed (students submitted)
     }
     return false;
   }

@@ -122,6 +122,7 @@ class EnumerationAnswer extends Equatable {
   final String? matchedItemId;
   final bool? isAutoCorrect;
   final bool? isOverrideCorrect;
+  final bool isCorrect;
 
   const EnumerationAnswer({
     required this.id,
@@ -129,10 +130,11 @@ class EnumerationAnswer extends Equatable {
     this.matchedItemId,
     this.isAutoCorrect,
     this.isOverrideCorrect,
+    this.isCorrect = false,
   });
 
   @override
-  List<Object?> get props => [id, answerText];
+  List<Object?> get props => [id, answerText, isCorrect];
 }
 
 class StartSubmissionResult extends Equatable {

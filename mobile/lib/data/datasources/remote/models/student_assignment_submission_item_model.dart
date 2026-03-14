@@ -39,6 +39,7 @@ class StudentAssignmentSubmissionItemModel {
       id: id,
       studentId: studentId,
       studentName: studentName,
+      studentUsername: '', // Not available in this context
       status: status,
       submittedAt: submittedAt,
       isLate: isLate,

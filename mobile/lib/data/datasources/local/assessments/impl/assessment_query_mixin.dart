@@ -31,7 +31,15 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
         final actualCount = statsResult.first['count'] as int? ?? 0;
         final computedTotalPoints = statsResult.first['total_points'] as int? ?? 0;
 
-        // Create new assessment with the actual count and computed total points
+        final subCountResult = await db.rawQuery(
+          'SELECT COUNT(*) as count FROM assessment_submissions WHERE assessment_id = ? AND deleted_at IS NULL',
+          [assessment.id],
+        );
+        final liveSubCount = subCountResult.first['count'] as int? ?? 0;
+        final effectiveSubCount = liveSubCount > 0 ? liveSubCount : assessment.submissionCount;
+
+        final effectiveTotalPoints = computedTotalPoints > 0 ? computedTotalPoints : assessment.totalPoints;
+
         final updatedAssessment = AssessmentModel(
           id: assessment.id,
           classId: assessment.classId,
@@ -44,9 +52,9 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
           resultsReleased: assessment.resultsReleased,
           isPublished: assessment.isPublished,
           orderIndex: assessment.orderIndex,
-          totalPoints: computedTotalPoints,
+          totalPoints: effectiveTotalPoints,
           questionCount: actualCount > 0 ? actualCount : assessment.questionCount,
-          submissionCount: assessment.submissionCount,
+          submissionCount: effectiveSubCount,
           createdAt: assessment.createdAt,
           updatedAt: assessment.updatedAt,
           cachedAt: assessment.cachedAt,
@@ -123,27 +131,25 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
             whereArgs: [answerKeyId],
           );
 
-          if (acceptableAnswersResults.isNotEmpty) {
-            // Use item_type discriminator instead of heuristic
-            if (itemType == 'enumeration_item') {
-              enumerationItems.add({
-                'id': answerKeyId,
-                'order_index': enumerationItems.length,
-                'acceptable_answers': acceptableAnswersResults.map((aa) {
-                  return {
-                    'id': aa['id'],
-                    'answer_text': aa['answer_text'],
-                  };
-                }).toList(),
+          if (itemType == 'enumeration_item') {
+            // Always include enumeration items — students have no acceptable_answers, but count is still needed
+            enumerationItems.add({
+              'id': answerKeyId,
+              'order_index': enumerationItems.length,
+              'acceptable_answers': acceptableAnswersResults.map((aa) {
+                return {
+                  'id': aa['id'],
+                  'answer_text': aa['answer_text'],
+                };
+              }).toList(),
+            });
+          } else if (acceptableAnswersResults.isNotEmpty) {
+            // correct_answer: flatten all acceptable answers as CorrectAnswer objects
+            for (final answer in acceptableAnswersResults) {
+              correctAnswers.add({
+                'id': answer['id'],
+                'answer_text': answer['answer_text'],
               });
-            } else {
-              // correct_answer: flatten all acceptable answers as CorrectAnswer objects
-              for (final answer in acceptableAnswersResults) {
-                correctAnswers.add({
-                  'id': answer['id'],
-                  'answer_text': answer['answer_text'],
-                });
-              }
             }
           }
         }

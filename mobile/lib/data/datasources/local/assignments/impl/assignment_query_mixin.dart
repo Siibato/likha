@@ -255,17 +255,18 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final results = await db.rawQuery('''
-        SELECT s.*, u.full_name as student_name
+        SELECT s.*, u.full_name as student_name, u.username as student_username
         FROM assignment_submissions s
         LEFT JOIN users u ON u.id = s.student_id
         WHERE s.assignment_id = ? AND s.deleted_at IS NULL
-        ORDER BY s.created_at DESC
+        ORDER BY CASE WHEN s.submitted_at IS NULL THEN 1 ELSE 0 END ASC, s.submitted_at ASC
       ''', [assignmentId]);
       if (results.isEmpty) return [];
       return results.map((row) => SubmissionListItemModel(
         id: row['id'] as String,
         studentId: row['student_id'] as String,
         studentName: row['student_name'] as String? ?? '',
+        studentUsername: row['student_username'] as String? ?? '',
         status: row['status'] as String,
         submittedAt: row['submitted_at'] != null ? DateTime.parse(row['submitted_at'] as String) : null,
         isLate: (row['is_late'] as int?) == 1,

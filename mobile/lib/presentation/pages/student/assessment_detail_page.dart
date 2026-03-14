@@ -106,12 +106,12 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
       final assessmentState = ref.read(assessmentProvider);
       // Use the submission's own isSubmitted flag — NOT whether results loaded.
       // Results can 403 (not released yet) even when the submission IS submitted.
-      final isSubmitted = assessmentState.currentStudentSubmission?.isSubmitted ?? false;
-      print('🔍 [DetailPage] _loadSubmissionStatus() - RESULT: currentStudentSubmission=${assessmentState.currentStudentSubmission?.id}, isSubmitted=$isSubmitted');
+      final submission = assessmentState.currentStudentSubmission;
+      print('🔍 [DetailPage] _loadSubmissionStatus() - RESULT: currentStudentSubmission=${submission?.id}, isSubmitted=${submission?.isSubmitted}');
 
       if (mounted) {
         setState(() {
-          _submissionIsSubmitted = isSubmitted;
+          _submissionIsSubmitted = submission?.isSubmitted; // null=no sub, false=in-progress, true=submitted
           print('🔍 [DetailPage] _loadSubmissionStatus() - setState: _submissionIsSubmitted=$_submissionIsSubmitted');
         });
       }

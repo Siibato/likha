@@ -233,6 +233,7 @@ class EnumerationAnswerModel extends EnumerationAnswer {
     super.matchedItemId,
     super.isAutoCorrect,
     super.isOverrideCorrect,
+    required super.isCorrect,
   });
 
   factory EnumerationAnswerModel.fromJson(Map<String, dynamic> json) {
@@ -242,6 +243,7 @@ class EnumerationAnswerModel extends EnumerationAnswer {
       matchedItemId: null,
       isAutoCorrect: null,
       isOverrideCorrect: null,
+      isCorrect: json['is_correct'] as bool? ?? false,
     );
   }
 
@@ -251,6 +253,7 @@ class EnumerationAnswerModel extends EnumerationAnswer {
     'matched_item_id': matchedItemId,
     'is_auto_correct': isAutoCorrect,
     'is_override_correct': isOverrideCorrect,
+    'is_correct': isCorrect,
   };
 }
 

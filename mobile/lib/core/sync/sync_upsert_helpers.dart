@@ -315,6 +315,42 @@ class SyncUpsertHelpers {
           }
         }
       }
+
+      // Upsert enumeration items as answer_keys with item_type = 'enumeration_item'
+      final enumerationItems = data['enumeration_items'];
+      if (enumerationItems is List && enumerationItems.isNotEmpty) {
+        for (final item in enumerationItems) {
+          if (item is! Map<String, dynamic>) continue;
+          await db.insert(
+            'answer_keys',
+            {
+              'id': item['id'],
+              'question_id': data['id'],
+              'item_type': 'enumeration_item',
+              'cached_at': DateTime.now().toIso8601String(),
+              'needs_sync': 0,
+            },
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+          final acceptableAnswers = item['acceptable_answers'];
+          if (acceptableAnswers is List && acceptableAnswers.isNotEmpty) {
+            for (final acceptable in acceptableAnswers) {
+              if (acceptable is! Map<String, dynamic>) continue;
+              await db.insert(
+                'answer_key_acceptable_answers',
+                {
+                  'id': acceptable['id'],
+                  'answer_key_id': item['id'],
+                  'answer_text': acceptable['answer_text'],
+                  'cached_at': DateTime.now().toIso8601String(),
+                  'needs_sync': 0,
+                },
+                conflictAlgorithm: ConflictAlgorithm.replace,
+              );
+            }
+          }
+        }
+      }
     }
   }
 

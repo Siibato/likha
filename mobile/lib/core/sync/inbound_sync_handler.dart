@@ -106,8 +106,13 @@ class InboundSyncHandler {
     }
 
     // Upsert base response data (user, classes, enrollments, enrolled_students)
-    final enrolledStudents = (baseData['enrolled_students'] as List?) ?? [];
+    var enrolledStudents = (baseData['enrolled_students'] as List?) ?? [];
     final userData = baseData['user'] as Map<String, dynamic>?;
+
+    // Ensure current user is always in the list (may not be in enrolled_students if only teacher enrolled them)
+    if (userData != null && enrolledStudents.every((s) => (s as Map<String, dynamic>?)?['id'] != userData['id'])) {
+      enrolledStudents = [userData, ...enrolledStudents];
+    }
 
     // Track students per class
     final rawEnrollments = (baseData['enrollments'] as List?) ?? [];

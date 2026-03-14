@@ -494,4 +494,79 @@ impl AssessmentRepository {
 
         Ok(())
     }
+
+    pub async fn count_enumeration_items_for_question(&self, question_id: Uuid) -> AppResult<usize> {
+        let count = answer_keys::Entity::find()
+            .filter(answer_keys::Column::QuestionId.eq(question_id))
+            .count(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+        Ok(count as usize)
+    }
+
+    /// Fetches all enumeration items (answer_keys) for a question with their acceptable answers.
+    pub async fn find_enumeration_items_for_question(&self, question_id: Uuid) -> AppResult<Vec<(answer_keys::Model, Vec<answer_key_acceptable_answers::Model>)>> {
+        let keys = answer_keys::Entity::find()
+            .filter(answer_keys::Column::QuestionId.eq(question_id))
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to fetch answer keys: {}", e)))?;
+
+        let mut result = Vec::new();
+        for key in keys {
+            let answers = answer_key_acceptable_answers::Entity::find()
+                .filter(answer_key_acceptable_answers::Column::AnswerKeyId.eq(key.id))
+                .all(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Failed to fetch acceptable answers: {}", e)))?;
+            result.push((key, answers));
+        }
+        Ok(result)
+    }
+
+    /// Creates one answer_key row + its acceptable answer rows for one enumeration slot.
+    pub async fn add_enumeration_item(
+        &self,
+        question_id: Uuid,
+        acceptable_answers: Vec<String>,
+    ) -> AppResult<answer_keys::Model> {
+        let new_key = answer_keys::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            question_id: Set(question_id),
+        };
+        let inserted = new_key
+            .insert(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to create answer key: {}", e)))?;
+
+        for text in acceptable_answers {
+            let answer = answer_key_acceptable_answers::ActiveModel {
+                id: Set(Uuid::new_v4()),
+                answer_key_id: Set(inserted.id),
+                answer_text: Set(text.trim().to_lowercase()),
+            };
+            answer
+                .insert(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Failed to add enumeration answer: {}", e)))?;
+        }
+        Ok(inserted)
+    }
+
+    /// Deletes ALL answer_key rows for a question (cascades to acceptable_answers).
+    pub async fn delete_all_answer_keys_for_question(&self, question_id: Uuid) -> AppResult<()> {
+        let keys = answer_keys::Entity::find()
+            .filter(answer_keys::Column::QuestionId.eq(question_id))
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        for key in keys {
+            answer_keys::Entity::delete_by_id(key.id)
+                .exec(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Failed to delete answer key: {}", e)))?;
+        }
+        Ok(())
+    }
 }

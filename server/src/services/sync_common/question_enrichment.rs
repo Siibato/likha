@@ -124,20 +124,25 @@ pub async fn enrich_questions(
                     "enumeration" => {
                         q["choices"] = json!([]);
                         let keys = answer_keys_map.get(&q_id).map(|v| v.as_slice()).unwrap_or(&[]);
-                        if user_role != "student" {
-                            // Teacher: full keys with acceptable answers
-                            q["answer_keys"] = json!(keys.iter().map(|key| {
-                                let answers = acceptable_answers_map.get(&key.id).map(|v| v.as_slice()).unwrap_or(&[]);
+                        q["enumeration_items"] = json!(keys.iter().enumerate().map(|(idx, key)| {
+                            let answers = acceptable_answers_map.get(&key.id).map(|v| v.as_slice()).unwrap_or(&[]);
+                            if user_role != "student" {
                                 json!({
                                     "id": key.id.to_string(),
-                                    "acceptable_answers": answers.iter().map(|a| a.answer_text.clone()).collect::<Vec<_>>()
+                                    "order_index": idx,
+                                    "acceptable_answers": answers.iter().map(|a| json!({
+                                        "id": a.id.to_string(),
+                                        "answer_text": a.answer_text
+                                    })).collect::<Vec<_>>()
                                 })
-                            }).collect::<Vec<_>>());
-                        } else {
-                            // Student: only count needed (no keys, no answers)
-                            q["enumeration_count"] = json!(keys.len());
-                            q["answer_keys"] = json!([]);
-                        }
+                            } else {
+                                json!({
+                                    "id": key.id.to_string(),
+                                    "order_index": idx,
+                                    "acceptable_answers": []
+                                })
+                            }
+                        }).collect::<Vec<_>>());
                     }
                     _ => {}
                 }

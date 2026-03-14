@@ -20,9 +20,10 @@ impl SubmissionRepository {
         &self,
         assessment_id: Uuid,
         student_id: Uuid,
+        submission_id: Option<Uuid>,
     ) -> AppResult<assessment_submissions::Model> {
         let submission = assessment_submissions::ActiveModel {
-            id: Set(Uuid::new_v4()),
+            id: Set(submission_id.unwrap_or_else(Uuid::new_v4)),
             assessment_id: Set(assessment_id),
             user_id: Set(student_id),
             started_at: Set(Utc::now().naive_utc()),
@@ -297,6 +298,16 @@ impl SubmissionRepository {
         self.save_answer_items(submission_answer_id, items).await
     }
 
+    /// Save answer text for identification questions
+    pub async fn save_answer_text(
+        &self,
+        submission_answer_id: Uuid,
+        answer_text: String,
+    ) -> AppResult<()> {
+        let items = vec![(None, None, Some(answer_text), false)];
+        self.save_answer_items(submission_answer_id, items).await
+    }
+
     /// Find answer choices - returns choice IDs for an answer
     pub async fn find_answer_choices(
         &self,
@@ -317,5 +328,51 @@ impl SubmissionRepository {
         Ok(items.into_iter()
             .filter_map(|item| item.answer_text)
             .collect())
+    }
+
+    /// Save enumeration answers with answer_key_id links to specific slots
+    pub async fn save_enumeration_answers_linked(
+        &self,
+        submission_answer_id: Uuid,
+        items: Vec<(Option<Uuid>, String)>, // (answer_key_id, answer_text)
+    ) -> AppResult<()> {
+        let mapped = items.into_iter()
+            .map(|(key_id, text)| (key_id, None, Some(text), false))
+            .collect();
+        self.save_answer_items(submission_answer_id, mapped).await
+    }
+
+    /// Find enumeration answer items - returns full models with is_correct (for enumeration/identification)
+    pub async fn find_enumeration_answer_items(
+        &self,
+        submission_answer_id: Uuid,
+    ) -> AppResult<Vec<submission_answer_items::Model>> {
+        let items = self.find_answer_items_by_submission_answer_id(submission_answer_id).await?;
+        Ok(items.into_iter()
+            .filter(|i| i.answer_text.is_some())
+            .collect())
+    }
+
+    /// Update is_correct flag on a specific answer item
+    pub async fn update_answer_item_correctness(
+        &self,
+        item_id: Uuid,
+        is_correct: bool,
+    ) -> AppResult<()> {
+        let mut item: submission_answer_items::ActiveModel =
+            submission_answer_items::Entity::find_by_id(item_id)
+                .one(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
+                .ok_or_else(|| AppError::NotFound("Answer item not found".to_string()))?
+                .into();
+
+        item.is_correct = Set(is_correct);
+
+        item.update(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to update answer item: {}", e)))?;
+
+        Ok(())
     }
 }

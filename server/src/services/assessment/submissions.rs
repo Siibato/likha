@@ -8,6 +8,7 @@ impl super::AssessmentService {
         &self,
         assessment_id: Uuid,
         student_id: Uuid,
+        submission_id: Option<Uuid>,
     ) -> AppResult<StartSubmissionResponse> {
         println!("🚀 [SERVICE] start_assessment() START - assessment_id: {}, student_id: {}", assessment_id, student_id);
 
@@ -45,7 +46,7 @@ impl super::AssessmentService {
 
         println!("🚀 [SERVICE] start_assessment() - creating new submission...");
         let submission = self.submission_repo
-            .create_submission(assessment_id, student_id).await?;
+            .create_submission(assessment_id, student_id, submission_id).await?;
         println!("🚀 [SERVICE] start_assessment() - submission created: id={}, submitted={}", submission.id, submission.submitted_at.is_some());
 
         let questions = self.assessment_repo
@@ -67,12 +68,24 @@ impl super::AssessmentService {
                 None
             };
 
-            let enumeration_count = if q.question_type == "enumeration" {
-                // Enumeration items not currently supported in schema
-                // TODO: Re-implement if schema is updated
-                None
+            let (enumeration_count, enumeration_items) = if q.question_type == "enumeration" {
+                let items = self.assessment_repo.find_enumeration_items_for_question(q.id).await?;
+                let count = items.len();
+                let item_responses: Vec<StudentEnumerationItemResponse> = items
+                    .into_iter()
+                    .enumerate()
+                    .map(|(idx, (key, answers))| StudentEnumerationItemResponse {
+                        id: key.id,
+                        order_index: idx,
+                        acceptable_answers: answers.into_iter().map(|a| StudentEnumerationAnswerResponse {
+                            id: a.id,
+                            answer_text: a.answer_text,
+                        }).collect(),
+                    })
+                    .collect();
+                (Some(count), Some(item_responses))
             } else {
-                None
+                (None, None)
             };
 
             student_questions.push(StudentQuestionResponse {
@@ -84,6 +97,7 @@ impl super::AssessmentService {
                 is_multi_select: q.is_multi_select,
                 choices,
                 enumeration_count,
+                enumeration_items,
             });
         }
 
@@ -127,13 +141,41 @@ impl super::AssessmentService {
             }
 
             if let Some(enum_answers) = &answer_input.enumeration_answers {
+                // Sort by order_index to maintain consistent slot ordering
+                let mut sorted = enum_answers.clone();
+                sorted.sort_by_key(|e| e.order_index);
+
+                // Look up the enumeration slots for this question
+                let slots = self.assessment_repo
+                    .find_enumeration_items_for_question(answer_input.question_id)
+                    .await?;
+
+                // Link each answer to its corresponding answer_key (slot) by position
+                let items: Vec<(Option<Uuid>, String)> = sorted.iter().enumerate()
+                    .map(|(i, e)| {
+                        let key_id = slots.get(i).map(|(key, _)| key.id);
+                        (key_id, e.answer_text.clone())
+                    })
+                    .collect();
+
                 self.submission_repo
-                    .save_enumeration_answers(answer.id, enum_answers.clone())
+                    .save_enumeration_answers_linked(answer.id, items)
+                    .await?;
+            }
+
+            if let Some(answer_text) = &answer_input.answer_text {
+                // Identification: save text to answer items
+                self.submission_repo
+                    .save_answer_text(answer.id, answer_text.clone())
                     .await?;
             }
         }
 
         println!("💾 [SERVICE] save_answers() SUCCESS - saved {} answers", request.answers.len());
+
+        // Auto-grade immediately after saving answers
+        GradingService::grade_submission(submission_id, &self.assessment_repo, &self.submission_repo).await?;
+
         Ok(())
     }
 

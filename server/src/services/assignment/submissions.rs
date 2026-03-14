@@ -10,6 +10,7 @@ impl super::AssignmentService {
         assignment_id: Uuid,
         student_id: Uuid,
         text_content: Option<String>,
+        submission_id: Option<Uuid>,
     ) -> AppResult<AssignmentSubmissionResponse> {
         let assignment = self
             .assignment_repo
@@ -71,7 +72,7 @@ impl super::AssignmentService {
             None => {
                 let sub = self
                     .assignment_repo
-                    .create_submission(assignment_id, student_id)
+                    .create_submission(assignment_id, student_id, submission_id)
                     .await?;
 
                 if text_content.is_some() {
@@ -202,6 +203,7 @@ impl super::AssignmentService {
         &self,
         submission_id: Uuid,
         student_id: Uuid,
+        text_content: Option<String>,
     ) -> AppResult<AssignmentSubmissionResponse> {
         let submission = self
             .assignment_repo
@@ -225,6 +227,13 @@ impl super::AssignmentService {
             .find_by_id(submission.assignment_id)
             .await?
             .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
+
+        // Save text content if provided
+        if text_content.is_some() {
+            self.assignment_repo
+                .update_submission_text(submission_id, text_content)
+                .await?;
+        }
 
         let now = chrono::Utc::now().naive_utc();
         let is_late = now > assignment.due_at;

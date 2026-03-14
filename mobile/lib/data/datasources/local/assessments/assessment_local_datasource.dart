@@ -81,7 +81,7 @@ abstract class AssessmentLocalDataSource {
   });
   Future<List<SubmissionSummaryModel>> getCachedSubmissions(String assessmentId);
   Future<int> getCachedSubmissionCount(String assessmentId);
-  Future<bool> hasStudentSubmittedAssessment(String assessmentId, String studentId);
+  Future<bool?> hasStudentSubmittedAssessment(String assessmentId, String studentId);
   Future<void> cacheSubmissions(String assessmentId, List<SubmissionSummaryModel> submissions);
   Future<AssessmentStatisticsModel?> getCachedStatistics(String assessmentId);
   Future<void> cacheStatistics(AssessmentStatisticsModel statistics);

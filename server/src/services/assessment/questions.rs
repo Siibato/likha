@@ -120,10 +120,13 @@ impl super::AssessmentService {
             }
         }
 
-        // Enumeration items handling - feature not currently supported in schema
-        if let Some(_items) = request.enumeration_items {
-            // TODO: Re-implement enumeration items if schema is updated
-            // self.assessment_repo.delete_enumeration_items_by_question_id(question_id).await?;
+        if let Some(items) = request.enumeration_items {
+            self.assessment_repo.delete_all_answer_keys_for_question(question_id).await?;
+            for item in items {
+                self.assessment_repo
+                    .add_enumeration_item(question_id, item.acceptable_answers)
+                    .await?;
+            }
         }
 
         self.assessment_repo.update_total_points(question.assessment_id).await?;
@@ -216,9 +219,12 @@ impl super::AssessmentService {
                 }
             }
             "enumeration" => {
-                // Enumeration items handling - feature not currently supported in schema
-                if let Some(_items) = &request.enumeration_items {
-                    // TODO: Re-implement enumeration items if schema is updated
+                if let Some(items) = &request.enumeration_items {
+                    for item in items {
+                        self.assessment_repo
+                            .add_enumeration_item(question.id, item.acceptable_answers.clone())
+                            .await?;
+                    }
                 }
             }
             _ => {}

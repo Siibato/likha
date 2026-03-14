@@ -69,6 +69,12 @@ pub struct EnumerationItemInput {
     pub acceptable_answers: Vec<String>,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct EnumerationAnswerInput {
+    pub order_index: i32,
+    pub answer_text: String,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct SaveAnswersRequest {
     pub answers: Vec<AnswerInput>,
@@ -79,7 +85,7 @@ pub struct AnswerInput {
     pub question_id: Uuid,
     pub answer_text: Option<String>,
     pub selected_choice_ids: Option<Vec<Uuid>>,
-    pub enumeration_answers: Option<Vec<String>>,
+    pub enumeration_answers: Option<Vec<EnumerationAnswerInput>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -213,6 +219,8 @@ pub struct SubmissionDetailResponse {
     pub started_at: String,
     pub submitted_at: Option<String>,
     pub total_points: i32,
+    pub auto_score: i32,
+    pub final_score: i32,
     pub answers: Vec<SubmissionAnswerResponse>,
 }
 
@@ -223,6 +231,7 @@ pub struct SubmissionAnswerResponse {
     pub question_text: String,
     pub question_type: String,
     pub question_points: i32,
+    pub answer_text: Option<String>,
     pub selected_choices: Option<Vec<SelectedChoiceResponse>>,
     pub enumeration_answers: Option<Vec<EnumerationAnswerResponse>>,
     pub points_earned: f64,
@@ -240,6 +249,7 @@ pub struct SelectedChoiceResponse {
 #[derive(Debug, Serialize)]
 pub struct EnumerationAnswerResponse {
     pub answer_text: String,
+    pub is_correct: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -259,6 +269,7 @@ pub struct StudentQuestionResponse {
     pub is_multi_select: bool,
     pub choices: Option<Vec<StudentChoiceResponse>>,
     pub enumeration_count: Option<usize>,
+    pub enumeration_items: Option<Vec<StudentEnumerationItemResponse>>,
 }
 
 #[derive(Debug, Serialize)]
@@ -266,6 +277,19 @@ pub struct StudentChoiceResponse {
     pub id: Uuid,
     pub choice_text: String,
     pub order_index: i32,
+}
+
+#[derive(Debug, Serialize)]
+pub struct StudentEnumerationItemResponse {
+    pub id: Uuid,
+    pub order_index: usize,
+    pub acceptable_answers: Vec<StudentEnumerationAnswerResponse>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct StudentEnumerationAnswerResponse {
+    pub id: Uuid,
+    pub answer_text: String,
 }
 
 #[derive(Debug, Serialize)]

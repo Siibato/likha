@@ -372,7 +372,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
   }
 
   @override
-  Future<bool> hasStudentSubmittedAssessment(String assessmentId, String studentId) async {
+  Future<bool?> hasStudentSubmittedAssessment(String assessmentId, String studentId) async {
     try {
       final db = await localDatabase.database;
       final result = await db.query(
@@ -382,10 +382,10 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
         whereArgs: [assessmentId, studentId],
       );
       if (result.isEmpty) {
-        return false;
+        return null; // No submission found
       }
       final isSubmitted = result.first['submitted_at'] != null;
-      return isSubmitted;
+      return isSubmitted; // false = in-progress, true = submitted
     } catch (e) {
       throw CacheException('Failed to check submission status: $e');
     }

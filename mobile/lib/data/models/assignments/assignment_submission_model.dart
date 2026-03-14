@@ -118,6 +118,7 @@ class SubmissionListItemModel extends SubmissionListItem {
     required super.id,
     required super.studentId,
     required super.studentName,
+    required super.studentUsername,
     required super.status,
     super.submittedAt,
     required super.isLate,
@@ -129,6 +130,7 @@ class SubmissionListItemModel extends SubmissionListItem {
       id: json['id'] as String,
       studentId: json['student_id'] as String,
       studentName: json['student_name'] as String,
+      studentUsername: json['student_username'] as String? ?? '',
       status: json['status'] as String,
       submittedAt: json['submitted_at'] != null
           ? _parseUtc(json['submitted_at'] as String)

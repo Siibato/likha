@@ -550,14 +550,15 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
           print('✅ [Provider] loadScorePreview() - submission.submittedAt: ${submission.submittedAt}');
         }
 
-        if (submission == null || !submission.isSubmitted) {
-          print('⏳ [Provider] loadScorePreview() NOT YET SUBMITTED (submission==null || !isSubmitted) - no results to load');
-          state = state.copyWith(isLoading: false);
+        if (submission == null) {
+          print('⏳ [Provider] loadScorePreview() NOT YET SUBMITTED (submission==null) - no results to load');
+          state = state.copyWith(isLoading: false, clearStudentSubmission: true);
           return;
         }
-        // ✅ Store submission AND clear loading immediately — don't block on results.
-        // _loadSubmissionStatus() reads this immediately after loadScorePreview() returns.
+        // ✅ Always store submission — detail page needs this to distinguish "no sub" vs "in-progress"
         state = state.copyWith(isLoading: false, currentStudentSubmission: submission);
+        // Early return for in-progress submissions (don't load results)
+        if (!submission.isSubmitted) return;
 
         // Fire-and-forget: load results in background (may 403 if not released — fine).
         // Uses .ignore() to suppress unawaited Future lint.

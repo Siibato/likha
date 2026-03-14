@@ -18,7 +18,11 @@ impl super::SyncPushService {
                 {
                     return self.success_result(op, Some(existing.id.to_string()), None);
                 }
-                match self.assessment_service.start_assessment(assessment_id, user_id).await {
+
+                // Extract optional submission_id from payload (client-provided UUID)
+                let submission_id = self.parse_uuid_field(&op.payload, "id").ok();
+
+                match self.assessment_service.start_assessment(assessment_id, user_id, submission_id).await {
                     Ok(s) => self.success_result(op, Some(s.submission_id.to_string()), None),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }
@@ -79,7 +83,10 @@ impl super::SyncPushService {
                     Ok(id) => id,
                     Err(e) => return self.error_result(op, &e),
                 };
-                match self.assignment_service.create_or_get_submission(assignment_id, user_id, None).await {
+                // Extract optional submission_id from payload (client-provided UUID)
+                let submission_id = self.parse_uuid_field(&op.payload, "id").ok();
+
+                match self.assignment_service.create_or_get_submission(assignment_id, user_id, None, submission_id).await {
                     Ok(r) => self.success_result(op, Some(r.id.to_string()), Some(r.updated_at)),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }
@@ -89,7 +96,8 @@ impl super::SyncPushService {
                     Ok(id) => id,
                     Err(e) => return self.error_result(op, &e),
                 };
-                match self.assignment_service.submit_assignment(submission_id, user_id).await {
+                let text_content = op.payload.get("text_content").and_then(|v| v.as_str()).map(|s| s.to_string());
+                match self.assignment_service.submit_assignment(submission_id, user_id, text_content).await {
                     Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }

@@ -91,6 +91,16 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final now = DateTime.now();
+
+      // Fetch current text_content before closing transaction
+      final result = await db.query(
+        'assignment_submissions',
+        columns: ['text_content'],
+        where: 'id = ?',
+        whereArgs: [submissionId],
+      );
+      final textContent = result.isNotEmpty ? result.first['text_content'] as String? : null;
+
       await db.transaction((txn) async {
         await txn.update(
           'assignment_submissions',
@@ -108,7 +118,11 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
           id: const Uuid().v4(),
           entityType: SyncEntityType.assignmentSubmission,
           operation: SyncOperation.submit,
-          payload: {'submission_id': submissionId, 'assignment_id': assignmentId},
+          payload: {
+            'submission_id': submissionId,
+            'assignment_id': assignmentId,
+            if (textContent != null && textContent.isNotEmpty) 'text_content': textContent,
+          },
           status: SyncStatus.pending,
           retryCount: 0,
           maxRetries: 3,

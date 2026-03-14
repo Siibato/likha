@@ -123,6 +123,7 @@ pub struct SubmissionListItem {
     pub id: Uuid,
     pub student_id: Uuid,
     pub student_name: String,
+    pub student_username: String,
     pub status: String,
     pub submitted_at: Option<String>,
     pub is_late: bool,

@@ -66,6 +66,7 @@ class SubmissionListItem extends Equatable {
   final String id;
   final String studentId;
   final String studentName;
+  final String studentUsername;
   final String status;
   final DateTime? submittedAt;
   final bool isLate;
@@ -75,6 +76,7 @@ class SubmissionListItem extends Equatable {
     required this.id,
     required this.studentId,
     required this.studentName,
+    required this.studentUsername,
     required this.status,
     this.submittedAt,
     required this.isLate,
@@ -83,7 +85,7 @@ class SubmissionListItem extends Equatable {
 
   @override
   List<Object?> get props =>
-      [id, studentId, studentName, status, submittedAt, isLate, score];
+      [id, studentId, studentName, studentUsername, status, submittedAt, isLate, score];
 }
 
 class StudentAssignmentListItem extends Equatable {

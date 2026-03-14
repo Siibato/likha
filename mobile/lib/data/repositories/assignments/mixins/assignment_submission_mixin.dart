@@ -34,7 +34,16 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
         await localDataSource.cacheSubmissions(
             assignmentId, result.cast<SubmissionListItemModel>());
         unawaited(validationService.validateAndSync('assignments'));
-        return Right(result);
+
+        // Sort by submittedAt ASC (drafts last) for consistent ordering with cache queries
+        final sorted = [...result]..sort((a, b) {
+          if (a.submittedAt == null && b.submittedAt == null) return 0;
+          if (a.submittedAt == null) return 1;
+          if (b.submittedAt == null) return -1;
+          return a.submittedAt!.compareTo(b.submittedAt!);
+        });
+
+        return Right(sorted);
       } on NetworkException catch (e) {
         return Left(NetworkFailure(e.message));
       } on ServerException catch (e) {
@@ -432,6 +441,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
             id: result.id,
             studentId: result.studentId,
             studentName: result.studentName,
+            studentUsername: '', // Not available from detail response
             status: result.status,
             submittedAt: result.submittedAt,
             isLate: result.isLate,

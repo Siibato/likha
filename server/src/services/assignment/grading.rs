@@ -34,7 +34,8 @@ impl super::AssignmentService {
             .map(|(s, user)| SubmissionListItem {
                 id: s.id,
                 student_id: s.student_id,
-                student_name: user.map(|u| u.full_name).unwrap_or_default(),
+                student_name: user.as_ref().map(|u| u.full_name.clone()).unwrap_or_default(),
+                student_username: user.map(|u| u.username).unwrap_or_default(),
                 status: s.status,
                 submitted_at: s.submitted_at.map(|dt| dt.to_string()),
                 is_late: s.is_late,

@@ -235,7 +235,8 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
   }
 
   Widget _buildAnswerCard(SubmissionAnswer answer, int index) {
-    final isAutoCorrect = answer.isAutoCorrect == true;
+    final isAutoCorrect = answer.isAutoCorrect ??
+        (answer.pointsAwarded >= answer.points && answer.points > 0);
     final isOverrideCorrect = answer.isOverrideCorrect;
     final effectiveCorrect = isOverrideCorrect ?? isAutoCorrect;
     final isPartial = answer.pointsAwarded > 0 && answer.pointsAwarded < answer.points;

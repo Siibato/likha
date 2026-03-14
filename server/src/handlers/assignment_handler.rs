@@ -209,7 +209,7 @@ pub async fn create_submission(
     }
 
     match service
-        .create_or_get_submission(id, auth_user.user_id, request.text_content)
+        .create_or_get_submission(id, auth_user.user_id, request.text_content, None)
         .await
     {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
@@ -286,7 +286,7 @@ pub async fn submit_assignment(
         return AppError::Forbidden("Student access required".to_string()).into_response();
     }
 
-    match service.submit_assignment(id, auth_user.user_id).await {
+    match service.submit_assignment(id, auth_user.user_id, None).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }

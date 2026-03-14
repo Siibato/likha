@@ -51,23 +51,24 @@ mixin AssignmentCacheMixin on AssignmentLocalDataSourceBase {
       final now = DateTime.now();
       await db.transaction((txn) async {
         for (final submission in submissions) {
-          await txn.insert(
-            'assignment_submissions',
-            {
-              'id': submission.id,
-              'assignment_id': assignmentId,
-              'student_id': submission.studentId,
-              'status': submission.status,
-              'submitted_at': submission.submittedAt?.toIso8601String(),
-              'is_late': submission.isLate ? 1 : 0,
-              'points': submission.score,
-              'created_at': now.toIso8601String(),
-              'updated_at': now.toIso8601String(),
-              'cached_at': now.toIso8601String(),
-              'needs_sync': 0,
-            },
-            conflictAlgorithm: ConflictAlgorithm.replace,
-          );
+          final map = {
+            'id': submission.id,
+            'assignment_id': assignmentId,
+            'student_id': submission.studentId,
+            'status': submission.status,
+            'submitted_at': submission.submittedAt?.toIso8601String(),
+            'is_late': submission.isLate ? 1 : 0,
+            'points': submission.score,
+            'created_at': now.toIso8601String(),
+            'updated_at': now.toIso8601String(),
+            'cached_at': now.toIso8601String(),
+            'needs_sync': 0,
+          };
+          // Update-first pattern: only touch columns in the list API response, preserve text_content
+          final updated = await txn.update('assignment_submissions', map, where: 'id = ?', whereArgs: [map['id']]);
+          if (updated == 0) {
+            await txn.insert('assignment_submissions', map);
+          }
         }
       });
     } catch (e) {

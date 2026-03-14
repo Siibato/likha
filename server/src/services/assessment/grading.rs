@@ -92,12 +92,20 @@ impl super::AssessmentService {
             };
 
             let enumeration_answers = if question.question_type == "enumeration" {
-                let enum_texts = self.submission_repo.find_enumeration_answers(a.id).await?;
+                let enum_items = self.submission_repo.find_enumeration_answer_items(a.id).await?;
                 Some(
-                    enum_texts.into_iter().map(|answer_text| EnumerationAnswerResponse {
-                        answer_text,
+                    enum_items.into_iter().map(|item| EnumerationAnswerResponse {
+                        answer_text: item.answer_text.unwrap_or_default(),
+                        is_correct: item.is_correct,
                     }).collect()
                 )
+            } else {
+                None
+            };
+
+            let answer_text = if question.question_type == "identification" {
+                let texts = self.submission_repo.find_enumeration_answers(a.id).await?;
+                texts.into_iter().next()
             } else {
                 None
             };
@@ -108,6 +116,7 @@ impl super::AssessmentService {
                 question_text: question.question_text,
                 question_type: question.question_type,
                 question_points: question.points,
+                answer_text,
                 selected_choices,
                 enumeration_answers,
                 points_earned: a.points,
@@ -124,6 +133,8 @@ impl super::AssessmentService {
             started_at: submission.started_at.to_string(),
             submitted_at: submission.submitted_at.map(|dt| dt.to_string()),
             total_points: submission.total_points,
+            auto_score: submission.total_points,
+            final_score: submission.total_points,
             answers: answer_responses,
         })
     }
@@ -167,6 +178,7 @@ impl super::AssessmentService {
             question_text: question.question_text,
             question_type: question.question_type,
             question_points: question.points,
+            answer_text: None,
             selected_choices: None,
             enumeration_answers: None,
             points_earned: updated.points,

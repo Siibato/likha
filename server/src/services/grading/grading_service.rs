@@ -15,6 +15,12 @@ impl GradingService {
         let mut auto_score = 0.0_f64;
 
         for answer in &answers {
+            // Skip re-grading teacher-overridden answers; keep their existing points
+            if answer.overridden_at.is_some() {
+                auto_score += answer.points;
+                continue;
+            }
+
             let question = assessment_repo
                 .find_question_by_id(answer.question_id)
                 .await?;
@@ -37,9 +43,10 @@ impl GradingService {
                     .await?
                 }
                 "identification" => {
-                    // Answer text is now in submission_answer_items, pass None for now
+                    let items = submission_repo.find_enumeration_answers(answer.id).await?;
+                    let answer_text = items.into_iter().next();
                     super::identification::grade_identification(
-                        &None,
+                        &answer_text,
                         question.id,
                         question.points,
                         assessment_repo,

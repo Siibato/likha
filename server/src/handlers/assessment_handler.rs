@@ -266,7 +266,7 @@ pub async fn start_assessment(
         return AppError::Forbidden("Student access required".to_string()).into_response();
     }
 
-    match service.start_assessment(assessment_id, auth_user.user_id).await {
+    match service.start_assessment(assessment_id, auth_user.user_id, None).await {
         Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
         Err(e) => e.into_response(),
     }

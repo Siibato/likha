@@ -159,9 +159,10 @@ impl AssignmentRepository {
         &self,
         assignment_id: Uuid,
         student_id: Uuid,
+        submission_id: Option<Uuid>,
     ) -> AppResult<assignment_submissions::Model> {
         let submission = assignment_submissions::ActiveModel {
-            id: Set(Uuid::new_v4()),
+            id: Set(submission_id.unwrap_or_else(Uuid::new_v4)),
             assignment_id: Set(assignment_id),
             student_id: Set(student_id),
             status: Set("draft".to_string()),
