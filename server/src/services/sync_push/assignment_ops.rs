@@ -19,7 +19,10 @@ impl super::SyncPushService {
                     Ok(v) => v,
                     Err(e) => return self.error_result(op, &e),
                 };
-                let client_id = self.parse_uuid_field(&op.payload, "id").ok();
+                let client_id = match self.parse_uuid_field(&op.payload, "id") {
+                    Ok(id) => Some(id),
+                    Err(e) => return self.error_result(op, &format!("Client ID is required for assignment creation: {}", e)),
+                };
                 let request = CreateAssignmentRequest {
                     title,
                     instructions,

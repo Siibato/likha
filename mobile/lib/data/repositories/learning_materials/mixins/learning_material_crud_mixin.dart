@@ -26,6 +26,7 @@ mixin LearningMaterialCrudMixin on LearningMaterialRepositoryBase {
           entityType: SyncEntityType.learningMaterial,
           operation: SyncOperation.create,
           payload: {
+            'id': materialId,
             'class_id': classId,
             'title': title,
             if (description != null) 'description': description,

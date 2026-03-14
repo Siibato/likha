@@ -8,6 +8,8 @@ import 'package:likha/domain/learning_materials/entities/material_detail.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
 
 mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
+  final Map<String, DateTime> _lastBackgroundFetchTime = {};
+
   @override
   ResultFuture<List<LearningMaterial>> getMaterials({
     required String classId,
@@ -17,8 +19,14 @@ mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
         final cachedMaterials = await localDataSource.getCachedMaterials(classId);
 
         // If server is reachable, fetch fresh in background (fire-and-forget)
+        // But debounce: skip if we fetched this classId within the last 2 seconds
         if (serverReachabilityService.isServerReachable) {
-          _backgroundFetchMaterials(classId);
+          final lastFetch = _lastBackgroundFetchTime[classId];
+          final now = DateTime.now();
+          if (lastFetch == null || now.difference(lastFetch).inSeconds >= 2) {
+            _lastBackgroundFetchTime[classId] = now;
+            _backgroundFetchMaterials(classId);
+          }
         }
 
         return Right(cachedMaterials);
