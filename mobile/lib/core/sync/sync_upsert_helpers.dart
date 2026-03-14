@@ -198,31 +198,33 @@ class SyncUpsertHelpers {
   ) async {
     for (final record in records) {
       final data = record as Map<String, dynamic>;
-      await db.insert(
-        'assessments',
-        {
-          'id': data['id'],
-          'class_id': data['class_id'],
-          'title': data['title'],
-          'description': data['description'],
-          'time_limit_minutes': data['time_limit_minutes'] ?? 0,
-          'open_at': data['open_at'] ?? DateTime.now().toIso8601String(),
-          'close_at': data['close_at'] ?? DateTime.now().toIso8601String(),
-          'show_results_immediately': (data['show_results_immediately'] == true) ? 1 : 0,
-          'results_released': (data['results_released'] == true) ? 1 : 0,
-          'is_published': (data['is_published'] == true) ? 1 : 0,
-          'order_index': data['order_index'] ?? 0,
-          'total_points': data['total_points'] ?? 0,
-          'question_count': data['question_count'] ?? 0,
-          'submission_count': data['submission_count'] ?? 0,
-          'created_at': data['created_at'] ?? DateTime.now().toIso8601String(),
-          'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
-          'deleted_at': data['deleted_at'],
-          'cached_at': DateTime.now().toIso8601String(),
-          'needs_sync': 0,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      final assessmentId = data['id'];
+      final map = {
+        'id': assessmentId,
+        'class_id': data['class_id'],
+        'title': data['title'],
+        'description': data['description'],
+        'time_limit_minutes': data['time_limit_minutes'] ?? 0,
+        'open_at': data['open_at'] ?? DateTime.now().toIso8601String(),
+        'close_at': data['close_at'] ?? DateTime.now().toIso8601String(),
+        'show_results_immediately': (data['show_results_immediately'] == true) ? 1 : 0,
+        'results_released': (data['results_released'] == true) ? 1 : 0,
+        'is_published': (data['is_published'] == true) ? 1 : 0,
+        'order_index': data['order_index'] ?? 0,
+        'total_points': data['total_points'] ?? 0,
+        'question_count': data['question_count'] ?? 0,
+        'submission_count': data['submission_count'] ?? 0,
+        'created_at': data['created_at'] ?? DateTime.now().toIso8601String(),
+        'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
+        'deleted_at': data['deleted_at'],
+        'cached_at': DateTime.now().toIso8601String(),
+        'needs_sync': 0,
+      };
+      // Use update-first pattern to avoid CASCADE DELETE on assessment_submissions
+      final updated = await db.update('assessments', map, where: 'id = ?', whereArgs: [assessmentId]);
+      if (updated == 0) {
+        await db.insert('assessments', map);
+      }
     }
   }
 
@@ -323,33 +325,35 @@ class SyncUpsertHelpers {
   ) async {
     for (final record in records) {
       final data = record as Map<String, dynamic>;
-      await db.insert(
-        'assignments',
-        {
-          'id': data['id'],
-          'class_id': data['class_id'],
-          'title': data['title'],
-          'instructions': data['instructions'],
-          'total_points': data['total_points'] ?? 0,
-          'submission_type': data['submission_type'] ?? 'text_only',
-          'allowed_file_types': data['allowed_file_types'],
-          'max_file_size_mb': data['max_file_size_mb'],
-          'due_at': data['due_at'] ?? '',
-          'submission_status': data['submission_status'],
-          'submission_id': data['submission_id'],
-          'score': data['score'],
-          'is_published': (data['is_published'] == true) ? 1 : 0,
-          'submission_count': data['submission_count'] ?? 0,
-          'graded_count': data['graded_count'] ?? 0,
-          'order_index': data['order_index'] ?? 0,
-          'created_at': data['created_at'] ?? DateTime.now().toIso8601String(),
-          'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
-          'deleted_at': data['deleted_at'],
-          'cached_at': DateTime.now().toIso8601String(),
-          'needs_sync': 0,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      final assignmentId = data['id'];
+      final map = {
+        'id': assignmentId,
+        'class_id': data['class_id'],
+        'title': data['title'],
+        'instructions': data['instructions'],
+        'total_points': data['total_points'] ?? 0,
+        'submission_type': data['submission_type'] ?? 'text_only',
+        'allowed_file_types': data['allowed_file_types'],
+        'max_file_size_mb': data['max_file_size_mb'],
+        'due_at': data['due_at'] ?? '',
+        'submission_status': data['submission_status'],
+        'submission_id': data['submission_id'],
+        'score': data['score'],
+        'is_published': (data['is_published'] == true) ? 1 : 0,
+        'submission_count': data['submission_count'] ?? 0,
+        'graded_count': data['graded_count'] ?? 0,
+        'order_index': data['order_index'] ?? 0,
+        'created_at': data['created_at'] ?? DateTime.now().toIso8601String(),
+        'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
+        'deleted_at': data['deleted_at'],
+        'cached_at': DateTime.now().toIso8601String(),
+        'needs_sync': 0,
+      };
+      // Use update-first pattern to avoid CASCADE DELETE on assignment_submissions
+      final updated = await db.update('assignments', map, where: 'id = ?', whereArgs: [assignmentId]);
+      if (updated == 0) {
+        await db.insert('assignments', map);
+      }
     }
   }
 
@@ -388,13 +392,20 @@ class SyncUpsertHelpers {
   ) async {
     for (final record in records) {
       final data = record as Map<String, dynamic>;
+      final userId = (data['student_id'] ?? data['user_id'])?.toString();
+
+      // Skip if user_id is missing (required field)
+      if (userId == null || userId.isEmpty) {
+        _log.warn('Assessment submission ${data['id']} has missing user_id, skipping');
+        continue;
+      }
 
       await db.insert(
         'assessment_submissions',
         {
           'id': data['id'],
           'assessment_id': data['assessment_id'],
-          'user_id': data['student_id'],
+          'user_id': userId,
           'started_at': data['started_at'] ?? DateTime.now().toIso8601String(),
           'submitted_at': data['submitted_at'],
           'total_points': data['total_points'] ?? 0,
@@ -783,9 +794,8 @@ class SyncUpsertHelpers {
       final deleted = submissionFilesDeltas['deleted'] as List<dynamic>? ?? [];
       deletedCounts['submission_files'] = deleted.length;
       for (final id in deleted) {
-        await db.update(
+        await db.delete(
           'submission_files',
-          {'deleted_at': DateTime.now().toIso8601String()},
           where: 'id = ?',
           whereArgs: [id as String],
         );

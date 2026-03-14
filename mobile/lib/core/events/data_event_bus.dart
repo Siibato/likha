@@ -16,6 +16,8 @@ class DataEventBus {
       StreamController<String?>.broadcast();
   final StreamController<String?> _materials =
       StreamController<String?>.broadcast();
+  final StreamController<String> _submissionDetail =
+      StreamController<String>.broadcast();
   final StreamController<void> _classes =
       StreamController<void>.broadcast();
 
@@ -23,6 +25,7 @@ class DataEventBus {
   Stream<String?> get onAssessmentDetailChanged => _assessmentDetail.stream;
   Stream<String?> get onAssignmentsChanged => _assignments.stream;
   Stream<String?> get onMaterialsChanged   => _materials.stream;
+  Stream<String>  get onSubmissionDetailChanged => _submissionDetail.stream;
   Stream<void>    get onClassesChanged      => _classes.stream;
 
   void notifyAssessmentsChanged(String classId) => _assessments.add(classId);
@@ -32,6 +35,10 @@ class DataEventBus {
     print('[EVENT_BUS] 🔔 notifyMaterialsChanged fired with classId: $classId');
     _materials.add(classId);
   }
+  void notifySubmissionDetailChanged(String submissionId) {
+    print('[EVENT_BUS] 🔔 notifySubmissionDetailChanged fired with submissionId: $submissionId');
+    _submissionDetail.add(submissionId);
+  }
   void notifyClassesChanged()                    => _classes.add(null);
 
   void dispose() {
@@ -39,6 +46,7 @@ class DataEventBus {
     _assessmentDetail.close();
     _assignments.close();
     _materials.close();
+    _submissionDetail.close();
     _classes.close();
   }
 }

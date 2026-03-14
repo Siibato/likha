@@ -15,7 +15,11 @@ mixin AssignmentCacheMixin on AssignmentLocalDataSourceBase {
           final map = assignment.toMap();
           map['cached_at'] = DateTime.now().toIso8601String();
           map['needs_sync'] = 0;
-          await txn.insert('assignments', map, conflictAlgorithm: ConflictAlgorithm.replace);
+          // Use update-first pattern to avoid CASCADE DELETE on assignment_submissions
+          final updated = await txn.update('assignments', map, where: 'id = ?', whereArgs: [map['id']]);
+          if (updated == 0) {
+            await txn.insert('assignments', map);
+          }
         }
       });
     } catch (e) {
@@ -30,7 +34,11 @@ mixin AssignmentCacheMixin on AssignmentLocalDataSourceBase {
       final map = assignment.toMap();
       map['cached_at'] = DateTime.now().toIso8601String();
       map['needs_sync'] = 0;
-      await db.insert('assignments', map, conflictAlgorithm: ConflictAlgorithm.replace);
+      // Use update-first pattern to avoid CASCADE DELETE on assignment_submissions
+      final updated = await db.update('assignments', map, where: 'id = ?', whereArgs: [map['id']]);
+      if (updated == 0) {
+        await db.insert('assignments', map);
+      }
     } catch (e) {
       throw CacheException('Failed to cache assignment detail: $e');
     }
@@ -108,7 +116,7 @@ mixin AssignmentCacheMixin on AssignmentLocalDataSourceBase {
               'file_type': file.fileType,
               'file_size': file.fileSize,
               'uploaded_at': file.uploadedAt.toIso8601String(),
-              'local_path': null,
+              'local_path': '',
               'cached_at': now,
             }, conflictAlgorithm: ConflictAlgorithm.ignore);
           }
@@ -137,7 +145,7 @@ mixin AssignmentCacheMixin on AssignmentLocalDataSourceBase {
           'file_type': file.fileType,
           'file_size': file.fileSize,
           'uploaded_at': file.uploadedAt.toIso8601String(),
-          'local_path': null,
+          'local_path': '',
           'cached_at': now,
         }, conflictAlgorithm: ConflictAlgorithm.ignore);
       }

@@ -16,7 +16,12 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
           final map = assessment.toMap();
           map['cached_at'] = DateTime.now().toIso8601String();
           map['needs_sync'] = 0;
-          await txn.insert('assessments', map, conflictAlgorithm: ConflictAlgorithm.replace);
+          // Use update-first pattern to avoid CASCADE DELETE on assessment_submissions
+          final assessmentId = map['id'] as String;
+          final updated = await txn.update('assessments', map, where: 'id = ?', whereArgs: [assessmentId]);
+          if (updated == 0) {
+            await txn.insert('assessments', map);
+          }
         }
       });
     } catch (e) {
@@ -32,7 +37,12 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
         final assessmentMap = assessment.toMap();
         assessmentMap['cached_at'] = DateTime.now().toIso8601String();
         assessmentMap['needs_sync'] = 0;
-        await txn.insert('assessments', assessmentMap, conflictAlgorithm: ConflictAlgorithm.replace);
+        // Use update-first pattern to avoid CASCADE DELETE on assessment_submissions
+        final assessmentId = assessmentMap['id'] as String;
+        final updated = await txn.update('assessments', assessmentMap, where: 'id = ?', whereArgs: [assessmentId]);
+        if (updated == 0) {
+          await txn.insert('assessments', assessmentMap);
+        }
 
         for (final question in questions) {
           final now = DateTime.now().toIso8601String();

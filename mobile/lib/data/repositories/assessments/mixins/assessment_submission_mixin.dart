@@ -18,23 +18,26 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
       try {
         final cached =
             await localDataSource.getCachedSubmissions(assessmentId);
-        return Right(cached);
-      } on CacheException {
-        // Not in local DB — fetch from server if reachable
-        try {
-          final result =
-              await remoteDataSource.getSubmissions(assessmentId: assessmentId);
-          await localDataSource.cacheSubmissions(assessmentId, result);
-          unawaited(validationService.validateAndSync('assessments'));
-          return Right(result);
-        } on NetworkException catch (e) {
-          return Left(NetworkFailure(e.message));
-        } on ServerException catch (e) {
-          return Left(ServerFailure(e.message));
+        // Only return cache if it has data; empty cache is treated as a miss
+        if (cached.isNotEmpty) {
+          return Right(cached);
         }
+      } on CacheException {
+        // Not in local DB — fall through to remote fetch
       }
-    } on CacheException catch (e) {
-      return Left(CacheFailure(e.message));
+
+      // Cache miss or empty cache — fetch from server if reachable
+      try {
+        final result =
+            await remoteDataSource.getSubmissions(assessmentId: assessmentId);
+        await localDataSource.cacheSubmissions(assessmentId, result);
+        unawaited(validationService.validateAndSync('assessments'));
+        return Right(result);
+      } on NetworkException catch (e) {
+        return Left(NetworkFailure(e.message));
+      } on ServerException catch (e) {
+        return Left(ServerFailure(e.message));
+      }
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

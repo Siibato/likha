@@ -91,6 +91,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   String? _currentClassId;
   bool _currentPublishedOnly = false;
   late StreamSubscription<String?> _refreshSub;
+  late StreamSubscription<String> _submissionDetailRefreshSub;
 
   AssignmentNotifier(
     this._createAssignment,
@@ -113,6 +114,12 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     _refreshSub = sl<DataEventBus>().onAssignmentsChanged.listen((classId) {
       if (_currentClassId != null && _currentClassId == classId) {
         loadAssignments(_currentClassId!, publishedOnly: _currentPublishedOnly, skipBackgroundRefresh: true);
+      }
+    });
+
+    _submissionDetailRefreshSub = sl<DataEventBus>().onSubmissionDetailChanged.listen((submissionId) {
+      if (state.currentSubmission?.id == submissionId) {
+        loadSubmissionDetail(submissionId);
       }
     });
   }
@@ -227,6 +234,25 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     );
   }
 
+  /// Silently re-fetches the assignment from local DB to pick up fresh submission
+  /// counts after cacheSubmissions() has written new rows to assignment_submissions.
+  Future<void> _refreshAssignmentCounts(String assignmentId) async {
+    final result = await _getAssignmentDetail(assignmentId);
+    result.fold(
+      (_) {}, // best-effort — silently ignore errors
+      (fresh) {
+        state = state.copyWith(
+          assignments: state.assignments
+              .map((a) => a.id == assignmentId ? fresh : a)
+              .toList(),
+          currentAssignment: state.currentAssignment?.id == assignmentId
+              ? fresh
+              : state.currentAssignment,
+        );
+      },
+    );
+  }
+
   // Teacher: Submissions
   Future<void> loadSubmissions(String assignmentId) async {
     state = state.copyWith(isLoading: true, clearError: true);
@@ -234,8 +260,11 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),
-      (submissions) =>
-          state = state.copyWith(isLoading: false, submissions: submissions),
+      (submissions) {
+        state = state.copyWith(isLoading: false, submissions: submissions);
+        // Background: refresh assignment counts now that submissions are cached
+        unawaited(_refreshAssignmentCounts(assignmentId));
+      },
     );
   }
 
@@ -342,13 +371,16 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   Future<List<int>?> downloadFile(String fileId) async {
     state = state.copyWith(isLoading: true, clearError: true);
     final result = await _downloadFile(fileId);
+    state = state.copyWith(isLoading: false);
     List<int>? fileBytes;
     result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(error: failure.message),
       (bytes) {
         fileBytes = bytes;
-        state = state.copyWith(isLoading: false);
+        // Reload submission detail to reflect updated localPath from DB (mirrors learningMaterialProvider.downloadFile)
+        if (state.currentSubmission != null) {
+          loadSubmissionDetail(state.currentSubmission!.id);
+        }
       },
     );
     return fileBytes;
@@ -365,6 +397,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   @override
   void dispose() {
     _refreshSub.cancel();
+    _submissionDetailRefreshSub.cancel();
     super.dispose();
   }
 }

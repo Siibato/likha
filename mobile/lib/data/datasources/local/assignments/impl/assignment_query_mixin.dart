@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/assignments/assignment_model.dart';
 import 'package:likha/data/models/assignments/assignment_submission_model.dart'
     show AssignmentSubmissionModel, SubmissionListItemModel;
 import 'package:likha/data/models/assignments/submission_file_model.dart';
+import 'package:path_provider/path_provider.dart';
 import '../assignment_local_datasource_base.dart';
 
 mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
@@ -28,11 +30,14 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
           final base = AssignmentModel.fromMap(row);
           // Compute dynamic submissionCount and gradedCount
           final countRow = await db.rawQuery(
-            'SELECT COUNT(*) as total, SUM(CASE WHEN status IN ("graded","returned") THEN 1 ELSE 0 END) as graded FROM assignment_submissions WHERE assignment_id = ? AND deleted_at IS NULL',
+            'SELECT COUNT(*) as total, SUM(CASE WHEN status IN (\'graded\',\'returned\') THEN 1 ELSE 0 END) as graded FROM assignment_submissions WHERE assignment_id = ? AND deleted_at IS NULL',
             [base.id],
           );
-          final submissionCount = countRow.first['total'] as int? ?? 0;
-          final gradedCount = countRow.first['graded'] as int? ?? 0;
+          final liveCount = countRow.first['total'] as int? ?? 0;
+          final liveGraded = countRow.first['graded'] as int? ?? 0;
+          // Prefer live count (from local rows); fall back to server-synced stored value when table is empty
+          final submissionCount = liveCount > 0 ? liveCount : base.submissionCount;
+          final gradedCount = liveGraded > 0 ? liveGraded : base.gradedCount;
 
           enriched.add(AssignmentModel(
             id: base.id,
@@ -69,11 +74,14 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
 
         // Compute dynamic submissionCount and gradedCount (E8: fixes always-0 from cache)
         final countRow = await db.rawQuery(
-          'SELECT COUNT(*) as total, SUM(CASE WHEN status IN ("graded","returned") THEN 1 ELSE 0 END) as graded FROM assignment_submissions WHERE assignment_id = ? AND deleted_at IS NULL',
+          'SELECT COUNT(*) as total, SUM(CASE WHEN status IN (\'graded\',\'returned\') THEN 1 ELSE 0 END) as graded FROM assignment_submissions WHERE assignment_id = ? AND deleted_at IS NULL',
           [base.id],
         );
-        final submissionCount = countRow.first['total'] as int? ?? 0;
-        final gradedCount = countRow.first['graded'] as int? ?? 0;
+        final liveCount = countRow.first['total'] as int? ?? 0;
+        final liveGraded = countRow.first['graded'] as int? ?? 0;
+        // Prefer live count (from local rows); fall back to server-synced stored value when table is empty
+        final submissionCount = liveCount > 0 ? liveCount : base.submissionCount;
+        final gradedCount = liveGraded > 0 ? liveGraded : base.gradedCount;
 
         enriched.add(AssignmentModel(
           id: base.id,
@@ -89,9 +97,9 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
           orderIndex: base.orderIndex,
           submissionCount: submissionCount,
           gradedCount: gradedCount,
-          submissionStatus: sub?.$2,
-          submissionId: sub?.$1,
-          score: sub?.$3,
+          submissionStatus: sub?.$2 ?? base.submissionStatus,
+          submissionId: sub?.$1 ?? base.submissionId,
+          score: sub?.$3 ?? base.score,
           createdAt: base.createdAt,
           updatedAt: base.updatedAt,
           cachedAt: base.cachedAt,
@@ -120,11 +128,14 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
 
       // Enrich with submission counts
       final countRow = await db.rawQuery(
-        'SELECT COUNT(*) as total, SUM(CASE WHEN status IN ("graded","returned") THEN 1 ELSE 0 END) as graded FROM assignment_submissions WHERE assignment_id = ? AND deleted_at IS NULL',
+        'SELECT COUNT(*) as total, SUM(CASE WHEN status IN (\'graded\',\'returned\') THEN 1 ELSE 0 END) as graded FROM assignment_submissions WHERE assignment_id = ? AND deleted_at IS NULL',
         [base.id],
       );
-      final submissionCount = countRow.first['total'] as int? ?? 0;
-      final gradedCount = countRow.first['graded'] as int? ?? 0;
+      final liveCount = countRow.first['total'] as int? ?? 0;
+      final liveGraded = countRow.first['graded'] as int? ?? 0;
+      // Prefer live count (from local rows); fall back to server-synced stored value when table is empty
+      final submissionCount = liveCount > 0 ? liveCount : base.submissionCount;
+      final gradedCount = liveGraded > 0 ? liveGraded : base.gradedCount;
 
       return AssignmentModel(
         id: base.id,
@@ -192,7 +203,9 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
     }
   }
 
-  /// NEW: Get cached submission files from SQLite
+  /// Get cached submission files from SQLite with auto-repair
+  /// If local_path is empty but file exists on disk, reconstructs and restores the path.
+  /// This ensures file cache state persists correctly after app restart.
   @override
   Future<List<SubmissionFileModel>> getCachedSubmissionFiles(String submissionId) async {
     try {
@@ -203,7 +216,35 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
         whereArgs: [submissionId],
         orderBy: 'uploaded_at ASC',
       );
-      return results.map((row) => SubmissionFileModel.fromMap(row)).toList();
+
+      final models = <SubmissionFileModel>[];
+      for (final row in results) {
+        final fileId = row['id'] as String;
+        final fileName = row['file_name'] as String?;
+        var localPath = row['local_path'] as String?;
+
+        // Auto-repair: if local_path is empty but file exists on disk, restore it
+        if ((localPath == null || localPath.isEmpty) && fileName != null) {
+          final expectedPath = await _getExpectedSubmissionFilePath(fileId, fileName);
+          if (expectedPath != null) {
+            final file = File(expectedPath);
+            if (await file.exists()) {
+              await db.update(
+                'submission_files',
+                {'local_path': expectedPath},
+                where: 'id = ?',
+                whereArgs: [fileId],
+              );
+              localPath = expectedPath;
+            }
+          }
+        }
+
+        final updatedRow = Map<String, dynamic>.from(row);
+        updatedRow['local_path'] = localPath;
+        models.add(SubmissionFileModel.fromMap(updatedRow));
+      }
+      return models;
     } catch (e) {
       throw CacheException('Failed to fetch submission files: $e');
     }
@@ -258,6 +299,25 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
       );
     } catch (e) {
       throw CacheException('Failed to get student submission: $e');
+    }
+  }
+
+  /// Reconstruct expected file path from fileId and fileName.
+  /// Uses naming convention: {nameWithoutExt}-{shortId8}.{ext}
+  /// Example: report.pdf with fileId cfa3d566-... → report-cfa3d566.pdf
+  /// Matches cacheFileBytes() naming in assignment_file_mixin.dart lines 186-190.
+  Future<String?> _getExpectedSubmissionFilePath(String fileId, String fileName) async {
+    try {
+      final appDirDoc = await getApplicationDocumentsDirectory();
+      final submissionFilesDir = Directory('${appDirDoc.path}/submission_files');
+      final shortId = fileId.substring(0, 8);
+      final dotIndex = fileName.lastIndexOf('.');
+      final localFileName = dotIndex > 0
+          ? '${fileName.substring(0, dotIndex)}-$shortId${fileName.substring(dotIndex)}'
+          : '$fileName-$shortId';
+      return '${submissionFilesDir.path}/$localFileName';
+    } catch (e) {
+      return null;
     }
   }
 }

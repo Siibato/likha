@@ -14,24 +14,28 @@ mixin AssignmentQueryMixin on AssignmentRepositoryBase {
   }) async {
     try {
       try {
-        // STEP 1: Get current student ID first
-        String? currentStudentId;
+        // STEP 1: Get current user ID and role to determine query type
+        String? currentUserId;
+        String? userRole;
         try {
-          currentStudentId = await storageService.getUserId();
-          print('📚 [AssignmentQueryMixin] getAssignments() - got currentStudentId: $currentStudentId');
+          currentUserId = await storageService.getUserId();
+          userRole = await storageService.getUserRole();
+          print('📚 [AssignmentQueryMixin] getAssignments() - got currentUserId: $currentUserId, userRole: $userRole');
         } catch (e) {
-          print('⚠️  [AssignmentQueryMixin] getAssignments() - could not get current student ID: $e');
+          print('⚠️  [AssignmentQueryMixin] getAssignments() - could not get user info: $e');
         }
 
-        // STEP 1a: Try cache with studentId for per-student enrichment (E2: populates submission_status/score)
+        // STEP 1a: Try cache with studentId only for students (per-student enrichment)
+        // Teachers use studentId=null to get aggregate counts (Path A)
+        final isStudent = userRole == 'student';
         final cachedAssignments = await localDataSource.getCachedAssignments(
           classId,
           publishedOnly: publishedOnly,
-          studentId: currentStudentId,
+          studentId: isStudent ? currentUserId : null,
         );
 
-        // STEP 1b: Assignments from cache are now pre-enriched with per-student data
-        print('📚 [AssignmentQueryMixin] getAssignments() - loading ${cachedAssignments.length} assignments (enriched with studentId=$currentStudentId)');
+        // STEP 1b: Assignments from cache (enriched with per-student data if user is a student)
+        print('📚 [AssignmentQueryMixin] getAssignments() - loading ${cachedAssignments.length} assignments (enriched with studentId=${isStudent ? currentUserId : 'null (teacher)'} )');
         final assignmentsWithSubmissions = <Assignment>[];
         for (final assignment in cachedAssignments) {
           try {

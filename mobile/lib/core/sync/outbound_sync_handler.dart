@@ -133,7 +133,7 @@ class OutboundSyncHandler {
     for (final result in response.results) {
       if (result.success) {
         final entry = createOps.firstWhere((e) => e.id == result.id);
-        final localId = entry.payload['local_id'] as String?;
+        final localId = entry.payload['id'] as String?;
         final serverId = result.serverId;
 
         if (localId != null && serverId != null && localId != serverId) {
@@ -349,8 +349,7 @@ class OutboundSyncHandler {
                 'submission_files',
                 {
                   'id': serverId,
-                  'is_local_only': 0,
-                  'local_path': null,
+                  'local_path': '',
                 },
                 where: 'id = ?',
                 whereArgs: [fileId],

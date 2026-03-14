@@ -1,10 +1,10 @@
-import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
+import 'package:likha/domain/assignments/entities/submission_file.dart';
 import 'package:likha/domain/assignments/usecases/create_submission.dart';
 import 'package:likha/domain/assignments/usecases/upload_file.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
@@ -17,7 +17,7 @@ import 'package:likha/presentation/pages/student/widgets/assignment_files_card.d
 import 'package:likha/presentation/pages/student/widgets/assignment_submit_button.dart';
 import 'package:likha/presentation/pages/student/widgets/assignment_submitted_banner.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:open_file/open_file.dart';
 
 class AssignmentDetailPage extends ConsumerStatefulWidget {
   final String assignmentId;
@@ -182,21 +182,34 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     }
   }
 
-  Future<void> _downloadFile(String fileId, String fileName) async {
-    final bytes =
-        await ref.read(assignmentProvider.notifier).downloadFile(fileId);
-    if (bytes == null || !mounted) return;
-
-    try {
-      final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/$fileName');
-      await file.writeAsBytes(bytes);
+  /// Open file with system default app
+  Future<void> _openFile(SubmissionFile file) async {
+    if (file.localPath == null || file.localPath!.isEmpty) {
       if (!mounted) return;
-
-      context.showSuccessSnackBar('File saved to ${file.path}');
+      context.showWarningSnackBar('File not cached. Downloading...', durationMs: 2000);
+      await _saveFile(file);
+      return;
+    }
+    try {
+      await OpenFile.open(file.localPath!);
     } catch (e) {
       if (!mounted) return;
-      context.showErrorSnackBar('Failed to save file: $e');
+      context.showErrorSnackBar('Error opening file: $e');
+    }
+  }
+
+  /// Download file via provider (datasource handles caching)
+  Future<void> _saveFile(SubmissionFile file) async {
+    if (mounted) {
+      context.showInfoSnackBar('Downloading ${file.fileName}...', durationMs: 3000);
+    }
+    await ref.read(assignmentProvider.notifier).downloadFile(file.id);
+    if (!mounted) return;
+    final providerState = ref.read(assignmentProvider);
+    if (providerState.error != null) {
+      context.showErrorSnackBar('Failed to download file', durationMs: 3000);
+    } else {
+      context.showSuccessSnackBar('✓ Downloaded: ${file.fileName}', durationMs: 3000);
     }
   }
 
@@ -590,11 +603,12 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                   ),
                 ),
                 trailing: IconButton(
-                  icon: const Icon(
-                    Icons.download_rounded,
-                    color: Color(0xFFFFBD59),
-                  ),
-                  onPressed: () => _downloadFile(file.id, file.fileName),
+                  icon: file.isCached
+                      ? const Icon(Icons.folder_open_rounded)
+                      : const Icon(Icons.download_rounded, color: Color(0xFFFFBD59)),
+                  onPressed: () => file.isCached
+                      ? _openFile(file)
+                      : _saveFile(file),
                 ),
               ),
             ),
