@@ -9,6 +9,7 @@ abstract class LearningMaterialLocalDataSource {
   Future<void> cacheMaterials(List<LearningMaterialModel> materials);
   Future<void> cacheMaterialDetail(LearningMaterialModel material);
   Future<void> cacheMaterialFiles(String materialId, List<MaterialFile> files);
+  Future<void> reconcileDeletedMaterials(String classId, List<String> activeIds);
   Future<void> cacheFile(String fileId, String fileName, List<int> bytes);
   Future<List<int>> getCachedFile(String fileId);
   Future<bool> isFileCached(String fileId);

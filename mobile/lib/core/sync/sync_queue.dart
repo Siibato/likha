@@ -35,6 +35,7 @@ enum SyncOperation {
   submit('submit'),
   grade('grade'),
   publish('publish'),
+  unpublish('unpublish'),
   upload('upload'),
   saveAnswers('save_answers'),
   releaseResults('release_results'),

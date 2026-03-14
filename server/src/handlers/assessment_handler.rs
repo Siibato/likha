@@ -108,6 +108,21 @@ pub async fn publish_assessment(
     }
 }
 
+pub async fn unpublish_assessment(
+    State(service): State<Arc<AssessmentService>>,
+    auth_user: AuthUser,
+    Path(assessment_id): Path<Uuid>,
+) -> impl IntoResponse {
+    if auth_user.role != "teacher" {
+        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    }
+
+    match service.unpublish_assessment(assessment_id, auth_user.user_id).await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
 pub async fn release_results(
     State(service): State<Arc<AssessmentService>>,
     auth_user: AuthUser,

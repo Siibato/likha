@@ -247,6 +247,39 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
   }
 
   @override
+  Future<void> markAssignmentUnpublishedLocally({required String assignmentId}) async {
+    try {
+      final db = await localDatabase.database;
+      final now = DateTime.now();
+      await db.transaction((txn) async {
+        await txn.update(
+          'assignments',
+          {
+            'is_published': 0,
+            'updated_at': now.toIso8601String(),
+            'cached_at': now.toIso8601String(),
+            'needs_sync': 1,
+          },
+          where: 'id = ?',
+          whereArgs: [assignmentId],
+        );
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assignment,
+          operation: SyncOperation.unpublish,
+          payload: {'id': assignmentId},
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 3,
+          createdAt: now,
+        ), txn: txn);
+      });
+    } catch (e) {
+      throw CacheException('Failed to mark assignment as unpublished locally: $e');
+    }
+  }
+
+  @override
   Future<void> softDeleteSubmissionFile(String fileId) async {
     try {
       final db = await localDatabase.database;

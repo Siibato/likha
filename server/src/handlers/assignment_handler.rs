@@ -133,6 +133,21 @@ pub async fn publish_assignment(
     }
 }
 
+pub async fn unpublish_assignment(
+    State(service): State<Arc<AssignmentService>>,
+    auth_user: AuthUser,
+    Path(id): Path<Uuid>,
+) -> impl IntoResponse {
+    if auth_user.role != "teacher" {
+        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    }
+
+    match service.unpublish_assignment(id, auth_user.user_id).await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
 pub async fn get_submissions(
     State(service): State<Arc<AssignmentService>>,
     auth_user: AuthUser,

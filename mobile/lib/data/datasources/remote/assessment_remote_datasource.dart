@@ -28,6 +28,8 @@ abstract class AssessmentRemoteDataSource {
 
   Future<AssessmentModel> publishAssessment({required String assessmentId});
 
+  Future<AssessmentModel> unpublishAssessment({required String assessmentId});
+
   Future<AssessmentModel> releaseResults({required String assessmentId});
 
   Future<void> reorderAllAssessments({
@@ -185,6 +187,19 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
     try {
       return await _dioClient.postTyped(
         ApiEndpoints.assessmentPublish(assessmentId),
+      );
+    } on DioException catch (e) {
+      throw _dioClient.handleError(e);
+    }
+  }
+
+  @override
+  Future<AssessmentModel> unpublishAssessment({
+    required String assessmentId,
+  }) async {
+    try {
+      return await _dioClient.postTyped(
+        ApiEndpoints.assessmentUnpublish(assessmentId),
       );
     } on DioException catch (e) {
       throw _dioClient.handleError(e);

@@ -14,6 +14,7 @@ import 'package:likha/domain/assignments/usecases/get_submission_detail.dart';
 import 'package:likha/domain/assignments/usecases/get_submissions.dart';
 import 'package:likha/domain/assignments/usecases/grade_submission.dart';
 import 'package:likha/domain/assignments/usecases/publish_assignment.dart';
+import 'package:likha/domain/assignments/usecases/unpublish_assignment.dart';
 import 'package:likha/domain/assignments/usecases/return_submission.dart';
 import 'package:likha/domain/assignments/usecases/submit_assignment.dart';
 import 'package:likha/domain/assignments/usecases/update_assignment.dart';
@@ -77,6 +78,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   final UpdateAssignment _updateAssignment;
   final DeleteAssignment _deleteAssignment;
   final PublishAssignment _publishAssignment;
+  final UnpublishAssignment _unpublishAssignment;
   final GetAssignmentSubmissions _getSubmissions;
   final GetAssignmentSubmissionDetail _getSubmissionDetail;
   final GradeSubmission _gradeSubmission;
@@ -100,6 +102,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     this._updateAssignment,
     this._deleteAssignment,
     this._publishAssignment,
+    this._unpublishAssignment,
     this._getSubmissions,
     this._getSubmissionDetail,
     this._gradeSubmission,
@@ -194,6 +197,21 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
         isLoading: false,
         currentAssignment: assignment,
         successMessage: 'Assignment published',
+      ),
+    );
+  }
+
+  Future<void> unpublishAssignment(String assignmentId) async {
+    state =
+        state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    final result = await _unpublishAssignment(assignmentId);
+    result.fold(
+      (failure) =>
+          state = state.copyWith(isLoading: false, error: failure.message),
+      (assignment) => state = state.copyWith(
+        isLoading: false,
+        currentAssignment: assignment,
+        successMessage: 'Assignment moved to draft',
       ),
     );
   }
@@ -411,6 +429,7 @@ final assignmentProvider =
     sl<UpdateAssignment>(),
     sl<DeleteAssignment>(),
     sl<PublishAssignment>(),
+    sl<UnpublishAssignment>(),
     sl<GetAssignmentSubmissions>(),
     sl<GetAssignmentSubmissionDetail>(),
     sl<GradeSubmission>(),

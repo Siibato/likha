@@ -291,13 +291,8 @@ impl super::AssessmentService {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
-        let submission_count = self.submission_repo.count_by_assessment_id(assessment_id).await?;
-        if submission_count > 0 {
-            return Err(AppError::BadRequest("Cannot delete assessment with existing submissions".to_string()));
-        }
-
-        self.assessment_repo.delete_assessment(assessment_id).await?;
-
+        self.submission_repo.soft_delete_by_assessment(assessment_id).await?;
+        self.assessment_repo.soft_delete(assessment_id).await?;
 
         Ok(())
     }
@@ -373,6 +368,55 @@ impl super::AssessmentService {
             submission_count,
             created_at: fmt_utc(published.created_at),
             updated_at: fmt_utc(published.updated_at),
+        })
+    }
+
+    pub async fn unpublish_assessment(
+        &self,
+        assessment_id: Uuid,
+        teacher_id: Uuid,
+    ) -> AppResult<AssessmentResponse> {
+        let assessment = self.assessment_repo.find_by_id(assessment_id).await?
+            .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
+
+        let _class = self.class_repo.find_by_id(assessment.class_id).await?
+            .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
+
+        if !self.class_repo.is_teacher_of_class(teacher_id, assessment.class_id).await? {
+            return Err(AppError::Forbidden("Access denied".to_string()));
+        }
+
+        if !assessment.is_published {
+            return Err(AppError::BadRequest("Assessment is not published".to_string()));
+        }
+
+        if assessment.results_released {
+            return Err(AppError::BadRequest("Cannot unpublish — results have already been released".to_string()));
+        }
+
+        let unpublished = self.assessment_repo.unpublish_assessment(assessment_id).await?;
+
+        let question_count = self.assessment_repo
+            .find_questions_by_assessment_id(assessment_id).await?.len();
+        let submission_count = self.submission_repo.count_by_assessment_id(assessment_id).await?;
+
+        Ok(AssessmentResponse {
+            id: unpublished.id,
+            class_id: unpublished.class_id,
+            title: unpublished.title,
+            description: unpublished.description,
+            time_limit_minutes: unpublished.time_limit_minutes,
+            open_at: fmt_utc(unpublished.open_at),
+            close_at: fmt_utc(unpublished.close_at),
+            show_results_immediately: unpublished.show_results_immediately,
+            results_released: unpublished.results_released,
+            is_published: unpublished.is_published,
+            order_index: unpublished.order_index,
+            total_points: unpublished.total_points,
+            question_count,
+            submission_count,
+            created_at: fmt_utc(unpublished.created_at),
+            updated_at: fmt_utc(unpublished.updated_at),
         })
     }
 

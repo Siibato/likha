@@ -36,6 +36,8 @@ abstract class AssignmentRepository {
 
   ResultFuture<Assignment> publishAssignment({required String assignmentId});
 
+  ResultFuture<Assignment> unpublishAssignment({required String assignmentId});
+
   ResultVoid reorderAllAssignments({
     required String classId,
     required List<String> assignmentIds,

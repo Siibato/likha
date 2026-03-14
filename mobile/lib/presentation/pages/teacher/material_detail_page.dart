@@ -92,14 +92,17 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
     final material = ref.read(learningMaterialProvider).currentMaterial;
     if (material == null || material.files.isEmpty) return;
 
-    int downloadedCount = 0;
-    final totalFiles = material.files.length;
+    final toDownload = material.files.where((f) => !f.isCached).toList();
+    if (toDownload.isEmpty) return;
 
-    for (final file in material.files) {
+    int downloadedCount = 0;
+    final total = toDownload.length;
+
+    for (final file in toDownload) {
       downloadedCount++;
 
       if (mounted) {
-        context.showInfoSnackBar('Downloading $downloadedCount of $totalFiles: ${file.fileName}', durationMs: 60000);
+        context.showInfoSnackBar('Downloading $downloadedCount of $total: ${file.fileName}', durationMs: 60000);
       }
 
       await _saveFile(file);
@@ -162,6 +165,10 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
     final material = state.currentMaterial;
     final user = ref.watch(authProvider).user;
     final isTeacher = user?.role == 'teacher' || user?.role == 'admin';
+
+    // Compute cache status
+    final allCached = material != null && material.files.isNotEmpty && material.files.every((f) => f.isCached);
+    final uncachedFiles = material != null ? material.files.where((f) => !f.isCached).toList() : <MaterialFile>[];
 
     ref.listen<LearningMaterialState>(learningMaterialProvider, (prev, next) {
       // Intercept delete success before showing snackbar
@@ -276,7 +283,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                           icon: const Icon(Icons.upload_file_rounded, size: 18),
                           label: const Text('Upload', style: TextStyle(fontWeight: FontWeight.w600)),
                         )
-                      else if (material.files.isNotEmpty)
+                      else if (material.files.isNotEmpty && !allCached)
                         ElevatedButton.icon(
                           onPressed: state.isLoading ? null : _downloadAllFiles,
                           style: ElevatedButton.styleFrom(
@@ -287,7 +294,12 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
                           icon: const Icon(Icons.download_rounded, size: 18),
-                          label: const Text('Download All', style: TextStyle(fontWeight: FontWeight.w600)),
+                          label: Text(
+                            uncachedFiles.length == material.files.length
+                                ? 'Download All'
+                                : 'Download ${uncachedFiles.length} remaining',
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
                         ),
                     ],
                   ),

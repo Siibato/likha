@@ -41,6 +41,16 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     );
   }
 
+  void _confirmUnpublish(Assignment assignment) {
+    AppDialogs.showDestructive(
+      context: context,
+      title: 'Move to Draft',
+      body: 'Move "${assignment.title}" back to draft? Students will no longer be able to access it.',
+      confirmLabel: 'Move to Draft',
+      onConfirm: () => ref.read(assignmentProvider.notifier).unpublishAssignment(widget.assignmentId),
+    );
+  }
+
   void _confirmDelete(Assignment assignment) {
     AppDialogs.showDestructive(
       context: context,
@@ -106,6 +116,9 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                   case 'publish':
                     _confirmPublish(assignment);
                     break;
+                  case 'unpublish':
+                    _confirmUnpublish(assignment);
+                    break;
                   case 'delete':
                     _confirmDelete(assignment);
                     break;
@@ -137,24 +150,34 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                       ],
                     ),
                   ),
-                if (!assignment.isPublished)
+                if (assignment.isPublished)
                   const PopupMenuItem(
-                    value: 'delete',
+                    value: 'unpublish',
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.delete_rounded,
-                          color: Color(0xFFEF5350),
-                          size: 20,
-                        ),
+                        Icon(Icons.unpublished_rounded, size: 20),
                         SizedBox(width: 12),
-                        Text(
-                          'Delete',
-                          style: TextStyle(color: Color(0xFFEF5350)),
-                        ),
+                        Text('Move to Draft'),
                       ],
                     ),
                   ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.delete_rounded,
+                        color: Color(0xFFEF5350),
+                        size: 20,
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        'Delete',
+                        style: TextStyle(color: Color(0xFFEF5350)),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
         ],

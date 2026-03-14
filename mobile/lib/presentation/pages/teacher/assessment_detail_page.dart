@@ -62,6 +62,16 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
     );
   }
 
+  void _confirmUnpublish(Assessment assessment) {
+    AppDialogs.showDestructive(
+      context: context,
+      title: 'Move to Draft',
+      body: 'Move "${assessment.title}" back to draft? Students will no longer be able to access it.',
+      confirmLabel: 'Move to Draft',
+      onConfirm: () => ref.read(assessmentProvider.notifier).unpublishAssessment(widget.assessmentId),
+    );
+  }
+
   void _confirmDelete(Assessment assessment) {
     final hasWarning = assessment.isPublished || assessment.submissionCount > 0;
     final warningBox = hasWarning
@@ -309,6 +319,9 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                   case 'release':
                     _confirmReleaseResults(assessment);
                     break;
+                  case 'unpublish':
+                    _confirmUnpublish(assessment);
+                    break;
                   case 'delete':
                     _confirmDelete(assessment);
                     break;
@@ -365,6 +378,17 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                         Icon(Icons.visibility_rounded, size: 20),
                         SizedBox(width: 12),
                         Text('Release Results'),
+                      ],
+                    ),
+                  ),
+                if (assessment.isPublished && !assessment.resultsReleased)
+                  const PopupMenuItem(
+                    value: 'unpublish',
+                    child: Row(
+                      children: [
+                        Icon(Icons.unpublished_rounded, size: 20),
+                        SizedBox(width: 12),
+                        Text('Move to Draft'),
                       ],
                     ),
                   ),

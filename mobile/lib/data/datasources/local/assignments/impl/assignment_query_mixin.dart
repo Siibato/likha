@@ -303,6 +303,22 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
     }
   }
 
+  /// Soft delete an assignment locally by setting deleted_at to current timestamp
+  @override
+  Future<void> deleteAssignmentLocal({required String assignmentId}) async {
+    try {
+      final db = await localDatabase.database;
+      await db.update(
+        'assignments',
+        {'deleted_at': DateTime.now().toIso8601String()},
+        where: 'id = ?',
+        whereArgs: [assignmentId],
+      );
+    } catch (e) {
+      throw CacheException('Failed to delete assignment locally: $e');
+    }
+  }
+
   /// Reconstruct expected file path from fileId and fileName.
   /// Uses naming convention: {nameWithoutExt}-{shortId8}.{ext}
   /// Example: report.pdf with fileId cfa3d566-... → report-cfa3d566.pdf

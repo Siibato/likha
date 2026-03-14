@@ -90,6 +90,16 @@ impl super::SyncPushService {
                     Err(e) => self.error_result(op, &e.to_string()),
                 }
             }
+            "unpublish" => {
+                let assessment_id = match self.parse_uuid_field(&op.payload, "id") {
+                    Ok(id) => id,
+                    Err(e) => return self.error_result(op, &e),
+                };
+                match self.assessment_service.unpublish_assessment(assessment_id, user_id).await {
+                    Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
+                    Err(e) => self.error_result(op, &e.to_string()),
+                }
+            }
             _ => self.error_result(op, &format!("Unknown operation: {}", op.operation)),
         }
     }

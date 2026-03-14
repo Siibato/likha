@@ -153,6 +153,23 @@ impl AssignmentRepository {
             .map_err(|e| AppError::InternalServerError(format!("Failed to publish assignment: {}", e)))
     }
 
+    pub async fn unpublish_assignment(&self, id: Uuid) -> AppResult<assignments_hw::Model> {
+        let mut assignment: assignments_hw::ActiveModel = assignments_hw::Entity::find_by_id(id)
+            .one(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
+            .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?
+            .into();
+
+        assignment.is_published = Set(false);
+        assignment.updated_at = Set(Utc::now().naive_utc());
+
+        assignment
+            .update(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to unpublish assignment: {}", e)))
+    }
+
     // ===== SUBMISSIONS =====
 
     pub async fn create_submission(

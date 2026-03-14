@@ -375,4 +375,24 @@ impl SubmissionRepository {
 
         Ok(())
     }
+
+    pub async fn soft_delete_by_assessment(&self, assessment_id: Uuid) -> AppResult<()> {
+        let now = Utc::now().naive_utc();
+        let assessment_id_str = assessment_id.to_string();
+        let now_str = now.to_string();
+
+        let query = format!(
+            "UPDATE assessment_submissions SET deleted_at = '{}', updated_at = '{}' WHERE assessment_id = '{}' AND deleted_at IS NULL",
+            now_str, now_str, assessment_id_str
+        );
+
+        let _result = self.db.execute(sea_orm::Statement::from_string(
+            sea_orm::DbBackend::Sqlite,
+            query,
+        ))
+        .await
+        .map_err(|e| AppError::InternalServerError(format!("Failed to delete submissions: {}", e)))?;
+
+        Ok(())
+    }
 }

@@ -150,6 +150,23 @@ impl AssessmentRepository {
             .map_err(|e| AppError::InternalServerError(format!("Failed to publish assessment: {}", e)))
     }
 
+    pub async fn unpublish_assessment(&self, id: Uuid) -> AppResult<assessments::Model> {
+        let mut assessment: assessments::ActiveModel = assessments::Entity::find_by_id(id)
+            .one(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
+            .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?
+            .into();
+
+        assessment.is_published = Set(false);
+        assessment.updated_at = Set(Utc::now().naive_utc());
+
+        assessment
+            .update(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to unpublish assessment: {}", e)))
+    }
+
     pub async fn release_results(&self, id: Uuid) -> AppResult<assessments::Model> {
         let mut assessment: assessments::ActiveModel = assessments::Entity::find_by_id(id)
             .one(&self.db)

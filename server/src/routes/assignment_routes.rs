@@ -43,6 +43,10 @@ pub fn routes(assignment_service: Arc<AssignmentService>) -> Router {
             post(assignment_handler::publish_assignment),
         )
         .route(
+            "/assignments/{id}/unpublish",
+            post(assignment_handler::unpublish_assignment),
+        )
+        .route(
             "/classes/{class_id}/assignments/reorder",
             post(assignment_handler::reorder_assignments),
         )

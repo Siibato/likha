@@ -342,4 +342,24 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
       throw CacheException('Failed to mark assessment as published locally: $e');
     }
   }
+
+  @override
+  Future<void> markAssessmentUnpublishedLocally({required String assessmentId}) async {
+    try {
+      final db = await localDatabase.database;
+      await db.update(
+        'assessments',
+        {
+          'is_published': 0,
+          'updated_at': DateTime.now().toIso8601String(),
+          'cached_at': DateTime.now().toIso8601String(),
+          'needs_sync': 1,
+        },
+        where: 'id = ?',
+        whereArgs: [assessmentId],
+      );
+    } catch (e) {
+      throw CacheException('Failed to mark assessment as unpublished locally: $e');
+    }
+  }
 }

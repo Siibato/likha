@@ -150,7 +150,8 @@ mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
         } on CacheException {
           await localDataSource.cacheMaterials(fresh);
 
-          // Fetch and cache file details for new materials with files
+          await localDataSource.reconcileDeletedMaterials(classId, fresh.map((m) => m.id).toList());
+
           for (final material in fresh) {
             if (material.fileCount > 0) {
               print('[BG_FETCH_MAT] 📄 Fetching files for new material: ${material.id}');
@@ -171,7 +172,8 @@ mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
         if (_materialsHaveChanged(cached, fresh)) {
           await localDataSource.cacheMaterials(fresh);
 
-          // Fetch and cache file details for updated materials with files
+          await localDataSource.reconcileDeletedMaterials(classId, fresh.map((m) => m.id).toList());
+
           for (final material in fresh) {
             if (material.fileCount > 0) {
               print('[BG_FETCH_MAT] 📄 Fetching files for updated material: ${material.id}');

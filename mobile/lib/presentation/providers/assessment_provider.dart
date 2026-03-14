@@ -17,6 +17,7 @@ import 'package:likha/domain/assessments/usecases/get_submission_detail.dart';
 import 'package:likha/domain/assessments/usecases/get_submissions.dart';
 import 'package:likha/domain/assessments/usecases/override_answer.dart';
 import 'package:likha/domain/assessments/usecases/publish_assessment.dart';
+import 'package:likha/domain/assessments/usecases/unpublish_assessment.dart';
 import 'package:likha/domain/assessments/usecases/release_results.dart';
 import 'package:likha/domain/assessments/usecases/save_answers.dart';
 import 'package:likha/domain/assessments/usecases/start_assessment.dart';
@@ -110,6 +111,7 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
   final GetAssessments _getAssessments;
   final GetAssessmentDetail _getAssessmentDetail;
   final PublishAssessment _publishAssessment;
+  final UnpublishAssessment _unpublishAssessment;
   final DeleteAssessment _deleteAssessment;
   final AddQuestions _addQuestions;
   final GetSubmissions _getSubmissions;
@@ -136,6 +138,7 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
     this._getAssessments,
     this._getAssessmentDetail,
     this._publishAssessment,
+    this._unpublishAssessment,
     this._deleteAssessment,
     this._addQuestions,
     this._getSubmissions,
@@ -258,6 +261,51 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
           currentAssessment: assessment,
           assessments: updatedList,
           successMessage: 'Assessment published',
+        );
+      },
+    );
+  }
+
+  Future<void> unpublishAssessment(String assessmentId) async {
+    state =
+        state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    final result = await _unpublishAssessment(assessmentId);
+    result.fold(
+      (failure) =>
+          state = state.copyWith(isLoading: false, error: failure.message),
+      (assessment) {
+        final updatedList = assessment.classId.isEmpty
+            ? state.assessments.map((a) {
+                if (a.id == assessmentId) {
+                  return Assessment(
+                    id: a.id,
+                    classId: a.classId,
+                    title: a.title,
+                    description: a.description,
+                    timeLimitMinutes: a.timeLimitMinutes,
+                    openAt: a.openAt,
+                    closeAt: a.closeAt,
+                    showResultsImmediately: a.showResultsImmediately,
+                    resultsReleased: a.resultsReleased,
+                    isPublished: false,
+                    orderIndex: a.orderIndex,
+                    totalPoints: a.totalPoints,
+                    questionCount: a.questionCount,
+                    submissionCount: a.submissionCount,
+                    createdAt: a.createdAt,
+                    updatedAt: DateTime.now(),
+                    needsSync: true,
+                    cachedAt: DateTime.now(),
+                  );
+                }
+                return a;
+              }).toList()
+            : state.assessments.map((a) => a.id == assessmentId ? assessment : a).toList();
+        state = state.copyWith(
+          isLoading: false,
+          currentAssessment: assessment,
+          assessments: updatedList,
+          successMessage: 'Assessment moved to draft',
         );
       },
     );
@@ -591,6 +639,7 @@ final assessmentProvider =
     sl<GetAssessments>(),
     sl<GetAssessmentDetail>(),
     sl<PublishAssessment>(),
+    sl<UnpublishAssessment>(),
     sl<DeleteAssessment>(),
     sl<AddQuestions>(),
     sl<GetSubmissions>(),

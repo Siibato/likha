@@ -48,6 +48,8 @@ abstract class AssignmentLocalDataSource {
   Future<void> cacheSubmissionFile(String submissionId, SubmissionFileModel file);
   Future<void> softDeleteSubmissionFile(String fileId);
   Future<void> markAssignmentPublishedLocally({required String assignmentId});
+  Future<void> markAssignmentUnpublishedLocally({required String assignmentId});
+  Future<void> deleteAssignmentLocal({required String assignmentId});
   Future<void> clearAllCache();
   Future<(String submissionId, String status, int? score)?> getStudentSubmissionForAssignment(
     String assignmentId,

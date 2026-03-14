@@ -93,5 +93,6 @@ abstract class AssessmentLocalDataSource {
     required bool isCorrect,
   });
   Future<void> markAssessmentPublishedLocally({required String assessmentId});
+  Future<void> markAssessmentUnpublishedLocally({required String assessmentId});
   Future<void> clearAllCache();
 }
