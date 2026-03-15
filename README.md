@@ -40,16 +40,51 @@ List available emulators:
 emulator -list-avds
 ```
 
-Start an emulator (replace `<avd_name>` with one from the list above):
+**Set up low-resource device emulators (for testing on constrained devices like school networks):**
 
 ```bash
-emulator -avd <avd_name>
+# Install Android 7 (2016)
+$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "system-images;android-24;google_apis;arm64-v8a"
+
+# Install Android 5 (2014)
+$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "system-images;android-21;google_apis;arm64-v8a"
+
+# Create Android 7 emulator (512MB RAM)
+$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd \
+  -n lowres_device \
+  -k "system-images;android-24;google_apis;arm64-v8a" \
+  -d "Nexus 5"
+
+# Create Android 5 extreme low-resource emulator (256MB RAM)
+$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd \
+  -n lowres_device_256 \
+  -k "system-images;android-21;google_apis;arm64-v8a" \
+  -d "Nexus 5"
+
+# Configure lowres_device (API 24): edit ~/.android/avd/lowres_device.avd/config.ini
+# Change: hw.ramSize=512, vm.heapSize=128, hw.gpu.enabled=no, runtime.network.speed=slow
+
+# Configure lowres_device_256 (API 21): edit ~/.android/avd/lowres_device_256.avd/config.ini
+# Change: hw.ramSize=256, vm.heapSize=64, hw.gpu.enabled=no, runtime.network.speed=slow
 ```
 
-Example:
+**Start an emulator:**
 
+Choose one of the three options below:
+
+**1. Modern phone (default - recommended for development):**
 ```bash
 emulator -avd Medium_Phone_API_36.1
+```
+
+**2. Low-resource device (Android 7.0, 512MB RAM):**
+```bash
+emulator -avd lowres_device -memory 512
+```
+
+**3. Extreme low-resource device (Android 5.0, 256MB RAM - for testing extreme constraints):**
+```bash
+emulator -avd lowres_device_256 -memory 256
 ```
 
 > **Note:** If the `emulator` command is not found, add the Android SDK to your PATH:

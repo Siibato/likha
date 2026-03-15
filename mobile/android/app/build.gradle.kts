@@ -66,3 +66,8 @@ if (gradle.startParameter.taskRequests.any { it.args.any { arg -> arg.contains("
 flutter {
     source = "../.."
 }
+
+// Override minSdk to support Android 5.0 (API 21)
+android.defaultConfig {
+    minSdk = flutter.minSdkVersion
+}
