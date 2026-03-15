@@ -7,14 +7,16 @@ pub struct AssignmentService {
     pub assignment_repo: AssignmentRepository,
     pub class_repo: ClassRepository,
     pub activity_log_repo: ActivityLogRepository,
+    pub file_storage_path: String,
 }
 
 impl AssignmentService {
-    pub fn new(db: DatabaseConnection) -> Self {
+    pub fn new(db: DatabaseConnection, file_storage_path: String) -> Self {
         Self {
             assignment_repo: AssignmentRepository::new(db.clone()),
             class_repo: ClassRepository::new(db.clone()),
             activity_log_repo: ActivityLogRepository::new(db),
+            file_storage_path,
         }
     }
 }

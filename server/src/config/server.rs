@@ -10,6 +10,7 @@ pub struct ServerConfig {
     pub materials_path: String,
     pub submissions_path: String,
     pub exports_path: String,
+    pub file_storage_path: String,
 }
 
 impl ServerConfig {
@@ -33,6 +34,8 @@ impl ServerConfig {
                 .unwrap_or_else(|_| "./storage/submissions".to_string()),
             exports_path: env::var("EXPORTS_PATH")
                 .unwrap_or_else(|_| "./storage/exports".to_string()),
+            file_storage_path: env::var("FILE_STORAGE_PATH")
+                .unwrap_or_else(|_| "./uploads".to_string()),
         }
     }
 }

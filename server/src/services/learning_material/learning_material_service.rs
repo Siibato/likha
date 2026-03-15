@@ -10,14 +10,16 @@ pub struct LearningMaterialService {
     pub material_repo: LearningMaterialRepository,
     pub class_repo: ClassRepository,
     pub activity_log_repo: ActivityLogRepository,
+    pub file_storage_path: String,
 }
 
 impl LearningMaterialService {
-    pub fn new(db: DatabaseConnection) -> Self {
+    pub fn new(db: DatabaseConnection, file_storage_path: String) -> Self {
         Self {
             material_repo: LearningMaterialRepository::new(db.clone()),
             class_repo: ClassRepository::new(db.clone()),
             activity_log_repo: ActivityLogRepository::new(db),
+            file_storage_path,
         }
     }
 }

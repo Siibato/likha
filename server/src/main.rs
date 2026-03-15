@@ -151,8 +151,8 @@ async fn main() {
     let class_service = Arc::new(ClassService::new(db.clone()));
 
     let assessment_service = Arc::new(AssessmentService::new(db.clone()));
-    let assignment_service = Arc::new(AssignmentService::new(db.clone()));
-    let material_service = Arc::new(LearningMaterialService::new(db.clone()));
+    let assignment_service = Arc::new(AssignmentService::new(db.clone(), config.file_storage_path.clone()));
+    let material_service = Arc::new(LearningMaterialService::new(db.clone(), config.file_storage_path.clone()));
 
     // Initialize new offline-first sync services
     let entitlement_repo = crate::db::repositories::entitlement_repository::EntitlementRepository::new(db.clone());

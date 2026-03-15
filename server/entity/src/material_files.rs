@@ -10,9 +10,10 @@ pub struct Model {
     pub file_name: String,
     pub file_type: String,
     pub file_size: i64,
-    #[serde(skip)]
-    pub file_data: Vec<u8>,
+    pub file_path: Option<String>,
+    pub file_hash: Option<String>,
     pub uploaded_at: chrono::NaiveDateTime,
+    pub deleted_at: Option<chrono::NaiveDateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

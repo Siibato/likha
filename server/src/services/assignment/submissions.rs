@@ -1,6 +1,8 @@
+use std::path::PathBuf;
 use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
 use crate::schema::assignment_schema::*;
+use crate::services::file_service;
 
 const DEFAULT_MAX_FILE_SIZE_MB: i32 = 10;
 
@@ -155,18 +157,59 @@ impl super::AssignmentService {
             )));
         }
 
-        let file = self
-            .assignment_repo
-            .save_file(submission_id, file_name, file_type, file_size, file_data)
-            .await?;
+        // Compute file hash for deduplication
+        let file_hash = file_service::compute_hash(&file_data);
 
-        Ok(FileMetadataResponse {
-            id: file.id,
-            file_name: file.file_name,
-            file_type: file.file_type,
-            file_size: file.file_size,
-            uploaded_at: file.uploaded_at.to_string(),
-        })
+        // Check if this file already exists
+        if let Ok(Some(existing_path)) = self.assignment_repo.find_active_file_path_by_hash(&file_hash).await {
+            // File already exists, reuse it
+            let file = self
+                .assignment_repo
+                .save_file(submission_id, file_name.clone(), file_type.clone(), file_size, existing_path, file_hash)
+                .await?;
+
+            return Ok(FileMetadataResponse {
+                id: file.id,
+                file_name: file.file_name,
+                file_type: file.file_type,
+                file_size: file.file_size,
+                uploaded_at: file.uploaded_at.to_string(),
+            });
+        }
+
+        // Generate filename and disk path
+        let file_id = Uuid::new_v4();
+        let disk_filename = file_service::generate_disk_filename(&file_name, file_id);
+        let mut disk_path = PathBuf::from(self.file_storage_path.clone());
+        disk_path.push("submission_files");
+        disk_path.push(&disk_filename);
+
+        // Write file to disk
+        if let Err(e) = file_service::write_file(&disk_path, &file_data).await {
+            return Err(AppError::InternalServerError(format!("Failed to write file to disk: {}", e)));
+        }
+
+        let file_path = disk_path.to_string_lossy().to_string();
+
+        // Save to database
+        match self
+            .assignment_repo
+            .save_file(submission_id, file_name.clone(), file_type.clone(), file_size, file_path, file_hash)
+            .await
+        {
+            Ok(file) => Ok(FileMetadataResponse {
+                id: file.id,
+                file_name: file.file_name,
+                file_type: file.file_type,
+                file_size: file.file_size,
+                uploaded_at: file.uploaded_at.to_string(),
+            }),
+            Err(e) => {
+                // DB insert failed, delete the file we just wrote
+                file_service::delete_file(&disk_path).await;
+                Err(e)
+            }
+        }
     }
 
     pub async fn delete_file(
@@ -196,7 +239,20 @@ impl super::AssignmentService {
             ));
         }
 
-        self.assignment_repo.delete_file(file_id).await
+        // Soft delete the DB row
+        self.assignment_repo.soft_delete_file(file_id).await?;
+
+        // Check if any other rows reference the same hash
+        if let (Some(hash), Some(path)) = (file.file_hash, file.file_path) {
+            if let Ok(count) = self.assignment_repo.count_active_by_hash(&hash, file_id).await {
+                if count == 0 {
+                    // No other references, delete physical file
+                    file_service::delete_file(&PathBuf::from(&path)).await;
+                }
+            }
+        }
+
+        Ok(())
     }
 
     pub async fn submit_assignment(
@@ -334,6 +390,14 @@ impl super::AssignmentService {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
-        Ok((file.file_name, file.file_type, file.file_data))
+        let file_path = file
+            .file_path
+            .ok_or_else(|| AppError::NotFound("File data not available".to_string()))?;
+
+        let file_bytes = file_service::read_file(&PathBuf::from(&file_path))
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to read file from disk: {}", e)))?;
+
+        Ok((file.file_name, file.file_type, file_bytes))
     }
 }

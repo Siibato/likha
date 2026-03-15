@@ -20,6 +20,7 @@ mod add_updated_at_to_assessment_submissions;
 mod m20260305_000001_schema_v2;
 mod m20260308_000001_add_order_index;
 mod m20260313_000001_schema_v3;
+mod m20260315_migrate_file_storage;
 
 pub struct Migrator;
 
@@ -47,6 +48,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260305_000001_schema_v2::Migration),
             Box::new(m20260308_000001_add_order_index::Migration),
             Box::new(m20260313_000001_schema_v3::Migration),
+            Box::new(m20260315_migrate_file_storage::Migration),
         ]
     }
 }
