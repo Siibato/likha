@@ -9,6 +9,8 @@ import 'package:likha/presentation/pages/student/widgets/assignment_card.dart';
 import 'package:likha/presentation/pages/student/widgets/empty_assignment_state.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
+import 'package:likha/presentation/pages/shared/widgets/skeletons/skeleton_pulse.dart';
+import 'package:likha/presentation/pages/shared/widgets/skeletons/assignment_card_skeleton.dart';
 
 class StudentAssignmentListPage extends ConsumerStatefulWidget {
   final String classId;
@@ -53,10 +55,12 @@ class _StudentAssignmentListPageState extends ConsumerState<StudentAssignmentLis
             ),
             Expanded(
               child: state.isLoading && state.assignments.isEmpty
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF2B2B2B),
-                        strokeWidth: 2.5,
+                  ? SkeletonPulse(
+                      child: ListView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(24),
+                        itemCount: 6,
+                        itemBuilder: (_, __) => const AssignmentCardSkeleton(),
                       ),
                     )
                   : state.assignments.isEmpty
