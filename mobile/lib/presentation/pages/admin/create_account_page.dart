@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/presentation/pages/admin/widgets/styled_text_field.dart';
 import 'package:likha/presentation/pages/admin/widgets/styled_dropdown.dart';
 import 'package:likha/presentation/pages/admin/widgets/styled_button.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
 
 class CreateAccountPage extends ConsumerStatefulWidget {
@@ -19,6 +20,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
   final _fullNameController = TextEditingController();
   String _selectedRole = 'student';
   bool _isSubmitting = false;
+  String? _formError;
 
   @override
   void dispose() {
@@ -42,10 +44,11 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
       if (mounted) {
         final state = ref.read(adminProvider);
         if (state.successMessage != null) {
-          context.showSuccessSnackBar(state.successMessage!);
+          ref.read(adminProvider.notifier).clearMessages();
           Navigator.pop(context);
         } else if (state.error != null) {
-          context.showErrorSnackBar(state.error!);
+          ref.read(adminProvider.notifier).clearMessages();
+          setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
         }
       }
     } finally {
@@ -87,6 +90,11 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 8),
+              FormMessage(
+                message: _formError,
+                severity: MessageSeverity.error,
+              ),
+              const SizedBox(height: 16),
               StyledTextField(
                 controller: _usernameController,
                 label: 'Username',
@@ -101,6 +109,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                   }
                   return null;
                 },
+                onChanged: (_) => setState(() => _formError = null),
               ),
               const SizedBox(height: 16),
               StyledTextField(
@@ -114,6 +123,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                   }
                   return null;
                 },
+                onChanged: (_) => setState(() => _formError = null),
               ),
               const SizedBox(height: 16),
               StyledDropdown(
@@ -128,7 +138,10 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                 ],
                 onChanged: (value) {
                   if (value != null) {
-                    setState(() => _selectedRole = value);
+                    setState(() {
+                      _selectedRole = value;
+                      _formError = null;
+                    });
                   }
                 },
               ),

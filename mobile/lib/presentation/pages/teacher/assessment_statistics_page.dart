@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/presentation/pages/teacher/widgets/class_performance_card.dart';
 import 'package:likha/presentation/pages/teacher/widgets/question_analysis_card.dart';
 import 'package:likha/presentation/pages/teacher/widgets/score_distribution_card.dart';
@@ -19,6 +18,7 @@ class AssessmentStatisticsPage extends ConsumerStatefulWidget {
 
 class _AssessmentStatisticsPageState
     extends ConsumerState<AssessmentStatisticsPage> {
+
   @override
   void initState() {
     super.initState();
@@ -34,7 +34,6 @@ class _AssessmentStatisticsPageState
 
     ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
       if (next.error != null && prev?.error != next.error) {
-        context.showErrorSnackBar(next.error!);
         ref.read(assessmentProvider.notifier).clearMessages();
       }
     });

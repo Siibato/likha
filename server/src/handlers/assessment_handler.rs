@@ -108,6 +108,21 @@ pub async fn publish_assessment(
     }
 }
 
+pub async fn unpublish_assessment(
+    State(service): State<Arc<AssessmentService>>,
+    auth_user: AuthUser,
+    Path(assessment_id): Path<Uuid>,
+) -> impl IntoResponse {
+    if auth_user.role != "teacher" {
+        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    }
+
+    match service.unpublish_assessment(assessment_id, auth_user.user_id).await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
 pub async fn release_results(
     State(service): State<Arc<AssessmentService>>,
     auth_user: AuthUser,
@@ -266,7 +281,7 @@ pub async fn start_assessment(
         return AppError::Forbidden("Student access required".to_string()).into_response();
     }
 
-    match service.start_assessment(assessment_id, auth_user.user_id).await {
+    match service.start_assessment(assessment_id, auth_user.user_id, None).await {
         Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
         Err(e) => e.into_response(),
     }
@@ -303,8 +318,8 @@ pub async fn submit_assessment(
 
     match service.submit_assessment(submission_id, auth_user.user_id).await {
         Ok(response) => {
-            println!("📤 [HANDLER] submit_assessment() SUCCESS - returning response: is_submitted={}, submitted_at={:?}, auto_score={}, final_score={}",
-                response.is_submitted, response.submitted_at, response.auto_score, response.final_score);
+            println!("📤 [HANDLER] submit_assessment() SUCCESS - returning response: submitted_at={:?}, total_points={}",
+                response.submitted_at, response.total_points);
             success_response(response, StatusCode::OK).into_response()
         },
         Err(e) => {

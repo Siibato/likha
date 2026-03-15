@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/presentation/pages/teacher/assignment_submissions_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assignment_info_card.dart';
@@ -9,6 +9,7 @@ import 'package:likha/presentation/pages/teacher/widgets/assignment_status_card.
 import 'package:likha/presentation/pages/teacher/widgets/assignment_submissions_card.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 
 class AssignmentDetailPage extends ConsumerStatefulWidget {
   final String assignmentId;
@@ -21,6 +22,8 @@ class AssignmentDetailPage extends ConsumerStatefulWidget {
 }
 
 class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
+  String? _formError;
+
   @override
   void initState() {
     super.initState();
@@ -38,6 +41,16 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       body: 'Publish "${assignment.title}"? Students will be able to see and submit to this assignment.',
       confirmLabel: 'Publish',
       onConfirm: () => ref.read(assignmentProvider.notifier).publishAssignment(widget.assignmentId),
+    );
+  }
+
+  void _confirmUnpublish(Assignment assignment) {
+    AppDialogs.showDestructive(
+      context: context,
+      title: 'Move to Draft',
+      body: 'Move "${assignment.title}" back to draft? Students will no longer be able to access it.',
+      confirmLabel: 'Move to Draft',
+      onConfirm: () => ref.read(assignmentProvider.notifier).unpublishAssignment(widget.assignmentId),
     );
   }
 
@@ -59,14 +72,14 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     ref.listen<AssignmentState>(assignmentProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
-        context.showSuccessSnackBar(next.successMessage!);
+        setState(() => _formError = null);
         ref.read(assignmentProvider.notifier).clearMessages();
         if (next.successMessage == 'Assignment deleted') {
           Navigator.pop(context, true);
         }
       }
       if (next.error != null && prev?.error != next.error) {
-        context.showErrorSnackBar(next.error!);
+        setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
         ref.read(assignmentProvider.notifier).clearMessages();
       }
     });
@@ -106,6 +119,9 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                   case 'publish':
                     _confirmPublish(assignment);
                     break;
+                  case 'unpublish':
+                    _confirmUnpublish(assignment);
+                    break;
                   case 'delete':
                     _confirmDelete(assignment);
                     break;
@@ -137,24 +153,34 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                       ],
                     ),
                   ),
-                if (!assignment.isPublished)
+                if (assignment.isPublished)
                   const PopupMenuItem(
-                    value: 'delete',
+                    value: 'unpublish',
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.delete_rounded,
-                          color: Color(0xFFEF5350),
-                          size: 20,
-                        ),
+                        Icon(Icons.unpublished_rounded, size: 20),
                         SizedBox(width: 12),
-                        Text(
-                          'Delete',
-                          style: TextStyle(color: Color(0xFFEF5350)),
-                        ),
+                        Text('Move to Draft'),
                       ],
                     ),
                   ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.delete_rounded,
+                        color: Color(0xFFEF5350),
+                        size: 20,
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        'Delete',
+                        style: TextStyle(color: Color(0xFFEF5350)),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
         ],
@@ -187,6 +213,11 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        FormMessage(
+                          message: _formError,
+                          severity: MessageSeverity.error,
+                        ),
+                        if (_formError != null) const SizedBox(height: 12),
                         AssignmentStatusCard(
                           isPublished: assignment.isPublished,
                           dueAt: assignment.dueAt,

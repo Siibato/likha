@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/data/models/learning_materials/material_file_model.dart';
+import 'package:path_provider/path_provider.dart';
 import '../learning_material_local_datasource_base.dart';
 
 mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
@@ -15,7 +17,7 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
         whereArgs: [classId],
         orderBy: 'order_index ASC',
       );
-      if (results.isEmpty) throw CacheException('No cached materials for class $classId');
+      if (results.isEmpty) return [];
 
       final materials = <LearningMaterialModel>[];
 
@@ -23,10 +25,11 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
       for (final result in results) {
         final materialId = result['id'] as String;
         final countResult = await db.rawQuery(
-          'SELECT COUNT(*) as count FROM material_files WHERE material_id = ? AND deleted_at IS NULL',
+          'SELECT COUNT(*) as count FROM material_files WHERE material_id = ?',
           [materialId],
         );
         final actualCount = countResult.first['count'] as int? ?? 0;
+        print('[GET_CACHED_MATERIALS] materialId=$materialId, fileCount=$actualCount');
 
         materials.add(LearningMaterialModel(
           id: materialId,
@@ -38,6 +41,9 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
           fileCount: actualCount,
           createdAt: DateTime.parse(result['created_at'] as String),
           updatedAt: DateTime.parse(result['updated_at'] as String),
+          cachedAt: result['cached_at'] != null ? DateTime.parse(result['cached_at'] as String) : null,
+          needsSync: (result['needs_sync'] as int?) == 1,
+          deletedAt: result['deleted_at'] != null ? DateTime.parse(result['deleted_at'] as String) : null,
         ));
       }
 
@@ -62,9 +68,8 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
 
       final r = results.first;
 
-      // Compute actual file count from the material_files table
       final countResult = await db.rawQuery(
-        'SELECT COUNT(*) as count FROM material_files WHERE material_id = ? AND deleted_at IS NULL',
+        'SELECT COUNT(*) as count FROM material_files WHERE material_id = ?',
         [materialId],
       );
       final actualCount = countResult.first['count'] as int? ?? 0;
@@ -79,6 +84,9 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
         fileCount: actualCount,
         createdAt: DateTime.parse(r['created_at'] as String),
         updatedAt: DateTime.parse(r['updated_at'] as String),
+        cachedAt: r['cached_at'] != null ? DateTime.parse(r['cached_at'] as String) : null,
+        needsSync: (r['needs_sync'] as int?) == 1,
+        deletedAt: r['deleted_at'] != null ? DateTime.parse(r['deleted_at'] as String) : null,
       );
     } catch (e) {
       if (e is CacheException) rethrow;
@@ -86,14 +94,13 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
     }
   }
 
-  /// NEW: Get cached material files from SQLite
   @override
   Future<List<MaterialFileModel>> getCachedMaterialFiles(String materialId) async {
     try {
       final db = await localDatabase.database;
       final results = await db.query(
         'material_files',
-        where: 'material_id = ? AND deleted_at IS NULL',
+        where: 'material_id = ?',
         whereArgs: [materialId],
         orderBy: 'uploaded_at ASC',
       );
@@ -107,14 +114,64 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
         debugPrint('[DB_LOAD] File $i: ${row['file_name']}');
         debugPrint('[DB_LOAD]   - id: ${row['id']}');
         debugPrint('[DB_LOAD]   - user_save_path: ${row['user_save_path']}');
-        debugPrint('[DB_LOAD]   - is_cached: ${row['is_cached']}');
         debugPrint('[DB_LOAD]   - local_path: ${row['local_path']}');
       }
       debugPrint('═══════════════════════════════════════════════════════════');
 
-      return results.map((row) => MaterialFileModel.fromMap(row)).toList();
+      // Build models with filesystem fallback + auto-repair
+      final models = <MaterialFileModel>[];
+      for (final row in results) {
+        final fileId = row['id'] as String;
+        final fileName = row['file_name'] as String?;
+        var localPath = row['local_path'] as String?;
+
+        // If local_path is empty but file exists on disk, restore it
+        if ((localPath == null || localPath.isEmpty) && fileName != null) {
+          final expectedPath = await _getExpectedFilePathForQuery(fileId, fileName);
+          if (expectedPath != null) {
+            final file = File(expectedPath);
+            if (await file.exists()) {
+              debugPrint('[GET_CACHED_FILES] 🔄 Found file on disk for $fileId, restoring DB path');
+              // Update DB with the found path
+              await db.update(
+                'material_files',
+                {'local_path': expectedPath},
+                where: 'id = ?',
+                whereArgs: [fileId],
+              );
+              localPath = expectedPath;
+            }
+          }
+        }
+
+        // Build the model with potentially restored local_path
+        final updatedRow = Map<String, dynamic>.from(row);
+        updatedRow['local_path'] = localPath;
+        models.add(MaterialFileModel.fromMap(updatedRow));
+      }
+
+      return models;
     } catch (e) {
       throw CacheException('Failed to fetch material files: $e');
+    }
+  }
+
+  /// Helper to compute expected file path using the short-ID naming convention
+  /// Format: {nameWithoutExt}-{shortId}.{ext}
+  Future<String?> _getExpectedFilePathForQuery(String fileId, String fileName) async {
+    try {
+      final appDirDoc = await getApplicationDocumentsDirectory();
+      final materialFilesDir = Directory('${appDirDoc.path}/material_files');
+
+      final shortId = fileId.substring(0, 8);
+      final dotIndex = fileName.lastIndexOf('.');
+      final localFileName = dotIndex > 0
+          ? '${fileName.substring(0, dotIndex)}-$shortId${fileName.substring(dotIndex)}'
+          : '$fileName-$shortId';
+      return '${materialFilesDir.path}/$localFileName';
+    } catch (e) {
+      debugPrint('[GET_EXPECTED_PATH_QUERY] Error: $e');
+      return null;
     }
   }
 }

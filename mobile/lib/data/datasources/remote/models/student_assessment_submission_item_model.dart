@@ -8,9 +8,7 @@ class StudentAssessmentSubmissionItemModel {
   final String studentUsername;
   final DateTime startedAt;
   final DateTime? submittedAt;
-  final bool isSubmitted;
-  final double autoScore;
-  final double finalScore;
+  final int totalPoints;
 
   const StudentAssessmentSubmissionItemModel({
     required this.assessmentId,
@@ -20,9 +18,7 @@ class StudentAssessmentSubmissionItemModel {
     required this.studentUsername,
     required this.startedAt,
     required this.submittedAt,
-    required this.isSubmitted,
-    required this.autoScore,
-    required this.finalScore,
+    required this.totalPoints,
   });
 
   factory StudentAssessmentSubmissionItemModel.fromMap(Map<String, dynamic> map) {
@@ -34,23 +30,23 @@ class StudentAssessmentSubmissionItemModel {
       studentUsername: map['student_username'] as String,
       startedAt: DateTime.parse(map['started_at'] as String),
       submittedAt: map['submitted_at'] != null ? DateTime.parse(map['submitted_at'] as String) : null,
-      isSubmitted: map['is_submitted'] as bool,
-      autoScore: (map['auto_score'] as num).toDouble(),
-      finalScore: (map['final_score'] as num).toDouble(),
+      totalPoints: map['total_points'] as int? ?? 0,
     );
   }
 
   SubmissionSummaryModel toSubmissionSummaryModel() {
     return SubmissionSummaryModel(
       id: id,
+      assessmentId: assessmentId,
       studentId: studentId,
       studentName: studentName,
       studentUsername: studentUsername,
       startedAt: startedAt,
       submittedAt: submittedAt,
-      isSubmitted: isSubmitted,
-      autoScore: autoScore,
-      finalScore: finalScore,
+      autoScore: 0.0,
+      finalScore: 0.0,
+      totalPoints: totalPoints,
+      isSubmitted: submittedAt != null,
     );
   }
 }

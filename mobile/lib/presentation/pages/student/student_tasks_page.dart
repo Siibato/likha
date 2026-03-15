@@ -5,6 +5,8 @@ import 'package:likha/presentation/pages/student/assignment_detail_page.dart';
 import 'package:likha/presentation/pages/student/assessment_detail_page.dart';
 import 'package:likha/presentation/pages/student/widgets/task_card.dart';
 import 'package:likha/presentation/providers/student_tasks_provider.dart';
+import 'package:likha/presentation/pages/shared/widgets/skeletons/skeleton_pulse.dart';
+import 'package:likha/presentation/pages/shared/widgets/skeletons/task_card_skeleton.dart';
 
 class StudentTasksPage extends ConsumerStatefulWidget {
   const StudentTasksPage({super.key});
@@ -67,10 +69,12 @@ class _StudentTasksPageState extends ConsumerState<StudentTasksPage> {
           const ClassSectionHeader(title: 'Tasks'),
           Expanded(
             child: taskState.isLoading && taskState.tasks.isEmpty
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      color: Color(0xFF2B2B2B),
-                      strokeWidth: 2.5,
+                ? SkeletonPulse(
+                    child: ListView.builder(
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(24),
+                      itemCount: 8,
+                      itemBuilder: (_, __) => const TaskCardSkeleton(),
                     ),
                   )
                 : taskState.tasks.isEmpty

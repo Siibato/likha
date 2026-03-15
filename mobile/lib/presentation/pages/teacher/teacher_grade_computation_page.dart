@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
@@ -26,6 +26,7 @@ class _TeacherGradeComputationPageState
     extends ConsumerState<TeacherGradeComputationPage> {
   late TextEditingController _assignmentWeightController;
   late TextEditingController _assessmentWeightController;
+  String? _formError;
 
   @override
   void initState() {
@@ -63,15 +64,14 @@ class _TeacherGradeComputationPageState
     final assessmentWeight = int.tryParse(_assessmentWeightController.text) ?? 50;
 
     if (assignmentWeight + assessmentWeight != 100) {
-      context.showErrorSnackBar('Weights must sum to 100%');
+      setState(() => _formError = 'Weights must sum to 100%');
       return;
     }
 
+    setState(() => _formError = null);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('assignment_weight_${widget.classId}', assignmentWeight);
     await prefs.setInt('assessment_weight_${widget.classId}', assessmentWeight);
-
-    context.showSuccessSnackBar('Weights saved');
   }
 
   @override
@@ -122,6 +122,11 @@ class _TeacherGradeComputationPageState
                                 ),
                               ),
                               const SizedBox(height: 16),
+                              FormMessage(
+                                message: _formError,
+                                severity: MessageSeverity.error,
+                              ),
+                              const SizedBox(height: 12),
                               Row(
                                 children: [
                                   Expanded(

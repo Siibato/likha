@@ -10,7 +10,10 @@ class UserModel extends User {
     required super.isActive,
     super.activatedAt,
     required super.createdAt,
+    super.updatedAt,
     super.deletedAt,
+    super.cachedAt,
+    super.needsSync = false,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +35,9 @@ class UserModel extends User {
       deletedAt: json['deleted_at'] != null
           ? DateTime.parse(json['deleted_at'] as String)
           : null,
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
+          : null,
     );
   }
 
@@ -47,7 +53,7 @@ class UserModel extends User {
       username: map['username'] as String,
       fullName: map['full_name'] as String,
       role: map['role'] as String,
-      accountStatus: accountStatus ?? 'active',
+      accountStatus: accountStatus ?? 'pending_activation',
       isActive: isActive,
       activatedAt: map['activated_at'] != null
           ? DateTime.parse(map['activated_at'] as String)
@@ -56,6 +62,13 @@ class UserModel extends User {
       deletedAt: map['deleted_at'] != null
           ? DateTime.parse(map['deleted_at'] as String)
           : null,
+      updatedAt: map['updated_at'] != null
+          ? DateTime.parse(map['updated_at'] as String)
+          : null,
+      cachedAt: map['cached_at'] != null
+          ? DateTime.parse(map['cached_at'] as String)
+          : null,
+      needsSync: (map['needs_sync'] as int?) == 1,
     );
   }
 
@@ -80,8 +93,10 @@ class UserModel extends User {
       'account_status': accountStatus,
       'activated_at': activatedAt?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
-      'updated_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String() ?? createdAt.toIso8601String(),
       'deleted_at': deletedAt?.toIso8601String(),
+      'cached_at': cachedAt?.toIso8601String(),
+      'needs_sync': needsSync ? 1 : 0,
     };
   }
 
@@ -95,6 +110,9 @@ class UserModel extends User {
     DateTime? activatedAt,
     DateTime? createdAt,
     DateTime? deletedAt,
+    DateTime? updatedAt,
+    DateTime? cachedAt,
+    bool? needsSync,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -106,6 +124,9 @@ class UserModel extends User {
       activatedAt: activatedAt ?? this.activatedAt,
       createdAt: createdAt ?? this.createdAt,
       deletedAt: deletedAt ?? this.deletedAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      cachedAt: cachedAt ?? this.cachedAt,
+      needsSync: needsSync ?? this.needsSync,
     );
   }
 }

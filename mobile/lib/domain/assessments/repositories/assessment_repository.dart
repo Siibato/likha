@@ -36,6 +36,8 @@ abstract class AssessmentRepository {
 
   ResultFuture<Assessment> publishAssessment({required String assessmentId});
 
+  ResultFuture<Assessment> unpublishAssessment({required String assessmentId});
+
   ResultFuture<Assessment> releaseResults({required String assessmentId});
 
   ResultVoid reorderAllAssessments({

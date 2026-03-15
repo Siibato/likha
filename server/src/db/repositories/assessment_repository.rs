@@ -3,8 +3,8 @@ use sea_orm::*;
 use uuid::Uuid;
 
 use ::entity::{
-    assessment_questions, assessments, enumeration_item_answers, enumeration_items,
-    question_choices, question_correct_answers,
+    answer_key_acceptable_answers, answer_keys, assessment_questions, assessments,
+    question_choices, submission_answer_items,
 };
 use crate::utils::{AppError, AppResult};
 
@@ -148,6 +148,23 @@ impl AssessmentRepository {
             .update(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Failed to publish assessment: {}", e)))
+    }
+
+    pub async fn unpublish_assessment(&self, id: Uuid) -> AppResult<assessments::Model> {
+        let mut assessment: assessments::ActiveModel = assessments::Entity::find_by_id(id)
+            .one(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
+            .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?
+            .into();
+
+        assessment.is_published = Set(false);
+        assessment.updated_at = Set(Utc::now().naive_utc());
+
+        assessment
+            .update(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to unpublish assessment: {}", e)))
     }
 
     pub async fn release_results(&self, id: Uuid) -> AppResult<assessments::Model> {
@@ -332,10 +349,33 @@ impl AssessmentRepository {
         &self,
         question_id: Uuid,
         answer_text: String,
-    ) -> AppResult<question_correct_answers::Model> {
-        let answer = question_correct_answers::ActiveModel {
+    ) -> AppResult<answer_key_acceptable_answers::Model> {
+        // First, create or get the answer key for this question
+        let answer_key = answer_keys::Entity::find()
+            .filter(answer_keys::Column::QuestionId.eq(question_id))
+            .one(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        let answer_key_id = if let Some(key) = answer_key {
+            key.id
+        } else {
+            // Create new answer key if it doesn't exist
+            let new_key = answer_keys::ActiveModel {
+                id: Set(Uuid::new_v4()),
+                question_id: Set(question_id),
+            };
+            let inserted = new_key
+                .insert(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Failed to create answer key: {}", e)))?;
+            inserted.id
+        };
+
+        // Now add the acceptable answer
+        let answer = answer_key_acceptable_answers::ActiveModel {
             id: Set(Uuid::new_v4()),
-            question_id: Set(question_id),
+            answer_key_id: Set(answer_key_id),
             answer_text: Set(answer_text.trim().to_lowercase()),
         };
 
@@ -348,88 +388,40 @@ impl AssessmentRepository {
     pub async fn find_correct_answers_by_question_id(
         &self,
         question_id: Uuid,
-    ) -> AppResult<Vec<question_correct_answers::Model>> {
-        question_correct_answers::Entity::find()
-            .filter(question_correct_answers::Column::QuestionId.eq(question_id))
-            .all(&self.db)
+    ) -> AppResult<Vec<answer_key_acceptable_answers::Model>> {
+        // Find the answer key for this question
+        let answer_key = answer_keys::Entity::find()
+            .filter(answer_keys::Column::QuestionId.eq(question_id))
+            .one(&self.db)
             .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        if let Some(key) = answer_key {
+            answer_key_acceptable_answers::Entity::find()
+                .filter(answer_key_acceptable_answers::Column::AnswerKeyId.eq(key.id))
+                .all(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+        } else {
+            Ok(vec![])
+        }
     }
 
     pub async fn delete_correct_answers_by_question_id(&self, question_id: Uuid) -> AppResult<()> {
-        question_correct_answers::Entity::delete_many()
-            .filter(question_correct_answers::Column::QuestionId.eq(question_id))
-            .exec(&self.db)
+        // Find and delete the answer key (which will cascade to acceptable answers)
+        let answer_key = answer_keys::Entity::find()
+            .filter(answer_keys::Column::QuestionId.eq(question_id))
+            .one(&self.db)
             .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to delete correct answers: {}", e)))?;
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        if let Some(key) = answer_key {
+            answer_keys::Entity::delete_by_id(key.id)
+                .exec(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Failed to delete answer key: {}", e)))?;
+        }
         Ok(())
-    }
-
-    // ===== ENUMERATION ITEMS =====
-
-    pub async fn add_enumeration_item(
-        &self,
-        question_id: Uuid,
-        order_index: i32,
-    ) -> AppResult<enumeration_items::Model> {
-        let item = enumeration_items::ActiveModel {
-            id: Set(Uuid::new_v4()),
-            question_id: Set(question_id),
-            order_index: Set(order_index),
-        };
-
-        item.insert(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to add enumeration item: {}", e)))
-    }
-
-    pub async fn find_enumeration_items_by_question_id(
-        &self,
-        question_id: Uuid,
-    ) -> AppResult<Vec<enumeration_items::Model>> {
-        enumeration_items::Entity::find()
-            .filter(enumeration_items::Column::QuestionId.eq(question_id))
-            .order_by_asc(enumeration_items::Column::OrderIndex)
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
-    }
-
-    pub async fn delete_enumeration_items_by_question_id(&self, question_id: Uuid) -> AppResult<()> {
-        enumeration_items::Entity::delete_many()
-            .filter(enumeration_items::Column::QuestionId.eq(question_id))
-            .exec(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to delete enumeration items: {}", e)))?;
-        Ok(())
-    }
-
-    pub async fn add_enumeration_item_answer(
-        &self,
-        enumeration_item_id: Uuid,
-        answer_text: String,
-    ) -> AppResult<enumeration_item_answers::Model> {
-        let answer = enumeration_item_answers::ActiveModel {
-            id: Set(Uuid::new_v4()),
-            enumeration_item_id: Set(enumeration_item_id),
-            answer_text: Set(answer_text.trim().to_lowercase()),
-        };
-
-        answer
-            .insert(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to add enumeration item answer: {}", e)))
-    }
-
-    pub async fn find_enumeration_item_answers(
-        &self,
-        enumeration_item_id: Uuid,
-    ) -> AppResult<Vec<enumeration_item_answers::Model>> {
-        enumeration_item_answers::Entity::find()
-            .filter(enumeration_item_answers::Column::EnumerationItemId.eq(enumeration_item_id))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
     }
 
     pub async fn find_all(&self) -> AppResult<Vec<assessments::Model>> {
@@ -517,6 +509,81 @@ impl AssessmentRepository {
                 .map_err(|e| AppError::InternalServerError(format!("Failed to reorder question: {}", e)))?;
         }
 
+        Ok(())
+    }
+
+    pub async fn count_enumeration_items_for_question(&self, question_id: Uuid) -> AppResult<usize> {
+        let count = answer_keys::Entity::find()
+            .filter(answer_keys::Column::QuestionId.eq(question_id))
+            .count(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+        Ok(count as usize)
+    }
+
+    /// Fetches all enumeration items (answer_keys) for a question with their acceptable answers.
+    pub async fn find_enumeration_items_for_question(&self, question_id: Uuid) -> AppResult<Vec<(answer_keys::Model, Vec<answer_key_acceptable_answers::Model>)>> {
+        let keys = answer_keys::Entity::find()
+            .filter(answer_keys::Column::QuestionId.eq(question_id))
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to fetch answer keys: {}", e)))?;
+
+        let mut result = Vec::new();
+        for key in keys {
+            let answers = answer_key_acceptable_answers::Entity::find()
+                .filter(answer_key_acceptable_answers::Column::AnswerKeyId.eq(key.id))
+                .all(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Failed to fetch acceptable answers: {}", e)))?;
+            result.push((key, answers));
+        }
+        Ok(result)
+    }
+
+    /// Creates one answer_key row + its acceptable answer rows for one enumeration slot.
+    pub async fn add_enumeration_item(
+        &self,
+        question_id: Uuid,
+        acceptable_answers: Vec<String>,
+    ) -> AppResult<answer_keys::Model> {
+        let new_key = answer_keys::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            question_id: Set(question_id),
+        };
+        let inserted = new_key
+            .insert(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to create answer key: {}", e)))?;
+
+        for text in acceptable_answers {
+            let answer = answer_key_acceptable_answers::ActiveModel {
+                id: Set(Uuid::new_v4()),
+                answer_key_id: Set(inserted.id),
+                answer_text: Set(text.trim().to_lowercase()),
+            };
+            answer
+                .insert(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Failed to add enumeration answer: {}", e)))?;
+        }
+        Ok(inserted)
+    }
+
+    /// Deletes ALL answer_key rows for a question (cascades to acceptable_answers).
+    pub async fn delete_all_answer_keys_for_question(&self, question_id: Uuid) -> AppResult<()> {
+        let keys = answer_keys::Entity::find()
+            .filter(answer_keys::Column::QuestionId.eq(question_id))
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        for key in keys {
+            answer_keys::Entity::delete_by_id(key.id)
+                .exec(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Failed to delete answer key: {}", e)))?;
+        }
         Ok(())
     }
 }

@@ -5,6 +5,8 @@ DateTime _parseUtc(String s) =>
     DateTime.parse(s.endsWith('Z') ? s : '${s}Z');
 
 class AssignmentModel extends Assignment {
+  final DateTime? deletedAt;
+
   const AssignmentModel({
     required super.id,
     required super.classId,
@@ -24,12 +26,15 @@ class AssignmentModel extends Assignment {
     super.score,
     required super.createdAt,
     required super.updatedAt,
+    super.cachedAt,
+    super.needsSync = false,
+    this.deletedAt,
   });
 
   factory AssignmentModel.fromJson(Map<String, dynamic> json) {
     return AssignmentModel(
       id: json['id'] as String,
-      classId: json['class_id'] as String? ?? json['assignment_id'] as String,
+      classId: json['class_id'] as String? ?? '',
       title: json['title'] as String,
       instructions: json['instructions'] as String? ?? '',
       totalPoints: json['total_points'] as int,
@@ -46,6 +51,9 @@ class AssignmentModel extends Assignment {
       score: json['score'] as int?,
       createdAt: json['created_at'] != null ? _parseUtc(json['created_at'] as String) : DateTime.now(),
       updatedAt: json['updated_at'] != null ? _parseUtc(json['updated_at'] as String) : DateTime.now(),
+      deletedAt: json['deleted_at'] != null
+          ? _parseUtc(json['deleted_at'] as String)
+          : null,
     );
   }
 
@@ -78,6 +86,13 @@ class AssignmentModel extends Assignment {
       score: map['score'] as int?,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
+      deletedAt: map['deleted_at'] != null
+          ? DateTime.parse(map['deleted_at'] as String)
+          : null,
+      cachedAt: map['cached_at'] != null
+          ? DateTime.parse(map['cached_at'] as String)
+          : null,
+      needsSync: (map['needs_sync'] as int?) == 1,
     );
   }
 
@@ -101,6 +116,9 @@ class AssignmentModel extends Assignment {
       'score': score,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'deleted_at': deletedAt?.toIso8601String(),
+      'cached_at': cachedAt?.toIso8601String(),
+      'needs_sync': needsSync ? 1 : 0,
     };
   }
 }

@@ -90,6 +90,7 @@ class _AssignmentSubmissionsPageState
 
                       return SubmissionCard(
                         studentName: submission.studentName,
+                        studentUsername: submission.studentUsername,
                         status: submission.status,
                         isLate: submission.isLate,
                         score: submission.score,

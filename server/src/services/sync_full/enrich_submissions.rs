@@ -5,8 +5,7 @@ use uuid::Uuid;
 
 use crate::utils::{AppError, AppResult};
 use ::entity::{
-    submission_answers, submission_answer_choices,
-    submission_enumeration_answers, assessment_questions, question_choices,
+    submission_answers, submission_answer_items, assessment_questions, question_choices,
 };
 
 /// Enriches assessment submissions with nested answer details.
@@ -39,51 +38,32 @@ pub async fn enrich_assessment_submissions(
             .push(answer.clone());
     }
 
-    // Batch Query 2: All submission_answer_choices
+    // Batch Query 2: All submission_answer_items
     let answer_ids: Vec<Uuid> = all_sub_answers.iter().map(|a| a.id).collect();
-    let all_selected_choices: Vec<submission_answer_choices::Model> = if !answer_ids.is_empty() {
-        submission_answer_choices::Entity::find()
-            .filter(submission_answer_choices::Column::SubmissionAnswerId.is_in(answer_ids.clone()))
+    let all_answer_items: Vec<submission_answer_items::Model> = if !answer_ids.is_empty() {
+        submission_answer_items::Entity::find()
+            .filter(submission_answer_items::Column::SubmissionAnswerId.is_in(answer_ids))
             .all(db)
             .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to fetch submission answer choices: {}", e)))?
+            .map_err(|e| AppError::InternalServerError(format!("Failed to fetch submission answer items: {}", e)))?
     } else {
         Vec::new()
     };
 
-    // Compute unique choice IDs before consuming the vector
-    let unique_choice_ids: Vec<Uuid> = all_selected_choices
+    // Compute unique choice IDs from answer items
+    let unique_choice_ids: Vec<Uuid> = all_answer_items
         .iter()
-        .map(|c| c.choice_id)
+        .filter_map(|item| item.choice_id)
         .collect::<HashSet<_>>()
         .into_iter()
         .collect();
 
-    let mut selected_choices_by_answer: HashMap<Uuid, Vec<submission_answer_choices::Model>> = HashMap::new();
-    for choice in all_selected_choices {
-        selected_choices_by_answer
-            .entry(choice.submission_answer_id)
+    let mut answer_items_by_answer: HashMap<Uuid, Vec<submission_answer_items::Model>> = HashMap::new();
+    for item in all_answer_items {
+        answer_items_by_answer
+            .entry(item.submission_answer_id)
             .or_insert_with(Vec::new)
-            .push(choice);
-    }
-
-    // Batch Query 3: All submission_enumeration_answers
-    let all_enum_sub_answers: Vec<submission_enumeration_answers::Model> = if !answer_ids.is_empty() {
-        submission_enumeration_answers::Entity::find()
-            .filter(submission_enumeration_answers::Column::SubmissionAnswerId.is_in(answer_ids))
-            .all(db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to fetch submission enumeration answers: {}", e)))?
-    } else {
-        Vec::new()
-    };
-
-    let mut enum_answers_by_answer: HashMap<Uuid, Vec<submission_enumeration_answers::Model>> = HashMap::new();
-    for answer in all_enum_sub_answers {
-        enum_answers_by_answer
-            .entry(answer.submission_answer_id)
-            .or_insert_with(Vec::new)
-            .push(answer);
+            .push(item);
     }
 
     // Batch Query 4: Question metadata (question_text, question_type, points)
@@ -140,38 +120,33 @@ pub async fn enrich_assessment_submissions(
                             .map(|(t, y, p)| (t.as_str(), y.as_str(), *p))
                             .unwrap_or(("", "", 0));
 
-                        // Build selected_choices
-                        let selected_choices: Vec<Value> = selected_choices_by_answer
+                        // Build answer items
+                        let items: Vec<Value> = answer_items_by_answer
                             .get(&ans.id)
                             .map(|v| v.as_slice())
                             .unwrap_or(&[])
                             .iter()
-                            .map(|sc| {
-                                let (choice_text, is_correct) = choice_meta
-                                    .get(&sc.choice_id)
-                                    .map(|(t, c)| (t.as_str(), *c))
-                                    .unwrap_or(("", false));
-                                json!({
-                                    "choice_id": sc.choice_id.to_string(),
-                                    "choice_text": choice_text,
-                                    "is_correct": is_correct
-                                })
-                            })
-                            .collect();
+                            .map(|item| {
+                                let mut item_json = json!({
+                                    "id": item.id.to_string(),
+                                    "is_correct": item.is_correct,
+                                });
 
-                        // Build enumeration_answers
-                        let enum_answers: Vec<Value> = enum_answers_by_answer
-                            .get(&ans.id)
-                            .map(|v| v.as_slice())
-                            .unwrap_or(&[])
-                            .iter()
-                            .map(|ea| json!({
-                                "id": ea.id.to_string(),
-                                "answer_text": ea.answer_text,
-                                "matched_item_id": ea.matched_item_id.map(|id| id.to_string()),
-                                "is_auto_correct": ea.is_auto_correct,
-                                "is_override_correct": ea.is_override_correct
-                            }))
+                                if let Some(choice_id) = item.choice_id {
+                                    let (choice_text, is_correct) = choice_meta
+                                        .get(&choice_id)
+                                        .map(|(t, c)| (t.as_str(), *c))
+                                        .unwrap_or(("", false));
+                                    item_json["choice_id"] = json!(choice_id.to_string());
+                                    item_json["choice_text"] = json!(choice_text);
+                                }
+
+                                if let Some(answer_text) = &item.answer_text {
+                                    item_json["answer_text"] = json!(answer_text);
+                                }
+
+                                item_json
+                            })
                             .collect();
 
                         json!({
@@ -180,12 +155,10 @@ pub async fn enrich_assessment_submissions(
                             "question_text": q_text,
                             "question_type": q_type,
                             "points": q_points,
-                            "answer_text": ans.answer_text,
-                            "selected_choices": selected_choices,
-                            "enumeration_answers": enum_answers,
-                            "is_auto_correct": ans.is_auto_correct,
-                            "is_override_correct": ans.is_override_correct,
-                            "points_awarded": ans.points_awarded
+                            "points_earned": ans.points,
+                            "overridden_by": ans.overridden_by.map(|id| id.to_string()),
+                            "overridden_at": ans.overridden_at.map(|dt| dt.to_string()),
+                            "items": items
                         })
                     })
                     .collect();

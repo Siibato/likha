@@ -8,10 +8,9 @@ pub struct Model {
     pub id: Uuid,
     pub submission_id: Uuid,
     pub question_id: Uuid,
-    pub answer_text: Option<String>,
-    pub is_auto_correct: Option<bool>,
-    pub is_override_correct: Option<bool>,
-    pub points_awarded: f64,
+    pub points: f64,
+    pub overridden_by: Option<Uuid>,
+    pub overridden_at: Option<chrono::NaiveDateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -28,10 +27,14 @@ pub enum Relation {
         to = "super::assessment_questions::Column::Id"
     )]
     Question,
-    #[sea_orm(has_many = "super::submission_answer_choices::Entity")]
-    SelectedChoices,
-    #[sea_orm(has_many = "super::submission_enumeration_answers::Entity")]
-    EnumerationAnswers,
+    #[sea_orm(
+        belongs_to = "super::users::Entity",
+        from = "Column::OverriddenBy",
+        to = "super::users::Column::Id"
+    )]
+    OverriddenByUser,
+    #[sea_orm(has_many = "super::submission_answer_items::Entity")]
+    AnswerItems,
 }
 
 impl Related<super::assessment_submissions::Entity> for Entity {
@@ -46,15 +49,15 @@ impl Related<super::assessment_questions::Entity> for Entity {
     }
 }
 
-impl Related<super::submission_answer_choices::Entity> for Entity {
+impl Related<super::users::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::SelectedChoices.def()
+        Relation::OverriddenByUser.def()
     }
 }
 
-impl Related<super::submission_enumeration_answers::Entity> for Entity {
+impl Related<super::submission_answer_items::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::EnumerationAnswers.def()
+        Relation::AnswerItems.def()
     }
 }
 

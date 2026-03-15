@@ -21,10 +21,10 @@ impl super::AssessmentService {
         let submissions = self.submission_repo
             .find_by_assessment_id(assessment_id).await?;
 
-        let submitted: Vec<_> = submissions.iter().filter(|s| s.is_submitted).collect();
+        let submitted: Vec<_> = submissions.iter().filter(|s| s.submitted_at.is_some()).collect();
         let submission_count = submitted.len();
 
-        let scores: Vec<f64> = submitted.iter().map(|s| s.final_score).collect();
+        let scores: Vec<f64> = submitted.iter().map(|s| s.total_points as f64).collect();
 
         let class_statistics = if scores.is_empty() {
             ClassStatistics {
@@ -50,7 +50,7 @@ impl super::AssessmentService {
                 let answers = self.submission_repo
                     .find_answers_by_submission_id(s.id).await?;
                 if let Some(a) = answers.iter().find(|a| a.question_id == q.id) {
-                    let is_correct = a.is_override_correct.or(a.is_auto_correct).unwrap_or(false);
+                    let is_correct = a.points > 0.0;
                     if is_correct {
                         correct_count += 1;
                     } else {

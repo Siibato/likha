@@ -36,18 +36,8 @@ impl super::AuthService {
         let user = self.user_repo.update_account_status(user.id, status).await?;
 
         self.activity_log_repo
-            .create_log(user.id, action, Some(admin_id), request.reason.clone())
+            .create_log(user.id, action, request.reason.clone())
             .await?;
-
-        let _ = self.change_log_repo.log_change(
-            "user",
-            request.user_id,
-            "update",
-            admin_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "account_status": status,
-            })).unwrap_or_default()),
-        ).await;
 
         Ok(Self::user_to_response(&user))
     }
@@ -69,7 +59,6 @@ impl super::AuthService {
                 id: log.id,
                 user_id: log.user_id,
                 action: log.action,
-                performed_by: log.performed_by,
                 details: log.details,
                 created_at: log.created_at.to_string(),
             })

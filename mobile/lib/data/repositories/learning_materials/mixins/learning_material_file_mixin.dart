@@ -19,6 +19,7 @@ mixin LearningMaterialFileMixin on LearningMaterialRepositoryBase {
         final mime = mimeType(filePath);
         final size = await fileSize(filePath);
 
+        final localFileId = const Uuid().v4();
         await localDataSource.stageMaterialFileForUpload(
           materialId: materialId,
           fileName: fileName,
@@ -28,11 +29,14 @@ mixin LearningMaterialFileMixin on LearningMaterialRepositoryBase {
         );
 
         return Right(MaterialFile(
-          id: '',
+          id: localFileId,
           fileName: fileName,
           fileType: mime,
           fileSize: size,
           uploadedAt: DateTime.now(),
+          localPath: filePath,
+          needsSync: true,
+          cachedAt: DateTime.now(),
         ));
       }
 
@@ -41,6 +45,25 @@ mixin LearningMaterialFileMixin on LearningMaterialRepositoryBase {
         filePath: filePath,
         fileName: fileName,
       );
+
+      try {
+        print('[UPLOAD_POST] ✅ File uploaded successfully, fetching material detail...');
+        final materialDetail = await remoteDataSource.getMaterialDetail(materialId: materialId);
+        print('[UPLOAD_POST] 📄 Got material detail: ${materialDetail.files.length} files');
+
+        if (materialDetail.files.isNotEmpty) {
+          print('[UPLOAD_POST] 💾 Caching ${materialDetail.files.length} files to local DB...');
+          await localDataSource.cacheMaterialFiles(materialId, materialDetail.files);
+          print('[UPLOAD_POST] ✅ Cache complete, notifying event bus...');
+        } else {
+          print('[UPLOAD_POST] ⚠️  No files in response, skipping cache');
+        }
+
+        dataEventBus.notifyMaterialsChanged(materialDetail.classId);
+      } catch (e) {
+        print('[UPLOAD_POST] ❌ Error during post-upload caching: $e');
+      }
+
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -55,6 +78,10 @@ mixin LearningMaterialFileMixin on LearningMaterialRepositoryBase {
   ResultVoid deleteFile({required String fileId}) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
+        try {
+          await localDataSource.deleteMaterialFileLocally(fileId);
+        } catch (_) {}
+
         await syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),
           entityType: SyncEntityType.materialFile,
@@ -90,9 +117,14 @@ mixin LearningMaterialFileMixin on LearningMaterialRepositoryBase {
       final result = await remoteDataSource.downloadFile(fileId: fileId);
 
       try {
-        await localDataSource.cacheFile(fileId, fileId, result);
-      } catch (_) {
-        // Ignore caching errors — still return the file
+        print('[DL_FILE] ✅ Downloaded ${result.length} bytes, caching...');
+        // Pass empty fileName to let datasource look it up from material_files table
+        await localDataSource.cacheFile(fileId, '', result);
+        print('[DL_FILE] ✅ File cached successfully');
+      } catch (e) {
+        // Log the error but still return file — user can open it from memory
+        // Next app start: file won't be cached, will need re-download
+        print('[DL_FILE] ⚠️  Cache write failed: $e (file still available in memory)');
       }
 
       return Right(result);

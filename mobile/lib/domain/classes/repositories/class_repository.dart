@@ -12,9 +12,9 @@ abstract class ClassRepository {
     String? teacherFullName,
   });
 
-  ResultFuture<List<ClassEntity>> getMyClasses();
+  ResultFuture<List<ClassEntity>> getMyClasses({bool skipBackgroundRefresh = false});
 
-  ResultFuture<List<ClassEntity>> getAllClasses();
+  ResultFuture<List<ClassEntity>> getAllClasses({bool skipBackgroundRefresh = false});
 
   ResultFuture<ClassDetail> getClassDetail({required String classId});
 

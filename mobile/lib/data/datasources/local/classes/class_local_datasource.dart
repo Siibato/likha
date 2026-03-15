@@ -7,6 +7,13 @@ abstract class ClassLocalDataSource {
   Future<List<ClassModel>> getCachedClassesForUser(String userId);
   Future<ClassDetailModel> getCachedClassDetail(String classId);
   Future<void> cacheClasses(List<ClassModel> classes);
+
+  Future<void> cacheStudentParticipation({
+    required String classId,
+    required String userId,
+    required DateTime joinedAt,
+  });
+
   Future<void> cacheClassDetail(ClassDetailModel classDetail);
   Future<ClassModel> createClassLocally({
     required String title,

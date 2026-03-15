@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 class Question extends Equatable {
   final String id;
+  final String assessmentId;
   final String questionType;
   final String questionText;
   final int points;
@@ -10,9 +11,14 @@ class Question extends Equatable {
   final List<Choice>? choices;
   final List<CorrectAnswer>? correctAnswers;
   final List<EnumerationItem>? enumerationItems;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final DateTime? cachedAt;
+  final bool needsSync;
 
   const Question({
     required this.id,
+    required this.assessmentId,
     required this.questionType,
     required this.questionText,
     required this.points,
@@ -21,10 +27,14 @@ class Question extends Equatable {
     this.choices,
     this.correctAnswers,
     this.enumerationItems,
+    this.createdAt,
+    this.updatedAt,
+    this.cachedAt,
+    this.needsSync = false,
   });
 
   @override
-  List<Object?> get props => [id, questionType, questionText, points, orderIndex];
+  List<Object?> get props => [id, assessmentId, questionType, questionText, points, orderIndex, createdAt, updatedAt, needsSync, cachedAt];
 }
 
 class Choice extends Equatable {

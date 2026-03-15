@@ -18,14 +18,12 @@ impl ActivityLogRepository {
         &self,
         user_id: Uuid,
         action: &str,
-        performed_by: Option<Uuid>,
         details: Option<String>,
     ) -> AppResult<activity_logs::Model> {
         let log = activity_logs::ActiveModel {
             id: Set(Uuid::new_v4()),
             user_id: Set(user_id),
             action: Set(action.to_string()),
-            performed_by: Set(performed_by),
             details: Set(details),
             created_at: Set(Utc::now().naive_utc()),
         };

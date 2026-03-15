@@ -39,6 +39,10 @@ pub fn routes(assessment_service: Arc<AssessmentService>) -> Router {
             post(assessment_handler::publish_assessment),
         )
         .route(
+            "/assessments/{id}/unpublish",
+            post(assessment_handler::unpublish_assessment),
+        )
+        .route(
             "/assessments/{id}/release-results",
             post(assessment_handler::release_results),
         )

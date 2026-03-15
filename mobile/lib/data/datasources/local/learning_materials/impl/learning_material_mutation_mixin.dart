@@ -34,8 +34,7 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
       await db.transaction((txn) async {
         final map = material.toMap();
         map['cached_at'] = now.toIso8601String();
-        map['sync_status'] = 'pending';
-        map['is_offline_mutation'] = 1;
+        map['needs_sync'] = 1;
         await txn.insert('learning_materials', map);
 
         await syncQueue.enqueue(SyncQueueEntry(
@@ -51,7 +50,7 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
           },
           status: SyncStatus.pending,
           retryCount: 0,
-          maxRetries: 5,
+          maxRetries: 3,
           createdAt: now,
         ), txn: txn);
       });
@@ -81,8 +80,7 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
             'description': description,
             'content_text': contentText,
             'updated_at': now.toIso8601String(),
-            'is_offline_mutation': 1,
-            'sync_status': 'pending',
+            'needs_sync': 1,
             'cached_at': now.toIso8601String(),
           },
           where: 'id = ?',
@@ -101,7 +99,7 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
           },
           status: SyncStatus.pending,
           retryCount: 0,
-          maxRetries: 5,
+          maxRetries: 3,
           createdAt: now,
         ), txn: txn);
       });
@@ -114,12 +112,29 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
   Future<void> deleteMaterialLocally(String materialId) async {
     try {
       final db = await localDatabase.database;
-      await db.update(
-        'learning_materials',
-        {'deleted_at': DateTime.now().toIso8601String()},
-        where: 'id = ?',
-        whereArgs: [materialId],
-      );
+      final now = DateTime.now();
+      await db.transaction((txn) async {
+        await txn.update(
+          'learning_materials',
+          {
+            'deleted_at': now.toIso8601String(),
+            'needs_sync': 1,
+            'updated_at': now.toIso8601String(),
+          },
+          where: 'id = ?',
+          whereArgs: [materialId],
+        );
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.learningMaterial,
+          operation: SyncOperation.delete,
+          payload: {'id': materialId},
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 3,
+          createdAt: now,
+        ), txn: txn);
+      });
     } catch (e) {
       throw CacheException('Failed to delete material locally: $e');
     }
@@ -150,40 +165,51 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
       final stagedPath = '${uploadDir.path}/${fileId}_$fileName';
       await sourceFile.copy(stagedPath);
 
-      await db.insert(
-        'material_files',
-        {
-          'id': fileId,
-          'material_id': materialId,
-          'file_name': fileName,
-          'file_type': fileType,
-          'file_size': fileSize,
-          'uploaded_at': now.toIso8601String(),
-          'local_path': stagedPath,
-          'is_cached': 0,
-          'cached_at': now.toIso8601String(),
-        },
-      );
-
-      await syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
-        entityType: SyncEntityType.materialFile,
-        operation: SyncOperation.upload,
-        payload: {
-          'file_id': fileId,
-          'material_id': materialId,
-          'local_path': stagedPath,
-          'file_name': fileName,
-          'file_type': fileType,
-          'file_size': fileSize,
-        },
-        status: SyncStatus.pending,
-        retryCount: 0,
-        maxRetries: 5,
-        createdAt: now,
-      ));
+      await db.transaction((txn) async {
+        await txn.insert(
+          'material_files',
+          {
+            'id': fileId,
+            'material_id': materialId,
+            'file_name': fileName,
+            'file_type': fileType,
+            'file_size': fileSize,
+            'local_path': stagedPath,
+            'uploaded_at': now.toIso8601String(),
+            'cached_at': now.toIso8601String(),
+            'needs_sync': 1,
+          },
+        );
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.materialFile,
+          operation: SyncOperation.upload,
+          payload: {
+            'file_id': fileId,
+            'material_id': materialId,
+            'local_path': stagedPath,
+            'file_name': fileName,
+            'file_type': fileType,
+            'file_size': fileSize,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 3,
+          createdAt: now,
+        ), txn: txn);
+      });
     } catch (e) {
       throw CacheException('Failed to stage material file for upload: $e');
+    }
+  }
+
+  @override
+  Future<void> deleteMaterialFileLocally(String fileId) async {
+    try {
+      final db = await localDatabase.database;
+      await db.delete('material_files', where: 'id = ?', whereArgs: [fileId]);
+    } catch (e) {
+      throw CacheException('Failed to delete material file locally: $e');
     }
   }
 }

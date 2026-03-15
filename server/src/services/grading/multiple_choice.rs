@@ -21,13 +21,21 @@ pub async fn grade_multiple_choice(
         .collect();
 
     let selected_ids: std::collections::HashSet<Uuid> =
-        selected.iter().map(|s| s.choice_id).collect();
+        selected.iter().cloned().collect();
 
     if is_multi_select {
-        let is_correct = correct_ids == selected_ids;
-        let awarded = if is_correct { points as f64 } else { 0.0 };
-        Ok((is_correct, awarded))
+        // Partial credit for multi-select: correct_selected / total_correct * points
+        let correct_selected = selected_ids.intersection(&correct_ids).count();
+        let total_correct = correct_ids.len();
+        let awarded = if total_correct > 0 {
+            (correct_selected as f64 / total_correct as f64) * points as f64
+        } else {
+            0.0
+        };
+        let is_any_correct = correct_selected > 0;
+        Ok((is_any_correct, awarded))
     } else {
+        // Single-select: unchanged (all-or-nothing)
         let is_correct = selected_ids.len() == 1 && correct_ids == selected_ids;
         let awarded = if is_correct { points as f64 } else { 0.0 };
         Ok((is_correct, awarded))

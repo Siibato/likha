@@ -18,23 +18,26 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
       try {
         final cached =
             await localDataSource.getCachedSubmissions(assessmentId);
-        return Right(cached);
-      } on CacheException {
-        // Not in local DB — fetch from server if reachable
-        try {
-          final result =
-              await remoteDataSource.getSubmissions(assessmentId: assessmentId);
-          await localDataSource.cacheSubmissions(assessmentId, result);
-          unawaited(validationService.validateAndSync('assessments'));
-          return Right(result);
-        } on NetworkException catch (e) {
-          return Left(NetworkFailure(e.message));
-        } on ServerException catch (e) {
-          return Left(ServerFailure(e.message));
+        // Only return cache if it has data; empty cache is treated as a miss
+        if (cached.isNotEmpty) {
+          return Right(cached);
         }
+      } on CacheException {
+        // Not in local DB — fall through to remote fetch
       }
-    } on CacheException catch (e) {
-      return Left(CacheFailure(e.message));
+
+      // Cache miss or empty cache — fetch from server if reachable
+      try {
+        final result =
+            await remoteDataSource.getSubmissions(assessmentId: assessmentId);
+        await localDataSource.cacheSubmissions(assessmentId, result);
+        unawaited(validationService.validateAndSync('assessments'));
+        return Right(result);
+      } on NetworkException catch (e) {
+        return Left(NetworkFailure(e.message));
+      } on ServerException catch (e) {
+        return Left(ServerFailure(e.message));
+      }
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -345,6 +348,16 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
             await localDataSource.getCachedSubmissionDetail(submissionId);
         final assessmentId = cached?.assessmentId ?? '';
 
+        // Fetch assessment to get totalPoints (not from finalScore)
+        int totalPoints = 0;
+        try {
+          final (assessment, _) =
+              await localDataSource.getCachedAssessmentDetail(assessmentId);
+          totalPoints = assessment.totalPoints;
+        } catch (_) {
+          totalPoints = 0;
+        }
+
         await localDataSource.submitAssessmentLocally(
           submissionId: submissionId,
           assessmentId: assessmentId,
@@ -352,13 +365,18 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
 
         return Right(SubmissionSummary(
           id: submissionId,
+          assessmentId: assessmentId,
           studentId: cached?.studentId ?? '',
           studentName: cached?.studentName ?? '',
           studentUsername: '',
           startedAt: cached?.startedAt ?? DateTime.now(),
           autoScore: cached?.autoScore ?? 0.0,
           finalScore: cached?.finalScore ?? 0.0,
+          totalPoints: totalPoints,
           isSubmitted: true,
+          needsSync: true,
+          submittedAt: DateTime.now(),
+          cachedAt: DateTime.now(),
         ));
       }
 
@@ -386,6 +404,7 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
             autoScore: result.autoScore,
             finalScore: result.finalScore,
             isSubmitted: true, // ← Mark as submitted
+            totalPoints: result.totalPoints,
             answers: cachedSubmission.answers, // ← Preserve existing answers
           );
 

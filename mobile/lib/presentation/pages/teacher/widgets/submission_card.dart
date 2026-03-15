@@ -4,6 +4,7 @@ import 'package:likha/presentation/pages/shared/widgets/cards/base_card_sm.dart'
 
 class SubmissionCard extends StatelessWidget {
   final String studentName;
+  final String studentUsername;
   final String status;
   final bool isLate;
   final int? score;
@@ -14,6 +15,7 @@ class SubmissionCard extends StatelessWidget {
   const SubmissionCard({
     super.key,
     required this.studentName,
+    required this.studentUsername,
     required this.status,
     required this.isLate,
     this.score,
@@ -97,62 +99,15 @@ class SubmissionCard extends StatelessWidget {
                     letterSpacing: -0.2,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        _statusLabel(status),
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    if (isLate)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 7,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.semanticError.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'Late',
-                          style: TextStyle(
-                            color: AppColors.semanticError,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    if (score != null)
-                      Text(
-                        '$score/$totalPoints pts',
-                        style: const TextStyle(
-                          color: AppColors.foregroundSecondary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                  ],
+                Text(
+                  studentUsername,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.foregroundTertiary,
+                  ),
                 ),
-                if (submittedAt != null) ...[
-                  const SizedBox(height: 4),
+                const SizedBox(height: 4),
+                if (submittedAt != null)
                   Text(
                     'Submitted: ${_formatDateTime(submittedAt!)}',
                     style: const TextStyle(
@@ -161,9 +116,63 @@ class SubmissionCard extends StatelessWidget {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                ],
               ],
             ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 3,
+                ),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  _statusLabel(status),
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              if (isLate) ...[
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.semanticError.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'Late',
+                    style: TextStyle(
+                      color: AppColors.semanticError,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+              if (score != null) ...[
+                const SizedBox(height: 6),
+                Text(
+                  '$score/$totalPoints pts',
+                  style: const TextStyle(
+                    color: AppColors.foregroundPrimary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ],
           ),
           const SizedBox(width: 8),
           const Icon(

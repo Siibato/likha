@@ -18,6 +18,7 @@ class StyledTextField extends StatelessWidget {
   final bool readOnly;
   final ValueChanged<String>? onChanged;
   final FocusNode? focusNode;
+  final String? errorText;
 
   const StyledTextField({
     super.key,
@@ -34,6 +35,7 @@ class StyledTextField extends StatelessWidget {
     this.readOnly = false,
     this.onChanged,
     this.focusNode,
+    this.errorText,
   });
 
   @override
@@ -66,6 +68,7 @@ class StyledTextField extends StatelessWidget {
           decoration: InputDecoration(
             labelText: label,
             hintText: hintText,
+            errorText: errorText,
             labelStyle: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,

@@ -252,9 +252,10 @@ class DioClient {
 
       case DioExceptionType.badResponse:
         final statusCode = error.response?.statusCode;
-        final message = error.response?.data['message'] ??
-                       error.response?.data['detail'] ??
-                       'Something went wrong';
+        final data = error.response?.data;
+        final message = (data is Map)
+            ? (data['message'] ?? data['detail'] ?? 'Something went wrong')
+            : 'Something went wrong';
 
         if (statusCode == 401) {
           return UnauthorizedException(message);

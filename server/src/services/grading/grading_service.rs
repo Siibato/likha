@@ -15,6 +15,12 @@ impl GradingService {
         let mut auto_score = 0.0_f64;
 
         for answer in &answers {
+            // Skip re-grading teacher-overridden answers; keep their existing points
+            if answer.overridden_at.is_some() {
+                auto_score += answer.points;
+                continue;
+            }
+
             let question = assessment_repo
                 .find_question_by_id(answer.question_id)
                 .await?;
@@ -37,8 +43,10 @@ impl GradingService {
                     .await?
                 }
                 "identification" => {
+                    let items = submission_repo.find_enumeration_answers(answer.id).await?;
+                    let answer_text = items.into_iter().next();
                     super::identification::grade_identification(
-                        &answer.answer_text,
+                        &answer_text,
                         question.id,
                         question.points,
                         assessment_repo,
@@ -66,7 +74,7 @@ impl GradingService {
         }
 
         submission_repo
-            .update_submission_scores(submission_id, auto_score, auto_score)
+            .update_submission_scores(submission_id, auto_score as i32)
             .await?;
 
         Ok((auto_score, auto_score))
@@ -77,12 +85,10 @@ impl GradingService {
         submission_repo: &SubmissionRepository,
     ) -> AppResult<f64> {
         let answers = submission_repo.find_answers_by_submission_id(submission_id).await?;
-        let final_score: f64 = answers.iter().map(|a| a.points_awarded).sum();
-        let submission = submission_repo.find_by_id(submission_id).await?;
-        let auto = submission.map(|s| s.auto_score).unwrap_or(0.0);
+        let final_score: f64 = answers.iter().map(|a| a.points).sum();
 
         submission_repo
-            .update_submission_scores(submission_id, auto, final_score)
+            .update_submission_scores(submission_id, final_score as i32)
             .await?;
 
         Ok(final_score)

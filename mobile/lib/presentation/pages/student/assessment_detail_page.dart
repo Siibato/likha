@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/services/server_clock_service.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/injection_container.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/presentation/pages/student/assessment_results_page.dart';
 import 'package:likha/presentation/pages/student/take_assessment_page.dart';
@@ -23,6 +24,7 @@ class AssessmentDetailPage extends ConsumerStatefulWidget {
 class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
   bool _isLoadingScore = false;
   bool? _submissionIsSubmitted; // Track whether submission is actually submitted
+  String? _formError;
 
   @override
   void initState() {
@@ -39,7 +41,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
   DetailStatus _computeDetailStatus() {
     final a = widget.assessment;
     final now = sl<ServerClockService>().now();
-    final hasSubmission = a.submissionCount > 0;
+    final hasSubmission = _submissionIsSubmitted != null;
     final withinWindow = now.isAfter(a.openAt) && now.isBefore(a.closeAt);
     final resultsAccessible = a.resultsReleased || a.showResultsImmediately;
 
@@ -106,12 +108,12 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
       final assessmentState = ref.read(assessmentProvider);
       // Use the submission's own isSubmitted flag — NOT whether results loaded.
       // Results can 403 (not released yet) even when the submission IS submitted.
-      final isSubmitted = assessmentState.currentStudentSubmission?.isSubmitted ?? false;
-      print('🔍 [DetailPage] _loadSubmissionStatus() - RESULT: currentStudentSubmission=${assessmentState.currentStudentSubmission?.id}, isSubmitted=$isSubmitted');
+      final submission = assessmentState.currentStudentSubmission;
+      print('🔍 [DetailPage] _loadSubmissionStatus() - RESULT: currentStudentSubmission=${submission?.id}, isSubmitted=${submission?.isSubmitted}');
 
       if (mounted) {
         setState(() {
-          _submissionIsSubmitted = isSubmitted;
+          _submissionIsSubmitted = submission?.isSubmitted; // null=no sub, false=in-progress, true=submitted
           print('🔍 [DetailPage] _loadSubmissionStatus() - setState: _submissionIsSubmitted=$_submissionIsSubmitted');
         });
       }
@@ -123,12 +125,13 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
 
   Future<void> _loadScore() async {
     final user = ref.read(authProvider).user;
-    print('🔍 [DetailPage] _loadScore() START - assessmentId: ${widget.assessment.id}, studentId: ${user?.id}');
+    if (user == null) return;
+    print('🔍 [DetailPage] _loadScore() START - assessmentId: ${widget.assessment.id}, studentId: ${user.id}');
     setState(() => _isLoadingScore = true);
 
     await ref.read(assessmentProvider.notifier).loadScorePreview(
       widget.assessment.id,
-      user?.id ?? '',
+      user.id,
     );
 
     final state = ref.read(assessmentProvider);
@@ -183,7 +186,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
 
     ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
       if (next.error != null && prev?.error != next.error) {
-        context.showErrorSnackBar(next.error!);
+        setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
         ref.read(assessmentProvider.notifier).clearMessages();
       }
     });
@@ -194,6 +197,16 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(child: _buildHeader()),
+            if (_formError != null)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: FormMessage(
+                    message: _formError,
+                    severity: MessageSeverity.error,
+                  ),
+                ),
+              ),
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               sliver: SliverList(

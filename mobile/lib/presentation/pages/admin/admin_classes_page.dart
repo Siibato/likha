@@ -70,11 +70,12 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
                     itemCount: classState.classes.length,
                     itemBuilder: (context, index) {
                       final cls = classState.classes[index];
+                      final teacherLabel = cls.teacherFullName.isEmpty
+                          ? cls.teacherUsername
+                          : cls.teacherFullName;
                       return ClassCard(
                         title: cls.title,
-                        subtitle: cls.teacherFullName.isEmpty
-                            ? cls.teacherUsername
-                            : cls.teacherFullName,
+                        subtitle: cls.isArchived ? '$teacherLabel · Archived' : teacherLabel,
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(

@@ -21,6 +21,7 @@ mixin AssessmentQuestionMixin on AssessmentRepositoryBase {
           final id = const Uuid().v4();
           return QuestionModel(
             id: id,
+            assessmentId: assessmentId,
             questionType: q['question_type'] as String,
             questionText: q['question_text'] as String,
             points: q['points'] as int,
@@ -144,6 +145,12 @@ mixin AssessmentQuestionMixin on AssessmentRepositoryBase {
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
+        // Fetch current question from cache to get assessmentId and other fields
+        final currentQuestion = await localDataSource.getCachedQuestion(questionId);
+        if (currentQuestion == null) {
+          return Left(ServerFailure('Question not found in local cache'));
+        }
+
         await localDataSource.updateQuestionLocally(
           questionId: questionId,
           updates: data,
@@ -162,11 +169,18 @@ mixin AssessmentQuestionMixin on AssessmentRepositoryBase {
 
         return Right(Question(
           id: questionId,
-          questionType: data['question_type'] as String? ?? '',
-          questionText: data['question_text'] as String? ?? '',
-          points: data['points'] as int? ?? 0,
-          orderIndex: data['order_index'] as int? ?? 0,
-          isMultiSelect: data['is_multi_select'] as bool? ?? false,
+          assessmentId: currentQuestion.assessmentId,
+          questionType:
+              data['question_type'] as String? ?? currentQuestion.questionType,
+          questionText:
+              data['question_text'] as String? ?? currentQuestion.questionText,
+          points: data['points'] as int? ?? currentQuestion.points,
+          orderIndex:
+              data['order_index'] as int? ?? currentQuestion.orderIndex,
+          isMultiSelect:
+              data['is_multi_select'] as bool? ?? currentQuestion.isMultiSelect,
+          needsSync: true,
+          cachedAt: DateTime.now(),
         ));
       }
 

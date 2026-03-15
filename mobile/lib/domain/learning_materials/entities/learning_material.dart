@@ -10,6 +10,8 @@ class LearningMaterial extends Equatable {
   final int fileCount;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? cachedAt;
+  final bool needsSync;
 
   const LearningMaterial({
     required this.id,
@@ -21,6 +23,8 @@ class LearningMaterial extends Equatable {
     required this.fileCount,
     required this.createdAt,
     required this.updatedAt,
+    this.cachedAt,
+    this.needsSync = false,
   });
 
   @override
@@ -34,5 +38,7 @@ class LearningMaterial extends Equatable {
         fileCount,
         createdAt,
         updatedAt,
+        cachedAt,
+        needsSync,
       ];
 }

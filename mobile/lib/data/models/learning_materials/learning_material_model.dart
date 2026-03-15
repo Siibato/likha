@@ -1,6 +1,8 @@
 import 'package:likha/domain/learning_materials/entities/learning_material.dart';
 
 class LearningMaterialModel extends LearningMaterial {
+  final DateTime? deletedAt;
+
   const LearningMaterialModel({
     required super.id,
     required super.classId,
@@ -11,6 +13,9 @@ class LearningMaterialModel extends LearningMaterial {
     required super.fileCount,
     required super.createdAt,
     required super.updatedAt,
+    super.cachedAt,
+    super.needsSync = false,
+    this.deletedAt,
   });
 
   factory LearningMaterialModel.fromJson(Map<String, dynamic> json) {
@@ -24,6 +29,9 @@ class LearningMaterialModel extends LearningMaterial {
       fileCount: json['file_count'] as int? ?? 0,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
+      deletedAt: json['deleted_at'] != null
+          ? DateTime.parse(json['deleted_at'] as String)
+          : null,
     );
   }
 
@@ -38,6 +46,13 @@ class LearningMaterialModel extends LearningMaterial {
       fileCount: map['file_count'] as int? ?? 0,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
+      deletedAt: map['deleted_at'] != null
+          ? DateTime.parse(map['deleted_at'] as String)
+          : null,
+      cachedAt: map['cached_at'] != null
+          ? DateTime.parse(map['cached_at'] as String)
+          : null,
+      needsSync: (map['needs_sync'] as int?) == 1,
     );
   }
 
@@ -63,9 +78,11 @@ class LearningMaterialModel extends LearningMaterial {
       'description': description,
       'content_text': contentText,
       'order_index': orderIndex,
-      'file_count': fileCount,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'deleted_at': deletedAt?.toIso8601String(),
+      'cached_at': cachedAt?.toIso8601String(),
+      'needs_sync': needsSync ? 1 : 0,
     };
   }
 }

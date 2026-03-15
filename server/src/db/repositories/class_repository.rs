@@ -49,7 +49,6 @@ impl ClassRepository {
             id: Set(Uuid::new_v4()),
             class_id: Set(class_id),
             user_id: Set(teacher_id),
-            role: Set("teacher".to_string()),
             joined_at: Set(now),
             updated_at: Set(now),
             removed_at: Set(None),
@@ -68,9 +67,18 @@ impl ClassRepository {
     }
 
     pub async fn find_by_user_id(&self, user_id: Uuid, role: &str) -> AppResult<Vec<classes::Model>> {
+        let user = users::Entity::find_by_id(user_id)
+            .one(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        // Check if user's role matches the requested role
+        if user.is_none() || user.as_ref().unwrap().role != role {
+            return Ok(vec![]);
+        }
+
         let class_ids: Vec<Uuid> = class_participants::Entity::find()
             .filter(class_participants::Column::UserId.eq(user_id))
-            .filter(class_participants::Column::Role.eq(role))
             .filter(class_participants::Column::RemovedAt.is_null())
             .all(&self.db)
             .await
@@ -146,11 +154,40 @@ impl ClassRepository {
         class_id: Uuid,
         user_id: Uuid,
     ) -> AppResult<class_participants::Model> {
+        // Check if participant already exists (possibly removed)
+        let existing = class_participants::Entity::find()
+            .filter(class_participants::Column::ClassId.eq(class_id))
+            .filter(class_participants::Column::UserId.eq(user_id))
+            .one(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        if let Some(existing_participant) = existing {
+            // If removed_at is set, resurrect the participant
+            if existing_participant.removed_at.is_some() {
+                let update = class_participants::ActiveModel {
+                    id: Set(existing_participant.id),
+                    removed_at: Set(None),
+                    updated_at: Set(Utc::now().naive_utc()),
+                    ..Default::default()
+                };
+
+                return update
+                    .update(&self.db)
+                    .await
+                    .map_err(|e| {
+                        AppError::InternalServerError(format!("Failed to add participant: {}", e))
+                    });
+            }
+            // If participant is already active, return existing record
+            return Ok(existing_participant);
+        }
+
+        // Create new participant record
         let participant = class_participants::ActiveModel {
             id: Set(Uuid::new_v4()),
             class_id: Set(class_id),
             user_id: Set(user_id),
-            role: Set("student".to_string()),
             joined_at: Set(Utc::now().naive_utc()),
             updated_at: Set(Utc::now().naive_utc()),
             removed_at: Set(None),
@@ -216,19 +253,31 @@ impl ClassRepository {
         class_id: Uuid,
         role: Option<&str>,
     ) -> AppResult<Vec<class_participants::Model>> {
-        let mut query = class_participants::Entity::find()
+        let mut participants = class_participants::Entity::find()
             .filter(class_participants::Column::ClassId.eq(class_id))
-            .filter(class_participants::Column::RemovedAt.is_null());
-
-        if let Some(role_filter) = role {
-            query = query.filter(class_participants::Column::Role.eq(role_filter));
-        }
-
-        query
+            .filter(class_participants::Column::RemovedAt.is_null())
             .order_by_asc(class_participants::Column::JoinedAt)
             .all(&self.db)
             .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        // Filter by user role if specified
+        if let Some(role_filter) = role {
+            let mut filtered = Vec::new();
+            for participant in participants {
+                if let Some(user) = users::Entity::find_by_id(participant.user_id)
+                    .one(&self.db)
+                    .await
+                    .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))? {
+                    if user.role == role_filter {
+                        filtered.push(participant);
+                    }
+                }
+            }
+            participants = filtered;
+        }
+
+        Ok(participants)
     }
 
     pub async fn find_enrollments_by_class_id(
@@ -236,6 +285,38 @@ impl ClassRepository {
         class_id: Uuid,
     ) -> AppResult<Vec<class_participants::Model>> {
         self.find_participants_by_class_id(class_id, Some("student")).await
+    }
+
+    pub async fn find_participants_by_user_id(
+        &self,
+        user_id: Uuid,
+        role: Option<&str>,
+    ) -> AppResult<Vec<class_participants::Model>> {
+        let mut participants = class_participants::Entity::find()
+            .filter(class_participants::Column::UserId.eq(user_id))
+            .filter(class_participants::Column::RemovedAt.is_null())
+            .order_by_asc(class_participants::Column::JoinedAt)
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        // Filter by user role if specified
+        if let Some(role_filter) = role {
+            let user = users::Entity::find_by_id(user_id)
+                .one(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+            if let Some(user) = user {
+                if user.role != role_filter {
+                    participants.clear();
+                }
+            } else {
+                participants.clear();
+            }
+        }
+
+        Ok(participants)
     }
 
     pub async fn find_classes_by_student_id(
@@ -246,15 +327,8 @@ impl ClassRepository {
     }
 
     pub async fn count_students_in_class(&self, class_id: Uuid) -> AppResult<usize> {
-        let count = class_participants::Entity::find()
-            .filter(class_participants::Column::ClassId.eq(class_id))
-            .filter(class_participants::Column::Role.eq("student"))
-            .filter(class_participants::Column::RemovedAt.is_null())
-            .count(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        Ok(count as usize)
+        let students = self.find_participants_by_class_id(class_id, Some("student")).await?;
+        Ok(students.len())
     }
 
     pub async fn is_student_enrolled(
@@ -265,13 +339,20 @@ impl ClassRepository {
         let participant = class_participants::Entity::find()
             .filter(class_participants::Column::ClassId.eq(class_id))
             .filter(class_participants::Column::UserId.eq(student_id))
-            .filter(class_participants::Column::Role.eq("student"))
             .filter(class_participants::Column::RemovedAt.is_null())
             .one(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-        Ok(participant.is_some())
+        if let Some(p) = participant {
+            let user = users::Entity::find_by_id(student_id)
+                .one(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+            Ok(user.is_some() && user.unwrap().role == "student")
+        } else {
+            Ok(false)
+        }
     }
 
     pub async fn is_user_participating(
@@ -291,36 +372,44 @@ impl ClassRepository {
     }
 
     pub async fn find_teacher_of_class(&self, class_id: Uuid) -> AppResult<Option<users::Model>> {
-        let teacher_participant = class_participants::Entity::find()
+        let participants = class_participants::Entity::find()
             .filter(class_participants::Column::ClassId.eq(class_id))
-            .filter(class_participants::Column::Role.eq("teacher"))
             .filter(class_participants::Column::RemovedAt.is_null())
-            .one(&self.db)
+            .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-        if let Some(participant) = teacher_participant {
-            let teacher = users::Entity::find_by_id(participant.user_id)
+        for participant in participants {
+            if let Some(user) = users::Entity::find_by_id(participant.user_id)
                 .one(&self.db)
                 .await
-                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-            Ok(teacher)
-        } else {
-            Ok(None)
+                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))? {
+                if user.role == "teacher" {
+                    return Ok(Some(user));
+                }
+            }
         }
+        Ok(None)
     }
 
     pub async fn is_teacher_of_class(&self, user_id: Uuid, class_id: Uuid) -> AppResult<bool> {
         let participant = class_participants::Entity::find()
             .filter(class_participants::Column::ClassId.eq(class_id))
             .filter(class_participants::Column::UserId.eq(user_id))
-            .filter(class_participants::Column::Role.eq("teacher"))
             .filter(class_participants::Column::RemovedAt.is_null())
             .one(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-        Ok(participant.is_some())
+        if let Some(p) = participant {
+            let user = users::Entity::find_by_id(user_id)
+                .one(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+            Ok(user.is_some() && user.unwrap().role == "teacher")
+        } else {
+            Ok(false)
+        }
     }
 
     pub async fn get_metadata(&self, teacher_id: Uuid) -> AppResult<(NaiveDateTime, usize, String)> {
@@ -345,13 +434,7 @@ impl ClassRepository {
     }
 
     pub async fn find_student_enrollments(&self, student_id: Uuid) -> AppResult<Vec<class_participants::Model>> {
-        class_participants::Entity::find()
-            .filter(class_participants::Column::UserId.eq(student_id))
-            .filter(class_participants::Column::Role.eq("student"))
-            .filter(class_participants::Column::RemovedAt.is_null())
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+        self.find_participants_by_user_id(student_id, Some("student")).await
     }
 
     pub async fn soft_delete(&self, id: Uuid) -> AppResult<()> {
@@ -379,26 +462,34 @@ impl ClassRepository {
             .map_err(|e| AppError::InternalServerError(format!("Transaction error: {}", e)))?;
 
         // Soft-remove current teacher
-        let old_teacher = class_participants::Entity::find()
+        let participants = class_participants::Entity::find()
             .filter(class_participants::Column::ClassId.eq(class_id))
-            .filter(class_participants::Column::Role.eq("teacher"))
             .filter(class_participants::Column::RemovedAt.is_null())
-            .one(&txn)
+            .all(&txn)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-        if let Some(old_teacher_participant) = old_teacher {
-            let update = class_participants::ActiveModel {
-                id: Set(old_teacher_participant.id),
-                removed_at: Set(Some(Utc::now().naive_utc())),
-                updated_at: Set(Utc::now().naive_utc()),
-                ..Default::default()
-            };
-
-            update
-                .update(&txn)
+        for participant in participants {
+            if let Some(user) = users::Entity::find_by_id(participant.user_id)
+                .one(&txn)
                 .await
-                .map_err(|e| AppError::InternalServerError(format!("Failed to remove old teacher: {}", e)))?;
+                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))? {
+                if user.role == "teacher" {
+                    let old_teacher_participant = participant;
+                    let update = class_participants::ActiveModel {
+                        id: Set(old_teacher_participant.id),
+                        removed_at: Set(Some(Utc::now().naive_utc())),
+                        updated_at: Set(Utc::now().naive_utc()),
+                        ..Default::default()
+                    };
+
+                    update
+                        .update(&txn)
+                        .await
+                        .map_err(|e| AppError::InternalServerError(format!("Failed to remove old teacher: {}", e)))?;
+                    break;
+                }
+            }
         }
 
         // Add new teacher
@@ -406,7 +497,6 @@ impl ClassRepository {
             id: Set(Uuid::new_v4()),
             class_id: Set(class_id),
             user_id: Set(new_teacher_id),
-            role: Set("teacher".to_string()),
             joined_at: Set(Utc::now().naive_utc()),
             updated_at: Set(Utc::now().naive_utc()),
             removed_at: Set(None),

@@ -19,7 +19,10 @@ impl super::SyncPushService {
                     Ok(v) => v,
                     Err(e) => return self.error_result(op, &e),
                 };
-                let client_id = self.parse_uuid_field(&op.payload, "id").ok();
+                let client_id = match self.parse_uuid_field(&op.payload, "id") {
+                    Ok(id) => Some(id),
+                    Err(e) => return self.error_result(op, &format!("Client ID is required for assignment creation: {}", e)),
+                };
                 let request = CreateAssignmentRequest {
                     title,
                     instructions,
@@ -71,6 +74,16 @@ impl super::SyncPushService {
                     Err(e) => return self.error_result(op, &e),
                 };
                 match self.assignment_service.publish_assignment(assignment_id, user_id).await {
+                    Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
+                    Err(e) => self.error_result(op, &e.to_string()),
+                }
+            }
+            "unpublish" => {
+                let assignment_id = match self.parse_uuid_field(&op.payload, "id") {
+                    Ok(id) => id,
+                    Err(e) => return self.error_result(op, &e),
+                };
+                match self.assignment_service.unpublish_assignment(assignment_id, user_id).await {
                     Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }

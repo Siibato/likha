@@ -5,6 +5,8 @@ import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/teacher/material_detail_page.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
+import 'package:likha/presentation/pages/shared/widgets/skeletons/skeleton_pulse.dart';
+import 'package:likha/presentation/pages/shared/widgets/skeletons/material_card_skeleton.dart';
 
 class StudentMaterialListPage extends ConsumerStatefulWidget {
   final String classId;
@@ -49,10 +51,12 @@ class _StudentMaterialListPageState extends ConsumerState<StudentMaterialListPag
             ),
             Expanded(
               child: state.isLoading && state.materials.isEmpty
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF2B2B2B),
-                        strokeWidth: 2.5,
+                  ? SkeletonPulse(
+                      child: ListView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(24),
+                        itemCount: 5,
+                        itemBuilder: (_, __) => const MaterialCardSkeleton(),
                       ),
                     )
                   : state.error != null && state.materials.isEmpty

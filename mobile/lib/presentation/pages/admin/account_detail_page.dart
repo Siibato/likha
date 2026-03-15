@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/presentation/pages/admin/widgets/info_card.dart';
 import 'package:likha/presentation/pages/admin/widgets/action_buttons.dart';
@@ -26,6 +25,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(adminProvider.notifier).clearActivityLogs();
       ref.read(adminProvider.notifier).loadActivityLogs(widget.user.id);
     });
   }
@@ -42,12 +42,10 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
     ref.listen<AdminState>(adminProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
-        context.showSuccessSnackBar(next.successMessage!);
         ref.read(adminProvider.notifier).clearMessages();
         ref.read(adminProvider.notifier).loadActivityLogs(widget.user.id);
       }
       if (next.error != null && prev?.error != next.error) {
-        context.showErrorSnackBar(next.error!);
         ref.read(adminProvider.notifier).clearMessages();
       }
     });

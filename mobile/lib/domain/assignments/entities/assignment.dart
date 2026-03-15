@@ -19,6 +19,8 @@ class Assignment extends Equatable {
   final int? score; // Student's own score
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? cachedAt;
+  final bool needsSync;
 
   const Assignment({
     required this.id,
@@ -39,6 +41,8 @@ class Assignment extends Equatable {
     this.score,
     required this.createdAt,
     required this.updatedAt,
+    this.cachedAt,
+    this.needsSync = false,
   });
 
   @override
@@ -61,5 +65,7 @@ class Assignment extends Equatable {
         score,
         createdAt,
         updatedAt,
+        cachedAt,
+        needsSync,
       ];
 }

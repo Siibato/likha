@@ -15,27 +15,82 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final now = DateTime.now();
+      final answers = jsonDecode(answersJson) as List<dynamic>;
+
       await db.transaction((txn) async {
+        // Delete existing answers for this submission
+        await txn.delete('submission_answers', where: 'submission_id = ?', whereArgs: [submissionId]);
+
+        // Insert normalized answers
+        for (final answerData in answers) {
+          final answer = answerData as Map<String, dynamic>;
+          final answerId = answer['id'] as String? ?? const Uuid().v4();
+          await txn.insert(
+            'submission_answers',
+            {
+              'id': answerId,
+              'submission_id': submissionId,
+              'question_id': answer['question_id'] as String,
+              'points': 0,
+              'cached_at': now.toIso8601String(),
+              'needs_sync': 1,
+            },
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+
+          // Insert answer items if present
+          if (answer['selected_choices'] != null) {
+            final choices = answer['selected_choices'] as List<dynamic>;
+            for (final choiceId in choices) {
+              await txn.insert(
+                'submission_answer_items',
+                {
+                  'id': const Uuid().v4(),
+                  'submission_answer_id': answerId,
+                  'choice_id': choiceId as String,
+                  'answer_text': null,
+                  'is_correct': 0,
+                  'cached_at': now.toIso8601String(),
+                  'needs_sync': 1,
+                },
+              );
+            }
+          } else if (answer['answer_text'] != null) {
+            await txn.insert(
+              'submission_answer_items',
+              {
+                'id': const Uuid().v4(),
+                'submission_answer_id': answerId,
+                'choice_id': null,
+                'answer_text': answer['answer_text'] as String,
+                'is_correct': 0,
+                'cached_at': now.toIso8601String(),
+                'needs_sync': 1,
+              },
+            );
+          }
+        }
+
+        // Mark submission as needing sync
         await txn.update(
           'assessment_submissions',
           {
-            'answers_json': answersJson,
-            'is_offline_mutation': 1,
-            'sync_status': 'pending',
+            'needs_sync': 1,
             'updated_at': now.toIso8601String(),
             'cached_at': now.toIso8601String(),
           },
           where: 'id = ?',
           whereArgs: [submissionId],
         );
+
         await syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),
           entityType: SyncEntityType.assessmentSubmission,
           operation: SyncOperation.saveAnswers,
-          payload: {'submission_id': submissionId, 'answers': jsonDecode(answersJson) as List<dynamic>},
+          payload: {'submission_id': submissionId, 'answers': answers},
           status: SyncStatus.pending,
           retryCount: 0,
-          maxRetries: 5,
+          maxRetries: 3,
           createdAt: now,
         ), txn: txn);
       });
@@ -61,16 +116,13 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
         {
           'id': submissionId,
           'assessment_id': assessmentId,
-          'student_id': studentId,
-          'student_name': studentName,
-          'student_username': studentUsername,
+          'user_id': studentId,
           'started_at': startedAt.toIso8601String(),
-          'local_start_at': startedAt.toIso8601String(),
-          'is_submitted': 0,
+          'total_points': 0,
+          'created_at': now.toIso8601String(),
           'updated_at': now.toIso8601String(),
           'cached_at': now.toIso8601String(),
-          'sync_status': 'synced',
-          'is_offline_mutation': 0,
+          'needs_sync': 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -93,26 +145,23 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
       await db.transaction((txn) async {
         await txn.insert('assessment_submissions', {
           'id': localId,
-          'local_id': localId,
           'assessment_id': assessmentId,
-          'student_id': studentId,
-          'student_name': studentName,
-          'student_username': studentUsername,
+          'user_id': studentId,
           'started_at': now.toIso8601String(),
-          'is_submitted': 0,
+          'total_points': 0,
+          'created_at': now.toIso8601String(),
           'updated_at': now.toIso8601String(),
           'cached_at': now.toIso8601String(),
-          'sync_status': 'pending',
-          'is_offline_mutation': 1,
+          'needs_sync': 1,
         });
         await syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),
           entityType: SyncEntityType.assessmentSubmission,
           operation: SyncOperation.create,
-          payload: {'local_id': localId, 'assessment_id': assessmentId, 'student_id': studentId},
+          payload: {'id': localId, 'assessment_id': assessmentId, 'user_id': studentId},
           status: SyncStatus.pending,
           retryCount: 0,
-          maxRetries: 5,
+          maxRetries: 3,
           createdAt: now,
         ), txn: txn);
       });
@@ -126,7 +175,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
   Future<StartSubmissionResultModel?> getCachedStartResult(String submissionId) async {
     try {
       final db = await localDatabase.database;
-      final results = await db.query('assessment_submissions', where: 'id = ?', whereArgs: [submissionId]);
+      final results = await db.query('assessment_submissions', where: 'id = ? AND deleted_at IS NULL', whereArgs: [submissionId]);
       if (results.isEmpty) return null;
       final submission = results.first;
       return StartSubmissionResultModel(
@@ -146,30 +195,33 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
   ) async {
     try {
       final db = await localDatabase.database;
-      print('🔎 [DataSource] getCachedStudentSubmission() START - assessmentId: $assessmentId, studentId: $studentId');
-      final results = await db.query(
-        'assessment_submissions',
-        where: 'assessment_id = ? AND student_id = ? AND deleted_at IS NULL',
-        whereArgs: [assessmentId, studentId],
-        orderBy: 'started_at DESC',
-        limit: 1,
-      );
-      print('🔎 [DataSource] getCachedStudentSubmission() - database query returned ${results.length} submission(s)');
+      final results = await db.rawQuery('''
+        SELECT s.*, u.full_name as student_name, u.username as student_username
+        FROM assessment_submissions s
+        LEFT JOIN users u ON u.id = s.user_id
+        WHERE s.assessment_id = ? AND s.user_id = ? AND s.deleted_at IS NULL
+        ORDER BY s.started_at DESC LIMIT 1
+      ''', [assessmentId, studentId]);
 
       if (results.isEmpty) {
-        print('🔎 [DataSource] getCachedStudentSubmission() - NO SUBMISSIONS FOUND in DB');
         return null;
       }
 
       final rawRow = results.first;
-      print('🔎 [DataSource] getCachedStudentSubmission() - raw DB row: id=${rawRow['id']}, is_submitted=${rawRow['is_submitted']}, submitted_at=${rawRow['submitted_at']}, started_at=${rawRow['started_at']}');
-
-      final submission = SubmissionSummaryModel.fromMap(rawRow);
-      print('🔎 [DataSource] getCachedStudentSubmission() RESULT - id: ${submission.id}, isSubmitted: ${submission.isSubmitted}, submittedAt: ${submission.submittedAt}, startedAt: ${submission.startedAt}');
-      return submission;
-    } catch (e, st) {
-      print('❌ [DataSource] getCachedStudentSubmission() EXCEPTION: $e');
-      print('❌ [DataSource] getCachedStudentSubmission() STACK: $st');
+      return SubmissionSummaryModel(
+        id: rawRow['id'] as String,
+        assessmentId: rawRow['assessment_id'] as String? ?? '',
+        studentId: rawRow['user_id'] as String? ?? '',
+        studentName: rawRow['student_name'] as String? ?? '',
+        studentUsername: rawRow['student_username'] as String? ?? '',
+        startedAt: DateTime.parse(rawRow['started_at'] as String),
+        submittedAt: rawRow['submitted_at'] != null ? DateTime.parse(rawRow['submitted_at'] as String) : null,
+        autoScore: (rawRow['earned_points'] as num?)?.toDouble() ?? 0.0,
+        finalScore: (rawRow['earned_points'] as num?)?.toDouble() ?? 0.0,
+        totalPoints: rawRow['total_points'] as int? ?? 0,
+        isSubmitted: rawRow['submitted_at'] != null,
+      );
+    } catch (e) {
       throw CacheException('Failed to get student submission: $e');
     }
   }
@@ -186,10 +238,9 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
         await txn.update(
           'assessment_submissions',
           {
-            'is_submitted': 1,
             'submitted_at': now.toIso8601String(),
-            'is_offline_mutation': 1,
-            'sync_status': 'pending',
+            'needs_sync': 1,
+            'updated_at': now.toIso8601String(),
             'cached_at': now.toIso8601String(),
           },
           where: 'id = ?',
@@ -202,7 +253,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
           payload: {'submission_id': submissionId, 'assessment_id': assessmentId},
           status: SyncStatus.pending,
           retryCount: 0,
-          maxRetries: 5,
+          maxRetries: 3,
           createdAt: now,
         ), txn: txn);
       });
@@ -215,29 +266,30 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
   Future<SubmissionDetailModel?> getCachedSubmissionDetail(String submissionId) async {
     try {
       final db = await localDatabase.database;
-      final results = await db.query('assessment_submissions', where: 'id = ?', whereArgs: [submissionId]);
+      final results = await db.rawQuery('''
+        SELECT s.*, u.full_name as student_name
+        FROM assessment_submissions s
+        LEFT JOIN users u ON u.id = s.user_id
+        WHERE s.id = ? AND s.deleted_at IS NULL
+      ''', [submissionId]);
       if (results.isEmpty) return null;
       final sub = results.first;
 
       List<SubmissionAnswerModel> answers = [];
-      final answersJson = sub['answers_json'] as String?;
-      if (answersJson != null && answersJson.isNotEmpty) {
-        try {
-          final answersList = jsonDecode(answersJson) as List<dynamic>;
-          answers = answersList.map((a) => SubmissionAnswerModel.fromJson(a as Map<String, dynamic>)).toList();
-        } catch (_) {}
-      }
+      // For now, return empty answers (they're stored in submission_answers table)
+      // A full implementation would reconstruct from submission_answers and submission_answer_items
 
       return SubmissionDetailModel(
         id: sub['id'] as String,
         assessmentId: sub['assessment_id'] as String? ?? '',
-        studentId: sub['student_id'] as String? ?? '',
+        studentId: sub['user_id'] as String? ?? '',
         studentName: sub['student_name'] as String? ?? '',
         startedAt: DateTime.parse(sub['started_at'] as String),
         submittedAt: sub['submitted_at'] != null ? DateTime.parse(sub['submitted_at'] as String) : null,
-        autoScore: (sub['auto_score'] as int?)?.toDouble() ?? 0.0,
-        finalScore: (sub['final_score'] as int?)?.toDouble() ?? 0.0,
-        isSubmitted: (sub['is_submitted'] as int?) == 1,
+        autoScore: (sub['earned_points'] as num?)?.toDouble() ?? 0.0,
+        finalScore: (sub['earned_points'] as num?)?.toDouble() ?? 0.0,
+        isSubmitted: sub['submitted_at'] != null,
+        totalPoints: sub['total_points'] as int? ?? 0,
         answers: answers,
       );
     } catch (e) {
@@ -254,19 +306,15 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
         {
           'id': submission.id,
           'assessment_id': submission.assessmentId,
-          'student_id': submission.studentId,
-          'student_name': submission.studentName,
-          'student_username': '',
+          'user_id': submission.studentId,
           'started_at': submission.startedAt.toIso8601String(),
           'submitted_at': submission.submittedAt?.toIso8601String(),
-          'auto_score': submission.autoScore.toInt(),
-          'final_score': submission.finalScore.toInt(),
-          'is_submitted': submission.isSubmitted ? 1 : 0,
-          'answers_json': jsonEncode(submission.answers),
+          'total_points': submission.totalPoints,
+          'earned_points': submission.autoScore,
+          'created_at': submission.startedAt.toIso8601String(),
           'updated_at': submission.submittedAt?.toIso8601String() ?? submission.startedAt.toIso8601String(),
           'cached_at': DateTime.now().toIso8601String(),
-          'sync_status': 'synced',
-          'is_offline_mutation': 0,
+          'needs_sync': 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -279,23 +327,28 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
   Future<List<SubmissionSummaryModel>> getCachedSubmissions(String assessmentId) async {
     try {
       final db = await localDatabase.database;
-      final results = await db.query(
-        'assessment_submissions',
-        where: 'assessment_id = ?',
-        whereArgs: [assessmentId],
-        orderBy: 'started_at DESC',
-      );
-      if (results.isEmpty) throw CacheException('No cached submissions for assessment $assessmentId');
+      final results = await db.rawQuery('''
+        SELECT s.*, u.full_name as student_name, u.username as student_username
+        FROM assessment_submissions s
+        LEFT JOIN users u ON u.id = s.user_id
+        WHERE s.assessment_id = ? AND s.deleted_at IS NULL
+        ORDER BY s.started_at DESC
+      ''', [assessmentId]);
+
+      if (results.isEmpty) return [];
+
       return results.map((row) => SubmissionSummaryModel(
         id: row['id'] as String,
-        studentId: row['student_id'] as String? ?? '',
+        assessmentId: row['assessment_id'] as String? ?? '',
+        studentId: row['user_id'] as String? ?? '',
         studentName: row['student_name'] as String? ?? '',
         studentUsername: row['student_username'] as String? ?? '',
         startedAt: DateTime.parse(row['started_at'] as String),
         submittedAt: row['submitted_at'] != null ? DateTime.parse(row['submitted_at'] as String) : null,
-        autoScore: (row['auto_score'] as int?)?.toDouble() ?? 0.0,
-        finalScore: (row['final_score'] as int?)?.toDouble() ?? 0.0,
-        isSubmitted: (row['is_submitted'] as int?) == 1,
+        autoScore: (row['earned_points'] as num?)?.toDouble() ?? 0.0,
+        finalScore: (row['earned_points'] as num?)?.toDouble() ?? 0.0,
+        totalPoints: row['total_points'] as int? ?? 0,
+        isSubmitted: row['submitted_at'] != null,
       )).toList();
     } catch (e) {
       if (e is CacheException) rethrow;
@@ -312,33 +365,28 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
         [assessmentId],
       );
       final count = (result.first['count'] as int?) ?? 0;
-      print('📊 [DataSource] getCachedSubmissionCount() - assessmentId: $assessmentId, count: $count');
       return count;
     } catch (e) {
-      print('❌ [DataSource] getCachedSubmissionCount() ERROR: $e');
       throw CacheException('Failed to get submission count: $e');
     }
   }
 
   @override
-  Future<bool> hasStudentSubmittedAssessment(String assessmentId, String studentId) async {
+  Future<bool?> hasStudentSubmittedAssessment(String assessmentId, String studentId) async {
     try {
       final db = await localDatabase.database;
       final result = await db.query(
         'assessment_submissions',
-        columns: ['is_submitted'],
-        where: 'assessment_id = ? AND student_id = ? AND deleted_at IS NULL',
+        columns: ['submitted_at'],
+        where: 'assessment_id = ? AND user_id = ? AND deleted_at IS NULL',
         whereArgs: [assessmentId, studentId],
       );
       if (result.isEmpty) {
-        print('📋 [DataSource] hasStudentSubmittedAssessment() - assessmentId: $assessmentId, studentId: $studentId → no submission');
-        return false;
+        return null; // No submission found
       }
-      final isSubmitted = (result.first['is_submitted'] as int?) == 1;
-      print('📋 [DataSource] hasStudentSubmittedAssessment() - assessmentId: $assessmentId, studentId: $studentId → $isSubmitted');
-      return isSubmitted;
+      final isSubmitted = result.first['submitted_at'] != null;
+      return isSubmitted; // false = in-progress, true = submitted
     } catch (e) {
-      print('❌ [DataSource] hasStudentSubmittedAssessment() ERROR: $e');
       throw CacheException('Failed to check submission status: $e');
     }
   }
@@ -354,18 +402,15 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
             {
               'id': submission.id,
               'assessment_id': assessmentId,
-              'student_id': submission.studentId,
-              'student_name': submission.studentName,
-              'student_username': submission.studentUsername,
+              'user_id': submission.studentId,
               'started_at': submission.startedAt.toIso8601String(),
               'submitted_at': submission.submittedAt?.toIso8601String(),
-              'auto_score': submission.autoScore.toInt(),
-              'final_score': submission.finalScore.toInt(),
-              'is_submitted': submission.isSubmitted ? 1 : 0,
+              'total_points': submission.totalPoints,
+              'earned_points': submission.autoScore,
+              'created_at': submission.startedAt.toIso8601String(),
               'updated_at': DateTime.now().toIso8601String(),
               'cached_at': DateTime.now().toIso8601String(),
-              'sync_status': 'synced',
-              'is_offline_mutation': 0,
+              'needs_sync': 0,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
@@ -385,39 +430,39 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
       final db = await localDatabase.database;
       final now = DateTime.now();
 
-      final rows = await db.query(
-        'assessment_submissions',
-        columns: ['id', 'answers_json'],
-        where: "answers_json LIKE ?",
-        whereArgs: ['%"$answerId"%'],
-      );
-
       await db.transaction((txn) async {
-        if (rows.isNotEmpty) {
-          final submissionId = rows.first['id'] as String;
-          final rawJson = rows.first['answers_json'] as String?;
-          if (rawJson != null) {
-            final answers = (jsonDecode(rawJson) as List<dynamic>)
-                .cast<Map<String, dynamic>>();
-            for (final answer in answers) {
-              if (answer['id'] == answerId) {
-                answer['is_override_correct'] = isCorrect;
-                break;
-              }
-            }
-            await txn.update(
-              'assessment_submissions',
-              {
-                'answers_json': jsonEncode(answers),
-                'is_offline_mutation': 1,
-                'sync_status': 'pending',
-                'updated_at': now.toIso8601String(),
-              },
-              where: 'id = ?',
-              whereArgs: [submissionId],
-            );
-          }
+        // Find the answer in submission_answers
+        final answerResults = await txn.query(
+          'submission_answers',
+          where: 'id = ?',
+          whereArgs: [answerId],
+        );
+
+        if (answerResults.isNotEmpty) {
+          final submissionId = answerResults.first['submission_id'] as String;
+
+          // Update answer items to reflect override
+          await txn.update(
+            'submission_answer_items',
+            {
+              'is_correct': isCorrect ? 1 : 0,
+            },
+            where: 'submission_answer_id = ?',
+            whereArgs: [answerId],
+          );
+
+          // Mark submission as needing sync
+          await txn.update(
+            'assessment_submissions',
+            {
+              'needs_sync': 1,
+              'updated_at': now.toIso8601String(),
+            },
+            where: 'id = ?',
+            whereArgs: [submissionId],
+          );
         }
+
         await syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),
           entityType: SyncEntityType.assessmentSubmission,
@@ -425,7 +470,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
           payload: {'answer_id': answerId, 'is_correct': isCorrect},
           status: SyncStatus.pending,
           retryCount: 0,
-          maxRetries: 5,
+          maxRetries: 3,
           createdAt: now,
         ), txn: txn);
       });

@@ -16,6 +16,7 @@ abstract class AssessmentLocalDataSource {
   });
   Future<void> deleteQuestionLocally({required String questionId});
   Future<void> deleteAssessmentLocally({required String assessmentId});
+  Future<QuestionModel?> getCachedQuestion(String questionId);
   Future<void> updateQuestionId({
     required String localId,
     required String serverId,
@@ -80,7 +81,7 @@ abstract class AssessmentLocalDataSource {
   });
   Future<List<SubmissionSummaryModel>> getCachedSubmissions(String assessmentId);
   Future<int> getCachedSubmissionCount(String assessmentId);
-  Future<bool> hasStudentSubmittedAssessment(String assessmentId, String studentId);
+  Future<bool?> hasStudentSubmittedAssessment(String assessmentId, String studentId);
   Future<void> cacheSubmissions(String assessmentId, List<SubmissionSummaryModel> submissions);
   Future<AssessmentStatisticsModel?> getCachedStatistics(String assessmentId);
   Future<void> cacheStatistics(AssessmentStatisticsModel statistics);
@@ -92,5 +93,6 @@ abstract class AssessmentLocalDataSource {
     required bool isCorrect,
   });
   Future<void> markAssessmentPublishedLocally({required String assessmentId});
+  Future<void> markAssessmentUnpublishedLocally({required String assessmentId});
   Future<void> clearAllCache();
 }

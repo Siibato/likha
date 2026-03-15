@@ -98,21 +98,9 @@ impl super::AssignmentService {
             .create_log(
                 teacher_id,
                 "assignment_created",
-                Some(teacher_id),
                 Some(format!("Assignment '{}' created", assignment.title)),
             )
             .await;
-
-        let _ = self.change_log_repo.log_change(
-            "assignment",
-            assignment.id,
-            "create",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "title": assignment.title,
-                "total_points": assignment.total_points,
-            })).unwrap_or_default()),
-        ).await;
 
         Ok(AssignmentResponse {
             id: assignment.id,
@@ -176,7 +164,7 @@ impl super::AssignmentService {
                 (
                     submission.as_ref().map(|s| s.status.clone()),
                     submission.as_ref().map(|s| s.id),
-                    submission.and_then(|s| s.score),
+                    submission.and_then(|s| s.points),
                 )
             } else {
                 (None, None, None)
@@ -235,7 +223,7 @@ impl super::AssignmentService {
                 is_published: a.is_published,
                 submission_status: submission.as_ref().map(|s| s.status.clone()),
                 submission_id: submission.as_ref().map(|s| s.id),
-                score: submission.and_then(|s| s.score),
+                score: submission.and_then(|s| s.points),
             });
         }
 
@@ -400,17 +388,6 @@ impl super::AssignmentService {
             .count_graded_by_assignment(assignment_id)
             .await?;
 
-        let _ = self.change_log_repo.log_change(
-            "assignment",
-            assignment_id,
-            "update",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "title": updated.title,
-                "total_points": updated.total_points,
-            })).unwrap_or_default()),
-        ).await;
-
         Ok(AssignmentResponse {
             id: updated.id,
             class_id: updated.class_id,
@@ -454,18 +431,8 @@ impl super::AssignmentService {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
-        let submission_count = self
-            .assignment_repo
-            .count_submissions_by_assignment(assignment_id)
-            .await?;
-        if submission_count > 0 {
-            return Err(AppError::BadRequest(
-                "Cannot delete assignment with existing submissions".to_string(),
-            ));
-        }
-
         self.assignment_repo
-            .delete_assignment(assignment_id)
+            .soft_delete(assignment_id)
             .await?;
 
         let _ = self
@@ -473,18 +440,9 @@ impl super::AssignmentService {
             .create_log(
                 teacher_id,
                 "assignment_deleted",
-                Some(teacher_id),
                 Some(format!("Assignment '{}' deleted", assignment.title)),
             )
             .await;
-
-        let _ = self.change_log_repo.log_change(
-            "assignment",
-            assignment_id,
-            "delete",
-            teacher_id,
-            None,
-        ).await;
 
         Ok(())
     }
@@ -526,20 +484,9 @@ impl super::AssignmentService {
             .create_log(
                 teacher_id,
                 "assignment_published",
-                Some(teacher_id),
                 Some(format!("Assignment '{}' published", published.title)),
             )
             .await;
-
-        let _ = self.change_log_repo.log_change(
-            "assignment",
-            assignment_id,
-            "update",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "is_published": true,
-            })).unwrap_or_default()),
-        ).await;
 
         Ok(AssignmentResponse {
             id: published.id,
@@ -563,6 +510,67 @@ impl super::AssignmentService {
         })
     }
 
+    pub async fn unpublish_assignment(
+        &self,
+        assignment_id: Uuid,
+        teacher_id: Uuid,
+    ) -> AppResult<AssignmentResponse> {
+        let assignment = self
+            .assignment_repo
+            .find_by_id(assignment_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
+
+        let _class = self
+            .class_repo
+            .find_by_id(assignment.class_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
+
+        if !self.class_repo.is_teacher_of_class(teacher_id, assignment.class_id).await? {
+            return Err(AppError::Forbidden("Access denied".to_string()));
+        }
+
+        if !assignment.is_published {
+            return Err(AppError::BadRequest("Assignment is not published".to_string()));
+        }
+
+        let unpublished = self
+            .assignment_repo
+            .unpublish_assignment(assignment_id)
+            .await?;
+
+        let _ = self
+            .activity_log_repo
+            .create_log(
+                teacher_id,
+                "assignment_unpublished",
+                Some(format!("Assignment '{}' unpublished", unpublished.title)),
+            )
+            .await;
+
+        Ok(AssignmentResponse {
+            id: unpublished.id,
+            class_id: unpublished.class_id,
+            title: unpublished.title,
+            instructions: unpublished.instructions,
+            total_points: unpublished.total_points,
+            submission_type: unpublished.submission_type,
+            allowed_file_types: unpublished.allowed_file_types,
+            max_file_size_mb: unpublished.max_file_size_mb,
+            due_at: unpublished.due_at.to_string(),
+            is_published: unpublished.is_published,
+            order_index: unpublished.order_index,
+            submission_count: 0,
+            graded_count: 0,
+            submission_status: None,
+            submission_id: None,
+            score: None,
+            created_at: unpublished.created_at.to_string(),
+            updated_at: unpublished.updated_at.to_string(),
+        })
+    }
+
     pub async fn soft_delete(&self, assignment_id: Uuid, teacher_id: Uuid) -> AppResult<()> {
         let assignment = self
             .assignment_repo
@@ -583,17 +591,6 @@ impl super::AssignmentService {
         }
 
         self.assignment_repo.soft_delete(assignment_id).await?;
-
-        let _ = self.change_log_repo.log_change(
-            "assignment",
-            assignment_id,
-            "delete",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "id": assignment_id,
-                "title": assignment.title,
-            })).unwrap_or_default()),
-        ).await;
 
         Ok(())
     }

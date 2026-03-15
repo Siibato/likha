@@ -22,7 +22,10 @@ impl super::SyncPushService {
                 let close_at = op.payload.get("close_at").and_then(|v| v.as_str()).map(|s| s.to_string())
                     .unwrap_or_else(|| Utc::now().checked_add_signed(chrono::Duration::hours(1)).unwrap().to_rfc3339());
 
-                let client_id = self.parse_uuid_field(&op.payload, "id").ok();
+                let client_id = match self.parse_uuid_field(&op.payload, "id") {
+                    Ok(id) => Some(id),
+                    Err(e) => return self.error_result(op, &format!("Client ID is required for assessment creation: {}", e)),
+                };
                 let request = CreateAssessmentRequest {
                     title,
                     description,
@@ -83,6 +86,16 @@ impl super::SyncPushService {
                     Err(e) => return self.error_result(op, &e),
                 };
                 match self.assessment_service.release_results(assessment_id, user_id).await {
+                    Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
+                    Err(e) => self.error_result(op, &e.to_string()),
+                }
+            }
+            "unpublish" => {
+                let assessment_id = match self.parse_uuid_field(&op.payload, "id") {
+                    Ok(id) => id,
+                    Err(e) => return self.error_result(op, &e),
+                };
+                match self.assessment_service.unpublish_assessment(assessment_id, user_id).await {
                     Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }

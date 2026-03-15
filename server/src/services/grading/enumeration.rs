@@ -1,4 +1,5 @@
 use uuid::Uuid;
+use std::collections::HashMap;
 use crate::db::repositories::assessment_repository::AssessmentRepository;
 use crate::db::repositories::submission_repository::SubmissionRepository;
 use crate::utils::AppResult;
@@ -10,58 +11,44 @@ pub async fn grade_enumeration(
     assessment_repo: &AssessmentRepository,
     submission_repo: &SubmissionRepository,
 ) -> AppResult<(bool, f64)> {
-    let enum_items = assessment_repo
-        .find_enumeration_items_by_question_id(question_id)
-        .await?;
-
-    if enum_items.is_empty() {
+    // Fetch the enumeration slots (answer_keys with their acceptable_answers)
+    let slots = assessment_repo.find_enumeration_items_for_question(question_id).await?;
+    if slots.is_empty() {
         return Ok((false, 0.0));
     }
 
-    let student_enum_answers = submission_repo
-        .find_enumeration_answers(submission_answer_id)
-        .await?;
+    // Fetch student's answer items (linked to slots via answer_key_id)
+    let items = submission_repo.find_answer_items_by_submission_answer_id(submission_answer_id).await?;
 
-    let mut item_answers: Vec<(Uuid, Vec<String>)> = Vec::new();
-    for item in &enum_items {
-        let answers = assessment_repo.find_enumeration_item_answers(item.id).await?;
-        let texts: Vec<String> = answers.iter().map(|a| a.answer_text.clone()).collect();
-        item_answers.push((item.id, texts));
-    }
+    // Build map: answer_key_id -> item for quick lookup
+    let item_map: HashMap<Uuid, &::entity::submission_answer_items::Model> = items.iter()
+        .filter_map(|item| item.answer_key_id.map(|k| (k, item)))
+        .collect();
 
-    let mut matched_items: std::collections::HashSet<Uuid> = std::collections::HashSet::new();
-    let mut matched_count = 0;
+    let total = slots.len();
+    let mut correct_count = 0usize;
 
-    for student_answer in &student_enum_answers {
-        let normalized = student_answer.answer_text.trim().to_lowercase();
-        let mut found_match = false;
+    for (key, acceptable_answers) in &slots {
+        if let Some(item) = item_map.get(&key.id) {
+            let student_text = item.answer_text.as_deref()
+                .map(|t| t.trim().to_lowercase())
+                .unwrap_or_default();
 
-        for (item_id, acceptable) in &item_answers {
-            if matched_items.contains(item_id) {
-                continue;
+            let is_slot_correct = !student_text.is_empty() && acceptable_answers.iter()
+                .any(|a| a.answer_text == student_text);
+
+            if is_slot_correct {
+                correct_count += 1;
             }
-            if acceptable.iter().any(|a| *a == normalized) {
-                matched_items.insert(*item_id);
-                matched_count += 1;
-                found_match = true;
 
-                submission_repo
-                    .update_enumeration_answer_grade(student_answer.id, Some(*item_id), true)
-                    .await?;
-                break;
-            }
-        }
-
-        if !found_match {
+            // Update per-item correctness for teacher UI
             submission_repo
-                .update_enumeration_answer_grade(student_answer.id, None, false)
+                .update_answer_item_correctness(item.id, is_slot_correct)
                 .await?;
         }
+        // Items with no answer_key_id (old data) stay at is_correct=false
     }
 
-    let total_items = enum_items.len() as f64;
-    let awarded = (matched_count as f64 / total_items) * points as f64;
-    let is_fully_correct = matched_count == enum_items.len();
-
-    Ok((is_fully_correct, awarded))
+    let partial_points = (correct_count as f64 / total as f64) * points as f64;
+    Ok((correct_count > 0, partial_points))
 }

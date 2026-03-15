@@ -51,7 +51,7 @@ impl super::AuthService {
         let user = self.user_repo.set_password(user.id, password_hash).await?;
 
         self.activity_log_repo
-            .create_log(user.id, "account_activated", Some(user.id), None)
+            .create_log(user.id, "account_activated", None)
             .await?;
 
         let access_token = self
@@ -141,7 +141,7 @@ impl super::AuthService {
             .await?;
 
         self.activity_log_repo
-            .create_log(user.id, "login", Some(user.id), None)
+            .create_log(user.id, "login", None)
             .await?;
 
         Ok(AuthResponse {

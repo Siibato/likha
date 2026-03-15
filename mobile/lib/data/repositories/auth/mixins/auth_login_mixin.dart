@@ -67,6 +67,7 @@ mixin AuthLoginMixin on AuthRepositoryBase {
       }
 
       unawaited(localDataSource.cacheCurrentUser(result.user));
+      unawaited(storageService.saveUserRole(result.user.role));
 
       return Right(result.user);
     } on TooManyRequestsException catch (e) {

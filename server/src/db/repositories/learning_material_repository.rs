@@ -136,7 +136,8 @@ impl LearningMaterialRepository {
         file_name: String,
         file_type: String,
         file_size: i64,
-        file_data: Vec<u8>,
+        file_path: String,
+        file_hash: String,
     ) -> AppResult<material_files::Model> {
         let file = material_files::ActiveModel {
             id: Set(Uuid::new_v4()),
@@ -144,13 +145,55 @@ impl LearningMaterialRepository {
             file_name: Set(file_name),
             file_type: Set(file_type),
             file_size: Set(file_size),
-            file_data: Set(file_data),
+            file_path: Set(Some(file_path)),
+            file_hash: Set(Some(file_hash)),
             uploaded_at: Set(Utc::now().naive_utc()),
+            deleted_at: Set(None),
         };
 
         file.insert(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Failed to save file: {}", e)))
+    }
+
+    pub async fn find_active_file_path_by_hash(&self, hash: &str) -> AppResult<Option<String>> {
+        let result = material_files::Entity::find()
+            .filter(material_files::Column::FileHash.eq(hash))
+            .filter(material_files::Column::DeletedAt.is_null())
+            .one(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        Ok(result.and_then(|f| f.file_path))
+    }
+
+    pub async fn count_active_by_hash(&self, hash: &str, exclude_id: Uuid) -> AppResult<i64> {
+        let count = material_files::Entity::find()
+            .filter(material_files::Column::FileHash.eq(hash))
+            .filter(material_files::Column::DeletedAt.is_null())
+            .filter(material_files::Column::Id.ne(exclude_id))
+            .count(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        Ok(count as i64)
+    }
+
+    pub async fn soft_delete_file(&self, id: Uuid) -> AppResult<()> {
+        let file = material_files::ActiveModel {
+            id: Set(id),
+            deleted_at: Set(Some(Utc::now().naive_utc())),
+            file_path: Set(None),
+            file_hash: Set(None),
+            ..Default::default()
+        };
+
+        material_files::Entity::update(file)
+            .exec(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to delete file: {}", e)))?;
+
+        Ok(())
     }
 
     pub async fn find_file_by_id(&self, id: Uuid) -> AppResult<Option<material_files::Model>> {
@@ -166,18 +209,11 @@ impl LearningMaterialRepository {
     ) -> AppResult<Vec<material_files::Model>> {
         material_files::Entity::find()
             .filter(material_files::Column::MaterialId.eq(material_id))
+            .filter(material_files::Column::DeletedAt.is_null())
             .order_by_asc(material_files::Column::UploadedAt)
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
-    }
-
-    pub async fn delete_file(&self, id: Uuid) -> AppResult<()> {
-        material_files::Entity::delete_by_id(id)
-            .exec(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to delete file: {}", e)))?;
-        Ok(())
     }
 
     pub async fn count_files_by_material(&self, material_id: Uuid) -> AppResult<usize> {

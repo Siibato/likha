@@ -19,24 +19,36 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
       try {
         final cached =
             await localDataSource.getCachedSubmissions(assignmentId);
-        return Right(cached);
-      } on CacheException {
-        // Not in local DB — fetch from server if reachable
-        try {
-          final result = await remoteDataSource.getSubmissions(
-              assignmentId: assignmentId);
-          await localDataSource.cacheSubmissions(
-              assignmentId, result.cast<SubmissionListItemModel>());
-          unawaited(validationService.validateAndSync('assignments'));
-          return Right(result);
-        } on NetworkException catch (e) {
-          return Left(NetworkFailure(e.message));
-        } on ServerException catch (e) {
-          return Left(ServerFailure(e.message));
+        // Only return cache if it has data; empty cache is treated as a miss
+        if (cached.isNotEmpty) {
+          return Right(cached);
         }
+      } on CacheException {
+        // Not in local DB — fall through to remote fetch
       }
-    } on CacheException catch (e) {
-      return Left(CacheFailure(e.message));
+
+      // Cache miss or empty cache — fetch from server if reachable
+      try {
+        final result = await remoteDataSource.getSubmissions(
+            assignmentId: assignmentId);
+        await localDataSource.cacheSubmissions(
+            assignmentId, result.cast<SubmissionListItemModel>());
+        unawaited(validationService.validateAndSync('assignments'));
+
+        // Sort by submittedAt ASC (drafts last) for consistent ordering with cache queries
+        final sorted = [...result]..sort((a, b) {
+          if (a.submittedAt == null && b.submittedAt == null) return 0;
+          if (a.submittedAt == null) return 1;
+          if (b.submittedAt == null) return -1;
+          return a.submittedAt!.compareTo(b.submittedAt!);
+        });
+
+        return Right(sorted);
+      } on NetworkException catch (e) {
+        return Left(NetworkFailure(e.message));
+      } on ServerException catch (e) {
+        return Left(ServerFailure(e.message));
+      }
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -47,27 +59,44 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
     required String submissionId,
   }) async {
     try {
-      // Fix 2: Server-primary when online (stale-while-revalidate pattern)
-      if (serverReachabilityService.isServerReachable) {
-        try {
-          final result = await remoteDataSource.getSubmissionDetail(
-              submissionId: submissionId);
-          unawaited(localDataSource.cacheSubmissionDetail(result));
-          unawaited(validationService.validateAndSync('assignments'));
-          return Right(result);
-        } on NetworkException {
-          // Server became unreachable mid-request — fall back to cache
-          final cached =
-              await localDataSource.getCachedSubmission(submissionId);
-          if (cached != null) return Right(cached);
-          rethrow;
+      // Cache-primary strategy: always return cached data if available (mirrors getMaterialDetail pattern)
+      // This ensures file.localPath (written by cacheFileBytes during download) is preserved
+      try {
+        final cached = await localDataSource.getCachedSubmission(submissionId);
+        if (cached != null) {
+          // Background refresh if server is reachable (non-blocking)
+          if (serverReachabilityService.isServerReachable) {
+            _backgroundRefreshSubmission(submissionId);
+          }
+          return Right(cached);
         }
+      } on CacheException {
+        // Cache miss — fall through to server fetch
       }
 
-      // Offline: use cached data
-      final cached = await localDataSource.getCachedSubmission(submissionId);
-      if (cached != null) return Right(cached);
-      return Left(NetworkFailure('No connection and no cached submission'));
+      // Cache miss: fetch from server
+      try {
+        final result = await remoteDataSource.getSubmissionDetail(
+            submissionId: submissionId);
+        // Await cache write to ensure DB is ready for subsequent reads
+        await localDataSource.cacheSubmissionDetail(result);
+        unawaited(validationService.validateAndSync('assignments'));
+
+        // Auto-repair: load from cache to restore file.localPath from disk if files exist
+        // This ensures files downloaded in previous sessions show as cached on initial load
+        try {
+          final cached = await localDataSource.getCachedSubmission(submissionId);
+          if (cached != null) {
+            return Right(cached);
+          }
+        } catch (_) {
+          // Auto-repair failed, return server result as fallback
+        }
+        return Right(result);
+      } on NetworkException {
+        // Server unreachable and cache is empty
+        rethrow;
+      }
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } on NetworkException catch (e) {
@@ -75,6 +104,62 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
+  }
+
+  /// Silently refreshes submission detail from server.
+  /// Updates local cache only if data has changed.
+  /// Emits DataEventBus event if files have changed so the detail page can reload.
+  /// All errors are swallowed — users keep seeing cached data without interruption.
+  /// ConflictAlgorithm.ignore on file inserts ensures local_path values are never overwritten.
+  void _backgroundRefreshSubmission(String submissionId) {
+    Future.microtask(() async {
+      try {
+        print('[BG_REFRESH] 🔄 Starting background refresh for submissionId=$submissionId');
+        final fresh = await remoteDataSource.getSubmissionDetail(
+            submissionId: submissionId);
+        // Get currently cached data to compare against fresh
+        final cached = await localDataSource.getCachedSubmission(submissionId);
+
+        if (_submissionDataHasChanged(cached, fresh)) {
+          print('[BG_REFRESH] ✅ Data changed! Caching and notifying...');
+          await localDataSource.cacheSubmissionDetail(fresh);
+          print('[BG_REFRESH] 📢 Calling dataEventBus.notifySubmissionDetailChanged($submissionId)');
+          dataEventBus.notifySubmissionDetailChanged(submissionId);
+        } else {
+          print('[BG_REFRESH] ⚫ Data unchanged, no notification');
+        }
+      } catch (e) {
+        print('[BG_REFRESH] ❌ Error in background refresh: $e');
+      }
+    });
+  }
+
+  /// Helper: checks if submission data has meaningfully changed between cached and fresh versions.
+  /// Checks status, score, textContent, feedback, and files.
+  bool _submissionDataHasChanged(
+    AssignmentSubmission? cached,
+    AssignmentSubmission fresh,
+  ) {
+    if (cached == null) return true;
+    if (cached.status != fresh.status) return true;
+    if (cached.score != fresh.score) return true;
+    if (cached.textContent != fresh.textContent) return true;
+    if (cached.feedback != fresh.feedback) return true;
+    if (_submissionFilesHaveChanged(cached.files, fresh.files)) return true;
+    return false;
+  }
+
+  /// Helper: checks if submission files have changed between cached and fresh versions.
+  bool _submissionFilesHaveChanged(
+    List<SubmissionFile> cached,
+    List<SubmissionFile> fresh,
+  ) {
+    if (cached.length != fresh.length) return true;
+    final cachedIds = {for (final f in cached) f.id};
+    for (final f in fresh) {
+      if (!cachedIds.contains(f.id)) return true;
+    }
+    return false;
   }
 
   @override
@@ -109,6 +194,8 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
           gradedAt: DateTime.now(),
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          needsSync: true,
+          cachedAt: DateTime.now(),
         ));
       }
 
@@ -119,6 +206,8 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
           if (feedback != null) 'feedback': feedback,
         },
       );
+      // Ensure cache is fresh before listener (ref.listen in page) re-reads it
+      await localDataSource.cacheSubmissionDetail(result);
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -155,11 +244,15 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
           gradedAt: null,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          needsSync: true,
+          cachedAt: DateTime.now(),
         ));
       }
 
       final result = await remoteDataSource.returnSubmission(
           submissionId: submissionId);
+      // Ensure cache is fresh before listener (ref.listen in page) re-reads it
+      await localDataSource.cacheSubmissionDetail(result);
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -200,6 +293,8 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
           gradedAt: null,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          needsSync: true,
+          cachedAt: DateTime.now(),
         ));
       }
 
@@ -230,6 +325,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
         final size = await fileSize(filePath);
         final mime = mimeType(filePath);
 
+        final localFileId = const Uuid().v4();
         await localDataSource.stageFileForUpload(
           submissionId: submissionId,
           fileName: fileName,
@@ -239,11 +335,14 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
         );
 
         return Right(SubmissionFile(
-          id: '',
+          id: localFileId,
           fileName: fileName,
           fileType: mime,
           fileSize: size,
           uploadedAt: DateTime.now(),
+          localPath: filePath,
+          needsSync: true,
+          cachedAt: DateTime.now(),
         ));
       }
 
@@ -326,6 +425,8 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
           gradedAt: null,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          needsSync: true,
+          cachedAt: DateTime.now(),
         ));
       }
 
@@ -340,6 +441,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
             id: result.id,
             studentId: result.studentId,
             studentName: result.studentName,
+            studentUsername: '', // Not available from detail response
             status: result.status,
             submittedAt: result.submittedAt,
             isLate: result.isLate,
@@ -369,9 +471,8 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
       }
 
       final result = await remoteDataSource.downloadFile(fileId: fileId);
-      try {
-        await localDataSource.cacheFileBytes(fileId, fileId, result);
-      } catch (_) {}
+      // Pass empty fileName to let datasource look it up from submission_files table
+      await localDataSource.cacheFileBytes(fileId, '', result);
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

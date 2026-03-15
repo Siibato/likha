@@ -34,11 +34,12 @@ impl super::AssignmentService {
             .map(|(s, user)| SubmissionListItem {
                 id: s.id,
                 student_id: s.student_id,
-                student_name: user.map(|u| u.full_name).unwrap_or_default(),
+                student_name: user.as_ref().map(|u| u.full_name.clone()).unwrap_or_default(),
+                student_username: user.map(|u| u.username).unwrap_or_default(),
                 status: s.status,
                 submitted_at: s.submitted_at.map(|dt| dt.to_string()),
                 is_late: s.is_late,
-                score: s.score,
+                score: s.points,
             })
             .collect();
 
@@ -97,7 +98,7 @@ impl super::AssignmentService {
 
         let graded = self
             .assignment_repo
-            .grade_submission(submission_id, request.score, request.feedback)
+            .grade_submission(submission_id, request.score, request.feedback, Some(teacher_id))
             .await?;
 
         let _ = self
@@ -105,24 +106,12 @@ impl super::AssignmentService {
             .create_log(
                 teacher_id,
                 "assignment_graded",
-                Some(teacher_id),
                 Some(format!(
                     "Graded assignment '{}' - score: {}/{}",
                     assignment.title, request.score, assignment.total_points
                 )),
             )
             .await;
-
-        let _ = self.change_log_repo.log_change(
-            "assignment_submission",
-            submission_id,
-            "update",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "status": "graded",
-                "score": request.score,
-            })).unwrap_or_default()),
-        ).await;
 
         let student_name = self
             .assignment_repo
@@ -179,23 +168,12 @@ impl super::AssignmentService {
             .create_log(
                 teacher_id,
                 "assignment_returned",
-                Some(teacher_id),
                 Some(format!(
                     "Returned assignment '{}' for revision",
                     assignment.title
                 )),
             )
             .await;
-
-        let _ = self.change_log_repo.log_change(
-            "assignment_submission",
-            submission_id,
-            "update",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "status": "returned",
-            })).unwrap_or_default()),
-        ).await;
 
         let student_name = self
             .assignment_repo
@@ -239,7 +217,7 @@ impl super::AssignmentService {
                     status: sub.status.clone(),
                     submitted_at: sub.submitted_at.map(|dt| dt.to_string()),
                     is_late: sub.is_late,
-                    score: sub.score,
+                    score: sub.points,
                 });
             }
         }

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/theme/app_colors.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/teacher/submission_review_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_submission_card.dart';
 import 'package:likha/presentation/pages/teacher/widgets/empty_assessment_submissions_state.dart';
@@ -19,6 +20,8 @@ class AssessmentSubmissionsPage extends ConsumerStatefulWidget {
 
 class _AssessmentSubmissionsPageState
     extends ConsumerState<AssessmentSubmissionsPage> {
+  String? _formError;
+
   @override
   void initState() {
     super.initState();
@@ -35,7 +38,7 @@ class _AssessmentSubmissionsPageState
 
     ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
       if (next.error != null && prev?.error != next.error) {
-        context.showErrorSnackBar(next.error!);
+        setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
         ref.read(assessmentProvider.notifier).clearMessages();
       }
     });
@@ -56,16 +59,27 @@ class _AssessmentSubmissionsPageState
           ),
         ),
       ),
-      body: state.isLoading && state.submissions.isEmpty
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.foregroundPrimary,
-                strokeWidth: 2.5,
+      body: Column(
+        children: [
+          if (_formError != null)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: FormMessage(
+                message: _formError,
+                severity: MessageSeverity.error,
               ),
-            )
-          : state.submissions.isEmpty
-              ? const EmptyAssessmentSubmissionsState()
-              : RefreshIndicator(
+            ),
+          Expanded(
+            child: state.isLoading && state.submissions.isEmpty
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.foregroundPrimary,
+                      strokeWidth: 2.5,
+                    ),
+                  )
+                : state.submissions.isEmpty
+                    ? const EmptyAssessmentSubmissionsState()
+                    : RefreshIndicator(
                   onRefresh: () => ref
                       .read(assessmentProvider.notifier)
                       .loadSubmissions(widget.assessmentId),
@@ -96,6 +110,9 @@ class _AssessmentSubmissionsPageState
                     },
                   ),
                 ),
+            ),
+        ],
+      ),
     );
   }
 }

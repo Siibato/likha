@@ -31,20 +31,9 @@ impl super::LearningMaterialService {
             .create_log(
                 teacher_id,
                 "material_created",
-                Some(teacher_id),
                 Some(format!("Learning material '{}' created", material.title)),
             )
             .await;
-
-        let _ = self.change_log_repo.log_change(
-            "learning_material",
-            material.id,
-            "create",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "title": material.title,
-            })).unwrap_or_default()),
-        ).await;
 
         Ok(MaterialResponse {
             id: material.id,
@@ -195,20 +184,9 @@ impl super::LearningMaterialService {
             .create_log(
                 teacher_id,
                 "material_updated",
-                Some(teacher_id),
                 Some(format!("Learning material '{}' updated", updated.title)),
             )
             .await;
-
-        let _ = self.change_log_repo.log_change(
-            "learning_material",
-            material_id,
-            "update",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "title": updated.title,
-            })).unwrap_or_default()),
-        ).await;
 
         Ok(MaterialResponse {
             id: updated.id,
@@ -240,18 +218,11 @@ impl super::LearningMaterialService {
             .create_log(
                 teacher_id,
                 "material_deleted",
-                Some(teacher_id),
                 Some(format!("Learning material '{}' deleted", material.title)),
             )
             .await;
 
-        let _ = self.change_log_repo.log_change(
-            "learning_material",
-            material_id,
-            "delete",
-            teacher_id,
-            None,
-        ).await;
+        // Material deleted
 
         Ok(())
     }
@@ -320,14 +291,6 @@ impl super::LearningMaterialService {
         }
 
         self.material_repo.soft_delete(material_id).await?;
-
-        let _ = self.change_log_repo.log_change(
-            "learning_material",
-            material_id,
-            "soft_delete",
-            teacher_id,
-            None,
-        ).await;
 
         Ok(())
     }

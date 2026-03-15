@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/domain/assessments/usecases/update_question.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_field.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 
 class EditQuestionPage extends ConsumerStatefulWidget {
   final Question question;
@@ -26,6 +27,7 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
   late TextEditingController _pointsController;
   late String _questionType;
   late bool _isMultiSelect;
+  String? _formError;
 
   // Multiple choice
   late List<_ChoiceEdit> _choices;
@@ -97,7 +99,7 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
 
     final points = int.tryParse(_pointsController.text.trim());
     if (points == null || points <= 0) {
-      context.showErrorSnackBar('Please enter valid points');
+      setState(() => _formError = 'Please enter valid points');
       return;
     }
 
@@ -109,11 +111,11 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
 
     if (_questionType == 'multiple_choice') {
       if (_choices.length < 2) {
-        context.showErrorSnackBar('At least 2 choices are required');
+        setState(() => _formError = 'At least 2 choices are required');
         return;
       }
       if (!_choices.any((c) => c.isCorrect)) {
-        context.showErrorSnackBar('At least one choice must be correct');
+        setState(() => _formError = 'At least one choice must be correct');
         return;
       }
 
@@ -132,7 +134,7 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
           .where((c) => c.text.trim().isNotEmpty)
           .toList();
       if (answers.isEmpty) {
-        context.showErrorSnackBar('At least one acceptable answer is required');
+        setState(() => _formError = 'At least one acceptable answer is required');
         return;
       }
 
@@ -140,7 +142,7 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
           answers.map((c) => c.text.trim()).toList();
     } else if (_questionType == 'enumeration') {
       if (_enumerationItems.isEmpty) {
-        context.showErrorSnackBar('At least one enumeration item is required');
+        setState(() => _formError = 'At least one enumeration item is required');
         return;
       }
 
@@ -169,24 +171,15 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
     final state = ref.read(assessmentProvider);
     if (state.error == null) {
       Navigator.pop(context, true);
+    } else {
+      setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
+      ref.read(assessmentProvider.notifier).clearMessages();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(assessmentProvider);
-
-    ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
-      if (next.error != null && prev?.error != next.error) {
-        context.showErrorSnackBar(next.error!);
-        ref.read(assessmentProvider.notifier).clearMessages();
-      }
-      if (next.successMessage != null &&
-          prev?.successMessage != next.successMessage) {
-        context.showSuccessSnackBar(next.successMessage!);
-        ref.read(assessmentProvider.notifier).clearMessages();
-      }
-    });
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
@@ -242,6 +235,11 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              FormMessage(
+                message: _formError,
+                severity: MessageSeverity.error,
+              ),
+              const SizedBox(height: 16),
               if (widget.hasSubmissions) ...[
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -282,6 +280,7 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
                   return null;
                 },
                 enabled: !state.isLoading,
+                onChanged: (_) => setState(() => _formError = null),
               ),
               const SizedBox(height: 16),
               AssessmentField(
@@ -300,6 +299,7 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
                   return null;
                 },
                 enabled: !state.isLoading,
+                onChanged: (_) => setState(() => _formError = null),
               ),
               const SizedBox(height: 24),
               if (_questionType == 'multiple_choice')

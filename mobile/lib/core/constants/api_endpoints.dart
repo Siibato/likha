@@ -169,6 +169,13 @@ class ApiEndpoints {
         AssessmentModel.fromJson,
       );
 
+  static ApiEndpoint<AssessmentModel> assessmentUnpublish(
+          String assessmentId) =>
+      ApiEndpoint<AssessmentModel>.fromModel(
+        '/api/v1/assessments/$assessmentId/unpublish',
+        AssessmentModel.fromJson,
+      );
+
   static ApiEndpoint<AssessmentModel> assessmentReleaseResults(
           String assessmentId) =>
       ApiEndpoint<AssessmentModel>.fromModel(
@@ -294,6 +301,13 @@ class ApiEndpoints {
   static ApiEndpoint<AssignmentModel> assignmentPublish(String assignmentId) =>
       ApiEndpoint<AssignmentModel>.fromModel(
         '/api/v1/assignments/$assignmentId/publish',
+        AssignmentModel.fromJson,
+      );
+
+  static ApiEndpoint<AssignmentModel> assignmentUnpublish(
+          String assignmentId) =>
+      ApiEndpoint<AssignmentModel>.fromModel(
+        '/api/v1/assignments/$assignmentId/unpublish',
         AssignmentModel.fromJson,
       );
 

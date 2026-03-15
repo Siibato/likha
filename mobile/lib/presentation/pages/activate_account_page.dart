@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/core/errors/error_messages.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 
 class ActivateAccountPage extends ConsumerStatefulWidget {
@@ -17,6 +18,7 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+  String? _formError;
 
   @override
   void dispose() {
@@ -41,7 +43,7 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
     if (mounted) {
       final state = ref.read(authProvider);
       if (state.error != null) {
-        context.showErrorSnackBar(state.error!);
+        setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
       }
     }
   }
@@ -63,6 +65,11 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  FormMessage(
+                    message: _formError,
+                    severity: MessageSeverity.error,
+                  ),
+                  if (_formError != null) const SizedBox(height: 12),
                   Container(
                     width: 96,
                     height: 96,

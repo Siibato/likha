@@ -8,7 +8,6 @@ pub struct Model {
     pub id: Uuid,
     pub class_id: Uuid,
     pub user_id: Uuid,
-    pub role: String,
     pub joined_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
     pub removed_at: Option<chrono::NaiveDateTime>,

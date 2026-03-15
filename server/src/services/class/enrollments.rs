@@ -100,18 +100,6 @@ impl super::ClassService {
             .await?;
 
         let is_active = student.account_status != "locked" && student.account_status != "deactivated";
-        let _ = self.change_log_repo.log_change(
-            "enrollment",
-            enrollment.id,
-            "create",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "id": enrollment.id,
-                "class_id": class_id,
-                "student_id": student_id,
-                "joined_at": enrollment.joined_at.to_string(),
-            })).unwrap_or_default()),
-        ).await;
 
         Ok(EnrollmentResponse {
             id: enrollment.id,
@@ -152,16 +140,6 @@ impl super::ClassService {
         self.class_repo.remove_student(class_id, student_id).await?;
 
         let enrollment_id = Uuid::new_v4();
-        let _ = self.change_log_repo.log_change(
-            "enrollment",
-            enrollment_id,
-            "delete",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "class_id": class_id,
-                "student_id": student_id,
-            })).unwrap_or_default()),
-        ).await;
 
         Ok(())
     }

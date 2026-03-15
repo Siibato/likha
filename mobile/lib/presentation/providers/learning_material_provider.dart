@@ -43,8 +43,8 @@ class LearningMaterialState {
       materials: materials ?? this.materials,
       currentMaterial: clearCurrent ? null : (currentMaterial ?? this.currentMaterial),
       isLoading: isLoading ?? this.isLoading,
-      error: clearError ? null : error,
-      successMessage: clearSuccess ? null : successMessage,
+      error: clearError ? null : (error ?? this.error),
+      successMessage: clearSuccess ? null : (successMessage ?? this.successMessage),
     );
   }
 }
@@ -77,12 +77,17 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     this._downloadFile,
   ) : super(LearningMaterialState()) {
     _refreshSub = sl<DataEventBus>().onMaterialsChanged.listen((classId) {
+      print('[MATERIAL_LISTENER] 👂 Event received: classId=$classId, _currentClassId=$_currentClassId');
       if (_currentClassId != null && _currentClassId == classId) {
+        print('[MATERIAL_LISTENER] ✅ ClassId MATCH! Calling loadMaterials()');
         loadMaterials(_currentClassId!);
         // Also reload the current material detail if it belongs to this class
         if (state.currentMaterial != null && state.currentMaterial!.classId == classId) {
+          print('[MATERIAL_LISTENER] 📄 Also reloading material detail');
           loadMaterialDetail(state.currentMaterial!.id);
         }
+      } else {
+        print('[MATERIAL_LISTENER] ❌ ClassId MISMATCH or _currentClassId is null');
       }
     });
   }
@@ -93,7 +98,14 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     final result = await _getMaterials(classId);
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: failure.message),
-      (materials) => state = state.copyWith(isLoading: false, materials: materials),
+      (materials) {
+        print('[LOAD_MATERIALS] Loaded ${materials.length} materials');
+        for (final m in materials) {
+          print('[LOAD_MATERIALS]   - ${m.title}: fileCount=${m.fileCount}');
+        }
+        state = state.copyWith(isLoading: false, materials: materials);
+        print('[LOAD_MATERIALS] State updated with new materials');
+      },
     );
   }
 
@@ -163,9 +175,27 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
         final updatedMaterials = state.materials
             .map((m) => m.id == materialId ? material : m)
             .toList();
+
+        // Also update currentMaterial if it matches the updated material
+        MaterialDetail? updatedCurrent = state.currentMaterial;
+        if (state.currentMaterial != null && state.currentMaterial!.id == materialId) {
+          updatedCurrent = MaterialDetail(
+            id: material.id,
+            classId: material.classId,
+            title: material.title,
+            description: material.description,
+            contentText: material.contentText,
+            orderIndex: material.orderIndex,
+            files: state.currentMaterial!.files,
+            createdAt: material.createdAt,
+            updatedAt: material.updatedAt,
+          );
+        }
+
         state = state.copyWith(
           isLoading: false,
           materials: updatedMaterials,
+          currentMaterial: updatedCurrent,
           successMessage: 'Material updated successfully',
         );
       },
@@ -247,6 +277,9 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
           successMessage: 'File uploaded successfully',
         );
         loadMaterialDetail(materialId);
+        if (_currentClassId != null) {
+          loadMaterials(_currentClassId!);
+        }
       },
     );
   }
@@ -266,16 +299,18 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     );
   }
 
-  Future<List<int>?> downloadFile(String fileId) async {
+  Future<void> downloadFile(String fileId) async {
     state = state.copyWith(isLoading: true, clearError: true);
     final result = await _downloadFile(fileId);
     state = state.copyWith(isLoading: false);
-    return result.fold(
-      (failure) {
-        state = state.copyWith(error: failure.message);
-        return null;
+    result.fold(
+      (failure) => state = state.copyWith(error: failure.message),
+      (_) {
+        // Reload detail to reflect updated localPath from DB
+        if (state.currentMaterial != null) {
+          loadMaterialDetail(state.currentMaterial!.id);
+        }
       },
-      (bytes) => bytes,
     );
   }
 

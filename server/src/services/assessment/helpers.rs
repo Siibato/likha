@@ -48,24 +48,9 @@ impl super::AssessmentService {
         };
 
         let enumeration_items = if question.question_type == "enumeration" && role == "teacher" {
-            let items = self.assessment_repo
-                .find_enumeration_items_by_question_id(question.id).await?;
-            let mut item_responses = Vec::new();
-            for item in items {
-                let answers = self.assessment_repo
-                    .find_enumeration_item_answers(item.id).await?;
-                item_responses.push(EnumerationItemResponse {
-                    id: item.id,
-                    order_index: item.order_index,
-                    acceptable_answers: answers.into_iter().map(|a| {
-                        EnumerationItemAnswerResponse {
-                            id: a.id,
-                            answer_text: a.answer_text,
-                        }
-                    }).collect(),
-                });
-            }
-            Some(item_responses)
+            // Enumeration items not currently supported in schema
+            // TODO: Re-implement if schema is updated
+            None
         } else {
             None
         };

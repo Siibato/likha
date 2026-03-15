@@ -26,6 +26,7 @@ mixin LearningMaterialCrudMixin on LearningMaterialRepositoryBase {
           entityType: SyncEntityType.learningMaterial,
           operation: SyncOperation.create,
           payload: {
+            'id': materialId,
             'class_id': classId,
             'title': title,
             if (description != null) 'description': description,
@@ -113,17 +114,34 @@ mixin LearningMaterialCrudMixin on LearningMaterialRepositoryBase {
           createdAt: DateTime.now(),
         ));
 
-        return Right(LearningMaterial(
-          id: materialId,
-          classId: '',
-          title: title ?? '',
-          description: description,
-          contentText: contentText,
-          orderIndex: 0,
-          fileCount: 0,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ));
+        // Fetch the current material from cache to preserve real values
+        try {
+          final existing = await localDataSource.getCachedMaterialDetail(materialId);
+          return Right(LearningMaterial(
+            id: existing.id,
+            classId: existing.classId,
+            title: title ?? existing.title,
+            description: description ?? existing.description,
+            contentText: contentText ?? existing.contentText,
+            orderIndex: existing.orderIndex,
+            fileCount: existing.fileCount,
+            createdAt: existing.createdAt,
+            updatedAt: DateTime.now(),
+          ));
+        } catch (_) {
+          // If material not in cache, return stub
+          return Right(LearningMaterial(
+            id: materialId,
+            classId: '',
+            title: title ?? '',
+            description: description,
+            contentText: contentText,
+            orderIndex: 0,
+            fileCount: 0,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ));
+        }
       }
 
       final result = await remoteDataSource.updateMaterial(

@@ -1,8 +1,9 @@
+import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/rich_text_field.dart';
 
 class AssignmentInstructionsField extends StatelessWidget {
-  final TextEditingController controller;
+  final FleatherController controller;
   final bool enabled;
 
   const AssignmentInstructionsField({
@@ -13,12 +14,12 @@ class AssignmentInstructionsField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StyledTextField(
+    return RichTextField(
       controller: controller,
       label: 'Instructions',
       icon: Icons.description_outlined,
       enabled: enabled,
-      maxLines: 5,
+      minHeight: 120,
       validator: (value) {
         if (value == null || value.trim().isEmpty) return 'Instructions are required';
         return null;

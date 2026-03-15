@@ -1,15 +1,16 @@
-import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/pages/teacher/widgets/material_attachments_card.dart';
+import 'package:likha/presentation/pages/teacher/widgets/material_content_card.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/widgets/styled_dialog.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
 import 'package:open_file/open_file.dart';
-import 'package:path_provider/path_provider.dart';
 
 class MaterialDetailPage extends ConsumerStatefulWidget {
   final String materialId;
@@ -21,7 +22,7 @@ class MaterialDetailPage extends ConsumerStatefulWidget {
 }
 
 class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
-  final Map<String, bool> _fileExistsMap = {};
+  String? _formError;
 
   @override
   void initState() {
@@ -35,23 +36,6 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
       debugPrint('[PAGE_INIT] ▶ Now calling loadMaterialDetail()');
       ref.read(learningMaterialProvider.notifier).loadMaterialDetail(widget.materialId);
     });
-  }
-
-  /// Check all files in the material to see which ones exist on device
-  /// Populates _fileExistsMap with results and triggers a setState to update the UI
-  Future<void> _checkAllFilesExist(List<MaterialFile> files) async {
-    final results = <String, bool>{};
-    for (final file in files) {
-      final found = await _findFileOnDevice(file);
-      results[file.id] = found != null;
-    }
-    if (mounted) {
-      setState(() {
-        _fileExistsMap
-          ..clear()
-          ..addAll(results);
-      });
-    }
   }
 
   Future<void> _uploadFile() async {
@@ -70,123 +54,38 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
     }
   }
 
-  /// Compute device filename from material file: originalName-[first10charsOfId].ext
-  String _deviceFileName(MaterialFile file) {
-    final shortId = file.id.replaceAll('-', '').substring(0, 10);
-    final dotIndex = file.fileName.lastIndexOf('.');
-    if (dotIndex == -1) return '${file.fileName}-$shortId';
-    final name = file.fileName.substring(0, dotIndex);
-    final ext = file.fileName.substring(dotIndex); // includes the dot
-    return '$name-$shortId$ext';
-  }
-
-  /// Search directory for file by ID suffix (non-recursive)
-  File? _searchDirForFile(Directory dir, String fileId) {
-    final shortId = fileId.replaceAll('-', '').substring(0, 10);
-    debugPrint('[SEARCH] Searching in: ${dir.path}');
-    debugPrint('[SEARCH] Looking for files with suffix: -$shortId.');
-
-    try {
-      final entries = dir.listSync(recursive: false);
-      debugPrint('[SEARCH] Found ${entries.length} entries in directory');
-
-      for (final entry in entries) {
-        if (entry is File) {
-          final fileName = entry.path.split('/').last;
-          debugPrint('[SEARCH]   Checking file: $fileName');
-
-          if (entry.path.contains('-$shortId.')) {
-            debugPrint('[SEARCH] ✓ MATCH FOUND: ${entry.path}');
-            return entry;
-          }
-        }
-      }
-
-      debugPrint('[SEARCH] No matching files found in ${dir.path}');
-    } catch (e) {
-      debugPrint('[SEARCH] Error searching directory: $e');
-    }
-    return null;
-  }
-
-  /// Find file on device by searching Downloads, then app Documents by ID suffix
-  Future<File?> _findFileOnDevice(MaterialFile file) async {
-    // 1. Search Downloads directory
-    final downloadsDir = await getDownloadsDirectory();
-    if (downloadsDir != null) {
-      final found = _searchDirForFile(downloadsDir, file.id);
-      if (found != null) return found;
-    }
-
-    // 2. Search app Documents directory
-    final docsDir = await getApplicationDocumentsDirectory();
-    return _searchDirForFile(docsDir, file.id);
-  }
-
   /// Open file with system default app
   Future<void> _openFile(MaterialFile file) async {
-    final found = await _findFileOnDevice(file);
-
-    if (found != null) {
-      try {
-        await OpenFile.open(found.path);
-      } catch (e) {
-        if (!mounted) return;
-        context.showErrorSnackBar('Error opening file: $e');
-      }
+    if (file.localPath == null || file.localPath!.isEmpty) {
+      // File path not available, offer to download
+      if (!mounted) return;
+      setState(() => _formError = 'File not cached. Downloading...');
+      await _saveFile(file);
       return;
     }
 
-    // File not found — re-download
-    if (!mounted) return;
-    context.showWarningSnackBar('File not found on device. Re-downloading...', durationMs: 2000);
-    await _saveFile(file);
-  }
-
-  /// Auto-save file to Documents folder
-  Future<void> _saveFile(MaterialFile file) async {
     try {
-      final deviceName = _deviceFileName(file);
-
-      // Show download started indicator
-      if (mounted) {
-        context.showInfoSnackBar('Downloading ${file.fileName}...', durationMs: 3000);
-      }
-
-      // Download bytes from server
-      final bytes = await ref.read(learningMaterialProvider.notifier)
-          .downloadFile(file.id);
-
-      if (bytes == null) {
-        if (!mounted) return;
-        context.showErrorSnackBar('Failed to download file', durationMs: 3000);
-        return;
-      }
-
-      // Save to Documents folder
-      final appDocsDir = await getApplicationDocumentsDirectory();
-      final savePath = '${appDocsDir.path}/$deviceName';
-
-      try {
-        await File(savePath).writeAsBytes(bytes);
-      } catch (e) {
-        if (!mounted) return;
-        context.showErrorSnackBar('Failed to save: $e', durationMs: 3000);
-        return;
-      }
-
-      // Step 4: Refresh file existence map and show success
-      final material = ref.read(learningMaterialProvider).currentMaterial;
-      if (material != null && mounted) {
-        await _checkAllFilesExist(material.files);
-      }
-
-      if (!mounted) return;
-
-      context.showSuccessSnackBar('✓ Saved: ${file.fileName}', durationMs: 3000);
+      await OpenFile.open(file.localPath!);
     } catch (e) {
       if (!mounted) return;
-      context.showErrorSnackBar('Error: $e', durationMs: 3000);
+      setState(() => _formError = 'Error opening file: $e');
+    }
+  }
+
+  /// Download file via provider (datasource handles caching)
+  Future<void> _saveFile(MaterialFile file) async {
+    // Provider's downloadFile() handles the download and calls loadMaterialDetail()
+    // to update file.localPath in the UI state
+    await ref.read(learningMaterialProvider.notifier).downloadFile(file.id);
+
+    if (!mounted) return;
+
+    // Check if download succeeded by looking at provider state
+    final providerState = ref.read(learningMaterialProvider);
+    if (providerState.error != null) {
+      setState(() => _formError = 'Failed to download file');
+    } else {
+      setState(() => _formError = null);
     }
   }
 
@@ -194,28 +93,22 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
     final material = ref.read(learningMaterialProvider).currentMaterial;
     if (material == null || material.files.isEmpty) return;
 
+    final toDownload = material.files.where((f) => !f.isCached).toList();
+    if (toDownload.isEmpty) return;
+
     int downloadedCount = 0;
-    final totalFiles = material.files.length;
+    final total = toDownload.length;
 
-    for (final file in material.files) {
+    for (final file in toDownload) {
       downloadedCount++;
-
-      if (mounted) {
-        context.showInfoSnackBar('Downloading $downloadedCount of $totalFiles: ${file.fileName}', durationMs: 60000);
-      }
 
       await _saveFile(file);
 
       if (!mounted) return;
     }
 
-    // Refresh all files after batch download completes
-    if (mounted && material.files.isNotEmpty) {
-      await _checkAllFilesExist(material.files);
-    }
-
     if (!mounted) return;
-    context.showSuccessSnackBar('Downloaded $downloadedCount file(s)', durationMs: 3000);
+    setState(() => _formError = null);
   }
 
   void _deleteFile(MaterialFile file) {
@@ -270,6 +163,10 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
     final user = ref.watch(authProvider).user;
     final isTeacher = user?.role == 'teacher' || user?.role == 'admin';
 
+    // Compute cache status
+    final allCached = material != null && material.files.isNotEmpty && material.files.every((f) => f.isCached);
+    final uncachedFiles = material != null ? material.files.where((f) => !f.isCached).toList() : <MaterialFile>[];
+
     ref.listen<LearningMaterialState>(learningMaterialProvider, (prev, next) {
       // Intercept delete success before showing snackbar
       if (next.successMessage == 'Material deleted successfully') {
@@ -279,16 +176,12 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
       }
 
       if (next.error != null && prev?.error != next.error) {
-        context.showErrorSnackBar(next.error!);
+        setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
         ref.read(learningMaterialProvider.notifier).clearMessages();
       }
       if (next.successMessage != null && prev?.successMessage != next.successMessage) {
-        context.showSuccessSnackBar(next.successMessage!);
+        setState(() => _formError = null);
         ref.read(learningMaterialProvider.notifier).clearMessages();
-      }
-      // Check file existence when material finishes loading
-      if (!next.isLoading && next.currentMaterial != null) {
-        _checkAllFilesExist(next.currentMaterial!.files);
       }
     });
 
@@ -325,157 +218,34 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
               child: ListView(
                 padding: const EdgeInsets.all(24),
                 children: [
-                  // Title
-                  Text(
-                    material.title,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF2B2B2B),
-                    ),
+                  // Form Error Display
+                  FormMessage(
+                    message: _formError,
+                    severity: MessageSeverity.error,
                   ),
-                  const SizedBox(height: 12),
+                  if (_formError != null) const SizedBox(height: 12),
 
-                  // Description
-                  if (material.description != null && material.description!.isNotEmpty) ...[
-                    Text(
-                      material.description!,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF666666),
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-
-                  // Files Section
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Attachments',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF2B2B2B),
-                        ),
-                      ),
-                      if (isTeacher)
-                        ElevatedButton.icon(
-                          onPressed: state.isLoading ? null : _uploadFile,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2B2B2B),
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          icon: const Icon(Icons.upload_file_rounded, size: 18),
-                          label: const Text('Upload', style: TextStyle(fontWeight: FontWeight.w600)),
-                        )
-                      else if (material.files.isNotEmpty)
-                        ElevatedButton.icon(
-                          onPressed: state.isLoading ? null : _downloadAllFiles,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2B2B2B),
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          icon: const Icon(Icons.download_rounded, size: 18),
-                          label: const Text('Download All', style: TextStyle(fontWeight: FontWeight.w600)),
-                        ),
-                    ],
+                  // Content card (title and contentText)
+                  MaterialContentCard(
+                    title: material.title,
+                    contentText: material.contentText,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
 
-                  // File List
-                  if (material.files.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(32),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE0E0E0)),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'No attachments',
-                          style: TextStyle(color: Color(0xFF999999)),
-                        ),
-                      ),
-                    )
-                  else
-                    ...material.files.map((file) {
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: const BorderSide(color: Color(0xFFE0E0E0)),
-                        ),
-                        child: ListTile(
-                          leading: const Icon(Icons.insert_drive_file_rounded, color: Color(0xFF2B2B2B)),
-                          title: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  file.fileName,
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                                if (state.isLoading)
-                                  const Padding(
-                                    padding: EdgeInsets.only(left: 8),
-                                    child: SizedBox(
-                                      width: 14,
-                                      height: 14,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Color(0xFF2B2B2B),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            subtitle: Text('${(file.fileSize / 1024 / 1024).toStringAsFixed(2)} MB'),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: (_fileExistsMap[file.id] ?? false)
-                                      ? const Icon(Icons.folder_open_rounded)
-                                      : const Icon(Icons.download_rounded),
-                                  color: state.isLoading
-                                      ? const Color(0xFFCCCCCC)
-                                      : const Color(0xFF2B2B2B),
-                                  tooltip: state.isLoading
-                                      ? 'Downloading...'
-                                      : ((_fileExistsMap[file.id] ?? false) ? 'Open file' : 'Save file'),
-                                  onPressed: state.isLoading
-                                      ? null
-                                      : () => (_fileExistsMap[file.id] ?? false)
-                                          ? _openFile(file)
-                                          : _saveFile(file),
-                                ),
-                                if (isTeacher)
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline_rounded),
-                                    color: state.isLoading
-                                        ? const Color(0xFFCCCCCC)
-                                        : const Color(0xFFEF5350),
-                                    tooltip:
-                                        state.isLoading ? 'Downloading...' : 'Delete file',
-                                    onPressed: state.isLoading ? null : () => _deleteFile(file),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        );
-                    }),
+                  // Attachments card (only show if there are files or user is teacher)
+                  if (material.files.isNotEmpty || isTeacher)
+                    MaterialAttachmentsCard(
+                      files: material.files,
+                      isTeacher: isTeacher,
+                      isLoading: state.isLoading,
+                      allCached: allCached,
+                      uncachedCount: uncachedFiles.length,
+                      onUploadFile: _uploadFile,
+                      onOpenFile: _openFile,
+                      onSaveFile: _saveFile,
+                      onDownloadAllFiles: _downloadAllFiles,
+                      onDeleteFile: _deleteFile,
+                    ),
                 ],
               ),
             ),

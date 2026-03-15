@@ -2,12 +2,11 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Serialize, Deserialize)]
-#[sea_orm(table_name = "enumeration_items")]
+#[sea_orm(table_name = "answer_keys")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub question_id: Uuid,
-    pub order_index: i32,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -18,8 +17,8 @@ pub enum Relation {
         to = "super::assessment_questions::Column::Id"
     )]
     Question,
-    #[sea_orm(has_many = "super::enumeration_item_answers::Entity")]
-    Answers,
+    #[sea_orm(has_many = "super::answer_key_acceptable_answers::Entity")]
+    AcceptableAnswers,
 }
 
 impl Related<super::assessment_questions::Entity> for Entity {
@@ -28,9 +27,9 @@ impl Related<super::assessment_questions::Entity> for Entity {
     }
 }
 
-impl Related<super::enumeration_item_answers::Entity> for Entity {
+impl Related<super::answer_key_acceptable_answers::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Answers.def()
+        Relation::AcceptableAnswers.def()
     }
 }
 

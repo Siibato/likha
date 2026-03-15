@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/utils/transmutation_util.dart';
+import 'package:likha/domain/assessments/entities/assessment.dart';
+import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
+import 'package:likha/presentation/pages/student/assessment_results_page.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
 import 'package:likha/presentation/providers/student_class_grades_provider.dart';
 
@@ -30,7 +33,7 @@ class _StudentClassGradeDetailPageState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
           .read(assessmentProvider.notifier)
-          .loadAssessments(widget.classId);
+          .loadAssessments(widget.classId, publishedOnly: true);
     });
   }
 
@@ -53,7 +56,7 @@ class _StudentClassGradeDetailPageState
                 onRefresh: () async {
                   ref
                       .read(assessmentProvider.notifier)
-                      .loadAssessments(widget.classId);
+                      .loadAssessments(widget.classId, publishedOnly: true);
                 },
                 color: const Color(0xFF2B2B2B),
                 child: CustomScrollView(
@@ -122,8 +125,14 @@ class _StudentClassGradeDetailPageState
                               assessment: assessment,
                               onTap: assessment.resultsReleased
                                   ? () {
-                                      // Navigate to assessment result page
-                                      // This would navigate to the assessment detail/result page
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => AssessmentResultsPage(
+                                            assessmentId: assessment.id,
+                                          ),
+                                        ),
+                                      );
                                     }
                                   : null,
                             );
@@ -203,7 +212,7 @@ class _OverallGradeBanner extends StatelessWidget {
 }
 
 class _AssignmentCard extends StatelessWidget {
-  final dynamic assignment;
+  final Assignment assignment;
 
   const _AssignmentCard({required this.assignment});
 
@@ -215,7 +224,7 @@ class _AssignmentCard extends StatelessWidget {
     final totalPoints = assignment.totalPoints;
 
     // Compute individual transmuted grade
-    final rawScore = (score / totalPoints) * 100;
+    final rawScore = totalPoints > 0 ? (score / totalPoints) * 100 : 0.0;
     final transmutedGrade = TransmutationUtil.transmute(rawScore);
 
     return Container(
@@ -337,7 +346,7 @@ class _AssignmentCard extends StatelessWidget {
 }
 
 class _AssessmentCard extends StatelessWidget {
-  final dynamic assessment;
+  final Assessment assessment;
   final VoidCallback? onTap;
 
   const _AssessmentCard({

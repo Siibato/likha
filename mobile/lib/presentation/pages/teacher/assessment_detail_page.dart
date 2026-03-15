@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/presentation/pages/teacher/assessment_submissions_page.dart';
@@ -13,6 +13,7 @@ import 'package:likha/presentation/pages/teacher/widgets/assessment_status_card.
 import 'package:likha/presentation/pages/teacher/widgets/questions_section.dart';
 import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
 
 class AssessmentDetailPage extends ConsumerStatefulWidget {
@@ -31,6 +32,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
   List<Question> _questionReorderBuffer = [];
   late AnimationController _questionAnimController;
   final Map<String, int> _questionAnimatingIndices = {};
+  String? _formError;
 
   @override
   void initState() {
@@ -59,6 +61,16 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
       body: 'Publish "${assessment.title}"? Once published, questions can no longer be edited.',
       confirmLabel: 'Publish',
       onConfirm: () => ref.read(assessmentProvider.notifier).publishAssessment(widget.assessmentId),
+    );
+  }
+
+  void _confirmUnpublish(Assessment assessment) {
+    AppDialogs.showDestructive(
+      context: context,
+      title: 'Move to Draft',
+      body: 'Move "${assessment.title}" back to draft? Students will no longer be able to access it.',
+      confirmLabel: 'Move to Draft',
+      onConfirm: () => ref.read(assessmentProvider.notifier).unpublishAssessment(widget.assessmentId),
     );
   }
 
@@ -229,7 +241,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
     ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
-        context.showSuccessSnackBar(next.successMessage!);
+        setState(() => _formError = null);
         ref.read(assessmentProvider.notifier).clearMessages();
         if (next.successMessage == 'Assessment deleted') {
           Navigator.pop(context, true);
@@ -242,7 +254,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
         }
       }
       if (next.error != null && prev?.error != next.error) {
-        context.showErrorSnackBar(next.error!);
+        setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
         ref.read(assessmentProvider.notifier).clearMessages();
       }
     });
@@ -309,6 +321,9 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                   case 'release':
                     _confirmReleaseResults(assessment);
                     break;
+                  case 'unpublish':
+                    _confirmUnpublish(assessment);
+                    break;
                   case 'delete':
                     _confirmDelete(assessment);
                     break;
@@ -368,6 +383,17 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                       ],
                     ),
                   ),
+                if (assessment.isPublished && !assessment.resultsReleased)
+                  const PopupMenuItem(
+                    value: 'unpublish',
+                    child: Row(
+                      children: [
+                        Icon(Icons.unpublished_rounded, size: 20),
+                        SizedBox(width: 12),
+                        Text('Move to Draft'),
+                      ],
+                    ),
+                  ),
                 const PopupMenuItem(
                   value: 'delete',
                   child: Row(
@@ -418,6 +444,11 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        FormMessage(
+                          message: _formError,
+                          severity: MessageSeverity.error,
+                        ),
+                        if (_formError != null) const SizedBox(height: 12),
                         AssessmentInfoCard(
                           description: assessment.description,
                           timeLimitMinutes: assessment.timeLimitMinutes,

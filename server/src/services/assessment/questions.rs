@@ -57,16 +57,6 @@ impl super::AssessmentService {
                 q_request.id,
             ).await?;
 
-            let _ = self.change_log_repo.log_change(
-                "question",
-                question.id,
-                "create",
-                teacher_id,
-                Some(serde_json::to_string(&serde_json::json!({
-                    "question_type": q_request.question_type,
-                    "points": q_request.points,
-                })).unwrap_or_default()),
-            ).await;
 
             self.add_question_type_data(&question, &q_request).await?;
 
@@ -131,30 +121,16 @@ impl super::AssessmentService {
         }
 
         if let Some(items) = request.enumeration_items {
-            self.assessment_repo.delete_enumeration_items_by_question_id(question_id).await?;
-            for item_input in items {
-                let item = self.assessment_repo
-                    .add_enumeration_item(question_id, item_input.order_index)
+            self.assessment_repo.delete_all_answer_keys_for_question(question_id).await?;
+            for item in items {
+                self.assessment_repo
+                    .add_enumeration_item(question_id, item.acceptable_answers)
                     .await?;
-                for answer in item_input.acceptable_answers {
-                    self.assessment_repo
-                        .add_enumeration_item_answer(item.id, answer)
-                        .await?;
-                }
             }
         }
 
         self.assessment_repo.update_total_points(question.assessment_id).await?;
 
-        let _ = self.change_log_repo.log_change(
-            "question",
-            question_id,
-            "update",
-            teacher_id,
-            Some(serde_json::to_string(&serde_json::json!({
-                "points": updated.points,
-            })).unwrap_or_default()),
-        ).await;
 
         let response = self.build_question_response(&updated, "teacher").await?;
         Ok(response)
@@ -185,13 +161,6 @@ impl super::AssessmentService {
         self.assessment_repo.delete_question(question_id).await?;
         self.assessment_repo.update_total_points(question.assessment_id).await?;
 
-        let _ = self.change_log_repo.log_change(
-            "question",
-            question_id,
-            "delete",
-            teacher_id,
-            None,
-        ).await;
 
         Ok(())
     }
@@ -251,15 +220,10 @@ impl super::AssessmentService {
             }
             "enumeration" => {
                 if let Some(items) = &request.enumeration_items {
-                    for item_input in items {
-                        let item = self.assessment_repo
-                            .add_enumeration_item(question.id, item_input.order_index)
+                    for item in items {
+                        self.assessment_repo
+                            .add_enumeration_item(question.id, item.acceptable_answers.clone())
                             .await?;
-                        for answer in &item_input.acceptable_answers {
-                            self.assessment_repo
-                                .add_enumeration_item_answer(item.id, answer.clone())
-                                .await?;
-                        }
                     }
                 }
             }

@@ -14,68 +14,35 @@ mixin AssignmentQueryMixin on AssignmentRepositoryBase {
   }) async {
     try {
       try {
-        // STEP 1: Try cache first (immediate, non-blocking)
-        final cachedAssignments =
-            await localDataSource.getCachedAssignments(classId, publishedOnly: publishedOnly);
-
-        // STEP 1b: Get current student ID for submission state check
-        String? currentStudentId;
+        // STEP 1: Get current user ID and role to determine query type
+        String? currentUserId;
+        String? userRole;
         try {
-          currentStudentId = await storageService.getUserId();
-          print('📚 [AssignmentQueryMixin] getAssignments() - got currentStudentId: $currentStudentId');
+          currentUserId = await storageService.getUserId();
+          userRole = await storageService.getUserRole();
+          print('📚 [AssignmentQueryMixin] getAssignments() - got currentUserId: $currentUserId, userRole: $userRole');
         } catch (e) {
-          print('⚠️  [AssignmentQueryMixin] getAssignments() - could not get current student ID: $e');
+          print('⚠️  [AssignmentQueryMixin] getAssignments() - could not get user info: $e');
         }
 
-        // STEP 1c: Populate submissionId and submissionStatus from assignment_submissions table
-        print('📚 [AssignmentQueryMixin] getAssignments() - loading ${cachedAssignments.length} assignments');
+        // STEP 1a: Try cache with studentId only for students (per-student enrichment)
+        // Teachers use studentId=null to get aggregate counts (Path A)
+        final isStudent = userRole == 'student';
+        final cachedAssignments = await localDataSource.getCachedAssignments(
+          classId,
+          publishedOnly: publishedOnly,
+          studentId: isStudent ? currentUserId : null,
+        );
+
+        // STEP 1b: Assignments from cache (enriched with per-student data if user is a student)
+        print('📚 [AssignmentQueryMixin] getAssignments() - loading ${cachedAssignments.length} assignments (enriched with studentId=${isStudent ? currentUserId : 'null (teacher)'} )');
         final assignmentsWithSubmissions = <Assignment>[];
         for (final assignment in cachedAssignments) {
           try {
-            Assignment assignmentWithSubmission = assignment;
-
-            // If we have student ID, look up their submission for this assignment
-            if (currentStudentId != null) {
-              try {
-                final submission = await localDataSource.getStudentSubmissionForAssignment(
-                  assignment.id,
-                  currentStudentId,
-                );
-
-                if (submission != null) {
-                  final (submissionId, status, score) = submission;
-                  print('📚 [AssignmentQueryMixin]   - ${assignment.title}: submissionId=$submissionId, status=$status, score=$score');
-                  // Create new assignment with submission data populated
-                  assignmentWithSubmission = Assignment(
-                    id: assignment.id,
-                    classId: assignment.classId,
-                    title: assignment.title,
-                    instructions: assignment.instructions,
-                    totalPoints: assignment.totalPoints,
-                    submissionType: assignment.submissionType,
-                    allowedFileTypes: assignment.allowedFileTypes,
-                    maxFileSizeMb: assignment.maxFileSizeMb,
-                    dueAt: assignment.dueAt,
-                    isPublished: assignment.isPublished,
-                    orderIndex: assignment.orderIndex,
-                    submissionCount: assignment.submissionCount,
-                    gradedCount: assignment.gradedCount,
-                    submissionId: submissionId,
-                    submissionStatus: status,
-                    score: score ?? assignment.score,
-                    createdAt: assignment.createdAt,
-                    updatedAt: assignment.updatedAt,
-                  );
-                } else {
-                  print('📚 [AssignmentQueryMixin]   - ${assignment.title}: no submission found');
-                }
-              } catch (e) {
-                print('⚠️  [AssignmentQueryMixin]   - ${assignment.title}: error getting submission: $e');
-                // If lookup fails, keep the original assignment without submission data
-              }
-            }
-
-            assignmentsWithSubmissions.add(assignmentWithSubmission);
+            // Assignments already have submissionId, submissionStatus, score from cache enrichment
+            // Just use them directly
+            print('📚 [AssignmentQueryMixin]   - ${assignment.title}: submissionStatus=${assignment.submissionStatus}, score=${assignment.score}, submissionCount=${assignment.submissionCount}, gradedCount=${assignment.gradedCount}');
+            assignmentsWithSubmissions.add(assignment);
           } catch (e) {
             print('⚠️  [AssignmentQueryMixin]   - ${assignment.title}: unexpected error: $e');
             assignmentsWithSubmissions.add(assignment);

@@ -11,6 +11,8 @@ class MaterialDetail extends Equatable {
   final List<MaterialFile> files;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? cachedAt;
+  final bool needsSync;
 
   const MaterialDetail({
     required this.id,
@@ -22,6 +24,8 @@ class MaterialDetail extends Equatable {
     required this.files,
     required this.createdAt,
     required this.updatedAt,
+    this.cachedAt,
+    this.needsSync = false,
   });
 
   @override
@@ -35,5 +39,7 @@ class MaterialDetail extends Equatable {
         files,
         createdAt,
         updatedAt,
+        cachedAt,
+        needsSync,
       ];
 }

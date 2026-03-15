@@ -206,6 +206,8 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
       }
 
       await remoteDataSource.deleteAssignment(assignmentId: assignmentId);
+      // Update local cache to mark assignment as deleted
+      await localDataSource.deleteAssignmentLocal(assignmentId: assignmentId);
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -256,6 +258,46 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
       }
 
       final result = await remoteDataSource.publishAssignment(
+        assignmentId: assignmentId,
+      );
+      return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  ResultFuture<Assignment> unpublishAssignment({
+    required String assignmentId,
+  }) async {
+    try {
+      if (!serverReachabilityService.isServerReachable) {
+        await localDataSource.markAssignmentUnpublishedLocally(assignmentId: assignmentId);
+
+        return Right(Assignment(
+          id: assignmentId,
+          classId: '',
+          title: '',
+          instructions: '',
+          totalPoints: 0,
+          submissionType: '',
+          allowedFileTypes: null,
+          maxFileSizeMb: null,
+          dueAt: DateTime.now(),
+          isPublished: false,
+          orderIndex: 0,
+          submissionCount: 0,
+          gradedCount: 0,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ));
+      }
+
+      final result = await remoteDataSource.unpublishAssignment(
         assignmentId: assignmentId,
       );
       return Right(result);

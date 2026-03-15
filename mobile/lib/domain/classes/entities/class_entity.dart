@@ -11,6 +11,8 @@ class ClassEntity extends Equatable {
   final int studentCount;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? cachedAt;
+  final bool needsSync;
 
   const ClassEntity({
     required this.id,
@@ -23,6 +25,8 @@ class ClassEntity extends Equatable {
     required this.studentCount,
     required this.createdAt,
     required this.updatedAt,
+    this.cachedAt,
+    this.needsSync = false,
   });
 
   @override
@@ -37,5 +41,7 @@ class ClassEntity extends Equatable {
     studentCount,
     createdAt,
     updatedAt,
+    cachedAt,
+    needsSync,
   ];
 }
