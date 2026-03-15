@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/constants/file_types.dart';
@@ -24,7 +27,7 @@ class CreateAssignmentPage extends ConsumerStatefulWidget {
 class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
-  final _instructionsController = TextEditingController();
+  late final FleatherController _instructionsController;
   final _totalPointsController = TextEditingController(text: '100');
   final _maxFileSizeController = TextEditingController(text: '10');
   Set<String> _selectedFileTypes = {};
@@ -32,6 +35,12 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
   DateTime _dueAt = DateTime.now().add(const Duration(days: 7));
   bool _isPublished = true;
   String? _formError;
+
+  @override
+  void initState() {
+    super.initState();
+    _instructionsController = FleatherController();
+  }
 
   @override
   void dispose() {
@@ -302,7 +311,7 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
           CreateAssignmentParams(
             classId: widget.classId,
             title: _titleController.text.trim(),
-            instructions: _instructionsController.text.trim(),
+            instructions: jsonEncode(_instructionsController.document.toJson()),
             totalPoints: totalPoints,
             submissionType: _submissionType,
             allowedFileTypes: allowedFileTypes,

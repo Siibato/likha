@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/pages/teacher/widgets/material_attachments_card.dart';
+import 'package:likha/presentation/pages/teacher/widgets/material_content_card.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/widgets/styled_dialog.dart';
@@ -223,175 +225,27 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                   ),
                   if (_formError != null) const SizedBox(height: 12),
 
-                  // Title
-                  Text(
-                    material.title,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF2B2B2B),
-                    ),
+                  // Content card (title and contentText)
+                  MaterialContentCard(
+                    title: material.title,
+                    contentText: material.contentText,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 24),
 
-                  // Description
-                  if (material.description != null && material.description!.isNotEmpty) ...[
-                    Text(
-                      material.description!,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF666666),
-                        height: 1.5,
-                      ),
+                  // Attachments card (only show if there are files or user is teacher)
+                  if (material.files.isNotEmpty || isTeacher)
+                    MaterialAttachmentsCard(
+                      files: material.files,
+                      isTeacher: isTeacher,
+                      isLoading: state.isLoading,
+                      allCached: allCached,
+                      uncachedCount: uncachedFiles.length,
+                      onUploadFile: _uploadFile,
+                      onOpenFile: _openFile,
+                      onSaveFile: _saveFile,
+                      onDownloadAllFiles: _downloadAllFiles,
+                      onDeleteFile: _deleteFile,
                     ),
-                    const SizedBox(height: 24),
-                  ],
-
-                  // Content Text
-                  if (material.contentText != null && material.contentText!.isNotEmpty) ...[
-                    Text(
-                      material.contentText!,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF333333),
-                        height: 1.6,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-
-                  // Files Section
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Attachments',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF2B2B2B),
-                        ),
-                      ),
-                      if (isTeacher)
-                        ElevatedButton.icon(
-                          onPressed: state.isLoading ? null : _uploadFile,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2B2B2B),
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          icon: const Icon(Icons.upload_file_rounded, size: 18),
-                          label: const Text('Upload', style: TextStyle(fontWeight: FontWeight.w600)),
-                        )
-                      else if (material.files.isNotEmpty && !allCached)
-                        ElevatedButton.icon(
-                          onPressed: state.isLoading ? null : _downloadAllFiles,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2B2B2B),
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          icon: const Icon(Icons.download_rounded, size: 18),
-                          label: Text(
-                            uncachedFiles.length == material.files.length
-                                ? 'Download All'
-                                : 'Download ${uncachedFiles.length} remaining',
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // File List
-                  if (material.files.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(32),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE0E0E0)),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'No attachments',
-                          style: TextStyle(color: Color(0xFF999999)),
-                        ),
-                      ),
-                    )
-                  else
-                    ...material.files.map((file) {
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: const BorderSide(color: Color(0xFFE0E0E0)),
-                        ),
-                        child: ListTile(
-                          leading: const Icon(Icons.insert_drive_file_rounded, color: Color(0xFF2B2B2B)),
-                          title: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  file.fileName,
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                                if (state.isLoading)
-                                  const Padding(
-                                    padding: EdgeInsets.only(left: 8),
-                                    child: SizedBox(
-                                      width: 14,
-                                      height: 14,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Color(0xFF2B2B2B),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            subtitle: Text('${(file.fileSize / 1024 / 1024).toStringAsFixed(2)} MB'),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: file.isCached
-                                      ? const Icon(Icons.folder_open_rounded)
-                                      : const Icon(Icons.download_rounded),
-                                  color: state.isLoading
-                                      ? const Color(0xFFCCCCCC)
-                                      : const Color(0xFF2B2B2B),
-                                  tooltip: state.isLoading
-                                      ? 'Downloading...'
-                                      : (file.isCached ? 'Open file' : 'Save file'),
-                                  onPressed: state.isLoading
-                                      ? null
-                                      : () => file.isCached
-                                          ? _openFile(file)
-                                          : _saveFile(file),
-                                ),
-                                if (isTeacher)
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline_rounded),
-                                    color: state.isLoading
-                                        ? const Color(0xFFCCCCCC)
-                                        : const Color(0xFFEF5350),
-                                    tooltip:
-                                        state.isLoading ? 'Downloading...' : 'Delete file',
-                                    onPressed: state.isLoading ? null : () => _deleteFile(file),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        );
-                    }),
                 ],
               ),
             ),

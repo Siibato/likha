@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/presentation/pages/shared/widgets/cards/markdown_display.dart';
 
 class AssignmentInstructionsCard extends StatelessWidget {
   final String instructions;
@@ -33,13 +34,8 @@ class AssignmentInstructionsCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Text(
-            instructions,
-            style: const TextStyle(
-              fontSize: 15,
-              height: 1.6,
-              color: Color(0xFF404040),
-            ),
+          MarkdownDisplay(
+            content: instructions,
           ),
         ],
       ),

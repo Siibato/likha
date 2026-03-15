@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:file_picker/file_picker.dart';
+import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
@@ -6,6 +9,7 @@ import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/pages/teacher/material_detail_page.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/rich_text_field.dart';
 
 class CreateMaterialPage extends ConsumerStatefulWidget {
   final String classId;
@@ -19,15 +23,21 @@ class CreateMaterialPage extends ConsumerStatefulWidget {
 class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
+  late final FleatherController _contentTextController;
   final List<PlatformFile> _selectedFiles = [];
   final _allowedExtensions = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'mp4', 'mp3', 'jpg', 'png', 'gif'];
   String? _formError;
 
   @override
+  void initState() {
+    super.initState();
+    _contentTextController = FleatherController();
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
-    _descriptionController.dispose();
+    _contentTextController.dispose();
     super.dispose();
   }
 
@@ -54,19 +64,22 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
 
   Future<void> _createMaterial() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedFiles.isEmpty) {
-      setState(() => _formError = 'Please select at least one file');
-      return;
-    }
 
     // Step 1: Create material
+    final contentPlainText = _contentTextController.document.toPlainText().trim();
+
+    // Validate: must have either text content or files
+    if (contentPlainText.isEmpty && _selectedFiles.isEmpty) {
+      setState(() => _formError = 'Add either text content or files');
+      return;
+    }
     await ref.read(learningMaterialProvider.notifier).createMaterial(
           classId: widget.classId,
           title: _titleController.text.trim(),
-          description: _descriptionController.text.trim().isEmpty
+          description: null,
+          contentText: contentPlainText.isEmpty
               ? null
-              : _descriptionController.text.trim(),
-          contentText: null,
+              : jsonEncode(_contentTextController.document.toJson()),
         );
 
     final state = ref.read(learningMaterialProvider);
@@ -179,29 +192,11 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
               },
             ),
             const SizedBox(height: 16),
-            TextFormField(
-              controller: _descriptionController,
-              decoration: InputDecoration(
-                labelText: 'Description (Optional)',
-                hintText: 'Brief description',
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-                ),
-              ),
-              maxLines: 3,
-              validator: (value) {
-                if (value != null && value.trim().length > 500) {
-                  return 'Description must be at most 500 characters';
-                }
-                return null;
-              },
+            RichTextField(
+              controller: _contentTextController,
+              label: 'Content (Optional)',
+              icon: Icons.description_outlined,
+              minHeight: 200,
             ),
             const SizedBox(height: 24),
             Column(
