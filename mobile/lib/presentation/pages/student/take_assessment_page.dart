@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/services/server_clock_service.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/data/models/assessments/question_model.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
@@ -12,6 +12,7 @@ import 'package:likha/presentation/pages/student/widgets/assessment_timer_badge.
 import 'package:likha/presentation/pages/student/widgets/assessment_question_card.dart';
 import 'package:likha/presentation/pages/student/widgets/assessment_submit_section.dart';
 import 'package:likha/presentation/pages/student/widgets/assessment_dialogs.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 
@@ -36,6 +37,7 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
   int _remainingSeconds = 0;
   bool _isSubmitting = false;
   bool _hasStarted = false;
+  String? _formError;
 
   List<StudentQuestion> _questions = [];
   String? _submissionId;
@@ -121,11 +123,7 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
         if (mounted) {
           setState(() {
             _hasStarted = false;
-          });
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              context.showErrorSnackBar('Failed to load questions. Please try again.');
-            }
+            _formError = 'Failed to load questions. Please try again.';
           });
         }
         return;
@@ -235,7 +233,6 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
     }
 
     if (mounted) {
-      context.showWarningSnackBar('Time is up! Assessment auto-submitted.');
       Navigator.pop(context);
     }
   }
@@ -264,13 +261,14 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
     final state = ref.read(assessmentProvider);
     if (mounted) {
       if (state.error != null) {
-        setState(() => _isSubmitting = false);
-        context.showErrorSnackBar(state.error!);
+        setState(() {
+          _isSubmitting = false;
+          _formError = AppErrorMapper.toUserMessage(state.error);
+        });
         ref.read(assessmentProvider.notifier).clearMessages();
         _startCountdown();
         _startAutoSave();
       } else {
-        context.showSuccessSnackBar('Assessment submitted successfully!');
         Navigator.pop(context);
       }
     }
@@ -289,7 +287,7 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
       if (next.error != null &&
           prev?.error != next.error &&
           !_isSubmitting) {
-        context.showErrorSnackBar(next.error!);
+        setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
         ref.read(assessmentProvider.notifier).clearMessages();
       }
     });
@@ -400,36 +398,47 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
           ),
         ),
       ),
-      body: Center(
-        child: state.error != null
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEEBEE),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: const Icon(
-                      Icons.error_outline_rounded,
-                      size: 64,
-                      color: Color(0xFFEA4335),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Text(
-                      state.error!,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Color(0xFF2B2B2B),
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
+      body: Column(
+        children: [
+          if (_formError != null || state.error != null)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: FormMessage(
+                message: _formError ?? state.error,
+                severity: MessageSeverity.error,
+              ),
+            ),
+          Expanded(
+            child: Center(
+              child: state.error != null
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEEBEE),
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: const Icon(
+                            Icons.error_outline_rounded,
+                            size: 64,
+                            color: Color(0xFFEA4335),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Text(
+                            state.error!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Color(0xFF2B2B2B),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
                   const SizedBox(height: 24),
                   FilledButton(
                     onPressed: () => Navigator.pop(context),
@@ -445,25 +454,28 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
                     ),
                     child: const Text('Go Back'),
                   ),
-                ],
-              )
-            : const Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    color: Color(0xFF2B2B2B),
-                    strokeWidth: 2.5,
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Starting assessment...',
-                    style: TextStyle(
-                      color: Color(0xFF666666),
-                      fontSize: 15,
+                        ],
+                      )
+                  : const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(
+                          color: Color(0xFF2B2B2B),
+                          strokeWidth: 2.5,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Starting assessment...',
+                          style: TextStyle(
+                            color: Color(0xFF666666),
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
+            ),
+          ),
+        ],
       ),
     );
   }

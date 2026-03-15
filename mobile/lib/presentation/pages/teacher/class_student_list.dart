@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/presentation/pages/teacher/widgets/empty_student_state.dart';
@@ -17,6 +16,7 @@ class ClassStudentListPage extends ConsumerStatefulWidget {
 }
 
 class _ClassStudentListPageState extends ConsumerState<ClassStudentListPage> {
+
   @override
   void initState() {
     super.initState();
@@ -42,7 +42,6 @@ class _ClassStudentListPageState extends ConsumerState<ClassStudentListPage> {
       }
       // Show error messages
       if (next.error != null && prev?.error != next.error) {
-        context.showErrorSnackBar(next.error!);
         ref.read(classProvider.notifier).clearMessages();
       }
     });

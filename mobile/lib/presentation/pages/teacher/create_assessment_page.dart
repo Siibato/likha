@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
 import 'package:likha/domain/assessments/usecases/create_assessment.dart';
@@ -12,6 +13,7 @@ import 'package:likha/presentation/pages/teacher/widgets/assessment_details_sect
 import 'package:likha/presentation/pages/teacher/widgets/assessment_questions_section.dart';
 import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CreateAssessmentPage extends ConsumerStatefulWidget {
@@ -39,6 +41,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
   bool _draftLoaded = false;
   Timer? _autoSaveTimer;
   bool _isQuestionReorderMode = false;
+  String? _formError;
 
   @override
   void initState() {
@@ -303,8 +306,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
       if (assessment == null) {
         debugPrint('[CreateAssessmentPage] _handleSave: Assessment is null, showing error');
         final state = ref.read(assessmentProvider);
-        context.showErrorSnackBar(
-            state.error ?? 'Failed to create assessment');
+        setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
         setState(() => _isSaving = false);
         return;
       }
@@ -329,7 +331,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
         final state = ref.read(assessmentProvider);
         if (state.error != null) {
           debugPrint('[CreateAssessmentPage] _handleSave: Error after addQuestions: ${state.error}');
-          context.showErrorSnackBar(state.error ?? 'Failed to add questions');
+          setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
           setState(() => _isSaving = false);
           return;
         }
@@ -340,18 +342,13 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
       await _clearDraft();
       ref.read(assessmentProvider.notifier).clearMessages();
       if (mounted) {
-        debugPrint('[CreateAssessmentPage] _handleSave: Success! Showing snackbar and navigating');
-        final message = _isPublished
-            ? 'Assessment created and published'
-            : 'Assessment saved as draft';
-        context.showSuccessSnackBar(message);
-        await Future.delayed(const Duration(milliseconds: 500));
-        if (mounted) Navigator.pop(context, true);
+        debugPrint('[CreateAssessmentPage] _handleSave: Success! Navigating');
+        Navigator.pop(context, true);
       }
     } catch (e) {
       debugPrint('[CreateAssessmentPage] _handleSave: Exception caught: $e');
       if (mounted) {
-        context.showErrorSnackBar('An error occurred: $e');
+        setState(() => _formError = 'An error occurred: $e');
         setState(() => _isSaving = false);
       }
     }
@@ -418,6 +415,11 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                       ),
                     ),
                     const SizedBox(height: 12),
+                    FormMessage(
+                      message: _formError,
+                      severity: MessageSeverity.error,
+                    ),
+                    const SizedBox(height: 12),
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -435,10 +437,30 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                         showResultsImmediately: _showResultsImmediately,
                         isPublished: _isPublished,
                         isLoading: _isSaving,
-                        onOpenAtChanged: (dt) => setState(() => _openAt = dt),
-                        onCloseAtChanged: (dt) => setState(() => _closeAt = dt),
-                        onShowResultsChanged: (value) => setState(() => _showResultsImmediately = value),
-                        onIsPublishedChanged: (value) => setState(() => _isPublished = value),
+                        onOpenAtChanged: (dt) {
+                          setState(() {
+                            _openAt = dt;
+                            _formError = null;
+                          });
+                        },
+                        onCloseAtChanged: (dt) {
+                          setState(() {
+                            _closeAt = dt;
+                            _formError = null;
+                          });
+                        },
+                        onShowResultsChanged: (value) {
+                          setState(() {
+                            _showResultsImmediately = value;
+                            _formError = null;
+                          });
+                        },
+                        onIsPublishedChanged: (value) {
+                          setState(() {
+                            _isPublished = value;
+                            _formError = null;
+                          });
+                        },
                         onCreateAssessment: null,
                       ),
                     ),

@@ -1,10 +1,11 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/pages/teacher/material_detail_page.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 
 class CreateMaterialPage extends ConsumerStatefulWidget {
   final String classId;
@@ -21,6 +22,7 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
   final _descriptionController = TextEditingController();
   final List<PlatformFile> _selectedFiles = [];
   final _allowedExtensions = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'mp4', 'mp3', 'jpg', 'png', 'gif'];
+  String? _formError;
 
   @override
   void dispose() {
@@ -53,7 +55,7 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
   Future<void> _createMaterial() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedFiles.isEmpty) {
-      context.showErrorSnackBar('Please select at least one file');
+      setState(() => _formError = 'Please select at least one file');
       return;
     }
 
@@ -69,6 +71,8 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
 
     final state = ref.read(learningMaterialProvider);
     if (state.error != null) {
+      setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
+      ref.read(learningMaterialProvider.notifier).clearMessages();
       return;
     }
 
@@ -78,7 +82,6 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
     }
 
     if (!mounted) return;
-    context.showSuccessSnackBar('Module created successfully!', durationMs: 2000);
 
     // Step 2: Upload files sequentially
     bool anyUploadFailed = false;
@@ -94,7 +97,6 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
         final uploadState = ref.read(learningMaterialProvider);
         if (uploadState.error != null) {
           anyUploadFailed = true;
-          // Don't clear messages here - let the error listener handle display
         }
       }
     }
@@ -125,13 +127,6 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(learningMaterialProvider);
 
-    ref.listen<LearningMaterialState>(learningMaterialProvider, (prev, next) {
-      if (next.error != null && prev?.error != next.error) {
-        context.showErrorSnackBar(next.error!);
-        ref.read(learningMaterialProvider.notifier).clearMessages();
-      }
-    });
-
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
@@ -152,6 +147,11 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
+            FormMessage(
+              message: _formError,
+              severity: MessageSeverity.error,
+            ),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _titleController,
               decoration: InputDecoration(

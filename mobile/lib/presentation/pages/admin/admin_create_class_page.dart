@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/presentation/pages/admin/widgets/styled_button.dart';
 import 'package:likha/presentation/pages/admin/widgets/styled_dropdown.dart';
 import 'package:likha/presentation/pages/admin/widgets/styled_text_field.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
@@ -19,6 +20,7 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   String? _selectedTeacherId;
+  String? _formError;
 
   @override
   void initState() {
@@ -38,7 +40,7 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
   Future<void> _handleCreate() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedTeacherId == null || _selectedTeacherId!.isEmpty) {
-      context.showErrorSnackBar('Please select a teacher');
+      setState(() => _formError = 'Please select a teacher');
       return;
     }
 
@@ -59,10 +61,9 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
     if (mounted) {
       final state = ref.read(classProvider);
       if (state.successMessage != null) {
-        context.showSuccessSnackBar(state.successMessage!);
         Navigator.pop(context);
       } else if (state.error != null) {
-        context.showErrorSnackBar(state.error!);
+        setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
       }
     }
   }
@@ -149,6 +150,11 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                FormMessage(
+                  message: _formError,
+                  severity: MessageSeverity.error,
+                ),
+                const SizedBox(height: 16),
                 StyledTextField(
                   controller: _titleController,
                   label: 'Class Title',
@@ -160,6 +166,7 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
                     }
                     return null;
                   },
+                  onChanged: (_) => setState(() => _formError = null),
                 ),
                 const SizedBox(height: 16),
                 StyledTextField(
@@ -168,6 +175,7 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
                   icon: Icons.description_outlined,
                   enabled: !classState.isLoading,
                   validator: null,
+                  onChanged: (_) => setState(() => _formError = null),
                 ),
                 const SizedBox(height: 16),
                 StyledDropdown<String?>(
@@ -195,6 +203,7 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
                   onChanged: (value) {
                     setState(() {
                       _selectedTeacherId = value;
+                      _formError = null;
                     });
                   },
                   enabled: !classState.isLoading,

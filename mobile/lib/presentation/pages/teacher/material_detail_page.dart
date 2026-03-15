@@ -1,8 +1,9 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/widgets/styled_dialog.dart';
@@ -19,6 +20,8 @@ class MaterialDetailPage extends ConsumerStatefulWidget {
 }
 
 class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
+  String? _formError;
+
   @override
   void initState() {
     super.initState();
@@ -54,7 +57,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
     if (file.localPath == null || file.localPath!.isEmpty) {
       // File path not available, offer to download
       if (!mounted) return;
-      context.showWarningSnackBar('File not cached. Downloading...', durationMs: 2000);
+      setState(() => _formError = 'File not cached. Downloading...');
       await _saveFile(file);
       return;
     }
@@ -63,16 +66,12 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
       await OpenFile.open(file.localPath!);
     } catch (e) {
       if (!mounted) return;
-      context.showErrorSnackBar('Error opening file: $e');
+      setState(() => _formError = 'Error opening file: $e');
     }
   }
 
   /// Download file via provider (datasource handles caching)
   Future<void> _saveFile(MaterialFile file) async {
-    if (mounted) {
-      context.showInfoSnackBar('Downloading ${file.fileName}...', durationMs: 3000);
-    }
-
     // Provider's downloadFile() handles the download and calls loadMaterialDetail()
     // to update file.localPath in the UI state
     await ref.read(learningMaterialProvider.notifier).downloadFile(file.id);
@@ -82,9 +81,9 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
     // Check if download succeeded by looking at provider state
     final providerState = ref.read(learningMaterialProvider);
     if (providerState.error != null) {
-      context.showErrorSnackBar('Failed to download file', durationMs: 3000);
+      setState(() => _formError = 'Failed to download file');
     } else {
-      context.showSuccessSnackBar('✓ Downloaded: ${file.fileName}', durationMs: 3000);
+      setState(() => _formError = null);
     }
   }
 
@@ -101,17 +100,13 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
     for (final file in toDownload) {
       downloadedCount++;
 
-      if (mounted) {
-        context.showInfoSnackBar('Downloading $downloadedCount of $total: ${file.fileName}', durationMs: 60000);
-      }
-
       await _saveFile(file);
 
       if (!mounted) return;
     }
 
     if (!mounted) return;
-    context.showSuccessSnackBar('Downloaded $downloadedCount file(s)', durationMs: 3000);
+    setState(() => _formError = null);
   }
 
   void _deleteFile(MaterialFile file) {
@@ -179,11 +174,11 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
       }
 
       if (next.error != null && prev?.error != next.error) {
-        context.showErrorSnackBar(next.error!);
+        setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
         ref.read(learningMaterialProvider.notifier).clearMessages();
       }
       if (next.successMessage != null && prev?.successMessage != next.successMessage) {
-        context.showSuccessSnackBar(next.successMessage!);
+        setState(() => _formError = null);
         ref.read(learningMaterialProvider.notifier).clearMessages();
       }
     });
@@ -221,6 +216,13 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
               child: ListView(
                 padding: const EdgeInsets.all(24),
                 children: [
+                  // Form Error Display
+                  FormMessage(
+                    message: _formError,
+                    severity: MessageSeverity.error,
+                  ),
+                  if (_formError != null) const SizedBox(height: 12),
+
                   // Title
                   Text(
                     material.title,

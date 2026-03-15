@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/presentation/pages/admin/widgets/student_action_card.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/info_row.dart';
@@ -68,13 +67,11 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
     ref.listen<ClassState>(classProvider, (prev, next) {
       // Success snackbar
       if (next.successMessage != null && prev?.successMessage != next.successMessage) {
-        context.showSuccessSnackBar(next.successMessage!);
         ref.read(classProvider.notifier).clearMessages();
       }
 
       // Error snackbar
       if (next.error != null && prev?.error != next.error) {
-        context.showErrorSnackBar(next.error!);
         ref.read(classProvider.notifier).clearMessages();
       }
     });

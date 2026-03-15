@@ -4,11 +4,13 @@ import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.
 class AssignmentTitleField extends StatelessWidget {
   final TextEditingController controller;
   final bool enabled;
+  final ValueChanged<String>? onChanged;
 
   const AssignmentTitleField({
     super.key,
     required this.controller,
     required this.enabled,
+    this.onChanged,
   });
 
   @override
@@ -18,6 +20,7 @@ class AssignmentTitleField extends StatelessWidget {
       label: 'Title',
       icon: Icons.title_rounded,
       enabled: enabled,
+      onChanged: onChanged,
       validator: (value) {
         if (value == null || value.trim().isEmpty) return 'Title is required';
         if (value.trim().length > 200) return 'Title must be 200 characters or less';

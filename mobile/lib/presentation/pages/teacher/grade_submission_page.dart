@@ -1,14 +1,14 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assignments/entities/submission_file.dart';
 import 'package:likha/domain/assignments/usecases/grade_submission.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/styled_button.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/status_badge.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/card_icon_slot.dart';
@@ -33,6 +33,7 @@ class GradeSubmissionPage extends ConsumerStatefulWidget {
 class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
   final _scoreController = TextEditingController();
   final _feedbackController = TextEditingController();
+  String? _formError;
 
   @override
   void initState() {
@@ -102,12 +103,11 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
   Future<void> _handleGrade() async {
     final score = int.tryParse(_scoreController.text.trim());
     if (score == null || score < 0 || score > widget.totalPoints) {
-      context.showErrorSnackBar(
-        'Score must be between 0 and ${widget.totalPoints}',
-      );
+      setState(() => _formError = 'Score must be between 0 and ${widget.totalPoints}');
       return;
     }
 
+    setState(() => _formError = null);
     final feedback = _feedbackController.text.trim();
     await ref
         .read(assignmentProvider.notifier)
@@ -177,7 +177,6 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
     ref.listen<AssignmentState>(assignmentProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
-        context.showSuccessSnackBar(next.successMessage!);
         ref.read(assignmentProvider.notifier).clearMessages();
         if (next.successMessage == 'Submission graded' ||
             next.successMessage == 'Submission returned for revision') {
@@ -187,7 +186,7 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
         }
       }
       if (next.error != null && prev?.error != next.error) {
-        context.showErrorSnackBar(next.error!);
+        setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
         ref.read(assignmentProvider.notifier).clearMessages();
       }
     });
@@ -338,6 +337,11 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
                         ),
                       ),
                       const SizedBox(height: 12),
+                      FormMessage(
+                        message: _formError,
+                        severity: MessageSeverity.error,
+                      ),
+                      const SizedBox(height: 12),
                       StyledTextField(
                         controller: _scoreController,
                         label: 'Score (out of ${widget.totalPoints})',
@@ -353,6 +357,7 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
                             return 'Score must be between 0 and ${widget.totalPoints}';
                           return null;
                         },
+                        onChanged: (_) => setState(() => _formError = null),
                       ),
                       const SizedBox(height: 12),
                       StyledTextField(
@@ -360,6 +365,7 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
                         label: 'Feedback (optional)',
                         icon: Icons.comment_outlined,
                         maxLines: 3,
+                        onChanged: (_) => setState(() => _formError = null),
                       ),
                       const SizedBox(height: 16),
                       Row(

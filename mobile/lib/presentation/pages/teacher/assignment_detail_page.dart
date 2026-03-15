@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/presentation/pages/teacher/assignment_submissions_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assignment_info_card.dart';
@@ -9,6 +9,7 @@ import 'package:likha/presentation/pages/teacher/widgets/assignment_status_card.
 import 'package:likha/presentation/pages/teacher/widgets/assignment_submissions_card.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 
 class AssignmentDetailPage extends ConsumerStatefulWidget {
   final String assignmentId;
@@ -21,6 +22,8 @@ class AssignmentDetailPage extends ConsumerStatefulWidget {
 }
 
 class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
+  String? _formError;
+
   @override
   void initState() {
     super.initState();
@@ -69,14 +72,14 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     ref.listen<AssignmentState>(assignmentProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
-        context.showSuccessSnackBar(next.successMessage!);
+        setState(() => _formError = null);
         ref.read(assignmentProvider.notifier).clearMessages();
         if (next.successMessage == 'Assignment deleted') {
           Navigator.pop(context, true);
         }
       }
       if (next.error != null && prev?.error != next.error) {
-        context.showErrorSnackBar(next.error!);
+        setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
         ref.read(assignmentProvider.notifier).clearMessages();
       }
     });
@@ -210,6 +213,11 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        FormMessage(
+                          message: _formError,
+                          severity: MessageSeverity.error,
+                        ),
+                        if (_formError != null) const SizedBox(height: 12),
                         AssignmentStatusCard(
                           isPublished: assignment.isPublished,
                           dueAt: assignment.dueAt,

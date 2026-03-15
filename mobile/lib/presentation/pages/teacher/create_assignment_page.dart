@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/constants/file_types.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assignments/usecases/create_assignment.dart';
 import 'package:likha/presentation/pages/teacher/widgets/shared_due_date_time_picker.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assignment_instructions_field.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assignment_points_field.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assignment_title_field.dart';
 import 'package:likha/presentation/pages/teacher/widgets/submission_type_dropdown.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 
 class CreateAssignmentPage extends ConsumerStatefulWidget {
@@ -30,6 +31,7 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
   String _submissionType = 'text_or_file';
   DateTime _dueAt = DateTime.now().add(const Duration(days: 7));
   bool _isPublished = true;
+  String? _formError;
 
   @override
   void dispose() {
@@ -279,7 +281,7 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
 
     final totalPoints = int.tryParse(_totalPointsController.text.trim());
     if (totalPoints == null || totalPoints <= 0 || totalPoints > 1000) {
-      context.showErrorSnackBar('Total points must be between 1 and 1000');
+      setState(() => _formError = 'Total points must be between 1 and 1000');
       return;
     }
 
@@ -313,13 +315,9 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
     if (!mounted) return;
     final state = ref.read(assignmentProvider);
     if (state.error != null) {
-      context.showErrorSnackBar(state.error!);
+      setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
       ref.read(assignmentProvider.notifier).clearMessages();
     } else {
-      final message = _isPublished
-          ? 'Assignment created and published'
-          : 'Assignment saved as draft';
-      context.showSuccessSnackBar(message);
       ref.read(assignmentProvider.notifier).clearMessages();
       Navigator.pop(context, true);
     }
@@ -352,9 +350,15 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              FormMessage(
+                message: _formError,
+                severity: MessageSeverity.error,
+              ),
+              const SizedBox(height: 16),
               AssignmentTitleField(
                 controller: _titleController,
                 enabled: !assignState.isLoading,
+                onChanged: (_) => setState(() => _formError = null),
               ),
               const SizedBox(height: 16),
               AssignmentInstructionsField(

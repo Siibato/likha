@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/core/errors/error_messages.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -13,6 +15,7 @@ class LoginPage extends ConsumerStatefulWidget {
 class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
+  String? _formError;
 
   @override
   void dispose() {
@@ -31,7 +34,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final state = ref.read(authProvider);
 
     if (state.error != null) {
-      context.showErrorSnackBar(state.error!);
+      setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
     }
   }
 
@@ -79,69 +82,23 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 48),
-                  
-                  // Username field with border styling
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE0E0E0),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Container(
-                      margin: const EdgeInsets.fromLTRB(1, 1, 1, 3),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(13),
-                      ),
-                      child: TextFormField(
-                        controller: _usernameController,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF202020),
-                        ),
-                        decoration: InputDecoration(
-                          labelText: 'Username',
-                          labelStyle: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF999999),
-                          ),
-                          prefixIcon: const Icon(
-                            Icons.person_outline_rounded,
-                            color: Color(0xFF999999),
-                            size: 22,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(13),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(13),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(13),
-                            borderSide: const BorderSide(
-                              color: Color(0xFF2B2B2B),
-                              width: 1.5,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 16,
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your username';
-                          }
-                          return null;
-                        },
-                        textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) => _handleContinue(),
-                        enabled: !authState.isLoading,
-                      ),
-                    ),
+                  FormMessage(
+                    message: _formError,
+                    severity: MessageSeverity.error,
+                  ),
+                  const SizedBox(height: 16),
+                  StyledTextField(
+                    controller: _usernameController,
+                    label: 'Username',
+                    icon: Icons.person_outline_rounded,
+                    enabled: !authState.isLoading,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter your username';
+                      }
+                      return null;
+                    },
+                    onChanged: (_) => setState(() => _formError = null),
                   ),
                   const SizedBox(height: 24),
                   

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/theme/app_colors.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:likha/domain/assessments/usecases/override_answer.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
@@ -21,6 +22,8 @@ class SubmissionReviewPage extends ConsumerStatefulWidget {
 }
 
 class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
+  String? _formError;
+
   @override
   void initState() {
     super.initState();
@@ -90,11 +93,11 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
     ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
-        context.showSuccessSnackBar(next.successMessage!);
+        setState(() => _formError = null);
         ref.read(assessmentProvider.notifier).clearMessages();
       }
       if (next.error != null && prev?.error != next.error) {
-        context.showErrorSnackBar(next.error!);
+        setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
         ref.read(assessmentProvider.notifier).clearMessages();
       }
     });
@@ -134,6 +137,11 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      FormMessage(
+                        message: _formError,
+                        severity: MessageSeverity.error,
+                      ),
+                      if (_formError != null) const SizedBox(height: 12),
                       _buildSummaryCard(detail),
                       const SizedBox(height: 16),
                       Text(

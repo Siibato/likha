@@ -1,8 +1,8 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/theme/app_colors.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
 import 'package:likha/domain/assignments/entities/submission_file.dart';
 import 'package:likha/domain/assignments/usecases/create_submission.dart';
@@ -10,6 +10,7 @@ import 'package:likha/domain/assignments/usecases/upload_file.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/card_icon_slot.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/student/widgets/assignment_instructions_card.dart';
 import 'package:likha/presentation/pages/student/widgets/assignment_returned_banner.dart';
 import 'package:likha/presentation/pages/student/widgets/assignment_text_input_card.dart';
@@ -54,6 +55,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
   final _textController = TextEditingController();
   String? _submissionId;
   bool _isCreatingSubmission = false;
+  String? _formError;
 
   @override
   void initState() {
@@ -134,7 +136,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     final file = result.files.first;
     if (file.path == null) {
       // Fix 4: Show error instead of silent abort when file.path is null
-      context.showErrorSnackBar('Could not access file. Please try again.');
+      setState(() => _formError = 'Could not access file. Please try again.');
       return;
     }
 
@@ -142,7 +144,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       final fileSizeMb = file.size / (1024 * 1024);
       if (fileSizeMb > widget.maxFileSizeMb!) {
         if (!mounted) return;
-        context.showErrorSnackBar('File too large. Max size is ${widget.maxFileSizeMb} MB');
+        setState(() => _formError = 'File too large. Max size is ${widget.maxFileSizeMb} MB');
         return;
       }
     }
@@ -186,7 +188,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
   Future<void> _openFile(SubmissionFile file) async {
     if (file.localPath == null || file.localPath!.isEmpty) {
       if (!mounted) return;
-      context.showWarningSnackBar('File not cached. Downloading...', durationMs: 2000);
+      setState(() => _formError = 'File not cached. Downloading...');
       await _saveFile(file);
       return;
     }
@@ -194,22 +196,19 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       await OpenFile.open(file.localPath!);
     } catch (e) {
       if (!mounted) return;
-      context.showErrorSnackBar('Error opening file: $e');
+      setState(() => _formError = 'Error opening file: $e');
     }
   }
 
   /// Download file via provider (datasource handles caching)
   Future<void> _saveFile(SubmissionFile file) async {
-    if (mounted) {
-      context.showInfoSnackBar('Downloading ${file.fileName}...', durationMs: 3000);
-    }
     await ref.read(assignmentProvider.notifier).downloadFile(file.id);
     if (!mounted) return;
     final providerState = ref.read(assignmentProvider);
     if (providerState.error != null) {
-      context.showErrorSnackBar('Failed to download file', durationMs: 3000);
+      setState(() => _formError = 'Failed to download file');
     } else {
-      context.showSuccessSnackBar('✓ Downloaded: ${file.fileName}', durationMs: 3000);
+      setState(() => _formError = null);
     }
   }
 
@@ -263,14 +262,14 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     ref.listen<AssignmentState>(assignmentProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
-        context.showSuccessSnackBar(next.successMessage!);
+        setState(() => _formError = null);
         ref.read(assignmentProvider.notifier).clearMessages();
         if (next.successMessage == 'Assignment submitted') {
           Navigator.pop(context, true);
         }
       }
       if (next.error != null && prev?.error != next.error) {
-        context.showErrorSnackBar(next.error!);
+        setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
         ref.read(assignmentProvider.notifier).clearMessages();
       }
     });
@@ -305,6 +304,13 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                     padding: const EdgeInsets.all(24),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
+                        // Form Error Display
+                        FormMessage(
+                          message: _formError,
+                          severity: MessageSeverity.error,
+                        ),
+                        if (_formError != null) const SizedBox(height: 12),
+
                         // Assignment Title
                         Text(
                           widget.assignmentTitle,

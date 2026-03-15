@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/presentation/pages/teacher/widgets/student_detail_info_card.dart';
 import 'package:likha/presentation/pages/teacher/widgets/student_assessment_row.dart';
@@ -71,7 +70,6 @@ class _TeacherStudentDetailPageState extends ConsumerState<TeacherStudentDetailP
       ),
       (prev, next) {
         if (next.error != null && prev?.error != next.error) {
-          context.showErrorSnackBar(next.error!);
         }
       },
     );

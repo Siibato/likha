@@ -8,6 +8,7 @@ class AssessmentField extends StatelessWidget {
   final String? Function(String?)? validator;
   final bool enabled;
   final TextInputType? keyboardType;
+  final ValueChanged<String>? onChanged;
 
   const AssessmentField({
     super.key,
@@ -18,6 +19,7 @@ class AssessmentField extends StatelessWidget {
     this.validator,
     this.enabled = true,
     this.keyboardType,
+    this.onChanged,
   });
 
   @override
@@ -28,6 +30,7 @@ class AssessmentField extends StatelessWidget {
       maxLines: maxLines,
       keyboardType: keyboardType,
       enabled: enabled,
+      onChanged: onChanged,
       textAlignVertical: isMultiLine ? TextAlignVertical.top : TextAlignVertical.center,
       style: const TextStyle(
         fontSize: 16,

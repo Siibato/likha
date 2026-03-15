@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/core/sync/sync_manager.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/presentation/pages/student/assessment_detail_page.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/student/widgets/assessment_card.dart';
 import 'package:likha/presentation/pages/student/widgets/empty_assessment_state.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
@@ -22,6 +23,8 @@ class AssessmentListPage extends ConsumerStatefulWidget {
 }
 
 class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
+  String? _formError;
+
   @override
   void initState() {
     super.initState();
@@ -105,7 +108,7 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
 
     ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
       if (next.error != null && prev?.error != next.error) {
-        context.showErrorSnackBar(next.error!);
+        setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
         ref.read(assessmentProvider.notifier).clearMessages();
       }
     });
@@ -133,6 +136,16 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
                         showBackButton: true,
                       ),
                     ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: FormMessage(
+                          message: _formError,
+                          severity: MessageSeverity.error,
+                        ),
+                      ),
+                    ),
+                    if (_formError != null) const SliverToBoxAdapter(child: SizedBox(height: 12)),
                     state.assessments.isEmpty
                         ? const SliverFillRemaining(
                             child: EmptyAssessmentState(),

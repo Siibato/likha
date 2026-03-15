@@ -11,6 +11,7 @@ class StyledDropdown<T> extends StatelessWidget {
   final bool enabled;
   final List<DropdownMenuItem<T>> items;
   final ValueChanged<T?>? onChanged;
+  final String? Function(T?)? validator;
 
   const StyledDropdown({
     super.key,
@@ -20,6 +21,7 @@ class StyledDropdown<T> extends StatelessWidget {
     required this.items,
     this.enabled = true,
     this.onChanged,
+    this.validator,
   });
 
   @override
@@ -43,6 +45,7 @@ class StyledDropdown<T> extends StatelessWidget {
           child: DropdownButtonFormField<T>(
             initialValue: value,
             isExpanded: true,
+            validator: validator,
             items: items.map((item) {
               return DropdownMenuItem<T>(
                 value: item.value,
@@ -77,6 +80,20 @@ class StyledDropdown<T> extends StatelessWidget {
                 borderRadius: BorderRadius.circular(13),
                 borderSide: const BorderSide(
                   color: Color(0xFF2B2B2B),
+                  width: 1.5,
+                ),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(13),
+                borderSide: const BorderSide(
+                  color: Color(0xFFEF5350),
+                  width: 1.5,
+                ),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(13),
+                borderSide: const BorderSide(
+                  color: Color(0xFFEF5350),
                   width: 1.5,
                 ),
               ),
