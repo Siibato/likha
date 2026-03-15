@@ -12,6 +12,8 @@ pub struct CreateAssignmentRequest {
     pub allowed_file_types: Option<String>,
     pub max_file_size_mb: Option<i32>,
     pub due_at: String,
+    #[serde(default)]
+    pub is_published: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -36,6 +38,16 @@ pub struct SubmitTextRequest {
     pub text_content: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ReorderAssignmentRequest {
+    pub new_order_index: i32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ReorderAssignmentsRequest {
+    pub assignment_ids: Vec<Uuid>,
+}
+
 // ===== RESPONSE SCHEMAS =====
 
 #[derive(Debug, Serialize)]
@@ -50,8 +62,12 @@ pub struct AssignmentResponse {
     pub max_file_size_mb: Option<i32>,
     pub due_at: String,
     pub is_published: bool,
+    pub order_index: i32,
     pub submission_count: usize,
     pub graded_count: usize,
+    pub submission_status: Option<String>,
+    pub submission_id: Option<Uuid>,
+    pub score: Option<i32>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -70,6 +86,7 @@ pub struct StudentAssignmentListItem {
     pub due_at: String,
     pub is_published: bool,
     pub submission_status: Option<String>,
+    pub submission_id: Option<Uuid>,
     pub score: Option<i32>,
 }
 
@@ -106,6 +123,7 @@ pub struct SubmissionListItem {
     pub id: Uuid,
     pub student_id: Uuid,
     pub student_name: String,
+    pub student_username: String,
     pub status: String,
     pub submitted_at: Option<String>,
     pub is_late: bool,
@@ -119,4 +137,32 @@ pub struct FileMetadataResponse {
     pub file_type: String,
     pub file_size: i64,
     pub uploaded_at: String,
+}
+
+// ===== STUDENT SUBMISSION STATUS SCHEMAS =====
+
+#[derive(Debug, Serialize)]
+pub struct StudentAssignmentSubmissionItem {
+    pub assignment_id: Uuid,
+    pub id: Uuid,                       // submission id
+    pub student_id: Uuid,
+    pub student_name: String,
+    pub status: String,                 // "draft" | "submitted" | "graded" | "returned"
+    pub submitted_at: Option<String>,
+    pub is_late: bool,
+    pub score: Option<i32>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct StudentAssignmentSubmissionsResponse {
+    pub submissions: Vec<StudentAssignmentSubmissionItem>,
+}
+
+// ===== METADATA SCHEMAS =====
+
+#[derive(Debug, Serialize)]
+pub struct AssignmentMetadataResponse {
+    pub last_modified: String,
+    pub record_count: usize,
+    pub etag: String,
 }

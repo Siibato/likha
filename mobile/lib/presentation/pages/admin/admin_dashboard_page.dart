@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/admin/account_management_page.dart';
+import 'package:likha/presentation/pages/admin/admin_classes_page.dart';
 import 'package:likha/presentation/pages/admin/create_account_page.dart';
+import 'package:likha/presentation/pages/admin/widgets/admin_header.dart';
+import 'package:likha/presentation/pages/shared/widgets/cards/navigation_card.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
+import 'package:likha/presentation/utils/logout_helper.dart';
 
 class AdminDashboardPage extends ConsumerWidget {
   const AdminDashboardPage({super.key});
@@ -12,74 +16,75 @@ class AdminDashboardPage extends ConsumerWidget {
     final authState = ref.watch(authProvider);
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Admin Dashboard'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          'Admin Dashboard',
+          style: TextStyle(
+            color: Color(0xFF202020),
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+            letterSpacing: -0.4,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => ref.read(authProvider.notifier).logout(),
+            icon: const Icon(
+              Icons.logout_rounded,
+              color: Color(0xFF404040),
+            ),
+            onPressed: () => handleLogoutTap(context, ref),
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Welcome, ${authState.user?.fullName ?? 'Admin'}',
-              style: Theme.of(context).textTheme.headlineSmall,
+            AdminHeader(
+              fullName: authState.user?.fullName ?? 'Admin',
             ),
-            const SizedBox(height: 24),
-            _DashboardCard(
-              icon: Icons.people,
+            const SizedBox(height: 32),
+            NavigationCard(
+              icon: Icons.class_outlined,
+              title: 'Class Management',
+              subtitle: 'Create classes and manage student enrollment',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AdminClassesPage(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            NavigationCard(
+              icon: Icons.people_outline_rounded,
               title: 'Account Management',
               subtitle: 'View and manage all user accounts',
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (_) => const AccountManagementPage()),
+                  builder: (_) => const AccountManagementPage(),
+                ),
               ),
             ),
-            const SizedBox(height: 12),
-            _DashboardCard(
-              icon: Icons.person_add,
+            const SizedBox(height: 14),
+            NavigationCard(
+              icon: Icons.person_add_outlined,
               title: 'Create Account',
               subtitle: 'Create a new teacher or student account',
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const CreateAccountPage()),
+                MaterialPageRoute(
+                  builder: (_) => const CreateAccountPage(),
+                ),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _DashboardCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _DashboardCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: Icon(icon, size: 40, color: Colors.blue),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: onTap,
       ),
     );
   }

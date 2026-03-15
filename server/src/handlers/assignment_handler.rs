@@ -11,8 +11,8 @@ use uuid::Uuid;
 use crate::middleware::auth_middleware::AuthUser;
 use crate::schema::assignment_schema::*;
 use crate::schema::auth_schema::MessageResponse;
-use crate::schema::common::ApiResponse;
-use crate::services::assignment_service::AssignmentService;
+use crate::schema::common::success_response;
+use crate::services::assignment::AssignmentService;
 use crate::utils::error::AppError;
 
 // ===== TEACHER: ASSIGNMENT CRUD =====
@@ -28,10 +28,10 @@ pub async fn create_assignment(
     }
 
     match service
-        .create_assignment(class_id, request, auth_user.user_id)
+        .create_assignment(class_id, request, auth_user.user_id, None)
         .await
     {
-        Ok(response) => (StatusCode::CREATED, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -45,7 +45,25 @@ pub async fn get_assignments(
         .get_assignments(class_id, auth_user.user_id, &auth_user.role)
         .await
     {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+pub async fn get_student_assignments(
+    State(service): State<Arc<AssignmentService>>,
+    auth_user: AuthUser,
+    Path(class_id): Path<Uuid>,
+) -> impl IntoResponse {
+    if auth_user.role != "student" {
+        return AppError::Forbidden("Student access required".to_string()).into_response();
+    }
+
+    match service
+        .get_student_assignments(class_id, auth_user.user_id)
+        .await
+    {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -59,7 +77,7 @@ pub async fn get_assignment_detail(
         .get_assignment_detail(id, auth_user.user_id, &auth_user.role)
         .await
     {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -78,7 +96,7 @@ pub async fn update_assignment(
         .update_assignment(id, request, auth_user.user_id)
         .await
     {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -93,13 +111,9 @@ pub async fn delete_assignment(
     }
 
     match service.delete_assignment(id, auth_user.user_id).await {
-        Ok(()) => (
-            StatusCode::OK,
-            Json(ApiResponse::success(MessageResponse {
-                message: "Assignment deleted".to_string(),
-            })),
-        )
-            .into_response(),
+        Ok(()) => success_response(MessageResponse {
+            message: "Assignment deleted".to_string(),
+        }, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -114,7 +128,22 @@ pub async fn publish_assignment(
     }
 
     match service.publish_assignment(id, auth_user.user_id).await {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+pub async fn unpublish_assignment(
+    State(service): State<Arc<AssignmentService>>,
+    auth_user: AuthUser,
+    Path(id): Path<Uuid>,
+) -> impl IntoResponse {
+    if auth_user.role != "teacher" {
+        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    }
+
+    match service.unpublish_assignment(id, auth_user.user_id).await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -129,7 +158,7 @@ pub async fn get_submissions(
     }
 
     match service.get_submissions(id, auth_user.user_id).await {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -143,7 +172,7 @@ pub async fn get_submission_detail(
         .get_submission_detail(id, auth_user.user_id, &auth_user.role)
         .await
     {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -162,7 +191,7 @@ pub async fn grade_submission(
         .grade_submission(id, request, auth_user.user_id)
         .await
     {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -177,7 +206,7 @@ pub async fn return_submission(
     }
 
     match service.return_submission(id, auth_user.user_id).await {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -195,10 +224,10 @@ pub async fn create_submission(
     }
 
     match service
-        .create_or_get_submission(id, auth_user.user_id, request.text_content)
+        .create_or_get_submission(id, auth_user.user_id, request.text_content, None)
         .await
     {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -237,8 +266,7 @@ pub async fn upload_file(
             .await
         {
             Ok(response) => {
-                return (StatusCode::CREATED, Json(ApiResponse::success(response)))
-                    .into_response();
+                return success_response(response, StatusCode::CREATED).into_response();
             }
             Err(e) => return e.into_response(),
         }
@@ -257,13 +285,9 @@ pub async fn delete_submission_file(
     }
 
     match service.delete_file(id, auth_user.user_id).await {
-        Ok(()) => (
-            StatusCode::OK,
-            Json(ApiResponse::success(MessageResponse {
-                message: "File deleted".to_string(),
-            })),
-        )
-            .into_response(),
+        Ok(()) => success_response(MessageResponse {
+            message: "File deleted".to_string(),
+        }, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -277,8 +301,8 @@ pub async fn submit_assignment(
         return AppError::Forbidden("Student access required".to_string()).into_response();
     }
 
-    match service.submit_assignment(id, auth_user.user_id).await {
-        Ok(response) => (StatusCode::OK, Json(ApiResponse::success(response))).into_response(),
+    match service.submit_assignment(id, auth_user.user_id, None).await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -304,6 +328,48 @@ pub async fn download_file(
                 AppError::InternalServerError("Failed to build response".to_string())
                     .into_response()
             }),
+        Err(e) => e.into_response(),
+    }
+}
+
+pub async fn get_assignments_metadata(
+    State(service): State<Arc<AssignmentService>>,
+    _auth_user: AuthUser,
+) -> impl IntoResponse {
+    match service.get_assignments_metadata().await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+pub async fn reorder_assignments(
+    State(service): State<Arc<AssignmentService>>,
+    auth_user: AuthUser,
+    Path(class_id): Path<Uuid>,
+    Json(request): Json<ReorderAssignmentsRequest>,
+) -> impl IntoResponse {
+    if auth_user.role != "teacher" {
+        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    }
+    match service.reorder_assignments(class_id, request, auth_user.user_id).await {
+        Ok(()) => success_response(
+            MessageResponse { message: "Assignments reordered".to_string() },
+            StatusCode::OK,
+        ).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+pub async fn get_student_assignment_submissions(
+    State(service): State<Arc<AssignmentService>>,
+    auth_user: AuthUser,
+    Path((class_id, student_id)): Path<(Uuid, Uuid)>,
+) -> impl IntoResponse {
+    if auth_user.role != "teacher" {
+        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    }
+    match service.get_student_assignment_submissions(class_id, student_id, auth_user.user_id).await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }

@@ -1,0 +1,218 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/utils/transmutation_util.dart';
+import 'package:likha/presentation/pages/shared/class_section_header.dart';
+import 'package:likha/presentation/pages/student/student_class_grade_detail_page.dart';
+import 'package:likha/presentation/providers/student_class_grades_provider.dart';
+
+class StudentGradesPage extends ConsumerStatefulWidget {
+  const StudentGradesPage({super.key});
+
+  @override
+  ConsumerState<StudentGradesPage> createState() => _StudentGradesPageState();
+}
+
+class _StudentGradesPageState extends ConsumerState<StudentGradesPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(studentClassGradesProvider.notifier).loadAllClassGrades();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final gradesState = ref.watch(studentClassGradesProvider);
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFFAFAFA),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const ClassSectionHeader(
+              title: 'My Grades',
+              showBackButton: true,
+            ),
+            Expanded(
+              child: gradesState.isLoading && gradesState.classGrades.isEmpty
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF2B2B2B),
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                  : gradesState.classGrades.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(
+                                Icons.school_outlined,
+                                size: 64,
+                                color: Color(0xFFCCCCCC),
+                              ),
+                              SizedBox(height: 16),
+                              Text(
+                                'No classes yet',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF2B2B2B),
+                                ),
+                              ),
+                              SizedBox(height: 6),
+                              Text(
+                                'Check back later',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF7A7A7A),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: () => ref
+                              .read(
+                                  studentClassGradesProvider.notifier)
+                              .loadAllClassGrades(),
+                          color: const Color(0xFF2B2B2B),
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 16),
+                            itemCount: gradesState.classGrades.length,
+                            itemBuilder: (context, index) {
+                              final classGrade =
+                                  gradesState.classGrades[index];
+                              return _ClassGradeCard(
+                                classGrade: classGrade,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          StudentClassGradeDetailPage(
+                                        classId: classGrade.classId,
+                                        className: classGrade.className,
+                                        classGrade: classGrade,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ClassGradeCard extends StatelessWidget {
+  final ClassGradeData classGrade;
+  final VoidCallback onTap;
+
+  const _ClassGradeCard({
+    required this.classGrade,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final descriptor = TransmutationUtil.getDescriptor(classGrade.reportGrade);
+    final badgeColor =
+        TransmutationUtil.getDescriptorColor(classGrade.reportGrade);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE0E0E0),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(1, 1, 1, 3.5),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(15),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(15),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          classGrade.className,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF202020),
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${classGrade.gradedCount} graded, ${classGrade.totalCount} total',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF999999),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '${classGrade.reportGrade}',
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF2B2B2B),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Color(badgeColor),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          descriptor,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

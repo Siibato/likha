@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/errors/error_messages.dart';
+import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/teacher/submission_review_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_submission_card.dart';
 import 'package:likha/presentation/pages/teacher/widgets/empty_assessment_submissions_state.dart';
@@ -17,6 +20,8 @@ class AssessmentSubmissionsPage extends ConsumerStatefulWidget {
 
 class _AssessmentSubmissionsPageState
     extends ConsumerState<AssessmentSubmissionsPage> {
+  String? _formError;
+
   @override
   void initState() {
     super.initState();
@@ -33,50 +38,52 @@ class _AssessmentSubmissionsPageState
 
     ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
       if (next.error != null && prev?.error != next.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: const Color(0xFFEF5350),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
         ref.read(assessmentProvider.notifier).clearMessages();
       }
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF2B2B2B)),
+        iconTheme: const IconThemeData(color: AppColors.foregroundPrimary),
         title: const Text(
           'Submissions',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.foregroundPrimary,
             letterSpacing: -0.4,
           ),
         ),
       ),
-      body: state.isLoading && state.submissions.isEmpty
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF2B2B2B),
-                strokeWidth: 2.5,
+      body: Column(
+        children: [
+          if (_formError != null)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: FormMessage(
+                message: _formError,
+                severity: MessageSeverity.error,
               ),
-            )
-          : state.submissions.isEmpty
-              ? const EmptyAssessmentSubmissionsState()
-              : RefreshIndicator(
+            ),
+          Expanded(
+            child: state.isLoading && state.submissions.isEmpty
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.foregroundPrimary,
+                      strokeWidth: 2.5,
+                    ),
+                  )
+                : state.submissions.isEmpty
+                    ? const EmptyAssessmentSubmissionsState()
+                    : RefreshIndicator(
                   onRefresh: () => ref
                       .read(assessmentProvider.notifier)
                       .loadSubmissions(widget.assessmentId),
-                  color: const Color(0xFF2B2B2B),
+                  color: AppColors.foregroundPrimary,
                   child: ListView.builder(
                     padding: const EdgeInsets.all(24),
                     itemCount: state.submissions.length,
@@ -103,6 +110,9 @@ class _AssessmentSubmissionsPageState
                     },
                   ),
                 ),
+            ),
+        ],
+      ),
     );
   }
 }

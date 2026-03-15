@@ -1,8 +1,20 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/errors/error_messages.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
 import 'package:likha/domain/assessments/usecases/create_assessment.dart';
+import 'package:likha/presentation/pages/teacher/widgets/question_draft.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/pages/teacher/widgets/assessment_details_section.dart';
+import 'package:likha/presentation/pages/teacher/widgets/assessment_questions_section.dart';
+import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
+import 'package:likha/presentation/pages/shared/class_section_header.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CreateAssessmentPage extends ConsumerStatefulWidget {
   final String classId;
@@ -15,9 +27,7 @@ class CreateAssessmentPage extends ConsumerStatefulWidget {
 }
 
 class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
-  int _currentStep = 0;
-
-  // Step 1: Assessment details
+  // Form state
   final _detailsFormKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -25,27 +35,142 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
   DateTime _openAt = DateTime.now();
   DateTime _closeAt = DateTime.now().add(const Duration(days: 7));
   bool _showResultsImmediately = false;
+  bool _isPublished = true;
+  final List<QuestionDraft> _questions = [];
+  bool _isSaving = false;
+  bool _draftLoaded = false;
+  Timer? _autoSaveTimer;
+  bool _isQuestionReorderMode = false;
+  String? _formError;
 
-  // Step 2: Questions
-  final List<_QuestionDraft> _questions = [];
-
-  // Created assessment ID after step 1 save
-  String? _createdAssessmentId;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDraft();
+    });
+  }
 
   @override
   void dispose() {
+    _autoSaveTimer?.cancel();
     _titleController.dispose();
     _descriptionController.dispose();
     _timeLimitController.dispose();
     super.dispose();
   }
 
-  String _formatDateTime(DateTime dt) {
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    final hour = dt.hour > 12 ? dt.hour - 12 : dt.hour == 0 ? 12 : dt.hour;
-    final minute = dt.minute.toString().padLeft(2, '0');
-    final period = dt.hour >= 12 ? 'PM' : 'AM';
-    return '${months[dt.month - 1]} ${dt.day.toString().padLeft(2, '0')}, ${dt.year} $hour:$minute $period';
+  Future<void> _loadDraft() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final draftKey = 'assessment_draft_${widget.classId}';
+      final draftJson = prefs.getString(draftKey);
+
+      if (draftJson != null && mounted) {
+        final draft = jsonDecode(draftJson) as Map<String, dynamic>;
+        _titleController.text = draft['title'] as String? ?? '';
+        _descriptionController.text = draft['description'] as String? ?? '';
+        _timeLimitController.text = draft['timeLimitMinutes'].toString();
+        _openAt = DateTime.parse(draft['openAt'] as String? ?? DateTime.now().toIso8601String());
+        _closeAt = DateTime.parse(draft['closeAt'] as String? ?? DateTime.now().add(const Duration(days: 7)).toIso8601String());
+        _showResultsImmediately = draft['showResultsImmediately'] as bool? ?? false;
+        _isPublished = draft['isPublished'] as bool? ?? true;
+
+        final questions = draft['questions'] as List?;
+        if (questions != null) {
+          _questions.clear();
+          for (final q in questions) {
+            _questions.add(QuestionDraft.fromJson(q as Map<String, dynamic>));
+          }
+        }
+
+        setState(() => _draftLoaded = true);
+      }
+    } catch (e) {
+      // Ignore draft load errors, continue with empty form
+    }
+  }
+
+  Future<void> _persistDraft() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final draft = {
+        'title': _titleController.text,
+        'description': _descriptionController.text,
+        'timeLimitMinutes': int.tryParse(_timeLimitController.text) ?? 30,
+        'openAt': _openAt.toIso8601String(),
+        'closeAt': _closeAt.toIso8601String(),
+        'showResultsImmediately': _showResultsImmediately,
+        'isPublished': _isPublished,
+        'questions': _questions.map((q) => q.toJson()).toList(),
+      };
+      await prefs.setString('assessment_draft_${widget.classId}', jsonEncode(draft));
+    } catch (e) {
+      // Ignore persistence errors for auto-save
+    }
+  }
+
+  void _scheduleAutoSave() {
+    _autoSaveTimer?.cancel();
+    _autoSaveTimer = Timer(const Duration(milliseconds: 800), _persistDraft);
+  }
+
+  Future<void> _saveDraftWithFeedback() async {
+    await _persistDraft();
+    if (mounted) {
+      context.showSuccessSnackBar('Draft saved', durationMs: 1500);
+    }
+  }
+
+  Future<void> _clearDraft() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('assessment_draft_${widget.classId}');
+    } catch (e) {
+      // Ignore clear errors
+    }
+  }
+
+  Future<void> _discardDraft() async {
+    await _clearDraft();
+    if (mounted) {
+      setState(() => _draftLoaded = false);
+      _titleController.clear();
+      _descriptionController.clear();
+      _timeLimitController.text = '30';
+      _openAt = DateTime.now();
+      _closeAt = DateTime.now().add(const Duration(days: 7));
+      _showResultsImmediately = false;
+      _isPublished = true;
+      _questions.clear();
+    }
+  }
+
+  void _enterQuestionReorderMode() {
+    setState(() => _isQuestionReorderMode = true);
+  }
+
+  void _exitQuestionReorderMode() {
+    setState(() => _isQuestionReorderMode = false);
+    _scheduleAutoSave();
+  }
+
+  void _showQuestionMoveDialog(int currentIndex) {
+    showDialog(
+      context: context,
+      builder: (ctx) => ReorderPositionDialog(
+        resourceType: 'questions',
+        totalCount: _questions.length,
+        currentPosition: currentIndex,
+        onReorder: (fromIndex, toIndex) {
+          setState(() {
+            final q = _questions.removeAt(fromIndex);
+            _questions.insert(toIndex, q);
+          });
+          _scheduleAutoSave();
+        },
+      ),
+    );
   }
 
   String _formatDateTimeForApi(DateTime dt) {
@@ -58,196 +183,50 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
         '${utc.second.toString().padLeft(2, '0')}';
   }
 
-  Widget _buildDateTimeField({
-    required String label,
-    required DateTime value,
-    required IconData icon,
-    required bool enabled,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: enabled ? onTap : null,
-      borderRadius: BorderRadius.circular(12),
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Icon(icon),
-          suffixIcon: const Icon(Icons.arrow_drop_down),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          enabled: enabled,
-        ),
-        child: Text(
-          _formatDateTime(value),
-          style: TextStyle(
-            fontSize: 16,
-            color: enabled ? null : Colors.grey,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _pickDateTime({
-    required DateTime initial,
-    required ValueChanged<DateTime> onPicked,
-  }) async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: initial,
-      firstDate: DateTime.now().subtract(const Duration(days: 1)),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    if (date == null || !mounted) return;
-
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(initial),
-    );
-    if (time == null || !mounted) return;
-
-    onPicked(DateTime(date.year, date.month, date.day, time.hour, time.minute));
-  }
-
-  Future<void> _handleCreateAssessment() async {
-    if (!_detailsFormKey.currentState!.validate()) return;
+  bool _validateAll() {
+    if (!_detailsFormKey.currentState!.validate()) return false;
 
     final timeLimit = int.tryParse(_timeLimitController.text.trim());
     if (timeLimit == null || timeLimit <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid time limit'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
+      context.showErrorSnackBar('Please enter a valid time limit');
+      return false;
     }
 
     if (_closeAt.isBefore(_openAt)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Close date must be after open date'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
+      context.showErrorSnackBar('Close date must be after open date');
+      return false;
     }
 
-    await ref.read(assessmentProvider.notifier).createAssessment(
-          CreateAssessmentParams(
-            classId: widget.classId,
-            title: _titleController.text.trim(),
-            description: _descriptionController.text.trim().isEmpty
-                ? null
-                : _descriptionController.text.trim(),
-            timeLimitMinutes: timeLimit,
-            openAt: _formatDateTimeForApi(_openAt),
-            closeAt: _formatDateTimeForApi(_closeAt),
-            showResultsImmediately: _showResultsImmediately,
-          ),
-        );
-
-    if (!mounted) return;
-    final state = ref.read(assessmentProvider);
-    if (state.currentAssessment != null && state.error == null) {
-      _createdAssessmentId = state.currentAssessment!.id;
-      setState(() => _currentStep = 1);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Assessment created. Now add questions.'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      ref.read(assessmentProvider.notifier).clearMessages();
-    } else if (state.error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(state.error!),
-          backgroundColor: Colors.red,
-        ),
-      );
-      ref.read(assessmentProvider.notifier).clearMessages();
-    }
-  }
-
-  void _addQuestion() {
-    setState(() {
-      _questions.add(_QuestionDraft());
-    });
-  }
-
-  void _removeQuestion(int index) {
-    setState(() {
-      _questions.removeAt(index);
-    });
-  }
-
-  Future<void> _handleSaveQuestions() async {
-    if (_questions.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please add at least one question'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
+    // Validate questions
     for (int i = 0; i < _questions.length; i++) {
       final q = _questions[i];
       if (q.questionText.trim().isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Question ${i + 1} text is empty'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
+        context.showErrorSnackBar('Question ${i + 1} text is empty');
+        return false;
       }
       if (q.type == 'multiple_choice' && q.choices.length < 2) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Question ${i + 1} needs at least 2 choices'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
+        context.showErrorSnackBar('Question ${i + 1} needs at least 2 choices');
+        return false;
       }
-      if (q.type == 'multiple_choice' &&
-          !q.choices.any((c) => c.isCorrect)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content:
-                Text('Question ${i + 1} needs at least one correct choice'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
+      if (q.type == 'multiple_choice' && !q.choices.any((c) => c.isCorrect)) {
+        context.showErrorSnackBar('Question ${i + 1} needs at least one correct choice');
+        return false;
       }
       if (q.type == 'identification' && q.acceptableAnswers.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Question ${i + 1} needs at least one acceptable answer'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
+        context.showErrorSnackBar('Question ${i + 1} needs at least one acceptable answer');
+        return false;
       }
       if (q.type == 'enumeration' && q.enumerationItems.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content:
-                Text('Question ${i + 1} needs at least one enumeration item'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
+        context.showErrorSnackBar('Question ${i + 1} needs at least one enumeration item');
+        return false;
       }
     }
 
-    final questionsData = _questions.asMap().entries.map((entry) {
+    return true;
+  }
+
+  List<Map<String, dynamic>> _buildQuestionsData() {
+    return _questions.asMap().entries.map((entry) {
       final i = entry.key;
       final q = entry.value;
       final map = <String, dynamic>{
@@ -285,750 +264,285 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
 
       return map;
     }).toList();
+  }
 
-    await ref.read(assessmentProvider.notifier).addQuestions(
+  Future<void> _handleSave() async {
+    if (!_validateAll()) return;
+
+    setState(() => _isSaving = true);
+
+    try {
+      debugPrint('[CreateAssessmentPage] _handleSave: Starting assessment creation');
+
+      // Build questionsData for use in both paths
+      final questionsData = _buildQuestionsData();
+
+      // Step 1: Create assessment
+      // When published: pass questions for atomic creation
+      // When draft: pass null (questions added in Step 2)
+      debugPrint('[CreateAssessmentPage] _handleSave: Calling createAssessment provider method');
+      final assessment = await ref
+          .read(assessmentProvider.notifier)
+          .createAssessment(
+            CreateAssessmentParams(
+              classId: widget.classId,
+              title: _titleController.text.trim(),
+              description: _descriptionController.text.trim().isEmpty
+                  ? null
+                  : _descriptionController.text.trim(),
+              timeLimitMinutes: int.parse(_timeLimitController.text.trim()),
+              openAt: _formatDateTimeForApi(_openAt),
+              closeAt: _formatDateTimeForApi(_closeAt),
+              showResultsImmediately: _showResultsImmediately,
+              isPublished: _isPublished,
+              questions: _isPublished ? questionsData : null,
+            ),
+          );
+
+      debugPrint('[CreateAssessmentPage] _handleSave: createAssessment returned assessment=${assessment?.id}');
+
+      if (!mounted) return;
+
+      if (assessment == null) {
+        debugPrint('[CreateAssessmentPage] _handleSave: Assessment is null, showing error');
+        final state = ref.read(assessmentProvider);
+        setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
+        setState(() => _isSaving = false);
+        return;
+      }
+
+      final assessmentId = assessment.id;
+      debugPrint('[CreateAssessmentPage] _handleSave: Assessment created with ID=$assessmentId');
+
+      // Step 2: Add questions only when DRAFT (published used atomic path above)
+      debugPrint('[CreateAssessmentPage] _handleSave: isPublished=$_isPublished, questions count=${_questions.length}');
+      if (!_isPublished && _questions.isNotEmpty) {
+        debugPrint('[CreateAssessmentPage] _handleSave: Adding ${_questions.length} questions (draft flow)');
+        await ref.read(assessmentProvider.notifier).addQuestions(
           AddQuestionsParams(
-            assessmentId: _createdAssessmentId!,
+            assessmentId: assessmentId,
             questions: questionsData,
           ),
         );
 
-    if (!mounted) return;
-    final state = ref.read(assessmentProvider);
-    if (state.error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(state.error!), backgroundColor: Colors.red),
-      );
-      ref.read(assessmentProvider.notifier).clearMessages();
-    } else {
-      setState(() => _currentStep = 2);
-      ref.read(assessmentProvider.notifier).clearMessages();
-    }
-  }
+        debugPrint('[CreateAssessmentPage] _handleSave: addQuestions completed');
 
-  void _handleFinish() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Assessment saved as draft'),
-        backgroundColor: Colors.green,
-      ),
-    );
-    Navigator.pop(context, true);
+        if (!mounted) return;
+        final state = ref.read(assessmentProvider);
+        if (state.error != null) {
+          debugPrint('[CreateAssessmentPage] _handleSave: Error after addQuestions: ${state.error}');
+          setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
+          setState(() => _isSaving = false);
+          return;
+        }
+      }
+
+      // Success
+      debugPrint('[CreateAssessmentPage] _handleSave: Clearing draft');
+      await _clearDraft();
+      ref.read(assessmentProvider.notifier).clearMessages();
+      if (mounted) {
+        debugPrint('[CreateAssessmentPage] _handleSave: Success! Navigating');
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      debugPrint('[CreateAssessmentPage] _handleSave: Exception caught: $e');
+      if (mounted) {
+        setState(() => _formError = 'An error occurred: $e');
+        setState(() => _isSaving = false);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final assessmentState = ref.watch(assessmentProvider);
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_currentStep == 0
-            ? 'Create Assessment'
-            : _currentStep == 1
-                ? 'Add Questions'
-                : 'Review'),
-      ),
-      body: Stepper(
-        currentStep: _currentStep,
-        onStepContinue: null,
-        onStepCancel: null,
-        controlsBuilder: (context, details) => const SizedBox.shrink(),
-        steps: [
-          Step(
-            title: const Text('Assessment Details'),
-            isActive: _currentStep >= 0,
-            state: _currentStep > 0 ? StepState.complete : StepState.indexed,
-            content: _buildDetailsStep(assessmentState),
-          ),
-          Step(
-            title: const Text('Questions'),
-            isActive: _currentStep >= 1,
-            state: _currentStep > 1 ? StepState.complete : StepState.indexed,
-            content: _buildQuestionsStep(assessmentState),
-          ),
-          Step(
-            title: const Text('Review'),
-            isActive: _currentStep >= 2,
-            state: _currentStep > 2 ? StepState.complete : StepState.indexed,
-            content: _buildReviewStep(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailsStep(AssessmentState assessmentState) {
-    return Form(
-      key: _detailsFormKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          TextFormField(
-            controller: _titleController,
-            decoration: InputDecoration(
-              labelText: 'Title',
-              prefixIcon: const Icon(Icons.title),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+      backgroundColor: const Color(0xFFFAFAFA),
+      body: SafeArea(
+        child: Column(
+          children: [
+            const ClassSectionHeader(
+              title: 'Create Assessment',
+              showBackButton: true,
             ),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Title is required';
-              }
-              return null;
-            },
-            enabled: !assessmentState.isLoading,
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _descriptionController,
-            maxLines: 3,
-            decoration: InputDecoration(
-              labelText: 'Description (optional)',
-              prefixIcon: const Icon(Icons.description),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            enabled: !assessmentState.isLoading,
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _timeLimitController,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: 'Time Limit (minutes)',
-              prefixIcon: const Icon(Icons.timer),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Time limit is required';
-              }
-              final parsed = int.tryParse(value.trim());
-              if (parsed == null || parsed <= 0) {
-                return 'Enter a valid number of minutes';
-              }
-              return null;
-            },
-            enabled: !assessmentState.isLoading,
-          ),
-          const SizedBox(height: 16),
-          _buildDateTimeField(
-            label: 'Open Date',
-            value: _openAt,
-            icon: Icons.calendar_today,
-            enabled: !assessmentState.isLoading,
-            onTap: () => _pickDateTime(
-              initial: _openAt,
-              onPicked: (dt) => setState(() => _openAt = dt),
-            ),
-          ),
-          const SizedBox(height: 16),
-          _buildDateTimeField(
-            label: 'Close Date',
-            value: _closeAt,
-            icon: Icons.event,
-            enabled: !assessmentState.isLoading,
-            onTap: () => _pickDateTime(
-              initial: _closeAt,
-              onPicked: (dt) => setState(() => _closeAt = dt),
-            ),
-          ),
-          const SizedBox(height: 8),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Show results immediately'),
-            subtitle:
-                const Text('Students can see results right after submission'),
-            value: _showResultsImmediately,
-            onChanged: assessmentState.isLoading
-                ? null
-                : (value) =>
-                    setState(() => _showResultsImmediately = value),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed:
-                assessmentState.isLoading ? null : _handleCreateAssessment,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: assessmentState.isLoading
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Create & Continue',
-                    style: TextStyle(fontSize: 16)),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuestionsStep(AssessmentState assessmentState) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (_questions.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 24),
-            child: Center(
-              child: Text(
-                'No questions added yet.\nTap the button below to add a question.',
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-        ..._questions.asMap().entries.map((entry) {
-          final index = entry.key;
-          final question = entry.value;
-          return _QuestionCard(
-            index: index,
-            question: question,
-            onRemove: () => _removeQuestion(index),
-            onChanged: () => setState(() {}),
-          );
-        }),
-        const SizedBox(height: 12),
-        OutlinedButton.icon(
-          onPressed: assessmentState.isLoading ? null : _addQuestion,
-          icon: const Icon(Icons.add),
-          label: const Text('Add Question'),
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        ElevatedButton(
-          onPressed: assessmentState.isLoading ? null : _handleSaveQuestions,
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          child: assessmentState.isLoading
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Save Questions & Review',
-                  style: TextStyle(fontSize: 16)),
-        ),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
-
-  Widget _buildReviewStep() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _titleController.text,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                if (_descriptionController.text.trim().isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(_descriptionController.text,
-                      style: TextStyle(color: Colors.grey[600])),
-                ],
-                const Divider(height: 24),
-                Text('Time Limit: ${_timeLimitController.text} minutes'),
-                const SizedBox(height: 4),
-                Text(
-                    'Open: ${_formatDateTime(_openAt)}'),
-                const SizedBox(height: 4),
-                Text(
-                    'Close: ${_formatDateTime(_closeAt)}'),
-                const SizedBox(height: 4),
-                Text(
-                    'Show results immediately: ${_showResultsImmediately ? 'Yes' : 'No'}'),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'Questions (${_questions.length})',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: 8),
-        ..._questions.asMap().entries.map((entry) {
-          final i = entry.key;
-          final q = entry.value;
-          return Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Q${i + 1}. ${q.questionText}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${_questionTypeLabel(q.type)} - ${q.points} point${q.points == 1 ? '' : 's'}',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                  ),
-                  if (q.type == 'multiple_choice') ...[
-                    const SizedBox(height: 8),
-                    ...q.choices.map((c) => Padding(
-                          padding: const EdgeInsets.only(left: 8, top: 2),
-                          child: Row(
-                            children: [
-                              Icon(
-                                c.isCorrect
-                                    ? Icons.check_circle
-                                    : Icons.circle_outlined,
-                                size: 16,
-                                color:
-                                    c.isCorrect ? Colors.green : Colors.grey,
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Draft resume banner
+                    if (_draftLoaded)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0F0F0),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.restore_rounded, size: 16, color: Color(0xFF666666)),
+                            const SizedBox(width: 8),
+                            const Expanded(
+                              child: Text(
+                                'Resuming draft',
+                                style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
                               ),
-                              const SizedBox(width: 8),
-                              Expanded(child: Text(c.text)),
-                            ],
-                          ),
-                        )),
-                  ],
-                  if (q.type == 'identification') ...[
-                    const SizedBox(height: 8),
+                            ),
+                            TextButton(
+                              onPressed: _discardDraft,
+                              style: TextButton.styleFrom(
+                                foregroundColor: const Color(0xFFE57373),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              ),
+                              child: const Text(
+                                'Discard',
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    // Details section
+                    const Text(
+                      'Assessment Details',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2B2B2B),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    FormMessage(
+                      message: _formError,
+                      severity: MessageSeverity.error,
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE0E0E0)),
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: AssessmentDetailsSection(
+                        formKey: _detailsFormKey,
+                        titleController: _titleController,
+                        descriptionController: _descriptionController,
+                        timeLimitController: _timeLimitController,
+                        openAt: _openAt,
+                        closeAt: _closeAt,
+                        showResultsImmediately: _showResultsImmediately,
+                        isPublished: _isPublished,
+                        isLoading: _isSaving,
+                        onOpenAtChanged: (dt) {
+                          setState(() {
+                            _openAt = dt;
+                            _formError = null;
+                          });
+                        },
+                        onCloseAtChanged: (dt) {
+                          setState(() {
+                            _closeAt = dt;
+                            _formError = null;
+                          });
+                        },
+                        onShowResultsChanged: (value) {
+                          setState(() {
+                            _showResultsImmediately = value;
+                            _formError = null;
+                          });
+                        },
+                        onIsPublishedChanged: (value) {
+                          setState(() {
+                            _isPublished = value;
+                            _formError = null;
+                          });
+                        },
+                        onCreateAssessment: null,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Questions section
                     Text(
-                      'Acceptable: ${q.acceptableAnswers.join(', ')}',
-                      style:
-                          TextStyle(color: Colors.grey[600], fontSize: 13),
+                      'Questions (${_questions.length})',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2B2B2B),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    AssessmentQuestionsSection(
+                      questions: _questions,
+                      isLoading: _isSaving,
+                      isReorderMode: _isQuestionReorderMode,
+                      onAddQuestion: _isQuestionReorderMode ? null : () => setState(() => _questions.add(QuestionDraft())),
+                      onRemoveQuestion: (index) => setState(() => _questions.removeAt(index)),
+                      onQuestionsChanged: _scheduleAutoSave,
+                      onSaveQuestions: null,
+                      onEnterReorderMode: _questions.length > 1 && !_isQuestionReorderMode ? _enterQuestionReorderMode : null,
+                      onExitReorderMode: _isQuestionReorderMode ? _exitQuestionReorderMode : null,
+                      onReorderQuestion: _isQuestionReorderMode ? _showQuestionMoveDialog : null,
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Bottom action bar (now inside scroll view)
+                    Row(
+                      children: [
+                        OutlinedButton(
+                          onPressed: _isSaving ? null : _saveDraftWithFeedback,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF2B2B2B),
+                            side: const BorderSide(color: Color(0xFFE0E0E0)),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            disabledForegroundColor: const Color(0xFFCCCCCC),
+                          ),
+                          child: const Text(
+                            'Save Draft',
+                            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: _isSaving || _isQuestionReorderMode ? null : _handleSave,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2B2B2B),
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: const Color(0xFFE0E0E0),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              elevation: 0,
+                            ),
+                            child: _isSaving
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : const Text(
+                                    'Save Assessment',
+                                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                                  ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
-                  if (q.type == 'enumeration') ...[
-                    const SizedBox(height: 8),
-                    ...q.enumerationItems.asMap().entries.map((ie) => Padding(
-                          padding: const EdgeInsets.only(left: 8, top: 2),
-                          child: Text(
-                            'Item ${ie.key + 1}: ${ie.value.answers.join(', ')}',
-                            style: TextStyle(
-                                color: Colors.grey[600], fontSize: 13),
-                          ),
-                        )),
-                  ],
-                ],
-              ),
-            ),
-          );
-        }),
-        const SizedBox(height: 24),
-        ElevatedButton(
-          onPressed: _handleFinish,
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          child:
-              const Text('Save as Draft', style: TextStyle(fontSize: 16)),
-        ),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
-
-  String _questionTypeLabel(String type) {
-    switch (type) {
-      case 'multiple_choice':
-        return 'Multiple Choice';
-      case 'identification':
-        return 'Identification';
-      case 'enumeration':
-        return 'Enumeration';
-      default:
-        return type;
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Local draft models
-// ---------------------------------------------------------------------------
-
-class _ChoiceDraft {
-  String text;
-  bool isCorrect;
-
-  _ChoiceDraft({this.text = '', this.isCorrect = false});
-}
-
-class _EnumerationItemDraft {
-  List<String> answers;
-
-  _EnumerationItemDraft({List<String>? answers})
-      : answers = answers ?? [''];
-}
-
-class _QuestionDraft {
-  String type;
-  String questionText;
-  int points;
-  bool isMultiSelect;
-  List<_ChoiceDraft> choices;
-  List<String> acceptableAnswers;
-  List<_EnumerationItemDraft> enumerationItems;
-
-  _QuestionDraft({
-    this.type = 'multiple_choice',
-    this.questionText = '',
-    this.points = 1,
-    this.isMultiSelect = false,
-    List<_ChoiceDraft>? choices,
-    List<String>? acceptableAnswers,
-    List<_EnumerationItemDraft>? enumerationItems,
-  })  : choices = choices ?? [_ChoiceDraft(), _ChoiceDraft()],
-        acceptableAnswers = acceptableAnswers ?? [''],
-        enumerationItems = enumerationItems ?? [];
-}
-
-// ---------------------------------------------------------------------------
-// Question card widget
-// ---------------------------------------------------------------------------
-
-class _QuestionCard extends StatelessWidget {
-  final int index;
-  final _QuestionDraft question;
-  final VoidCallback onRemove;
-  final VoidCallback onChanged;
-
-  const _QuestionCard({
-    required this.index,
-    required this.question,
-    required this.onRemove,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text('Question ${index + 1}',
-                    style: Theme.of(context).textTheme.titleSmall),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                  onPressed: onRemove,
-                  tooltip: 'Remove question',
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              initialValue: question.type,
-              decoration: InputDecoration(
-                labelText: 'Question Type',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              items: const [
-                DropdownMenuItem(
-                    value: 'multiple_choice', child: Text('Multiple Choice')),
-                DropdownMenuItem(
-                    value: 'identification', child: Text('Identification')),
-                DropdownMenuItem(
-                    value: 'enumeration', child: Text('Enumeration')),
-              ],
-              onChanged: (value) {
-                if (value != null) {
-                  question.type = value;
-                  onChanged();
-                }
-              },
             ),
-            const SizedBox(height: 12),
-            TextFormField(
-              initialValue: question.questionText,
-              maxLines: 2,
-              decoration: InputDecoration(
-                labelText: 'Question Text',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onChanged: (value) {
-                question.questionText = value;
-              },
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              initialValue: question.points.toString(),
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Points',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onChanged: (value) {
-                question.points = int.tryParse(value) ?? 1;
-              },
-            ),
-            const SizedBox(height: 12),
-            if (question.type == 'multiple_choice')
-              _buildMultipleChoiceSection(context),
-            if (question.type == 'identification')
-              _buildIdentificationSection(context),
-            if (question.type == 'enumeration')
-              _buildEnumerationSection(context),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildMultipleChoiceSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: const Text('Allow multiple correct answers'),
-          value: question.isMultiSelect,
-          onChanged: (value) {
-            question.isMultiSelect = value;
-            if (!value) {
-              // Keep only first correct
-              bool found = false;
-              for (final c in question.choices) {
-                if (c.isCorrect && found) {
-                  c.isCorrect = false;
-                }
-                if (c.isCorrect) found = true;
-              }
-            }
-            onChanged();
-          },
-        ),
-        ...question.choices.asMap().entries.map((entry) {
-          final ci = entry.key;
-          final choice = entry.value;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              children: [
-                Checkbox(
-                  value: choice.isCorrect,
-                  onChanged: (value) {
-                    if (!question.isMultiSelect) {
-                      for (final c in question.choices) {
-                        c.isCorrect = false;
-                      }
-                    }
-                    choice.isCorrect = value ?? false;
-                    onChanged();
-                  },
-                ),
-                Expanded(
-                  child: TextFormField(
-                    initialValue: choice.text,
-                    decoration: InputDecoration(
-                      labelText: 'Choice ${ci + 1}',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      isDense: true,
-                    ),
-                    onChanged: (value) {
-                      choice.text = value;
-                    },
-                  ),
-                ),
-                if (question.choices.length > 2)
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 20),
-                    onPressed: () {
-                      question.choices.removeAt(ci);
-                      onChanged();
-                    },
-                  ),
-              ],
-            ),
-          );
-        }),
-        TextButton.icon(
-          onPressed: () {
-            question.choices.add(_ChoiceDraft());
-            onChanged();
-          },
-          icon: const Icon(Icons.add, size: 18),
-          label: const Text('Add Choice'),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildIdentificationSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Acceptable Answers',
-            style: TextStyle(fontWeight: FontWeight.w500)),
-        const SizedBox(height: 8),
-        ...question.acceptableAnswers.asMap().entries.map((entry) {
-          final ai = entry.key;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    initialValue: entry.value,
-                    decoration: InputDecoration(
-                      labelText: 'Answer ${ai + 1}',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      isDense: true,
-                    ),
-                    onChanged: (value) {
-                      question.acceptableAnswers[ai] = value;
-                    },
-                  ),
-                ),
-                if (question.acceptableAnswers.length > 1)
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 20),
-                    onPressed: () {
-                      question.acceptableAnswers.removeAt(ai);
-                      onChanged();
-                    },
-                  ),
-              ],
-            ),
-          );
-        }),
-        TextButton.icon(
-          onPressed: () {
-            question.acceptableAnswers.add('');
-            onChanged();
-          },
-          icon: const Icon(Icons.add, size: 18),
-          label: const Text('Add Acceptable Answer'),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEnumerationSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ...question.enumerationItems.asMap().entries.map((entry) {
-          final ii = entry.key;
-          final item = entry.value;
-          return Card(
-            color: Colors.grey[50],
-            margin: const EdgeInsets.only(bottom: 8),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text('Item ${ii + 1}',
-                          style:
-                              const TextStyle(fontWeight: FontWeight.w500)),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline,
-                            size: 20, color: Colors.red),
-                        onPressed: () {
-                          question.enumerationItems.removeAt(ii);
-                          onChanged();
-                        },
-                      ),
-                    ],
-                  ),
-                  ...item.answers.asMap().entries.map((ae) {
-                    final ai = ae.key;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              initialValue: ae.value,
-                              decoration: InputDecoration(
-                                labelText: 'Variant ${ai + 1}',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                isDense: true,
-                              ),
-                              onChanged: (value) {
-                                item.answers[ai] = value;
-                              },
-                            ),
-                          ),
-                          if (item.answers.length > 1)
-                            IconButton(
-                              icon: const Icon(Icons.close, size: 18),
-                              onPressed: () {
-                                item.answers.removeAt(ai);
-                                onChanged();
-                              },
-                            ),
-                        ],
-                      ),
-                    );
-                  }),
-                  TextButton.icon(
-                    onPressed: () {
-                      item.answers.add('');
-                      onChanged();
-                    },
-                    icon: const Icon(Icons.add, size: 16),
-                    label: const Text('Add Variant', style: TextStyle(fontSize: 13)),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }),
-        TextButton.icon(
-          onPressed: () {
-            question.enumerationItems.add(_EnumerationItemDraft());
-            onChanged();
-          },
-          icon: const Icon(Icons.add, size: 18),
-          label: const Text('Add Enumeration Item'),
-        ),
-      ],
     );
   }
 }

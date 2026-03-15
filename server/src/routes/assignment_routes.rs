@@ -5,7 +5,7 @@ use axum::{
 use std::sync::Arc;
 
 use crate::handlers::assignment_handler;
-use crate::services::assignment_service::AssignmentService;
+use crate::services::assignment::AssignmentService;
 
 pub fn routes(assignment_service: Arc<AssignmentService>) -> Router {
     Router::new()
@@ -17,6 +17,14 @@ pub fn routes(assignment_service: Arc<AssignmentService>) -> Router {
         .route(
             "/classes/{class_id}/assignments",
             get(assignment_handler::get_assignments),
+        )
+        .route(
+            "/assignments/metadata",
+            get(assignment_handler::get_assignments_metadata),
+        )
+        .route(
+            "/classes/{class_id}/student-assignments",
+            get(assignment_handler::get_student_assignments),
         )
         .route(
             "/assignments/{id}",
@@ -33,6 +41,14 @@ pub fn routes(assignment_service: Arc<AssignmentService>) -> Router {
         .route(
             "/assignments/{id}/publish",
             post(assignment_handler::publish_assignment),
+        )
+        .route(
+            "/assignments/{id}/unpublish",
+            post(assignment_handler::unpublish_assignment),
+        )
+        .route(
+            "/classes/{class_id}/assignments/reorder",
+            post(assignment_handler::reorder_assignments),
         )
         // Submissions (Teacher)
         .route(
@@ -72,6 +88,10 @@ pub fn routes(assignment_service: Arc<AssignmentService>) -> Router {
         .route(
             "/submission-files/{id}/download",
             get(assignment_handler::download_file),
+        )
+        .route(
+            "/classes/{class_id}/students/{student_id}/assignment-submissions",
+            get(assignment_handler::get_student_assignment_submissions),
         )
         .with_state(assignment_service)
 }

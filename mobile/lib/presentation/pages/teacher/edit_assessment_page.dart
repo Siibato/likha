@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/usecases/update_assessment.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_field.dart';
 import 'package:likha/presentation/pages/teacher/widgets/date_time_picker_field.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 
 class EditAssessmentPage extends ConsumerStatefulWidget {
   final Assessment assessment;
@@ -23,6 +25,7 @@ class _EditAssessmentPageState extends ConsumerState<EditAssessmentPage> {
   late DateTime _openAt;
   late DateTime _closeAt;
   late bool _showResultsImmediately;
+  String? _formError;
 
   @override
   void initState() {
@@ -81,22 +84,12 @@ class _EditAssessmentPageState extends ConsumerState<EditAssessmentPage> {
 
     final timeLimit = int.tryParse(_timeLimitController.text.trim());
     if (timeLimit == null || timeLimit <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid time limit'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      setState(() => _formError = 'Please enter a valid time limit');
       return;
     }
 
     if (_closeAt.isBefore(_openAt)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Close date must be after open date'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      setState(() => _formError = 'Close date must be after open date');
       return;
     }
 
@@ -118,31 +111,15 @@ class _EditAssessmentPageState extends ConsumerState<EditAssessmentPage> {
     final state = ref.read(assessmentProvider);
     if (state.error == null) {
       Navigator.pop(context, true);
+    } else {
+      setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
+      ref.read(assessmentProvider.notifier).clearMessages();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(assessmentProvider);
-
-    ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
-      if (next.error != null && prev?.error != next.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.error!), backgroundColor: Colors.red),
-        );
-        ref.read(assessmentProvider.notifier).clearMessages();
-      }
-      if (next.successMessage != null &&
-          prev?.successMessage != next.successMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.successMessage!),
-            backgroundColor: Colors.green,
-          ),
-        );
-        ref.read(assessmentProvider.notifier).clearMessages();
-      }
-    });
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
@@ -198,6 +175,11 @@ class _EditAssessmentPageState extends ConsumerState<EditAssessmentPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              FormMessage(
+                message: _formError,
+                severity: MessageSeverity.error,
+              ),
+              const SizedBox(height: 16),
               AssessmentField(
                 label: 'Title',
                 controller: _titleController,
@@ -209,6 +191,7 @@ class _EditAssessmentPageState extends ConsumerState<EditAssessmentPage> {
                   return null;
                 },
                 enabled: !state.isLoading,
+                onChanged: (_) => setState(() => _formError = null),
               ),
               const SizedBox(height: 16),
               AssessmentField(
@@ -217,6 +200,7 @@ class _EditAssessmentPageState extends ConsumerState<EditAssessmentPage> {
                 icon: Icons.description_outlined,
                 maxLines: 3,
                 enabled: !state.isLoading,
+                onChanged: (_) => setState(() => _formError = null),
               ),
               const SizedBox(height: 16),
               AssessmentField(
@@ -235,6 +219,7 @@ class _EditAssessmentPageState extends ConsumerState<EditAssessmentPage> {
                   return null;
                 },
                 enabled: !state.isLoading,
+                onChanged: (_) => setState(() => _formError = null),
               ),
               const SizedBox(height: 16),
               DateTimePickerField(

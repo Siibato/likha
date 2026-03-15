@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
 import 'package:likha/domain/assignments/usecases/create_assignment.dart';
@@ -12,10 +14,12 @@ import 'package:likha/domain/assignments/usecases/get_submission_detail.dart';
 import 'package:likha/domain/assignments/usecases/get_submissions.dart';
 import 'package:likha/domain/assignments/usecases/grade_submission.dart';
 import 'package:likha/domain/assignments/usecases/publish_assignment.dart';
+import 'package:likha/domain/assignments/usecases/unpublish_assignment.dart';
 import 'package:likha/domain/assignments/usecases/return_submission.dart';
 import 'package:likha/domain/assignments/usecases/submit_assignment.dart';
 import 'package:likha/domain/assignments/usecases/update_assignment.dart';
 import 'package:likha/domain/assignments/usecases/upload_file.dart';
+import 'package:likha/domain/assignments/usecases/reorder_assignment.dart';
 import 'package:likha/injection_container.dart';
 
 class AssignmentState {
@@ -74,6 +78,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   final UpdateAssignment _updateAssignment;
   final DeleteAssignment _deleteAssignment;
   final PublishAssignment _publishAssignment;
+  final UnpublishAssignment _unpublishAssignment;
   final GetAssignmentSubmissions _getSubmissions;
   final GetAssignmentSubmissionDetail _getSubmissionDetail;
   final GradeSubmission _gradeSubmission;
@@ -83,6 +88,12 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   final DeleteFile _deleteFile;
   final SubmitAssignment _submitAssignment;
   final DownloadFile _downloadFile;
+  final ReorderAllAssignments _reorderAllAssignments;
+
+  String? _currentClassId;
+  bool _currentPublishedOnly = false;
+  late StreamSubscription<String?> _refreshSub;
+  late StreamSubscription<String> _submissionDetailRefreshSub;
 
   AssignmentNotifier(
     this._createAssignment,
@@ -91,6 +102,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     this._updateAssignment,
     this._deleteAssignment,
     this._publishAssignment,
+    this._unpublishAssignment,
     this._getSubmissions,
     this._getSubmissionDetail,
     this._gradeSubmission,
@@ -100,11 +112,26 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     this._deleteFile,
     this._submitAssignment,
     this._downloadFile,
-  ) : super(AssignmentState());
+    this._reorderAllAssignments,
+  ) : super(AssignmentState()) {
+    _refreshSub = sl<DataEventBus>().onAssignmentsChanged.listen((classId) {
+      if (_currentClassId != null && _currentClassId == classId) {
+        loadAssignments(_currentClassId!, publishedOnly: _currentPublishedOnly, skipBackgroundRefresh: true);
+      }
+    });
 
-  Future<void> loadAssignments(String classId) async {
+    _submissionDetailRefreshSub = sl<DataEventBus>().onSubmissionDetailChanged.listen((submissionId) {
+      if (state.currentSubmission?.id == submissionId) {
+        loadSubmissionDetail(submissionId);
+      }
+    });
+  }
+
+  Future<void> loadAssignments(String classId, {bool publishedOnly = false, bool skipBackgroundRefresh = false}) async {
+    _currentClassId = classId;
+    _currentPublishedOnly = publishedOnly;
     state = state.copyWith(isLoading: true, clearError: true);
-    final result = await _getAssignments(classId);
+    final result = await _getAssignments(classId, publishedOnly: publishedOnly, skipBackgroundRefresh: skipBackgroundRefresh);
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),
@@ -174,6 +201,21 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     );
   }
 
+  Future<void> unpublishAssignment(String assignmentId) async {
+    state =
+        state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    final result = await _unpublishAssignment(assignmentId);
+    result.fold(
+      (failure) =>
+          state = state.copyWith(isLoading: false, error: failure.message),
+      (assignment) => state = state.copyWith(
+        isLoading: false,
+        currentAssignment: assignment,
+        successMessage: 'Assignment moved to draft',
+      ),
+    );
+  }
+
   Future<void> deleteAssignment(String assignmentId) async {
     state =
         state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
@@ -193,6 +235,42 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     );
   }
 
+  Future<void> reorderAllAssignments({
+    required String classId,
+    required List<String> assignmentIds,
+    required List<Assignment> orderedAssignments,
+  }) async {
+    // Optimistic update
+    state = state.copyWith(assignments: orderedAssignments);
+    final result = await _reorderAllAssignments(
+      classId: classId,
+      assignmentIds: assignmentIds,
+    );
+    result.fold(
+      (failure) => state = state.copyWith(error: failure.message),
+      (_) {},
+    );
+  }
+
+  /// Silently re-fetches the assignment from local DB to pick up fresh submission
+  /// counts after cacheSubmissions() has written new rows to assignment_submissions.
+  Future<void> _refreshAssignmentCounts(String assignmentId) async {
+    final result = await _getAssignmentDetail(assignmentId);
+    result.fold(
+      (_) {}, // best-effort — silently ignore errors
+      (fresh) {
+        state = state.copyWith(
+          assignments: state.assignments
+              .map((a) => a.id == assignmentId ? fresh : a)
+              .toList(),
+          currentAssignment: state.currentAssignment?.id == assignmentId
+              ? fresh
+              : state.currentAssignment,
+        );
+      },
+    );
+  }
+
   // Teacher: Submissions
   Future<void> loadSubmissions(String assignmentId) async {
     state = state.copyWith(isLoading: true, clearError: true);
@@ -200,8 +278,11 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),
-      (submissions) =>
-          state = state.copyWith(isLoading: false, submissions: submissions),
+      (submissions) {
+        state = state.copyWith(isLoading: false, submissions: submissions);
+        // Background: refresh assignment counts now that submissions are cached
+        unawaited(_refreshAssignmentCounts(assignmentId));
+      },
     );
   }
 
@@ -308,13 +389,16 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   Future<List<int>?> downloadFile(String fileId) async {
     state = state.copyWith(isLoading: true, clearError: true);
     final result = await _downloadFile(fileId);
+    state = state.copyWith(isLoading: false);
     List<int>? fileBytes;
     result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(error: failure.message),
       (bytes) {
         fileBytes = bytes;
-        state = state.copyWith(isLoading: false);
+        // Reload submission detail to reflect updated localPath from DB (mirrors learningMaterialProvider.downloadFile)
+        if (state.currentSubmission != null) {
+          loadSubmissionDetail(state.currentSubmission!.id);
+        }
       },
     );
     return fileBytes;
@@ -322,6 +406,17 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
 
   void clearMessages() {
     state = state.copyWith(clearError: true, clearSuccess: true);
+  }
+
+  void clearCurrentSubmission() {
+    state = state.copyWith(clearSubmission: true);
+  }
+
+  @override
+  void dispose() {
+    _refreshSub.cancel();
+    _submissionDetailRefreshSub.cancel();
+    super.dispose();
   }
 }
 
@@ -334,6 +429,7 @@ final assignmentProvider =
     sl<UpdateAssignment>(),
     sl<DeleteAssignment>(),
     sl<PublishAssignment>(),
+    sl<UnpublishAssignment>(),
     sl<GetAssignmentSubmissions>(),
     sl<GetAssignmentSubmissionDetail>(),
     sl<GradeSubmission>(),
@@ -343,5 +439,6 @@ final assignmentProvider =
     sl<DeleteFile>(),
     sl<SubmitAssignment>(),
     sl<DownloadFile>(),
+    sl<ReorderAllAssignments>(),
   );
 });

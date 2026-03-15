@@ -11,6 +11,7 @@ class LockAccount {
     return _repository.lockAccount(
       userId: params.userId,
       locked: params.locked,
+      reason: params.reason,
     );
   }
 }
@@ -18,6 +19,7 @@ class LockAccount {
 class LockAccountParams {
   final String userId;
   final bool locked;
+  final String? reason;
 
-  LockAccountParams({required this.userId, required this.locked});
+  LockAccountParams({required this.userId, required this.locked, this.reason});
 }

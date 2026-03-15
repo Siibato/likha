@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/presentation/pages/teacher/assignment_submissions_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assignment_info_card.dart';
@@ -7,6 +8,8 @@ import 'package:likha/presentation/pages/teacher/widgets/assignment_instructions
 import 'package:likha/presentation/pages/teacher/widgets/assignment_status_card.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assignment_submissions_card.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 
 class AssignmentDetailPage extends ConsumerStatefulWidget {
   final String assignmentId;
@@ -19,6 +22,8 @@ class AssignmentDetailPage extends ConsumerStatefulWidget {
 }
 
 class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
+  String? _formError;
+
   @override
   void initState() {
     super.initState();
@@ -30,100 +35,32 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
   }
 
   void _confirmPublish(Assignment assignment) {
-    showDialog(
+    AppDialogs.showConfirmation(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text(
-          'Publish Assignment',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
-        ),
-        content: Text(
-          'Publish "${assignment.title}"? Students will be able to see and submit to this assignment.',
-          style: const TextStyle(fontSize: 15),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                color: Color(0xFF666666),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ref
-                  .read(assignmentProvider.notifier)
-                  .publishAssignment(widget.assignmentId);
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF2B2B2B),
-            ),
-            child: const Text(
-              'Publish',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
+      title: 'Publish Assignment',
+      body: 'Publish "${assignment.title}"? Students will be able to see and submit to this assignment.',
+      confirmLabel: 'Publish',
+      onConfirm: () => ref.read(assignmentProvider.notifier).publishAssignment(widget.assignmentId),
+    );
+  }
+
+  void _confirmUnpublish(Assignment assignment) {
+    AppDialogs.showDestructive(
+      context: context,
+      title: 'Move to Draft',
+      body: 'Move "${assignment.title}" back to draft? Students will no longer be able to access it.',
+      confirmLabel: 'Move to Draft',
+      onConfirm: () => ref.read(assignmentProvider.notifier).unpublishAssignment(widget.assignmentId),
     );
   }
 
   void _confirmDelete(Assignment assignment) {
-    showDialog(
+    AppDialogs.showDestructive(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text(
-          'Delete Assignment',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
-        ),
-        content: Text(
-          'Delete "${assignment.title}"? This cannot be undone.',
-          style: const TextStyle(fontSize: 15),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                color: Color(0xFF666666),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ref
-                  .read(assignmentProvider.notifier)
-                  .deleteAssignment(widget.assignmentId);
-            },
-            child: const Text(
-              'Delete',
-              style: TextStyle(
-                color: Color(0xFFEF5350),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
+      title: 'Delete Assignment',
+      body: 'Delete "${assignment.title}"? This cannot be undone.',
+      confirmLabel: 'Delete',
+      onConfirm: () => ref.read(assignmentProvider.notifier).deleteAssignment(widget.assignmentId),
     );
   }
 
@@ -135,32 +72,14 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     ref.listen<AssignmentState>(assignmentProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.successMessage!),
-            backgroundColor: const Color(0xFF4CAF50),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        setState(() => _formError = null);
         ref.read(assignmentProvider.notifier).clearMessages();
         if (next.successMessage == 'Assignment deleted') {
           Navigator.pop(context, true);
         }
       }
       if (next.error != null && prev?.error != next.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: const Color(0xFFEF5350),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
         ref.read(assignmentProvider.notifier).clearMessages();
       }
     });
@@ -200,6 +119,9 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                   case 'publish':
                     _confirmPublish(assignment);
                     break;
+                  case 'unpublish':
+                    _confirmUnpublish(assignment);
+                    break;
                   case 'delete':
                     _confirmDelete(assignment);
                     break;
@@ -231,24 +153,34 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                       ],
                     ),
                   ),
-                if (!assignment.isPublished)
+                if (assignment.isPublished)
                   const PopupMenuItem(
-                    value: 'delete',
+                    value: 'unpublish',
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.delete_rounded,
-                          color: Color(0xFFEF5350),
-                          size: 20,
-                        ),
+                        Icon(Icons.unpublished_rounded, size: 20),
                         SizedBox(width: 12),
-                        Text(
-                          'Delete',
-                          style: TextStyle(color: Color(0xFFEF5350)),
-                        ),
+                        Text('Move to Draft'),
                       ],
                     ),
                   ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.delete_rounded,
+                        color: Color(0xFFEF5350),
+                        size: 20,
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        'Delete',
+                        style: TextStyle(color: Color(0xFFEF5350)),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
         ],
@@ -281,6 +213,11 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        FormMessage(
+                          message: _formError,
+                          severity: MessageSeverity.error,
+                        ),
+                        if (_formError != null) const SizedBox(height: 12),
                         AssignmentStatusCard(
                           isPublished: assignment.isPublished,
                           dueAt: assignment.dueAt,

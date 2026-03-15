@@ -4,6 +4,7 @@ import 'package:likha/domain/assessments/entities/assessment.dart';
 enum AssessmentStatus {
   notYetOpen,
   available,
+  inProgress,
   closed,
   submitted,
 }
@@ -26,6 +27,8 @@ class AssessmentCard extends StatelessWidget {
         return 'Not Yet Open';
       case AssessmentStatus.available:
         return 'Available';
+      case AssessmentStatus.inProgress:
+        return 'In Progress';
       case AssessmentStatus.closed:
         return 'Closed';
       case AssessmentStatus.submitted:
@@ -39,6 +42,8 @@ class AssessmentCard extends StatelessWidget {
         return Icons.schedule_rounded;
       case AssessmentStatus.available:
         return Icons.play_circle_outline_rounded;
+      case AssessmentStatus.inProgress:
+        return Icons.play_circle_rounded;
       case AssessmentStatus.closed:
         return Icons.lock_outline_rounded;
       case AssessmentStatus.submitted:
@@ -59,27 +64,24 @@ class AssessmentCard extends StatelessWidget {
   }
 
   String _formatDateTime(DateTime dt) {
-    final month = dt.month.toString().padLeft(2, '0');
-    final day = dt.day.toString().padLeft(2, '0');
-    final year = dt.year;
-    final hour = dt.hour > 12
-        ? dt.hour - 12
-        : dt.hour == 0
+    final local = dt.toLocal();
+    final month = local.month.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    final year = local.year;
+    final hour = local.hour > 12
+        ? local.hour - 12
+        : local.hour == 0
             ? 12
-            : dt.hour;
-    final minute = dt.minute.toString().padLeft(2, '0');
-    final period = dt.hour >= 12 ? 'PM' : 'AM';
+            : local.hour;
+    final minute = local.minute.toString().padLeft(2, '0');
+    final period = local.hour >= 12 ? 'PM' : 'AM';
     return '$month/$day/$year $hour:$minute $period';
   }
 
   @override
   Widget build(BuildContext context) {
-    final canTap = status == AssessmentStatus.available ||
-        (status == AssessmentStatus.submitted &&
-            (assessment.resultsReleased || assessment.showResultsImmediately));
-
     return GestureDetector(
-      onTap: canTap ? onTap : null,
+      onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
         decoration: BoxDecoration(
@@ -106,10 +108,8 @@ class AssessmentCard extends StatelessWidget {
               _buildInfoRow(),
               const SizedBox(height: 12),
               _buildDateInfo(),
-              if (canTap) ...[
-                const SizedBox(height: 12),
-                _buildActionHint(),
-              ],
+              const SizedBox(height: 12),
+              _buildActionHint(),
             ],
           ),
         ),
@@ -222,18 +222,23 @@ class AssessmentCard extends StatelessWidget {
   }
 
   Widget _buildActionHint() {
+    final hintText = switch (status) {
+      AssessmentStatus.submitted => 'Tap to view details',
+      AssessmentStatus.available => 'Tap to start',
+      AssessmentStatus.inProgress => 'Tap to resume',
+      _ => 'Tap to view details',
+    };
+
     return Align(
       alignment: Alignment.centerRight,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            status == AssessmentStatus.submitted
-                ? 'Tap to view results'
-                : 'Tap to start',
+            hintText,
             style: const TextStyle(
               fontSize: 13,
-              color: Color(0xFFFFBD59),
+              color: Color(0xFF666666),
               fontWeight: FontWeight.w600,
               letterSpacing: -0.2,
             ),
@@ -242,7 +247,7 @@ class AssessmentCard extends StatelessWidget {
           const Icon(
             Icons.arrow_forward_rounded,
             size: 16,
-            color: Color(0xFFFFBD59),
+            color: Color(0xFF666666),
           ),
         ],
       ),

@@ -5,6 +5,8 @@ class AssignmentCard extends StatelessWidget {
   final int totalPoints;
   final DateTime dueAt;
   final bool isPastDue;
+  final String? submissionStatus;
+  final int? score;
   final VoidCallback onTap;
 
   const AssignmentCard({
@@ -13,6 +15,8 @@ class AssignmentCard extends StatelessWidget {
     required this.totalPoints,
     required this.dueAt,
     required this.isPastDue,
+    this.submissionStatus,
+    this.score,
     required this.onTap,
   });
 
@@ -83,12 +87,15 @@ class AssignmentCard extends StatelessWidget {
                           color: Colors.grey[600],
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          '$totalPoints pts',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
+                        Flexible(
+                          child: Text(
+                            '$totalPoints pts',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -98,40 +105,117 @@ class AssignmentCard extends StatelessWidget {
                           color: Colors.grey[600],
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          _formatDateTime(dueAt),
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
+                        Flexible(
+                          child: Text(
+                            _formatDateTime(dueAt),
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    if (isPastDue) ...[
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8F9FA),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: const Color(0xFFE0E0E0),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        if (submissionStatus == 'graded' && score != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8F9FA),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: const Color(0xFFE0E0E0),
+                              ),
+                            ),
+                            child: Text(
+                              'Score: $score/$totalPoints',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF666666),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
-                        ),
-                        child: const Text(
-                          'Past Due',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Color(0xFF666666),
-                            fontWeight: FontWeight.w600,
+                          const SizedBox(width: 6),
+                        ] else if (submissionStatus == 'submitted') ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8F9FA),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: const Color(0xFFE0E0E0),
+                              ),
+                            ),
+                            child: const Text(
+                              'Submitted',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF666666),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    ],
+                          const SizedBox(width: 6),
+                        ] else if (submissionStatus == 'returned') ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8F9FA),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: const Color(0xFFE0E0E0),
+                              ),
+                            ),
+                            child: const Text(
+                              'Returned',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF666666),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                        ],
+                        if (isPastDue && submissionStatus == null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8F9FA),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: const Color(0xFFE0E0E0),
+                              ),
+                            ),
+                            child: const Text(
+                              'Past Due',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF666666),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
               ),

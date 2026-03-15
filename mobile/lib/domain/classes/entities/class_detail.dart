@@ -38,14 +38,14 @@ class ClassDetail extends Equatable {
 class Enrollment extends Equatable {
   final String id;
   final User student;
-  final DateTime enrolledAt;
+  final DateTime joinedAt;
 
   const Enrollment({
     required this.id,
     required this.student,
-    required this.enrolledAt,
+    required this.joinedAt,
   });
 
   @override
-  List<Object?> get props => [id, student, enrolledAt];
+  List<Object?> get props => [id, student, joinedAt];
 }

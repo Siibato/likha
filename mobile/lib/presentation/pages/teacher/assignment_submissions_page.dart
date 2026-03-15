@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/teacher/grade_submission_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/empty_submissions_state.dart';
 import 'package:likha/presentation/pages/teacher/widgets/submission_card.dart';
@@ -39,11 +40,11 @@ class _AssignmentSubmissionsPageState
     final state = ref.watch(assignmentProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF2B2B2B)),
+        iconTheme: const IconThemeData(color: AppColors.foregroundPrimary),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -52,7 +53,7 @@ class _AssignmentSubmissionsPageState
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF2B2B2B),
+                color: AppColors.foregroundPrimary,
                 letterSpacing: -0.4,
               ),
             ),
@@ -61,7 +62,7 @@ class _AssignmentSubmissionsPageState
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF999999),
+                color: AppColors.foregroundTertiary,
               ),
             ),
           ],
@@ -70,7 +71,7 @@ class _AssignmentSubmissionsPageState
       body: state.isLoading && state.submissions.isEmpty
           ? const Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF2B2B2B),
+                color: AppColors.foregroundPrimary,
                 strokeWidth: 2.5,
               ),
             )
@@ -80,7 +81,7 @@ class _AssignmentSubmissionsPageState
                   onRefresh: () => ref
                       .read(assignmentProvider.notifier)
                       .loadSubmissions(widget.assignmentId),
-                  color: const Color(0xFF2B2B2B),
+                  color: AppColors.foregroundPrimary,
                   child: ListView.builder(
                     padding: const EdgeInsets.all(24),
                     itemCount: state.submissions.length,
@@ -89,6 +90,7 @@ class _AssignmentSubmissionsPageState
 
                       return SubmissionCard(
                         studentName: submission.studentName,
+                        studentUsername: submission.studentUsername,
                         status: submission.status,
                         isLate: submission.isLate,
                         score: submission.score,

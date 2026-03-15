@@ -18,6 +18,7 @@ class AssessmentStatisticsPage extends ConsumerStatefulWidget {
 
 class _AssessmentStatisticsPageState
     extends ConsumerState<AssessmentStatisticsPage> {
+
   @override
   void initState() {
     super.initState();
@@ -33,16 +34,6 @@ class _AssessmentStatisticsPageState
 
     ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
       if (next.error != null && prev?.error != next.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: const Color(0xFFEF5350),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
         ref.read(assessmentProvider.notifier).clearMessages();
       }
     });

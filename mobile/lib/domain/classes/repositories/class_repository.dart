@@ -7,11 +7,23 @@ abstract class ClassRepository {
   ResultFuture<ClassEntity> createClass({
     required String title,
     String? description,
+    String? teacherId,
+    String? teacherUsername,
+    String? teacherFullName,
   });
 
-  ResultFuture<List<ClassEntity>> getMyClasses();
+  ResultFuture<List<ClassEntity>> getMyClasses({bool skipBackgroundRefresh = false});
+
+  ResultFuture<List<ClassEntity>> getAllClasses({bool skipBackgroundRefresh = false});
 
   ResultFuture<ClassDetail> getClassDetail({required String classId});
+
+  ResultFuture<ClassEntity> updateClass({
+    required String classId,
+    String? title,
+    String? description,
+    String? teacherId,
+  });
 
   ResultFuture<Enrollment> addStudent({
     required String classId,
@@ -24,4 +36,6 @@ abstract class ClassRepository {
   });
 
   ResultFuture<List<User>> searchStudents({String? query});
+
+  ResultFuture<List<User>> getEnrolledStudents({required String classId});
 }

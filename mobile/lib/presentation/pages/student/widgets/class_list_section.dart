@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:likha/presentation/pages/student/widgets/class_card.dart';
+import 'package:likha/presentation/pages/shared/widgets/cards/class_card.dart';
 
 class ClassListSection extends StatelessWidget {
   final List<dynamic> classes;
@@ -22,8 +22,7 @@ class ClassListSection extends StatelessWidget {
             final cls = classes[index];
             return ClassCard(
               title: cls.title,
-              // Keep your teacher logic here
-              teacher: 'Prof. Elena Petrova', 
+              subtitle: cls.teacherFullName,
               onTap: () => onClassTap(cls),
             );
           },

@@ -5,7 +5,7 @@ use axum::{
 use std::sync::Arc;
 
 use crate::handlers::assessment_handler;
-use crate::services::assessment_service::AssessmentService;
+use crate::services::assessment::AssessmentService;
 
 pub fn routes(assessment_service: Arc<AssessmentService>) -> Router {
     Router::new()
@@ -17,6 +17,10 @@ pub fn routes(assessment_service: Arc<AssessmentService>) -> Router {
         .route(
             "/classes/{class_id}/assessments",
             get(assessment_handler::get_assessments),
+        )
+        .route(
+            "/assessments/metadata",
+            get(assessment_handler::get_assessments_metadata),
         )
         .route(
             "/assessments/{id}",
@@ -35,13 +39,25 @@ pub fn routes(assessment_service: Arc<AssessmentService>) -> Router {
             post(assessment_handler::publish_assessment),
         )
         .route(
+            "/assessments/{id}/unpublish",
+            post(assessment_handler::unpublish_assessment),
+        )
+        .route(
             "/assessments/{id}/release-results",
             post(assessment_handler::release_results),
+        )
+        .route(
+            "/classes/{class_id}/assessments/reorder",
+            post(assessment_handler::reorder_assessments),
         )
         // Questions
         .route(
             "/assessments/{id}/questions",
             post(assessment_handler::add_questions),
+        )
+        .route(
+            "/assessments/{id}/questions/reorder",
+            post(assessment_handler::reorder_questions),
         )
         .route(
             "/questions/{id}",
@@ -84,6 +100,10 @@ pub fn routes(assessment_service: Arc<AssessmentService>) -> Router {
         .route(
             "/submissions/{id}/results",
             get(assessment_handler::get_student_results),
+        )
+        .route(
+            "/classes/{class_id}/students/{student_id}/assessment-submissions",
+            get(assessment_handler::get_student_assessment_submissions),
         )
         .with_state(assessment_service)
 }

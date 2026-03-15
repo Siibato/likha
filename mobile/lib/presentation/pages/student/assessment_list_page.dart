@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/errors/error_messages.dart';
+import 'package:likha/core/services/server_clock_service.dart';
+import 'package:likha/core/sync/sync_manager.dart';
+import 'package:likha/injection_container.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
-import 'package:likha/presentation/pages/student/take_assessment_page.dart';
-import 'package:likha/presentation/pages/student/assessment_results_page.dart';
-import 'package:likha/presentation/pages/student/widgets/student_header.dart';
+import 'package:likha/presentation/pages/student/assessment_detail_page.dart';
+import 'package:likha/presentation/pages/shared/class_section_header.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/student/widgets/assessment_card.dart';
 import 'package:likha/presentation/pages/student/widgets/empty_assessment_state.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/providers/sync_provider.dart';
 
 class AssessmentListPage extends ConsumerStatefulWidget {
   final String classId;
@@ -18,174 +23,92 @@ class AssessmentListPage extends ConsumerStatefulWidget {
 }
 
 class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
+  String? _formError;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(assessmentProvider.notifier).loadAssessments(widget.classId);
+      ref.read(assessmentProvider.notifier).loadAssessments(widget.classId, publishedOnly: true);
     });
   }
 
   AssessmentStatus _getStatus(Assessment assessment) {
-    final now = DateTime.now();
-    if (assessment.submissionCount > 0) {
+    final now = sl<ServerClockService>().now();
+    print('📋 [ListPage] _getStatus() - assessment: ${assessment.title}, submissionCount: ${assessment.submissionCount}, isSubmitted: ${assessment.isSubmitted}, resultsReleased: ${assessment.resultsReleased}, showResultsImmediately: ${assessment.showResultsImmediately}');
+    print('📋 [ListPage] _getStatus() - openAt: ${assessment.openAt}, closeAt: ${assessment.closeAt}, now: $now');
+
+    if (assessment.isSubmitted != null) {
+      final resultsAccessible =
+          assessment.resultsReleased || assessment.showResultsImmediately;
+      final isSubmitted = assessment.isSubmitted ?? false;
+
+      print('📋 [ListPage] _getStatus() - has submissions! resultsAccessible: $resultsAccessible, isSubmitted: $isSubmitted');
+
+      // Results are out → show "Submitted" so user knows to go view them
+      if (resultsAccessible) {
+        print('📋 [ListPage] _getStatus() - returning SUBMITTED (results released)');
+        return AssessmentStatus.submitted;
+      }
+
+      // Student has submitted, awaiting results → show "Submitted"
+      if (isSubmitted) {
+        print('📋 [ListPage] _getStatus() - returning SUBMITTED (student submitted)');
+        return AssessmentStatus.submitted;
+      }
+
+      // Started but not submitted — check if still within window
+      final withinWindow =
+          now.isAfter(assessment.openAt) && now.isBefore(assessment.closeAt);
+      print('📋 [ListPage] _getStatus() - started but not submitted, withinWindow: $withinWindow');
+      if (withinWindow) {
+        print('📋 [ListPage] _getStatus() - returning IN_PROGRESS (can resume)');
+        return AssessmentStatus.inProgress;
+      }
+      // Past window, not submitted → show "Submitted" (too late)
+      print('📋 [ListPage] _getStatus() - returning SUBMITTED (past window, not submitted)');
       return AssessmentStatus.submitted;
     }
+
+    print('📋 [ListPage] _getStatus() - no submissions, checking time window');
     if (now.isBefore(assessment.openAt)) {
+      print('📋 [ListPage] _getStatus() - returning NOT_YET_OPEN');
       return AssessmentStatus.notYetOpen;
     }
     if (now.isAfter(assessment.closeAt)) {
+      print('📋 [ListPage] _getStatus() - returning CLOSED');
       return AssessmentStatus.closed;
     }
+    print('📋 [ListPage] _getStatus() - returning AVAILABLE');
     return AssessmentStatus.available;
   }
 
-  String _formatTimeLimit(int minutes) {
-    if (minutes >= 60) {
-      final hours = minutes ~/ 60;
-      final remaining = minutes % 60;
-      if (remaining == 0) {
-        return '$hours hr${hours > 1 ? 's' : ''}';
-      }
-      return '$hours hr${hours > 1 ? 's' : ''} $remaining min';
-    }
-    return '$minutes min';
-  }
-
   void _onAssessmentTap(Assessment assessment) {
-    final status = _getStatus(assessment);
-    if (status == AssessmentStatus.available) {
-      _confirmStartAssessment(assessment);
-    } else if (status == AssessmentStatus.submitted &&
-        (assessment.resultsReleased || assessment.showResultsImmediately)) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => AssessmentResultsPage(assessmentId: assessment.id),
-        ),
-      );
-    }
-  }
-
-  void _confirmStartAssessment(Assessment assessment) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Start Assessment',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 20,
-            letterSpacing: -0.4,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Are you ready to start "${assessment.title}"?',
-              style: const TextStyle(fontSize: 15, height: 1.4),
-            ),
-            const SizedBox(height: 16),
-            _DialogInfoRow(
-              label: 'Time Limit',
-              value: _formatTimeLimit(assessment.timeLimitMinutes),
-            ),
-            const SizedBox(height: 8),
-            _DialogInfoRow(
-              label: 'Total Points',
-              value: '${assessment.totalPoints}',
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF8ED),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: const Color(0xFFFFBD59).withOpacity(0.3),
-                ),
-              ),
-              child: const Row(
-                children: [
-                  Icon(
-                    Icons.info_outline_rounded,
-                    size: 18,
-                    color: Color(0xFFFFBD59),
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Timer starts immediately and cannot be paused',
-                      style: TextStyle(
-                        color: Color(0xFF2B2B2B),
-                        fontSize: 13,
-                        height: 1.3,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF666666),
-            ),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => TakeAssessmentPage(
-                    assessmentId: assessment.id,
-                    timeLimitMinutes: assessment.timeLimitMinutes,
-                  ),
-                ),
-              ).then((_) {
-                ref
-                    .read(assessmentProvider.notifier)
-                    .loadAssessments(widget.classId);
-              });
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF2B2B2B),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('Start'),
-          ),
-        ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AssessmentDetailPage(assessment: assessment),
       ),
-    );
+    ).then((_) {
+      ref.read(assessmentProvider.notifier).loadAssessments(widget.classId, publishedOnly: true);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(assessmentProvider);
 
+    // Listen for sync completion to auto-refresh if data arrives after page opens
+    ref.listen<SyncState>(syncProvider, (previous, next) {
+      if (!(previous?.assessmentsReady ?? false) && next.assessmentsReady) {
+        // Assessments just became ready in the DB — reload
+        ref.read(assessmentProvider.notifier).loadAssessments(widget.classId, publishedOnly: true, skipBackgroundRefresh: true);
+      }
+    });
+
     ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
       if (next.error != null && prev?.error != next.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: const Color(0xFFEA4335),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
         ref.read(assessmentProvider.notifier).clearMessages();
       }
     });
@@ -203,13 +126,26 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
             : RefreshIndicator(
                 onRefresh: () => ref
                     .read(assessmentProvider.notifier)
-                    .loadAssessments(widget.classId),
+                    .loadAssessments(widget.classId, publishedOnly: true),
                 color: const Color(0xFF2B2B2B),
                 child: CustomScrollView(
                   slivers: [
                     const SliverToBoxAdapter(
-                      child: StudentHeader(title: 'Assessments'),
+                      child: ClassSectionHeader(
+                        title: 'Assessments',
+                        showBackButton: true,
+                      ),
                     ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: FormMessage(
+                          message: _formError,
+                          severity: MessageSeverity.error,
+                        ),
+                      ),
+                    ),
+                    if (_formError != null) const SliverToBoxAdapter(child: SizedBox(height: 12)),
                     state.assessments.isEmpty
                         ? const SliverFillRemaining(
                             child: EmptyAssessmentState(),
@@ -241,39 +177,6 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
                 ),
               ),
       ),
-    );
-  }
-}
-
-class _DialogInfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _DialogInfoRow({
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: Color(0xFF666666),
-            fontSize: 14,
-          ),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
-        ),
-      ],
     );
   }
 }

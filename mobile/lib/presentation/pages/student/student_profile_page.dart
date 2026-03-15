@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/presentation/pages/student/widgets/student_header.dart';
-import 'package:likha/presentation/providers/auth_provider.dart';
+import 'package:likha/presentation/pages/shared/class_section_header.dart';
+import 'package:likha/presentation/pages/student/student_grades_page.dart';
+import 'package:likha/presentation/utils/logout_helper.dart';
 
 class StudentProfilePage extends ConsumerWidget {
   const StudentProfilePage({super.key});
@@ -12,49 +13,12 @@ class StudentProfilePage extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const StudentHeader(title: 'Profile'),
+          const ClassSectionHeader(title: 'Profile'),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
               child: Column(
                 children: [
-                  const Spacer(),
-                  Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8F9FA),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Icon(
-                            Icons.person_outline,
-                            size: 40,
-                            color: Color(0xFF404040),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Coming soon',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF2B2B2B),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          'Profile settings will appear here',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF7A7A7A),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                   const Spacer(),
                   SizedBox(
                     width: double.infinity,
@@ -74,8 +38,89 @@ class StudentProfilePage extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(15),
                           child: InkWell(
                             borderRadius: BorderRadius.circular(15),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const StudentGradesPage(),
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF8F9FA),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(
+                                      Icons.grade_outlined,
+                                      size: 22,
+                                      color: Color(0xFF404040),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: const [
+                                        Text(
+                                          'View My Grades',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF202020),
+                                            letterSpacing: -0.4,
+                                          ),
+                                        ),
+                                        SizedBox(height: 2),
+                                        Text(
+                                          'See your class grades',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                            color: Color(0xFF999999),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.chevron_right_rounded,
+                                    color: Color(0xFFCCCCCC),
+                                    size: 24,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0E0E0),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Container(
+                        margin: const EdgeInsets.fromLTRB(1, 1, 1, 3.5),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(15),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(15),
                             onTap: () =>
-                                ref.read(authProvider.notifier).logout(),
+                                handleLogoutTap(context, ref),
                             child: const Padding(
                               padding: EdgeInsets.symmetric(vertical: 16),
                               child: Row(

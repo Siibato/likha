@@ -11,11 +11,15 @@ class Assessment extends Equatable {
   final bool showResultsImmediately;
   final bool resultsReleased;
   final bool isPublished;
+  final int orderIndex;
   final int totalPoints;
   final int questionCount;
   final int submissionCount;
+  final bool? isSubmitted; // null if no submission, true if submitted, false if started but not submitted
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? cachedAt;
+  final bool needsSync;
 
   const Assessment({
     required this.id,
@@ -28,11 +32,15 @@ class Assessment extends Equatable {
     required this.showResultsImmediately,
     required this.resultsReleased,
     required this.isPublished,
+    required this.orderIndex,
     required this.totalPoints,
     required this.questionCount,
     required this.submissionCount,
+    this.isSubmitted,
     required this.createdAt,
     required this.updatedAt,
+    this.cachedAt,
+    this.needsSync = false,
   });
 
   @override
@@ -47,10 +55,14 @@ class Assessment extends Equatable {
         showResultsImmediately,
         resultsReleased,
         isPublished,
+        orderIndex,
         totalPoints,
         questionCount,
         submissionCount,
+        isSubmitted,
         createdAt,
         updatedAt,
+        cachedAt,
+        needsSync,
       ];
 }

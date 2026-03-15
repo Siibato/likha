@@ -2,7 +2,6 @@ mod config;
 mod db;
 mod handlers;
 mod middleware;
-mod models;
 mod routes;
 mod schema;
 mod services;
@@ -14,13 +13,25 @@ use dotenv::dotenv;
 use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter, ColumnTrait, ActiveModelTrait, Set};
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
 use tower_http::cors::{Any, CorsLayer};
+use tower_http::timeout::TimeoutLayer;
 use uuid::Uuid;
 
-use crate::services::assessment_service::AssessmentService;
-use crate::services::assignment_service::AssignmentService;
-use crate::services::auth_service::AuthService;
-use crate::services::class_service::ClassService;
+use crate::services::assessment::AssessmentService;
+use crate::services::assignment::AssignmentService;
+use crate::services::auth::AuthService;
+use crate::services::class::ClassService;
+use crate::services::learning_material::LearningMaterialService;
+use crate::services::entitlement::EntitlementService;
+use crate::services::sync_push::SyncPushService;
+use crate::services::sync_conflict_service::SyncConflictService;
+use crate::services::sync_full::SyncFullService;
+use crate::services::sync_delta::SyncDeltaService;
+use crate::db::repositories::{
+    manifest_repository::ManifestRepository,
+    processed_operations_repository::ProcessedOperationsRepository,
+};
 
 #[tokio::main]
 async fn main() {
@@ -29,6 +40,7 @@ async fn main() {
     tracing_subscriber::fmt()
         .with_target(false)
         .compact()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
     let config = config::ServerConfig::from_env();
@@ -91,12 +103,22 @@ async fn main() {
                 println!("Database reset complete");
                 return;
             }
+            "clear-invalid-attempts" => {
+                let db = db::establish_connection(&config.database_url)
+                    .await
+                    .expect("Failed to connect to database");
+                let repo = crate::db::repositories::login_attempt_repository::LoginAttemptRepository::new(db);
+                repo.clear_all_attempts().await.expect("Failed to clear attempts");
+                println!("All login attempt records cleared.");
+                return;
+            }
             other => {
                 eprintln!("Unknown command: {}", other);
                 eprintln!("Available commands:");
-                eprintln!("  create-db   Create the database and run migrations");
-                eprintln!("  delete-db   Delete the database file");
-                eprintln!("  reset-db    Delete and recreate the database");
+                eprintln!("  create-db               Create the database and run migrations");
+                eprintln!("  delete-db               Delete the database file");
+                eprintln!("  reset-db                Delete and recreate the database");
+                eprintln!("  clear-invalid-attempts  Clear all login attempt records");
                 std::process::exit(1);
             }
         }
@@ -129,9 +151,54 @@ async fn main() {
     let class_service = Arc::new(ClassService::new(db.clone()));
 
     let assessment_service = Arc::new(AssessmentService::new(db.clone()));
-    let assignment_service = Arc::new(AssignmentService::new(db.clone()));
+    let assignment_service = Arc::new(AssignmentService::new(db.clone(), config.file_storage_path.clone()));
+    let material_service = Arc::new(LearningMaterialService::new(db.clone(), config.file_storage_path.clone()));
 
-    let app = create_app(auth_service, class_service, assessment_service, assignment_service);
+    // Initialize new offline-first sync services
+    let entitlement_repo = crate::db::repositories::entitlement_repository::EntitlementRepository::new(db.clone());
+    let manifest_repo = ManifestRepository::new(db.clone());
+
+    let entitlement_service = Arc::new(EntitlementService::new(
+        entitlement_repo,
+        manifest_repo.clone(),
+    ));
+
+    let processed_ops_repo = Arc::new(ProcessedOperationsRepository::new(db.clone()));
+    let sync_push_service = Arc::new(SyncPushService::new(
+        entitlement_service.clone(),
+        class_service.clone(),
+        assessment_service.clone(),
+        assignment_service.clone(),
+        material_service.clone(),
+        auth_service.clone(),
+        processed_ops_repo,
+    ));
+
+    let sync_conflict_service = Arc::new(SyncConflictService::new());
+
+    let sync_full_service = Arc::new(SyncFullService::new(
+        entitlement_service.clone(),
+        manifest_repo.clone(),
+        db.clone(),
+    ));
+
+    let sync_delta_service = Arc::new(SyncDeltaService::new(
+        entitlement_service.clone(),
+        manifest_repo.clone(),
+        db.clone(),
+    ));
+
+    let app = create_app(
+        auth_service,
+        class_service,
+        assessment_service,
+        assignment_service,
+        material_service,
+        sync_push_service,
+        sync_conflict_service,
+        sync_full_service,
+        sync_delta_service,
+    );
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
 
@@ -141,7 +208,7 @@ async fn main() {
         .await
         .expect("Failed to bind to address");
 
-    axum::serve(listener, app)
+    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
         .await
         .expect("Failed to start server");
 }
@@ -151,6 +218,11 @@ fn create_app(
     class_service: Arc<ClassService>,
     assessment_service: Arc<AssessmentService>,
     assignment_service: Arc<AssignmentService>,
+    material_service: Arc<LearningMaterialService>,
+    sync_push_service: Arc<SyncPushService>,
+    sync_conflict_service: Arc<SyncConflictService>,
+    sync_full_service: Arc<SyncFullService>,
+    sync_delta_service: Arc<SyncDeltaService>,
 ) -> Router {
     let cors = CorsLayer::new()
         .allow_origin(Any)
@@ -160,8 +232,19 @@ fn create_app(
     Router::new()
         .nest(
             "/api/v1",
-            routes::api_routes(auth_service, class_service, assessment_service, assignment_service),
+            routes::api_routes(
+                auth_service,
+                class_service,
+                assessment_service,
+                assignment_service,
+                material_service,
+                sync_push_service,
+                sync_conflict_service,
+                sync_full_service,
+                sync_delta_service,
+            ),
         )
+        .layer(TimeoutLayer::new(Duration::from_secs(60)))
         .layer(cors)
         .layer(middleware::logging_middleware())
 }
@@ -198,9 +281,8 @@ async fn seed_admin(db: &DatabaseConnection) -> Result<(), sea_orm::DbErr> {
         full_name: Set("System Administrator".to_string()),
         role: Set("admin".to_string()),
         account_status: Set("pending_activation".to_string()),
-        is_active: Set(true),
         activated_at: Set(None),
-        created_by: Set(None),
+        deleted_at: Set(None),
         created_at: Set(Utc::now().naive_utc()),
         updated_at: Set(Utc::now().naive_utc()),
     };
@@ -210,3 +292,4 @@ async fn seed_admin(db: &DatabaseConnection) -> Result<(), sea_orm::DbErr> {
 
     Ok(())
 }
+

@@ -3,8 +3,7 @@ use sea_orm::*;
 use uuid::Uuid;
 
 use ::entity::{
-    assessment_submissions, submission_answer_choices, submission_answers,
-    submission_enumeration_answers,
+    assessment_submissions, submission_answer_items, submission_answers,
 };
 use crate::utils::{AppError, AppResult};
 
@@ -21,17 +20,18 @@ impl SubmissionRepository {
         &self,
         assessment_id: Uuid,
         student_id: Uuid,
+        submission_id: Option<Uuid>,
     ) -> AppResult<assessment_submissions::Model> {
         let submission = assessment_submissions::ActiveModel {
-            id: Set(Uuid::new_v4()),
+            id: Set(submission_id.unwrap_or_else(Uuid::new_v4)),
             assessment_id: Set(assessment_id),
-            student_id: Set(student_id),
+            user_id: Set(student_id),
             started_at: Set(Utc::now().naive_utc()),
             submitted_at: Set(None),
-            auto_score: Set(0.0),
-            final_score: Set(0.0),
-            is_submitted: Set(false),
+            total_points: Set(0),
             created_at: Set(Utc::now().naive_utc()),
+            updated_at: Set(Utc::now().naive_utc()),
+            deleted_at: Set(None),
         };
 
         submission
@@ -65,7 +65,7 @@ impl SubmissionRepository {
         assessment_id: Uuid,
     ) -> AppResult<Option<assessment_submissions::Model>> {
         assessment_submissions::Entity::find()
-            .filter(assessment_submissions::Column::StudentId.eq(student_id))
+            .filter(assessment_submissions::Column::UserId.eq(student_id))
             .filter(assessment_submissions::Column::AssessmentId.eq(assessment_id))
             .one(&self.db)
             .await
@@ -84,7 +84,7 @@ impl SubmissionRepository {
     pub async fn count_submitted_by_assessment_id(&self, assessment_id: Uuid) -> AppResult<usize> {
         let count = assessment_submissions::Entity::find()
             .filter(assessment_submissions::Column::AssessmentId.eq(assessment_id))
-            .filter(assessment_submissions::Column::IsSubmitted.eq(true))
+            .filter(assessment_submissions::Column::SubmittedAt.is_not_null())
             .count(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
@@ -97,7 +97,7 @@ impl SubmissionRepository {
         &self,
         submission_id: Uuid,
         question_id: Uuid,
-        answer_text: Option<String>,
+        _answer_text: Option<String>,
     ) -> AppResult<submission_answers::Model> {
         let existing = submission_answers::Entity::find()
             .filter(submission_answers::Column::SubmissionId.eq(submission_id))
@@ -107,21 +107,16 @@ impl SubmissionRepository {
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
         if let Some(existing) = existing {
-            let mut active: submission_answers::ActiveModel = existing.into();
-            active.answer_text = Set(answer_text);
-            active
-                .update(&self.db)
-                .await
-                .map_err(|e| AppError::InternalServerError(format!("Failed to update answer: {}", e)))
+            // No need to update - answer_text is stored in submission_answer_items instead
+            Ok(existing)
         } else {
             let answer = submission_answers::ActiveModel {
                 id: Set(Uuid::new_v4()),
                 submission_id: Set(submission_id),
                 question_id: Set(question_id),
-                answer_text: Set(answer_text),
-                is_auto_correct: Set(None),
-                is_override_correct: Set(None),
-                points_awarded: Set(0.0),
+                points: Set(0.0),
+                overridden_by: Set(None),
+                overridden_at: Set(None),
             };
 
             answer
@@ -152,7 +147,7 @@ impl SubmissionRepository {
     pub async fn update_answer_grade(
         &self,
         answer_id: Uuid,
-        is_auto_correct: Option<bool>,
+        _is_auto_correct: Option<bool>,
         points_awarded: f64,
     ) -> AppResult<submission_answers::Model> {
         let mut answer: submission_answers::ActiveModel =
@@ -163,8 +158,7 @@ impl SubmissionRepository {
                 .ok_or_else(|| AppError::NotFound("Answer not found".to_string()))?
                 .into();
 
-        answer.is_auto_correct = Set(is_auto_correct);
-        answer.points_awarded = Set(points_awarded);
+        answer.points = Set(points_awarded);
 
         answer
             .update(&self.db)
@@ -175,7 +169,7 @@ impl SubmissionRepository {
     pub async fn override_answer(
         &self,
         answer_id: Uuid,
-        is_correct: bool,
+        _is_correct: bool,
         points: f64,
     ) -> AppResult<submission_answers::Model> {
         let mut answer: submission_answers::ActiveModel =
@@ -186,8 +180,9 @@ impl SubmissionRepository {
                 .ok_or_else(|| AppError::NotFound("Answer not found".to_string()))?
                 .into();
 
-        answer.is_override_correct = Set(Some(is_correct));
-        answer.points_awarded = Set(points);
+        answer.points = Set(points);
+        answer.overridden_by = Set(None); // Would be set by the caller if needed
+        answer.overridden_at = Set(Some(Utc::now().naive_utc()));
 
         answer
             .update(&self.db)
@@ -198,8 +193,7 @@ impl SubmissionRepository {
     pub async fn update_submission_scores(
         &self,
         submission_id: Uuid,
-        auto_score: f64,
-        final_score: f64,
+        total_points: i32,
     ) -> AppResult<()> {
         let mut submission: assessment_submissions::ActiveModel =
             assessment_submissions::Entity::find_by_id(submission_id)
@@ -209,8 +203,7 @@ impl SubmissionRepository {
                 .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?
                 .into();
 
-        submission.auto_score = Set(auto_score);
-        submission.final_score = Set(final_score);
+        submission.total_points = Set(total_points);
 
         submission
             .update(&self.db)
@@ -229,8 +222,8 @@ impl SubmissionRepository {
                 .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?
                 .into();
 
-        submission.is_submitted = Set(true);
-        submission.submitted_at = Set(Some(Utc::now().naive_utc()));
+        let now = Utc::now().naive_utc();
+        submission.submitted_at = Set(Some(now));
 
         submission
             .update(&self.db)
@@ -238,112 +231,167 @@ impl SubmissionRepository {
             .map_err(|e| AppError::InternalServerError(format!("Failed to submit: {}", e)))
     }
 
-    // ===== ANSWER CHOICES (MC selections) =====
+    // ===== ANSWER ITEMS (submission_answer_items) =====
 
+    pub async fn save_answer_items(
+        &self,
+        submission_answer_id: Uuid,
+        items: Vec<(Option<Uuid>, Option<Uuid>, Option<String>, bool)>, // (answer_key_id, choice_id, answer_text, is_correct)
+    ) -> AppResult<()> {
+        // Delete existing items
+        submission_answer_items::Entity::delete_many()
+            .filter(submission_answer_items::Column::SubmissionAnswerId.eq(submission_answer_id))
+            .exec(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to clear answer items: {}", e)))?;
+
+        // Insert new items
+        for (answer_key_id, choice_id, answer_text, is_correct) in items {
+            let item = submission_answer_items::ActiveModel {
+                id: Set(Uuid::new_v4()),
+                submission_answer_id: Set(submission_answer_id),
+                answer_key_id: Set(answer_key_id),
+                choice_id: Set(choice_id),
+                answer_text: Set(answer_text),
+                is_correct: Set(is_correct),
+            };
+            item.insert(&self.db)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Failed to save answer item: {}", e)))?;
+        }
+
+        Ok(())
+    }
+
+    pub async fn find_answer_items_by_submission_answer_id(
+        &self,
+        submission_answer_id: Uuid,
+    ) -> AppResult<Vec<submission_answer_items::Model>> {
+        submission_answer_items::Entity::find()
+            .filter(submission_answer_items::Column::SubmissionAnswerId.eq(submission_answer_id))
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+    }
+
+    /// Save answer choices - wraps save_answer_items for backward compatibility
     pub async fn save_answer_choices(
         &self,
         submission_answer_id: Uuid,
         choice_ids: Vec<Uuid>,
     ) -> AppResult<()> {
-        // Delete existing selections
-        submission_answer_choices::Entity::delete_many()
-            .filter(submission_answer_choices::Column::SubmissionAnswerId.eq(submission_answer_id))
-            .exec(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to clear choices: {}", e)))?;
-
-        // Insert new selections
-        for choice_id in choice_ids {
-            let selection = submission_answer_choices::ActiveModel {
-                id: Set(Uuid::new_v4()),
-                submission_answer_id: Set(submission_answer_id),
-                choice_id: Set(choice_id),
-            };
-            selection
-                .insert(&self.db)
-                .await
-                .map_err(|e| AppError::InternalServerError(format!("Failed to save choice: {}", e)))?;
-        }
-
-        Ok(())
+        let items = choice_ids.into_iter()
+            .map(|choice_id| (None, Some(choice_id), None, false))
+            .collect();
+        self.save_answer_items(submission_answer_id, items).await
     }
 
-    pub async fn find_answer_choices(
-        &self,
-        submission_answer_id: Uuid,
-    ) -> AppResult<Vec<submission_answer_choices::Model>> {
-        submission_answer_choices::Entity::find()
-            .filter(submission_answer_choices::Column::SubmissionAnswerId.eq(submission_answer_id))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
-    }
-
-    // ===== ENUMERATION ANSWERS =====
-
+    /// Save enumeration answers - wraps save_answer_items for backward compatibility
     pub async fn save_enumeration_answers(
         &self,
         submission_answer_id: Uuid,
-        answers: Vec<String>,
+        enum_answers: Vec<String>,
     ) -> AppResult<()> {
-        // Delete existing
-        submission_enumeration_answers::Entity::delete_many()
-            .filter(submission_enumeration_answers::Column::SubmissionAnswerId.eq(submission_answer_id))
-            .exec(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to clear enum answers: {}", e)))?;
+        let items = enum_answers.into_iter()
+            .map(|answer_text| (None, None, Some(answer_text), false))
+            .collect();
+        self.save_answer_items(submission_answer_id, items).await
+    }
 
-        // Insert new
-        for answer_text in answers {
-            let answer = submission_enumeration_answers::ActiveModel {
-                id: Set(Uuid::new_v4()),
-                submission_answer_id: Set(submission_answer_id),
-                answer_text: Set(answer_text),
-                matched_item_id: Set(None),
-                is_auto_correct: Set(None),
-                is_override_correct: Set(None),
-            };
-            answer
-                .insert(&self.db)
+    /// Save answer text for identification questions
+    pub async fn save_answer_text(
+        &self,
+        submission_answer_id: Uuid,
+        answer_text: String,
+    ) -> AppResult<()> {
+        let items = vec![(None, None, Some(answer_text), false)];
+        self.save_answer_items(submission_answer_id, items).await
+    }
+
+    /// Find answer choices - returns choice IDs for an answer
+    pub async fn find_answer_choices(
+        &self,
+        submission_answer_id: Uuid,
+    ) -> AppResult<Vec<Uuid>> {
+        let items = self.find_answer_items_by_submission_answer_id(submission_answer_id).await?;
+        Ok(items.into_iter()
+            .filter_map(|item| item.choice_id)
+            .collect())
+    }
+
+    /// Find enumeration answers - returns answer texts for an answer
+    pub async fn find_enumeration_answers(
+        &self,
+        submission_answer_id: Uuid,
+    ) -> AppResult<Vec<String>> {
+        let items = self.find_answer_items_by_submission_answer_id(submission_answer_id).await?;
+        Ok(items.into_iter()
+            .filter_map(|item| item.answer_text)
+            .collect())
+    }
+
+    /// Save enumeration answers with answer_key_id links to specific slots
+    pub async fn save_enumeration_answers_linked(
+        &self,
+        submission_answer_id: Uuid,
+        items: Vec<(Option<Uuid>, String)>, // (answer_key_id, answer_text)
+    ) -> AppResult<()> {
+        let mapped = items.into_iter()
+            .map(|(key_id, text)| (key_id, None, Some(text), false))
+            .collect();
+        self.save_answer_items(submission_answer_id, mapped).await
+    }
+
+    /// Find enumeration answer items - returns full models with is_correct (for enumeration/identification)
+    pub async fn find_enumeration_answer_items(
+        &self,
+        submission_answer_id: Uuid,
+    ) -> AppResult<Vec<submission_answer_items::Model>> {
+        let items = self.find_answer_items_by_submission_answer_id(submission_answer_id).await?;
+        Ok(items.into_iter()
+            .filter(|i| i.answer_text.is_some())
+            .collect())
+    }
+
+    /// Update is_correct flag on a specific answer item
+    pub async fn update_answer_item_correctness(
+        &self,
+        item_id: Uuid,
+        is_correct: bool,
+    ) -> AppResult<()> {
+        let mut item: submission_answer_items::ActiveModel =
+            submission_answer_items::Entity::find_by_id(item_id)
+                .one(&self.db)
                 .await
-                .map_err(|e| AppError::InternalServerError(format!("Failed to save enum answer: {}", e)))?;
-        }
+                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
+                .ok_or_else(|| AppError::NotFound("Answer item not found".to_string()))?
+                .into();
+
+        item.is_correct = Set(is_correct);
+
+        item.update(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to update answer item: {}", e)))?;
 
         Ok(())
     }
 
-    pub async fn find_enumeration_answers(
-        &self,
-        submission_answer_id: Uuid,
-    ) -> AppResult<Vec<submission_enumeration_answers::Model>> {
-        submission_enumeration_answers::Entity::find()
-            .filter(submission_enumeration_answers::Column::SubmissionAnswerId.eq(submission_answer_id))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
-    }
+    pub async fn soft_delete_by_assessment(&self, assessment_id: Uuid) -> AppResult<()> {
+        let now = Utc::now().naive_utc();
+        let assessment_id_str = assessment_id.to_string();
+        let now_str = now.to_string();
 
-    pub async fn update_enumeration_answer_grade(
-        &self,
-        id: Uuid,
-        matched_item_id: Option<Uuid>,
-        is_auto_correct: bool,
-    ) -> AppResult<()> {
-        let mut answer: submission_enumeration_answers::ActiveModel =
-            submission_enumeration_answers::Entity::find_by_id(id)
-                .one(&self.db)
-                .await
-                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
-                .ok_or_else(|| AppError::NotFound("Enumeration answer not found".to_string()))?
-                .into();
+        let query = format!(
+            "UPDATE assessment_submissions SET deleted_at = '{}', updated_at = '{}' WHERE assessment_id = '{}' AND deleted_at IS NULL",
+            now_str, now_str, assessment_id_str
+        );
 
-        answer.matched_item_id = Set(matched_item_id);
-        answer.is_auto_correct = Set(Some(is_auto_correct));
-
-        answer
-            .update(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to update enum answer: {}", e)))?;
+        let _result = self.db.execute(sea_orm::Statement::from_string(
+            sea_orm::DbBackend::Sqlite,
+            query,
+        ))
+        .await
+        .map_err(|e| AppError::InternalServerError(format!("Failed to delete submissions: {}", e)))?;
 
         Ok(())
     }

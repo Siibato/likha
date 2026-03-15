@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/student/student_class_detail_page.dart';
-import 'package:likha/presentation/pages/student/widgets/student_header.dart';
+import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/student/widgets/class_list_section.dart';
 import 'package:likha/presentation/pages/student/widgets/empty_state.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
+import 'package:likha/presentation/pages/shared/widgets/skeletons/skeleton_pulse.dart';
+import 'package:likha/presentation/pages/shared/widgets/skeletons/class_card_skeleton.dart';
 
 class StudentClassesPage extends ConsumerStatefulWidget {
   const StudentClassesPage({super.key});
@@ -29,10 +31,12 @@ class _StudentClassesPageState extends ConsumerState<StudentClassesPage> {
 
     return SafeArea(
       child: classState.isLoading && classState.classes.isEmpty
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF2B2B2B),
-                strokeWidth: 2.5,
+          ? SkeletonPulse(
+              child: ListView.builder(
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(24),
+                itemCount: 6,
+                itemBuilder: (_, __) => const ClassCardSkeleton(),
               ),
             )
           : RefreshIndicator(
@@ -42,7 +46,7 @@ class _StudentClassesPageState extends ConsumerState<StudentClassesPage> {
               child: CustomScrollView(
                 slivers: [
                   const SliverToBoxAdapter(
-                    child: StudentHeader(title: 'Classes'),
+                    child: ClassSectionHeader(title: 'Classes'),
                   ),
                   classState.classes.isEmpty
                       ? const SliverFillRemaining(

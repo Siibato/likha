@@ -11,6 +11,10 @@ pub struct CreateAssessmentRequest {
     pub open_at: String,
     pub close_at: String,
     pub show_results_immediately: Option<bool>,
+    #[serde(default)]
+    pub is_published: Option<bool>,
+    // NEW: optional questions for atomic creation when publishing
+    pub questions: Option<Vec<AddQuestionRequest>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -25,6 +29,7 @@ pub struct UpdateAssessmentRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct AddQuestionRequest {
+    pub id: Option<Uuid>,
     pub question_type: String,
     pub question_text: String,
     pub points: i32,
@@ -64,6 +69,12 @@ pub struct EnumerationItemInput {
     pub acceptable_answers: Vec<String>,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct EnumerationAnswerInput {
+    pub order_index: i32,
+    pub answer_text: String,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct SaveAnswersRequest {
     pub answers: Vec<AnswerInput>,
@@ -74,12 +85,27 @@ pub struct AnswerInput {
     pub question_id: Uuid,
     pub answer_text: Option<String>,
     pub selected_choice_ids: Option<Vec<Uuid>>,
-    pub enumeration_answers: Option<Vec<String>>,
+    pub enumeration_answers: Option<Vec<EnumerationAnswerInput>>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct OverrideAnswerRequest {
     pub is_correct: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ReorderAssessmentRequest {
+    pub new_order_index: i32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ReorderAssessmentsRequest {
+    pub assessment_ids: Vec<Uuid>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ReorderQuestionsRequest {
+    pub question_ids: Vec<Uuid>,
 }
 
 // ===== RESPONSE SCHEMAS =====
@@ -96,6 +122,7 @@ pub struct AssessmentResponse {
     pub show_results_immediately: bool,
     pub results_released: bool,
     pub is_published: bool,
+    pub order_index: i32,
     pub total_points: i32,
     pub question_count: usize,
     pub submission_count: usize,
@@ -120,6 +147,7 @@ pub struct AssessmentDetailResponse {
     pub show_results_immediately: bool,
     pub results_released: bool,
     pub is_published: bool,
+    pub order_index: i32,
     pub total_points: i32,
     pub questions: Vec<QuestionResponse>,
     pub created_at: String,
@@ -179,9 +207,7 @@ pub struct SubmissionSummaryResponse {
     pub student_username: String,
     pub started_at: String,
     pub submitted_at: Option<String>,
-    pub auto_score: f64,
-    pub final_score: f64,
-    pub is_submitted: bool,
+    pub total_points: i32,
 }
 
 #[derive(Debug, Serialize)]
@@ -192,9 +218,9 @@ pub struct SubmissionDetailResponse {
     pub student_name: String,
     pub started_at: String,
     pub submitted_at: Option<String>,
-    pub auto_score: f64,
-    pub final_score: f64,
-    pub is_submitted: bool,
+    pub total_points: i32,
+    pub auto_score: i32,
+    pub final_score: i32,
     pub answers: Vec<SubmissionAnswerResponse>,
 }
 
@@ -204,13 +230,13 @@ pub struct SubmissionAnswerResponse {
     pub question_id: Uuid,
     pub question_text: String,
     pub question_type: String,
-    pub points: i32,
+    pub question_points: i32,
     pub answer_text: Option<String>,
     pub selected_choices: Option<Vec<SelectedChoiceResponse>>,
     pub enumeration_answers: Option<Vec<EnumerationAnswerResponse>>,
-    pub is_auto_correct: Option<bool>,
-    pub is_override_correct: Option<bool>,
-    pub points_awarded: f64,
+    pub points_earned: f64,
+    pub overridden_by: Option<Uuid>,
+    pub overridden_at: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -222,11 +248,8 @@ pub struct SelectedChoiceResponse {
 
 #[derive(Debug, Serialize)]
 pub struct EnumerationAnswerResponse {
-    pub id: Uuid,
     pub answer_text: String,
-    pub matched_item_id: Option<Uuid>,
-    pub is_auto_correct: Option<bool>,
-    pub is_override_correct: Option<bool>,
+    pub is_correct: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -246,6 +269,7 @@ pub struct StudentQuestionResponse {
     pub is_multi_select: bool,
     pub choices: Option<Vec<StudentChoiceResponse>>,
     pub enumeration_count: Option<usize>,
+    pub enumeration_items: Option<Vec<StudentEnumerationItemResponse>>,
 }
 
 #[derive(Debug, Serialize)]
@@ -256,11 +280,23 @@ pub struct StudentChoiceResponse {
 }
 
 #[derive(Debug, Serialize)]
+pub struct StudentEnumerationItemResponse {
+    pub id: Uuid,
+    pub order_index: usize,
+    pub acceptable_answers: Vec<StudentEnumerationAnswerResponse>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct StudentEnumerationAnswerResponse {
+    pub id: Uuid,
+    pub answer_text: String,
+}
+
+#[derive(Debug, Serialize)]
 pub struct StudentResultResponse {
     pub submission_id: Uuid,
-    pub auto_score: f64,
-    pub final_score: f64,
-    pub total_points: i32,
+    pub total_earned: i32,
+    pub total_possible: i32,
     pub submitted_at: Option<String>,
     pub answers: Vec<StudentAnswerResultResponse>,
 }
@@ -319,4 +355,32 @@ pub struct QuestionStatistics {
     pub correct_count: usize,
     pub incorrect_count: usize,
     pub correct_percentage: f64,
+}
+
+// ===== STUDENT SUBMISSION STATUS SCHEMAS =====
+
+#[derive(Debug, Serialize)]
+pub struct StudentAssessmentSubmissionItem {
+    pub assessment_id: Uuid,
+    pub id: Uuid,                       // submission id
+    pub student_id: Uuid,
+    pub student_name: String,
+    pub student_username: String,
+    pub started_at: String,
+    pub submitted_at: Option<String>,
+    pub total_points: i32,
+}
+
+#[derive(Debug, Serialize)]
+pub struct StudentAssessmentSubmissionsResponse {
+    pub submissions: Vec<StudentAssessmentSubmissionItem>,
+}
+
+// ===== METADATA SCHEMAS =====
+
+#[derive(Debug, Serialize)]
+pub struct AssessmentMetadataResponse {
+    pub last_modified: String,
+    pub record_count: usize,
+    pub etag: String,
 }

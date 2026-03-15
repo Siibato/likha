@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/presentation/pages/student/widgets/student_header.dart';
+import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/student/widgets/score_summary_card.dart';
 import 'package:likha/presentation/pages/student/widgets/answer_result_card.dart';
 import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/providers/auth_provider.dart';
 
 class AssessmentResultsPage extends ConsumerStatefulWidget {
   final String? submissionId;
@@ -25,6 +26,7 @@ class AssessmentResultsPage extends ConsumerStatefulWidget {
 
 class _AssessmentResultsPageState
     extends ConsumerState<AssessmentResultsPage> {
+
   @override
   void initState() {
     super.initState();
@@ -40,15 +42,11 @@ class _AssessmentResultsPageState
   }
 
   Future<void> _loadViaAssessment() async {
+    final user = ref.read(authProvider).user;
+    if (user == null) return;
     await ref
         .read(assessmentProvider.notifier)
-        .startAssessment(widget.assessmentId!);
-    final state = ref.read(assessmentProvider);
-    if (state.startResult != null) {
-      ref
-          .read(assessmentProvider.notifier)
-          .loadStudentResults(state.startResult!.submissionId);
-    }
+        .loadStudentResultsByAssessment(widget.assessmentId!, user.id);
   }
 
   @override
@@ -58,16 +56,6 @@ class _AssessmentResultsPageState
 
     ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
       if (next.error != null && prev?.error != next.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: const Color(0xFFEA4335),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
         ref.read(assessmentProvider.notifier).clearMessages();
       }
     });
@@ -131,7 +119,10 @@ class _AssessmentResultsPageState
             : CustomScrollView(
                 slivers: [
                   const SliverToBoxAdapter(
-                    child: StudentHeader(title: 'Results'),
+                    child: ClassSectionHeader(
+                      title: 'Results',
+                      showBackButton: true,
+                    ),
                   ),
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(

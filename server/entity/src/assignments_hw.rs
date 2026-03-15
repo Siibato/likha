@@ -15,8 +15,10 @@ pub struct Model {
     pub max_file_size_mb: Option<i32>,
     pub due_at: chrono::NaiveDateTime,
     pub is_published: bool,
+    pub order_index: i32,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
+    pub deleted_at: Option<chrono::NaiveDateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

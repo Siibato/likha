@@ -12,11 +12,13 @@ pub struct Model {
     pub text_content: Option<String>,
     pub submitted_at: Option<chrono::NaiveDateTime>,
     pub is_late: bool,
-    pub score: Option<i32>,
+    pub points: Option<i32>,
+    pub graded_by: Option<Uuid>,
     pub feedback: Option<String>,
     pub graded_at: Option<chrono::NaiveDateTime>,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
+    pub deleted_at: Option<chrono::NaiveDateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -33,6 +35,12 @@ pub enum Relation {
         to = "super::users::Column::Id"
     )]
     Student,
+    #[sea_orm(
+        belongs_to = "super::users::Entity",
+        from = "Column::GradedBy",
+        to = "super::users::Column::Id"
+    )]
+    GradedByUser,
     #[sea_orm(has_many = "super::submission_files::Entity")]
     Files,
 }

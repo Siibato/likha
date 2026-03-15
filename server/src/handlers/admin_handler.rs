@@ -8,8 +8,8 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::schema::auth_schema::{CreateAccountRequest, LockAccountRequest, ResetAccountRequest, UpdateAccountRequest};
-use crate::schema::common::ApiResponse;
-use crate::services::auth_service::AuthService;
+use crate::schema::common::success_response;
+use crate::services::auth::AuthService;
 use crate::middleware::auth_middleware::AuthUser;
 use crate::utils::error::AppError;
 
@@ -29,11 +29,8 @@ pub async fn create_account(
         return e.into_response();
     }
 
-    match auth_service.create_account(request, auth_user.user_id).await {
-        Ok(response) => (
-            StatusCode::CREATED,
-            Json(ApiResponse::success(response)),
-        ).into_response(),
+    match auth_service.create_account(request, auth_user.user_id, None).await {
+        Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -47,10 +44,7 @@ pub async fn get_all_accounts(
     }
 
     match auth_service.get_all_accounts().await {
-        Ok(response) => (
-            StatusCode::OK,
-            Json(ApiResponse::success(response)),
-        ).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -65,10 +59,7 @@ pub async fn reset_account(
     }
 
     match auth_service.reset_account(request, auth_user.user_id).await {
-        Ok(response) => (
-            StatusCode::OK,
-            Json(ApiResponse::success(response)),
-        ).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -83,10 +74,7 @@ pub async fn lock_account(
     }
 
     match auth_service.lock_account(request, auth_user.user_id).await {
-        Ok(response) => (
-            StatusCode::OK,
-            Json(ApiResponse::success(response)),
-        ).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -102,10 +90,7 @@ pub async fn update_account(
     }
 
     match auth_service.update_account(user_id, request, auth_user.user_id).await {
-        Ok(response) => (
-            StatusCode::OK,
-            Json(ApiResponse::success(response)),
-        ).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -120,10 +105,22 @@ pub async fn get_activity_logs(
     }
 
     match auth_service.get_activity_logs(user_id).await {
-        Ok(response) => (
-            StatusCode::OK,
-            Json(ApiResponse::success(response)),
-        ).into_response(),
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+pub async fn get_account(
+    State(auth_service): State<Arc<AuthService>>,
+    auth_user: AuthUser,
+    Path(user_id): Path<Uuid>,
+) -> impl IntoResponse {
+    if let Err(e) = require_admin(&auth_user) {
+        return e.into_response();
+    }
+
+    match auth_service.get_account(user_id).await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }

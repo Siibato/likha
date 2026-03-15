@@ -1,18 +1,20 @@
 use axum::{
-    routing::{delete, get, post},
+    routing::{delete, get, post, put},
     Router,
 };
 use std::sync::Arc;
 
 use crate::handlers::class_handler;
-use crate::services::auth_service::AuthService;
-use crate::services::class_service::ClassService;
+use crate::services::auth::AuthService;
+use crate::services::class::ClassService;
 
 pub fn routes(class_service: Arc<ClassService>, auth_service: Arc<AuthService>) -> Router {
     let class_routes = Router::new()
         .route("/classes", post(class_handler::create_class))
         .route("/classes", get(class_handler::get_classes))
+        .route("/classes/metadata", get(class_handler::get_classes_metadata))
         .route("/classes/{id}", get(class_handler::get_class_detail))
+        .route("/classes/{id}", put(class_handler::update_class))
         .route(
             "/classes/{id}/students",
             post(class_handler::add_student),

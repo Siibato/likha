@@ -7,13 +7,13 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub assessment_id: Uuid,
-    pub student_id: Uuid,
+    pub user_id: Uuid,
     pub started_at: chrono::NaiveDateTime,
     pub submitted_at: Option<chrono::NaiveDateTime>,
-    pub auto_score: f64,
-    pub final_score: f64,
-    pub is_submitted: bool,
+    pub total_points: i32,
     pub created_at: chrono::NaiveDateTime,
+    pub updated_at: chrono::NaiveDateTime,
+    pub deleted_at: Option<chrono::NaiveDateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -26,10 +26,10 @@ pub enum Relation {
     Assessment,
     #[sea_orm(
         belongs_to = "super::users::Entity",
-        from = "Column::StudentId",
+        from = "Column::UserId",
         to = "super::users::Column::Id"
     )]
-    Student,
+    User,
     #[sea_orm(has_many = "super::submission_answers::Entity")]
     Answers,
 }
@@ -42,7 +42,7 @@ impl Related<super::assessments::Entity> for Entity {
 
 impl Related<super::users::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Student.def()
+        Relation::User.def()
     }
 }
 

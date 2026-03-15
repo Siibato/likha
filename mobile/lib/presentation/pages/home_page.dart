@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/admin/admin_dashboard_page.dart';
 import 'package:likha/presentation/pages/student/student_shell_page.dart';
-import 'package:likha/presentation/pages/teacher/teacher_dashboard_page.dart';
+import 'package:likha/presentation/pages/teacher/teacher_shell_page.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 
 class HomePage extends ConsumerWidget {
@@ -22,7 +22,7 @@ class HomePage extends ConsumerWidget {
       case 'admin':
         return const AdminDashboardPage();
       case 'teacher':
-        return const TeacherDashboardPage();
+        return const TeacherShellPage();
       case 'student':
         return const StudentShellPage();
       default:

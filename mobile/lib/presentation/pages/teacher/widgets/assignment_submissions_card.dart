@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class AssignmentSubmissionsCard extends StatelessWidget {
   final int submissionCount;
@@ -31,12 +32,12 @@ class AssignmentSubmissionsCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFFE3F2FD),
+                color: AppColors.backgroundTertiary,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(
                 Icons.assignment_turned_in_rounded,
-                color: Color(0xFF42A5F5),
+                color: AppColors.foregroundSecondary,
                 size: 22,
               ),
             ),
@@ -58,7 +59,7 @@ class AssignmentSubmissionsCard extends StatelessWidget {
                   Text(
                     '$submissionCount submitted • $gradedCount graded',
                     style: const TextStyle(
-                      color: Color(0xFF999999),
+                      color: AppColors.foregroundTertiary,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
@@ -68,7 +69,7 @@ class AssignmentSubmissionsCard extends StatelessWidget {
             ),
             const Icon(
               Icons.chevron_right_rounded,
-              color: Color(0xFFCCCCCC),
+              color: AppColors.borderLight,
               size: 22,
             ),
           ],

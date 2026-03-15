@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class AssignmentReturnedBanner extends StatelessWidget {
   final String feedback;
@@ -16,17 +17,17 @@ class AssignmentReturnedBanner extends StatelessWidget {
         color: const Color(0xFFFFF8ED),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFFFFBD59).withOpacity(0.3),
+          color: AppColors.deprecatedWarningYellow.withOpacity(0.3),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.replay_rounded, color: Color(0xFFFFBD59), size: 22),
-              SizedBox(width: 10),
-              Text(
+              Icon(Icons.replay_rounded, color: AppColors.deprecatedWarningYellow, size: 22),
+              const SizedBox(width: 10),
+              const Text(
                 'Returned for Revision',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,

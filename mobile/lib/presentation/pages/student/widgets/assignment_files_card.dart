@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
+import 'package:likha/presentation/pages/shared/widgets/primitives/card_icon_slot.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/styled_button.dart';
 import 'package:likha/presentation/utils/formatters.dart';
 
 class AssignmentFilesCard extends StatelessWidget {
@@ -21,96 +25,66 @@ class AssignmentFilesCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return BaseCard(
       margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(1, 1, 1, 3.5),
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Files',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF202020),
-                letterSpacing: -0.4,
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Files',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF202020),
+              letterSpacing: -0.4,
+            ),
+          ),
+          if (allowedFileTypes != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Allowed: $allowedFileTypes',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF999999),
               ),
             ),
-            if (allowedFileTypes != null) ...[
-              const SizedBox(height: 6),
-              Text(
-                'Allowed: $allowedFileTypes',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF999999),
-                ),
-              ),
-            ],
-            if (maxFileSizeMb != null) ...[
-              const SizedBox(height: 2),
-              Text(
-                'Max size: $maxFileSizeMb MB',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF999999),
-                ),
-              ),
-            ],
-            const SizedBox(height: 12),
-            Container(
-              height: 1,
-              color: const Color(0xFFF0F0F0),
-            ),
-            if (files.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              ...files.map((file) => _FileListTile(
-                    fileName: file.fileName,
-                    fileSize: file.fileSize,
-                    isReadOnly: isReadOnly,
-                    onDelete: () => onDeleteFile(file.id),
-                  )),
-            ],
-            if (!isReadOnly) ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: onUploadPressed,
-                  icon: const Icon(
-                    Icons.upload_file_rounded,
-                    color: Color(0xFFFFBD59),
-                  ),
-                  label: const Text(
-                    'Upload File',
-                    style: TextStyle(
-                      color: Color(0xFF2B2B2B),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    side: const BorderSide(
-                      color: Color(0xFFE0E0E0),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-            ],
           ],
-        ),
+          if (maxFileSizeMb != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              'Max size: $maxFileSizeMb MB',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF999999),
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          Container(
+            height: 1,
+            color: const Color(0xFFF0F0F0),
+          ),
+          if (files.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            ...files.map((file) => _FileListTile(
+                  fileName: file.fileName,
+                  fileSize: file.fileSize,
+                  isReadOnly: isReadOnly,
+                  onDelete: () => onDeleteFile(file.id),
+                )),
+          ],
+          if (!isReadOnly) ...[
+            const SizedBox(height: 12),
+            StyledButton(
+              text: 'Upload File',
+              variant: StyledButtonVariant.outlined,
+              icon: Icons.upload_file_rounded,
+              isLoading: false,
+              onPressed: onUploadPressed,
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -133,17 +107,9 @@ class _FileListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF8F9FA),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: const Icon(
-          Icons.attach_file_rounded,
-          color: Color(0xFF666666),
-          size: 20,
-        ),
+      leading: CardIconSlot.sm(
+        icon: Icons.attach_file_rounded,
+        iconColor: AppColors.foregroundSecondary,
       ),
       title: Text(
         fileName,

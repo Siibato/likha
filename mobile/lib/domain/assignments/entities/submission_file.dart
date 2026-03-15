@@ -6,6 +6,9 @@ class SubmissionFile extends Equatable {
   final String fileType;
   final int fileSize;
   final DateTime uploadedAt;
+  final String? localPath;
+  final DateTime? cachedAt;
+  final bool needsSync;
 
   const SubmissionFile({
     required this.id,
@@ -13,8 +16,13 @@ class SubmissionFile extends Equatable {
     required this.fileType,
     required this.fileSize,
     required this.uploadedAt,
+    this.localPath,
+    this.cachedAt,
+    this.needsSync = false,
   });
 
+  bool get isCached => localPath != null && localPath!.isNotEmpty;
+
   @override
-  List<Object?> get props => [id, fileName, fileType, fileSize, uploadedAt];
+  List<Object?> get props => [id, fileName, fileType, fileSize, uploadedAt, localPath, cachedAt, needsSync];
 }

@@ -7,16 +7,17 @@ class ScoreSummaryCard extends StatelessWidget {
   const ScoreSummaryCard({super.key, required this.result});
 
   String _formatDateTime(DateTime dt) {
-    final month = dt.month.toString().padLeft(2, '0');
-    final day = dt.day.toString().padLeft(2, '0');
-    final year = dt.year;
-    final hour = dt.hour > 12
-        ? dt.hour - 12
-        : dt.hour == 0
+    final local = dt.toLocal();
+    final month = local.month.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    final year = local.year;
+    final hour = local.hour > 12
+        ? local.hour - 12
+        : local.hour == 0
             ? 12
-            : dt.hour;
-    final minute = dt.minute.toString().padLeft(2, '0');
-    final period = dt.hour >= 12 ? 'PM' : 'AM';
+            : local.hour;
+    final minute = local.minute.toString().padLeft(2, '0');
+    final period = local.hour >= 12 ? 'PM' : 'AM';
     return '$month/$day/$year $hour:$minute $period';
   }
 
@@ -81,10 +82,10 @@ class ScoreSummaryCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF8ED),
+                color: const Color(0xFFF8F9FA),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: const Color(0xFFFFBD59).withOpacity(0.3),
+                  color: const Color(0xFFE0E0E0),
                 ),
               ),
               child: Text(
@@ -92,7 +93,7 @@ class ScoreSummaryCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFFFFBD59),
+                  color: Color(0xFF2B2B2B),
                   letterSpacing: -0.3,
                 ),
               ),
@@ -106,7 +107,7 @@ class ScoreSummaryCard extends StatelessWidget {
                     : 0,
                 minHeight: 10,
                 backgroundColor: const Color(0xFFF0F0F0),
-                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFFBD59)),
+                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF2B2B2B)),
               ),
             ),
             if (result.submittedAt != null) ...[

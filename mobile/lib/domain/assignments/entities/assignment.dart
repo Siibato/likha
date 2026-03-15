@@ -11,10 +11,16 @@ class Assignment extends Equatable {
   final int? maxFileSizeMb;
   final DateTime dueAt;
   final bool isPublished;
+  final int orderIndex;
   final int submissionCount;
   final int gradedCount;
+  final String? submissionStatus; // Student's own submission status
+  final String? submissionId; // Student's own submission ID
+  final int? score; // Student's own score
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? cachedAt;
+  final bool needsSync;
 
   const Assignment({
     required this.id,
@@ -27,10 +33,16 @@ class Assignment extends Equatable {
     this.maxFileSizeMb,
     required this.dueAt,
     required this.isPublished,
+    required this.orderIndex,
     required this.submissionCount,
     required this.gradedCount,
+    this.submissionStatus,
+    this.submissionId,
+    this.score,
     required this.createdAt,
     required this.updatedAt,
+    this.cachedAt,
+    this.needsSync = false,
   });
 
   @override
@@ -45,9 +57,15 @@ class Assignment extends Equatable {
         maxFileSizeMb,
         dueAt,
         isPublished,
+        orderIndex,
         submissionCount,
         gradedCount,
+        submissionStatus,
+        submissionId,
+        score,
         createdAt,
         updatedAt,
+        cachedAt,
+        needsSync,
       ];
 }

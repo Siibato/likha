@@ -9,6 +9,14 @@ use super::auth_schema::UserResponse;
 pub struct CreateClassRequest {
     pub title: String,
     pub description: Option<String>,
+    pub teacher_id: Option<Uuid>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateClassRequest {
+    pub title: Option<String>,
+    pub description: Option<String>,
+    pub teacher_id: Option<Uuid>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -29,6 +37,8 @@ pub struct ClassResponse {
     pub title: String,
     pub description: Option<String>,
     pub teacher_id: Uuid,
+    pub teacher_username: String,
+    pub teacher_full_name: String,
     pub is_archived: bool,
     pub student_count: usize,
     pub created_at: String,
@@ -51,10 +61,19 @@ pub struct ClassDetailResponse {
 pub struct EnrollmentResponse {
     pub id: Uuid,
     pub student: UserResponse,
-    pub enrolled_at: String,
+    pub joined_at: String,
 }
 
 #[derive(Debug, Serialize)]
 pub struct ClassListResponse {
     pub classes: Vec<ClassResponse>,
+}
+
+// ===== METADATA SCHEMAS =====
+
+#[derive(Debug, Serialize)]
+pub struct ClassMetadataResponse {
+    pub last_modified: String,
+    pub record_count: usize,
+    pub etag: String,
 }

@@ -1,7 +1,7 @@
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
-import 'package:likha/domain/assignments/entities/submission_file.dart';
+import 'package:likha/domain/assignments/entities/submission_file.dart'; // StudentAssignmentStatus is in here
 
 abstract class AssignmentRepository {
   // Teacher: Assignment CRUD
@@ -14,9 +14,10 @@ abstract class AssignmentRepository {
     String? allowedFileTypes,
     int? maxFileSizeMb,
     required String dueAt,
+    bool isPublished = true,
   });
 
-  ResultFuture<List<Assignment>> getAssignments({required String classId});
+  ResultFuture<List<Assignment>> getAssignments({required String classId, bool publishedOnly = false, bool skipBackgroundRefresh = false});
 
   ResultFuture<Assignment> getAssignmentDetail({required String assignmentId});
 
@@ -35,6 +36,13 @@ abstract class AssignmentRepository {
 
   ResultFuture<Assignment> publishAssignment({required String assignmentId});
 
+  ResultFuture<Assignment> unpublishAssignment({required String assignmentId});
+
+  ResultVoid reorderAllAssignments({
+    required String classId,
+    required List<String> assignmentIds,
+  });
+
   // Teacher: Submissions & Grading
   ResultFuture<List<SubmissionListItem>> getSubmissions({
     required String assignmentId,
@@ -52,6 +60,11 @@ abstract class AssignmentRepository {
 
   ResultFuture<AssignmentSubmission> returnSubmission({
     required String submissionId,
+  });
+
+  ResultFuture<StudentAssignmentStatus?> getStudentAssignmentSubmission({
+    required String assignmentId,
+    required String studentId,
   });
 
   // Student: Submission flow

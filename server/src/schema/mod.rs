@@ -4,3 +4,6 @@ pub mod assignment_schema;
 pub mod auth_schema;
 pub mod class_schema;
 pub mod common;
+pub mod learning_material_schema;
+pub mod sync_schema;
+pub mod tasks_schema;

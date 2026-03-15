@@ -44,6 +44,7 @@ pub struct ResetAccountRequest {
 pub struct LockAccountRequest {
     pub user_id: Uuid,
     pub locked: bool,
+    pub reason: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -53,8 +54,8 @@ pub struct ResetPasswordRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct UpdateAccountRequest {
-    pub username: Option<String>,
     pub full_name: Option<String>,
+    pub role: Option<String>,
 }
 
 // ===== RESPONSE SCHEMAS =====

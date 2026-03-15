@@ -19,20 +19,19 @@ impl UserRepository {
         username: String,
         full_name: String,
         role: String,
-        created_by: Option<Uuid>,
+        client_id: Option<Uuid>,
     ) -> AppResult<users::Model> {
         let user = users::ActiveModel {
-            id: Set(Uuid::new_v4()),
+            id: Set(client_id.unwrap_or_else(Uuid::new_v4)),
             username: Set(username),
             password_hash: Set(None),
             full_name: Set(full_name),
             role: Set(role),
             account_status: Set("pending_activation".to_string()),
-            is_active: Set(true),
             activated_at: Set(None),
-            created_by: Set(created_by),
             created_at: Set(Utc::now().naive_utc()),
             updated_at: Set(Utc::now().naive_utc()),
+            deleted_at: Set(None),
         };
 
         user.insert(&self.db)
@@ -64,11 +63,9 @@ impl UserRepository {
         user_id: Uuid,
         status: &str,
     ) -> AppResult<users::Model> {
-        let is_active = status != "locked";
         let user = users::ActiveModel {
             id: Set(user_id),
             account_status: Set(status.to_string()),
-            is_active: Set(is_active),
             updated_at: Set(Utc::now().naive_utc()),
             ..Default::default()
         };
@@ -100,8 +97,8 @@ impl UserRepository {
     pub async fn update_account(
         &self,
         user_id: Uuid,
-        username: Option<String>,
         full_name: Option<String>,
+        role: Option<String>,
     ) -> AppResult<users::Model> {
         let mut user: users::ActiveModel = users::Entity::find_by_id(user_id)
             .one(&self.db)
@@ -110,11 +107,11 @@ impl UserRepository {
             .ok_or_else(|| AppError::NotFound("User not found".to_string()))?
             .into();
 
-        if let Some(username) = username {
-            user.username = Set(username);
-        }
         if let Some(full_name) = full_name {
             user.full_name = Set(full_name);
+        }
+        if let Some(role) = role {
+            user.role = Set(role);
         }
         user.updated_at = Set(Utc::now().naive_utc());
 
@@ -210,5 +207,25 @@ impl UserRepository {
             .map_err(|e| AppError::InternalServerError(format!("Failed to revoke token: {}", e)))?;
 
         Ok(())
+    }
+
+    pub async fn revoke_all_tokens_for_user(&self, user_id: Uuid) -> AppResult<u64> {
+        let now = Utc::now().naive_utc();
+        let now_str = now.to_string();
+        let user_id_str = user_id.to_string();
+
+        let query = format!(
+            "UPDATE refresh_tokens SET revoked_at = '{}' WHERE user_id = '{}' AND revoked_at IS NULL",
+            now_str, user_id_str
+        );
+
+        let result = self.db.execute(sea_orm::Statement::from_string(
+            sea_orm::DbBackend::Sqlite,
+            query,
+        ))
+        .await
+        .map_err(|e| AppError::InternalServerError(format!("Failed to revoke tokens: {}", e)))?;
+
+        Ok(result.rows_affected())
     }
 }
