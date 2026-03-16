@@ -79,6 +79,24 @@ impl super::SyncFullService {
             let enrollments = enrollment_data.records.clone();
             tracing::debug!("BASE REQUEST: Fetched {} enrollments", enrollments.len());
 
+            // Compute student count per class from enrollments (no additional queries needed)
+            let mut student_count_by_class: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+            for enrollment in &enrollments {
+                if let Some(serde_json::Value::String(class_id)) = enrollment.get("class_id") {
+                    *student_count_by_class.entry(class_id.clone()).or_insert(0) += 1;
+                }
+            }
+
+            // Enrich classes with computed student_count
+            let mut classes = classes;
+            for cls in &mut classes {
+                if let Some(serde_json::Value::String(class_id)) = cls.get("id") {
+                    if let Some(&count) = student_count_by_class.get(class_id) {
+                        cls["student_count"] = serde_json::json!(count);
+                    }
+                }
+            }
+
             // Extract enrolled students (role-aware)
             let student_ids: Vec<Uuid> = enrollment_data
                 .records
@@ -355,8 +373,8 @@ impl super::SyncFullService {
         };
         tracing::debug!("Fetched {} material files", material_files.len());
 
-        // Fetch submission_files
-        let submission_ids: Vec<Uuid> = enriched_assessment_submissions
+        // Fetch submission_files (for assignment submissions — FK points to assignment_submissions.id, not assessments)
+        let submission_ids: Vec<Uuid> = assignment_submissions
             .iter()
             .filter_map(|s| s.get("id").and_then(|id| id.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
             .collect();

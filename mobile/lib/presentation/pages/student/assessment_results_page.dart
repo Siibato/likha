@@ -109,18 +109,71 @@ class _AssessmentResultsPageState
     );
   }
 
+  Widget _buildResultsUnavailableBox() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundSecondary,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.borderLight,
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFE0E0),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.info_outline_rounded,
+                size: 24,
+                color: const Color(0xFFD32F2F),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Results Not Yet Available',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF2B2B2B),
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Your results will appear here once your teacher releases them',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.foregroundSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(assessmentProvider);
     final result = state.studentResult;
     final isResultsNotReleased =
         state.error?.toLowerCase().contains('not been released') ?? false;
-
-    ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
-      if (next.error != null && prev?.error != next.error && !next.error!.toLowerCase().contains('not been released')) {
-        ref.read(assessmentProvider.notifier).clearMessages();
-      }
-    });
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
@@ -214,6 +267,7 @@ class _AssessmentResultsPageState
                                 ),
                               ),
                         ],
+                        if (result == null && !isResultsNotReleased) _buildResultsUnavailableBox(),
                         const SizedBox(height: 40),
                       ]),
                     ),

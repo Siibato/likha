@@ -169,7 +169,7 @@ class SubmissionAnswerModel extends SubmissionAnswer {
       questionId: json['question_id'] as String,
       questionText: json['question_text'] as String,
       questionType: json['question_type'] as String,
-      points: json['question_points'] as int? ?? 0,
+      points: (json['question_points'] as num?)?.toInt() ?? 0,
       answerText: json['answer_text'] as String?,
       selectedChoices: (json['selected_choices'] as List<dynamic>?)
           ?.map((e) =>
@@ -288,7 +288,7 @@ class StudentResultModel extends StudentResult {
       submissionId: json['submission_id'] as String,
       autoScore: (json['total_earned'] as num? ?? 0).toDouble(),
       finalScore: (json['total_earned'] as num? ?? 0).toDouble(),
-      totalPoints: json['total_possible'] as int? ?? 0,
+      totalPoints: (json['total_possible'] as num?)?.toInt() ?? 0,
       submittedAt: json['submitted_at'] != null
           ? _parseUtc(json['submitted_at'] as String)
           : null,

@@ -16,6 +16,15 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
     required String assignmentId,
   }) async {
     try {
+      // Offline guard: if server is unreachable, always return from local DB
+      // This ensures the teacher sees synced submissions when offline, and an empty list
+      // (not an error) when submissions have never been synced for this assignment
+      if (!serverReachabilityService.isServerReachable) {
+        final cached =
+            await localDataSource.getCachedSubmissions(assignmentId);
+        return Right(cached);
+      }
+
       try {
         final cached =
             await localDataSource.getCachedSubmissions(assignmentId);

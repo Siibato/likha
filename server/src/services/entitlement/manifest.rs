@@ -158,9 +158,14 @@ impl super::EntitlementService {
         let assignment_ids: Vec<Uuid> = assignments.iter().map(|a| a.id).collect();
         let assignment_submissions = if assignment_ids.is_empty() {
             Vec::new()
-        } else {
+        } else if user_role == "student" {
             self.manifest_repo
                 .get_assignment_submissions_manifest(user_id, assignment_ids)
+                .await?
+        } else {
+            // teacher/admin: fetch all students' submissions for their assignments
+            self.manifest_repo
+                .get_all_assignment_submissions_manifest(assignment_ids)
                 .await?
         };
 

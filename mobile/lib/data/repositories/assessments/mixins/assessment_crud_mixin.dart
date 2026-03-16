@@ -150,6 +150,8 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
         assessmentId: assessmentId,
         data: data,
       );
+      // Cache the updated assessment locally so changes persist across app restarts
+      await localDataSource.cacheAssessments([result]);
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

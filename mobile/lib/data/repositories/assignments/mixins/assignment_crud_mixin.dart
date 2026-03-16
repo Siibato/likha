@@ -104,6 +104,8 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
           'is_published': isPublished,
         },
       );
+      // Cache the assignment locally so it persists across app restarts
+      await localDataSource.cacheAssignments([result]);
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -178,6 +180,8 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
           if (dueAt != null) 'due_at': dueAt,
         },
       );
+      // Cache the updated assignment locally so changes persist across app restarts
+      await localDataSource.cacheAssignments([result]);
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -202,6 +206,8 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
           maxRetries: 5,
           createdAt: DateTime.now(),
         ));
+        // Soft-delete the assignment locally so it's not visible in the UI
+        await localDataSource.deleteAssignmentLocal(assignmentId: assignmentId);
         return const Right(null);
       }
 

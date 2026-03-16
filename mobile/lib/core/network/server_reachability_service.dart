@@ -22,7 +22,7 @@ class ServerReachabilityServiceImpl implements ServerReachabilityService {
   static const int _backoffThreshold = 60; // consecutive failures before backoff
 
   late StreamController<bool> _reachabilityStream;
-  late Timer? _nextCheck;
+  Timer? _nextCheck;
   bool _isServerReachable = false;
   int _consecutiveFailures = 0;
   bool _isDisposed = false;

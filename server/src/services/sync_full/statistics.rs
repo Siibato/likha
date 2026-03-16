@@ -138,9 +138,8 @@ pub fn format_student_results(
 
         results.push(json!({
             "submission_id": submission_id,
-            "auto_score": auto_score,
-            "final_score": final_score,
-            "total_points": total_points,
+            "total_earned": auto_score,
+            "total_possible": total_points,
             "submitted_at": submitted_at,
             "answers": answers_json
         }));

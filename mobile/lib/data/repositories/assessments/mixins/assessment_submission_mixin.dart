@@ -19,7 +19,12 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
       try {
         final result =
             await remoteDataSource.getSubmissions(assessmentId: assessmentId);
-        await localDataSource.cacheSubmissions(assessmentId, result);
+        try {
+          await localDataSource.cacheSubmissions(assessmentId, result);
+        } catch (_) {
+          // Non-fatal: caching failed (e.g. FK constraint if students not yet synced)
+          // Remote data is still valid — return it
+        }
         unawaited(validationService.validateAndSync('assessments'));
         return Right(result);
       } on NetworkException {

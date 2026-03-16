@@ -271,7 +271,7 @@ impl ManifestRepository {
             .collect())
     }
 
-    /// Get manifest entries for assignment submissions
+    /// Get manifest entries for assignment submissions (student's own submissions)
     pub async fn get_assignment_submissions_manifest(
         &self,
         user_id: Uuid,
@@ -279,6 +279,27 @@ impl ManifestRepository {
     ) -> AppResult<Vec<ManifestEntry>> {
         let records = assignment_submissions::Entity::find()
             .filter(assignment_submissions::Column::StudentId.eq(user_id))
+            .filter(assignment_submissions::Column::AssignmentId.is_in(assignment_ids))
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        Ok(records
+            .into_iter()
+            .map(|r| ManifestEntry {
+                id: r.id,
+                updated_at: r.updated_at,
+                deleted: false,
+            })
+            .collect())
+    }
+
+    /// Get manifest entries for all assignment submissions for given assignments (teacher/admin view)
+    pub async fn get_all_assignment_submissions_manifest(
+        &self,
+        assignment_ids: Vec<Uuid>,
+    ) -> AppResult<Vec<ManifestEntry>> {
+        let records = assignment_submissions::Entity::find()
             .filter(assignment_submissions::Column::AssignmentId.is_in(assignment_ids))
             .all(&self.db)
             .await
@@ -661,6 +682,7 @@ impl ManifestRepository {
                     "created_at": r.created_at.to_string(),
                     "updated_at": r.updated_at.to_string(),
                     "deleted_at": r.deleted_at.map(|d| d.to_string()),
+                    "student_count": 0,
                 })
             })
             .collect();
@@ -890,8 +912,9 @@ impl ManifestRepository {
         submission_ids: Vec<Uuid>,
         since: NaiveDateTime,
     ) -> AppResult<Vec<Value>> {
+        // Note: user_id parameter is kept for signature compatibility but not used here
+        // because submission_ids are already pre-filtered by the manifest (which is role-aware)
         let records = assignment_submissions::Entity::find()
-            .filter(assignment_submissions::Column::StudentId.eq(user_id))
             .filter(assignment_submissions::Column::Id.is_in(submission_ids))
             .filter(assignment_submissions::Column::UpdatedAt.gt(since))
             .all(&self.db)
@@ -970,6 +993,9 @@ impl ManifestRepository {
                 "started_at": r.started_at.to_string(),
                 "submitted_at": r.submitted_at.map(|d| d.to_string()),
                 "total_points": r.total_points,
+                "is_submitted": if r.submitted_at.is_some() { 1u64 } else { 0u64 },
+                "auto_score": r.total_points,
+                "final_score": r.total_points,
                 "created_at": r.created_at.to_string(),
                 "updated_at": r.updated_at.to_string(),
                 "deleted_at": r.deleted_at.map(|d| d.to_string()),

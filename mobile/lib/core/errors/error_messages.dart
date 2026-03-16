@@ -1,8 +1,18 @@
 class AppErrorMapper {
-  static String toUserMessage(String? rawError) {
-    if (rawError == null) return 'Something went wrong. Try again later.';
+  static String? toUserMessage(String? rawError) {
+    if (rawError == null) return null;
 
     final lower = rawError.toLowerCase();
+
+    // Connectivity errors are expected in an offline-first app — suppress entirely
+    if (lower.contains('internet') ||
+        lower.contains('unreachable') ||
+        lower.contains('network') ||
+        lower.contains('connection') ||
+        lower.contains('socket') ||
+        lower.contains('timeout')) {
+      return null;
+    }
 
     // Check if the error message looks user-friendly FIRST (short, no technical jargon)
     // These are messages already crafted by the notifier and should pass through
@@ -21,16 +31,6 @@ class AppErrorMapper {
     final isTechnical = technicalTerms.any((term) => lower.contains(term));
     if (rawError.length < 80 && !isTechnical) {
       return rawError;
-    }
-
-    // Network errors
-    if (lower.contains('network') ||
-        lower.contains('connection') ||
-        lower.contains('socket')) {
-      return 'Network error. Check your connection and try again.';
-    }
-    if (lower.contains('timeout')) {
-      return 'Connection timed out. Try again.';
     }
 
     if (lower.contains('unauthorized') || lower.contains('401')) {

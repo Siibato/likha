@@ -298,23 +298,27 @@ class _EnumerationAnswerDetail extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF8ED),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(
-                color: const Color(0xFFFFBD59).withOpacity(0.3),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: answer.correctAnswers!.map((ans) => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF8ED),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: const Color(0xFFFFBD59).withOpacity(0.3),
+                ),
               ),
-            ),
-            child: Text(
-              answer.correctAnswers!.join(', '),
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.foregroundPrimary,
+              child: Text(
+                ans,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.foregroundPrimary,
+                ),
               ),
-            ),
+            )).toList(),
           ),
         ],
       ],

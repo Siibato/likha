@@ -153,9 +153,10 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
               if (!mounted) return;
 
               final state = ref.read(learningMaterialProvider);
-              if (state.error != null) {
+              final errMsg = AppErrorMapper.toUserMessage(state.error);
+              if (errMsg != null) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(AppErrorMapper.toUserMessage(state.error))),
+                  SnackBar(content: Text(errMsg)),
                 );
               }
             },
