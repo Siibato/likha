@@ -15,26 +15,30 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
     required String assessmentId,
   }) async {
     try {
-      try {
-        final cached =
-            await localDataSource.getCachedSubmissions(assessmentId);
-        // Only return cache if it has data; empty cache is treated as a miss
-        if (cached.isNotEmpty) {
-          return Right(cached);
-        }
-      } on CacheException {
-        // Not in local DB — fall through to remote fetch
-      }
-
-      // Cache miss or empty cache — fetch from server if reachable
+      // Network-first: always try server for fresh data
       try {
         final result =
             await remoteDataSource.getSubmissions(assessmentId: assessmentId);
-        await localDataSource.cacheSubmissions(assessmentId, result);
+        try {
+          await localDataSource.cacheSubmissions(assessmentId, result);
+        } catch (_) {
+          // Non-fatal: caching failed (e.g. FK constraint if students not yet synced)
+          // Remote data is still valid — return it
+        }
         unawaited(validationService.validateAndSync('assessments'));
         return Right(result);
-      } on NetworkException catch (e) {
-        return Left(NetworkFailure(e.message));
+      } on NetworkException {
+        // Offline — fall back to cache
+        try {
+          final cached =
+              await localDataSource.getCachedSubmissions(assessmentId);
+          if (cached.isNotEmpty) {
+            return Right(cached);
+          }
+        } on CacheException {
+          // No cache available
+        }
+        return Left(NetworkFailure('No network connection and no cached submissions'));
       } on ServerException catch (e) {
         return Left(ServerFailure(e.message));
       }

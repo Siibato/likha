@@ -48,9 +48,18 @@ impl super::AssessmentService {
         };
 
         let enumeration_items = if question.question_type == "enumeration" && role == "teacher" {
-            // Enumeration items not currently supported in schema
-            // TODO: Re-implement if schema is updated
-            None
+            let items = self.assessment_repo
+                .find_enumeration_items_for_question(question.id).await?;
+            Some(
+                items.into_iter().enumerate().map(|(i, (key, answers))| EnumerationItemResponse {
+                    id: key.id,
+                    order_index: i as i32,
+                    acceptable_answers: answers.into_iter().map(|a| EnumerationItemAnswerResponse {
+                        id: a.id,
+                        answer_text: a.answer_text,
+                    }).collect(),
+                }).collect()
+            )
         } else {
             None
         };

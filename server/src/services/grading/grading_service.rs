@@ -74,7 +74,7 @@ impl GradingService {
         }
 
         submission_repo
-            .update_submission_scores(submission_id, auto_score as i32)
+            .update_submission_scores(submission_id, auto_score)
             .await?;
 
         Ok((auto_score, auto_score))
@@ -88,7 +88,7 @@ impl GradingService {
         let final_score: f64 = answers.iter().map(|a| a.points).sum();
 
         submission_repo
-            .update_submission_scores(submission_id, final_score as i32)
+            .update_submission_scores(submission_id, final_score)
             .await?;
 
         Ok(final_score)

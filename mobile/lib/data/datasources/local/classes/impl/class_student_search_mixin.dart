@@ -27,14 +27,8 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
       final db = await localDatabase.database;
       await db.transaction((txn) async {
         for (final student in students) {
-          final existing = await txn.query(
-            'users',
-            where: 'id = ?',
-            whereArgs: [student.id],
-            limit: 1,
-          );
-          if (existing.isNotEmpty) continue; // never overwrite logged-in user
-
+          // Use ConflictAlgorithm.replace to update existing student data
+          // This ensures stale data from prior sync/searches is updated
           await txn.insert(
             'users',
             {

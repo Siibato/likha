@@ -1,16 +1,23 @@
+import 'dart:convert';
+
 import 'package:file_picker/file_picker.dart';
+import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
+import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/injection_container.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
 import 'package:likha/domain/assignments/entities/submission_file.dart';
 import 'package:likha/domain/assignments/usecases/create_submission.dart';
 import 'package:likha/domain/assignments/usecases/upload_file.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
+import 'package:likha/presentation/pages/shared/widgets/cards/markdown_display.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/card_icon_slot.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/pages/student/widgets/assignment_instructions_card.dart';
 import 'package:likha/presentation/pages/student/widgets/assignment_returned_banner.dart';
 import 'package:likha/presentation/pages/student/widgets/assignment_text_input_card.dart';
@@ -31,6 +38,7 @@ class AssignmentDetailPage extends ConsumerStatefulWidget {
   final String? submissionId;
   final int? score;
   final String? submissionStatus;
+  final DateTime dueAt;
 
   const AssignmentDetailPage({
     super.key,
@@ -44,6 +52,7 @@ class AssignmentDetailPage extends ConsumerStatefulWidget {
     this.submissionId,
     this.score,
     this.submissionStatus,
+    required this.dueAt,
   });
 
   @override
@@ -52,7 +61,7 @@ class AssignmentDetailPage extends ConsumerStatefulWidget {
 }
 
 class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
-  final _textController = TextEditingController();
+  late final FleatherController _submissionController;
   String? _submissionId;
   bool _isCreatingSubmission = false;
   String? _formError;
@@ -60,6 +69,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
   @override
   void initState() {
     super.initState();
+    _submissionController = FleatherController();
     // Always clear stale submission first, then load if submissionId exists
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(assignmentProvider.notifier).clearCurrentSubmission();
@@ -74,7 +84,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
 
   @override
   void dispose() {
-    _textController.dispose();
+    _submissionController.dispose();
     super.dispose();
   }
 
@@ -86,13 +96,19 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       widget.submissionType == 'file' ||
       widget.submissionType == 'text_or_file';
 
+  String? _getTextContent() {
+    if (!_canSubmitText) return null;
+    final plain = _submissionController.document.toPlainText().trim();
+    return plain.isEmpty ? null : jsonEncode(_submissionController.document.toJson());
+  }
+
   Future<void> _createSubmission() async {
     setState(() => _isCreatingSubmission = true);
 
     await ref.read(assignmentProvider.notifier).createSubmission(
           CreateSubmissionParams(
             assignmentId: widget.assignmentId,
-            textContent: _canSubmitText ? _textController.text.trim() : null,
+            textContent: _getTextContent(),
           ),
         );
 
@@ -104,9 +120,8 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
         _isCreatingSubmission = false;
       });
 
-      if (state.currentSubmission!.textContent != null &&
-          _textController.text.isEmpty) {
-        _textController.text = state.currentSubmission!.textContent!;
+      if (state.currentSubmission!.textContent != null) {
+        _hydrateController(state.currentSubmission!.textContent!);
       }
     } else {
       setState(() => _isCreatingSubmission = false);
@@ -164,9 +179,33 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
   }
 
   Future<void> _handleSubmit() async {
+    final effectiveStatus = ref.read(assignmentProvider).currentSubmission?.status ?? widget.submissionStatus;
+
+    // Show confirmation dialog for re-submission
+    if (effectiveStatus == 'submitted') {
+      await AppDialogs.showConfirmation(
+        context: context,
+        title: 'Re-submit Assignment?',
+        body: 'You are about to replace your existing submission. Your teacher will see the updated version.',
+        confirmLabel: 'Re-submit',
+        onConfirm: _performSubmit,
+      );
+      return;
+    }
+
+    await _performSubmit();
+  }
+
+  Future<void> _performSubmit() async {
     if (_submissionId == null) {
       await _createSubmission();
       if (_submissionId == null) return;
+    }
+
+    // If submission already exists and text has changed, persist text first
+    if (_submissionId != null && _canSubmitText) {
+      await _createSubmission(); // calls create_or_get which now allows submitted status
+      if (!mounted) return;
     }
 
     await ref
@@ -255,8 +294,8 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     // Prefill text content if submission exists
     if (submission != null &&
         submission.textContent != null &&
-        _textController.text.isEmpty) {
-      _textController.text = submission.textContent!;
+        _submissionController.document.toPlainText().trim().isEmpty) {
+      _hydrateController(submission.textContent!);
     }
 
     ref.listen<AssignmentState>(assignmentProvider, (prev, next) {
@@ -276,10 +315,11 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
 
     // Use submission status from loaded data, or fall back to initial status from widget
     final effectiveStatus = submission?.status ?? widget.submissionStatus;
-    final isSubmitted = effectiveStatus == 'submitted';
     final isGraded = effectiveStatus == 'graded';
-    final isReadOnly = isSubmitted || isGraded;
-    final canEdit = !isReadOnly;
+    final isSubmitted = effectiveStatus == 'submitted';
+    final isDeadlinePassed = sl<ServerClockService>().now().isAfter(widget.dueAt);
+    final canEditSubmitted = isSubmitted && !isDeadlinePassed; // submitted but editable
+    final canEdit = !isGraded && (!isSubmitted || canEditSubmitted);
     final isLoading = state.isLoading || _isCreatingSubmission;
 
     return Scaffold(
@@ -352,7 +392,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                         if (_canSubmitText && canEdit) ...[
                           const SizedBox(height: 16),
                           AssignmentTextInputCard(
-                            controller: _textController,
+                            controller: _submissionController,
                             isReadOnly: false,
                           ),
                         ],
@@ -368,12 +408,13 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                           ),
                         ],
 
-                        // Submit button (for draft or returned)
+                        // Submit button (for draft, returned, or editable submitted)
                         if (canEdit) ...[
                           const SizedBox(height: 24),
                           AssignmentSubmitButton(
                             isLoading: isLoading,
                             onPressed: _handleSubmit,
+                            text: canEditSubmitted ? 'Re-submit Assignment' : 'Submit Assignment',
                           ),
                         ],
 
@@ -383,8 +424,8 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                           const AssignmentSubmittedBanner(),
                         ],
 
-                        // Read-only submission view (for submitted or graded)
-                        if (isReadOnly && submission != null) ...[
+                        // Read-only submission view (for graded or submitted after deadline)
+                        if (!canEdit && submission != null) ...[
                           const SizedBox(height: 16),
                           _buildSubmissionCard(submission),
                         ],
@@ -403,6 +444,16 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
               ),
       ),
     );
+  }
+
+  void _hydrateController(String content) {
+    if (content.isEmpty) return;
+    try {
+      final doc = ParchmentDocument.fromJson(jsonDecode(content));
+      setState(() => _submissionController = FleatherController(document: doc));
+    } catch (_) {
+      // Fallback: leave as empty or could insert as plain text if needed
+    }
   }
 
   Widget _buildScoreCard(int score, {DateTime? gradedAt}) {
@@ -453,10 +504,10 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF8ED),
+              color: const Color(0xFFF8F9FA),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: AppColors.deprecatedWarningYellow.withValues(alpha: 0.3),
+                color: const Color(0xFFE0E0E0),
               ),
             ),
             child: Text(
@@ -464,7 +515,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFFFFBD59),
+                color: Color(0xFF2B2B2B),
                 letterSpacing: -0.3,
               ),
             ),
@@ -479,7 +530,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
               minHeight: 10,
               backgroundColor: const Color(0xFFF0F0F0),
               valueColor:
-                  const AlwaysStoppedAnimation<Color>(Color(0xFFFFBD59)),
+                  const AlwaysStoppedAnimation<Color>(Color(0xFF2B2B2B)),
             ),
           ),
           if (gradedAt != null) ...[
@@ -566,14 +617,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
               ),
             ),
             const SizedBox(height: 6),
-            Text(
-              submission.textContent!,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF2B2B2B),
-                height: 1.5,
-              ),
-            ),
+            MarkdownDisplay(content: submission.textContent),
             if (submission.files.isNotEmpty) const SizedBox(height: 16),
           ],
           if (submission.files.isNotEmpty) ...[
@@ -611,7 +655,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                 trailing: IconButton(
                   icon: file.isCached
                       ? const Icon(Icons.folder_open_rounded)
-                      : const Icon(Icons.download_rounded, color: Color(0xFFFFBD59)),
+                      : const Icon(Icons.download_rounded, color: Color(0xFF2B2B2B)),
                   onPressed: () => file.isCached
                       ? _openFile(file)
                       : _saveFile(file),

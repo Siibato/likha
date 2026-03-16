@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
@@ -10,6 +11,7 @@ import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.
 import 'package:likha/presentation/pages/shared/widgets/forms/styled_button.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
+import 'package:likha/presentation/pages/shared/widgets/cards/markdown_display.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/status_badge.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/card_icon_slot.dart';
 import 'package:likha/presentation/pages/shared/widgets/tokens/app_text_styles.dart';
@@ -34,12 +36,14 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
   final _scoreController = TextEditingController();
   final _feedbackController = TextEditingController();
   String? _formError;
+  bool _formPrefilled = false;
 
   @override
   void initState() {
     super.initState();
     _scoreController.clear();
     _feedbackController.clear();
+    _formPrefilled = false;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
           .read(assignmentProvider.notifier)
@@ -48,18 +52,14 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
   }
 
   void _prefillFormIfGraded() {
+    if (_formPrefilled) return;
+
     final submission = ref.read(assignmentProvider).currentSubmission;
     if (submission == null) return;
 
-    final newScore = submission.score?.toString() ?? '';
-    if (_scoreController.text != newScore) {
-      _scoreController.text = newScore;
-    }
-
-    final newFeedback = submission.feedback ?? '';
-    if (_feedbackController.text != newFeedback) {
-      _feedbackController.text = newFeedback;
-    }
+    _scoreController.text = submission.score?.toString() ?? '';
+    _feedbackController.text = submission.feedback ?? '';
+    _formPrefilled = true;
   }
 
   @override
@@ -118,12 +118,6 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
             feedback: feedback.isEmpty ? null : feedback,
           ),
         );
-  }
-
-  Future<void> _handleReturn() async {
-    await ref
-        .read(assignmentProvider.notifier)
-        .returnSubmission(widget.submissionId);
   }
 
   /// Open file with system default app
@@ -235,10 +229,7 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
                         submission.textContent!.isNotEmpty) ...[
                       _buildSection(
                         'Text Content',
-                        child: Text(
-                          submission.textContent!,
-                          style: const TextStyle(fontSize: 15, height: 1.5),
-                        ),
+                        child: MarkdownDisplay(content: submission.textContent),
                       ),
                       const SizedBox(height: 16),
                     ],
@@ -347,6 +338,7 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
                         label: 'Score (out of ${widget.totalPoints})',
                         icon: Icons.star_outline_rounded,
                         keyboardType: TextInputType.number,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                         validator: (value) {
                           if (value == null || value.trim().isEmpty)
                             return 'Score is required';
@@ -364,31 +356,17 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
                         controller: _feedbackController,
                         label: 'Feedback (optional)',
                         icon: Icons.comment_outlined,
-                        maxLines: 3,
+                        minLines: 1,
+                        maxLines: null,
                         onChanged: (_) => setState(() => _formError = null),
                       ),
                       const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: StyledButton(
-                              text: 'Return',
-                              isLoading: state.isLoading,
-                              onPressed: _handleReturn,
-                              variant: StyledButtonVariant.outlined,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: StyledButton(
-                              text: submission.status == 'graded'
-                                  ? 'Update Grade'
-                                  : 'Grade',
-                              isLoading: state.isLoading,
-                              onPressed: _handleGrade,
-                            ),
-                          ),
-                        ],
+                      StyledButton(
+                        text: submission.status == 'graded'
+                            ? 'Update Grade'
+                            : 'Grade',
+                        isLoading: state.isLoading,
+                        onPressed: _handleGrade,
                       ),
                     ],
                     const SizedBox(height: 32),

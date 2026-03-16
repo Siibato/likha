@@ -28,7 +28,7 @@ impl SubmissionRepository {
             user_id: Set(student_id),
             started_at: Set(Utc::now().naive_utc()),
             submitted_at: Set(None),
-            total_points: Set(0),
+            total_points: Set(0.0),
             created_at: Set(Utc::now().naive_utc()),
             updated_at: Set(Utc::now().naive_utc()),
             deleted_at: Set(None),
@@ -193,7 +193,7 @@ impl SubmissionRepository {
     pub async fn update_submission_scores(
         &self,
         submission_id: Uuid,
-        total_points: i32,
+        total_points: f64,
     ) -> AppResult<()> {
         let mut submission: assessment_submissions::ActiveModel =
             assessment_submissions::Entity::find_by_id(submission_id)

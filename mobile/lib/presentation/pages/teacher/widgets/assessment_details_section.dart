@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_field.dart';
 import 'package:likha/presentation/pages/teacher/widgets/shared_due_date_time_picker.dart';
 
@@ -69,6 +70,7 @@ class AssessmentDetailsSection extends StatelessWidget {
             controller: timeLimitController,
             icon: Icons.timer_rounded,
             keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return 'Time limit is required';

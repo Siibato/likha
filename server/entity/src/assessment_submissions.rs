@@ -10,7 +10,7 @@ pub struct Model {
     pub user_id: Uuid,
     pub started_at: chrono::NaiveDateTime,
     pub submitted_at: Option<chrono::NaiveDateTime>,
-    pub total_points: i32,
+    pub total_points: f64,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
     pub deleted_at: Option<chrono::NaiveDateTime>,

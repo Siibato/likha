@@ -55,22 +55,13 @@ pub fn compute_assessment_statistics(
         let highest = scores.last().copied().unwrap_or(0.0);
         let lowest = scores.first().copied().unwrap_or(0.0);
 
-        // Score distribution
-        let mut distribution = vec![
-            ("0-25%", 0),
-            ("26-50%", 0),
-            ("51-75%", 0),
-            ("76-100%", 0),
-        ];
+        // Score distribution by individual point values
+        let mut score_map: std::collections::HashMap<i64, usize> = std::collections::HashMap::new();
         for score in &scores {
-            let percentage = if total_points > 0.0 { (score / total_points) * 100.0 } else { 0.0 };
-            match percentage {
-                p if p <= 25.0 => distribution[0].1 += 1,
-                p if p <= 50.0 => distribution[1].1 += 1,
-                p if p <= 75.0 => distribution[2].1 += 1,
-                _ => distribution[3].1 += 1,
-            }
+            *score_map.entry(score.floor() as i64).or_insert(0) += 1;
         }
+        let mut distribution: Vec<(i64, usize)> = score_map.into_iter().collect();
+        distribution.sort_by_key(|b| b.0);
 
         stats.push(json!({
             "assessment_id": assessment_id,
@@ -82,8 +73,8 @@ pub fn compute_assessment_statistics(
                 "median": median,
                 "highest": highest,
                 "lowest": lowest,
-                "score_distribution": distribution.iter().map(|(range, count)| {
-                    json!({"range": range, "count": count})
+                "score_distribution": distribution.iter().map(|(score, count)| {
+                    json!({"score": score, "count": count})
                 }).collect::<Vec<_>>()
             },
             "question_statistics": []
@@ -147,9 +138,8 @@ pub fn format_student_results(
 
         results.push(json!({
             "submission_id": submission_id,
-            "auto_score": auto_score,
-            "final_score": final_score,
-            "total_points": total_points,
+            "total_earned": auto_score,
+            "total_possible": total_points,
             "submitted_at": submitted_at,
             "answers": answers_json
         }));

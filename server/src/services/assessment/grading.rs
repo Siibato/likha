@@ -27,6 +27,8 @@ impl super::AssessmentService {
             let student = self.user_repo.find_by_id(s.user_id).await?
                 .ok_or_else(|| AppError::NotFound("Student not found".to_string()))?;
 
+            let earned_score = s.total_points;
+
             responses.push(SubmissionSummaryResponse {
                 id: s.id,
                 student_id: s.user_id,
@@ -35,6 +37,8 @@ impl super::AssessmentService {
                 started_at: s.started_at.to_string(),
                 submitted_at: s.submitted_at.map(|dt| dt.to_string()),
                 total_points: s.total_points,
+                auto_score: earned_score,
+                final_score: earned_score,
             });
         }
 
@@ -125,6 +129,8 @@ impl super::AssessmentService {
             });
         }
 
+        let earned_score: f64 = answer_responses.iter().map(|a| a.points_earned).sum::<f64>();
+
         Ok(SubmissionDetailResponse {
             id: submission.id,
             assessment_id: submission.assessment_id,
@@ -133,8 +139,8 @@ impl super::AssessmentService {
             started_at: submission.started_at.to_string(),
             submitted_at: submission.submitted_at.map(|dt| dt.to_string()),
             total_points: submission.total_points,
-            auto_score: submission.total_points,
-            final_score: submission.total_points,
+            auto_score: earned_score,
+            final_score: earned_score,
             answers: answer_responses,
         })
     }

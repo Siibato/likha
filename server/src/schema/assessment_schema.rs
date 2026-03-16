@@ -207,7 +207,9 @@ pub struct SubmissionSummaryResponse {
     pub student_username: String,
     pub started_at: String,
     pub submitted_at: Option<String>,
-    pub total_points: i32,
+    pub total_points: f64,
+    pub auto_score: f64,
+    pub final_score: f64,
 }
 
 #[derive(Debug, Serialize)]
@@ -218,9 +220,9 @@ pub struct SubmissionDetailResponse {
     pub student_name: String,
     pub started_at: String,
     pub submitted_at: Option<String>,
-    pub total_points: i32,
-    pub auto_score: i32,
-    pub final_score: i32,
+    pub total_points: f64,
+    pub auto_score: f64,
+    pub final_score: f64,
     pub answers: Vec<SubmissionAnswerResponse>,
 }
 
@@ -295,7 +297,7 @@ pub struct StudentEnumerationAnswerResponse {
 #[derive(Debug, Serialize)]
 pub struct StudentResultResponse {
     pub submission_id: Uuid,
-    pub total_earned: i32,
+    pub total_earned: f64,
     pub total_possible: i32,
     pub submitted_at: Option<String>,
     pub answers: Vec<StudentAnswerResultResponse>,
@@ -342,7 +344,7 @@ pub struct ClassStatistics {
 
 #[derive(Debug, Serialize)]
 pub struct ScoreBucket {
-    pub range: String,
+    pub score: i32,
     pub count: usize,
 }
 
@@ -368,7 +370,7 @@ pub struct StudentAssessmentSubmissionItem {
     pub student_username: String,
     pub started_at: String,
     pub submitted_at: Option<String>,
-    pub total_points: i32,
+    pub total_points: f64,
 }
 
 #[derive(Debug, Serialize)]

@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 
 class AdminSearchBar extends StatelessWidget {
   final ValueChanged<String> onChanged;
+  final String hintText;
 
   const AdminSearchBar({
     super.key,
     required this.onChanged,
+    this.hintText = 'Search accounts...',
   });
 
   @override
@@ -30,7 +32,7 @@ class AdminSearchBar extends StatelessWidget {
               color: Color(0xFF202020),
             ),
             decoration: InputDecoration(
-              hintText: 'Search accounts...',
+              hintText: hintText,
               hintStyle: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,

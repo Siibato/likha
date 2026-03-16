@@ -400,17 +400,17 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
       ),
       body: Column(
         children: [
-          if (_formError != null || state.error != null)
+          if (_formError != null)
             Padding(
               padding: const EdgeInsets.all(16),
               child: FormMessage(
-                message: _formError ?? state.error,
+                message: _formError,
                 severity: MessageSeverity.error,
               ),
             ),
           Expanded(
             child: Center(
-              child: state.error != null
+              child: _formError != null
                   ? Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -430,7 +430,7 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 32),
                           child: Text(
-                            state.error!,
+                            _formError!,
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               color: Color(0xFF2B2B2B),

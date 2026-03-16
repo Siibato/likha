@@ -87,7 +87,7 @@ class AssessmentModel extends Assessment {
       resultsReleased: (map['results_released'] as int?) == 1,
       isPublished: (map['is_published'] as int?) == 1,
       orderIndex: map['order_index'] as int? ?? 0,
-      totalPoints: map['total_points'] as int? ?? 0,
+      totalPoints: (map['total_points'] as num?)?.toInt() ?? 0,
       questionCount: map['question_count'] as int? ?? 0,
       submissionCount: map['submission_count'] as int? ?? 0,
       createdAt: DateTime.parse(map['created_at'] as String),

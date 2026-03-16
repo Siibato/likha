@@ -1,9 +1,9 @@
+import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
-import 'package:likha/core/theme/app_colors.dart';
-import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/rich_text_field.dart';
 
 class AssignmentTextInputCard extends StatelessWidget {
-  final TextEditingController controller;
+  final FleatherController controller;
   final bool isReadOnly;
 
   const AssignmentTextInputCard({
@@ -14,9 +14,8 @@ class AssignmentTextInputCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BaseCard(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(18),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -29,51 +28,16 @@ class AssignmentTextInputCard extends StatelessWidget {
               letterSpacing: -0.4,
             ),
           ),
-          const SizedBox(height: 12),
-          TextFormField(
+          const SizedBox(height: 8),
+          RichTextField(
             controller: controller,
-            maxLines: 10,
-            readOnly: isReadOnly,
-            style: TextStyle(
-              fontSize: 15,
-              color: isReadOnly
-                  ? AppColors.foregroundSecondary
-                  : AppColors.foregroundPrimary,
-            ),
-            decoration: InputDecoration(
-              hintText: isReadOnly
-                  ? 'No response provided'
-                  : 'Type your response here...',
-              hintStyle: const TextStyle(
-                color: Color(0xFFCCCCCC),
-                fontSize: 15,
-              ),
-              filled: true,
-              fillColor: isReadOnly
-                  ? AppColors.backgroundDisabled
-                  : AppColors.backgroundSecondary,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: AppColors.borderLight,
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: AppColors.borderLight,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: isReadOnly
-                      ? AppColors.borderLight
-                      : AppColors.deprecatedWarningYellow,
-                  width: isReadOnly ? 1 : 2,
-                ),
-              ),
-            ),
+            label: 'Your Response',
+            icon: Icons.edit_note_rounded,
+            enabled: !isReadOnly,
+            minHeight: 160,
+            hintText: isReadOnly
+                ? 'No response provided'
+                : 'Type your response here...',
           ),
         ],
       ),

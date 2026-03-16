@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/events/data_event_bus.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
 import 'package:likha/domain/assignments/usecases/create_assignment.dart';
@@ -250,6 +251,37 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
       (failure) => state = state.copyWith(error: failure.message),
       (_) {},
     );
+  }
+
+  /// Downloads all submission files across all loaded submissions that aren't already cached.
+  /// Returns (downloaded, totalUncached):
+  ///   - downloaded: number of files successfully downloaded
+  ///   - totalUncached: total number of uncached files found (attempted downloads)
+  /// Sets state.error if server is unreachable.
+  Future<(int, int)> downloadAllSubmissionFiles() async {
+    if (!sl<ServerReachabilityService>().isServerReachable) {
+      state = state.copyWith(error: 'No server connection. Please connect and try again.');
+      return (0, 0);
+    }
+
+    int downloaded = 0;
+    int totalUncached = 0;
+    for (final submission in state.submissions) {
+      final detailResult = await _getSubmissionDetail(submission.id);
+      await detailResult.fold(
+        (_) async {}, // silently skip — don't abort entire batch for one failure
+        (detail) async {
+          for (final file in detail.files) {
+            if (!file.isCached) {
+              totalUncached++;
+              final result = await _downloadFile(file.id);
+              result.fold((_) {}, (_) => downloaded++);
+            }
+          }
+        },
+      );
+    }
+    return (downloaded, totalUncached);
   }
 
   /// Silently re-fetches the assignment from local DB to pick up fresh submission
