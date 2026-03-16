@@ -99,6 +99,7 @@ class _StudentAssignmentListPageState extends ConsumerState<StudentAssignmentLis
                                     submissionId: assignment.submissionId,
                                     score: assignment.score,
                                     submissionStatus: assignment.submissionStatus,
+                                    dueAt: assignment.dueAt,
                                   ),
                                 ),
                               ).then((_) => ref

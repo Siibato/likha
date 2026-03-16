@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class AssessmentField extends StatelessWidget {
   final String label;
@@ -9,6 +10,7 @@ class AssessmentField extends StatelessWidget {
   final bool enabled;
   final TextInputType? keyboardType;
   final ValueChanged<String>? onChanged;
+  final List<TextInputFormatter>? inputFormatters;
 
   const AssessmentField({
     super.key,
@@ -20,6 +22,7 @@ class AssessmentField extends StatelessWidget {
     this.enabled = true,
     this.keyboardType,
     this.onChanged,
+    this.inputFormatters,
   });
 
   @override
@@ -31,6 +34,7 @@ class AssessmentField extends StatelessWidget {
       keyboardType: keyboardType,
       enabled: enabled,
       onChanged: onChanged,
+      inputFormatters: inputFormatters,
       textAlignVertical: isMultiLine ? TextAlignVertical.top : TextAlignVertical.center,
       style: const TextStyle(
         fontSize: 16,

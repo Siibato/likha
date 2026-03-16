@@ -143,6 +143,7 @@ class _StudentTasksPageState extends ConsumerState<StudentTasksPage> {
             submissionId: a.submissionId,
             score: a.score,
             submissionStatus: a.submissionStatus,
+            dueAt: a.dueAt,
           ),
         ),
       );

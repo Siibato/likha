@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
@@ -226,6 +227,7 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
                 icon: Icons.star_outline_rounded,
                 controller: _pointsController,
                 keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Points are required';

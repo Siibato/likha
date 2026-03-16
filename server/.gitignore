@@ -16,6 +16,7 @@
 /storage/materials/*
 /storage/submissions/*
 /storage/exports/*
+/uploads
 !storage/.gitkeep
 
 # IDE

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/presentation/pages/teacher/widgets/question_draft.dart';
 import 'package:likha/presentation/pages/teacher/widgets/question_type_dropdown.dart';
@@ -219,18 +220,53 @@ class QuestionCard extends StatelessWidget {
                 ),
               ],
               if (question.questionType == 'enumeration' &&
-                  question.enumerationItems != null) ...[
+                  question.enumerationItems != null &&
+                  question.enumerationItems!.isNotEmpty) ...[
                 const SizedBox(height: 10),
-                Padding(
-                  padding: const EdgeInsets.only(left: 44),
-                  child: Text(
-                    '${question.enumerationItems!.length} items to enumerate',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF666666),
+                ...question.enumerationItems!.take(4).toList().asMap().entries.map(
+                  (entry) => Padding(
+                    padding: const EdgeInsets.only(left: 44, top: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${entry.key + 1}.',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF999999),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            entry.value.acceptableAnswers
+                                .map((a) => a.answerText)
+                                .join(' / '),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF666666),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
+                if (question.enumerationItems!.length > 4)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 44, top: 6),
+                    child: Text(
+                      '+${question.enumerationItems!.length - 4} more items',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF999999),
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
               ],
             ],
           ),
@@ -392,6 +428,7 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
           TextFormField(
             initialValue: widget.question.points.toString(),
             keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,

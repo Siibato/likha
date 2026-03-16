@@ -81,7 +81,7 @@ mixin AuthQueryMixin on AuthLocalDataSourceBase {
         whereArgs: [userId],
         orderBy: 'created_at DESC',
       );
-      if (results.isEmpty) return [];
+      if (results.isEmpty) throw CacheException('No cached activity logs found for user: $userId');
       return results.map((row) => ActivityLogModel.fromMap(row)).toList();
     } catch (e) {
       if (e is CacheException) rethrow;

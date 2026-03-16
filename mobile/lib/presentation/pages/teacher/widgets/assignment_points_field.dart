@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.dart';
 
 class AssignmentPointsField extends StatelessWidget {
@@ -19,6 +20,7 @@ class AssignmentPointsField extends StatelessWidget {
       icon: Icons.star_outline_rounded,
       enabled: enabled,
       keyboardType: TextInputType.number,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
       validator: (value) {
         if (value == null || value.trim().isEmpty) return 'Total points is required';
         final points = int.tryParse(value.trim());

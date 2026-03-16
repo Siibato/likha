@@ -40,9 +40,9 @@ impl super::AssignmentService {
                     "This assignment only accepts file submissions".to_string(),
                 ));
             }
-            if text.len() > 50000 {
+            if text.len() > 200000 {
                 return Err(AppError::BadRequest(
-                    "Text content must be at most 50000 characters".to_string(),
+                    "Text content must be at most 200000 characters".to_string(),
                 ));
             }
         }
@@ -59,9 +59,13 @@ impl super::AssignmentService {
                     ));
                 }
                 if existing.status == "submitted" {
-                    return Err(AppError::BadRequest(
-                        "This submission has already been submitted. Wait for teacher to return it for revision.".to_string(),
-                    ));
+                    let now = chrono::Utc::now().naive_utc();
+                    if now > assignment.due_at {
+                        return Err(AppError::BadRequest(
+                            "The deadline has passed. You can no longer edit this submission.".to_string(),
+                        ));
+                    }
+                    // Deadline not passed — allow text update, fall through
                 }
                 if text_content.is_some() {
                     self.assignment_repo
@@ -114,17 +118,26 @@ impl super::AssignmentService {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
-        if submission.status != "draft" && submission.status != "returned" {
-            return Err(AppError::BadRequest(
-                "Can only upload files to draft or returned submissions".to_string(),
-            ));
-        }
-
         let assignment = self
             .assignment_repo
             .find_by_id(submission.assignment_id)
             .await?
             .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
+
+        if submission.status != "draft" && submission.status != "returned" && submission.status != "submitted" {
+            return Err(AppError::BadRequest(
+                "Can only upload files to draft, returned, or submitted (before deadline) submissions".to_string(),
+            ));
+        }
+
+        if submission.status == "submitted" {
+            let now = chrono::Utc::now().naive_utc();
+            if now > assignment.due_at {
+                return Err(AppError::BadRequest(
+                    "The deadline has passed. You can no longer upload files.".to_string(),
+                ));
+            }
+        }
 
         if assignment.submission_type == "text" {
             return Err(AppError::BadRequest(
@@ -233,10 +246,24 @@ impl super::AssignmentService {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
-        if submission.status != "draft" && submission.status != "returned" {
+        if submission.status != "draft" && submission.status != "returned" && submission.status != "submitted" {
             return Err(AppError::BadRequest(
-                "Can only delete files from draft or returned submissions".to_string(),
+                "Can only delete files from draft, returned, or submitted (before deadline) submissions".to_string(),
             ));
+        }
+
+        if submission.status == "submitted" {
+            let assignment = self
+                .assignment_repo
+                .find_by_id(submission.assignment_id)
+                .await?
+                .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
+            let now = chrono::Utc::now().naive_utc();
+            if now > assignment.due_at {
+                return Err(AppError::BadRequest(
+                    "The deadline has passed. You can no longer delete files.".to_string(),
+                ));
+            }
         }
 
         // Soft delete the DB row
@@ -271,18 +298,27 @@ impl super::AssignmentService {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
-        if submission.status != "draft" && submission.status != "returned" {
+        let assignment = self
+            .assignment_repo
+            .find_by_id(submission.assignment_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
+
+        if submission.status != "draft" && submission.status != "returned" && submission.status != "submitted" {
             return Err(AppError::BadRequest(format!(
                 "Cannot submit a submission with status '{}'",
                 submission.status
             )));
         }
 
-        let assignment = self
-            .assignment_repo
-            .find_by_id(submission.assignment_id)
-            .await?
-            .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
+        if submission.status == "submitted" {
+            let now = chrono::Utc::now().naive_utc();
+            if now > assignment.due_at {
+                return Err(AppError::BadRequest(
+                    "The deadline has passed. You can no longer resubmit.".to_string(),
+                ));
+            }
+        }
 
         // Save text content if provided
         if text_content.is_some() {

@@ -27,22 +27,13 @@ impl super::ClassService {
         let existing_classes = self.class_repo.find_by_teacher_id(actual_teacher_id).await?;
         let normalized_title = request.title.trim().to_lowercase();
 
-        if let Some(existing) = existing_classes
+        if existing_classes
             .iter()
-            .find(|c| c.title.to_lowercase() == normalized_title)
+            .any(|c| c.title.to_lowercase() == normalized_title)
         {
-            return Ok(ClassResponse {
-                id: existing.id,
-                title: existing.title.clone(),
-                description: existing.description.clone(),
-                teacher_id: actual_teacher_id,
-                teacher_username: teacher.username.clone(),
-                teacher_full_name: teacher.full_name.clone(),
-                is_archived: existing.is_archived,
-                student_count: 0,
-                created_at: existing.created_at.to_string(),
-                updated_at: existing.updated_at.to_string(),
-            });
+            return Err(AppError::BadRequest(
+                format!("A class named '{}' already exists for this teacher", request.title.trim())
+            ));
         }
 
         let class = self

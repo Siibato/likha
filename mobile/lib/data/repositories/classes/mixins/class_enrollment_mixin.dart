@@ -17,55 +17,7 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
-        // Prevent duplicate queue entries
-        try {
-          final alreadyEnrolled = await localDataSource.getEnrolledStudentIds(classId);
-          if (alreadyEnrolled.contains(studentId)) {
-            final cachedStudent = await localDataSource.getStudentById(studentId);
-            final s = cachedStudent ?? _skeletonStudent(studentId);
-            return Right(Enrollment(id: '', student: s, joinedAt: DateTime.now()));
-          }
-        } catch (_) {}
-
-        UserModel? cachedStudent;
-        try {
-          cachedStudent = await localDataSource.getStudentById(studentId);
-        } catch (_) {}
-
-        final studentModel = cachedStudent ?? _skeletonStudent(studentId);
-
-        String? enrollmentId;
-        try {
-          enrollmentId = await localDataSource.addStudentLocally(
-            classId: classId,
-            student: studentModel,
-          );
-        } catch (_) {}
-
-        await syncQueue.enqueue(SyncQueueEntry(
-          id: const Uuid().v4(),
-          entityType: SyncEntityType.classEntity,
-          operation: SyncOperation.addEnrollment,
-          payload: {
-            'class_id': classId,
-            'student_id': studentId,
-            if (cachedStudent != null) 'student_username': cachedStudent.username,
-            if (cachedStudent != null) 'student_full_name': cachedStudent.fullName,
-            if (enrollmentId != null) 'local_enrollment_id': enrollmentId,
-          },
-          status: SyncStatus.pending,
-          retryCount: 0,
-          maxRetries: 5,
-          createdAt: DateTime.now(),
-        ));
-
-        try {
-          await localDataSource.getCachedClassDetail(classId);
-        } catch (_) {
-          // Non-critical
-        }
-
-        return Right(Enrollment(id: '', student: studentModel, joinedAt: DateTime.now()));
+        return _addStudentOffline(classId, studentId);
       }
 
       final result = await remoteDataSource.addStudent(
@@ -76,13 +28,69 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
       syncInBackgroundForClass(classId);
 
       return Right(result);
+    } on NetworkException {
+      // Server was thought reachable but API failed → fall back to offline queue
+      return _addStudentOffline(classId, studentId);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
+  }
+
+  Future<Right<Failure, Enrollment>> _addStudentOffline(
+    String classId,
+    String studentId,
+  ) async {
+    // Prevent duplicate queue entries
+    try {
+      final alreadyEnrolled = await localDataSource.getEnrolledStudentIds(classId);
+      if (alreadyEnrolled.contains(studentId)) {
+        final cachedStudent = await localDataSource.getStudentById(studentId);
+        final s = cachedStudent ?? _skeletonStudent(studentId);
+        return Right(Enrollment(id: '', student: s, joinedAt: DateTime.now()));
+      }
+    } catch (_) {}
+
+    UserModel? cachedStudent;
+    try {
+      cachedStudent = await localDataSource.getStudentById(studentId);
+    } catch (_) {}
+
+    final studentModel = cachedStudent ?? _skeletonStudent(studentId);
+
+    String? enrollmentId;
+    try {
+      enrollmentId = await localDataSource.addStudentLocally(
+        classId: classId,
+        student: studentModel,
+      );
+    } catch (_) {}
+
+    await syncQueue.enqueue(SyncQueueEntry(
+      id: const Uuid().v4(),
+      entityType: SyncEntityType.classEntity,
+      operation: SyncOperation.addEnrollment,
+      payload: {
+        'class_id': classId,
+        'student_id': studentId,
+        if (cachedStudent != null) 'student_username': cachedStudent.username,
+        if (cachedStudent != null) 'student_full_name': cachedStudent.fullName,
+        if (enrollmentId != null) 'local_enrollment_id': enrollmentId,
+      },
+      status: SyncStatus.pending,
+      retryCount: 0,
+      maxRetries: 5,
+      createdAt: DateTime.now(),
+    ));
+
+    try {
+      await localDataSource.getCachedClassDetail(classId);
+    } catch (_) {
+      // Non-critical
+    }
+
+    return Right(Enrollment(id: '', student: studentModel, joinedAt: DateTime.now()));
   }
 
   @override
@@ -92,31 +100,7 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
-        try {
-          await localDataSource.removeStudentLocally(
-            classId: classId,
-            studentId: studentId,
-          );
-        } catch (_) {}
-
-        await syncQueue.enqueue(SyncQueueEntry(
-          id: const Uuid().v4(),
-          entityType: SyncEntityType.classEntity,
-          operation: SyncOperation.removeEnrollment,
-          payload: {'class_id': classId, 'student_id': studentId},
-          status: SyncStatus.pending,
-          retryCount: 0,
-          maxRetries: 5,
-          createdAt: DateTime.now(),
-        ));
-
-        try {
-          await localDataSource.getCachedClassDetail(classId);
-        } catch (_) {
-          // Non-critical
-        }
-
-        return const Right(null);
+        return _removeStudentOffline(classId, studentId);
       }
 
       await remoteDataSource.removeStudent(
@@ -127,13 +111,45 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
       syncInBackgroundForClass(classId);
 
       return const Right(null);
+    } on NetworkException {
+      // Server was thought reachable but API failed → fall back to offline queue
+      return _removeStudentOffline(classId, studentId);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
+  }
+
+  Future<Right<Failure, void>> _removeStudentOffline(
+    String classId,
+    String studentId,
+  ) async {
+    try {
+      await localDataSource.removeStudentLocally(
+        classId: classId,
+        studentId: studentId,
+      );
+    } catch (_) {}
+
+    await syncQueue.enqueue(SyncQueueEntry(
+      id: const Uuid().v4(),
+      entityType: SyncEntityType.classEntity,
+      operation: SyncOperation.removeEnrollment,
+      payload: {'class_id': classId, 'student_id': studentId},
+      status: SyncStatus.pending,
+      retryCount: 0,
+      maxRetries: 5,
+      createdAt: DateTime.now(),
+    ));
+
+    try {
+      await localDataSource.getCachedClassDetail(classId);
+    } catch (_) {
+      // Non-critical
+    }
+
+    return const Right(null);
   }
 
   @override

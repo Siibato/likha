@@ -48,7 +48,7 @@ class SubmissionSummaryModel extends SubmissionSummary {
       finalScore: (json['final_score'] as num? ?? 0).toDouble(),
       isSubmitted: json['submitted_at'] != null,
       assessmentId: json['assessment_id'] as String? ?? '',
-      totalPoints: json['total_points'] as int? ?? 0,
+      totalPoints: (json['total_points'] as num?)?.toInt() ?? 0,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : null,
@@ -76,7 +76,7 @@ class SubmissionSummaryModel extends SubmissionSummary {
       finalScore: (map['earned_points'] as num?)?.toDouble() ?? 0.0,
       isSubmitted: map['submitted_at'] != null,
       assessmentId: map['assessment_id'] as String? ?? '',
-      totalPoints: map['total_points'] as int? ?? 0,
+      totalPoints: (map['total_points'] as num?)?.toInt() ?? 0,
       createdAt: map['created_at'] != null
           ? DateTime.parse(map['created_at'] as String)
           : null,
@@ -139,7 +139,7 @@ class SubmissionDetailModel extends SubmissionDetail {
       autoScore: (json['auto_score'] as num? ?? 0).toDouble(),
       finalScore: (json['final_score'] as num? ?? 0).toDouble(),
       isSubmitted: json['submitted_at'] != null,
-      totalPoints: json['total_points'] as int? ?? 0,
+      totalPoints: (json['total_points'] as num?)?.toInt() ?? 0,
       answers: (json['answers'] as List<dynamic>)
           .map((e) =>
               SubmissionAnswerModel.fromJson(e as Map<String, dynamic>))
@@ -329,8 +329,8 @@ class StudentAnswerResultModel extends StudentAnswerResult {
       questionId: json['question_id'] as String,
       questionText: json['question_text'] as String,
       questionType: json['question_type'] as String,
-      points: json['question_points'] as int? ?? 0,
-      pointsAwarded: (json['points_earned'] as num? ?? 0).toDouble(),
+      points: json['points'] as int? ?? json['question_points'] as int? ?? 0,
+      pointsAwarded: (json['points_awarded'] as num? ?? json['points_earned'] as num? ?? 0).toDouble(),
       isCorrect: json['is_correct'] as bool?,
       answerText: json['answer_text'] as String?,
       selectedChoices: (json['selected_choices'] as List<dynamic>?)

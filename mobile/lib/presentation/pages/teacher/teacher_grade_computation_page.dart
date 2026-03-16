@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
@@ -145,6 +146,7 @@ class _TeacherGradeComputationPageState
                                         TextFormField(
                                           controller: _assignmentWeightController,
                                           keyboardType: TextInputType.number,
+                                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                                           decoration: InputDecoration(
                                             hintText: '50',
                                             suffixText: '%',
@@ -178,6 +180,7 @@ class _TeacherGradeComputationPageState
                                         TextFormField(
                                           controller: _assessmentWeightController,
                                           keyboardType: TextInputType.number,
+                                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                                           decoration: InputDecoration(
                                             hintText: '50',
                                             suffixText: '%',
