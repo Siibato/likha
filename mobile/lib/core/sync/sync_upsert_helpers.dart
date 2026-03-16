@@ -445,7 +445,7 @@ class SyncUpsertHelpers {
           'started_at': data['started_at'] ?? DateTime.now().toIso8601String(),
           'submitted_at': data['submitted_at'],
           'total_points': data['total_points'] ?? 0,
-          'earned_points': ((data['earned_points'] ?? data['auto_score'] ?? data['final_score']) as num?)?.toDouble() ?? 0.0,
+          'earned_points': ((data['earned_points'] ?? data['auto_score'] ?? data['final_score'] ?? data['total_points']) as num?)?.toDouble() ?? 0.0,
           'created_at': data['created_at'] ?? DateTime.now().toIso8601String(),
           'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
           'deleted_at': data['deleted_at'],

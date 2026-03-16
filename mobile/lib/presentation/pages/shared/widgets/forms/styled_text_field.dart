@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// A styled text input field that matches the app's design system.
 ///
@@ -11,7 +12,8 @@ class StyledTextField extends StatelessWidget {
   final bool enabled;
   final String? Function(String?)? validator;
   final TextInputType? keyboardType;
-  final int maxLines;
+  final int? maxLines;
+  final int? minLines;
   final String? hintText;
   final bool obscureText;
   final Widget? suffixIcon;
@@ -19,6 +21,7 @@ class StyledTextField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final FocusNode? focusNode;
   final String? errorText;
+  final List<TextInputFormatter>? inputFormatters;
 
   const StyledTextField({
     super.key,
@@ -29,6 +32,7 @@ class StyledTextField extends StatelessWidget {
     this.validator,
     this.keyboardType,
     this.maxLines = 1,
+    this.minLines,
     this.hintText,
     this.obscureText = false,
     this.suffixIcon,
@@ -36,6 +40,7 @@ class StyledTextField extends StatelessWidget {
     this.onChanged,
     this.focusNode,
     this.errorText,
+    this.inputFormatters,
   });
 
   @override
@@ -56,16 +61,19 @@ class StyledTextField extends StatelessWidget {
           enabled: enabled,
           keyboardType: keyboardType,
           maxLines: maxLines,
+          minLines: minLines,
           obscureText: obscureText,
           readOnly: readOnly,
           onChanged: onChanged,
           focusNode: focusNode,
+          inputFormatters: inputFormatters,
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w500,
             color: Color(0xFF202020),
           ),
           decoration: InputDecoration(
+            alignLabelWithHint: maxLines != 1 || maxLines == null,
             labelText: label,
             hintText: hintText,
             errorText: errorText,
@@ -78,11 +86,24 @@ class StyledTextField extends StatelessWidget {
               fontSize: 14,
               color: Color(0xFFCCCCCC),
             ),
-            prefixIcon: Icon(
-              icon,
-              color: const Color(0xFF999999),
-              size: 22,
-            ),
+            prefixIcon: maxLines != 1 || maxLines == null
+                ? Align(
+                    alignment: Alignment.topCenter,
+                    widthFactor: 1.0,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 14),
+                      child: Icon(
+                        icon,
+                        color: const Color(0xFF999999),
+                        size: 22,
+                      ),
+                    ),
+                  )
+                : Icon(
+                    icon,
+                    color: const Color(0xFF999999),
+                    size: 22,
+                  ),
             suffixIcon: suffixIcon,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),

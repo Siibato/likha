@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class ClassSectionHeader extends StatelessWidget {
   final String title;
   final bool showBackButton;
+  final double fontSize;
 
   const ClassSectionHeader({
     super.key,
     required this.title,
     this.showBackButton = false,
+    this.fontSize = 28,
   });
 
   @override
@@ -51,10 +53,10 @@ class ClassSectionHeader extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
-                fontSize: 32,
+              style: TextStyle(
+                fontSize: fontSize,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF2B2B2B),
+                color: const Color(0xFF2B2B2B),
                 letterSpacing: -0.5,
               ),
             ),

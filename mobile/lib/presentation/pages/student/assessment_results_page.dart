@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/student/widgets/score_summary_card.dart';
 import 'package:likha/presentation/pages/student/widgets/answer_result_card.dart';
@@ -49,21 +50,135 @@ class _AssessmentResultsPageState
         .loadStudentResultsByAssessment(widget.assessmentId!, user.id);
   }
 
+  Widget _buildResultsNotReleasedBox() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundSecondary,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.borderLight,
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE0E0E0),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.hourglass_bottom_rounded,
+                size: 24,
+                color: AppColors.foregroundTertiary,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Results Pending',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF2B2B2B),
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Your teacher hasn\'t released results yet',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.foregroundSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResultsUnavailableBox() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundSecondary,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.borderLight,
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFE0E0),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.info_outline_rounded,
+                size: 24,
+                color: const Color(0xFFD32F2F),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Results Not Yet Available',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF2B2B2B),
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Your results will appear here once your teacher releases them',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.foregroundSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(assessmentProvider);
     final result = state.studentResult;
-
-    ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
-      if (next.error != null && prev?.error != next.error) {
-        ref.read(assessmentProvider.notifier).clearMessages();
-      }
-    });
+    final isResultsNotReleased =
+        state.error?.toLowerCase().contains('not been released') ?? false;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       body: SafeArea(
-        child: state.isLoading || result == null
+        child: state.isLoading && result == null && !isResultsNotReleased
             ? Center(
                 child: state.error != null
                     ? Column(
@@ -131,24 +246,28 @@ class _AssessmentResultsPageState
                     ),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
-                        ScoreSummaryCard(result: result),
-                        const SizedBox(height: 32),
-                        const Text(
-                          'Question Breakdown',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF2B2B2B),
-                            letterSpacing: -0.4,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        ...result.answers.asMap().entries.map(
-                              (entry) => AnswerResultCard(
-                                answer: entry.value,
-                                questionNumber: entry.key + 1,
-                              ),
+                        if (isResultsNotReleased) _buildResultsNotReleasedBox(),
+                        if (result != null) ...[
+                          ScoreSummaryCard(result: result),
+                          const SizedBox(height: 32),
+                          const Text(
+                            'Question Breakdown',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF2B2B2B),
+                              letterSpacing: -0.4,
                             ),
+                          ),
+                          const SizedBox(height: 16),
+                          ...result.answers.asMap().entries.map(
+                                (entry) => AnswerResultCard(
+                                  answer: entry.value,
+                                  questionNumber: entry.key + 1,
+                                ),
+                              ),
+                        ],
+                        if (result == null && !isResultsNotReleased) _buildResultsUnavailableBox(),
                         const SizedBox(height: 40),
                       ]),
                     ),

@@ -40,7 +40,7 @@ class ClassPerformanceCard extends StatelessWidget {
                 child: _MetricCard(
                   label: 'Mean',
                   value: classStats.mean.toStringAsFixed(1),
-                  color: const Color(0xFF42A5F5),
+                  backgroundColor: const Color(0xFFF5F5F5),
                 ),
               ),
               const SizedBox(width: 10),
@@ -48,7 +48,7 @@ class ClassPerformanceCard extends StatelessWidget {
                 child: _MetricCard(
                   label: 'Median',
                   value: classStats.median.toStringAsFixed(1),
-                  color: const Color(0xFF9C27B0),
+                  backgroundColor: const Color(0xFFF5F5F5),
                 ),
               ),
             ],
@@ -60,7 +60,7 @@ class ClassPerformanceCard extends StatelessWidget {
                 child: _MetricCard(
                   label: 'Highest',
                   value: classStats.highest.toStringAsFixed(1),
-                  color: const Color(0xFF4CAF50),
+                  backgroundColor: const Color(0xFFF0F0F0),
                 ),
               ),
               const SizedBox(width: 10),
@@ -68,7 +68,7 @@ class ClassPerformanceCard extends StatelessWidget {
                 child: _MetricCard(
                   label: 'Lowest',
                   value: classStats.lowest.toStringAsFixed(1),
-                  color: const Color(0xFFEF5350),
+                  backgroundColor: const Color(0xFFF0F0F0),
                 ),
               ),
             ],
@@ -82,12 +82,12 @@ class ClassPerformanceCard extends StatelessWidget {
 class _MetricCard extends StatelessWidget {
   final String label;
   final String value;
-  final Color color;
+  final Color backgroundColor;
 
   const _MetricCard({
     required this.label,
     required this.value,
-    required this.color,
+    required this.backgroundColor,
   });
 
   @override
@@ -95,10 +95,10 @@ class _MetricCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: color.withValues(alpha: 0.3),
+          color: const Color(0xFFE0E0E0),
           width: 1,
         ),
       ),
@@ -106,10 +106,10 @@ class _MetricCard extends StatelessWidget {
         children: [
           Text(
             value,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w700,
-              color: color,
+              color: Color(0xFF2B2B2B),
               letterSpacing: -0.5,
             ),
           ),

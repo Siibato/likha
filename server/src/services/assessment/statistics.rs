@@ -101,25 +101,17 @@ impl super::AssessmentService {
         let highest = *sorted_scores.last().unwrap();
         let lowest = *sorted_scores.first().unwrap();
 
-        let total = total_points as f64;
-        let distribution = if total > 0.0 {
-            let buckets = vec![
-                ("0-20%", 0.0, 0.2),
-                ("21-40%", 0.2, 0.4),
-                ("41-60%", 0.4, 0.6),
-                ("61-80%", 0.6, 0.8),
-                ("81-100%", 0.8, 1.0),
-            ];
-            buckets.into_iter().map(|(range, low, high)| {
-                let count = scores.iter().filter(|&&s| {
-                    let pct = s / total;
-                    pct >= low && (pct < high || (high == 1.0 && pct <= high))
-                }).count();
-                ScoreBucket {
-                    range: range.to_string(),
-                    count,
-                }
-            }).collect()
+        let distribution = if total_points > 0 {
+            use std::collections::HashMap;
+            let mut score_map: HashMap<i32, usize> = HashMap::new();
+            for &s in scores {
+                *score_map.entry(s.floor() as i32).or_insert(0) += 1;
+            }
+            let mut buckets: Vec<ScoreBucket> = score_map.into_iter()
+                .map(|(score, count)| ScoreBucket { score, count })
+                .collect();
+            buckets.sort_by_key(|b| b.score);
+            buckets
         } else {
             Vec::new()
         };

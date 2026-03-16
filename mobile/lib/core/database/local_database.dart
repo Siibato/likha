@@ -26,8 +26,9 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 1,
+      version: 2,
       onCreate: _createTables,
+      onUpgrade: _upgradeDatabase,
       onDowngrade: _downgradeDatabase,
       onOpen: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
@@ -395,6 +396,15 @@ class LocalDatabase {
         )
       ''');
 
+      // Student results cache table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS student_results_cache (
+          submission_id TEXT PRIMARY KEY,
+          results_json TEXT NOT NULL,
+          cached_at TEXT NOT NULL
+        )
+      ''');
+
       // Create indexes
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_class_id ON class_participants(class_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_user_id ON class_participants(user_id)');
@@ -429,6 +439,19 @@ class LocalDatabase {
     });
   }
 
+  Future<void> _upgradeDatabase(Database db, int oldVersion, int newVersion) async {
+    // Handle upgrade: v1 → v2 adds student_results_cache table
+    if (oldVersion < 2) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS student_results_cache (
+          submission_id TEXT PRIMARY KEY,
+          results_json TEXT NOT NULL,
+          cached_at TEXT NOT NULL
+        )
+      ''');
+    }
+  }
+
   Future<void> _downgradeDatabase(Database db, int oldVersion, int newVersion) async {
     // Handle downgrade from higher versions to v1 by doing a nuclear reset
     // Drop all tables in reverse FK order and recreate with v1 schema
@@ -460,6 +483,7 @@ class LocalDatabase {
       'users',
       'sync_queue',
       'sync_metadata',
+      'student_results_cache',
     ];
 
     for (final table in tables) {

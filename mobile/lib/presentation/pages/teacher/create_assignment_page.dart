@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/constants/file_types.dart';
 import 'package:likha/core/errors/error_messages.dart';
@@ -602,6 +603,7 @@ class _MaxFileSizeField extends StatelessWidget {
       controller: controller,
       enabled: enabled,
       keyboardType: TextInputType.number,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
       style: const TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w500,

@@ -53,7 +53,7 @@ impl super::SyncPushService {
                     });
                 }
 
-                match self.assessment_service.add_questions(assessment_id, AddQuestionsRequest { questions }, user_id).await {
+                match self.assessment_service.insert_questions_for_assessment(assessment_id, questions, user_id).await {
                     Ok(mut responses) => match responses.pop() {
                         Some(r) => self.success_result(op, Some(r.id.to_string()), Some(Utc::now().to_rfc3339())),
                         None => self.error_result(op, "No questions returned from server"),

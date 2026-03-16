@@ -70,17 +70,17 @@ class ClassStatisticsModel extends ClassStatistics {
 }
 
 class ScoreBucketModel extends ScoreBucket {
-  const ScoreBucketModel({required super.range, required super.count});
+  const ScoreBucketModel({required super.score, required super.count});
 
   factory ScoreBucketModel.fromJson(Map<String, dynamic> json) {
     return ScoreBucketModel(
-      range: json['range'] as String,
+      score: json['score'] as int,
       count: json['count'] as int,
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'range': range,
+    'score': score,
     'count': count,
   };
 }

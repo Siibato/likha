@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/presentation/widgets/styled_dialog.dart';
 
@@ -68,6 +69,7 @@ class _ReorderPositionDialogState extends State<ReorderPositionDialog> {
           TextField(
             controller: _controller,
             keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             autofocus: true,
             style: const TextStyle(
               fontSize: 15,

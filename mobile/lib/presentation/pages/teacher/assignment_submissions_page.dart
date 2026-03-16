@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/core/errors/error_messages.dart';
+import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/presentation/pages/teacher/grade_submission_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/empty_submissions_state.dart';
 import 'package:likha/presentation/pages/teacher/widgets/submission_card.dart';
@@ -25,6 +27,8 @@ class AssignmentSubmissionsPage extends ConsumerStatefulWidget {
 
 class _AssignmentSubmissionsPageState
     extends ConsumerState<AssignmentSubmissionsPage> {
+  bool _isDownloadingAll = false;
+
   @override
   void initState() {
     super.initState();
@@ -33,6 +37,31 @@ class _AssignmentSubmissionsPageState
           .read(assignmentProvider.notifier)
           .loadSubmissions(widget.assignmentId);
     });
+  }
+
+  Future<void> _downloadAll() async {
+    setState(() => _isDownloadingAll = true);
+    context.showInfoSnackBar('Downloading submission files...', durationMs: 60000);
+
+    final (count, totalUncached) = await ref.read(assignmentProvider.notifier).downloadAllSubmissionFiles();
+
+    if (!mounted) return;
+    setState(() => _isDownloadingAll = false);
+
+    // Dismiss the info snackbar
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+    final error = ref.read(assignmentProvider).error;
+    if (error != null) {
+      context.showErrorSnackBar(AppErrorMapper.toUserMessage(error) ?? 'Download failed');
+      ref.read(assignmentProvider.notifier).clearMessages();
+    } else if (count > 0) {
+      context.showSuccessSnackBar('Downloaded $count file(s). All submissions viewable offline.');
+    } else if (totalUncached > 0) {
+      context.showWarningSnackBar('Some files could not be downloaded. Please try again.');
+    } else {
+      context.showInfoSnackBar('All files already downloaded.');
+    }
   }
 
   @override
@@ -67,6 +96,7 @@ class _AssignmentSubmissionsPageState
             ),
           ],
         ),
+        actions: [],
       ),
       body: state.isLoading && state.submissions.isEmpty
           ? const Center(
@@ -111,6 +141,54 @@ class _AssignmentSubmissionsPageState
                     },
                   ),
                 ),
+      bottomNavigationBar: state.submissions.isEmpty
+          ? null
+          : Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  top: BorderSide(
+                    color: const Color(0xFFE0E0E0),
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: FilledButton(
+                onPressed: _isDownloadingAll ? null : _downloadAll,
+                style: FilledButton.styleFrom(
+                  backgroundColor: _isDownloadingAll
+                      ? const Color(0xFFCCCCCC)
+                      : const Color(0xFF2B2B2B),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: _isDownloadingAll
+                    ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.download_for_offline_rounded, size: 20),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Download All Files',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
     );
   }
 }

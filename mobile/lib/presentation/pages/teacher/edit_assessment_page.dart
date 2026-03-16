@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
@@ -208,6 +209,7 @@ class _EditAssessmentPageState extends ConsumerState<EditAssessmentPage> {
                 controller: _timeLimitController,
                 icon: Icons.timer_outlined,
                 keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Time limit is required';

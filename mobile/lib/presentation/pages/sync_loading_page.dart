@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
 
@@ -38,7 +39,7 @@ class SyncLoadingPage extends ConsumerWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              if (hasFailed && syncState.lastError != null) ...[
+              if (hasFailed && AppErrorMapper.toUserMessage(syncState.lastError) != null) ...[
                 const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -48,7 +49,7 @@ class SyncLoadingPage extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    'Error: ${syncState.lastError}',
+                    'Error: ${AppErrorMapper.toUserMessage(syncState.lastError)!}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Colors.red[900],
                     ),

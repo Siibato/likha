@@ -108,7 +108,11 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
 
     ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
       if (next.error != null && prev?.error != next.error) {
-        setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
+        final isResultsNotReleased =
+            next.error!.toLowerCase().contains('not been released');
+        if (!isResultsNotReleased) {
+          setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
+        }
         ref.read(assessmentProvider.notifier).clearMessages();
       }
     });

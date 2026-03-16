@@ -218,7 +218,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
         submittedAt: rawRow['submitted_at'] != null ? DateTime.parse(rawRow['submitted_at'] as String) : null,
         autoScore: (rawRow['earned_points'] as num?)?.toDouble() ?? 0.0,
         finalScore: (rawRow['earned_points'] as num?)?.toDouble() ?? 0.0,
-        totalPoints: rawRow['total_points'] as int? ?? 0,
+        totalPoints: (rawRow['total_points'] as num?)?.toInt() ?? 0,
         isSubmitted: rawRow['submitted_at'] != null,
       );
     } catch (e) {
@@ -289,7 +289,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
         autoScore: (sub['earned_points'] as num?)?.toDouble() ?? 0.0,
         finalScore: (sub['earned_points'] as num?)?.toDouble() ?? 0.0,
         isSubmitted: sub['submitted_at'] != null,
-        totalPoints: sub['total_points'] as int? ?? 0,
+        totalPoints: (sub['total_points'] as num?)?.toInt() ?? 0,
         answers: answers,
       );
     } catch (e) {
@@ -347,7 +347,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
         submittedAt: row['submitted_at'] != null ? DateTime.parse(row['submitted_at'] as String) : null,
         autoScore: (row['earned_points'] as num?)?.toDouble() ?? 0.0,
         finalScore: (row['earned_points'] as num?)?.toDouble() ?? 0.0,
-        totalPoints: row['total_points'] as int? ?? 0,
+        totalPoints: (row['total_points'] as num?)?.toInt() ?? 0,
         isSubmitted: row['submitted_at'] != null,
       )).toList();
     } catch (e) {

@@ -41,13 +41,13 @@ class ClassStatistics extends Equatable {
 }
 
 class ScoreBucket extends Equatable {
-  final String range;
+  final int score;
   final int count;
 
-  const ScoreBucket({required this.range, required this.count});
+  const ScoreBucket({required this.score, required this.count});
 
   @override
-  List<Object?> get props => [range, count];
+  List<Object?> get props => [score, count];
 }
 
 class QuestionStatistics extends Equatable {

@@ -46,9 +46,9 @@ class ScoreDistributionCard extends StatelessWidget {
               child: Row(
                 children: [
                   SizedBox(
-                    width: 75,
+                    width: 50,
                     child: Text(
-                      bucket.range,
+                      '${bucket.score}',
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,

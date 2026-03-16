@@ -18,6 +18,24 @@ mixin ClassCrudMixin on ClassRepositoryBase {
     String? teacherFullName,
   }) async {
     try {
+      // Client-side duplicate check before creating
+      try {
+        final allCached = await localDataSource.getCachedClasses();
+        final normalizedTitle = title.trim().toLowerCase();
+        if (teacherId != null) {
+          final hasDuplicate = allCached.any(
+            (c) => c.teacherId == teacherId && c.title.toLowerCase() == normalizedTitle,
+          );
+          if (hasDuplicate) {
+            return Left(ServerFailure(
+              'A class named "${title.trim()}" already exists for this teacher',
+            ));
+          }
+        }
+      } catch (_) {
+        // Cache check failed, proceed with normal flow (server will validate)
+      }
+
       if (!serverReachabilityService.isServerReachable) {
         final localId = const Uuid().v4();
 

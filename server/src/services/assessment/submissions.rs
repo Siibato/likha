@@ -227,6 +227,8 @@ impl super::AssessmentService {
             started_at: submitted.started_at.to_string(),
             submitted_at: submitted.submitted_at.map(|dt| dt.to_string()),
             total_points: submitted.total_points,
+            auto_score: auto_score,
+            final_score: final_score,
         };
 
         Ok(response)

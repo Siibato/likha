@@ -65,7 +65,6 @@ class TeacherProfilePage extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  const Spacer(),
                 ],
               ),
             ),

@@ -16,9 +16,17 @@ class ServerReachabilityServiceImpl implements ServerReachabilityService {
   final Duration checkInterval;
   final Duration timeout;
 
+  // Adaptive polling constants
+  static const Duration _unreachableInterval = Duration(seconds: 10);
+  static const Duration _backoffInterval = Duration(seconds: 60);
+  static const int _backoffThreshold = 60; // consecutive failures before backoff
+
   late StreamController<bool> _reachabilityStream;
-  late Timer? _periodicCheck;
+  Timer? _nextCheck;
   bool _isServerReachable = false;
+  int _consecutiveFailures = 0;
+  bool _isDisposed = false;
+  bool _checkInFlight = false;
 
   ServerReachabilityServiceImpl(
     this._dio, {
@@ -35,20 +43,23 @@ class ServerReachabilityServiceImpl implements ServerReachabilityService {
 
   @override
   Future<void> initialize() async {
+    _isDisposed = false;
     _reachabilityStream = StreamController<bool>.broadcast();
 
     // Initial check
     await checkNow();
 
-    // Periodic checks (we use unawaited here since Timer.periodic doesn't wait)
-    _periodicCheck = Timer.periodic(checkInterval, (_) {
-      // Fire-and-forget: checkNow() updates the internal state
-      unawaited(checkNow());
-    });
+    // checkNow() schedules the next one-shot timer internally via _scheduleNext()
   }
 
   @override
   Future<bool> checkNow() async {
+    if (_checkInFlight) return _isServerReachable;
+    _checkInFlight = true;
+
+    _nextCheck?.cancel();
+    _nextCheck = null;
+
     try {
       final response = await _dio.get(
         '/api/v1/health',
@@ -62,7 +73,13 @@ class ServerReachabilityServiceImpl implements ServerReachabilityService {
       final wasReachable = _isServerReachable;
       _isServerReachable = response.statusCode == 200;
 
-      if (wasReachable != _isServerReachable) {
+      if (_isServerReachable) {
+        _consecutiveFailures = 0;
+      } else {
+        _consecutiveFailures++;
+      }
+
+      if (wasReachable != _isServerReachable && !_isDisposed) {
         _reachabilityStream.add(_isServerReachable);
       }
 
@@ -70,18 +87,41 @@ class ServerReachabilityServiceImpl implements ServerReachabilityService {
     } catch (e) {
       final wasReachable = _isServerReachable;
       _isServerReachable = false;
+      _consecutiveFailures++;
 
-      if (wasReachable) {
+      if (wasReachable && !_isDisposed) {
         _reachabilityStream.add(false);
       }
 
       return false;
+    } finally {
+      _checkInFlight = false;
+      _scheduleNext();
     }
+  }
+
+  void _scheduleNext() {
+    if (_isDisposed) return;
+
+    final Duration interval;
+    if (_isServerReachable) {
+      interval = checkInterval;
+    } else if (_consecutiveFailures < _backoffThreshold) {
+      interval = _unreachableInterval;
+    } else {
+      interval = _backoffInterval;
+    }
+
+    _nextCheck = Timer(interval, () {
+      unawaited(checkNow());
+    });
   }
 
   @override
   void dispose() {
-    _periodicCheck?.cancel();
+    _isDisposed = true;
+    _nextCheck?.cancel();
+    _nextCheck = null;
     _reachabilityStream.close();
   }
 }

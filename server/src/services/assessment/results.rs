@@ -51,11 +51,11 @@ impl super::AssessmentService {
             };
 
             let enumeration_answers = if question.question_type == "enumeration" {
-                let enum_texts = self.submission_repo.find_enumeration_answers(a.id).await?;
-                Some(enum_texts.into_iter().map(|answer_text| {
+                let enum_items = self.submission_repo.find_enumeration_answer_items(a.id).await?;
+                Some(enum_items.into_iter().map(|item| {
                     StudentEnumAnswerResult {
-                        answer_text,
-                        is_correct,
+                        answer_text: item.answer_text.unwrap_or_default(),
+                        is_correct: Some(item.is_correct),
                     }
                 }).collect())
             } else {
@@ -72,11 +72,23 @@ impl super::AssessmentService {
                     Some(answer_keys.iter().map(|a| a.answer_text.clone()).collect())
                 }
                 "enumeration" => {
-                    // New schema: use answer keys for enumeration
-                    let answer_keys = self.assessment_repo.find_correct_answers_by_question_id(question.id).await?;
-                    Some(answer_keys.iter().map(|a| a.answer_text.clone()).collect())
+                    // Fetch all enumeration slots and flatten all their acceptable answers
+                    let enum_items = self.assessment_repo.find_enumeration_items_for_question(question.id).await?;
+                    let all_acceptable: Vec<String> = enum_items
+                        .into_iter()
+                        .flat_map(|(_, acceptable)| acceptable.into_iter().map(|a| a.answer_text))
+                        .collect();
+                    if all_acceptable.is_empty() { None } else { Some(all_acceptable) }
                 }
                 _ => None,
+            };
+
+            // Fetch identification answer text from submission_answer_items
+            let answer_text = if question.question_type == "identification" {
+                let texts = self.submission_repo.find_enumeration_answers(a.id).await?;
+                texts.into_iter().next()
+            } else {
+                None
             };
 
             answer_results.push(StudentAnswerResultResponse {
@@ -86,7 +98,7 @@ impl super::AssessmentService {
                 points: question.points,
                 points_awarded: a.points,
                 is_correct,
-                answer_text: None, // Answer text is now in submission_answer_items
+                answer_text,
                 selected_choices,
                 enumeration_answers,
                 correct_answers,

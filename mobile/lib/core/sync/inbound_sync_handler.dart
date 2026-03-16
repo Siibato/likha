@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/sync/sync_logger.dart';
 import 'package:likha/core/sync/sync_state.dart';
@@ -123,27 +125,7 @@ class InboundSyncHandler {
       if (cid != null) studentsPerClassCount[cid] = (studentsPerClassCount[cid] ?? 0) + 1;
     }
 
-    // Upsert all base response data sequentially (proper await ensures committed before verification)
-    _log.warn('Starting base response data upsert (classes, enrollments, students)...');
-    await _upsertHelpers.upsertClasses(db, baseData['classes'] ?? []);
-    await _upsertHelpers.upsertEnrolledStudents(db, enrolledStudents);
-    await _upsertHelpers.upsertEnrollments(db, baseData['enrollments'] ?? [], enrolledStudents);
-    await _upsertHelpers.recalculateClassStudentCounts(db);
-
-    _log.baseResponse(
-      classes: (baseData['classes'] as List?)?.length ?? 0,
-      enrollments: rawEnrollments.length,
-      students: enrolledStudents.length,
-    );
-
-    // Log per-class student counts
-    final classes = (baseData['classes'] as List?)?.whereType<Map<String, dynamic>>().toList() ?? [];
-    for (final cls in classes) {
-      final clsId = cls['id']?.toString() ?? '';
-      _log.studentsPerClass(cls, studentsPerClassCount[clsId] ?? 0);
-    }
-
-    // Cache the logged-in user from sync response
+    // Cache the logged-in user from sync response (BEFORE enrollment upserts to avoid CASCADE DELETE)
     if (userData != null) {
       await db.insert(
         'users',
@@ -162,6 +144,26 @@ class InboundSyncHandler {
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
+    }
+
+    // Upsert all base response data sequentially (proper await ensures committed before verification)
+    _log.warn('Starting base response data upsert (classes, enrollments, students)...');
+    await _upsertHelpers.upsertClasses(db, baseData['classes'] ?? []);
+    await _upsertHelpers.upsertEnrolledStudents(db, enrolledStudents);
+    await _upsertHelpers.upsertEnrollments(db, baseData['enrollments'] ?? [], enrolledStudents);
+    await _upsertHelpers.recalculateClassStudentCounts(db);
+
+    _log.baseResponse(
+      classes: (baseData['classes'] as List?)?.length ?? 0,
+      enrollments: rawEnrollments.length,
+      students: enrolledStudents.length,
+    );
+
+    // Log per-class student counts
+    final classes = (baseData['classes'] as List?)?.whereType<Map<String, dynamic>>().toList() ?? [];
+    for (final cls in classes) {
+      final clsId = cls['id']?.toString() ?? '';
+      _log.studentsPerClass(cls, studentsPerClassCount[clsId] ?? 0);
     }
 
     // VERIFICATION: Check what was actually stored in SQLite (after all awaits complete)
@@ -332,14 +334,40 @@ class InboundSyncHandler {
         await _upsertHelpers.upsertLearningMaterials(db, learningMaterials);
         await _upsertHelpers.upsertMaterialFiles(db, materialFiles);
 
-        // NOTE: assessment_statistics_cache and student_results_cache tables don't exist in schema
-        // These upserts are skipped to prevent silent failures
+        // NOTE: assessment_statistics_cache is still skipped (no use case), but student_results_cache now exists
         _log.warn(
           'Skipping upsert of ${assessmentStatistics.length} assessment_statistics (table not in schema)',
         );
-        _log.warn(
-          'Skipping upsert of ${studentResults.length} student_results (table not in schema)',
-        );
+
+        // Write student_results to cache
+        if (studentResults.isNotEmpty) {
+          await db.transaction((txn) async {
+            for (final result in studentResults) {
+              try {
+                final data = result as Map<String, dynamic>;
+                final submissionId = data['submission_id']?.toString();
+                if (submissionId == null || submissionId.isEmpty) {
+                  _log.warn('Student result missing submission_id, skipping');
+                  continue;
+                }
+
+                final now = DateTime.now().toIso8601String();
+                await txn.insert(
+                  'student_results_cache',
+                  {
+                    'submission_id': submissionId,
+                    'results_json': jsonEncode(data),
+                    'cached_at': now,
+                  },
+                  conflictAlgorithm: ConflictAlgorithm.replace,
+                );
+              } catch (e) {
+                _log.warn('Failed to cache student result: $e');
+              }
+            }
+          });
+          _log.upsertSummary('student_results_cache', studentResults.length);
+        }
       }
     }
 

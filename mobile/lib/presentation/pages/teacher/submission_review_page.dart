@@ -410,7 +410,7 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
       children: enumAnswers.asMap().entries.map((entry) {
         final idx = entry.key;
         final ea = entry.value;
-        final isCorrect = ea.isAutoCorrect == true || ea.isOverrideCorrect == true;
+        final isCorrect = ea.isOverrideCorrect ?? ea.isAutoCorrect ?? ea.isCorrect;
         return Padding(
           padding: const EdgeInsets.only(bottom: 4),
           child: Row(

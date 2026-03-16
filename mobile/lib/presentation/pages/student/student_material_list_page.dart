@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/teacher/material_detail_page.dart';
+import 'package:likha/presentation/pages/student/student_material_detail_page.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
 import 'package:likha/presentation/pages/shared/widgets/skeletons/skeleton_pulse.dart';
@@ -59,68 +59,28 @@ class _StudentMaterialListPageState extends ConsumerState<StudentMaterialListPag
                         itemBuilder: (_, __) => const MaterialCardSkeleton(),
                       ),
                     )
-                  : state.error != null && state.materials.isEmpty
-                      ? Center(
+                  : state.materials.isEmpty
+                      ? const Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
-                                Icons.wifi_off_rounded,
+                                Icons.library_books_outlined,
                                 size: 64,
-                                color: const Color(0xFFCCCCCC),
+                                color: Color(0xFFCCCCCC),
                               ),
-                              const SizedBox(height: 16),
-                              const Text(
-                                'Learning modules unavailable',
+                              SizedBox(height: 16),
+                              Text(
+                                'No modules yet',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Color(0xFF666666),
+                                  color: Color(0xFF999999),
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 32),
-                                child: Text(
-                                  'Connect to the internet to view modules',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Color(0xFF999999),
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-                              OutlinedButton(
-                                onPressed: () => ref
-                                    .read(learningMaterialProvider.notifier)
-                                    .loadMaterials(widget.classId),
-                                child: const Text('Retry'),
                               ),
                             ],
                           ),
                         )
-                      : state.materials.isEmpty
-                          ? const Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.library_books_outlined,
-                                    size: 64,
-                                    color: Color(0xFFCCCCCC),
-                                  ),
-                                  SizedBox(height: 16),
-                                  Text(
-                                    'No modules yet',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Color(0xFF999999),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : RefreshIndicator(
+                      : RefreshIndicator(
                               onRefresh: () => ref
                                   .read(learningMaterialProvider.notifier)
                                   .loadMaterials(widget.classId),
@@ -134,7 +94,7 @@ class _StudentMaterialListPageState extends ConsumerState<StudentMaterialListPag
                                     onTap: () => Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => MaterialDetailPage(
+                                        builder: (_) => StudentMaterialDetailPage(
                                           materialId: material.id,
                                         ),
                                       ),

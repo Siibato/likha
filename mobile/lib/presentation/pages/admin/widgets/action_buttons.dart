@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 
 class ActionButtons extends StatelessWidget {
@@ -71,11 +72,17 @@ class _ActionButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: isDisabled
               ? const Color(0xFFE0E0E0)
-              : backgroundColor.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(12),
+              : _getLightBackground(),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDisabled
+                ? const Color(0xFFCCCCCC)
+                : AppColors.borderLight,
+            width: 1,
+          ),
         ),
         child: Container(
-          margin: const EdgeInsets.fromLTRB(1, 1, 1, 2.5),
+          margin: const EdgeInsets.fromLTRB(1, 1, 1, 3.5),
           padding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 12,
@@ -83,8 +90,8 @@ class _ActionButton extends StatelessWidget {
           decoration: BoxDecoration(
             color: isDisabled
                 ? const Color(0xFFF5F5F5)
-                : backgroundColor.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(11),
+                : _getLightBackground(),
+            borderRadius: BorderRadius.circular(13),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -92,7 +99,7 @@ class _ActionButton extends StatelessWidget {
               Icon(
                 icon,
                 size: 18,
-                color: isDisabled ? const Color(0xFF999999) : backgroundColor,
+                color: isDisabled ? const Color(0xFF999999) : AppColors.foregroundPrimary,
               ),
               const SizedBox(width: 8),
               Text(
@@ -100,7 +107,7 @@ class _ActionButton extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: isDisabled ? const Color(0xFF999999) : backgroundColor,
+                  color: isDisabled ? const Color(0xFF999999) : AppColors.foregroundPrimary,
                 ),
               ),
             ],
@@ -108,5 +115,10 @@ class _ActionButton extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Color _getLightBackground() {
+    // Create a light tinted background while maintaining semantic color
+    return backgroundColor.withOpacity(0.12);
   }
 }
