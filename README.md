@@ -79,7 +79,7 @@ emulator -avd Medium_Phone_API_36.1
 
 **2. Low-resource device (Android 7.0, 512MB RAM):**
 ```bash
-emulator -avd lowres_device -memory 512
+emulator -avd lowres_device
 ```
 
 **3. Extreme low-resource device (Android 5.0, 256MB RAM - for testing extreme constraints):**

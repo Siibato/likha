@@ -30,6 +30,7 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
           entityType: SyncEntityType.assignment,
           operation: SyncOperation.create,
           payload: {
+            'id': assignmentId,
             'class_id': classId,
             'title': title,
             'instructions': instructions,

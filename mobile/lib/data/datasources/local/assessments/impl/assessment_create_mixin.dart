@@ -248,7 +248,8 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
           txn: txn,
         );
 
-        // Enqueue questions as a single operation
+        // Enqueue questions as a single operation with client-generated IDs (matching addQuestions pattern)
+        // Use createdAt + 1ms to ensure questions are processed AFTER assessment on the server
         await syncQueue.enqueue(
           SyncQueueEntry(
             id: const Uuid().v4(),
@@ -258,6 +259,7 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
               'assessment_id': assessmentId,
               'questions': questions.map((q) {
                 final map = <String, dynamic>{
+                  'id': q.id,
                   'question_type': q.questionType,
                   'question_text': q.questionText,
                   'points': q.points,
@@ -266,18 +268,26 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
                 if (q.isMultiSelect) map['is_multi_select'] = true;
                 if (q.choices != null) {
                   map['choices'] = q.choices!.map((c) => {
+                        'id': c.id,
                         'choice_text': c.choiceText,
                         'is_correct': c.isCorrect,
                         'order_index': c.orderIndex,
                       }).toList();
                 }
                 if (q.correctAnswers != null) {
-                  map['correct_answers'] = q.correctAnswers!.map((a) => a.answerText).toList();
+                  map['correct_answers'] = q.correctAnswers!.map((a) => {
+                        'id': a.id,
+                        'answer_text': a.answerText,
+                      }).toList();
                 }
                 if (q.enumerationItems != null) {
                   map['enumeration_items'] = q.enumerationItems!.map((e) => {
+                        'id': e.id,
                         'order_index': e.orderIndex,
-                        'acceptable_answers': e.acceptableAnswers.map((a) => a.answerText).toList(),
+                        'acceptable_answers': e.acceptableAnswers.map((a) => {
+                              'id': a.id,
+                              'answer_text': a.answerText,
+                            }).toList(),
                       }).toList();
                 }
                 return map;
@@ -286,7 +296,7 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
             status: SyncStatus.pending,
             retryCount: 0,
             maxRetries: 3,
-            createdAt: now,
+            createdAt: now.add(const Duration(milliseconds: 1)),
           ),
           txn: txn,
         );

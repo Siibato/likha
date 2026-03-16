@@ -5,6 +5,8 @@ import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/data/repositories/assessments/assessment_repository_base.dart';
+import 'package:likha/data/models/assessments/question_model.dart'
+    show QuestionModel, ChoiceModel, CorrectAnswerModel, EnumerationItemModel, EnumerationItemAnswerModel;
 import 'package:uuid/uuid.dart';
 
 mixin AssessmentCrudMixin on AssessmentRepositoryBase {
@@ -22,6 +24,89 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
+        final now = DateTime.now();
+
+        // When creating an assessment with questions (published or draft), use atomic creation method
+        if (questions != null && questions.isNotEmpty) {
+          // Convert questions to QuestionModel (same pattern as addQuestions)
+          final questionModels = questions.map((q) {
+            final id = const Uuid().v4();
+            return QuestionModel(
+              id: id,
+              assessmentId: '', // Will be set by createAssessmentWithQuestionsLocally
+              questionType: q['question_type'] as String,
+              questionText: q['question_text'] as String,
+              points: q['points'] as int,
+              orderIndex: q['order_index'] as int? ?? 0,
+              isMultiSelect: q['is_multi_select'] as bool? ?? false,
+              choices: (q['choices'] as List?)?.map((c) => ChoiceModel(
+                    id: const Uuid().v4(),
+                    choiceText: c['choice_text'] as String,
+                    isCorrect: c['is_correct'] as bool,
+                    orderIndex: c['order_index'] as int,
+                  )).toList(),
+              correctAnswers: (q['correct_answers'] as List?)?.map((a) =>
+                  CorrectAnswerModel(
+                    id: const Uuid().v4(),
+                    answerText:
+                        a is String ? a : (a as Map)['answer_text'] as String,
+                  )).toList(),
+              enumerationItems: (q['enumeration_items'] as List?)?.map((e) =>
+                  EnumerationItemModel(
+                    id: const Uuid().v4(),
+                    orderIndex: e['order_index'] as int,
+                    acceptableAnswers: (e['acceptable_answers'] as List?)
+                            ?.map((a) => EnumerationItemAnswerModel(
+                                  id: const Uuid().v4(),
+                                  answerText: a is String
+                                      ? a
+                                      : (a as Map)['answer_text'] as String,
+                                ))
+                            .toList() ??
+                        const [],
+                  )).toList(),
+            );
+          }).toList();
+
+          final assessmentId = await localDataSource.createAssessmentWithQuestionsLocally(
+            classId: classId,
+            title: title,
+            description: description,
+            timeLimitMinutes: timeLimitMinutes,
+            openAt: openAt,
+            closeAt: closeAt,
+            showResultsImmediately: showResultsImmediately,
+            isPublished: isPublished,
+            questions: questionModels,
+          );
+
+          // Calculate totalPoints from questions
+          int totalPoints = 0;
+          for (final q in questions) {
+            totalPoints += q['points'] as int? ?? 0;
+          }
+
+          return Right(Assessment(
+            id: assessmentId,
+            classId: classId,
+            title: title,
+            description: description,
+            timeLimitMinutes: timeLimitMinutes,
+            openAt: DateTime.parse(openAt),
+            closeAt: DateTime.parse(closeAt),
+            showResultsImmediately: showResultsImmediately ?? false,
+            resultsReleased: false,
+            isPublished: isPublished,
+            orderIndex: 0,
+            totalPoints: totalPoints,
+            questionCount: questions.length,
+            submissionCount: 0,
+            createdAt: now,
+            updatedAt: now,
+          ));
+        }
+
+        // Draft path: create without questions
         final assessmentId = await localDataSource.createAssessmentLocally(
           classId: classId,
           title: title,
@@ -33,7 +118,6 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           isPublished: isPublished,
         );
 
-        final now = DateTime.now();
         return Right(Assessment(
           id: assessmentId,
           classId: classId,
