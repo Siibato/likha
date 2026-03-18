@@ -280,13 +280,6 @@ impl ClassRepository {
         Ok(participants)
     }
 
-    pub async fn find_enrollments_by_class_id(
-        &self,
-        class_id: Uuid,
-    ) -> AppResult<Vec<class_participants::Model>> {
-        self.find_participants_by_class_id(class_id, Some("student")).await
-    }
-
     pub async fn find_participants_by_user_id(
         &self,
         user_id: Uuid,
@@ -344,7 +337,7 @@ impl ClassRepository {
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-        if let Some(p) = participant {
+        if let Some(_) = participant {
             let user = users::Entity::find_by_id(student_id)
                 .one(&self.db)
                 .await
@@ -353,22 +346,6 @@ impl ClassRepository {
         } else {
             Ok(false)
         }
-    }
-
-    pub async fn is_user_participating(
-        &self,
-        class_id: Uuid,
-        user_id: Uuid,
-    ) -> AppResult<bool> {
-        let participant = class_participants::Entity::find()
-            .filter(class_participants::Column::ClassId.eq(class_id))
-            .filter(class_participants::Column::UserId.eq(user_id))
-            .filter(class_participants::Column::RemovedAt.is_null())
-            .one(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        Ok(participant.is_some())
     }
 
     pub async fn find_teacher_of_class(&self, class_id: Uuid) -> AppResult<Option<users::Model>> {
@@ -401,7 +378,7 @@ impl ClassRepository {
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-        if let Some(p) = participant {
+        if let Some(_) = participant {
             let user = users::Entity::find_by_id(user_id)
                 .one(&self.db)
                 .await

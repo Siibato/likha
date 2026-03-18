@@ -141,7 +141,7 @@ impl super::AssessmentService {
         let assessment = self.assessment_repo.find_by_id(assessment_id).await?
             .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
 
-        let class = self.class_repo.find_by_id(assessment.class_id).await?
+        let _class = self.class_repo.find_by_id(assessment.class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
         if role == "student" && !assessment.is_published {
@@ -220,7 +220,7 @@ impl super::AssessmentService {
         let assessment = self.assessment_repo.find_by_id(assessment_id).await?
             .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
 
-        let class = self.class_repo.find_by_id(assessment.class_id).await?
+        let _class = self.class_repo.find_by_id(assessment.class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
         if !self.class_repo.is_teacher_of_class(teacher_id, assessment.class_id).await? {
@@ -284,7 +284,7 @@ impl super::AssessmentService {
         let assessment = self.assessment_repo.find_by_id(assessment_id).await?
             .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
 
-        let class = self.class_repo.find_by_id(assessment.class_id).await?
+        let _class = self.class_repo.find_by_id(assessment.class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
         if !self.class_repo.is_teacher_of_class(teacher_id, assessment.class_id).await? {

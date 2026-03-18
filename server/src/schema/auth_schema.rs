@@ -48,11 +48,6 @@ pub struct LockAccountRequest {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct ResetPasswordRequest {
-    pub user_id: Uuid,
-}
-
-#[derive(Debug, Deserialize)]
 pub struct UpdateAccountRequest {
     pub full_name: Option<String>,
     pub role: Option<String>,

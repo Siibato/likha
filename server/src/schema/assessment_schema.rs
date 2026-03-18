@@ -65,7 +65,6 @@ pub struct ChoiceInput {
 
 #[derive(Debug, Deserialize)]
 pub struct EnumerationItemInput {
-    pub order_index: i32,
     pub acceptable_answers: Vec<String>,
 }
 
@@ -91,11 +90,6 @@ pub struct AnswerInput {
 #[derive(Debug, Deserialize)]
 pub struct OverrideAnswerRequest {
     pub is_correct: bool,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct ReorderAssessmentRequest {
-    pub new_order_index: i32,
 }
 
 #[derive(Debug, Deserialize)]

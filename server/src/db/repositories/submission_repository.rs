@@ -81,16 +81,6 @@ impl SubmissionRepository {
         Ok(count as usize)
     }
 
-    pub async fn count_submitted_by_assessment_id(&self, assessment_id: Uuid) -> AppResult<usize> {
-        let count = assessment_submissions::Entity::find()
-            .filter(assessment_submissions::Column::AssessmentId.eq(assessment_id))
-            .filter(assessment_submissions::Column::SubmittedAt.is_not_null())
-            .count(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        Ok(count as usize)
-    }
-
     // ===== SUBMISSION ANSWERS =====
 
     pub async fn upsert_answer(
@@ -282,18 +272,6 @@ impl SubmissionRepository {
     ) -> AppResult<()> {
         let items = choice_ids.into_iter()
             .map(|choice_id| (None, Some(choice_id), None, false))
-            .collect();
-        self.save_answer_items(submission_answer_id, items).await
-    }
-
-    /// Save enumeration answers - wraps save_answer_items for backward compatibility
-    pub async fn save_enumeration_answers(
-        &self,
-        submission_answer_id: Uuid,
-        enum_answers: Vec<String>,
-    ) -> AppResult<()> {
-        let items = enum_answers.into_iter()
-            .map(|answer_text| (None, None, Some(answer_text), false))
             .collect();
         self.save_answer_items(submission_answer_id, items).await
     }

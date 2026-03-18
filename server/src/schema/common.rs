@@ -18,15 +18,6 @@ impl<T> ApiResponse<T> {
             error: None,
         }
     }
-
-    pub fn error(message: String) -> Self {
-        Self {
-            success: false,
-            status_code: 0,
-            data: None,
-            error: Some(message),
-        }
-    }
 }
 
 /// Helper function to create a success response with the correct status code.

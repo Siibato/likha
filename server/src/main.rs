@@ -244,7 +244,7 @@ fn create_app(
                 sync_delta_service,
             ),
         )
-        .layer(TimeoutLayer::new(Duration::from_secs(60)))
+        .layer(TimeoutLayer::with_status_code(axum::http::StatusCode::REQUEST_TIMEOUT, Duration::from_secs(60)))
         .layer(cors)
         .layer(middleware::logging_middleware())
 }

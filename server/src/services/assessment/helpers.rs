@@ -1,5 +1,4 @@
 use chrono::NaiveDateTime;
-use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
 use crate::schema::assessment_schema::*;
 use entity::assessment_questions;

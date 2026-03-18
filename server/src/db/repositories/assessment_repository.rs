@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use ::entity::{
     answer_key_acceptable_answers, answer_keys, assessment_questions, assessments,
-    question_choices, submission_answer_items,
+    question_choices,
 };
 use crate::utils::{AppError, AppResult};
 
@@ -123,14 +123,6 @@ impl AssessmentRepository {
             .update(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Failed to update assessment: {}", e)))
-    }
-
-    pub async fn delete_assessment(&self, id: Uuid) -> AppResult<()> {
-        assessments::Entity::delete_by_id(id)
-            .exec(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to delete assessment: {}", e)))?;
-        Ok(())
     }
 
     pub async fn publish_assessment(&self, id: Uuid) -> AppResult<assessments::Model> {
@@ -461,23 +453,7 @@ impl AssessmentRepository {
         Ok(result.flatten().unwrap_or(-1))
     }
 
-    pub async fn update_order_index(&self, id: Uuid, order_index: i32) -> AppResult<()> {
-        let assessment = assessments::ActiveModel {
-            id: Set(id),
-            order_index: Set(order_index),
-            updated_at: Set(Utc::now().naive_utc()),
-            ..Default::default()
-        };
-
-        assessments::Entity::update(assessment)
-            .exec(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to update order index: {}", e)))?;
-
-        Ok(())
-    }
-
-    pub async fn reorder_assessments(&self, class_id: Uuid, assessment_ids: Vec<Uuid>) -> AppResult<()> {
+    pub async fn reorder_assessments(&self, _class_id: Uuid, assessment_ids: Vec<Uuid>) -> AppResult<()> {
         for (index, id) in assessment_ids.iter().enumerate() {
             let assessment = assessments::ActiveModel {
                 id: Set(*id),
@@ -495,7 +471,7 @@ impl AssessmentRepository {
         Ok(())
     }
 
-    pub async fn reorder_questions(&self, assessment_id: Uuid, question_ids: Vec<Uuid>) -> AppResult<()> {
+    pub async fn reorder_questions(&self, _assessment_id: Uuid, question_ids: Vec<Uuid>) -> AppResult<()> {
         for (index, id) in question_ids.iter().enumerate() {
             let question = assessment_questions::ActiveModel {
                 id: Set(*id),
@@ -510,15 +486,6 @@ impl AssessmentRepository {
         }
 
         Ok(())
-    }
-
-    pub async fn count_enumeration_items_for_question(&self, question_id: Uuid) -> AppResult<usize> {
-        let count = answer_keys::Entity::find()
-            .filter(answer_keys::Column::QuestionId.eq(question_id))
-            .count(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        Ok(count as usize)
     }
 
     /// Fetches all enumeration items (answer_keys) for a question with their acceptable answers.

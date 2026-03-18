@@ -63,7 +63,7 @@ impl super::ClassService {
         teacher_id: Uuid,
         caller_role: &str,
     ) -> AppResult<ClassResponse> {
-        let class = self
+        let _class = self
             .class_repo
             .find_by_id(class_id)
             .await?
@@ -240,7 +240,7 @@ impl super::ClassService {
     }
 
     pub async fn soft_delete(&self, class_id: Uuid, teacher_id: Uuid) -> AppResult<()> {
-        let class = self
+        let _class = self
             .class_repo
             .find_by_id(class_id)
             .await?

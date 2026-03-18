@@ -8,7 +8,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::schema::auth_schema::MessageResponse;
-use crate::schema::class_schema::{AddStudentRequest, CreateClassRequest, SearchStudentsQuery, UpdateClassRequest, ClassMetadataResponse};
+use crate::schema::class_schema::{AddStudentRequest, CreateClassRequest, SearchStudentsQuery, UpdateClassRequest};
 use crate::schema::common::success_response;
 use crate::services::auth::AuthService;
 use crate::services::class::ClassService;

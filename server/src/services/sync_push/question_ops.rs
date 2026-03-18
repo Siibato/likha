@@ -1,6 +1,6 @@
 use uuid::Uuid;
 use chrono::Utc;
-use crate::schema::assessment_schema::{AddQuestionRequest, UpdateQuestionRequest, AddQuestionsRequest, ChoiceInput, EnumerationItemInput};
+use crate::schema::assessment_schema::{AddQuestionRequest, UpdateQuestionRequest, ChoiceInput, EnumerationItemInput};
 use super::sync_push_service::{OperationResult, SyncQueueEntry};
 
 impl super::SyncPushService {
@@ -116,12 +116,11 @@ impl super::SyncPushService {
     fn parse_enumeration_items(payload: &serde_json::Value) -> Option<Vec<EnumerationItemInput>> {
         payload.get("enumeration_items")?.as_array().map(|arr| {
             arr.iter().filter_map(|item| {
-                let order_index = item.get("order_index").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
                 let acceptable_answers = item.get("acceptable_answers")
                     .and_then(|v| v.as_array())
                     .map(|a| a.iter().filter_map(|s| s.as_str().map(|s| s.to_string())).collect())
                     .unwrap_or_default();
-                Some(EnumerationItemInput { order_index, acceptable_answers })
+                Some(EnumerationItemInput { acceptable_answers })
             }).collect()
         })
     }

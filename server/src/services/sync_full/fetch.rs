@@ -1,9 +1,9 @@
 use chrono::Utc;
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 
-use crate::utils::{AppResult, AppError};
+use crate::utils::AppResult;
 use crate::services::sync_common::enrich_questions;
 
 use super::sync_full_service::{FullSyncRequest, FullSyncResponse};
@@ -220,7 +220,6 @@ impl super::SyncFullService {
         let batch_enrollment_data = if batch_enrollment_ids.is_empty() {
             crate::db::repositories::manifest_repository::PaginatedRecords {
                 records: Vec::new(),
-                has_more: false,
             }
         } else {
             self.manifest_repo

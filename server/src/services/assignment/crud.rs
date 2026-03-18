@@ -242,7 +242,7 @@ impl super::AssignmentService {
             .await?
             .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
 
-        let class = self
+        let _class = self
             .class_repo
             .find_by_id(assignment.class_id)
             .await?
@@ -578,7 +578,7 @@ impl super::AssignmentService {
             .await?
             .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
 
-        let class = self
+        let _class = self
             .class_repo
             .find_by_id(assignment.class_id)
             .await?
