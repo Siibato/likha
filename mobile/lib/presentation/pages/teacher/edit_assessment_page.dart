@@ -273,7 +273,7 @@ class _EditAssessmentPageState extends ConsumerState<EditAssessmentPage> {
                     ),
                   ),
                   value: _showResultsImmediately,
-                  activeColor: const Color(0xFF2B2B2B),
+                  activeThumbColor: const Color(0xFF2B2B2B),
                   onChanged: state.isLoading
                       ? null
                       : (value) => setState(() => _showResultsImmediately = value),

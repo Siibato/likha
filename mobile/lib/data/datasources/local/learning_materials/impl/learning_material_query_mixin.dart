@@ -29,7 +29,7 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
           [materialId],
         );
         final actualCount = countResult.first['count'] as int? ?? 0;
-        print('[GET_CACHED_MATERIALS] materialId=$materialId, fileCount=$actualCount');
+        debugPrint('[GET_CACHED_MATERIALS] materialId=$materialId, fileCount=$actualCount');
 
         materials.add(LearningMaterialModel(
           id: materialId,

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
@@ -35,51 +36,51 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
 
   AssessmentStatus _getStatus(Assessment assessment) {
     final now = sl<ServerClockService>().now();
-    print('📋 [ListPage] _getStatus() - assessment: ${assessment.title}, submissionCount: ${assessment.submissionCount}, isSubmitted: ${assessment.isSubmitted}, resultsReleased: ${assessment.resultsReleased}, showResultsImmediately: ${assessment.showResultsImmediately}');
-    print('📋 [ListPage] _getStatus() - openAt: ${assessment.openAt}, closeAt: ${assessment.closeAt}, now: $now');
+    debugPrint('📋 [ListPage] _getStatus() - assessment: ${assessment.title}, submissionCount: ${assessment.submissionCount}, isSubmitted: ${assessment.isSubmitted}, resultsReleased: ${assessment.resultsReleased}, showResultsImmediately: ${assessment.showResultsImmediately}');
+    debugPrint('📋 [ListPage] _getStatus() - openAt: ${assessment.openAt}, closeAt: ${assessment.closeAt}, now: $now');
 
     if (assessment.isSubmitted != null) {
       final resultsAccessible =
           assessment.resultsReleased || assessment.showResultsImmediately;
       final isSubmitted = assessment.isSubmitted ?? false;
 
-      print('📋 [ListPage] _getStatus() - has submissions! resultsAccessible: $resultsAccessible, isSubmitted: $isSubmitted');
+      debugPrint('📋 [ListPage] _getStatus() - has submissions! resultsAccessible: $resultsAccessible, isSubmitted: $isSubmitted');
 
       // Results are out → show "Submitted" so user knows to go view them
       if (resultsAccessible) {
-        print('📋 [ListPage] _getStatus() - returning SUBMITTED (results released)');
+        debugPrint('📋 [ListPage] _getStatus() - returning SUBMITTED (results released)');
         return AssessmentStatus.submitted;
       }
 
       // Student has submitted, awaiting results → show "Submitted"
       if (isSubmitted) {
-        print('📋 [ListPage] _getStatus() - returning SUBMITTED (student submitted)');
+        debugPrint('📋 [ListPage] _getStatus() - returning SUBMITTED (student submitted)');
         return AssessmentStatus.submitted;
       }
 
       // Started but not submitted — check if still within window
       final withinWindow =
           now.isAfter(assessment.openAt) && now.isBefore(assessment.closeAt);
-      print('📋 [ListPage] _getStatus() - started but not submitted, withinWindow: $withinWindow');
+      debugPrint('📋 [ListPage] _getStatus() - started but not submitted, withinWindow: $withinWindow');
       if (withinWindow) {
-        print('📋 [ListPage] _getStatus() - returning IN_PROGRESS (can resume)');
+        debugPrint('📋 [ListPage] _getStatus() - returning IN_PROGRESS (can resume)');
         return AssessmentStatus.inProgress;
       }
       // Past window, not submitted → show "Submitted" (too late)
-      print('📋 [ListPage] _getStatus() - returning SUBMITTED (past window, not submitted)');
+      debugPrint('📋 [ListPage] _getStatus() - returning SUBMITTED (past window, not submitted)');
       return AssessmentStatus.submitted;
     }
 
-    print('📋 [ListPage] _getStatus() - no submissions, checking time window');
+    debugPrint('📋 [ListPage] _getStatus() - no submissions, checking time window');
     if (now.isBefore(assessment.openAt)) {
-      print('📋 [ListPage] _getStatus() - returning NOT_YET_OPEN');
+      debugPrint('📋 [ListPage] _getStatus() - returning NOT_YET_OPEN');
       return AssessmentStatus.notYetOpen;
     }
     if (now.isAfter(assessment.closeAt)) {
-      print('📋 [ListPage] _getStatus() - returning CLOSED');
+      debugPrint('📋 [ListPage] _getStatus() - returning CLOSED');
       return AssessmentStatus.closed;
     }
-    print('📋 [ListPage] _getStatus() - returning AVAILABLE');
+    debugPrint('📋 [ListPage] _getStatus() - returning AVAILABLE');
     return AssessmentStatus.available;
   }
 

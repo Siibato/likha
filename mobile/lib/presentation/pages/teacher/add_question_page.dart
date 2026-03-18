@@ -271,7 +271,7 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
             contentPadding: EdgeInsets.zero,
             title: const Text('Allow multiple correct answers'),
             value: _isMultiSelect,
-            activeColor: const Color(0xFF2B2B2B),
+            activeThumbColor: const Color(0xFF2B2B2B),
             onChanged: isLoading
                 ? null
                 : (value) {
@@ -417,9 +417,9 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
               letterSpacing: -0.2,
             )),
         const SizedBox(height: 4),
-        Text(
+        const Text(
           'Students can enter any of these answers (case-insensitive)',
-          style: const TextStyle(color: Color(0xFF999999), fontSize: 13),
+          style: TextStyle(color: Color(0xFF999999), fontSize: 13),
         ),
         const SizedBox(height: 12),
         ..._acceptableAnswerControllers.asMap().entries.map((entry) {
@@ -525,9 +525,9 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
               letterSpacing: -0.2,
             )),
         const SizedBox(height: 4),
-        Text(
+        const Text(
           'Each item can have multiple acceptable answers',
-          style: const TextStyle(color: Color(0xFF999999), fontSize: 13),
+          style: TextStyle(color: Color(0xFF999999), fontSize: 13),
         ),
         const SizedBox(height: 12),
         ..._enumerationItems.asMap().entries.map((entry) {

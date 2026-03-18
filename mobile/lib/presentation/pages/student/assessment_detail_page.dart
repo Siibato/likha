@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
@@ -45,40 +46,40 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
     final withinWindow = now.isAfter(a.openAt) && now.isBefore(a.closeAt);
     final resultsAccessible = a.resultsReleased || a.showResultsImmediately;
 
-    print('📄 [DetailPage] _computeDetailStatus() - title: ${a.title}, submissionCount: ${a.submissionCount}, withinWindow: $withinWindow, resultsAccessible: $resultsAccessible');
+    debugPrint('📄 [DetailPage] _computeDetailStatus() - title: ${a.title}, submissionCount: ${a.submissionCount}, withinWindow: $withinWindow, resultsAccessible: $resultsAccessible');
 
     if (hasSubmission && resultsAccessible) {
-      print('📄 [DetailPage] _computeDetailStatus() - returning RESULTS_AVAILABLE');
+      debugPrint('📄 [DetailPage] _computeDetailStatus() - returning RESULTS_AVAILABLE');
       return DetailStatus.resultsAvailable;
     }
     if (hasSubmission) {
       // Has submission — check if it's actually submitted
       final submissionIsSubmitted = _cachedSubmissionIsSubmitted();
-      print('📄 [DetailPage] _computeDetailStatus() - hasSubmission: true, submissionIsSubmitted: $submissionIsSubmitted, withinWindow: $withinWindow');
+      debugPrint('📄 [DetailPage] _computeDetailStatus() - hasSubmission: true, submissionIsSubmitted: $submissionIsSubmitted, withinWindow: $withinWindow');
 
       if (submissionIsSubmitted) {
         // Already submitted → awaiting grading or results
-        print('📄 [DetailPage] _computeDetailStatus() - returning PENDING_RESULTS (submitted, awaiting grading)');
+        debugPrint('📄 [DetailPage] _computeDetailStatus() - returning PENDING_RESULTS (submitted, awaiting grading)');
         return DetailStatus.pendingResults;
       } else if (withinWindow) {
         // Started but not submitted, window still open → resumable
-        print('📄 [DetailPage] _computeDetailStatus() - returning RESUMABLE (started but not submitted)');
+        debugPrint('📄 [DetailPage] _computeDetailStatus() - returning RESUMABLE (started but not submitted)');
         return DetailStatus.resumable;
       } else {
         // Started but not submitted, window closed → too late
-        print('📄 [DetailPage] _computeDetailStatus() - returning PENDING_RESULTS (not submitted, window closed)');
+        debugPrint('📄 [DetailPage] _computeDetailStatus() - returning PENDING_RESULTS (not submitted, window closed)');
         return DetailStatus.pendingResults;
       }
     }
     if (now.isBefore(a.openAt)) {
-      print('📄 [DetailPage] _computeDetailStatus() - returning NOT_YET_OPEN');
+      debugPrint('📄 [DetailPage] _computeDetailStatus() - returning NOT_YET_OPEN');
       return DetailStatus.notYetOpen;
     }
     if (now.isAfter(a.closeAt)) {
-      print('📄 [DetailPage] _computeDetailStatus() - returning CLOSED');
+      debugPrint('📄 [DetailPage] _computeDetailStatus() - returning CLOSED');
       return DetailStatus.closed;
     }
-    print('📄 [DetailPage] _computeDetailStatus() - returning AVAILABLE');
+    debugPrint('📄 [DetailPage] _computeDetailStatus() - returning AVAILABLE');
     return DetailStatus.available;
   }
 
@@ -91,15 +92,15 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
   Future<void> _loadSubmissionStatus() async {
     final user = ref.read(authProvider).user;
     if (user == null) {
-      print('❌ [DetailPage] _loadSubmissionStatus() - user is null, cannot load submission');
+      debugPrint('❌ [DetailPage] _loadSubmissionStatus() - user is null, cannot load submission');
       return;
     }
 
     try {
-      print('🔍 [DetailPage] _loadSubmissionStatus() START - assessmentId: ${widget.assessment.id}, studentId: ${user.id}');
+      debugPrint('🔍 [DetailPage] _loadSubmissionStatus() START - assessmentId: ${widget.assessment.id}, studentId: ${user.id}');
 
       // Load the submission to check if it's submitted
-      print('🔍 [DetailPage] _loadSubmissionStatus() - calling loadScorePreview()');
+      debugPrint('🔍 [DetailPage] _loadSubmissionStatus() - calling loadScorePreview()');
       await ref.read(assessmentProvider.notifier).loadScorePreview(
         widget.assessment.id,
         user.id,
@@ -109,24 +110,24 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
       // Use the submission's own isSubmitted flag — NOT whether results loaded.
       // Results can 403 (not released yet) even when the submission IS submitted.
       final submission = assessmentState.currentStudentSubmission;
-      print('🔍 [DetailPage] _loadSubmissionStatus() - RESULT: currentStudentSubmission=${submission?.id}, isSubmitted=${submission?.isSubmitted}');
+      debugPrint('🔍 [DetailPage] _loadSubmissionStatus() - RESULT: currentStudentSubmission=${submission?.id}, isSubmitted=${submission?.isSubmitted}');
 
       if (mounted) {
         setState(() {
           _submissionIsSubmitted = submission?.isSubmitted; // null=no sub, false=in-progress, true=submitted
-          print('🔍 [DetailPage] _loadSubmissionStatus() - setState: _submissionIsSubmitted=$_submissionIsSubmitted');
+          debugPrint('🔍 [DetailPage] _loadSubmissionStatus() - setState: _submissionIsSubmitted=$_submissionIsSubmitted');
         });
       }
     } catch (e, st) {
-      print('❌ [DetailPage] _loadSubmissionStatus() EXCEPTION: $e');
-      print('❌ [DetailPage] _loadSubmissionStatus() STACK: $st');
+      debugPrint('❌ [DetailPage] _loadSubmissionStatus() EXCEPTION: $e');
+      debugPrint('❌ [DetailPage] _loadSubmissionStatus() STACK: $st');
     }
   }
 
   Future<void> _loadScore() async {
     final user = ref.read(authProvider).user;
     if (user == null) return;
-    print('🔍 [DetailPage] _loadScore() START - assessmentId: ${widget.assessment.id}, studentId: ${user.id}');
+    debugPrint('🔍 [DetailPage] _loadScore() START - assessmentId: ${widget.assessment.id}, studentId: ${user.id}');
     setState(() => _isLoadingScore = true);
 
     await ref.read(assessmentProvider.notifier).loadScorePreview(
@@ -135,7 +136,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
     );
 
     final state = ref.read(assessmentProvider);
-    print('🔍 [DetailPage] _loadScore() END - studentResult: ${state.studentResult}, error: ${state.error}');
+    debugPrint('🔍 [DetailPage] _loadScore() END - studentResult: ${state.studentResult}, error: ${state.error}');
     if (mounted) setState(() => _isLoadingScore = false);
   }
 
@@ -481,9 +482,9 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
           backgroundColor: const Color(0xFF34A853),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
-        child: Row(
+        child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
+          children: [
             Icon(Icons.play_arrow_rounded, size: 20),
             SizedBox(width: 8),
             Text(
@@ -506,9 +507,9 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
           backgroundColor: const Color(0xFFFFBD59),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
-        child: Row(
+        child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
+          children: [
             Icon(Icons.play_circle_rounded, size: 20, color: Color(0xFF2B2B2B)),
             SizedBox(width: 8),
             Text(
@@ -535,9 +536,9 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
           backgroundColor: const Color(0xFF2B2B2B),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
-        child: Row(
+        child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
+          children: [
             Icon(Icons.bar_chart_rounded, size: 20),
             SizedBox(width: 8),
             Text(

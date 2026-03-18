@@ -13,7 +13,7 @@ class AdminDashboardPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
+    ref.watch(authProvider);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -22,7 +22,7 @@ class AdminDashboardPage extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClassSectionHeader(
+              const ClassSectionHeader(
                 title: 'Admin Dashboard',
                 fontSize: 28,
               ),

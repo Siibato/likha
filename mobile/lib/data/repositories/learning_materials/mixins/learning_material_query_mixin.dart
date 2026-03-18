@@ -1,4 +1,6 @@
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
+
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -37,18 +39,18 @@ mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
           await localDataSource.cacheMaterials(freshMaterials);
 
           // Also fetch and cache file details for materials with files
-          print('[GET_MAT_INIT] 📥 Initial load: caching file details for ${freshMaterials.length} materials');
+          debugPrint('[GET_MAT_INIT] 📥 Initial load: caching file details for ${freshMaterials.length} materials');
           for (final material in freshMaterials) {
             if (material.fileCount > 0) {
-              print('[GET_MAT_INIT] 📄 Fetching files for material: ${material.id} (fileCount=${material.fileCount})');
+              debugPrint('[GET_MAT_INIT] 📄 Fetching files for material: ${material.id} (fileCount=${material.fileCount})');
               try {
                 final detail = await remoteDataSource.getMaterialDetail(materialId: material.id);
                 if (detail.files.isNotEmpty) {
                   await localDataSource.cacheMaterialFiles(material.id, detail.files);
-                  print('[GET_MAT_INIT] ✅ Cached ${detail.files.length} files');
+                  debugPrint('[GET_MAT_INIT] ✅ Cached ${detail.files.length} files');
                 }
               } catch (e) {
-                print('[GET_MAT_INIT] ⚠️  Failed to cache files for ${material.id}: $e');
+                debugPrint('[GET_MAT_INIT] ⚠️  Failed to cache files for ${material.id}: $e');
               }
             }
           }
@@ -142,7 +144,7 @@ mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
   void _backgroundFetchMaterials(String classId) {
     Future.microtask(() async {
       try {
-        print('[BG_FETCH_MAT] 🔄 Background fetch starting for classId=$classId');
+        debugPrint('[BG_FETCH_MAT] 🔄 Background fetch starting for classId=$classId');
         final fresh = await remoteDataSource.getMaterials(classId: classId);
         final List<LearningMaterial> cached;
         try {
@@ -154,14 +156,14 @@ mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
 
           for (final material in fresh) {
             if (material.fileCount > 0) {
-              print('[BG_FETCH_MAT] 📄 Fetching files for new material: ${material.id}');
+              debugPrint('[BG_FETCH_MAT] 📄 Fetching files for new material: ${material.id}');
               try {
                 final detail = await remoteDataSource.getMaterialDetail(materialId: material.id);
                 if (detail.files.isNotEmpty) {
                   await localDataSource.cacheMaterialFiles(material.id, detail.files);
                 }
               } catch (e) {
-                print('[BG_FETCH_MAT] ⚠️  Failed to cache files for ${material.id}: $e');
+                debugPrint('[BG_FETCH_MAT] ⚠️  Failed to cache files for ${material.id}: $e');
               }
             }
           }
@@ -176,14 +178,14 @@ mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
 
           for (final material in fresh) {
             if (material.fileCount > 0) {
-              print('[BG_FETCH_MAT] 📄 Fetching files for updated material: ${material.id}');
+              debugPrint('[BG_FETCH_MAT] 📄 Fetching files for updated material: ${material.id}');
               try {
                 final detail = await remoteDataSource.getMaterialDetail(materialId: material.id);
                 if (detail.files.isNotEmpty) {
                   await localDataSource.cacheMaterialFiles(material.id, detail.files);
                 }
               } catch (e) {
-                print('[BG_FETCH_MAT] ⚠️  Failed to cache files for ${material.id}: $e');
+                debugPrint('[BG_FETCH_MAT] ⚠️  Failed to cache files for ${material.id}: $e');
               }
             }
           }
@@ -191,7 +193,7 @@ mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
           dataEventBus.notifyMaterialsChanged(classId);
         }
       } catch (e) {
-        print('[BG_FETCH_MAT] ❌ Error: $e');
+        debugPrint('[BG_FETCH_MAT] ❌ Error: $e');
       }
     });
   }
@@ -217,22 +219,22 @@ mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
   void _backgroundRefreshMaterialFiles(String materialId, String classId) {
     Future.microtask(() async {
       try {
-        print('[BG_REFRESH] 🔄 Starting background refresh for materialId=$materialId, classId=$classId');
+        debugPrint('[BG_REFRESH] 🔄 Starting background refresh for materialId=$materialId, classId=$classId');
         final fresh = await remoteDataSource.getMaterialDetail(materialId: materialId);
         final cached = await localDataSource.getCachedMaterialFiles(materialId);
 
-        print('[BG_REFRESH] cached files=${cached.length}, fresh files=${fresh.files.length}');
+        debugPrint('[BG_REFRESH] cached files=${cached.length}, fresh files=${fresh.files.length}');
 
         if (_materialFilesHaveChanged(cached, fresh.files)) {
-          print('[BG_REFRESH] ✅ Files changed! Caching and notifying...');
+          debugPrint('[BG_REFRESH] ✅ Files changed! Caching and notifying...');
           await localDataSource.cacheMaterialFiles(materialId, fresh.files);
-          print('[BG_REFRESH] 📢 Calling dataEventBus.notifyMaterialsChanged($classId)');
+          debugPrint('[BG_REFRESH] 📢 Calling dataEventBus.notifyMaterialsChanged($classId)');
           dataEventBus.notifyMaterialsChanged(classId);
         } else {
-          print('[BG_REFRESH] ⚫ Files unchanged, no notification');
+          debugPrint('[BG_REFRESH] ⚫ Files unchanged, no notification');
         }
       } catch (e) {
-        print('[BG_REFRESH] ❌ Error in background refresh: $e');
+        debugPrint('[BG_REFRESH] ❌ Error in background refresh: $e');
       }
     });
   }

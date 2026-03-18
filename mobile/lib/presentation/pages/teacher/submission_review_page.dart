@@ -144,9 +144,9 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
                       if (_formError != null) const SizedBox(height: 12),
                       _buildSummaryCard(detail),
                       const SizedBox(height: 16),
-                      Text(
+                      const Text(
                         'Answers',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
                           color: AppColors.foregroundDark,
@@ -305,7 +305,7 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
           _buildAnswerContent(answer),
           if (isOverrideCorrect != null) ...[
             const SizedBox(height: 8),
-            StatusBadge(
+            const StatusBadge(
               label: 'Grade overridden',
               color: AppColors.deprecatedWarningYellow,
               icon: Icons.edit_outlined,

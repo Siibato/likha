@@ -105,7 +105,7 @@ class AccountTile extends StatelessWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: _statusColor(user.accountStatus).withOpacity(0.15),
+                  color: _statusColor(user.accountStatus).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(

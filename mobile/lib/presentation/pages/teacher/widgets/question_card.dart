@@ -532,7 +532,7 @@ class _MultipleChoiceSection extends StatelessWidget {
               ),
             ),
             value: question.isMultiSelect,
-            activeColor: const Color(0xFF2B2B2B),
+            activeThumbColor: const Color(0xFF2B2B2B),
             onChanged: (value) {
               question.isMultiSelect = value;
               if (!value) {

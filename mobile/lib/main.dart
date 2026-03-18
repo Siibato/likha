@@ -14,7 +14,7 @@ void main() async {
     await dotenv.load(fileName: '.env');
   } catch (e) {
     // .env not found - will use fallback URL
-    print('Warning: .env file not loaded: $e');
+    debugPrint('Warning: .env file not loaded: $e');
   }
   await di.init();
 

@@ -1,5 +1,7 @@
 import 'dart:async';
+
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -123,22 +125,22 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
   void _backgroundRefreshSubmission(String submissionId) {
     Future.microtask(() async {
       try {
-        print('[BG_REFRESH] 🔄 Starting background refresh for submissionId=$submissionId');
+        debugPrint('[BG_REFRESH] 🔄 Starting background refresh for submissionId=$submissionId');
         final fresh = await remoteDataSource.getSubmissionDetail(
             submissionId: submissionId);
         // Get currently cached data to compare against fresh
         final cached = await localDataSource.getCachedSubmission(submissionId);
 
         if (_submissionDataHasChanged(cached, fresh)) {
-          print('[BG_REFRESH] ✅ Data changed! Caching and notifying...');
+          debugPrint('[BG_REFRESH] ✅ Data changed! Caching and notifying...');
           await localDataSource.cacheSubmissionDetail(fresh);
-          print('[BG_REFRESH] 📢 Calling dataEventBus.notifySubmissionDetailChanged($submissionId)');
+          debugPrint('[BG_REFRESH] 📢 Calling dataEventBus.notifySubmissionDetailChanged($submissionId)');
           dataEventBus.notifySubmissionDetailChanged(submissionId);
         } else {
-          print('[BG_REFRESH] ⚫ Data unchanged, no notification');
+          debugPrint('[BG_REFRESH] ⚫ Data unchanged, no notification');
         }
       } catch (e) {
-        print('[BG_REFRESH] ❌ Error in background refresh: $e');
+        debugPrint('[BG_REFRESH] ❌ Error in background refresh: $e');
       }
     });
   }
@@ -500,7 +502,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
     try {
       final record = await localDataSource
           .getStudentSubmissionForAssignment(assignmentId, studentId);
-      if (record == null) return Right(null);
+      if (record == null) return const Right(null);
       return Right(StudentAssignmentStatus(
         submissionId: record.$1,
         status: record.$2,

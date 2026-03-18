@@ -1,4 +1,6 @@
 import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/domain/learning_materials/entities/learning_material.dart';
@@ -77,17 +79,17 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     this._downloadFile,
   ) : super(LearningMaterialState()) {
     _refreshSub = sl<DataEventBus>().onMaterialsChanged.listen((classId) {
-      print('[MATERIAL_LISTENER] 👂 Event received: classId=$classId, _currentClassId=$_currentClassId');
+      debugPrint('[MATERIAL_LISTENER] 👂 Event received: classId=$classId, _currentClassId=$_currentClassId');
       if (_currentClassId != null && _currentClassId == classId) {
-        print('[MATERIAL_LISTENER] ✅ ClassId MATCH! Calling loadMaterials()');
+        debugPrint('[MATERIAL_LISTENER] ✅ ClassId MATCH! Calling loadMaterials()');
         loadMaterials(_currentClassId!);
         // Also reload the current material detail if it belongs to this class
         if (state.currentMaterial != null && state.currentMaterial!.classId == classId) {
-          print('[MATERIAL_LISTENER] 📄 Also reloading material detail');
+          debugPrint('[MATERIAL_LISTENER] 📄 Also reloading material detail');
           loadMaterialDetail(state.currentMaterial!.id);
         }
       } else {
-        print('[MATERIAL_LISTENER] ❌ ClassId MISMATCH or _currentClassId is null');
+        debugPrint('[MATERIAL_LISTENER] ❌ ClassId MISMATCH or _currentClassId is null');
       }
     });
   }
@@ -99,12 +101,12 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: failure.message),
       (materials) {
-        print('[LOAD_MATERIALS] Loaded ${materials.length} materials');
+        debugPrint('[LOAD_MATERIALS] Loaded ${materials.length} materials');
         for (final m in materials) {
-          print('[LOAD_MATERIALS]   - ${m.title}: fileCount=${m.fileCount}');
+          debugPrint('[LOAD_MATERIALS]   - ${m.title}: fileCount=${m.fileCount}');
         }
         state = state.copyWith(isLoading: false, materials: materials);
-        print('[LOAD_MATERIALS] State updated with new materials');
+        debugPrint('[LOAD_MATERIALS] State updated with new materials');
       },
     );
   }

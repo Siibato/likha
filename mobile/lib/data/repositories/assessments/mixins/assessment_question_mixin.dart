@@ -148,7 +148,7 @@ mixin AssessmentQuestionMixin on AssessmentRepositoryBase {
         // Fetch current question from cache to get assessmentId and other fields
         final currentQuestion = await localDataSource.getCachedQuestion(questionId);
         if (currentQuestion == null) {
-          return Left(ServerFailure('Question not found in local cache'));
+          return const Left(ServerFailure('Question not found in local cache'));
         }
 
         await localDataSource.updateQuestionLocally(

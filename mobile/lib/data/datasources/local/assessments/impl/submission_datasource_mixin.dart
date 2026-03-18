@@ -181,7 +181,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
       return StartSubmissionResultModel(
         submissionId: submission['id'] as String,
         startedAt: DateTime.parse(submission['started_at'] as String),
-        questions: [],
+        questions: const [],
       );
     } catch (e) {
       throw CacheException('Failed to get cached start result: $e');

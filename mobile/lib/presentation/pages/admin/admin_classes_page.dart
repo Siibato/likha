@@ -73,10 +73,10 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
               ),
             )
           : classState.classes.isEmpty
-              ? Center(
+              ? const Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
+                    children: [
                       Icon(Icons.class_outlined, size: 64, color: Color(0xFFCCCCCC)),
                       SizedBox(height: 16),
                       Text(

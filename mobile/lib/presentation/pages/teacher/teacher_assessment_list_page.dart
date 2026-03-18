@@ -216,7 +216,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
       body: SafeArea(
         child: Column(
           children: [
-            ClassSectionHeader(
+            const ClassSectionHeader(
               title: 'Assessments',
               showBackButton: true,
             ),

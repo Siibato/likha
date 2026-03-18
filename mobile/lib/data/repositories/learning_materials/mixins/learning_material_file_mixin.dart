@@ -1,4 +1,6 @@
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
+
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/sync/sync_queue.dart';
@@ -47,21 +49,21 @@ mixin LearningMaterialFileMixin on LearningMaterialRepositoryBase {
       );
 
       try {
-        print('[UPLOAD_POST] ✅ File uploaded successfully, fetching material detail...');
+        debugPrint('[UPLOAD_POST] ✅ File uploaded successfully, fetching material detail...');
         final materialDetail = await remoteDataSource.getMaterialDetail(materialId: materialId);
-        print('[UPLOAD_POST] 📄 Got material detail: ${materialDetail.files.length} files');
+        debugPrint('[UPLOAD_POST] 📄 Got material detail: ${materialDetail.files.length} files');
 
         if (materialDetail.files.isNotEmpty) {
-          print('[UPLOAD_POST] 💾 Caching ${materialDetail.files.length} files to local DB...');
+          debugPrint('[UPLOAD_POST] 💾 Caching ${materialDetail.files.length} files to local DB...');
           await localDataSource.cacheMaterialFiles(materialId, materialDetail.files);
-          print('[UPLOAD_POST] ✅ Cache complete, notifying event bus...');
+          debugPrint('[UPLOAD_POST] ✅ Cache complete, notifying event bus...');
         } else {
-          print('[UPLOAD_POST] ⚠️  No files in response, skipping cache');
+          debugPrint('[UPLOAD_POST] ⚠️  No files in response, skipping cache');
         }
 
         dataEventBus.notifyMaterialsChanged(materialDetail.classId);
       } catch (e) {
-        print('[UPLOAD_POST] ❌ Error during post-upload caching: $e');
+        debugPrint('[UPLOAD_POST] ❌ Error during post-upload caching: $e');
       }
 
       return Right(result);
@@ -117,14 +119,14 @@ mixin LearningMaterialFileMixin on LearningMaterialRepositoryBase {
       final result = await remoteDataSource.downloadFile(fileId: fileId);
 
       try {
-        print('[DL_FILE] ✅ Downloaded ${result.length} bytes, caching...');
+        debugPrint('[DL_FILE] ✅ Downloaded ${result.length} bytes, caching...');
         // Pass empty fileName to let datasource look it up from material_files table
         await localDataSource.cacheFile(fileId, '', result);
-        print('[DL_FILE] ✅ File cached successfully');
+        debugPrint('[DL_FILE] ✅ File cached successfully');
       } catch (e) {
         // Log the error but still return file — user can open it from memory
         // Next app start: file won't be cached, will need re-download
-        print('[DL_FILE] ⚠️  Cache write failed: $e (file still available in memory)');
+        debugPrint('[DL_FILE] ⚠️  Cache write failed: $e (file still available in memory)');
       }
 
       return Right(result);

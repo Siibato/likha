@@ -71,27 +71,27 @@ class _AssessmentResultsPageState
                 color: const Color(0xFFE0E0E0),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.hourglass_bottom_rounded,
                 size: 24,
                 color: AppColors.foregroundTertiary,
               ),
             ),
             const SizedBox(width: 16),
-            Expanded(
+            const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Results Pending',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF2B2B2B),
                       letterSpacing: -0.3,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Text(
                     'Your teacher hasn\'t released results yet',
                     style: TextStyle(
@@ -130,27 +130,27 @@ class _AssessmentResultsPageState
                 color: const Color(0xFFFFE0E0),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.info_outline_rounded,
                 size: 24,
-                color: const Color(0xFFD32F2F),
+                color: Color(0xFFD32F2F),
               ),
             ),
             const SizedBox(width: 16),
-            Expanded(
+            const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Results Not Yet Available',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF2B2B2B),
                       letterSpacing: -0.3,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Text(
                     'Your results will appear here once your teacher releases them',
                     style: TextStyle(

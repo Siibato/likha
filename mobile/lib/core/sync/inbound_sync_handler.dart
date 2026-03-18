@@ -239,8 +239,8 @@ class InboundSyncHandler {
     if (classBatches.isNotEmpty) {
       for (int batchIndex = 0; batchIndex < classBatches.length; batchIndex++) {
         final batch = classBatches[batchIndex];
-        final progressBase = 0.1;
-        final progressRange = 0.85;
+        const progressBase = 0.1;
+        const progressRange = 0.85;
         final batchProgress = progressBase + (progressRange * (batchIndex / classBatches.length));
 
         // Create step description with batch titles

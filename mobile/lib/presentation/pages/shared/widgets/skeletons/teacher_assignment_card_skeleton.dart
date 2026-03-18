@@ -31,7 +31,7 @@ class TeacherAssignmentCardSkeleton extends StatelessWidget {
           borderRadius:
               BorderRadius.circular(AppDimensions.kCardSmInnerRadius),
         ),
-        child: Row(
+        child: const Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Icon slot
@@ -40,7 +40,7 @@ class TeacherAssignmentCardSkeleton extends StatelessWidget {
               height: 36,
               borderRadius: 10,
             ),
-            const SizedBox(width: 14),
+            SizedBox(width: 14),
             // Text column
             Expanded(
               child: Column(
@@ -52,7 +52,7 @@ class TeacherAssignmentCardSkeleton extends StatelessWidget {
                     height: 14,
                     borderRadius: 4,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   // Metadata
                   SkeletonBox(
                     width: double.infinity * 0.5,

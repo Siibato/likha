@@ -1,4 +1,6 @@
 import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
@@ -66,11 +68,11 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
   @override
   Future<void> cacheFile(String fileId, String fileName, List<int> bytes) async {
     try {
-      print('[CACHE_FILE] 💾 Caching file $fileId (${bytes.length} bytes)');
+      debugPrint('[CACHE_FILE] 💾 Caching file $fileId (${bytes.length} bytes)');
       final appDirDoc = await getApplicationDocumentsDirectory();
       final materialFilesDir = Directory('${appDirDoc.path}/material_files');
       if (!await materialFilesDir.exists()) {
-        print('[CACHE_FILE] 📁 Creating directory: ${materialFilesDir.path}');
+        debugPrint('[CACHE_FILE] 📁 Creating directory: ${materialFilesDir.path}');
         await materialFilesDir.create(recursive: true);
       }
 
@@ -94,11 +96,11 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
           ? '${finalFileName.substring(0, dotIndex)}-$shortId${finalFileName.substring(dotIndex)}'
           : '$finalFileName-$shortId';
       final filePath = '${materialFilesDir.path}/$localFileName';
-      print('[CACHE_FILE] 📝 Writing to: $filePath');
+      debugPrint('[CACHE_FILE] 📝 Writing to: $filePath');
       await File(filePath).writeAsBytes(bytes);
-      print('[CACHE_FILE] ✅ File written successfully');
+      debugPrint('[CACHE_FILE] ✅ File written successfully');
 
-      print('[CACHE_FILE] 🔄 Updating DB: local_path=$filePath');
+      debugPrint('[CACHE_FILE] 🔄 Updating DB: local_path=$filePath');
       final rowsAffected = await db.update(
         'material_files',
         {
@@ -108,13 +110,13 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
         where: 'id = ?',
         whereArgs: [fileId],
       );
-      print('[CACHE_FILE] ✅ DB updated, rowsAffected=$rowsAffected');
+      debugPrint('[CACHE_FILE] ✅ DB updated, rowsAffected=$rowsAffected');
 
       if (rowsAffected == 0) {
-        print('[CACHE_FILE] ⚠️  WARNING: Update affected 0 rows (file might not exist in DB)');
+        debugPrint('[CACHE_FILE] ⚠️  WARNING: Update affected 0 rows (file might not exist in DB)');
       }
     } catch (e) {
-      print('[CACHE_FILE] ❌ Error: $e');
+      debugPrint('[CACHE_FILE] ❌ Error: $e');
       throw CacheException('Failed to cache file: $e');
     }
   }
@@ -147,7 +149,7 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
       final file = File(expectedPath);
 
       if (!await file.exists()) {
-        print('[GET_CACHED] ⚠️  File $fileId not found at expected path: $expectedPath');
+        debugPrint('[GET_CACHED] ⚠️  File $fileId not found at expected path: $expectedPath');
         // Clean up DB entry
         await db.update(
           'material_files',
@@ -158,7 +160,7 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
         throw CacheException('File not found at: $expectedPath');
       }
 
-      print('[GET_CACHED] ✅ Retrieved cached file: $fileId from $expectedPath');
+      debugPrint('[GET_CACHED] ✅ Retrieved cached file: $fileId from $expectedPath');
       return await file.readAsBytes();
     } catch (e) {
       if (e is CacheException) rethrow;
@@ -182,7 +184,7 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
       final expectedPath = '${materialFilesDir.path}/$localFileName';
       return expectedPath;
     } catch (e) {
-      print('[GET_EXPECTED_PATH] Error: $e');
+      debugPrint('[GET_EXPECTED_PATH] Error: $e');
       return null;
     }
   }
@@ -200,13 +202,13 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
       );
 
       if (results.isEmpty) {
-        print('[IS_CACHED] ❌ fileId=$fileId not found in DB');
+        debugPrint('[IS_CACHED] ❌ fileId=$fileId not found in DB');
         return false;
       }
 
       final fileName = results.first['file_name'] as String?;
       if (fileName == null || fileName.isEmpty) {
-        print('[IS_CACHED] ❌ fileId=$fileId has no fileName');
+        debugPrint('[IS_CACHED] ❌ fileId=$fileId has no fileName');
         return false;
       }
 
@@ -219,12 +221,12 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
       // Check if file actually exists at expected location
       final file = File(expectedPath);
       final exists = await file.exists();
-      print('[IS_CACHED] fileId=$fileId, fileName=$fileName, expectedPath=$expectedPath, exists=$exists');
+      debugPrint('[IS_CACHED] fileId=$fileId, fileName=$fileName, expectedPath=$expectedPath, exists=$exists');
 
       // If exists but DB path is empty/stale, update it for next time
       final storedPath = results.first['local_path'] as String?;
       if (exists && (storedPath == null || storedPath.isEmpty)) {
-        print('[IS_CACHED] 🔄 Updating DB with found path');
+        debugPrint('[IS_CACHED] 🔄 Updating DB with found path');
         await db.update(
           'material_files',
           {'local_path': expectedPath},
@@ -235,7 +237,7 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
 
       return exists;
     } catch (e) {
-      print('[IS_CACHED] ❌ Error: $e');
+      debugPrint('[IS_CACHED] ❌ Error: $e');
       return false;
     }
   }
@@ -243,7 +245,7 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
   @override
   Future<void> cacheMaterialFiles(String materialId, List<MaterialFile> files) async {
     try {
-      print('[CACHE_FILES] 💾 Starting cacheMaterialFiles with ${files.length} files for materialId=$materialId');
+      debugPrint('[CACHE_FILES] 💾 Starting cacheMaterialFiles with ${files.length} files for materialId=$materialId');
       final db = await localDatabase.database;
       for (final file in files) {
         // Preserve local cache state if row already exists
@@ -255,7 +257,7 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
         );
 
         if (existing.isEmpty) {
-          print('[CACHE_FILES] ➕ Inserting new file: ${file.fileName} (${file.id})');
+          debugPrint('[CACHE_FILES] ➕ Inserting new file: ${file.fileName} (${file.id})');
           final rowsAffected = await db.insert(
             'material_files',
             {
@@ -270,9 +272,9 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
             },
             conflictAlgorithm: ConflictAlgorithm.ignore,
           );
-          print('[CACHE_FILES] ✅ Insert completed, rowsAffected=$rowsAffected');
+          debugPrint('[CACHE_FILES] ✅ Insert completed, rowsAffected=$rowsAffected');
         } else {
-          print('[CACHE_FILES] 🔄 Updating existing file: ${file.fileName} (${file.id})');
+          debugPrint('[CACHE_FILES] 🔄 Updating existing file: ${file.fileName} (${file.id})');
           // Only update server-side metadata — preserve local_path
           final rowsAffected = await db.update(
             'material_files',
@@ -286,12 +288,12 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
             where: 'id = ?',
             whereArgs: [file.id],
           );
-          print('[CACHE_FILES] ✅ Update completed, rowsAffected=$rowsAffected');
+          debugPrint('[CACHE_FILES] ✅ Update completed, rowsAffected=$rowsAffected');
         }
       }
-      print('[CACHE_FILES] ✅ cacheMaterialFiles completed successfully');
+      debugPrint('[CACHE_FILES] ✅ cacheMaterialFiles completed successfully');
     } catch (e) {
-      print('[CACHE_FILES] ❌ Error in cacheMaterialFiles: $e');
+      debugPrint('[CACHE_FILES] ❌ Error in cacheMaterialFiles: $e');
       throw CacheException('Failed to cache material files: $e');
     }
   }

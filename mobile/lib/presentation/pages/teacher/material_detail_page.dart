@@ -5,17 +5,14 @@ import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
-import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
-import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/markdown_display.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/card_icon_slot.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/status_badge.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/rich_text_field.dart';
-import 'package:likha/presentation/providers/auth_provider.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/widgets/styled_dialog.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
@@ -257,28 +254,6 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
     }
   }
 
-  Future<void> _downloadAllFiles() async {
-    final material = ref.read(learningMaterialProvider).currentMaterial;
-    if (material == null || material.files.isEmpty) return;
-
-    final toDownload = material.files.where((f) => !f.isCached).toList();
-    if (toDownload.isEmpty) return;
-
-    int downloadedCount = 0;
-    final total = toDownload.length;
-
-    for (final file in toDownload) {
-      downloadedCount++;
-
-      await _saveFile(file);
-
-      if (!mounted) return;
-    }
-
-    if (!mounted) return;
-    setState(() => _formError = null);
-  }
-
   void _deleteFile(MaterialFile file) {
     AppDialogs.showDestructive(
       context: context,
@@ -339,12 +314,6 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(learningMaterialProvider);
     final material = state.currentMaterial;
-    final user = ref.watch(authProvider).user;
-    final isTeacher = user?.role == 'teacher' || user?.role == 'admin';
-
-    // Compute cache status
-    final allCached = material != null && material.files.isNotEmpty && material.files.every((f) => f.isCached);
-    final uncachedFiles = material != null ? material.files.where((f) => !f.isCached).toList() : <MaterialFile>[];
 
     ref.listen<LearningMaterialState>(learningMaterialProvider, (prev, next) {
       // Intercept delete success before showing snackbar
@@ -376,7 +345,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.error_outline_rounded, size: 64, color: const Color(0xFFCCCCCC)),
+                        const Icon(Icons.error_outline_rounded, size: 64, color: Color(0xFFCCCCCC)),
                         const SizedBox(height: 16),
                         const Text('Failed to load module', style: TextStyle(fontSize: 16, color: Color(0xFF666666))),
                         const SizedBox(height: 24),
@@ -498,9 +467,9 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
           ),
           if (material.needsSync) ...[
             const SizedBox(height: 12),
-            StatusBadge(
+            const StatusBadge(
               label: 'Pending sync',
-              color: const Color(0xFF999999),
+              color: Color(0xFF999999),
               variant: BadgeVariant.outlined,
             ),
           ],

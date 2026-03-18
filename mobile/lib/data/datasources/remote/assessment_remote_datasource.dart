@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+
 import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/datasources/remote/models/student_assessment_submission_item_model.dart';
@@ -346,15 +348,15 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
   Future<StartSubmissionResultModel> startAssessment({
     required String assessmentId,
   }) async {
-    print('🚀 [RemoteDS] startAssessment() START - assessmentId: $assessmentId');
+    debugPrint('🚀 [RemoteDS] startAssessment() START - assessmentId: $assessmentId');
     try {
       final result = await _dioClient.postTyped(
         ApiEndpoints.assessmentStart(assessmentId),
       );
-      print('🚀 [RemoteDS] startAssessment() SUCCESS - submissionId: ${result.submissionId}, startedAt: ${result.startedAt}, questionCount: ${result.questions.length}');
+      debugPrint('🚀 [RemoteDS] startAssessment() SUCCESS - submissionId: ${result.submissionId}, startedAt: ${result.startedAt}, questionCount: ${result.questions.length}');
       return result;
     } on DioException catch (e) {
-      print('🚀 [RemoteDS] startAssessment() ERROR - DioException: ${e.message}, statusCode: ${e.response?.statusCode}');
+      debugPrint('🚀 [RemoteDS] startAssessment() ERROR - DioException: ${e.message}, statusCode: ${e.response?.statusCode}');
       throw _dioClient.handleError(e);
     }
   }
@@ -364,15 +366,15 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
     required String submissionId,
     required List<Map<String, dynamic>> answers,
   }) async {
-    print('💾 [RemoteDS] saveAnswers() START - submissionId: $submissionId, answerCount: ${answers.length}');
+    debugPrint('💾 [RemoteDS] saveAnswers() START - submissionId: $submissionId, answerCount: ${answers.length}');
     try {
       await _dioClient.putVoid(
         ApiEndpoints.submissionAnswers(submissionId),
         data: {'answers': answers},
       );
-      print('💾 [RemoteDS] saveAnswers() SUCCESS');
+      debugPrint('💾 [RemoteDS] saveAnswers() SUCCESS');
     } on DioException catch (e) {
-      print('💾 [RemoteDS] saveAnswers() ERROR - DioException: ${e.message}, statusCode: ${e.response?.statusCode}');
+      debugPrint('💾 [RemoteDS] saveAnswers() ERROR - DioException: ${e.message}, statusCode: ${e.response?.statusCode}');
       throw _dioClient.handleError(e);
     }
   }
@@ -381,19 +383,19 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
   Future<SubmissionSummaryModel> submitAssessment({
     required String submissionId,
   }) async {
-    print('📤 [RemoteDS] submitAssessment() START - submissionId: $submissionId');
+    debugPrint('📤 [RemoteDS] submitAssessment() START - submissionId: $submissionId');
     try {
       final result = await _dioClient.postTyped<SubmissionSummaryModel>(
         ApiEndpoints.submissionSubmit(submissionId),
       );
-      print('📤 [RemoteDS] submitAssessment() SUCCESS - received: id=${result.id}, isSubmitted=${result.isSubmitted}, submittedAt=${result.submittedAt}, autoScore=${result.autoScore}, finalScore=${result.finalScore}');
+      debugPrint('📤 [RemoteDS] submitAssessment() SUCCESS - received: id=${result.id}, isSubmitted=${result.isSubmitted}, submittedAt=${result.submittedAt}, autoScore=${result.autoScore}, finalScore=${result.finalScore}');
       return result;
     } on DioException catch (e) {
-      print('📤 [RemoteDS] submitAssessment() ERROR - DioException: ${e.message}, statusCode: ${e.response?.statusCode}');
-      print('📤 [RemoteDS] submitAssessment() - Response body: ${e.response?.data}');
+      debugPrint('📤 [RemoteDS] submitAssessment() ERROR - DioException: ${e.message}, statusCode: ${e.response?.statusCode}');
+      debugPrint('📤 [RemoteDS] submitAssessment() - Response body: ${e.response?.data}');
       throw _dioClient.handleError(e);
     } catch (e) {
-      print('📤 [RemoteDS] submitAssessment() ERROR - Unexpected exception: $e');
+      debugPrint('📤 [RemoteDS] submitAssessment() ERROR - Unexpected exception: $e');
       rethrow;
     }
   }

@@ -163,12 +163,12 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
                             margin: const EdgeInsets.only(top: 16, bottom: 12),
                             decoration: BoxDecoration(
                               color: getCategoryState(category) > 0
-                                  ? const Color(0xFF2B2B2B).withOpacity(0.05)
+                                  ? const Color(0xFF2B2B2B).withValues(alpha: 0.05)
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
                                 color: getCategoryState(category) > 0
-                                    ? const Color(0xFF2B2B2B).withOpacity(0.2)
+                                    ? const Color(0xFF2B2B2B).withValues(alpha: 0.2)
                                     : Colors.transparent,
                               ),
                             ),
@@ -442,7 +442,7 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
                     ),
                   ),
                   value: _isPublished,
-                  activeColor: const Color(0xFF2B2B2B),
+                  activeThumbColor: const Color(0xFF2B2B2B),
                   onChanged: assignState.isLoading
                       ? null
                       : (value) => setState(() => _isPublished = value),
@@ -535,9 +535,9 @@ class _AllowedFileTypesSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           'Allowed File Types (optional)',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             color: Color(0xFF999999),
             fontWeight: FontWeight.w400,

@@ -5,13 +5,11 @@ import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/sync_state.dart';
 import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';
 import 'package:likha/data/models/sync/push_response_model.dart';
-import 'package:likha/services/storage_service.dart';
 
 class OutboundSyncHandler {
   final SyncQueue _syncQueue;
   final SyncRemoteDataSource _syncRemoteDataSource;
   final LocalDatabase _localDatabase;
-  final StorageService _storageService;
   final SyncLogger _log;
   final void Function({
     SyncPhase? phase,
@@ -30,7 +28,6 @@ class OutboundSyncHandler {
     this._syncQueue,
     this._syncRemoteDataSource,
     this._localDatabase,
-    this._storageService,
     this._log,
     this._updateState,
   );
