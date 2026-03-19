@@ -12,7 +12,9 @@ import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/markdown_display.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/card_icon_slot.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/status_badge.dart';
+import 'package:likha/presentation/pages/shared/widgets/primitives/info_chip.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/utils/formatters.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/rich_text_field.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/widgets/styled_dialog.dart';
@@ -296,12 +298,6 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
     );
   }
 
-  String _formatFileSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
-
   String _formatDate(DateTime dt) {
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
@@ -451,12 +447,12 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
           const SizedBox(height: 16),
           Row(
             children: [
-              _InfoChip(
+              InfoChip(
                 icon: Icons.attach_file_rounded,
                 label: '${material.files.length} file(s)',
               ),
               const SizedBox(width: 14),
-              _InfoChip(
+              InfoChip(
                 icon: Icons.schedule_rounded,
                 label: 'Updated ${_formatDate(material.updatedAt)}',
               ),
@@ -553,7 +549,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                 overflow: TextOverflow.ellipsis,
               ),
               subtitle: Text(
-                _formatFileSize(file.fileSize),
+                formatFileSize(file.fileSize),
                 style: const TextStyle(
                   fontSize: 12,
                   color: Color(0xFF999999),
@@ -582,33 +578,6 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
           }),
         ],
       ),
-    );
-  }
-}
-
-class _InfoChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _InfoChip({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 15, color: const Color(0xFF666666)),
-        const SizedBox(width: 5),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            color: Color(0xFF666666),
-            fontWeight: FontWeight.w500,
-            letterSpacing: -0.2,
-          ),
-        ),
-      ],
     );
   }
 }

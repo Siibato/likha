@@ -5,6 +5,9 @@ import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/pages/shared/widgets/cards/score_display_card.dart';
+import 'package:likha/presentation/pages/shared/widgets/primitives/info_chip.dart';
+import 'package:likha/presentation/utils/formatters.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/presentation/pages/student/assessment_results_page.dart';
 import 'package:likha/presentation/pages/student/take_assessment_page.dart';
@@ -222,7 +225,12 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
                   ),
                   _buildInfoCard(),
                   if (status == DetailStatus.resultsAvailable) ...[
-                    _buildScorePreviewCard(state),
+                    ScoreDisplayCard(
+                      score: state.studentResult?.finalScore ?? 0,
+                      totalPoints: widget.assessment.totalPoints ?? 0,
+                      isLoading: state.isLoading,
+                      useBaseCardStyle: false,
+                    ),
                     _buildViewResultsButton(),
                   ] else if (status == DetailStatus.available) ...[
                     _buildStartButton(),
@@ -346,124 +354,6 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
               icon: Icons.event_rounded,
               label: 'Closes',
               dateTime: _formatDateTime(widget.assessment.closeAt),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildScorePreviewCard(AssessmentState state) {
-    if (_isLoadingScore) {
-      return Container(
-        margin: const EdgeInsets.only(bottom: 14),
-        decoration: BoxDecoration(
-          color: const Color(0xFFE0E0E0),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(1, 1, 1, 3.5),
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: const Center(
-            child: CircularProgressIndicator(
-              color: Color(0xFF2B2B2B),
-              strokeWidth: 2.5,
-            ),
-          ),
-        ),
-      );
-    }
-
-    final result = state.studentResult;
-    if (result == null) {
-      return const SizedBox.shrink();
-    }
-
-    final totalPoints = result.totalPoints.toDouble();
-    final finalScore = result.finalScore;
-    final percentage = totalPoints > 0 ? (finalScore / totalPoints) * 100 : 0.0;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(1, 1, 1, 3.5),
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Your Score',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF666666),
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(
-                  finalScore.toStringAsFixed(1),
-                  style: const TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF2B2B2B),
-                  ),
-                ),
-                Text(
-                  ' / $totalPoints',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF999999),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8F9FA),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFE0E0E0)),
-                ),
-                child: Text(
-                  '${percentage.toStringAsFixed(1)}%',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF2B2B2B),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
-                minHeight: 10,
-                backgroundColor: const Color(0xFFF0F0F0),
-                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF2B2B2B)),
-                value: totalPoints > 0 ? finalScore / totalPoints : 0,
-              ),
             ),
           ],
         ),

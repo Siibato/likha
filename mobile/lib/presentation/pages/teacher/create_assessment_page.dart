@@ -13,6 +13,7 @@ import 'package:likha/presentation/pages/teacher/widgets/assessment_details_sect
 import 'package:likha/presentation/pages/teacher/widgets/assessment_questions_section.dart';
 import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
+import 'package:likha/presentation/utils/formatters.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -173,16 +174,6 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
     );
   }
 
-  String _formatDateTimeForApi(DateTime dt) {
-    final utc = dt.toUtc();
-    return '${utc.year.toString().padLeft(4, '0')}-'
-        '${utc.month.toString().padLeft(2, '0')}-'
-        '${utc.day.toString().padLeft(2, '0')}T'
-        '${utc.hour.toString().padLeft(2, '0')}:'
-        '${utc.minute.toString().padLeft(2, '0')}:'
-        '${utc.second.toString().padLeft(2, '0')}';
-  }
-
   bool _validateAll() {
     if (!_detailsFormKey.currentState!.validate()) return false;
 
@@ -291,8 +282,8 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                   ? null
                   : _descriptionController.text.trim(),
               timeLimitMinutes: int.parse(_timeLimitController.text.trim()),
-              openAt: _formatDateTimeForApi(_openAt),
-              closeAt: _formatDateTimeForApi(_closeAt),
+              openAt: formatDateTimeForApi(_openAt),
+              closeAt: formatDateTimeForApi(_closeAt),
               showResultsImmediately: _showResultsImmediately,
               isPublished: _isPublished,
               questions: _isPublished ? questionsData : null,

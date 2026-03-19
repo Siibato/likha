@@ -11,6 +11,7 @@ import 'package:likha/presentation/pages/teacher/edit_question_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_info_card.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_status_card.dart';
 import 'package:likha/presentation/pages/teacher/widgets/questions_section.dart';
+import 'package:likha/presentation/pages/teacher/widgets/question_reorder_list.dart';
 import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
@@ -575,142 +576,13 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                           const SizedBox(height: 16),
                         ],
                         if (_isQuestionReorderMode)
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: const Color(0xFFE0E0E0),
-                                width: 1,
-                              ),
-                            ),
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      'Questions (${_questionReorderBuffer.length})',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF202020),
-                                        letterSpacing: -0.3,
-                                      ),
-                                    ),
-                                    const Spacer(),
-                                    TextButton(
-                                      onPressed: _cancelQuestionReorderMode,
-                                      child: const Text('Cancel'),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    ElevatedButton(
-                                      onPressed: () => _exitQuestionReorderMode(widget.assessmentId),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF2B2B2B),
-                                        foregroundColor: Colors.white,
-                                      ),
-                                      child: const Text('Done'),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                AnimatedBuilder(
-                                  animation: _questionAnimController,
-                                  builder: (context, _) => Column(
-                                    children: _questionReorderBuffer.asMap().entries.map((entry) {
-                                      final index = entry.key;
-                                      final question = entry.value;
-                                      final oldIndex = _questionAnimatingIndices[question.id];
-                                      double animOffset = 0;
-                                      if (oldIndex != null && oldIndex != index) {
-                                        const cardHeight = 92.0;
-                                        animOffset = (oldIndex - index) * cardHeight;
-                                      }
-                                      final currentOffset = Tween<double>(begin: animOffset, end: 0)
-                                          .evaluate(_questionAnimController);
-                                      return Transform.translate(
-                                        key: ValueKey(question.id),
-                                        offset: Offset(0, currentOffset),
-                                        child: GestureDetector(
-                                          onTap: () => _showQuestionMoveDialog(index),
-                                          child: Container(
-                                            margin: const EdgeInsets.only(bottom: 12),
-                                            padding: const EdgeInsets.all(12),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFFAFAFA),
-                                              borderRadius: BorderRadius.circular(8),
-                                              border: Border.all(
-                                                color: const Color(0xFFE0E0E0),
-                                              ),
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                Container(
-                                                  width: 32,
-                                                  height: 32,
-                                                  decoration: BoxDecoration(
-                                                    border: Border.all(
-                                                      color: const Color(0xFF2B2B2B),
-                                                      width: 1.5,
-                                                    ),
-                                                    borderRadius: BorderRadius.circular(4),
-                                                  ),
-                                                  child: Center(
-                                                    child: Text(
-                                                      '${index + 1}',
-                                                      style: const TextStyle(
-                                                        fontSize: 14,
-                                                        fontWeight: FontWeight.w600,
-                                                        color: Color(0xFF2B2B2B),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 12),
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      Text(
-                                                        question.questionText,
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow.ellipsis,
-                                                        style: const TextStyle(
-                                                          fontSize: 14,
-                                                          fontWeight: FontWeight.w500,
-                                                          color: Color(0xFF202020),
-                                                        ),
-                                                      ),
-                                                      const SizedBox(height: 4),
-                                                      Chip(
-                                                        label: Text(
-                                                          question.questionType,
-                                                          style: const TextStyle(
-                                                            fontSize: 12,
-                                                          ),
-                                                        ),
-                                                        labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-                                                        visualDensity: VisualDensity.compact,
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                const Icon(
-                                                  Icons.chevron_right_rounded,
-                                                  color: Color(0xFF999999),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
-                                  ),
-                                ),
-                              ],
-                            ),
+                          QuestionReorderList(
+                            reorderBuffer: _questionReorderBuffer,
+                            questionAnimatingIndices: _questionAnimatingIndices,
+                            animationController: _questionAnimController,
+                            onShowMoveDialog: _showQuestionMoveDialog,
+                            onCancel: _cancelQuestionReorderMode,
+                            onConfirm: () => _exitQuestionReorderMode(widget.assessmentId),
                           )
                         else
                           QuestionsSection(
