@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/injection_container.dart';
@@ -46,40 +46,40 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
     final withinWindow = now.isAfter(a.openAt) && now.isBefore(a.closeAt);
     final resultsAccessible = a.resultsReleased || a.showResultsImmediately;
 
-    debugPrint('📄 [DetailPage] _computeDetailStatus() - title: ${a.title}, submissionCount: ${a.submissionCount}, withinWindow: $withinWindow, resultsAccessible: $resultsAccessible');
+    PageLogger.instance.log('_computeDetailStatus() - title: ${a.title}, submissionCount: ${a.submissionCount}, withinWindow: $withinWindow, resultsAccessible: $resultsAccessible');
 
     if (hasSubmission && resultsAccessible) {
-      debugPrint('📄 [DetailPage] _computeDetailStatus() - returning RESULTS_AVAILABLE');
+      PageLogger.instance.log('_computeDetailStatus() - returning RESULTS_AVAILABLE');
       return DetailStatus.resultsAvailable;
     }
     if (hasSubmission) {
       // Has submission — check if it's actually submitted
       final submissionIsSubmitted = _cachedSubmissionIsSubmitted();
-      debugPrint('📄 [DetailPage] _computeDetailStatus() - hasSubmission: true, submissionIsSubmitted: $submissionIsSubmitted, withinWindow: $withinWindow');
+      PageLogger.instance.log('_computeDetailStatus() - hasSubmission: true, submissionIsSubmitted: $submissionIsSubmitted, withinWindow: $withinWindow');
 
       if (submissionIsSubmitted) {
         // Already submitted → awaiting grading or results
-        debugPrint('📄 [DetailPage] _computeDetailStatus() - returning PENDING_RESULTS (submitted, awaiting grading)');
+        PageLogger.instance.log('_computeDetailStatus() - returning PENDING_RESULTS (submitted, awaiting grading)');
         return DetailStatus.pendingResults;
       } else if (withinWindow) {
         // Started but not submitted, window still open → resumable
-        debugPrint('📄 [DetailPage] _computeDetailStatus() - returning RESUMABLE (started but not submitted)');
+        PageLogger.instance.log('_computeDetailStatus() - returning RESUMABLE (started but not submitted)');
         return DetailStatus.resumable;
       } else {
         // Started but not submitted, window closed → too late
-        debugPrint('📄 [DetailPage] _computeDetailStatus() - returning PENDING_RESULTS (not submitted, window closed)');
+        PageLogger.instance.log('_computeDetailStatus() - returning PENDING_RESULTS (not submitted, window closed)');
         return DetailStatus.pendingResults;
       }
     }
     if (now.isBefore(a.openAt)) {
-      debugPrint('📄 [DetailPage] _computeDetailStatus() - returning NOT_YET_OPEN');
+      PageLogger.instance.log('_computeDetailStatus() - returning NOT_YET_OPEN');
       return DetailStatus.notYetOpen;
     }
     if (now.isAfter(a.closeAt)) {
-      debugPrint('📄 [DetailPage] _computeDetailStatus() - returning CLOSED');
+      PageLogger.instance.log('_computeDetailStatus() - returning CLOSED');
       return DetailStatus.closed;
     }
-    debugPrint('📄 [DetailPage] _computeDetailStatus() - returning AVAILABLE');
+    PageLogger.instance.log('_computeDetailStatus() - returning AVAILABLE');
     return DetailStatus.available;
   }
 
@@ -92,15 +92,15 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
   Future<void> _loadSubmissionStatus() async {
     final user = ref.read(authProvider).user;
     if (user == null) {
-      debugPrint('❌ [DetailPage] _loadSubmissionStatus() - user is null, cannot load submission');
+      PageLogger.instance.log('_loadSubmissionStatus() - user is null, cannot load submission');
       return;
     }
 
     try {
-      debugPrint('🔍 [DetailPage] _loadSubmissionStatus() START - assessmentId: ${widget.assessment.id}, studentId: ${user.id}');
+      PageLogger.instance.log('_loadSubmissionStatus() START - assessmentId: ${widget.assessment.id}, studentId: ${user.id}');
 
       // Load the submission to check if it's submitted
-      debugPrint('🔍 [DetailPage] _loadSubmissionStatus() - calling loadScorePreview()');
+      PageLogger.instance.log('_loadSubmissionStatus() - calling loadScorePreview()');
       await ref.read(assessmentProvider.notifier).loadScorePreview(
         widget.assessment.id,
         user.id,
@@ -110,24 +110,23 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
       // Use the submission's own isSubmitted flag — NOT whether results loaded.
       // Results can 403 (not released yet) even when the submission IS submitted.
       final submission = assessmentState.currentStudentSubmission;
-      debugPrint('🔍 [DetailPage] _loadSubmissionStatus() - RESULT: currentStudentSubmission=${submission?.id}, isSubmitted=${submission?.isSubmitted}');
+      PageLogger.instance.log('_loadSubmissionStatus() - RESULT: currentStudentSubmission=${submission?.id}, isSubmitted=${submission?.isSubmitted}');
 
       if (mounted) {
         setState(() {
           _submissionIsSubmitted = submission?.isSubmitted; // null=no sub, false=in-progress, true=submitted
-          debugPrint('🔍 [DetailPage] _loadSubmissionStatus() - setState: _submissionIsSubmitted=$_submissionIsSubmitted');
+          PageLogger.instance.log('_loadSubmissionStatus() - setState: _submissionIsSubmitted=$_submissionIsSubmitted');
         });
       }
     } catch (e, st) {
-      debugPrint('❌ [DetailPage] _loadSubmissionStatus() EXCEPTION: $e');
-      debugPrint('❌ [DetailPage] _loadSubmissionStatus() STACK: $st');
+      PageLogger.instance.error('_loadSubmissionStatus() EXCEPTION', e);
     }
   }
 
   Future<void> _loadScore() async {
     final user = ref.read(authProvider).user;
     if (user == null) return;
-    debugPrint('🔍 [DetailPage] _loadScore() START - assessmentId: ${widget.assessment.id}, studentId: ${user.id}');
+    PageLogger.instance.log('_loadScore() START - assessmentId: ${widget.assessment.id}, studentId: ${user.id}');
     setState(() => _isLoadingScore = true);
 
     await ref.read(assessmentProvider.notifier).loadScorePreview(
@@ -136,7 +135,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
     );
 
     final state = ref.read(assessmentProvider);
-    debugPrint('🔍 [DetailPage] _loadScore() END - studentResult: ${state.studentResult}, error: ${state.error}');
+    PageLogger.instance.log('_loadScore() END - studentResult: ${state.studentResult}, error: ${state.error}');
     if (mounted) setState(() => _isLoadingScore = false);
   }
 

@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
-import 'package:flutter/foundation.dart';
 
+import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -22,9 +22,9 @@ mixin AssignmentQueryMixin on AssignmentRepositoryBase {
         try {
           currentUserId = await storageService.getUserId();
           userRole = await storageService.getUserRole();
-          debugPrint('📚 [AssignmentQueryMixin] getAssignments() - got currentUserId: $currentUserId, userRole: $userRole');
+          RepoLogger.instance.log('getAssignments() - got currentUserId: $currentUserId, userRole: $userRole');
         } catch (e) {
-          debugPrint('⚠️  [AssignmentQueryMixin] getAssignments() - could not get user info: $e');
+          RepoLogger.instance.warn('getAssignments() - could not get user info', e);
         }
 
         // STEP 1a: Try cache with studentId only for students (per-student enrichment)
@@ -37,16 +37,15 @@ mixin AssignmentQueryMixin on AssignmentRepositoryBase {
         );
 
         // STEP 1b: Assignments from cache (enriched with per-student data if user is a student)
-        debugPrint('📚 [AssignmentQueryMixin] getAssignments() - loading ${cachedAssignments.length} assignments (enriched with studentId=${isStudent ? currentUserId : 'null (teacher)'} )');
+        RepoLogger.instance.log('getAssignments() - loading ${cachedAssignments.length} assignments');
         final assignmentsWithSubmissions = <Assignment>[];
         for (final assignment in cachedAssignments) {
           try {
             // Assignments already have submissionId, submissionStatus, score from cache enrichment
             // Just use them directly
-            debugPrint('📚 [AssignmentQueryMixin]   - ${assignment.title}: submissionStatus=${assignment.submissionStatus}, score=${assignment.score}, submissionCount=${assignment.submissionCount}, gradedCount=${assignment.gradedCount}');
             assignmentsWithSubmissions.add(assignment);
           } catch (e) {
-            debugPrint('⚠️  [AssignmentQueryMixin]   - ${assignment.title}: unexpected error: $e');
+            RepoLogger.instance.warn('getAssignments() - error processing ${assignment.title}', e);
             assignmentsWithSubmissions.add(assignment);
           }
         }

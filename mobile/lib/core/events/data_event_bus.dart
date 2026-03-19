@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:likha/core/logging/core_logger.dart';
 
 /// Event bus that bridges the data layer (repositories) and the presentation
 /// layer (notifiers). Repositories emit events; notifiers listen and reload.
@@ -34,11 +34,11 @@ class DataEventBus {
   void notifyAssessmentDetailChanged(String assessmentId) => _assessmentDetail.add(assessmentId);
   void notifyAssignmentsChanged(String classId) => _assignments.add(classId);
   void notifyMaterialsChanged(String classId) {
-    debugPrint('[EVENT_BUS] 🔔 notifyMaterialsChanged fired with classId: $classId');
+    CoreLogger.instance.log('🔔 notifyMaterialsChanged fired with classId: $classId');
     _materials.add(classId);
   }
   void notifySubmissionDetailChanged(String submissionId) {
-    debugPrint('[EVENT_BUS] 🔔 notifySubmissionDetailChanged fired with submissionId: $submissionId');
+    CoreLogger.instance.log('🔔 notifySubmissionDetailChanged fired with submissionId: $submissionId');
     _submissionDetail.add(submissionId);
   }
   void notifyClassesChanged()                    => _classes.add(null);

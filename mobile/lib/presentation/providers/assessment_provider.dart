@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/logging/provider_logger.dart';
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
@@ -572,10 +572,10 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
   /// Loads score preview for the detail page using local DB only.
   /// Never calls startAssessment(). Sets studentResult in state if found.
   Future<void> loadScorePreview(String assessmentId, String studentId) async {
-    debugPrint('📊 [Provider] loadScorePreview() START - assessmentId: $assessmentId, studentId: $studentId');
+    ProviderLogger.instance.log('loadScorePreview() START - assessmentId: $assessmentId, studentId: $studentId');
     state = state.copyWith(isLoading: true, clearError: true);
 
-    debugPrint('📊 [Provider] loadScorePreview() - calling _getStudentSubmission...');
+    ProviderLogger.instance.log('loadScorePreview() - calling _getStudentSubmission...');
     final submissionResult = await _getStudentSubmission(
       GetStudentSubmissionParams(
         assessmentId: assessmentId,
@@ -583,25 +583,22 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
       ),
     );
 
-    debugPrint('📊 [Provider] loadScorePreview() - got submissionResult, folding...');
+    ProviderLogger.instance.log('loadScorePreview() - got submissionResult, folding...');
 
     await submissionResult.fold(
       (failure) async {
-        debugPrint('❌ [Provider] loadScorePreview() FAILED - failure type: ${failure.runtimeType}, message: ${failure.message}');
+        ProviderLogger.instance.error('loadScorePreview() FAILED', Exception(failure.message));
         state = state.copyWith(isLoading: false, error: failure.message);
       },
       (submission) async {
-        debugPrint('✅ [Provider] loadScorePreview() GOT SUBMISSION');
-        debugPrint('✅ [Provider] loadScorePreview() - submission is null: ${submission == null}');
-        debugPrint('✅ [Provider] loadScorePreview() - submission value: $submission');
+        ProviderLogger.instance.log('loadScorePreview() GOT SUBMISSION');
+        ProviderLogger.instance.log('loadScorePreview() - submission is null: ${submission == null}');
         if (submission != null) {
-          debugPrint('✅ [Provider] loadScorePreview() - submission.id: ${submission.id}');
-          debugPrint('✅ [Provider] loadScorePreview() - submission.isSubmitted: ${submission.isSubmitted}');
-          debugPrint('✅ [Provider] loadScorePreview() - submission.submittedAt: ${submission.submittedAt}');
+          ProviderLogger.instance.log('loadScorePreview() - submission.id: ${submission.id}, isSubmitted: ${submission.isSubmitted}');
         }
 
         if (submission == null) {
-          debugPrint('⏳ [Provider] loadScorePreview() NOT YET SUBMITTED (submission==null) - no results to load');
+          ProviderLogger.instance.log('loadScorePreview() NOT YET SUBMITTED (submission==null) - no results to load');
           state = state.copyWith(isLoading: false, clearStudentSubmission: true);
           return;
         }
@@ -620,7 +617,7 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
         }).ignore();
       },
     );
-    debugPrint('📊 [Provider] loadScorePreview() END - currentStudentSubmission=${state.currentStudentSubmission?.id}');
+    ProviderLogger.instance.log('loadScorePreview() END - currentStudentSubmission=${state.currentStudentSubmission?.id}');
   }
 
   void clearMessages() {

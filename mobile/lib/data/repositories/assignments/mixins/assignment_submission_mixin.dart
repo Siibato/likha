@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:dartz/dartz.dart';
-import 'package:flutter/foundation.dart';
+import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -125,22 +125,22 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
   void _backgroundRefreshSubmission(String submissionId) {
     Future.microtask(() async {
       try {
-        debugPrint('[BG_REFRESH] 🔄 Starting background refresh for submissionId=$submissionId');
+        RepoLogger.instance.log('_backgroundRefreshSubmission() - Starting background refresh for submissionId=$submissionId');
         final fresh = await remoteDataSource.getSubmissionDetail(
             submissionId: submissionId);
         // Get currently cached data to compare against fresh
         final cached = await localDataSource.getCachedSubmission(submissionId);
 
         if (_submissionDataHasChanged(cached, fresh)) {
-          debugPrint('[BG_REFRESH] ✅ Data changed! Caching and notifying...');
+          RepoLogger.instance.log('_backgroundRefreshSubmission() - Data changed! Caching and notifying...');
           await localDataSource.cacheSubmissionDetail(fresh);
-          debugPrint('[BG_REFRESH] 📢 Calling dataEventBus.notifySubmissionDetailChanged($submissionId)');
+          RepoLogger.instance.log('_backgroundRefreshSubmission() - Calling dataEventBus.notifySubmissionDetailChanged($submissionId)');
           dataEventBus.notifySubmissionDetailChanged(submissionId);
         } else {
-          debugPrint('[BG_REFRESH] ⚫ Data unchanged, no notification');
+          RepoLogger.instance.log('_backgroundRefreshSubmission() - Data unchanged, no notification');
         }
       } catch (e) {
-        debugPrint('[BG_REFRESH] ❌ Error in background refresh: $e');
+        RepoLogger.instance.error('_backgroundRefreshSubmission() - Error in background refresh', e);
       }
     });
   }

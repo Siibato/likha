@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
+import 'package:likha/core/logging/cache_logger.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
@@ -68,11 +68,11 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
   @override
   Future<void> cacheFile(String fileId, String fileName, List<int> bytes) async {
     try {
-      debugPrint('[CACHE_FILE] 💾 Caching file $fileId (${bytes.length} bytes)');
+      CacheLogger.instance.log('Caching file $fileId (${bytes.length} bytes)');
       final appDirDoc = await getApplicationDocumentsDirectory();
       final materialFilesDir = Directory('${appDirDoc.path}/material_files');
       if (!await materialFilesDir.exists()) {
-        debugPrint('[CACHE_FILE] 📁 Creating directory: ${materialFilesDir.path}');
+        CacheLogger.instance.log('Creating directory: ${materialFilesDir.path}');
         await materialFilesDir.create(recursive: true);
       }
 
@@ -96,11 +96,11 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
           ? '${finalFileName.substring(0, dotIndex)}-$shortId${finalFileName.substring(dotIndex)}'
           : '$finalFileName-$shortId';
       final filePath = '${materialFilesDir.path}/$localFileName';
-      debugPrint('[CACHE_FILE] 📝 Writing to: $filePath');
+      CacheLogger.instance.log('Writing to: $filePath');
       await File(filePath).writeAsBytes(bytes);
-      debugPrint('[CACHE_FILE] ✅ File written successfully');
+      CacheLogger.instance.log('File written successfully');
 
-      debugPrint('[CACHE_FILE] 🔄 Updating DB: local_path=$filePath');
+      CacheLogger.instance.log('Updating DB: local_path=$filePath');
       final rowsAffected = await db.update(
         'material_files',
         {
@@ -110,13 +110,13 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
         where: 'id = ?',
         whereArgs: [fileId],
       );
-      debugPrint('[CACHE_FILE] ✅ DB updated, rowsAffected=$rowsAffected');
+      CacheLogger.instance.log('DB updated, rowsAffected=$rowsAffected');
 
       if (rowsAffected == 0) {
-        debugPrint('[CACHE_FILE] ⚠️  WARNING: Update affected 0 rows (file might not exist in DB)');
+        CacheLogger.instance.warn('Update affected 0 rows (file might not exist in DB)');
       }
     } catch (e) {
-      debugPrint('[CACHE_FILE] ❌ Error: $e');
+      CacheLogger.instance.error('Error caching file', e);
       throw CacheException('Failed to cache file: $e');
     }
   }
@@ -149,7 +149,7 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
       final file = File(expectedPath);
 
       if (!await file.exists()) {
-        debugPrint('[GET_CACHED] ⚠️  File $fileId not found at expected path: $expectedPath');
+        CacheLogger.instance.warn('File $fileId not found at expected path: $expectedPath');
         // Clean up DB entry
         await db.update(
           'material_files',
@@ -160,7 +160,7 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
         throw CacheException('File not found at: $expectedPath');
       }
 
-      debugPrint('[GET_CACHED] ✅ Retrieved cached file: $fileId from $expectedPath');
+      CacheLogger.instance.log('Retrieved cached file: $fileId from $expectedPath');
       return await file.readAsBytes();
     } catch (e) {
       if (e is CacheException) rethrow;
@@ -184,7 +184,7 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
       final expectedPath = '${materialFilesDir.path}/$localFileName';
       return expectedPath;
     } catch (e) {
-      debugPrint('[GET_EXPECTED_PATH] Error: $e');
+      CacheLogger.instance.error('Error getting expected path', e);
       return null;
     }
   }
@@ -202,13 +202,13 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
       );
 
       if (results.isEmpty) {
-        debugPrint('[IS_CACHED] ❌ fileId=$fileId not found in DB');
+        CacheLogger.instance.warn('fileId=$fileId not found in DB');
         return false;
       }
 
       final fileName = results.first['file_name'] as String?;
       if (fileName == null || fileName.isEmpty) {
-        debugPrint('[IS_CACHED] ❌ fileId=$fileId has no fileName');
+        CacheLogger.instance.warn('fileId=$fileId has no fileName');
         return false;
       }
 
@@ -221,12 +221,12 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
       // Check if file actually exists at expected location
       final file = File(expectedPath);
       final exists = await file.exists();
-      debugPrint('[IS_CACHED] fileId=$fileId, fileName=$fileName, expectedPath=$expectedPath, exists=$exists');
+      CacheLogger.instance.log('fileId=$fileId, fileName=$fileName, expectedPath=$expectedPath, exists=$exists');
 
       // If exists but DB path is empty/stale, update it for next time
       final storedPath = results.first['local_path'] as String?;
       if (exists && (storedPath == null || storedPath.isEmpty)) {
-        debugPrint('[IS_CACHED] 🔄 Updating DB with found path');
+        CacheLogger.instance.log('Updating DB with found path');
         await db.update(
           'material_files',
           {'local_path': expectedPath},
@@ -237,7 +237,7 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
 
       return exists;
     } catch (e) {
-      debugPrint('[IS_CACHED] ❌ Error: $e');
+      CacheLogger.instance.error('Error checking if file cached', e);
       return false;
     }
   }
@@ -245,7 +245,7 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
   @override
   Future<void> cacheMaterialFiles(String materialId, List<MaterialFile> files) async {
     try {
-      debugPrint('[CACHE_FILES] 💾 Starting cacheMaterialFiles with ${files.length} files for materialId=$materialId');
+      CacheLogger.instance.log('Starting cacheMaterialFiles with ${files.length} files for materialId=$materialId');
       final db = await localDatabase.database;
       for (final file in files) {
         // Preserve local cache state if row already exists
@@ -257,7 +257,7 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
         );
 
         if (existing.isEmpty) {
-          debugPrint('[CACHE_FILES] ➕ Inserting new file: ${file.fileName} (${file.id})');
+          CacheLogger.instance.log('Inserting new file: ${file.fileName} (${file.id})');
           final rowsAffected = await db.insert(
             'material_files',
             {
@@ -272,9 +272,9 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
             },
             conflictAlgorithm: ConflictAlgorithm.ignore,
           );
-          debugPrint('[CACHE_FILES] ✅ Insert completed, rowsAffected=$rowsAffected');
+          CacheLogger.instance.log('Insert completed, rowsAffected=$rowsAffected');
         } else {
-          debugPrint('[CACHE_FILES] 🔄 Updating existing file: ${file.fileName} (${file.id})');
+          CacheLogger.instance.log('Updating existing file: ${file.fileName} (${file.id})');
           // Only update server-side metadata — preserve local_path
           final rowsAffected = await db.update(
             'material_files',
@@ -288,12 +288,12 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
             where: 'id = ?',
             whereArgs: [file.id],
           );
-          debugPrint('[CACHE_FILES] ✅ Update completed, rowsAffected=$rowsAffected');
+          CacheLogger.instance.log('Update completed, rowsAffected=$rowsAffected');
         }
       }
-      debugPrint('[CACHE_FILES] ✅ cacheMaterialFiles completed successfully');
+      CacheLogger.instance.log('cacheMaterialFiles completed successfully');
     } catch (e) {
-      debugPrint('[CACHE_FILES] ❌ Error in cacheMaterialFiles: $e');
+      CacheLogger.instance.error('Error in cacheMaterialFiles', e);
       throw CacheException('Failed to cache material files: $e');
     }
   }

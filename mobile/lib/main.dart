@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
 import 'package:likha/core/sync/sync_manager.dart';
+import 'package:likha/core/logging/core_logger.dart';
 import 'package:likha/injection_container.dart' as di;
 import 'package:likha/presentation/pages/home_page.dart';
 import 'package:likha/presentation/pages/login_page.dart';
@@ -14,7 +15,7 @@ void main() async {
     await dotenv.load(fileName: '.env');
   } catch (e) {
     // .env not found - will use fallback URL
-    debugPrint('Warning: .env file not loaded: $e');
+    CoreLogger.instance.warn('.env file not loaded: $e');
   }
   await di.init();
 

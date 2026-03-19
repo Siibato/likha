@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
@@ -272,7 +272,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
     setState(() => _isSaving = true);
 
     try {
-      debugPrint('[CreateAssessmentPage] _handleSave: Starting assessment creation');
+      PageLogger.instance.log('_handleSave: Starting assessment creation');
 
       // Build questionsData for use in both paths
       final questionsData = _buildQuestionsData();
@@ -280,7 +280,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
       // Step 1: Create assessment
       // When published: pass questions for atomic creation
       // When draft: pass null (questions added in Step 2)
-      debugPrint('[CreateAssessmentPage] _handleSave: Calling createAssessment provider method');
+      PageLogger.instance.log('_handleSave: Calling createAssessment provider method');
       final assessment = await ref
           .read(assessmentProvider.notifier)
           .createAssessment(
@@ -299,12 +299,12 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
             ),
           );
 
-      debugPrint('[CreateAssessmentPage] _handleSave: createAssessment returned assessment=${assessment?.id}');
+      PageLogger.instance.log('_handleSave: createAssessment returned assessment=${assessment?.id}');
 
       if (!mounted) return;
 
       if (assessment == null) {
-        debugPrint('[CreateAssessmentPage] _handleSave: Assessment is null, showing error');
+        PageLogger.instance.log('_handleSave: Assessment is null, showing error');
         final state = ref.read(assessmentProvider);
         setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
         setState(() => _isSaving = false);
@@ -312,12 +312,12 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
       }
 
       final assessmentId = assessment.id;
-      debugPrint('[CreateAssessmentPage] _handleSave: Assessment created with ID=$assessmentId');
+      PageLogger.instance.log('_handleSave: Assessment created with ID=$assessmentId');
 
       // Step 2: Add questions only when DRAFT (published used atomic path above)
-      debugPrint('[CreateAssessmentPage] _handleSave: isPublished=$_isPublished, questions count=${_questions.length}');
+      PageLogger.instance.log('_handleSave: isPublished=$_isPublished, questions count=${_questions.length}');
       if (!_isPublished && _questions.isNotEmpty) {
-        debugPrint('[CreateAssessmentPage] _handleSave: Adding ${_questions.length} questions (draft flow)');
+        PageLogger.instance.log('_handleSave: Adding ${_questions.length} questions (draft flow)');
         await ref.read(assessmentProvider.notifier).addQuestions(
           AddQuestionsParams(
             assessmentId: assessmentId,
@@ -325,12 +325,12 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
           ),
         );
 
-        debugPrint('[CreateAssessmentPage] _handleSave: addQuestions completed');
+        PageLogger.instance.log('_handleSave: addQuestions completed');
 
         if (!mounted) return;
         final state = ref.read(assessmentProvider);
         if (state.error != null) {
-          debugPrint('[CreateAssessmentPage] _handleSave: Error after addQuestions: ${state.error}');
+          PageLogger.instance.error('_handleSave: Error after addQuestions', Exception(state.error));
           setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
           setState(() => _isSaving = false);
           return;
@@ -338,15 +338,15 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
       }
 
       // Success
-      debugPrint('[CreateAssessmentPage] _handleSave: Clearing draft');
+      PageLogger.instance.log('_handleSave: Clearing draft');
       await _clearDraft();
       ref.read(assessmentProvider.notifier).clearMessages();
       if (mounted) {
-        debugPrint('[CreateAssessmentPage] _handleSave: Success! Navigating');
+        PageLogger.instance.log('_handleSave: Success! Navigating');
         Navigator.pop(context, true);
       }
     } catch (e) {
-      debugPrint('[CreateAssessmentPage] _handleSave: Exception caught: $e');
+      PageLogger.instance.error('_handleSave: Exception caught', e);
       if (mounted) {
         setState(() => _formError = 'An error occurred: $e');
         setState(() => _isSaving = false);

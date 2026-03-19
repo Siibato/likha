@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
@@ -33,13 +34,9 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
   @override
   void initState() {
     super.initState();
-    debugPrint('═══════════════════════════════════════════════════════════');
-    debugPrint('[PAGE_INIT] MaterialDetailPage initState');
-    debugPrint('[PAGE_INIT] materialId: ${widget.materialId}');
-    debugPrint('[PAGE_INIT] Scheduling loadMaterialDetail()...');
-    debugPrint('═══════════════════════════════════════════════════════════');
+    PageLogger.instance.log('MaterialDetailPage initState - materialId: ${widget.materialId}');
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      debugPrint('[PAGE_INIT] ▶ Now calling loadMaterialDetail()');
+      PageLogger.instance.log('Now calling loadMaterialDetail()');
       ref.read(learningMaterialProvider.notifier).loadMaterialDetail(widget.materialId);
     });
   }

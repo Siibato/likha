@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
-import 'package:flutter/foundation.dart';
 
+import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/sync/sync_queue.dart';
@@ -49,21 +49,21 @@ mixin LearningMaterialFileMixin on LearningMaterialRepositoryBase {
       );
 
       try {
-        debugPrint('[UPLOAD_POST] ✅ File uploaded successfully, fetching material detail...');
+        RepoLogger.instance.log('uploadFile() - File uploaded successfully, fetching material detail...');
         final materialDetail = await remoteDataSource.getMaterialDetail(materialId: materialId);
-        debugPrint('[UPLOAD_POST] 📄 Got material detail: ${materialDetail.files.length} files');
+        RepoLogger.instance.log('uploadFile() - Got material detail: ${materialDetail.files.length} files');
 
         if (materialDetail.files.isNotEmpty) {
-          debugPrint('[UPLOAD_POST] 💾 Caching ${materialDetail.files.length} files to local DB...');
+          RepoLogger.instance.log('uploadFile() - Caching ${materialDetail.files.length} files to local DB...');
           await localDataSource.cacheMaterialFiles(materialId, materialDetail.files);
-          debugPrint('[UPLOAD_POST] ✅ Cache complete, notifying event bus...');
+          RepoLogger.instance.log('uploadFile() - Cache complete, notifying event bus...');
         } else {
-          debugPrint('[UPLOAD_POST] ⚠️  No files in response, skipping cache');
+          RepoLogger.instance.warn('uploadFile() - No files in response, skipping cache');
         }
 
         dataEventBus.notifyMaterialsChanged(materialDetail.classId);
       } catch (e) {
-        debugPrint('[UPLOAD_POST] ❌ Error during post-upload caching: $e');
+        RepoLogger.instance.error('uploadFile() - Error during post-upload caching', e);
       }
 
       return Right(result);
@@ -119,14 +119,14 @@ mixin LearningMaterialFileMixin on LearningMaterialRepositoryBase {
       final result = await remoteDataSource.downloadFile(fileId: fileId);
 
       try {
-        debugPrint('[DL_FILE] ✅ Downloaded ${result.length} bytes, caching...');
+        RepoLogger.instance.log('downloadFile() - Downloaded ${result.length} bytes, caching...');
         // Pass empty fileName to let datasource look it up from material_files table
         await localDataSource.cacheFile(fileId, '', result);
-        debugPrint('[DL_FILE] ✅ File cached successfully');
+        RepoLogger.instance.log('downloadFile() - File cached successfully');
       } catch (e) {
         // Log the error but still return file — user can open it from memory
         // Next app start: file won't be cached, will need re-download
-        debugPrint('[DL_FILE] ⚠️  Cache write failed: $e (file still available in memory)');
+        RepoLogger.instance.warn('downloadFile() - Cache write failed, file still available in memory', e);
       }
 
       return Right(result);

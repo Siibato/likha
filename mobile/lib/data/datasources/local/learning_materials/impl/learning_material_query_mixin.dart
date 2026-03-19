@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
+import 'package:likha/core/logging/cache_logger.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/data/models/learning_materials/material_file_model.dart';
@@ -29,7 +29,7 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
           [materialId],
         );
         final actualCount = countResult.first['count'] as int? ?? 0;
-        debugPrint('[GET_CACHED_MATERIALS] materialId=$materialId, fileCount=$actualCount');
+        CacheLogger.instance.log('materialId=$materialId, fileCount=$actualCount');
 
         materials.add(LearningMaterialModel(
           id: materialId,
@@ -106,17 +106,12 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
       );
 
       // Log what we loaded from the database
-      debugPrint('═══════════════════════════════════════════════════════════');
-      debugPrint('[DB_LOAD] getCachedMaterialFiles for materialId: $materialId');
-      debugPrint('[DB_LOAD] Found ${results.length} file(s)');
+      CacheLogger.instance.log('getCachedMaterialFiles for materialId: $materialId');
+      CacheLogger.instance.log('Found ${results.length} file(s)');
       for (var i = 0; i < results.length; i++) {
         final row = results[i];
-        debugPrint('[DB_LOAD] File $i: ${row['file_name']}');
-        debugPrint('[DB_LOAD]   - id: ${row['id']}');
-        debugPrint('[DB_LOAD]   - user_save_path: ${row['user_save_path']}');
-        debugPrint('[DB_LOAD]   - local_path: ${row['local_path']}');
+        CacheLogger.instance.log('File $i: ${row['file_name']} (id: ${row['id']}, local_path: ${row['local_path']})');
       }
-      debugPrint('═══════════════════════════════════════════════════════════');
 
       // Build models with filesystem fallback + auto-repair
       final models = <MaterialFileModel>[];
@@ -131,7 +126,7 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
           if (expectedPath != null) {
             final file = File(expectedPath);
             if (await file.exists()) {
-              debugPrint('[GET_CACHED_FILES] 🔄 Found file on disk for $fileId, restoring DB path');
+              CacheLogger.instance.log('Found file on disk for $fileId, restoring DB path');
               // Update DB with the found path
               await db.update(
                 'material_files',
@@ -170,7 +165,7 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
           : '$fileName-$shortId';
       return '${materialFilesDir.path}/$localFileName';
     } catch (e) {
-      debugPrint('[GET_EXPECTED_PATH_QUERY] Error: $e');
+      CacheLogger.instance.error('Error getting expected path', e);
       return null;
     }
   }

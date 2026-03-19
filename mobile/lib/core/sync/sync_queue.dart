@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 
 import 'package:sqflite/sqflite.dart';
 import 'package:likha/core/database/local_database.dart';
+import 'package:likha/core/logging/core_logger.dart';
 
 // Re-export Transaction type from sqflite for convenience
 export 'package:sqflite/sqflite.dart' show Transaction;
@@ -142,17 +142,17 @@ class SyncQueueImpl implements SyncQueue {
 
   @override
   Future<void> enqueue(SyncQueueEntry entry, {Transaction? txn}) async {
-    debugPrint('[SyncQueue] enqueue: Adding ${entry.entityType.dbValue} ${entry.operation.dbValue} to queue, ID=${entry.id}');
+    CoreLogger.instance.log('enqueue: Adding ${entry.entityType.dbValue} ${entry.operation.dbValue} to queue, ID=${entry.id}');
 
     if (txn != null) {
-      debugPrint('[SyncQueue] enqueue: Using provided transaction object');
+      CoreLogger.instance.log('enqueue: Using provided transaction object');
       await txn.insert(
         'sync_queue',
         entry.toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
     } else {
-      debugPrint('[SyncQueue] enqueue: Getting database connection');
+      CoreLogger.instance.log('enqueue: Getting database connection');
       final db = await _localDatabase.database;
       await db.insert(
         'sync_queue',
@@ -161,7 +161,7 @@ class SyncQueueImpl implements SyncQueue {
       );
     }
 
-    debugPrint('[SyncQueue] enqueue: Entry added to queue successfully');
+    CoreLogger.instance.log('enqueue: Entry added to queue successfully');
   }
 
   @override
