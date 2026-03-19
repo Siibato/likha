@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:likha/core/sync/sync_logger.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -589,6 +591,45 @@ class SyncUpsertHelpers {
     }
   }
 
+  /// Save sync token (last_sync_at) to sync_metadata
+  Future<void> saveSyncToken(Database db, String syncToken) async {
+    await db.insert(
+      'sync_metadata',
+      {'key': 'last_sync_at', 'value': syncToken},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  /// Save sync expiry timestamp to sync_metadata
+  Future<void> saveSyncExpiry(Database db, String expiryAt) async {
+    await db.insert(
+      'sync_metadata',
+      {'key': 'data_expiry_at', 'value': expiryAt},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  /// Upsert current logged-in user
+  Future<void> upsertCurrentUser(Database db, Map<String, dynamic> userData) async {
+    await db.insert(
+      'users',
+      {
+        'id': userData['id'],
+        'username': userData['username'],
+        'full_name': userData['full_name'],
+        'role': userData['role'],
+        'account_status': userData['account_status'],
+        'activated_at': userData['activated_at'],
+        'created_at': userData['created_at'],
+        'updated_at': userData['updated_at'] ?? userData['created_at'],
+        'deleted_at': userData['deleted_at'],
+        'cached_at': DateTime.now().toIso8601String(),
+        'needs_sync': 0,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
   /// DEPRECATED: assessment_statistics_cache table doesn't exist in schema
   /// This method is kept for reference but is never called.
   @Deprecated('Table assessment_statistics_cache does not exist in local_database schema')
@@ -600,15 +641,37 @@ class SyncUpsertHelpers {
     // Table doesn't exist - method is a no-op
   }
 
-  /// DEPRECATED: student_results_cache table doesn't exist in schema
-  /// This method is kept for reference but is never called.
-  @Deprecated('Table student_results_cache does not exist in local_database schema')
+  /// Upsert student results cache (assessment performance data)
   Future<void> upsertStudentResults(
     Database db,
     List<dynamic> records,
   ) async {
-    _log.warn('upsertStudentResults called but table does not exist; skipping');
-    // Table doesn't exist - method is a no-op
+    if (records.isEmpty) return;
+    await db.transaction((txn) async {
+      for (final result in records) {
+        try {
+          final data = result as Map<String, dynamic>;
+          final submissionId = data['submission_id']?.toString();
+          if (submissionId == null || submissionId.isEmpty) {
+            _log.warn('Student result missing submission_id, skipping');
+            continue;
+          }
+          final now = DateTime.now().toIso8601String();
+          await txn.insert(
+            'student_results_cache',
+            {
+              'submission_id': submissionId,
+              'results_json': jsonEncode(data),
+              'cached_at': now,
+            },
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        } catch (e) {
+          _log.warn('Failed to cache student result: $e');
+        }
+      }
+    });
+    _log.upsertSummary('student_results_cache', records.length);
   }
 
   /// Process delta payload: upsert updated, soft-delete removed

@@ -11,18 +11,7 @@ class OutboundSyncHandler {
   final SyncRemoteDataSource _syncRemoteDataSource;
   final LocalDatabase _localDatabase;
   final SyncLogger _log;
-  final void Function({
-    SyncPhase? phase,
-    int? pendingCount,
-    int? failedCount,
-    String? lastError,
-    DateTime? lastSyncAt,
-    double? progress,
-    String? currentStep,
-    bool? assessmentsReady,
-    bool? assignmentsReady,
-    bool? materialsReady,
-  }) _updateState;
+  final SyncStateUpdater _updateState;
 
   OutboundSyncHandler(
     this._syncQueue,
@@ -221,11 +210,7 @@ class OutboundSyncHandler {
       operations: operations,
     );
 
-    try {
-      await processPushResults(response, pushStartTime);
-    } catch (e) {
-      rethrow;
-    }
+    await processPushResults(response, pushStartTime);
   }
 
   /// Process push results and update local state

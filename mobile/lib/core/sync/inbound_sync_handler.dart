@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/sync/sync_logger.dart';
 import 'package:likha/core/sync/sync_state.dart';
@@ -13,18 +11,7 @@ class InboundSyncHandler {
   final LocalDatabase _localDatabase;
   final SyncLogger _log;
   final SyncUpsertHelpers _upsertHelpers;
-  final void Function({
-    SyncPhase? phase,
-    int? pendingCount,
-    int? failedCount,
-    String? lastError,
-    DateTime? lastSyncAt,
-    double? progress,
-    String? currentStep,
-    bool? assessmentsReady,
-    bool? assignmentsReady,
-    bool? materialsReady,
-  }) _updateState;
+  final SyncStateUpdater _updateState;
 
   InboundSyncHandler(
     this._syncRemoteDataSource,
@@ -72,14 +59,7 @@ class InboundSyncHandler {
   Future<String?> runFullSync() async {
     // Get device ID (or generate and store)
     final db = await _localDatabase.database;
-    final deviceIdRows = await db.query(
-      'sync_metadata',
-      where: 'key = ?',
-      whereArgs: ['device_id'],
-    );
-    final deviceId = deviceIdRows.isNotEmpty
-        ? deviceIdRows.first['value'] as String
-        : generateAndStoreDeviceId(db);
+    final deviceId = await _getOrCreateDeviceId(db);
 
     // STEP 0: Initialize progress
     _updateState(progress: 0.0, currentStep: 'Preparing Likha for you…');
@@ -127,23 +107,7 @@ class InboundSyncHandler {
 
     // Cache the logged-in user from sync response (BEFORE enrollment upserts to avoid CASCADE DELETE)
     if (userData != null) {
-      await db.insert(
-        'users',
-        {
-          'id': userData['id'],
-          'username': userData['username'],
-          'full_name': userData['full_name'],
-          'role': userData['role'],
-          'account_status': userData['account_status'],
-          'activated_at': userData['activated_at'],
-          'created_at': userData['created_at'],
-          'updated_at': userData['updated_at'] ?? userData['created_at'],
-          'deleted_at': userData['deleted_at'],
-          'cached_at': DateTime.now().toIso8601String(),
-          'needs_sync': 0,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      await _upsertHelpers.upsertCurrentUser(db, userData);
     }
 
     // Upsert all base response data sequentially (proper await ensures committed before verification)
@@ -340,34 +304,7 @@ class InboundSyncHandler {
         );
 
         // Write student_results to cache
-        if (studentResults.isNotEmpty) {
-          await db.transaction((txn) async {
-            for (final result in studentResults) {
-              try {
-                final data = result as Map<String, dynamic>;
-                final submissionId = data['submission_id']?.toString();
-                if (submissionId == null || submissionId.isEmpty) {
-                  _log.warn('Student result missing submission_id, skipping');
-                  continue;
-                }
-
-                final now = DateTime.now().toIso8601String();
-                await txn.insert(
-                  'student_results_cache',
-                  {
-                    'submission_id': submissionId,
-                    'results_json': jsonEncode(data),
-                    'cached_at': now,
-                  },
-                  conflictAlgorithm: ConflictAlgorithm.replace,
-                );
-              } catch (e) {
-                _log.warn('Failed to cache student result: $e');
-              }
-            }
-          });
-          _log.upsertSummary('student_results_cache', studentResults.length);
-        }
+        await _upsertHelpers.upsertStudentResults(db, studentResults);
       }
     }
 
@@ -388,16 +325,8 @@ class InboundSyncHandler {
 
     // Save sync metadata
     final expiryAt = DateTime.now().add(const Duration(days: 30)).toIso8601String();
-    await db.insert(
-      'sync_metadata',
-      {'key': 'last_sync_at', 'value': syncToken},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-    await db.insert(
-      'sync_metadata',
-      {'key': 'data_expiry_at', 'value': expiryAt},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await _upsertHelpers.saveSyncToken(db, syncToken);
+    await _upsertHelpers.saveSyncExpiry(db, expiryAt);
 
     return serverTime ?? syncToken;
   }
@@ -407,14 +336,7 @@ class InboundSyncHandler {
   Future<String?> runDeltaSync(String lastSyncAt, String? dataExpiryAt) async {
     // Get device ID
     final db = await _localDatabase.database;
-    final deviceIdRows = await db.query(
-      'sync_metadata',
-      where: 'key = ?',
-      whereArgs: ['device_id'],
-    );
-    final deviceId = deviceIdRows.isNotEmpty
-        ? deviceIdRows.first['value'] as String
-        : generateAndStoreDeviceId(db);
+    final deviceId = await _getOrCreateDeviceId(db);
 
     // Fetch deltas
     final response =
@@ -458,24 +380,28 @@ class InboundSyncHandler {
 
     // Update sync metadata
     final expiryAt = DateTime.now().add(const Duration(days: 30)).toIso8601String();
-    await db.insert(
-      'sync_metadata',
-      {'key': 'last_sync_at', 'value': syncToken},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-    await db.insert(
-      'sync_metadata',
-      {'key': 'data_expiry_at', 'value': expiryAt},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await _upsertHelpers.saveSyncToken(db, syncToken);
+    await _upsertHelpers.saveSyncExpiry(db, expiryAt);
 
     return serverTime ?? syncToken;
   }
 
+  /// Get existing device ID or generate and store a new one
+  Future<String> _getOrCreateDeviceId(Database db) async {
+    final rows = await db.query(
+      'sync_metadata',
+      where: 'key = ?',
+      whereArgs: ['device_id'],
+    );
+    return rows.isNotEmpty
+        ? rows.first['value'] as String
+        : await generateAndStoreDeviceId(db);
+  }
+
   /// Generate and store a device ID
-  String generateAndStoreDeviceId(Database db) {
+  Future<String> generateAndStoreDeviceId(Database db) async {
     final deviceId = const Uuid().v4();
-    db.insert(
+    await db.insert(
       'sync_metadata',
       {'key': 'device_id', 'value': deviceId},
       conflictAlgorithm: ConflictAlgorithm.replace,
