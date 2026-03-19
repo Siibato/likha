@@ -15,7 +15,7 @@ import 'package:likha/presentation/pages/teacher/widgets/question_reorder_list.d
 import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
-import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 
 class AssessmentDetailPage extends ConsumerStatefulWidget {
   final String assessmentId;
@@ -44,7 +44,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
-          .read(assessmentProvider.notifier)
+          .read(teacherAssessmentProvider.notifier)
           .loadAssessmentDetail(widget.assessmentId);
     });
   }
@@ -61,7 +61,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
       title: 'Publish Assessment',
       body: 'Publish "${assessment.title}"? Once published, questions can no longer be edited.',
       confirmLabel: 'Publish',
-      onConfirm: () => ref.read(assessmentProvider.notifier).publishAssessment(widget.assessmentId),
+      onConfirm: () => ref.read(teacherAssessmentProvider.notifier).publishAssessment(widget.assessmentId),
     );
   }
 
@@ -71,7 +71,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
       title: 'Move to Draft',
       body: 'Move "${assessment.title}" back to draft? Students will no longer be able to access it.',
       confirmLabel: 'Move to Draft',
-      onConfirm: () => ref.read(assessmentProvider.notifier).unpublishAssessment(widget.assessmentId),
+      onConfirm: () => ref.read(teacherAssessmentProvider.notifier).unpublishAssessment(widget.assessmentId),
     );
   }
 
@@ -107,7 +107,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
       title: 'Delete Assessment',
       body: 'Delete "${assessment.title}"? This cannot be undone.',
       confirmLabel: 'Delete',
-      onConfirm: () => ref.read(assessmentProvider.notifier).deleteAssessment(widget.assessmentId),
+      onConfirm: () => ref.read(teacherAssessmentProvider.notifier).deleteAssessment(widget.assessmentId),
       warningBox: warningBox,
     );
   }
@@ -118,12 +118,12 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
       title: 'Release Results',
       body: 'Release results for "${assessment.title}"? Students will be able to see their scores.',
       confirmLabel: 'Release',
-      onConfirm: () => ref.read(assessmentProvider.notifier).releaseResults(widget.assessmentId),
+      onConfirm: () => ref.read(teacherAssessmentProvider.notifier).releaseResults(widget.assessmentId),
     );
   }
 
   void _confirmDeleteQuestion(Question question, bool hasSubmissions) {
-    final assessment = ref.read(assessmentProvider).currentAssessment;
+    final assessment = ref.read(teacherAssessmentProvider).currentAssessment;
     final warningBox = hasSubmissions && assessment != null
         ? Container(
             padding: const EdgeInsets.all(12),
@@ -152,7 +152,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
       title: 'Delete Question',
       body: 'Delete this question? This cannot be undone.',
       confirmLabel: 'Delete',
-      onConfirm: () => ref.read(assessmentProvider.notifier).deleteQuestion(question.id),
+      onConfirm: () => ref.read(teacherAssessmentProvider.notifier).deleteQuestion(question.id),
       warningBox: warningBox,
     );
   }
@@ -169,7 +169,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
     ).then((result) {
       if (result == true) {
         ref
-            .read(assessmentProvider.notifier)
+            .read(teacherAssessmentProvider.notifier)
             .loadAssessmentDetail(widget.assessmentId);
       }
     });
@@ -197,7 +197,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
     });
 
     final questionIds = _questionReorderBuffer.map((q) => q.id).toList();
-    await ref.read(assessmentProvider.notifier).reorderAllQuestions(
+    await ref.read(teacherAssessmentProvider.notifier).reorderAllQuestions(
       assessmentId: assessmentId,
       questionIds: questionIds,
       orderedQuestions: _questionReorderBuffer,
@@ -235,28 +235,28 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(assessmentProvider);
-    final assessment = state.currentAssessment;
-    final questions = state.questions;
+    final assessmentState = ref.watch(teacherAssessmentProvider);
+    final assessment = assessmentState.currentAssessment;
+    final questions = assessmentState.questions;
 
-    ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
+    ref.listen<TeacherAssessmentState>(teacherAssessmentProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
         setState(() => _formError = null);
-        ref.read(assessmentProvider.notifier).clearMessages();
+        ref.read(teacherAssessmentProvider.notifier).clearMessages();
         if (next.successMessage == 'Assessment deleted') {
           Navigator.pop(context, true);
         }
         if (next.successMessage == 'Question deleted' ||
             next.successMessage == 'Questions added') {
           ref
-              .read(assessmentProvider.notifier)
+              .read(teacherAssessmentProvider.notifier)
               .loadAssessmentDetail(widget.assessmentId);
         }
       }
       if (next.error != null && prev?.error != next.error) {
         setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
-        ref.read(assessmentProvider.notifier).clearMessages();
+        ref.read(teacherAssessmentProvider.notifier).clearMessages();
       }
     });
 
@@ -291,7 +291,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                     ).then((result) {
                       if (result == true) {
                         ref
-                            .read(assessmentProvider.notifier)
+                            .read(teacherAssessmentProvider.notifier)
                             .loadAssessmentDetail(widget.assessmentId);
                       }
                     });
@@ -417,7 +417,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
           ],
         ],
       ),
-      body: state.isLoading && assessment == null
+      body: assessmentState.isLoading && assessment == null
           ? const Center(
               child: CircularProgressIndicator(
                 color: Color(0xFF2B2B2B),
@@ -436,7 +436,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                 )
               : RefreshIndicator(
                   onRefresh: () => ref
-                      .read(assessmentProvider.notifier)
+                      .read(teacherAssessmentProvider.notifier)
                       .loadAssessmentDetail(widget.assessmentId),
                   color: const Color(0xFF2B2B2B),
                   child: SingleChildScrollView(
@@ -472,7 +472,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                                   ).then((result) {
                                     if (result == true) {
                                       ref
-                                          .read(assessmentProvider.notifier)
+                                          .read(teacherAssessmentProvider.notifier)
                                           .loadAssessmentDetail(
                                               widget.assessmentId);
                                     }
@@ -601,7 +601,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                                     ).then((result) {
                                       if (result == true) {
                                         ref
-                                            .read(assessmentProvider.notifier)
+                                            .read(teacherAssessmentProvider.notifier)
                                             .loadAssessmentDetail(
                                                 widget.assessmentId);
                                       }

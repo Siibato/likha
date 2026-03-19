@@ -68,7 +68,7 @@ mixin LearningMaterialFileMixin on LearningMaterialRepositoryBase {
 
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -100,7 +100,7 @@ mixin LearningMaterialFileMixin on LearningMaterialRepositoryBase {
       await remoteDataSource.deleteFile(fileId: fileId);
       return const Right(null);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -131,7 +131,7 @@ mixin LearningMaterialFileMixin on LearningMaterialRepositoryBase {
 
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {

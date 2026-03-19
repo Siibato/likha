@@ -17,7 +17,7 @@ mixin AuthLoginMixin on AuthRepositoryBase {
       final result = await remoteDataSource.checkUsername(username: username);
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -39,7 +39,7 @@ mixin AuthLoginMixin on AuthRepositoryBase {
       );
       return Right(result.user);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -81,7 +81,7 @@ mixin AuthLoginMixin on AuthRepositoryBase {
         fullName: e.fullName,
       ));
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } on UnauthorizedException catch (e) {
@@ -102,7 +102,7 @@ mixin AuthLoginMixin on AuthRepositoryBase {
       final result = await remoteDataSource.refreshToken(token);
       return Right(result.user);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } on UnauthorizedException catch (e) {

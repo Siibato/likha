@@ -215,7 +215,7 @@ class StudentTasksNotifier extends StateNotifier<StudentTasksState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: e.toString(),
+        error: 'Something went wrong. Please try again.',
       );
     }
   }

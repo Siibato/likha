@@ -59,7 +59,7 @@ mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
         } on NetworkException catch (e) {
           return Left(NetworkFailure(e.message));
         } on ServerException catch (e) {
-          return Left(ServerFailure(e.message));
+          return Left(ServerFailure(e.message, statusCode: e.statusCode));
         }
       }
     } on CacheException catch (e) {
@@ -128,7 +128,7 @@ mixin LearningMaterialQueryMixin on LearningMaterialRepositoryBase {
         }
       }
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {

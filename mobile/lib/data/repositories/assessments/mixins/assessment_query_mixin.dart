@@ -169,9 +169,11 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
         final (_, questions) =
             await localDataSource.getCachedAssessmentDetail(assessmentId);
         if (questions.isEmpty) {
-          return const Left(ValidationFailure(
-              'Assessment must have at least one question to publish'));
+          throw ValidationException(
+              'Assessment must have at least one question to publish');
         }
+      } on ValidationException catch (e) {
+        return Left(ValidationFailure(e.message));
       } catch (e) {
         return Left(CacheFailure('Cannot validate assessment: ${e.toString()}'));
       }
@@ -217,7 +219,7 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
       await localDataSource.markAssessmentPublishedLocally(assessmentId: assessmentId);
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -282,7 +284,7 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
       await localDataSource.markAssessmentUnpublishedLocally(assessmentId: assessmentId);
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -347,7 +349,7 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
       await localDataSource.cacheAssessments([result]);
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {

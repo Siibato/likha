@@ -69,3 +69,12 @@ class InvalidCredentialsException implements Exception {
   @override
   String toString() => 'InvalidCredentialsException: $message (attempts: $attemptsRemaining)';
 }
+
+class ValidationException implements Exception {
+  final String message;
+
+  ValidationException(this.message);
+
+  @override
+  String toString() => 'ValidationException: $message';
+}

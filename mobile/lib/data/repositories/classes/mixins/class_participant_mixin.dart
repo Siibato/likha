@@ -32,7 +32,7 @@ mixin ClassParticipantMixin on ClassRepositoryBase {
       // Server was thought reachable but API failed → fall back to offline queue
       return _addStudentOffline(classId, studentId);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -115,7 +115,7 @@ mixin ClassParticipantMixin on ClassRepositoryBase {
       // Server was thought reachable but API failed → fall back to offline queue
       return _removeStudentOffline(classId, studentId);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

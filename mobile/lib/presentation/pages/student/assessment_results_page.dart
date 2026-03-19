@@ -4,7 +4,7 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/student/widgets/score_summary_card.dart';
 import 'package:likha/presentation/pages/student/widgets/answer_result_card.dart';
-import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/providers/student_assessment_provider.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 
 class AssessmentResultsPage extends ConsumerStatefulWidget {
@@ -34,7 +34,7 @@ class _AssessmentResultsPageState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.submissionId != null) {
         ref
-            .read(assessmentProvider.notifier)
+            .read(studentAssessmentProvider.notifier)
             .loadStudentResults(widget.submissionId!);
       } else if (widget.assessmentId != null) {
         _loadViaAssessment();
@@ -46,7 +46,7 @@ class _AssessmentResultsPageState
     final user = ref.read(authProvider).user;
     if (user == null) return;
     await ref
-        .read(assessmentProvider.notifier)
+        .read(studentAssessmentProvider.notifier)
         .loadStudentResultsByAssessment(widget.assessmentId!, user.id);
   }
 
@@ -170,7 +170,7 @@ class _AssessmentResultsPageState
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(assessmentProvider);
+    final state = ref.watch(studentAssessmentProvider);
     final result = state.studentResult;
     final isResultsNotReleased =
         state.error?.toLowerCase().contains('not been released') ?? false;

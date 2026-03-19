@@ -91,7 +91,7 @@ mixin AssignmentQueryMixin on AssignmentRepositoryBase {
         }
       }
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {

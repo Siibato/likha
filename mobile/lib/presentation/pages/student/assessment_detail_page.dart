@@ -13,7 +13,7 @@ import 'package:likha/presentation/pages/student/assessment_results_page.dart';
 import 'package:likha/presentation/pages/student/take_assessment_page.dart';
 import 'package:likha/presentation/pages/student/widgets/assessment_dialogs.dart';
 import 'package:likha/presentation/pages/student/widgets/assessment_status_banner.dart';
-import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/providers/student_assessment_provider.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 
 class AssessmentDetailPage extends ConsumerStatefulWidget {
@@ -104,12 +104,12 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
 
       // Load the submission to check if it's submitted
       PageLogger.instance.log('_loadSubmissionStatus() - calling loadScorePreview()');
-      await ref.read(assessmentProvider.notifier).loadScorePreview(
+      await ref.read(studentAssessmentProvider.notifier).loadScorePreview(
         widget.assessment.id,
         user.id,
       );
 
-      final assessmentState = ref.read(assessmentProvider);
+      final assessmentState = ref.read(studentAssessmentProvider);
       // Use the submission's own isSubmitted flag — NOT whether results loaded.
       // Results can 403 (not released yet) even when the submission IS submitted.
       final submission = assessmentState.currentStudentSubmission;
@@ -132,12 +132,12 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
     PageLogger.instance.log('_loadScore() START - assessmentId: ${widget.assessment.id}, studentId: ${user.id}');
     setState(() => _isLoadingScore = true);
 
-    await ref.read(assessmentProvider.notifier).loadScorePreview(
+    await ref.read(studentAssessmentProvider.notifier).loadScorePreview(
       widget.assessment.id,
       user.id,
     );
 
-    final state = ref.read(assessmentProvider);
+    final state = ref.read(studentAssessmentProvider);
     PageLogger.instance.log('_loadScore() END - studentResult: ${state.studentResult}, error: ${state.error}');
     if (mounted) setState(() => _isLoadingScore = false);
   }
@@ -170,7 +170,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
   }
 
   void _onViewResultsPressed() {
-    final submissionId = ref.read(assessmentProvider).currentStudentSubmission?.id;
+    final submissionId = ref.read(studentAssessmentProvider).currentStudentSubmission?.id;
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -185,16 +185,16 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
   @override
   Widget build(BuildContext context) {
     final status = _computeDetailStatus();
-    final state = ref.watch(assessmentProvider);
+    final state = ref.watch(studentAssessmentProvider);
 
-    ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
+    ref.listen<StudentAssessmentState>(studentAssessmentProvider, (prev, next) {
       if (next.error != null && prev?.error != next.error) {
         final isResultsNotReleased =
             next.error!.toLowerCase().contains('not been released');
         if (!isResultsNotReleased) {
           setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
         }
-        ref.read(assessmentProvider.notifier).clearMessages();
+        ref.read(studentAssessmentProvider.notifier).clearMessages();
       }
     });
 

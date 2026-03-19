@@ -58,7 +58,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
       } on NetworkException catch (e) {
         return Left(NetworkFailure(e.message));
       } on ServerException catch (e) {
-        return Left(ServerFailure(e.message));
+        return Left(ServerFailure(e.message, statusCode: e.statusCode));
       }
     } catch (e) {
       return Left(ServerFailure(e.toString()));
@@ -109,7 +109,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
         rethrow;
       }
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -221,7 +221,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
       await localDataSource.cacheSubmissionDetail(result);
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -266,7 +266,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
       await localDataSource.cacheSubmissionDetail(result);
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -317,7 +317,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
       unawaited(localDataSource.cacheSubmissionDetail(result));
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -366,7 +366,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
       unawaited(localDataSource.cacheSubmissionFile(submissionId, result));
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -396,7 +396,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
       await remoteDataSource.deleteFile(fileId: fileId);
       return const Right(null);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -465,7 +465,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
 
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -486,7 +486,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
       await localDataSource.cacheFileBytes(fileId, '', result);
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {

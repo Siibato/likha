@@ -5,7 +5,7 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:likha/domain/assessments/usecases/override_answer.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
-import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/status_badge.dart';
@@ -29,7 +29,7 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
-          .read(assessmentProvider.notifier)
+          .read(teacherAssessmentProvider.notifier)
           .loadSubmissionDetail(widget.submissionId);
     });
   }
@@ -68,7 +68,7 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
   }
 
   Future<void> _overrideAnswer(String answerId, bool isCorrect) async {
-    await ref.read(assessmentProvider.notifier).overrideAnswer(
+    await ref.read(teacherAssessmentProvider.notifier).overrideAnswer(
           OverrideAnswerParams(
             answerId: answerId,
             isCorrect: isCorrect,
@@ -76,29 +76,29 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
         );
 
     if (!mounted) return;
-    final state = ref.read(assessmentProvider);
+    final state = ref.read(teacherAssessmentProvider);
     if (state.error == null) {
       // Reload submission detail to reflect updated scores
       ref
-          .read(assessmentProvider.notifier)
+          .read(teacherAssessmentProvider.notifier)
           .loadSubmissionDetail(widget.submissionId);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(assessmentProvider);
+    final state = ref.watch(teacherAssessmentProvider);
     final detail = state.currentSubmission;
 
-    ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
+    ref.listen<TeacherAssessmentState>(teacherAssessmentProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
         setState(() => _formError = null);
-        ref.read(assessmentProvider.notifier).clearMessages();
+        ref.read(teacherAssessmentProvider.notifier).clearMessages();
       }
       if (next.error != null && prev?.error != next.error) {
         setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
-        ref.read(assessmentProvider.notifier).clearMessages();
+        ref.read(teacherAssessmentProvider.notifier).clearMessages();
       }
     });
 

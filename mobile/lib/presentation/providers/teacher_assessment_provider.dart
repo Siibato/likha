@@ -1,7 +1,5 @@
 import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/logging/provider_logger.dart';
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
@@ -10,105 +8,73 @@ import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
 import 'package:likha/domain/assessments/usecases/create_assessment.dart';
 import 'package:likha/domain/assessments/usecases/delete_assessment.dart';
+import 'package:likha/domain/assessments/usecases/delete_question.dart';
 import 'package:likha/domain/assessments/usecases/get_assessment_detail.dart';
 import 'package:likha/domain/assessments/usecases/get_assessments.dart';
 import 'package:likha/domain/assessments/usecases/get_statistics.dart';
-import 'package:likha/domain/assessments/usecases/get_student_results.dart';
-import 'package:likha/domain/assessments/usecases/get_student_submission.dart';
 import 'package:likha/domain/assessments/usecases/get_submission_detail.dart';
 import 'package:likha/domain/assessments/usecases/get_submissions.dart';
 import 'package:likha/domain/assessments/usecases/override_answer.dart';
 import 'package:likha/domain/assessments/usecases/publish_assessment.dart';
-import 'package:likha/domain/assessments/usecases/unpublish_assessment.dart';
 import 'package:likha/domain/assessments/usecases/release_results.dart';
-import 'package:likha/domain/assessments/usecases/save_answers.dart';
-import 'package:likha/domain/assessments/usecases/start_assessment.dart';
-import 'package:likha/domain/assessments/usecases/submit_assessment.dart';
-import 'package:likha/domain/assessments/usecases/update_assessment.dart';
-import 'package:likha/domain/assessments/usecases/update_question.dart';
-import 'package:likha/domain/assessments/usecases/delete_question.dart';
 import 'package:likha/domain/assessments/usecases/reorder_assessment.dart';
 import 'package:likha/domain/assessments/usecases/reorder_questions.dart';
+import 'package:likha/domain/assessments/usecases/unpublish_assessment.dart';
+import 'package:likha/domain/assessments/usecases/update_assessment.dart';
+import 'package:likha/domain/assessments/usecases/update_question.dart';
 import 'package:likha/injection_container.dart';
 
-class AssessmentState {
+const _unset = Object();
+
+class TeacherAssessmentState {
   final List<Assessment> assessments;
   final Assessment? currentAssessment;
   final List<Question> questions;
   final List<SubmissionSummary> submissions;
   final SubmissionDetail? currentSubmission;
-  final StartSubmissionResult? startResult;
-  final SubmissionSummary? currentStudentSubmission;
-  final StudentResult? studentResult;
   final AssessmentStatistics? statistics;
   final bool isLoading;
   final String? error;
   final String? successMessage;
 
-  AssessmentState({
+  TeacherAssessmentState({
     this.assessments = const [],
     this.currentAssessment,
     this.questions = const [],
     this.submissions = const [],
     this.currentSubmission,
-    this.startResult,
-    this.currentStudentSubmission,
-    this.studentResult,
     this.statistics,
     this.isLoading = false,
     this.error,
     this.successMessage,
   });
 
-  AssessmentState copyWith({
+  TeacherAssessmentState copyWith({
     List<Assessment>? assessments,
-    Assessment? currentAssessment,
+    Object? currentAssessment = _unset,
     List<Question>? questions,
     List<SubmissionSummary>? submissions,
-    SubmissionDetail? currentSubmission,
-    StartSubmissionResult? startResult,
-    SubmissionSummary? currentStudentSubmission,
-    StudentResult? studentResult,
-    AssessmentStatistics? statistics,
+    Object? currentSubmission = _unset,
+    Object? statistics = _unset,
     bool? isLoading,
-    String? error,
-    String? successMessage,
-    bool clearError = false,
-    bool clearSuccess = false,
-    bool clearAssessment = false,
-    bool clearSubmission = false,
-    bool clearStartResult = false,
-    bool clearStudentSubmission = false,
-    bool clearStudentResult = false,
-    bool clearStatistics = false,
+    Object? error = _unset,
+    Object? successMessage = _unset,
   }) {
-    return AssessmentState(
+    return TeacherAssessmentState(
       assessments: assessments ?? this.assessments,
-      currentAssessment: clearAssessment
-          ? null
-          : (currentAssessment ?? this.currentAssessment),
+      currentAssessment: identical(currentAssessment, _unset) ? this.currentAssessment : currentAssessment as Assessment?,
       questions: questions ?? this.questions,
       submissions: submissions ?? this.submissions,
-      currentSubmission: clearSubmission
-          ? null
-          : (currentSubmission ?? this.currentSubmission),
-      startResult:
-          clearStartResult ? null : (startResult ?? this.startResult),
-      currentStudentSubmission: clearStudentSubmission
-          ? null
-          : (currentStudentSubmission ?? this.currentStudentSubmission),
-      studentResult:
-          clearStudentResult ? null : (studentResult ?? this.studentResult),
-      statistics: clearStatistics ? null : (statistics ?? this.statistics),
+      currentSubmission: identical(currentSubmission, _unset) ? this.currentSubmission : currentSubmission as SubmissionDetail?,
+      statistics: identical(statistics, _unset) ? this.statistics : statistics as AssessmentStatistics?,
       isLoading: isLoading ?? this.isLoading,
-      error: clearError ? null : (error ?? this.error),
-      successMessage:
-          clearSuccess ? null : (successMessage ?? this.successMessage),
+      error: identical(error, _unset) ? this.error : error as String?,
+      successMessage: identical(successMessage, _unset) ? this.successMessage : successMessage as String?,
     );
   }
 }
 
-class AssessmentNotifier extends StateNotifier<AssessmentState> {
+class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
   final CreateAssessment _createAssessment;
   final GetAssessments _getAssessments;
   final GetAssessmentDetail _getAssessmentDetail;
@@ -121,11 +87,6 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
   final OverrideAnswer _overrideAnswer;
   final ReleaseResults _releaseResults;
   final GetStatistics _getStatistics;
-  final StartAssessment _startAssessment;
-  final SaveAnswers _saveAnswers;
-  final SubmitAssessment _submitAssessment;
-  final GetStudentResults _getStudentResults;
-  final GetStudentSubmission _getStudentSubmission;
   final UpdateAssessment _updateAssessment;
   final UpdateQuestion _updateQuestion;
   final DeleteQuestion _deleteQuestion;
@@ -135,7 +96,7 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
   String? _currentClassId;
   late StreamSubscription<String?> _refreshSub;
 
-  AssessmentNotifier(
+  TeacherAssessmentNotifier(
     this._createAssessment,
     this._getAssessments,
     this._getAssessmentDetail,
@@ -148,19 +109,13 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
     this._overrideAnswer,
     this._releaseResults,
     this._getStatistics,
-    this._startAssessment,
-    this._saveAnswers,
-    this._submitAssessment,
-    this._getStudentResults,
-    this._getStudentSubmission,
     this._updateAssessment,
     this._updateQuestion,
     this._deleteQuestion,
     this._reorderAllQuestions,
     this._reorderAllAssessments,
-  ) : super(AssessmentState()) {
+  ) : super(TeacherAssessmentState()) {
     _refreshSub = sl<DataEventBus>().onAssessmentsChanged.listen((classId) {
-      // Only reload if this notifier is currently showing that classId
       if (_currentClassId != null && _currentClassId == classId) {
         loadAssessments(_currentClassId!, skipBackgroundRefresh: true);
       }
@@ -169,23 +124,18 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
 
   Future<void> loadAssessments(String classId, {bool publishedOnly = false, bool skipBackgroundRefresh = false}) async {
     _currentClassId = classId;
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(isLoading: true, error: null);
     final result = await _getAssessments(classId, publishedOnly: publishedOnly, skipBackgroundRefresh: skipBackgroundRefresh);
     result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
-      (assessments) =>
-          state = state.copyWith(isLoading: false, assessments: assessments),
+      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (assessments) => state = state.copyWith(isLoading: false, assessments: assessments),
     );
   }
 
   Future<Assessment?> createAssessment(CreateAssessmentParams params) async {
     final completer = Completer<Assessment?>();
-
-    state =
-        state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _createAssessment(params);
-
     result.fold(
       (failure) {
         state = state.copyWith(isLoading: false, error: failure.message);
@@ -201,16 +151,14 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
         completer.complete(assessment);
       },
     );
-
     return completer.future;
   }
 
   Future<void> loadAssessmentDetail(String assessmentId) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(isLoading: true, error: null);
     final result = await _getAssessmentDetail(assessmentId);
     result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
       (data) {
         final (assessment, questions) = data;
         state = state.copyWith(
@@ -223,14 +171,11 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
   }
 
   Future<void> publishAssessment(String assessmentId) async {
-    state =
-        state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _publishAssessment(assessmentId);
     result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
       (assessment) {
-        // Only replace in list if we got a real response (has classId populated)
         final updatedList = assessment.classId.isEmpty
             ? state.assessments.map((a) {
                 if (a.id == assessmentId) {
@@ -244,7 +189,7 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
                     closeAt: a.closeAt,
                     showResultsImmediately: a.showResultsImmediately,
                     resultsReleased: a.resultsReleased,
-                    isPublished: true,  // optimistic
+                    isPublished: true,
                     orderIndex: a.orderIndex,
                     totalPoints: a.totalPoints,
                     questionCount: a.questionCount,
@@ -269,12 +214,10 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
   }
 
   Future<void> unpublishAssessment(String assessmentId) async {
-    state =
-        state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _unpublishAssessment(assessmentId);
     result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
       (assessment) {
         final updatedList = assessment.classId.isEmpty
             ? state.assessments.map((a) {
@@ -314,19 +257,16 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
   }
 
   Future<void> deleteAssessment(String assessmentId) async {
-    state =
-        state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _deleteAssessment(assessmentId);
     result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
       (_) {
         state = state.copyWith(
           isLoading: false,
-          assessments:
-              state.assessments.where((a) => a.id != assessmentId).toList(),
+          assessments: state.assessments.where((a) => a.id != assessmentId).toList(),
           successMessage: 'Assessment deleted',
-          clearAssessment: true,
+          currentAssessment: null,
         );
       },
     );
@@ -337,12 +277,8 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
     required List<String> assessmentIds,
     required List<Assessment> orderedAssessments,
   }) async {
-    // Optimistic update
     state = state.copyWith(assessments: orderedAssessments);
-    final result = await _reorderAllAssessments(
-      classId: classId,
-      assessmentIds: assessmentIds,
-    );
+    final result = await _reorderAllAssessments(classId: classId, assessmentIds: assessmentIds);
     result.fold(
       (failure) => state = state.copyWith(error: failure.message),
       (_) {},
@@ -354,12 +290,8 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
     required List<String> questionIds,
     required List<Question> orderedQuestions,
   }) async {
-    // Optimistic update
     state = state.copyWith(questions: orderedQuestions);
-    final result = await _reorderAllQuestions(
-      assessmentId: assessmentId,
-      questionIds: questionIds,
-    );
+    final result = await _reorderAllQuestions(assessmentId: assessmentId, questionIds: questionIds);
     result.fold(
       (failure) => state = state.copyWith(error: failure.message),
       (_) {},
@@ -367,12 +299,10 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
   }
 
   Future<void> addQuestions(AddQuestionsParams params) async {
-    state =
-        state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _addQuestions(params);
     result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
       (questions) => state = state.copyWith(
         isLoading: false,
         questions: [...state.questions, ...questions],
@@ -382,12 +312,10 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
   }
 
   Future<void> updateAssessment(UpdateAssessmentParams params) async {
-    state =
-        state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _updateAssessment(params);
     result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
       (assessment) => state = state.copyWith(
         isLoading: false,
         currentAssessment: assessment,
@@ -397,12 +325,10 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
   }
 
   Future<void> updateQuestion(UpdateQuestionParams params) async {
-    state =
-        state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _updateQuestion(params);
     result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
       (question) => state = state.copyWith(
         isLoading: false,
         successMessage: 'Question updated',
@@ -411,12 +337,10 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
   }
 
   Future<void> deleteQuestion(String questionId) async {
-    state =
-        state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _deleteQuestion(questionId);
     result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
       (_) => state = state.copyWith(
         isLoading: false,
         successMessage: 'Question deleted',
@@ -425,17 +349,12 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
   }
 
   Future<void> releaseResults(String assessmentId) async {
-    state =
-        state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _releaseResults(assessmentId);
     result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
       (assessment) {
-        // Update the assessment in the list
-        final updatedList = state.assessments
-            .map((a) => a.id == assessmentId ? assessment : a)
-            .toList();
+        final updatedList = state.assessments.map((a) => a.id == assessmentId ? assessment : a).toList();
         state = state.copyWith(
           isLoading: false,
           currentAssessment: assessment,
@@ -446,36 +365,29 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
     );
   }
 
-  // Teacher: Submissions
   Future<void> loadSubmissions(String assessmentId) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(isLoading: true, error: null);
     final result = await _getSubmissions(assessmentId);
     result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
-      (submissions) =>
-          state = state.copyWith(isLoading: false, submissions: submissions),
+      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (submissions) => state = state.copyWith(isLoading: false, submissions: submissions),
     );
   }
 
   Future<void> loadSubmissionDetail(String submissionId) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(isLoading: true, error: null);
     final result = await _getSubmissionDetail(submissionId);
     result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
-      (detail) => state =
-          state.copyWith(isLoading: false, currentSubmission: detail),
+      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (detail) => state = state.copyWith(isLoading: false, currentSubmission: detail),
     );
   }
 
   Future<void> overrideAnswer(OverrideAnswerParams params) async {
-    state =
-        state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _overrideAnswer(params);
     result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
       (_) => state = state.copyWith(
         isLoading: false,
         successMessage: 'Grade overridden',
@@ -484,144 +396,16 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
   }
 
   Future<void> loadStatistics(String assessmentId) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(isLoading: true, error: null);
     final result = await _getStatistics(assessmentId);
     result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
-      (stats) =>
-          state = state.copyWith(isLoading: false, statistics: stats),
-    );
-  }
-
-  // Student
-  Future<void> startAssessment(
-    String assessmentId,
-    String studentId,
-    String studentName,
-    String studentUsername,
-  ) async {
-    state = state.copyWith(isLoading: true, clearError: true);
-    final result = await _startAssessment(StartAssessmentParams(
-      assessmentId:    assessmentId,
-      studentId:       studentId,
-      studentName:     studentName,
-      studentUsername: studentUsername,
-    ));
-    result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
-      (startResult) =>
-          state = state.copyWith(isLoading: false, startResult: startResult),
-    );
-  }
-
-  Future<void> saveAnswers(SaveAnswersParams params) async {
-    final result = await _saveAnswers(params);
-    result.fold(
-      (failure) => state = state.copyWith(error: failure.message),
-      (_) {},
-    );
-  }
-
-  Future<void> submitAssessment(String submissionId) async {
-    state =
-        state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
-    final result = await _submitAssessment(submissionId);
-    result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
-      (_) => state = state.copyWith(
-        isLoading: false,
-        successMessage: 'Assessment submitted',
-        clearStartResult: true,
-      ),
-    );
-  }
-
-  Future<void> loadStudentResults(String submissionId) async {
-    state = state.copyWith(isLoading: true, clearError: true);
-    final result = await _getStudentResults(submissionId);
-    result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: failure.message),
-      (studentResult) =>
-          state = state.copyWith(isLoading: false, studentResult: studentResult),
+      (stats) => state = state.copyWith(isLoading: false, statistics: stats),
     );
-  }
-
-  Future<void> loadStudentResultsByAssessment(String assessmentId, String studentId) async {
-    state = state.copyWith(isLoading: true, clearError: true);
-    final submResult = await _getStudentSubmission(GetStudentSubmissionParams(
-      assessmentId: assessmentId,
-      studentId: studentId,
-    ));
-    await submResult.fold(
-      (failure) async {
-        state = state.copyWith(isLoading: false, error: 'Could not find your submission');
-      },
-      (submission) async {
-        if (submission == null) {
-          state = state.copyWith(isLoading: false, error: 'No submission found for this assessment');
-          return;
-        }
-        await loadStudentResults(submission.id);
-      },
-    );
-  }
-
-  /// Loads score preview for the detail page using local DB only.
-  /// Never calls startAssessment(). Sets studentResult in state if found.
-  Future<void> loadScorePreview(String assessmentId, String studentId) async {
-    ProviderLogger.instance.log('loadScorePreview() START - assessmentId: $assessmentId, studentId: $studentId');
-    state = state.copyWith(isLoading: true, clearError: true);
-
-    ProviderLogger.instance.log('loadScorePreview() - calling _getStudentSubmission...');
-    final submissionResult = await _getStudentSubmission(
-      GetStudentSubmissionParams(
-        assessmentId: assessmentId,
-        studentId: studentId,
-      ),
-    );
-
-    ProviderLogger.instance.log('loadScorePreview() - got submissionResult, folding...');
-
-    await submissionResult.fold(
-      (failure) async {
-        ProviderLogger.instance.error('loadScorePreview() FAILED', Exception(failure.message));
-        state = state.copyWith(isLoading: false, error: failure.message);
-      },
-      (submission) async {
-        ProviderLogger.instance.log('loadScorePreview() GOT SUBMISSION');
-        ProviderLogger.instance.log('loadScorePreview() - submission is null: ${submission == null}');
-        if (submission != null) {
-          ProviderLogger.instance.log('loadScorePreview() - submission.id: ${submission.id}, isSubmitted: ${submission.isSubmitted}');
-        }
-
-        if (submission == null) {
-          ProviderLogger.instance.log('loadScorePreview() NOT YET SUBMITTED (submission==null) - no results to load');
-          state = state.copyWith(isLoading: false, clearStudentSubmission: true);
-          return;
-        }
-        // ✅ Always store submission — detail page needs this to distinguish "no sub" vs "in-progress"
-        state = state.copyWith(isLoading: false, currentStudentSubmission: submission);
-        // Early return for in-progress submissions (don't load results)
-        if (!submission.isSubmitted) return;
-
-        // Fire-and-forget: load results in background (may 403 if not released — fine).
-        // Uses .ignore() to suppress unawaited Future lint.
-        loadStudentResults(submission.id).then((_) {
-          // Silence 403 "not released yet" error — not user-visible
-          if (state.error != null) {
-            state = state.copyWith(clearError: true);
-          }
-        }).ignore();
-      },
-    );
-    ProviderLogger.instance.log('loadScorePreview() END - currentStudentSubmission=${state.currentStudentSubmission?.id}');
   }
 
   void clearMessages() {
-    state = state.copyWith(clearError: true, clearSuccess: true);
+    state = state.copyWith(error: null, successMessage: null);
   }
 
   @override
@@ -631,9 +415,8 @@ class AssessmentNotifier extends StateNotifier<AssessmentState> {
   }
 }
 
-final assessmentProvider =
-    StateNotifierProvider<AssessmentNotifier, AssessmentState>((ref) {
-  return AssessmentNotifier(
+final teacherAssessmentProvider = StateNotifierProvider<TeacherAssessmentNotifier, TeacherAssessmentState>((ref) {
+  return TeacherAssessmentNotifier(
     sl<CreateAssessment>(),
     sl<GetAssessments>(),
     sl<GetAssessmentDetail>(),
@@ -646,11 +429,6 @@ final assessmentProvider =
     sl<OverrideAnswer>(),
     sl<ReleaseResults>(),
     sl<GetStatistics>(),
-    sl<StartAssessment>(),
-    sl<SaveAnswers>(),
-    sl<SubmitAssessment>(),
-    sl<GetStudentResults>(),
-    sl<GetStudentSubmission>(),
     sl<UpdateAssessment>(),
     sl<UpdateQuestion>(),
     sl<DeleteQuestion>(),

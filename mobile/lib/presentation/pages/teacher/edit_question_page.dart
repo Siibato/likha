@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/domain/assessments/usecases/update_question.dart';
-import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_field.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/teacher/widgets/question_editor_body.dart';
@@ -162,7 +162,7 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
       }).toList();
     }
 
-    await ref.read(assessmentProvider.notifier).updateQuestion(
+    await ref.read(teacherAssessmentProvider.notifier).updateQuestion(
           UpdateQuestionParams(
             questionId: widget.question.id,
             data: data,
@@ -170,18 +170,18 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
         );
 
     if (!mounted) return;
-    final state = ref.read(assessmentProvider);
+    final state = ref.read(teacherAssessmentProvider);
     if (state.error == null) {
       Navigator.pop(context, true);
     } else {
       setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
-      ref.read(assessmentProvider.notifier).clearMessages();
+      ref.read(teacherAssessmentProvider.notifier).clearMessages();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(assessmentProvider);
+    final state = ref.watch(teacherAssessmentProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),

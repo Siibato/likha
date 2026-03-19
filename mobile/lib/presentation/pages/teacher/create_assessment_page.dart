@@ -8,7 +8,7 @@ import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
 import 'package:likha/domain/assessments/usecases/create_assessment.dart';
 import 'package:likha/presentation/pages/teacher/widgets/question_draft.dart';
-import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_details_section.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_questions_section.dart';
 import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
@@ -273,7 +273,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
       // When draft: pass null (questions added in Step 2)
       PageLogger.instance.log('_handleSave: Calling createAssessment provider method');
       final assessment = await ref
-          .read(assessmentProvider.notifier)
+          .read(teacherAssessmentProvider.notifier)
           .createAssessment(
             CreateAssessmentParams(
               classId: widget.classId,
@@ -296,7 +296,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
 
       if (assessment == null) {
         PageLogger.instance.log('_handleSave: Assessment is null, showing error');
-        final state = ref.read(assessmentProvider);
+        final state = ref.read(teacherAssessmentProvider);
         setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
         setState(() => _isSaving = false);
         return;
@@ -309,7 +309,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
       PageLogger.instance.log('_handleSave: isPublished=$_isPublished, questions count=${_questions.length}');
       if (!_isPublished && _questions.isNotEmpty) {
         PageLogger.instance.log('_handleSave: Adding ${_questions.length} questions (draft flow)');
-        await ref.read(assessmentProvider.notifier).addQuestions(
+        await ref.read(teacherAssessmentProvider.notifier).addQuestions(
           AddQuestionsParams(
             assessmentId: assessmentId,
             questions: questionsData,
@@ -319,7 +319,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
         PageLogger.instance.log('_handleSave: addQuestions completed');
 
         if (!mounted) return;
-        final state = ref.read(assessmentProvider);
+        final state = ref.read(teacherAssessmentProvider);
         if (state.error != null) {
           PageLogger.instance.error('_handleSave: Error after addQuestions', Exception(state.error));
           setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
@@ -331,7 +331,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
       // Success
       PageLogger.instance.log('_handleSave: Clearing draft');
       await _clearDraft();
-      ref.read(assessmentProvider.notifier).clearMessages();
+      ref.read(teacherAssessmentProvider.notifier).clearMessages();
       if (mounted) {
         PageLogger.instance.log('_handleSave: Success! Navigating');
         Navigator.pop(context, true);

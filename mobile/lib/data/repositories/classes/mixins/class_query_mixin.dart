@@ -24,7 +24,7 @@ mixin ClassQueryMixin on ClassRepositoryBase {
         return Right(freshClasses);
       }
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } on CacheException catch (e) {
@@ -57,7 +57,7 @@ mixin ClassQueryMixin on ClassRepositoryBase {
         return Right(freshClasses);
       }
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } on CacheException catch (e) {

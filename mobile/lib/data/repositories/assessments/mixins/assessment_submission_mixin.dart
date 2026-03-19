@@ -42,7 +42,7 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
         }
         return const Left(NetworkFailure('No network connection and no cached submissions'));
       } on ServerException catch (e) {
-        return Left(ServerFailure(e.message));
+        return Left(ServerFailure(e.message, statusCode: e.statusCode));
       }
     } catch (e) {
       return Left(ServerFailure(e.toString()));
@@ -68,7 +68,7 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
       unawaited(localDataSource.cacheSubmissionDetail(result));
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -102,7 +102,7 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
           answerId: answerId, isCorrect: isCorrect);
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -334,7 +334,7 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
           submissionId: submissionId, answers: answers);
       return const Right(null);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -454,7 +454,7 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
 
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
