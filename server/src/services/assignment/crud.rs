@@ -1,20 +1,9 @@
-use chrono::NaiveDateTime;
 use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
+use crate::utils::{parse_datetime, validators::Validator};
 use crate::schema::assignment_schema::*;
 
 impl super::AssignmentService {
-    fn parse_datetime(s: &str) -> AppResult<NaiveDateTime> {
-        NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S")
-            .or_else(|_| NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S"))
-            .or_else(|_| NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S%.f"))
-            .map_err(|_| {
-                AppError::BadRequest(format!(
-                    "Invalid datetime format: {}. Use YYYY-MM-DDTHH:MM:SS",
-                    s
-                ))
-            })
-    }
 
     pub async fn create_assignment(
         &self,
@@ -35,43 +24,15 @@ impl super::AssignmentService {
             ));
         }
 
-        let title = request.title.trim().to_string();
-        if title.is_empty() || title.len() > 200 {
-            return Err(AppError::BadRequest(
-                "Title is required and must be at most 200 characters".to_string(),
-            ));
-        }
-
-        let instructions = request.instructions.trim().to_string();
-        if instructions.is_empty() || instructions.len() > 10000 {
-            return Err(AppError::BadRequest(
-                "Instructions are required and must be at most 10000 characters".to_string(),
-            ));
-        }
-
-        if request.total_points < 1 || request.total_points > 1000 {
-            return Err(AppError::BadRequest(
-                "Total points must be between 1 and 1000".to_string(),
-            ));
-        }
-
-        let valid_types = ["text", "file", "text_or_file"];
-        if !valid_types.contains(&request.submission_type.as_str()) {
-            return Err(AppError::BadRequest(format!(
-                "Invalid submission type. Must be one of: {:?}",
-                valid_types
-            )));
-        }
-
+        let title = Validator::validate_title(&request.title)?;
+        let instructions = Validator::validate_instructions(&request.instructions)?;
+        Validator::validate_points(request.total_points)?;
+        Validator::validate_submission_type(&request.submission_type)?;
         if let Some(max_size) = request.max_file_size_mb {
-            if max_size < 1 || max_size > 50 {
-                return Err(AppError::BadRequest(
-                    "Max file size must be between 1 and 50 MB".to_string(),
-                ));
-            }
+            Validator::validate_max_file_size(max_size)?;
         }
 
-        let due_at = Self::parse_datetime(&request.due_at)?;
+        let due_at = parse_datetime(&request.due_at)?;
 
         let max_order = self.assignment_repo.get_max_order_index(class_id).await?;
         let order_index = max_order + 1;
@@ -315,42 +276,15 @@ impl super::AssignmentService {
             ));
         }
 
-        if let Some(ref title) = request.title {
-            if title.trim().is_empty() || title.len() > 200 {
-                return Err(AppError::BadRequest(
-                    "Title must be between 1 and 200 characters".to_string(),
-                ));
-            }
-        }
+        let title = Validator::validate_optional_title(request.title)?;
+        let instructions = Validator::validate_optional_instructions(request.instructions)?;
+        Validator::validate_optional_points(request.total_points)?;
+        Validator::validate_optional_submission_type(request.submission_type.clone())?;
 
-        if let Some(ref instructions) = request.instructions {
-            if instructions.trim().is_empty() || instructions.len() > 10000 {
-                return Err(AppError::BadRequest(
-                    "Instructions must be between 1 and 10000 characters".to_string(),
-                ));
-            }
-        }
-
-        if let Some(tp) = request.total_points {
-            if tp < 1 || tp > 1000 {
-                return Err(AppError::BadRequest(
-                    "Total points must be between 1 and 1000".to_string(),
-                ));
-            }
-        }
-
-        if let Some(ref st) = request.submission_type {
-            let valid_types = ["text", "file", "text_or_file"];
-            if !valid_types.contains(&st.as_str()) {
-                return Err(AppError::BadRequest(format!(
-                    "Invalid submission type. Must be one of: {:?}",
-                    valid_types
-                )));
-            }
-        }
+        Validator::validate_optional_max_file_size(request.max_file_size_mb)?;
 
         let due_at = match &request.due_at {
-            Some(s) => Some(Self::parse_datetime(s)?),
+            Some(s) => Some(parse_datetime(s)?),
             None => None,
         };
 
@@ -369,8 +303,8 @@ impl super::AssignmentService {
             .assignment_repo
             .update_assignment(
                 assignment_id,
-                request.title,
-                request.instructions,
+                title,
+                instructions,
                 request.total_points,
                 request.submission_type,
                 allowed_file_types,

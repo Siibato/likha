@@ -1,5 +1,6 @@
 use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
+use crate::utils::validators::Validator;
 use crate::schema::class_schema::{
     ClassResponse, ClassListResponse, CreateClassRequest, UpdateClassRequest,
 };
@@ -11,9 +12,7 @@ impl super::ClassService {
         teacher_id: Uuid,
         client_id: Option<Uuid>,
     ) -> AppResult<ClassResponse> {
-        if request.title.trim().is_empty() {
-            return Err(AppError::BadRequest("Class title is required".to_string()));
-        }
+        let title = Validator::validate_title(&request.title)?;
 
         // Use admin-provided teacher_id if present, otherwise use the requesting user's id
         let actual_teacher_id = request.teacher_id.unwrap_or(teacher_id);
@@ -25,20 +24,20 @@ impl super::ClassService {
             .ok_or_else(|| AppError::NotFound("Teacher not found".to_string()))?;
 
         let existing_classes = self.class_repo.find_by_teacher_id(actual_teacher_id).await?;
-        let normalized_title = request.title.trim().to_lowercase();
+        let normalized_title = title.to_lowercase();
 
         if existing_classes
             .iter()
             .any(|c| c.title.to_lowercase() == normalized_title)
         {
             return Err(AppError::BadRequest(
-                format!("A class named '{}' already exists for this teacher", request.title.trim())
+                format!("A class named '{}' already exists for this teacher", title)
             ));
         }
 
         let class = self
             .class_repo
-            .create_class(request.title.trim().to_string(), request.description, actual_teacher_id, client_id)
+            .create_class(title, request.description, actual_teacher_id, client_id)
             .await?;
 
 
@@ -76,11 +75,7 @@ impl super::ClassService {
             ));
         }
 
-        if let Some(ref title) = request.title {
-            if title.trim().is_empty() {
-                return Err(AppError::BadRequest("Class title cannot be empty".to_string()));
-            }
-        }
+        let title = Validator::validate_optional_title(request.title)?;
 
         let description = request.description.map(|d| {
             let trimmed = d.trim();
@@ -95,7 +90,7 @@ impl super::ClassService {
             .class_repo
             .update_class(
                 class_id,
-                request.title.map(|t| t.trim().to_string()),
+                title,
                 description,
             )
             .await?;

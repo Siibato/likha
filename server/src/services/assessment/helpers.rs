@@ -1,17 +1,8 @@
-use chrono::NaiveDateTime;
-use crate::utils::error::{AppError, AppResult};
+use crate::utils::error::AppResult;
 use crate::schema::assessment_schema::*;
 use entity::assessment_questions;
 
 impl super::AssessmentService {
-    pub fn parse_datetime(s: &str) -> AppResult<NaiveDateTime> {
-        NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S")
-            .or_else(|_| NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S"))
-            .or_else(|_| NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S%.f"))
-            .map_err(|_| AppError::BadRequest(format!(
-                "Invalid datetime format: {}. Use YYYY-MM-DDTHH:MM:SS", s
-            )))
-    }
 
     pub async fn build_question_response(
         &self,
