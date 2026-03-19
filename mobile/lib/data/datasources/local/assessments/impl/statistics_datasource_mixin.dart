@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:likha/data/models/assessments/statistics_model.dart';
 import 'package:likha/data/models/assessments/submission_model.dart';
+import 'package:likha/core/database/db_schema.dart';
 import 'package:sqflite/sqflite.dart';
 import '../assessment_local_datasource_base.dart';
 
@@ -27,6 +28,7 @@ mixin StatisticsDataSourceMixin on AssessmentLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final now = DateTime.now().toIso8601String();
+      // GHOST TABLE: assessment_statistics_cache does not exist in schema
       await db.insert(
         'assessment_statistics_cache',
         {
@@ -46,8 +48,8 @@ mixin StatisticsDataSourceMixin on AssessmentLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final results = await db.query(
-        'student_results_cache',
-        where: 'submission_id = ?',
+        DbTables.studentResultsCache,
+        where: '${StudentResultsCacheCols.submissionId} = ?',
         whereArgs: [submissionId],
       );
       if (results.isEmpty) return null;
@@ -64,11 +66,11 @@ mixin StatisticsDataSourceMixin on AssessmentLocalDataSourceBase {
       final db = await localDatabase.database;
       final now = DateTime.now().toIso8601String();
       await db.insert(
-        'student_results_cache',
+        DbTables.studentResultsCache,
         {
-          'submission_id': result.submissionId,
-          'results_json': jsonEncode(result.toJson()),
-          'cached_at': now,
+          StudentResultsCacheCols.submissionId: result.submissionId,
+          StudentResultsCacheCols.resultsJson: jsonEncode(result.toJson()),
+          CommonCols.cachedAt: now,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );

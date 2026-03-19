@@ -1,3 +1,4 @@
+import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/auth/activity_log_model.dart';
 import 'package:likha/data/models/auth/user_model.dart';
@@ -13,18 +14,18 @@ mixin AuthQueryMixin on AuthLocalDataSourceBase {
       if (userId != null) {
         // If userId provided, query for that specific user
         result = await db.query(
-          'users',
-          where: 'id = ?',
+          DbTables.users,
+          where: '${CommonCols.id} = ?',
           whereArgs: [userId],
           limit: 1,
         );
       } else {
         // Otherwise, return most recent user (backwards compatibility)
         result = await db.query(
-          'users',
-          where: 'id != ""',
+          DbTables.users,
+          where: '${CommonCols.id} != ""',
           limit: 1,
-          orderBy: 'cached_at DESC',
+          orderBy: '${CommonCols.cachedAt} DESC',
         );
       }
 
@@ -41,9 +42,9 @@ mixin AuthQueryMixin on AuthLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final results = await db.query(
-        'users',
-        where: 'deleted_at IS NULL',
-        orderBy: 'username ASC',
+        DbTables.users,
+        where: '${CommonCols.deletedAt} IS NULL',
+        orderBy: '${UsersCols.username} ASC',
       );
       if (results.isEmpty) return [];
       return results.map(UserModel.fromMap).toList();
@@ -58,8 +59,8 @@ mixin AuthQueryMixin on AuthLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final result = await db.query(
-        'users',
-        where: 'id = ?',
+        DbTables.users,
+        where: '${CommonCols.id} = ?',
         whereArgs: [userId],
         limit: 1,
       );
@@ -76,10 +77,10 @@ mixin AuthQueryMixin on AuthLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final results = await db.query(
-        'activity_logs',
-        where: 'user_id = ?',
+        DbTables.activityLogs,
+        where: '${ActivityLogsCols.userId} = ?',
         whereArgs: [userId],
-        orderBy: 'created_at DESC',
+        orderBy: '${CommonCols.createdAt} DESC',
       );
       if (results.isEmpty) throw CacheException('No cached activity logs found for user: $userId');
       return results.map((row) => ActivityLogModel.fromMap(row)).toList();

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:path_provider/path_provider.dart';
@@ -31,17 +32,17 @@ mixin AssignmentFileMixin on AssignmentLocalDataSourceBase {
 
       await db.transaction((txn) async {
         await txn.insert(
-          'submission_files',
+          DbTables.submissionFiles,
           {
-            'id': fileId,
-            'submission_id': submissionId,
-            'file_name': fileName,
-            'file_type': fileType,
-            'file_size': fileSize,
-            'uploaded_at': now.toIso8601String(),
-            'local_path': stagedPath,
-            'cached_at': now.toIso8601String(),
-            'needs_sync': 1,
+            CommonCols.id: fileId,
+            SubmissionFilesCols.submissionId: submissionId,
+            SubmissionFilesCols.fileName: fileName,
+            SubmissionFilesCols.fileType: fileType,
+            SubmissionFilesCols.fileSize: fileSize,
+            SubmissionFilesCols.uploadedAt: now.toIso8601String(),
+            SubmissionFilesCols.localPath: stagedPath,
+            CommonCols.cachedAt: now.toIso8601String(),
+            CommonCols.needsSync: 1,
           },
         );
         await syncQueue.enqueue(SyncQueueEntry(
@@ -74,8 +75,8 @@ mixin AssignmentFileMixin on AssignmentLocalDataSourceBase {
 
       // Get file metadata from DB to find the expected filename
       final results = await db.query(
-        'submission_files',
-        where: 'id = ?',
+        DbTables.submissionFiles,
+        where: '${CommonCols.id} = ?',
         whereArgs: [fileId],
       );
 
@@ -83,7 +84,7 @@ mixin AssignmentFileMixin on AssignmentLocalDataSourceBase {
         return false;
       }
 
-      final fileName = results.first['file_name'] as String?;
+      final fileName = results.first[SubmissionFilesCols.fileName] as String?;
       if (fileName == null || fileName.isEmpty) {
         return false;
       }
@@ -102,9 +103,9 @@ mixin AssignmentFileMixin on AssignmentLocalDataSourceBase {
       final storedPath = results.first['local_path'] as String?;
       if (exists && (storedPath == null || storedPath.isEmpty)) {
         await db.update(
-          'submission_files',
-          {'local_path': expectedPath},
-          where: 'id = ?',
+          DbTables.submissionFiles,
+          {SubmissionFilesCols.localPath: expectedPath},
+          where: '${CommonCols.id} = ?',
           whereArgs: [fileId],
         );
       }
@@ -120,8 +121,8 @@ mixin AssignmentFileMixin on AssignmentLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final results = await db.query(
-        'submission_files',
-        where: 'id = ?',
+        DbTables.submissionFiles,
+        where: '${CommonCols.id} = ?',
         whereArgs: [fileId],
       );
 
@@ -129,7 +130,7 @@ mixin AssignmentFileMixin on AssignmentLocalDataSourceBase {
         throw CacheException('File $fileId not found in database');
       }
 
-      final fileName = results.first['file_name'] as String?;
+      final fileName = results.first[SubmissionFilesCols.fileName] as String?;
       if (fileName == null || fileName.isEmpty) {
         throw CacheException('File $fileId has no fileName in database');
       }
@@ -145,9 +146,9 @@ mixin AssignmentFileMixin on AssignmentLocalDataSourceBase {
       if (!await file.exists()) {
         // Clean up DB entry
         await db.update(
-          'submission_files',
-          {'local_path': ''},
-          where: 'id = ?',
+          DbTables.submissionFiles,
+          {SubmissionFilesCols.localPath: ''},
+          where: '${CommonCols.id} = ?',
           whereArgs: [fileId],
         );
         throw CacheException('File not found at: $expectedPath');
@@ -172,13 +173,13 @@ mixin AssignmentFileMixin on AssignmentLocalDataSourceBase {
       // Query submission_files for the canonical file_name to ensure correct extension
       final db = await localDatabase.database;
       final rows = await db.query(
-        'submission_files',
-        columns: ['file_name'],
-        where: 'id = ?',
+        DbTables.submissionFiles,
+        columns: [SubmissionFilesCols.fileName],
+        where: '${CommonCols.id} = ?',
         whereArgs: [fileId],
       );
       final storedFileName = rows.isNotEmpty
-          ? rows.first['file_name'] as String?
+          ? rows.first[SubmissionFilesCols.fileName] as String?
           : null;
       final finalFileName = storedFileName ?? fileName;
 
@@ -194,12 +195,12 @@ mixin AssignmentFileMixin on AssignmentLocalDataSourceBase {
 
       // Update DB with the cached file path
       await db.update(
-        'submission_files',
+        DbTables.submissionFiles,
         {
-          'local_path': filePath,
-          'cached_at': DateTime.now().toIso8601String(),
+          SubmissionFilesCols.localPath: filePath,
+          CommonCols.cachedAt: DateTime.now().toIso8601String(),
         },
-        where: 'id = ?',
+        where: '${CommonCols.id} = ?',
         whereArgs: [fileId],
       );
     } catch (e) {

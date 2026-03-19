@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/logging/cache_logger.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
@@ -12,10 +13,10 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final results = await db.query(
-        'learning_materials',
-        where: 'class_id = ? AND deleted_at IS NULL',
+        DbTables.learningMaterials,
+        where: '${LearningMaterialsCols.classId} = ? AND ${CommonCols.deletedAt} IS NULL',
         whereArgs: [classId],
-        orderBy: 'order_index ASC',
+        orderBy: '${LearningMaterialsCols.orderIndex} ASC',
       );
       if (results.isEmpty) return [];
 
@@ -25,7 +26,7 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
       for (final result in results) {
         final materialId = result['id'] as String;
         final countResult = await db.rawQuery(
-          'SELECT COUNT(*) as count FROM material_files WHERE material_id = ?',
+          'SELECT COUNT(*) as count FROM ${DbTables.materialFiles} WHERE material_id = ?',
           [materialId],
         );
         final actualCount = countResult.first['count'] as int? ?? 0;
@@ -59,8 +60,8 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final results = await db.query(
-        'learning_materials',
-        where: 'id = ? AND deleted_at IS NULL',
+        DbTables.learningMaterials,
+        where: '${CommonCols.id} = ? AND ${CommonCols.deletedAt} IS NULL',
         whereArgs: [materialId],
       );
 
@@ -99,10 +100,10 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final results = await db.query(
-        'material_files',
-        where: 'material_id = ?',
+        DbTables.materialFiles,
+        where: '${MaterialFilesCols.materialId} = ?',
         whereArgs: [materialId],
-        orderBy: 'uploaded_at ASC',
+        orderBy: '${MaterialFilesCols.uploadedAt} ASC',
       );
 
       // Log what we loaded from the database
@@ -129,9 +130,9 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
               CacheLogger.instance.log('Found file on disk for $fileId, restoring DB path');
               // Update DB with the found path
               await db.update(
-                'material_files',
-                {'local_path': expectedPath},
-                where: 'id = ?',
+                DbTables.materialFiles,
+                {MaterialFilesCols.localPath: expectedPath},
+                where: '${CommonCols.id} = ?',
                 whereArgs: [fileId],
               );
               localPath = expectedPath;

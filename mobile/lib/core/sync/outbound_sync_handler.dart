@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/sync/sync_logger.dart';
 import 'package:likha/core/sync/sync_queue.dart';
@@ -125,9 +126,9 @@ class OutboundSyncHandler {
         if (localId != null && serverId != null && localId != serverId) {
           // Reconcile assessment_submissions table
           await db.update(
-            'assessment_submissions',
-            {'id': serverId},
-            where: 'id = ?',
+            DbTables.assessmentSubmissions,
+            {CommonCols.id: serverId},
+            where: '${CommonCols.id} = ?',
             whereArgs: [localId],
           );
 
@@ -167,17 +168,17 @@ class OutboundSyncHandler {
         if (localId != null && serverId != null && localId != serverId) {
           // Reconcile assignment_submissions table
           await db.update(
-            'assignment_submissions',
-            {'id': serverId},
-            where: 'id = ?',
+            DbTables.assignmentSubmissions,
+            {CommonCols.id: serverId},
+            where: '${CommonCols.id} = ?',
             whereArgs: [localId],
           );
 
           // Reconcile submission_files staged under the local submission ID
           await db.update(
-            'submission_files',
-            {'submission_id': serverId},
-            where: 'submission_id = ? AND needs_sync = 1',
+            DbTables.submissionFiles,
+            {SubmissionFilesCols.submissionId: serverId},
+            where: '${SubmissionFilesCols.submissionId} = ? AND ${CommonCols.needsSync} = 1',
             whereArgs: [localId],
           );
 
@@ -253,9 +254,9 @@ class OutboundSyncHandler {
             // Update the entity table to use the server ID
             if (entityType == SyncEntityType.classEntity.serverValue) {
               await db.update(
-                'classes',
-                {'id': serverId},
-                where: 'id = ?',
+                DbTables.classes,
+                {CommonCols.id: serverId},
+                where: '${CommonCols.id} = ?',
                 whereArgs: [payloadId],
               );
             }
@@ -300,13 +301,13 @@ class OutboundSyncHandler {
         try {
           final db = await _localDatabase.database;
           final rows = await db.query(
-            'material_files',
-            columns: ['material_id'],
-            where: 'id = ?',
+            DbTables.materialFiles,
+            columns: [MaterialFilesCols.materialId],
+            where: '${CommonCols.id} = ?',
             whereArgs: [fileId],
           );
           if (rows.isNotEmpty) {
-            materialId = rows.first['material_id'] as String?;
+            materialId = rows.first[MaterialFilesCols.materialId] as String?;
           }
         } catch (_) {
           // If DB lookup fails, fall back to payload value
@@ -328,12 +329,12 @@ class OutboundSyncHandler {
               final db = await _localDatabase.database;
               // Rename row ID from local UUID to server UUID
               await db.update(
-                'submission_files',
+                DbTables.submissionFiles,
                 {
-                  'id': serverId,
-                  'local_path': '',
+                  CommonCols.id: serverId,
+                  SubmissionFilesCols.localPath: '',
                 },
-                where: 'id = ?',
+                where: '${CommonCols.id} = ?',
                 whereArgs: [fileId],
               );
             } catch (e) {

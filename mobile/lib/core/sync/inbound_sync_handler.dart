@@ -1,3 +1,4 @@
+import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/sync/sync_logger.dart';
 import 'package:likha/core/sync/sync_state.dart';
@@ -28,18 +29,18 @@ class InboundSyncHandler {
 
     // Check for last_sync_at
     final rows = await db.query(
-      'sync_metadata',
-      where: 'key = ?',
-      whereArgs: ['last_sync_at'],
+      DbTables.syncMetadata,
+      where: '${SyncMetadataCols.key} = ?',
+      whereArgs: [DbValues.metaLastSyncAt],
     );
-    final lastSyncAt = rows.isNotEmpty ? rows.first['value'] as String? : null;
+    final lastSyncAt = rows.isNotEmpty ? rows.first[SyncMetadataCols.value] as String? : null;
 
     final expiryRows = await db.query(
-      'sync_metadata',
-      where: 'key = ?',
-      whereArgs: ['data_expiry_at'],
+      DbTables.syncMetadata,
+      where: '${SyncMetadataCols.key} = ?',
+      whereArgs: [DbValues.metaDataExpiryAt],
     );
-    final dataExpiryAt = expiryRows.isNotEmpty ? expiryRows.first['value'] as String? : null;
+    final dataExpiryAt = expiryRows.isNotEmpty ? expiryRows.first[SyncMetadataCols.value] as String? : null;
 
     if (lastSyncAt == null) {
       // FIRST LOGIN: full sync
@@ -389,12 +390,12 @@ class InboundSyncHandler {
   /// Get existing device ID or generate and store a new one
   Future<String> _getOrCreateDeviceId(Database db) async {
     final rows = await db.query(
-      'sync_metadata',
-      where: 'key = ?',
-      whereArgs: ['device_id'],
+      DbTables.syncMetadata,
+      where: '${SyncMetadataCols.key} = ?',
+      whereArgs: [DbValues.metaDeviceId],
     );
     return rows.isNotEmpty
-        ? rows.first['value'] as String
+        ? rows.first[SyncMetadataCols.value] as String
         : await generateAndStoreDeviceId(db);
   }
 
@@ -402,8 +403,8 @@ class InboundSyncHandler {
   Future<String> generateAndStoreDeviceId(Database db) async {
     final deviceId = const Uuid().v4();
     await db.insert(
-      'sync_metadata',
-      {'key': 'device_id', 'value': deviceId},
+      DbTables.syncMetadata,
+      {SyncMetadataCols.key: DbValues.metaDeviceId, SyncMetadataCols.value: deviceId},
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
     return deviceId;

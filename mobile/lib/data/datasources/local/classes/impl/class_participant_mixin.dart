@@ -1,3 +1,4 @@
+import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/auth/user_model.dart';
 import 'package:uuid/uuid.dart';
@@ -15,21 +16,21 @@ mixin ClassParticipantMixin on ClassLocalDataSourceBase {
       final now = DateTime.now();
       await db.transaction((txn) async {
         await txn.insert(
-          'class_participants',
+          DbTables.classParticipants,
           {
-            'id': participantId,
-            'class_id': classId,
-            'user_id': student.id,
-            'joined_at': now.toIso8601String(),
-            'updated_at': now.toIso8601String(),
-            'removed_at': null,
-            'cached_at': now.toIso8601String(),
-            'needs_sync': 1,
+            CommonCols.id: participantId,
+            ClassParticipantsCols.classId: classId,
+            ClassParticipantsCols.userId: student.id,
+            ClassParticipantsCols.joinedAt: now.toIso8601String(),
+            CommonCols.updatedAt: now.toIso8601String(),
+            ClassParticipantsCols.removedAt: null,
+            CommonCols.cachedAt: now.toIso8601String(),
+            CommonCols.needsSync: 1,
           },
         );
 
         await txn.rawUpdate(
-          'UPDATE classes SET student_count = (SELECT COUNT(*) FROM class_participants WHERE class_id = ? AND removed_at IS NULL), updated_at = ? WHERE id = ?',
+          'UPDATE ${DbTables.classes} SET student_count = (SELECT COUNT(*) FROM ${DbTables.classParticipants} WHERE class_id = ? AND removed_at IS NULL), updated_at = ? WHERE id = ?',
           [classId, now.toIso8601String(), classId],
         );
       });
@@ -50,18 +51,18 @@ mixin ClassParticipantMixin on ClassLocalDataSourceBase {
       await db.transaction((txn) async {
         // Soft delete: set removed_at instead of hard delete
         await txn.update(
-          'class_participants',
+          DbTables.classParticipants,
           {
-            'removed_at': now.toIso8601String(),
-            'needs_sync': 1,
-            'updated_at': now.toIso8601String(),
+            ClassParticipantsCols.removedAt: now.toIso8601String(),
+            CommonCols.needsSync: 1,
+            CommonCols.updatedAt: now.toIso8601String(),
           },
-          where: 'class_id = ? AND user_id = ? AND removed_at IS NULL',
+          where: '${ClassParticipantsCols.classId} = ? AND ${ClassParticipantsCols.userId} = ? AND ${ClassParticipantsCols.removedAt} IS NULL',
           whereArgs: [classId, studentId],
         );
 
         await txn.rawUpdate(
-          'UPDATE classes SET student_count = (SELECT COUNT(*) FROM class_participants WHERE class_id = ? AND removed_at IS NULL), updated_at = ? WHERE id = ?',
+          'UPDATE ${DbTables.classes} SET student_count = (SELECT COUNT(*) FROM ${DbTables.classParticipants} WHERE class_id = ? AND removed_at IS NULL), updated_at = ? WHERE id = ?',
           [classId, now.toIso8601String(), classId],
         );
       });
@@ -75,12 +76,12 @@ mixin ClassParticipantMixin on ClassLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final results = await db.query(
-        'class_participants',
-        columns: ['user_id'],
-        where: 'class_id = ? AND removed_at IS NULL',
+        DbTables.classParticipants,
+        columns: [ClassParticipantsCols.userId],
+        where: '${ClassParticipantsCols.classId} = ? AND ${ClassParticipantsCols.removedAt} IS NULL',
         whereArgs: [classId],
       );
-      return results.map((row) => row['user_id'] as String).toSet();
+      return results.map((row) => row[ClassParticipantsCols.userId] as String).toSet();
     } catch (e) {
       throw CacheException('Failed to get participant IDs: $e');
     }

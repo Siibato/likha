@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/assignments/assignment_model.dart';
 import 'package:likha/data/models/assignments/assignment_submission_model.dart'
@@ -13,13 +14,13 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final where = publishedOnly
-          ? 'class_id = ? AND is_published = 1 AND deleted_at IS NULL'
-          : 'class_id = ? AND deleted_at IS NULL';
+          ? '${AssignmentsCols.classId} = ? AND ${AssignmentsCols.isPublished} = 1 AND ${CommonCols.deletedAt} IS NULL'
+          : '${AssignmentsCols.classId} = ? AND ${CommonCols.deletedAt} IS NULL';
       final results = await db.query(
-        'assignments',
+        DbTables.assignments,
         where: where,
         whereArgs: [classId],
-        orderBy: 'order_index ASC',
+        orderBy: '${AssignmentsCols.orderIndex} ASC',
       );
       if (results.isEmpty) return [];
 
@@ -30,7 +31,7 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
           final base = AssignmentModel.fromMap(row);
           // Compute dynamic submissionCount and gradedCount
           final countRow = await db.rawQuery(
-            'SELECT COUNT(*) as total, SUM(CASE WHEN status IN (\'graded\',\'returned\') THEN 1 ELSE 0 END) as graded FROM assignment_submissions WHERE assignment_id = ? AND deleted_at IS NULL',
+            'SELECT COUNT(*) as total, SUM(CASE WHEN status IN (\'graded\',\'returned\') THEN 1 ELSE 0 END) as graded FROM ${DbTables.assignmentSubmissions} WHERE assignment_id = ? AND deleted_at IS NULL',
             [base.id],
           );
           final liveCount = countRow.first['total'] as int? ?? 0;
@@ -119,8 +120,8 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final results = await db.query(
-        'assignments',
-        where: 'id = ? AND deleted_at IS NULL',
+        DbTables.assignments,
+        where: '${CommonCols.id} = ? AND ${CommonCols.deletedAt} IS NULL',
         whereArgs: [assignmentId],
       );
       if (results.isEmpty) throw CacheException('Assignment $assignmentId not cached');
@@ -172,8 +173,8 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
       final db = await localDatabase.database;
       final results = await db.rawQuery('''
         SELECT s.*, u.full_name as student_name
-        FROM assignment_submissions s
-        LEFT JOIN users u ON u.id = s.student_id
+        FROM ${DbTables.assignmentSubmissions} s
+        LEFT JOIN ${DbTables.users} u ON u.id = s.student_id
         WHERE s.id = ?
       ''', [submissionId]);
       if (results.isEmpty) return null;
@@ -211,10 +212,10 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final results = await db.query(
-        'submission_files',
-        where: 'submission_id = ?',
+        DbTables.submissionFiles,
+        where: '${SubmissionFilesCols.submissionId} = ?',
         whereArgs: [submissionId],
-        orderBy: 'uploaded_at ASC',
+        orderBy: '${SubmissionFilesCols.uploadedAt} ASC',
       );
 
       final models = <SubmissionFileModel>[];
@@ -230,9 +231,9 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
             final file = File(expectedPath);
             if (await file.exists()) {
               await db.update(
-                'submission_files',
-                {'local_path': expectedPath},
-                where: 'id = ?',
+                DbTables.submissionFiles,
+                {SubmissionFilesCols.localPath: expectedPath},
+                where: '${CommonCols.id} = ?',
                 whereArgs: [fileId],
               );
               localPath = expectedPath;
@@ -256,8 +257,8 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
       final db = await localDatabase.database;
       final results = await db.rawQuery('''
         SELECT s.*, u.full_name as student_name, u.username as student_username
-        FROM assignment_submissions s
-        LEFT JOIN users u ON u.id = s.student_id
+        FROM ${DbTables.assignmentSubmissions} s
+        LEFT JOIN ${DbTables.users} u ON u.id = s.student_id
         WHERE s.assignment_id = ? AND s.deleted_at IS NULL
         ORDER BY CASE WHEN s.submitted_at IS NULL THEN 1 ELSE 0 END ASC, s.submitted_at ASC
       ''', [assignmentId]);
@@ -286,9 +287,9 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final results = await db.query(
-        'assignment_submissions',
-        columns: ['id', 'status', 'points'],
-        where: 'assignment_id = ? AND student_id = ? AND deleted_at IS NULL',
+        DbTables.assignmentSubmissions,
+        columns: [CommonCols.id, AssignmentSubmissionsCols.status, AssignmentSubmissionsCols.points],
+        where: '${AssignmentSubmissionsCols.assignmentId} = ? AND ${AssignmentSubmissionsCols.studentId} = ? AND ${CommonCols.deletedAt} IS NULL',
         whereArgs: [assignmentId, studentId],
       );
       if (results.isEmpty) return null;
@@ -309,9 +310,9 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       await db.update(
-        'assignments',
-        {'deleted_at': DateTime.now().toIso8601String()},
-        where: 'id = ?',
+        DbTables.assignments,
+        {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+        where: '${CommonCols.id} = ?',
         whereArgs: [assignmentId],
       );
     } catch (e) {

@@ -1,3 +1,4 @@
+import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/assessments/question_model.dart';
 import '../assessment_local_datasource_base.dart';
@@ -11,9 +12,9 @@ mixin QuestionDataSourceMixin on AssessmentLocalDataSourceBase {
   }) async {
     try {
       final db = await localDatabase.database;
-      updates['updated_at'] = DateTime.now().toIso8601String();
-      updates['needs_sync'] = isOfflineMutation ? 1 : 0;
-      await db.update('assessment_questions', updates, where: 'id = ? AND deleted_at IS NULL', whereArgs: [questionId]);
+      updates[CommonCols.updatedAt] = DateTime.now().toIso8601String();
+      updates[CommonCols.needsSync] = isOfflineMutation ? 1 : 0;
+      await db.update(DbTables.assessmentQuestions, updates, where: '${CommonCols.id} = ? AND ${CommonCols.deletedAt} IS NULL', whereArgs: [questionId]);
     } catch (e) {
       throw CacheException('Failed to update question locally: $e');
     }
@@ -24,13 +25,13 @@ mixin QuestionDataSourceMixin on AssessmentLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       await db.update(
-        'assessment_questions',
+        DbTables.assessmentQuestions,
         {
-          'deleted_at': DateTime.now().toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
-          'needs_sync': 1,
+          CommonCols.deletedAt: DateTime.now().toIso8601String(),
+          CommonCols.updatedAt: DateTime.now().toIso8601String(),
+          CommonCols.needsSync: 1,
         },
-        where: 'id = ?',
+        where: '${CommonCols.id} = ?',
         whereArgs: [questionId],
       );
     } catch (e) {
@@ -43,8 +44,8 @@ mixin QuestionDataSourceMixin on AssessmentLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final rows = await db.query(
-        'assessment_questions',
-        where: 'id = ? AND deleted_at IS NULL',
+        DbTables.assessmentQuestions,
+        where: '${CommonCols.id} = ? AND ${CommonCols.deletedAt} IS NULL',
         whereArgs: [questionId],
         limit: 1,
       );
@@ -59,7 +60,7 @@ mixin QuestionDataSourceMixin on AssessmentLocalDataSourceBase {
   Future<void> updateQuestionId({required String localId, required String serverId}) async {
     try {
       final db = await localDatabase.database;
-      await db.update('assessment_questions', {'id': serverId}, where: 'id = ?', whereArgs: [localId]);
+      await db.update(DbTables.assessmentQuestions, {CommonCols.id: serverId}, where: '${CommonCols.id} = ?', whereArgs: [localId]);
     } catch (e) {
       throw CacheException('Failed to update question ID: $e');
     }
@@ -75,9 +76,9 @@ mixin QuestionDataSourceMixin on AssessmentLocalDataSourceBase {
       // Update choice IDs in the question_choices table
       for (final entry in idMapping.entries) {
         await db.update(
-          'question_choices',
-          {'id': entry.value},
-          where: 'id = ?',
+          DbTables.questionChoices,
+          {CommonCols.id: entry.value},
+          where: '${CommonCols.id} = ?',
           whereArgs: [entry.key],
         );
       }
@@ -96,9 +97,9 @@ mixin QuestionDataSourceMixin on AssessmentLocalDataSourceBase {
       // Update answer IDs in the answer_key_acceptable_answers table
       for (final entry in idMapping.entries) {
         await db.update(
-          'answer_key_acceptable_answers',
-          {'id': entry.value},
-          where: 'id = ?',
+          DbTables.answerKeyAcceptableAnswers,
+          {CommonCols.id: entry.value},
+          where: '${CommonCols.id} = ?',
           whereArgs: [entry.key],
         );
       }

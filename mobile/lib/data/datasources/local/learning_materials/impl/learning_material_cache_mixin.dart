@@ -5,6 +5,7 @@ import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:likha/core/database/db_schema.dart';
 import 'package:sqflite/sqflite.dart';
 import '../learning_material_local_datasource_base.dart';
 

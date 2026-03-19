@@ -1,3 +1,4 @@
+import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/assessments/question_model.dart';
@@ -23,23 +24,23 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
 
       await db.transaction((txn) async {
         await txn.insert(
-          'assessments',
+          DbTables.assessments,
           {
-            'id': assessmentId,
-            'class_id': classId,
-            'title': title,
-            if (description != null) 'description': description,
-            'time_limit_minutes': timeLimitMinutes,
-            'open_at': openAt,
-            'close_at': closeAt,
-            'show_results_immediately': (showResultsImmediately ?? false) ? 1 : 0,
-            'results_released': 0,
-            'is_published': isPublished ? 1 : 0,
-            'order_index': 0,
-            'created_at': now.toIso8601String(),
-            'updated_at': now.toIso8601String(),
-            'cached_at': now.toIso8601String(),
-            'needs_sync': 1,
+            CommonCols.id: assessmentId,
+            AssessmentsCols.classId: classId,
+            AssessmentsCols.title: title,
+            if (description != null) AssessmentsCols.description: description,
+            AssessmentsCols.timeLimitMinutes: timeLimitMinutes,
+            AssessmentsCols.openAt: openAt,
+            AssessmentsCols.closeAt: closeAt,
+            AssessmentsCols.showResultsImmediately: (showResultsImmediately ?? false) ? 1 : 0,
+            AssessmentsCols.resultsReleased: 0,
+            AssessmentsCols.isPublished: isPublished ? 1 : 0,
+            AssessmentsCols.orderIndex: 0,
+            CommonCols.createdAt: now.toIso8601String(),
+            CommonCols.updatedAt: now.toIso8601String(),
+            CommonCols.cachedAt: now.toIso8601String(),
+            CommonCols.needsSync: 1,
           },
         );
 
@@ -71,7 +72,7 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
       // Verify assessment was actually inserted
       final verifyResult = await db.query(
         'assessments',
-        where: 'id = ?',
+        where: '${CommonCols.id} = ?',
         whereArgs: [assessmentId],
         limit: 1,
       );
@@ -106,23 +107,23 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
       await db.transaction((txn) async {
         // Step 1: Create assessment
         await txn.insert(
-          'assessments',
+          DbTables.assessments,
           {
-            'id': assessmentId,
-            'class_id': classId,
-            'title': title,
-            if (description != null) 'description': description,
-            'time_limit_minutes': timeLimitMinutes,
-            'open_at': openAt,
-            'close_at': closeAt,
-            'show_results_immediately': (showResultsImmediately ?? false) ? 1 : 0,
-            'results_released': 0,
-            'is_published': isPublished ? 1 : 0,
-            'order_index': 0,
-            'created_at': now.toIso8601String(),
-            'updated_at': now.toIso8601String(),
-            'cached_at': now.toIso8601String(),
-            'needs_sync': 1,
+            CommonCols.id: assessmentId,
+            AssessmentsCols.classId: classId,
+            AssessmentsCols.title: title,
+            if (description != null) AssessmentsCols.description: description,
+            AssessmentsCols.timeLimitMinutes: timeLimitMinutes,
+            AssessmentsCols.openAt: openAt,
+            AssessmentsCols.closeAt: closeAt,
+            AssessmentsCols.showResultsImmediately: (showResultsImmediately ?? false) ? 1 : 0,
+            AssessmentsCols.resultsReleased: 0,
+            AssessmentsCols.isPublished: isPublished ? 1 : 0,
+            AssessmentsCols.orderIndex: 0,
+            CommonCols.createdAt: now.toIso8601String(),
+            CommonCols.updatedAt: now.toIso8601String(),
+            CommonCols.cachedAt: now.toIso8601String(),
+            CommonCols.needsSync: 1,
           },
         );
 
@@ -130,19 +131,19 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
         for (final question in questions) {
           // Insert into assessment_questions (v18 - renamed from 'questions')
           await txn.insert(
-            'assessment_questions',
+            DbTables.assessmentQuestions,
             {
-              'id': question.id,
-              'assessment_id': assessmentId,
-              'question_type': question.questionType,
-              'question_text': question.questionText,
-              'points': question.points,
-              'order_index': question.orderIndex,
-              'is_multi_select': question.isMultiSelect ? 1 : 0,
-              'created_at': now.toIso8601String(),
-              'updated_at': now.toIso8601String(),
-              'cached_at': now.toIso8601String(),
-              'needs_sync': 1,
+              CommonCols.id: question.id,
+              AssessmentQuestionsCols.assessmentId: assessmentId,
+              AssessmentQuestionsCols.questionType: question.questionType,
+              AssessmentQuestionsCols.questionText: question.questionText,
+              AssessmentQuestionsCols.points: question.points,
+              AssessmentQuestionsCols.orderIndex: question.orderIndex,
+              AssessmentQuestionsCols.isMultiSelect: question.isMultiSelect ? 1 : 0,
+              CommonCols.createdAt: now.toIso8601String(),
+              CommonCols.updatedAt: now.toIso8601String(),
+              CommonCols.cachedAt: now.toIso8601String(),
+              CommonCols.needsSync: 1,
             },
           );
 
@@ -150,15 +151,15 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
           if (question.choices != null) {
             for (final choice in question.choices!) {
               await txn.insert(
-                'question_choices',
+                DbTables.questionChoices,
                 {
-                  'id': choice.id,
-                  'question_id': question.id,
-                  'choice_text': choice.choiceText,
-                  'is_correct': choice.isCorrect ? 1 : 0,
-                  'order_index': choice.orderIndex,
-                  'cached_at': now.toIso8601String(),
-                  'needs_sync': 0,
+                  CommonCols.id: choice.id,
+                  QuestionChoicesCols.questionId: question.id,
+                  QuestionChoicesCols.choiceText: choice.choiceText,
+                  QuestionChoicesCols.isCorrect: choice.isCorrect ? 1 : 0,
+                  QuestionChoicesCols.orderIndex: choice.orderIndex,
+                  CommonCols.cachedAt: now.toIso8601String(),
+                  CommonCols.needsSync: 0,
                 },
               );
             }
@@ -168,25 +169,25 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
           if (question.correctAnswers != null && question.correctAnswers!.isNotEmpty) {
             final answerKeyId = const Uuid().v4();
             await txn.insert(
-              'answer_keys',
+              DbTables.answerKeys,
               {
-                'id': answerKeyId,
-                'question_id': question.id,
-                'item_type': 'correct_answer',
-                'cached_at': now.toIso8601String(),
-                'needs_sync': 0,
+                CommonCols.id: answerKeyId,
+                AnswerKeysCols.questionId: question.id,
+                AnswerKeysCols.itemType: DbValues.itemTypeCorrectAnswer,
+                CommonCols.cachedAt: now.toIso8601String(),
+                CommonCols.needsSync: 0,
               },
             );
 
             for (final answer in question.correctAnswers!) {
               await txn.insert(
-                'answer_key_acceptable_answers',
+                DbTables.answerKeyAcceptableAnswers,
                 {
-                  'id': answer.id,
-                  'answer_key_id': answerKeyId,
-                  'answer_text': answer.answerText,
-                  'cached_at': now.toIso8601String(),
-                  'needs_sync': 0,
+                  CommonCols.id: answer.id,
+                  AnswerKeyAcceptableAnswersCols.answerKeyId: answerKeyId,
+                  AnswerKeyAcceptableAnswersCols.answerText: answer.answerText,
+                  CommonCols.cachedAt: now.toIso8601String(),
+                  CommonCols.needsSync: 0,
                 },
               );
             }
@@ -197,11 +198,11 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
             for (final enumItem in question.enumerationItems!) {
               final answerKeyId = const Uuid().v4();
               await txn.insert(
-                'answer_keys',
+                DbTables.answerKeys,
                 {
                   'id': answerKeyId,
                   'question_id': question.id,
-                  'item_type': 'enumeration_item',
+                  AnswerKeysCols.itemType: DbValues.itemTypeEnumerationItem,
                   'cached_at': now.toIso8601String(),
                   'needs_sync': 0,
                 },
@@ -209,7 +210,7 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
 
               for (final acceptableAnswer in enumItem.acceptableAnswers) {
                 await txn.insert(
-                  'answer_key_acceptable_answers',
+                  DbTables.answerKeyAcceptableAnswers,
                   {
                     'id': acceptableAnswer.id,
                     'answer_key_id': answerKeyId,
@@ -305,7 +306,7 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
       // Verify both assessment and questions were actually inserted
       final assessmentVerify = await db.query(
         'assessments',
-        where: 'id = ?',
+        where: '${CommonCols.id} = ?',
         whereArgs: [assessmentId],
         limit: 1,
       );
@@ -315,7 +316,7 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
       }
 
       final questionsCount = await db.rawQuery(
-        'SELECT COUNT(*) as cnt FROM assessment_questions WHERE assessment_id = ?',
+        'SELECT COUNT(*) as cnt FROM ${DbTables.assessmentQuestions} WHERE assessment_id = ?',
         [assessmentId],
       );
       final insertedQuestionCount = (questionsCount.first['cnt'] as num).toInt();
@@ -340,12 +341,12 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
       await db.update(
         'assessments',
         {
-          'is_published': 1,
-          'updated_at': DateTime.now().toIso8601String(),
-          'cached_at': DateTime.now().toIso8601String(),
-          'needs_sync': 1,
+          AssessmentsCols.isPublished: 1,
+          CommonCols.updatedAt: DateTime.now().toIso8601String(),
+          CommonCols.cachedAt: DateTime.now().toIso8601String(),
+          CommonCols.needsSync: 1,
         },
-        where: 'id = ?',
+        where: '${CommonCols.id} = ?',
         whereArgs: [assessmentId],
       );
     } catch (e) {
@@ -360,12 +361,12 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
       await db.update(
         'assessments',
         {
-          'is_published': 0,
-          'updated_at': DateTime.now().toIso8601String(),
-          'cached_at': DateTime.now().toIso8601String(),
-          'needs_sync': 1,
+          AssessmentsCols.isPublished: 0,
+          CommonCols.updatedAt: DateTime.now().toIso8601String(),
+          CommonCols.cachedAt: DateTime.now().toIso8601String(),
+          CommonCols.needsSync: 1,
         },
-        where: 'id = ?',
+        where: '${CommonCols.id} = ?',
         whereArgs: [assessmentId],
       );
     } catch (e) {
