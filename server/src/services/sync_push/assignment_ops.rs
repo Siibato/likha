@@ -2,23 +2,15 @@ use uuid::Uuid;
 use chrono::Utc;
 use crate::schema::assignment_schema::{CreateAssignmentRequest, UpdateAssignmentRequest};
 use super::sync_push_service::{OperationResult, SyncQueueEntry};
+use super::extract_field;
 
 impl super::SyncPushService {
     pub(super) async fn handle_assignment_operation(&self, user_id: Uuid, _user_role: &str, op: &SyncQueueEntry) -> OperationResult {
         match op.operation.as_str() {
             "create" => {
-                let class_id = match self.parse_uuid_field(&op.payload, "class_id") {
-                    Ok(id) => id,
-                    Err(e) => return self.error_result(op, &e),
-                };
-                let title = match self.parse_str_field(&op.payload, "title") {
-                    Ok(v) => v,
-                    Err(e) => return self.error_result(op, &e),
-                };
-                let instructions = match self.parse_str_field(&op.payload, "instructions") {
-                    Ok(v) => v,
-                    Err(e) => return self.error_result(op, &e),
-                };
+                let class_id = extract_field!(self, op, parse_uuid_field, "class_id");
+                let title = extract_field!(self, op, parse_str_field, "title");
+                let instructions = extract_field!(self, op, parse_str_field, "instructions");
                 let client_id = match self.parse_uuid_field(&op.payload, "id") {
                     Ok(id) => Some(id),
                     Err(e) => return self.error_result(op, &format!("Client ID is required for assignment creation: {}", e)),
@@ -40,10 +32,7 @@ impl super::SyncPushService {
                 }
             }
             "update" => {
-                let assignment_id = match self.parse_uuid_field(&op.payload, "id") {
-                    Ok(id) => id,
-                    Err(e) => return self.error_result(op, &e),
-                };
+                let assignment_id = extract_field!(self, op, parse_uuid_field, "id");
                 let request = UpdateAssignmentRequest {
                     title: op.payload.get("title").and_then(|v| v.as_str()).map(|s| s.to_string()),
                     instructions: op.payload.get("instructions").and_then(|v| v.as_str()).map(|s| s.to_string()),
@@ -59,30 +48,21 @@ impl super::SyncPushService {
                 }
             }
             "delete" => {
-                let assignment_id = match self.parse_uuid_field(&op.payload, "id") {
-                    Ok(id) => id,
-                    Err(e) => return self.error_result(op, &e),
-                };
+                let assignment_id = extract_field!(self, op, parse_uuid_field, "id");
                 match self.assignment_service.soft_delete(assignment_id, user_id).await {
                     Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }
             }
             "publish" => {
-                let assignment_id = match self.parse_uuid_field(&op.payload, "id") {
-                    Ok(id) => id,
-                    Err(e) => return self.error_result(op, &e),
-                };
+                let assignment_id = extract_field!(self, op, parse_uuid_field, "id");
                 match self.assignment_service.publish_assignment(assignment_id, user_id).await {
                     Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }
             }
             "unpublish" => {
-                let assignment_id = match self.parse_uuid_field(&op.payload, "id") {
-                    Ok(id) => id,
-                    Err(e) => return self.error_result(op, &e),
-                };
+                let assignment_id = extract_field!(self, op, parse_uuid_field, "id");
                 match self.assignment_service.unpublish_assignment(assignment_id, user_id).await {
                     Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
                     Err(e) => self.error_result(op, &e.to_string()),

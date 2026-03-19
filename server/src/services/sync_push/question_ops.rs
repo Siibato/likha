@@ -2,15 +2,13 @@ use uuid::Uuid;
 use chrono::Utc;
 use crate::schema::assessment_schema::{AddQuestionRequest, UpdateQuestionRequest, ChoiceInput, EnumerationItemInput};
 use super::sync_push_service::{OperationResult, SyncQueueEntry};
+use super::extract_field;
 
 impl super::SyncPushService {
     pub(super) async fn handle_question_operation(&self, user_id: Uuid, op: &SyncQueueEntry) -> OperationResult {
         match op.operation.as_str() {
             "create" => {
-                let assessment_id = match self.parse_uuid_field(&op.payload, "assessment_id") {
-                    Ok(id) => id,
-                    Err(e) => return self.error_result(op, &e),
-                };
+                let assessment_id = extract_field!(self, op, parse_uuid_field, "assessment_id");
 
                 let questions_array = match op.payload.get("questions").and_then(|v| v.as_array()) {
                     Some(arr) => arr,
@@ -22,18 +20,9 @@ impl super::SyncPushService {
                     let id = q.get("id")
                         .and_then(|v| v.as_str())
                         .and_then(|s| Uuid::parse_str(s).ok());
-                    let question_type = match q.get("question_type").and_then(|v| v.as_str()).ok_or_else(|| "Missing question_type field".to_string()) {
-                        Ok(v) => v.to_string(),
-                        Err(e) => return self.error_result(op, &e),
-                    };
-                    let question_text = match q.get("question_text").and_then(|v| v.as_str()).ok_or_else(|| "Missing question_text field".to_string()) {
-                        Ok(v) => v.to_string(),
-                        Err(e) => return self.error_result(op, &e),
-                    };
-                    let points = match q.get("points").and_then(|v| v.as_i64()).ok_or_else(|| "Missing points field".to_string()).map(|v| v as i32) {
-                        Ok(v) => v,
-                        Err(e) => return self.error_result(op, &e),
-                    };
+                    let question_type = extract_field!(self, op, q, parse_str_field, "question_type");
+                    let question_text = extract_field!(self, op, q, parse_str_field, "question_text");
+                    let points = extract_field!(self, op, q, parse_i32_field, "points");
                     let order_index = q.get("order_index").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
                     let is_multi_select = q.get("is_multi_select").and_then(|v| v.as_bool());
                     let choices = Self::parse_choices(q);
@@ -62,10 +51,7 @@ impl super::SyncPushService {
                 }
             }
             "update" => {
-                let question_id = match self.parse_uuid_field(&op.payload, "id") {
-                    Ok(id) => id,
-                    Err(e) => return self.error_result(op, &e),
-                };
+                let question_id = extract_field!(self, op, parse_uuid_field, "id");
                 let request = UpdateQuestionRequest {
                     question_text: op.payload.get("question_text").and_then(|v| v.as_str()).map(|s| s.to_string()),
                     points: op.payload.get("points").and_then(|v| v.as_i64()).map(|v| v as i32),
@@ -81,10 +67,7 @@ impl super::SyncPushService {
                 }
             }
             "delete" => {
-                let question_id = match self.parse_uuid_field(&op.payload, "id") {
-                    Ok(id) => id,
-                    Err(e) => return self.error_result(op, &e),
-                };
+                let question_id = extract_field!(self, op, parse_uuid_field, "id");
                 match self.assessment_service.delete_question(question_id, user_id).await {
                     Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
                     Err(e) => self.error_result(op, &e.to_string()),
