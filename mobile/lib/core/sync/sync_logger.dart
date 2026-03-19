@@ -9,8 +9,8 @@ class SyncLogger extends AppLogger {
     log('════ FULL SYNC START ════ classes=$totalClasses batches=$totalBatches');
   }
 
-  void baseResponse({required int classes, required int enrollments, required int students}) {
-    log('Phase 1 (base): classes=$classes enrollments=$enrollments students=$students');
+  void baseResponse({required int classes, required int participants, required int students}) {
+    log('Phase 1 (base): classes=$classes participants=$participants students=$students');
   }
 
   void studentsPerClass(Map<String, dynamic> classData, int studentCount) {

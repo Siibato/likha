@@ -38,8 +38,8 @@ abstract class ClassLocalDataSource {
   Future<UserModel?> getStudentById(String studentId);
   Future<void> cacheSearchStudents(List<UserModel> students);
   Future<List<UserModel>> searchCachedStudents(String query);
-  Future<List<UserModel>> getCachedEnrolledStudents(String classId);
-  Future<Set<String>> getEnrolledStudentIds(String classId);
-  Future<ClassDetailModel?> buildClassDetailFromEnrollments(String classId);
+  Future<List<UserModel>> getCachedParticipants(String classId);
+  Future<Set<String>> getParticipantIds(String classId);
+  Future<ClassDetailModel?> buildClassDetailFromParticipants(String classId);
   Future<void> clearAllCache();
 }

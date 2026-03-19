@@ -3,7 +3,7 @@ import 'package:likha/domain/auth/entities/user.dart';
 
 class StudentActionCard extends StatelessWidget {
   final User student;
-  final bool isEnrolled;
+  final bool isParticipant;
   final bool isLoading;
   final VoidCallback? onAdd;
   final VoidCallback? onRemove;
@@ -11,7 +11,7 @@ class StudentActionCard extends StatelessWidget {
   const StudentActionCard({
     super.key,
     required this.student,
-    required this.isEnrolled,
+    required this.isParticipant,
     this.isLoading = false,
     this.onAdd,
     this.onRemove,
@@ -108,7 +108,7 @@ class StudentActionCard extends StatelessWidget {
       );
     }
 
-    if (isEnrolled) {
+    if (isParticipant) {
       return IconButton(
         iconSize: 22,
         splashRadius: 20,

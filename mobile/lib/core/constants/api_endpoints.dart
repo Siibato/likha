@@ -119,10 +119,10 @@ class ApiEndpoints {
         ClassModel.fromJson,
       );
 
-  static ApiEndpoint<EnrollmentModel> classStudents(String classId) =>
-      ApiEndpoint<EnrollmentModel>.fromModel(
+  static ApiEndpoint<ParticipantModel> classStudents(String classId) =>
+      ApiEndpoint<ParticipantModel>.fromModel(
         '/api/v1/classes/$classId/students',
-        EnrollmentModel.fromJson,
+        ParticipantModel.fromJson,
       );
 
   static ApiEndpoint<void> classStudent(String classId, String studentId) =>

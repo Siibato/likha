@@ -7,7 +7,7 @@ class ClassDetail extends Equatable {
   final String? description;
   final String teacherId;
   final bool isArchived;
-  final List<Enrollment> students;
+  final List<Participant> students;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -35,12 +35,12 @@ class ClassDetail extends Equatable {
   ];
 }
 
-class Enrollment extends Equatable {
+class Participant extends Equatable {
   final String id;
   final User student;
   final DateTime joinedAt;
 
-  const Enrollment({
+  const Participant({
     required this.id,
     required this.student,
     required this.joinedAt,

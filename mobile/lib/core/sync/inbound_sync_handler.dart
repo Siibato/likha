@@ -88,18 +88,18 @@ class InboundSyncHandler {
     }
 
     // Upsert base response data (user, classes, enrollments, enrolled_students)
-    var enrolledStudents = (baseData['enrolled_students'] as List?) ?? [];
+    var participantUsers = (baseData['enrolled_students'] as List?) ?? [];
     final userData = baseData['user'] as Map<String, dynamic>?;
 
     // Ensure current user is always in the list (may not be in enrolled_students if only teacher enrolled them)
-    if (userData != null && enrolledStudents.every((s) => (s as Map<String, dynamic>?)?['id'] != userData['id'])) {
-      enrolledStudents = [userData, ...enrolledStudents];
+    if (userData != null && participantUsers.every((s) => (s as Map<String, dynamic>?)?['id'] != userData['id'])) {
+      participantUsers = [userData, ...participantUsers];
     }
 
     // Track students per class
-    final rawEnrollments = (baseData['enrollments'] as List?) ?? [];
+    final rawParticipants = (baseData['enrollments'] as List?) ?? [];
     final studentsPerClassCount = <String, int>{};
-    for (final e in rawEnrollments) {
+    for (final e in rawParticipants) {
       if (e is! Map<String, dynamic>) continue;
       final cid = e['class_id']?.toString();
       if (cid != null) studentsPerClassCount[cid] = (studentsPerClassCount[cid] ?? 0) + 1;
@@ -113,14 +113,14 @@ class InboundSyncHandler {
     // Upsert all base response data sequentially (proper await ensures committed before verification)
     _log.warn('Starting base response data upsert (classes, enrollments, students)...');
     await _upsertHelpers.upsertClasses(db, baseData['classes'] ?? []);
-    await _upsertHelpers.upsertEnrolledStudents(db, enrolledStudents);
-    await _upsertHelpers.upsertEnrollments(db, baseData['enrollments'] ?? [], enrolledStudents);
+    await _upsertHelpers.upsertEnrolledStudents(db, participantUsers);
+    await _upsertHelpers.upsertParticipants(db, baseData['enrollments'] ?? [], participantUsers);
     await _upsertHelpers.recalculateClassStudentCounts(db);
 
     _log.baseResponse(
       classes: (baseData['classes'] as List?)?.length ?? 0,
-      enrollments: rawEnrollments.length,
-      students: enrolledStudents.length,
+      participants: rawParticipants.length,
+      students: participantUsers.length,
     );
 
     // Log per-class student counts
@@ -191,7 +191,7 @@ class InboundSyncHandler {
 
     // Build student map for submission enrichment
     final studentMap = <String, dynamic>{};
-    for (final s in enrolledStudents) {
+    for (final s in participantUsers) {
       if (s is! Map<String, dynamic>) continue;
       final id = s['id']?.toString();
       if (id != null && id.isNotEmpty) {
@@ -239,8 +239,8 @@ class InboundSyncHandler {
         final studentResults = batchData['student_results'] ?? [];
 
         // NEW: Extract enrolled_students and enrollments from batch (for full offline support)
-        final batchEnrolledStudents = (batchData['enrolled_students'] as List?) ?? [];
-        final batchEnrollments = (batchData['enrollments'] as List?) ?? [];
+        final batchParticipantUsers = (batchData['enrolled_students'] as List?) ?? [];
+        final batchParticipants = (batchData['enrollments'] as List?) ?? [];
 
         _log.batchReceived(batchIndex, classBatches.length, {
           'assessments': assessments.length,
@@ -253,8 +253,8 @@ class InboundSyncHandler {
           'submission_files': submissionFiles.length,
           'assessment_statistics': assessmentStatistics.length,
           'student_results': studentResults.length,
-          'enrolled_students': batchEnrolledStudents.length,  // NEW: for offline support
-          'enrollments': batchEnrollments.length,              // NEW: for offline support
+          'enrolled_students': batchParticipantUsers.length,  // NEW: for offline support
+          'enrollments': batchParticipants.length,              // NEW: for offline support
         });
 
         // Log questions per assessment
@@ -277,11 +277,11 @@ class InboundSyncHandler {
         }
 
         // NEW: Upsert batch enrolled_students and enrollments (for full offline support)
-        await _upsertHelpers.upsertEnrolledStudents(db, batchEnrolledStudents);
-        await _upsertHelpers.upsertEnrollments(db, batchEnrollments, batchEnrolledStudents);
+        await _upsertHelpers.upsertEnrolledStudents(db, batchParticipantUsers);
+        await _upsertHelpers.upsertParticipants(db, batchParticipants, batchParticipantUsers);
 
         // Update in-memory studentMap with batch students so submissions can reference them
-        for (final s in batchEnrolledStudents) {
+        for (final s in batchParticipantUsers) {
           if (s is! Map<String, dynamic>) continue;
           final id = s['id']?.toString();
           if (id != null && id.isNotEmpty) {

@@ -109,14 +109,14 @@ class SyncUpsertHelpers {
     }
   }
 
-  Future<void> upsertEnrollments(
+  Future<void> upsertParticipants(
     Database db,
-    List<dynamic> enrollments,
-    List<dynamic> enrolledStudents,
+    List<dynamic> participants,
+    List<dynamic> participantUsers,
   ) async {
     // Build lookup map: user_id -> student data
     final studentMap = <String, Map<String, dynamic>>{};
-    for (final s in enrolledStudents) {
+    for (final s in participantUsers) {
       if (s is! Map<String, dynamic>) continue;
       final id = s['id']?.toString();
       if (id != null && id.isNotEmpty) {
@@ -124,9 +124,9 @@ class SyncUpsertHelpers {
       }
     }
 
-    for (final enrollment in enrollments) {
-      if (enrollment is! Map<String, dynamic>) continue;
-      final e = enrollment;
+    for (final participant in participants) {
+      if (participant is! Map<String, dynamic>) continue;
+      final e = participant;
       // Accept both user_id (new) and student_id (old) for backward compat
       final userId = (e['user_id'] ?? e['student_id'])?.toString();
       if (userId == null || userId.isEmpty) continue;
@@ -492,53 +492,44 @@ class SyncUpsertHelpers {
     }
   }
 
+  Future<void> _preserveLocalPathUpsert(
+    Database db,
+    String table,
+    String fkColumn,
+    Map<String, dynamic> data,
+  ) async {
+    final existing = await db.query(table,
+        columns: ['local_path'], where: 'id = ?', whereArgs: [data['id']]);
+    if (existing.isEmpty) {
+      await db.insert(table, {
+        'id': data['id'],
+        fkColumn: data[fkColumn],
+        'file_name': data['file_name'],
+        'file_type': data['file_type'],
+        'file_size': data['file_size'] ?? 0,
+        'local_path': '',
+        'uploaded_at': data['uploaded_at'] ?? DateTime.now().toIso8601String(),
+        'cached_at': DateTime.now().toIso8601String(),
+        'needs_sync': 0,
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+    } else {
+      await db.update(table, {
+        'file_name': data['file_name'],
+        'file_type': data['file_type'],
+        'file_size': data['file_size'] ?? 0,
+        'uploaded_at': data['uploaded_at'] ?? DateTime.now().toIso8601String(),
+        'cached_at': DateTime.now().toIso8601String(),
+      }, where: 'id = ?', whereArgs: [data['id']]);
+    }
+  }
+
   /// NEW: Upsert material files metadata (no binary data)
   Future<void> upsertMaterialFiles(
     Database db,
     List<dynamic> records,
   ) async {
     for (final record in records) {
-      final data = record as Map<String, dynamic>;
-
-      // Preserve local_path if row exists (don't overwrite with null)
-      final existing = await db.query(
-        'material_files',
-        columns: ['local_path'],
-        where: 'id = ?',
-        whereArgs: [data['id']],
-      );
-
-      if (existing.isEmpty) {
-        await db.insert(
-          'material_files',
-          {
-            'id': data['id'],
-            'material_id': data['material_id'],
-            'file_name': data['file_name'],
-            'file_type': data['file_type'],
-            'file_size': data['file_size'] ?? 0,
-            'local_path': '',
-            'uploaded_at': data['uploaded_at'] ?? DateTime.now().toIso8601String(),
-            'cached_at': DateTime.now().toIso8601String(),
-            'needs_sync': 0,
-          },
-          conflictAlgorithm: ConflictAlgorithm.ignore,
-        );
-      } else {
-        // Only update server-side metadata — preserve local cache state
-        await db.update(
-          'material_files',
-          {
-            'file_name': data['file_name'],
-            'file_type': data['file_type'],
-            'file_size': data['file_size'] ?? 0,
-            'uploaded_at': data['uploaded_at'] ?? DateTime.now().toIso8601String(),
-            'cached_at': DateTime.now().toIso8601String(),
-          },
-          where: 'id = ?',
-          whereArgs: [data['id']],
-        );
-      }
+      await _preserveLocalPathUpsert(db, 'material_files', 'material_id', record as Map<String, dynamic>);
     }
   }
 
@@ -548,46 +539,7 @@ class SyncUpsertHelpers {
     List<dynamic> records,
   ) async {
     for (final record in records) {
-      final data = record as Map<String, dynamic>;
-
-      final existing = await db.query(
-        'submission_files',
-        columns: ['local_path'],
-        where: 'id = ?',
-        whereArgs: [data['id']],
-      );
-
-      if (existing.isEmpty) {
-        await db.insert(
-          'submission_files',
-          {
-            'id': data['id'],
-            'submission_id': data['submission_id'],
-            'file_name': data['file_name'],
-            'file_type': data['file_type'],
-            'file_size': data['file_size'] ?? 0,
-            'local_path': '',
-            'uploaded_at': data['uploaded_at'] ?? DateTime.now().toIso8601String(),
-            'cached_at': DateTime.now().toIso8601String(),
-            'needs_sync': 0,
-          },
-          conflictAlgorithm: ConflictAlgorithm.ignore,
-        );
-      } else {
-        // Only update server-side metadata — preserve local cache state
-        await db.update(
-          'submission_files',
-          {
-            'file_name': data['file_name'],
-            'file_type': data['file_type'],
-            'file_size': data['file_size'] ?? 0,
-            'uploaded_at': data['uploaded_at'] ?? DateTime.now().toIso8601String(),
-            'cached_at': DateTime.now().toIso8601String(),
-          },
-          where: 'id = ?',
-          whereArgs: [data['id']],
-        );
-      }
+      await _preserveLocalPathUpsert(db, 'submission_files', 'submission_id', record as Map<String, dynamic>);
     }
   }
 
@@ -706,39 +658,14 @@ class SyncUpsertHelpers {
     if (enrollmentDeltas != null) {
       final updated = enrollmentDeltas['updated'] as List<dynamic>? ?? [];
       updatedCounts['enrollments'] = updated.length;
-      // For delta, students should already be in the users table
-      for (final enrollment in updated) {
-        final e = enrollment as Map<String, dynamic>;
-        // Accept both user_id (new) and student_id (old) for backward compat
-        final userId = (e['user_id'] ?? e['student_id']) as String;
+      await upsertParticipants(db, updated, []);
 
-        // Look up student from local users table
-        await db.insert(
-          'class_participants',
-          {
-            'id': e['id'],
-            'class_id': e['class_id'],
-            'user_id': userId,
-            'joined_at': e['joined_at'] ?? e['enrolled_at'],
-            'updated_at': e['joined_at'] ?? e['enrolled_at'],
-            'removed_at': null,
-            'cached_at': DateTime.now().toIso8601String(),
-            'needs_sync': 0,
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
-      }
-
-      // Soft-delete removed enrollments (student was unenrolled)
       final deleted = enrollmentDeltas['deleted'] as List<dynamic>? ?? [];
       deletedCounts['enrollments'] = deleted.length;
       for (final id in deleted) {
-        await db.update(
-          'class_participants',
-          {'removed_at': DateTime.now().toIso8601String()},
-          where: 'id = ?',
-          whereArgs: [id as String],
-        );
+        await db.update('class_participants',
+            {'removed_at': DateTime.now().toIso8601String()},
+            where: 'id = ?', whereArgs: [id as String]);
       }
     }
 

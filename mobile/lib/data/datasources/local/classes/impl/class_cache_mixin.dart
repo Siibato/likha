@@ -90,14 +90,14 @@ mixin ClassCacheMixin on ClassLocalDataSourceBase {
         await txn.insert('classes', classMap, conflictAlgorithm: ConflictAlgorithm.replace);
 
         // Cache students as class_participants (v18 - no user detail columns)
-        for (final enrollment in classDetail.students) {
+        for (final participant in classDetail.students) {
           await txn.insert(
             'class_participants',
             {
-              'id': enrollment.id,
+              'id': participant.id,
               'class_id': classDetail.id,
-              'user_id': enrollment.student.id,
-              'joined_at': enrollment.joinedAt.toIso8601String(),
+              'user_id': participant.student.id,
+              'joined_at': participant.joinedAt.toIso8601String(),
               'updated_at': DateTime.now().toIso8601String(),
               'removed_at': null,
               'cached_at': DateTime.now().toIso8601String(),

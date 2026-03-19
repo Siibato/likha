@@ -83,7 +83,7 @@ mixin ClassQueryMixin on ClassRepositoryBase {
         } on CacheException {
           // No cache: try rebuilding from enrollments table
           try {
-            final rebuilt = await localDataSource.buildClassDetailFromEnrollments(classId);
+            final rebuilt = await localDataSource.buildClassDetailFromParticipants(classId);
             if (rebuilt != null) return Right(rebuilt);
             return const Left(CacheFailure('Class detail not available offline'));
           } catch (_) {

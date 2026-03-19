@@ -1,13 +1,13 @@
 import 'package:likha/data/repositories/classes/class_repository_base.dart';
 import 'mixins/class_crud_mixin.dart';
 import 'mixins/class_query_mixin.dart';
-import 'mixins/class_enrollment_mixin.dart';
+import 'mixins/class_participant_mixin.dart';
 
 class ClassRepositoryImpl extends ClassRepositoryBase
     with
         ClassCrudMixin,
         ClassQueryMixin,
-        ClassEnrollmentMixin {
+        ClassParticipantMixin {
   ClassRepositoryImpl({
     required super.remoteDataSource,
     required super.localDataSource,

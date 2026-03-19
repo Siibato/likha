@@ -70,7 +70,7 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
   }
 
   @override
-  Future<List<UserModel>> getCachedEnrolledStudents(String classId) async {
+  Future<List<UserModel>> getCachedParticipants(String classId) async {
     try {
       final db = await localDatabase.database;
       // v18: Join with users table to get student details
@@ -105,7 +105,7 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
         );
       }).toList();
     } catch (e) {
-      throw CacheException('Failed to get enrolled students: $e');
+      throw CacheException('Failed to get participants: $e');
     }
   }
 }

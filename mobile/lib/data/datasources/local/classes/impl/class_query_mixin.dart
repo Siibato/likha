@@ -84,7 +84,7 @@ mixin ClassQueryMixin on ClassLocalDataSourceBase {
         description: classMap['description'] as String?,
         teacherId: classMap['teacher_id'] as String? ?? '',
         isArchived: (classMap['is_archived'] as int?) == 1,
-        students: _mapEnrollments(participantResults),
+        students: _mapParticipants(participantResults),
         createdAt: DateTime.parse(classMap['created_at'] as String),
         updatedAt: DateTime.parse(classMap['updated_at'] as String),
       );
@@ -95,7 +95,7 @@ mixin ClassQueryMixin on ClassLocalDataSourceBase {
   }
 
   @override
-  Future<ClassDetailModel?> buildClassDetailFromEnrollments(String classId) async {
+  Future<ClassDetailModel?> buildClassDetailFromParticipants(String classId) async {
     try {
       final db = await localDatabase.database;
       final classResults = await db.query(
@@ -123,7 +123,7 @@ mixin ClassQueryMixin on ClassLocalDataSourceBase {
         description: classMap['description'] as String?,
         teacherId: classMap['teacher_id'] as String? ?? '',
         isArchived: (classMap['is_archived'] as int?) == 1,
-        students: _mapEnrollments(participantResults),
+        students: _mapParticipants(participantResults),
         createdAt: DateTime.parse(classMap['created_at'] as String),
         updatedAt: DateTime.parse(classMap['updated_at'] as String),
       );
@@ -132,14 +132,14 @@ mixin ClassQueryMixin on ClassLocalDataSourceBase {
     }
   }
 
-  List<EnrollmentModel> _mapEnrollments(List<Map<String, Object?>> rows) {
+  List<ParticipantModel> _mapParticipants(List<Map<String, Object?>> rows) {
     return rows.map((e) {
       final accountStatus = e['account_status'] as String?;
       final isActive = accountStatus != null &&
           accountStatus != 'locked' &&
           accountStatus != 'deactivated';
 
-      return EnrollmentModel(
+      return ParticipantModel(
         id: e['id'] as String,
         student: UserModel(
           id: e['user_id'] as String,

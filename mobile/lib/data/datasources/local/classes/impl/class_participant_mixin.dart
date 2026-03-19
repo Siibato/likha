@@ -3,7 +3,7 @@ import 'package:likha/data/models/auth/user_model.dart';
 import 'package:uuid/uuid.dart';
 import '../class_local_datasource_base.dart';
 
-mixin ClassEnrollmentMixin on ClassLocalDataSourceBase {
+mixin ClassParticipantMixin on ClassLocalDataSourceBase {
   @override
   Future<String> addStudentLocally({
     required String classId,
@@ -71,7 +71,7 @@ mixin ClassEnrollmentMixin on ClassLocalDataSourceBase {
   }
 
   @override
-  Future<Set<String>> getEnrolledStudentIds(String classId) async {
+  Future<Set<String>> getParticipantIds(String classId) async {
     try {
       final db = await localDatabase.database;
       final results = await db.query(
@@ -82,7 +82,7 @@ mixin ClassEnrollmentMixin on ClassLocalDataSourceBase {
       );
       return results.map((row) => row['user_id'] as String).toSet();
     } catch (e) {
-      throw CacheException('Failed to get enrolled student IDs: $e');
+      throw CacheException('Failed to get participant IDs: $e');
     }
   }
 }

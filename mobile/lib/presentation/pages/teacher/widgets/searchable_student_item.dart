@@ -4,7 +4,7 @@ class SearchableStudentItem extends StatelessWidget {
   final String fullName;
   final String username;
   final String accountStatus;
-  final bool isEnrolled;
+  final bool isParticipant;
   final VoidCallback onAction;
 
   const SearchableStudentItem({
@@ -12,7 +12,7 @@ class SearchableStudentItem extends StatelessWidget {
     required this.fullName,
     required this.username,
     required this.accountStatus,
-    required this.isEnrolled,
+    required this.isParticipant,
     required this.onAction,
   });
 
@@ -63,10 +63,10 @@ class SearchableStudentItem extends StatelessWidget {
           ),
           trailing: IconButton(
             icon: Icon(
-              isEnrolled
+              isParticipant
                   ? Icons.remove_circle_rounded
                   : Icons.add_circle_rounded,
-              color: isEnrolled
+              color: isParticipant
                   ? const Color(0xFFEF5350)
                   : const Color(0xFF2B2B2B),
             ),
