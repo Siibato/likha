@@ -3,6 +3,7 @@ pub mod assessment_handler;
 pub mod assignment_handler;
 pub mod auth_handler;
 pub mod class_handler;
+pub mod grading_handler;
 pub mod health_handler;
 pub mod learning_material_handler;
 pub mod sync_conflict_handler;

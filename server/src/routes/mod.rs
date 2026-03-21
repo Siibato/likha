@@ -2,6 +2,7 @@ pub mod assessment_routes;
 pub mod assignment_routes;
 pub mod auth_routes;
 pub mod class_routes;
+pub mod grading_routes;
 pub mod health_routes;
 pub mod learning_material_routes;
 pub mod sync_routes_new;
@@ -14,6 +15,7 @@ use crate::services::assessment::AssessmentService;
 use crate::services::assignment::AssignmentService;
 use crate::services::auth::AuthService;
 use crate::services::class::ClassService;
+use crate::services::grade_computation::GradeComputationService;
 use crate::services::learning_material::LearningMaterialService;
 use crate::services::sync_push::SyncPushService;
 use crate::services::sync_conflict_service::SyncConflictService;
@@ -26,6 +28,7 @@ pub fn api_routes(
     assessment_service: Arc<AssessmentService>,
     assignment_service: Arc<AssignmentService>,
     material_service: Arc<LearningMaterialService>,
+    grade_computation_service: Arc<GradeComputationService>,
     sync_push_service: Arc<SyncPushService>,
     sync_conflict_service: Arc<SyncConflictService>,
     sync_full_service: Arc<SyncFullService>,
@@ -38,6 +41,7 @@ pub fn api_routes(
         .merge(assessment_routes::routes(assessment_service.clone()))
         .merge(assignment_routes::routes(assignment_service.clone()))
         .merge(learning_material_routes::routes(material_service))
+        .merge(grading_routes::routes(grade_computation_service))
         .merge(tasks_routes::routes(assignment_service, assessment_service))
         .merge(sync_routes_new::routes(
             sync_push_service,

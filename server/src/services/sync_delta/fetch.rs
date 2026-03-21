@@ -138,7 +138,43 @@ impl super::SyncDeltaService {
             .await?;
         tracing::debug!("Got {} learning material deltas", learning_materials.len());
 
-        // Step 5: Separate updated vs deleted for each entity type
+        // Step 5: Fetch grading deltas
+        let class_ids: Vec<Uuid> = manifest.classes.iter().map(|e| e.id).collect();
+        let grade_configs_raw = self.manifest_repo
+            .get_grade_configs_since(class_ids.clone(), last_sync_at)
+            .await?;
+        let grade_items_raw = self.manifest_repo
+            .get_grade_items_since(class_ids.clone(), last_sync_at)
+            .await?;
+
+        // Get all grade_item IDs for score delta query
+        let all_grade_item_ids: Vec<Uuid> = self.manifest_repo
+            .get_grade_item_ids_for_classes(class_ids.clone())
+            .await?;
+
+        let grade_scores_raw = if all_grade_item_ids.is_empty() {
+            Vec::new()
+        } else {
+            match user_role {
+                "student" => self.manifest_repo
+                    .get_student_grade_scores_since(user_id, all_grade_item_ids, last_sync_at)
+                    .await?,
+                _ => self.manifest_repo
+                    .get_all_grade_scores_since(all_grade_item_ids, last_sync_at)
+                    .await?,
+            }
+        };
+
+        let quarterly_grades_raw = match user_role {
+            "student" => self.manifest_repo
+                .get_student_quarterly_grades_since(user_id, class_ids, last_sync_at)
+                .await?,
+            _ => self.manifest_repo
+                .get_all_quarterly_grades_since(class_ids, last_sync_at)
+                .await?,
+        };
+
+        // Step 6: Separate updated vs deleted for each entity type
         let classes_deltas = separate_deltas(classes);
         let enrollments_deltas = separate_deltas(enrollments);
         let assessments_deltas = separate_deltas(assessments);
@@ -147,6 +183,10 @@ impl super::SyncDeltaService {
         let assignments_deltas = separate_deltas(assignments);
         let assignment_submissions_deltas = separate_deltas(assignment_submissions);
         let learning_materials_deltas = separate_deltas(learning_materials);
+        let grade_configs_deltas = separate_deltas(grade_configs_raw);
+        let grade_items_deltas = separate_deltas(grade_items_raw);
+        let grade_scores_deltas = separate_deltas(grade_scores_raw);
+        let quarterly_grades_deltas = separate_deltas(quarterly_grades_raw);
 
         let now = Utc::now();
         let sync_token = now.to_rfc3339();
@@ -173,6 +213,10 @@ impl super::SyncDeltaService {
                 assignments: assignments_deltas,
                 assignment_submissions: assignment_submissions_deltas,
                 learning_materials: learning_materials_deltas,
+                grade_configs: grade_configs_deltas,
+                grade_items: grade_items_deltas,
+                grade_scores: grade_scores_deltas,
+                quarterly_grades: quarterly_grades_deltas,
             },
         })
     }

@@ -3,6 +3,7 @@ pub mod assessment_repository;
 pub mod assignment_repository;
 pub mod class_repository;
 pub mod entitlement_repository;
+pub mod grade_computation_repository;
 pub mod learning_material_repository;
 pub mod login_attempt_repository;
 pub mod manifest_repository;

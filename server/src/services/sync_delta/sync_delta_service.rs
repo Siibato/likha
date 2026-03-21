@@ -30,6 +30,10 @@ pub struct DeltaPayload {
     pub assignments: EntityDeltas,
     pub assignment_submissions: EntityDeltas,
     pub learning_materials: EntityDeltas,
+    pub grade_configs: EntityDeltas,
+    pub grade_items: EntityDeltas,
+    pub grade_scores: EntityDeltas,
+    pub quarterly_grades: EntityDeltas,
 }
 
 /// Response variants

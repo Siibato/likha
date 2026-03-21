@@ -46,6 +46,9 @@ impl AssessmentRepository {
             created_at: Set(Utc::now().naive_utc()),
             updated_at: Set(Utc::now().naive_utc()),
             deleted_at: Set(None),
+            quarter: Set(None),
+            is_departmental_exam: Set(None),
+            component: Set(None),
         };
 
         assessment

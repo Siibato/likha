@@ -22,6 +22,7 @@ use crate::services::assessment::AssessmentService;
 use crate::services::assignment::AssignmentService;
 use crate::services::auth::AuthService;
 use crate::services::class::ClassService;
+use crate::services::grade_computation::GradeComputationService;
 use crate::services::learning_material::LearningMaterialService;
 use crate::services::entitlement::EntitlementService;
 use crate::services::sync_push::SyncPushService;
@@ -188,12 +189,15 @@ async fn main() {
         db.clone(),
     ));
 
+    let grade_computation_service = Arc::new(GradeComputationService::new(db.clone()));
+
     let app = create_app(
         auth_service,
         class_service,
         assessment_service,
         assignment_service,
         material_service,
+        grade_computation_service,
         sync_push_service,
         sync_conflict_service,
         sync_full_service,
@@ -219,6 +223,7 @@ fn create_app(
     assessment_service: Arc<AssessmentService>,
     assignment_service: Arc<AssignmentService>,
     material_service: Arc<LearningMaterialService>,
+    grade_computation_service: Arc<GradeComputationService>,
     sync_push_service: Arc<SyncPushService>,
     sync_conflict_service: Arc<SyncConflictService>,
     sync_full_service: Arc<SyncFullService>,
@@ -238,6 +243,7 @@ fn create_app(
                 assessment_service,
                 assignment_service,
                 material_service,
+                grade_computation_service,
                 sync_push_service,
                 sync_conflict_service,
                 sync_full_service,

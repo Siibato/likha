@@ -1,0 +1,238 @@
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+
+use crate::services::grade_computation::deped_weights::get_descriptor;
+
+// ===== REQUEST SCHEMAS =====
+
+#[derive(Debug, Deserialize)]
+pub struct SetupGradingConfigRequest {
+    pub grade_level: String,
+    pub subject_group: String,
+    pub school_year: String,
+    pub semester: Option<i32>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateGradingConfigRequest {
+    pub quarter: i32,
+    pub ww_weight: f64,
+    pub pt_weight: f64,
+    pub qa_weight: f64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateGradeItemRequest {
+    pub title: String,
+    pub component: String,
+    pub quarter: i32,
+    pub total_points: f64,
+    pub is_departmental_exam: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateGradeItemRequest {
+    pub title: Option<String>,
+    pub component: Option<String>,
+    pub total_points: Option<f64>,
+    pub order_index: Option<i32>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct StudentScore {
+    pub student_id: Uuid,
+    pub score: f64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BulkUpdateScoresRequest {
+    pub scores: Vec<StudentScore>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct OverrideScoreRequest {
+    pub override_score: f64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct QuarterQuery {
+    pub quarter: Option<i32>,
+}
+
+// ===== RESPONSE SCHEMAS =====
+
+#[derive(Debug, Serialize)]
+pub struct GradingConfigResponse {
+    pub id: String,
+    pub class_id: String,
+    pub quarter: i32,
+    pub ww_weight: f64,
+    pub pt_weight: f64,
+    pub qa_weight: f64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct GradeItemResponse {
+    pub id: String,
+    pub class_id: String,
+    pub title: String,
+    pub component: String,
+    pub quarter: i32,
+    pub total_points: f64,
+    pub is_departmental_exam: bool,
+    pub source_type: String,
+    pub source_id: Option<String>,
+    pub order_index: i32,
+}
+
+#[derive(Debug, Serialize)]
+pub struct GradeScoreResponse {
+    pub id: String,
+    pub grade_item_id: String,
+    pub student_id: String,
+    pub score: Option<f64>,
+    pub is_auto_populated: bool,
+    pub override_score: Option<f64>,
+    pub effective_score: Option<f64>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct QuarterlyGradeResponse {
+    pub id: String,
+    pub class_id: String,
+    pub student_id: String,
+    pub quarter: i32,
+    pub ww_percentage: Option<f64>,
+    pub pt_percentage: Option<f64>,
+    pub qa_percentage: Option<f64>,
+    pub ww_weighted: Option<f64>,
+    pub pt_weighted: Option<f64>,
+    pub qa_weighted: Option<f64>,
+    pub initial_grade: Option<f64>,
+    pub transmuted_grade: Option<i32>,
+    pub descriptor: Option<String>,
+    pub is_complete: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct FinalGradeResponse {
+    pub student_id: String,
+    pub quarterly_grades: Vec<QuarterlyGradeResponse>,
+    pub final_grade: Option<f64>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct GradeSummaryRow {
+    pub student_id: String,
+    pub student_name: String,
+    pub ww_weighted: Option<f64>,
+    pub pt_weighted: Option<f64>,
+    pub qa_weighted: Option<f64>,
+    pub initial_grade: Option<f64>,
+    pub transmuted_grade: Option<i32>,
+    pub descriptor: Option<String>,
+    pub is_complete: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct GradeSummaryResponse {
+    pub class_id: String,
+    pub quarter: i32,
+    pub ww_weight: f64,
+    pub pt_weight: f64,
+    pub qa_weight: f64,
+    pub students: Vec<GradeSummaryRow>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PresetInfo {
+    pub key: String,
+    pub label: String,
+    pub ww: f64,
+    pub pt: f64,
+    pub qa: f64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct DepEdPresetsResponse {
+    pub presets: Vec<PresetInfo>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ClassGradingSetupResponse {
+    pub class_id: String,
+    pub grade_level: String,
+    pub subject_group: String,
+    pub school_year: String,
+    pub semester: Option<i32>,
+    pub configs: Vec<GradingConfigResponse>,
+}
+
+// ===== FROM CONVERSIONS =====
+
+impl From<::entity::grade_components_config::Model> for GradingConfigResponse {
+    fn from(m: ::entity::grade_components_config::Model) -> Self {
+        Self {
+            id: m.id.to_string(),
+            class_id: m.class_id.to_string(),
+            quarter: m.quarter,
+            ww_weight: m.ww_weight,
+            pt_weight: m.pt_weight,
+            qa_weight: m.qa_weight,
+        }
+    }
+}
+
+impl From<::entity::grade_items::Model> for GradeItemResponse {
+    fn from(m: ::entity::grade_items::Model) -> Self {
+        Self {
+            id: m.id.to_string(),
+            class_id: m.class_id.to_string(),
+            title: m.title,
+            component: m.component,
+            quarter: m.quarter,
+            total_points: m.total_points,
+            is_departmental_exam: m.is_departmental_exam,
+            source_type: m.source_type,
+            source_id: m.source_id,
+            order_index: m.order_index,
+        }
+    }
+}
+
+impl From<::entity::grade_scores::Model> for GradeScoreResponse {
+    fn from(m: ::entity::grade_scores::Model) -> Self {
+        let effective_score = m.override_score.or(m.score);
+        Self {
+            id: m.id.to_string(),
+            grade_item_id: m.grade_item_id.to_string(),
+            student_id: m.student_id.to_string(),
+            score: m.score,
+            is_auto_populated: m.is_auto_populated,
+            override_score: m.override_score,
+            effective_score,
+        }
+    }
+}
+
+impl From<::entity::quarterly_grades::Model> for QuarterlyGradeResponse {
+    fn from(m: ::entity::quarterly_grades::Model) -> Self {
+        let descriptor = m.transmuted_grade.map(|t| get_descriptor(t).to_string());
+        Self {
+            id: m.id.to_string(),
+            class_id: m.class_id.to_string(),
+            student_id: m.student_id.to_string(),
+            quarter: m.quarter,
+            ww_percentage: m.ww_percentage,
+            pt_percentage: m.pt_percentage,
+            qa_percentage: m.qa_percentage,
+            ww_weighted: m.ww_weighted,
+            pt_weighted: m.pt_weighted,
+            qa_weighted: m.qa_weighted,
+            initial_grade: m.initial_grade,
+            transmuted_grade: m.transmuted_grade,
+            descriptor,
+            is_complete: m.is_complete,
+        }
+    }
+}

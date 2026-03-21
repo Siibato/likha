@@ -37,6 +37,10 @@ impl ClassRepository {
             created_at: Set(now),
             updated_at: Set(now),
             deleted_at: Set(None),
+            grade_level: Set(None),
+            subject_group: Set(None),
+            school_year: Set(None),
+            semester: Set(None),
         };
 
         let created_class = class

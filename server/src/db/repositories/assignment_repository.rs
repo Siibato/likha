@@ -45,6 +45,9 @@ impl AssignmentRepository {
             created_at: Set(Utc::now().naive_utc()),
             updated_at: Set(Utc::now().naive_utc()),
             deleted_at: Set(None),
+            quarter: Set(None),
+            no_submission_required: Set(None),
+            component: Set(None),
         };
 
         assignment
