@@ -36,6 +36,10 @@ class SyncUpsertHelpers {
             ClassesCols.teacherFullName: record['teacher_full_name'] ?? '',
             ClassesCols.isArchived: (record['is_archived'] == true) ? 1 : 0,
             ClassesCols.studentCount: record['student_count'] ?? 0,
+            ClassesCols.gradeLevel: record['grade_level'],
+            ClassesCols.subjectGroup: record['subject_group'],
+            ClassesCols.schoolYear: record['school_year'],
+            ClassesCols.semester: record['semester'] != null ? (record['semester'] as num).toInt() : null,
             CommonCols.createdAt: record['created_at'],
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
             CommonCols.cachedAt: DateTime.now().toIso8601String(),
@@ -544,6 +548,186 @@ class SyncUpsertHelpers {
     }
   }
 
+  /// Upsert grade component configurations
+  Future<void> upsertGradeConfigs(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+
+        await db.insert(
+          DbTables.gradeComponentsConfig,
+          {
+            CommonCols.id: record['id'],
+            GradeComponentsConfigCols.classId: record['class_id'],
+            GradeComponentsConfigCols.quarter: (record['quarter'] as num).toInt(),
+            GradeComponentsConfigCols.wwWeight: (record['ww_weight'] as num).toDouble(),
+            GradeComponentsConfigCols.ptWeight: (record['pt_weight'] as num).toDouble(),
+            GradeComponentsConfigCols.qaWeight: (record['qa_weight'] as num).toDouble(),
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+            CommonCols.deletedAt: record['deleted_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.needsSync: 0,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert grade config', e);
+      }
+    }
+
+    _log.upsertSummary('grade_components_config', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert grade configs', failedCount);
+    }
+  }
+
+  /// Upsert grade items
+  Future<void> upsertGradeItems(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+
+        await db.insert(
+          DbTables.gradeItems,
+          {
+            CommonCols.id: record['id'],
+            GradeItemsCols.classId: record['class_id'],
+            GradeItemsCols.title: record['title'],
+            GradeItemsCols.component: record['component'],
+            GradeItemsCols.quarter: (record['quarter'] as num).toInt(),
+            GradeItemsCols.totalPoints: (record['total_points'] as num).toDouble(),
+            GradeItemsCols.isDepartmentalExam: (record['is_departmental_exam'] == true) ? 1 : 0,
+            GradeItemsCols.sourceType: record['source_type'] ?? 'manual',
+            GradeItemsCols.sourceId: record['source_id'],
+            GradeItemsCols.orderIndex: (record['order_index'] as num?)?.toInt() ?? 0,
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+            CommonCols.deletedAt: record['deleted_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.needsSync: 0,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert grade item', e);
+      }
+    }
+
+    _log.upsertSummary('grade_items', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert grade items', failedCount);
+    }
+  }
+
+  /// Upsert grade scores
+  Future<void> upsertGradeScores(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+
+        await db.insert(
+          DbTables.gradeScores,
+          {
+            CommonCols.id: record['id'],
+            GradeScoresCols.gradeItemId: record['grade_item_id'],
+            GradeScoresCols.studentId: record['student_id'],
+            GradeScoresCols.score: record['score'] != null ? (record['score'] as num).toDouble() : null,
+            GradeScoresCols.isAutoPopulated: (record['is_auto_populated'] == true) ? 1 : 0,
+            GradeScoresCols.overrideScore: record['override_score'] != null ? (record['override_score'] as num).toDouble() : null,
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+            CommonCols.deletedAt: record['deleted_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.needsSync: 0,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert grade score', e);
+      }
+    }
+
+    _log.upsertSummary('grade_scores', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert grade scores', failedCount);
+    }
+  }
+
+  /// Upsert quarterly grades
+  Future<void> upsertQuarterlyGrades(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+
+        await db.insert(
+          DbTables.quarterlyGrades,
+          {
+            CommonCols.id: record['id'],
+            QuarterlyGradesCols.classId: record['class_id'],
+            QuarterlyGradesCols.studentId: record['student_id'],
+            QuarterlyGradesCols.quarter: (record['quarter'] as num).toInt(),
+            QuarterlyGradesCols.wwPercentage: record['ww_percentage'] != null ? (record['ww_percentage'] as num).toDouble() : null,
+            QuarterlyGradesCols.ptPercentage: record['pt_percentage'] != null ? (record['pt_percentage'] as num).toDouble() : null,
+            QuarterlyGradesCols.qaPercentage: record['qa_percentage'] != null ? (record['qa_percentage'] as num).toDouble() : null,
+            QuarterlyGradesCols.wwWeighted: record['ww_weighted'] != null ? (record['ww_weighted'] as num).toDouble() : null,
+            QuarterlyGradesCols.ptWeighted: record['pt_weighted'] != null ? (record['pt_weighted'] as num).toDouble() : null,
+            QuarterlyGradesCols.qaWeighted: record['qa_weighted'] != null ? (record['qa_weighted'] as num).toDouble() : null,
+            QuarterlyGradesCols.initialGrade: record['initial_grade'] != null ? (record['initial_grade'] as num).toDouble() : null,
+            QuarterlyGradesCols.transmutedGrade: record['transmuted_grade'] != null ? (record['transmuted_grade'] as num).toInt() : null,
+            QuarterlyGradesCols.isComplete: (record['is_complete'] == true) ? 1 : 0,
+            QuarterlyGradesCols.computedAt: record['computed_at'],
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+            CommonCols.deletedAt: record['deleted_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.needsSync: 0,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert quarterly grade', e);
+      }
+    }
+
+    _log.upsertSummary('quarterly_grades', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert quarterly grades', failedCount);
+    }
+  }
+
   /// Save sync token (last_sync_at) to sync_metadata
   Future<void> saveSyncToken(Database db, String syncToken) async {
     await db.insert(
@@ -822,6 +1006,82 @@ class SyncUpsertHelpers {
       for (final id in deleted) {
         await db.delete(
           DbTables.submissionFiles,
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle grade configs delta
+    final gradeConfigsDeltas = deltas['grade_configs'] as Map<String, dynamic>?;
+    if (gradeConfigsDeltas != null) {
+      final updated = gradeConfigsDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['grade_configs'] = updated.length;
+      await upsertGradeConfigs(db, updated);
+
+      final deleted = gradeConfigsDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['grade_configs'] = deleted.length;
+      for (final id in deleted) {
+        await db.update(
+          DbTables.gradeComponentsConfig,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle grade items delta
+    final gradeItemsDeltas = deltas['grade_items'] as Map<String, dynamic>?;
+    if (gradeItemsDeltas != null) {
+      final updated = gradeItemsDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['grade_items'] = updated.length;
+      await upsertGradeItems(db, updated);
+
+      final deleted = gradeItemsDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['grade_items'] = deleted.length;
+      for (final id in deleted) {
+        await db.update(
+          DbTables.gradeItems,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle grade scores delta
+    final gradeScoresDeltas = deltas['grade_scores'] as Map<String, dynamic>?;
+    if (gradeScoresDeltas != null) {
+      final updated = gradeScoresDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['grade_scores'] = updated.length;
+      await upsertGradeScores(db, updated);
+
+      final deleted = gradeScoresDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['grade_scores'] = deleted.length;
+      for (final id in deleted) {
+        await db.update(
+          DbTables.gradeScores,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle quarterly grades delta
+    final quarterlyGradesDeltas = deltas['quarterly_grades'] as Map<String, dynamic>?;
+    if (quarterlyGradesDeltas != null) {
+      final updated = quarterlyGradesDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['quarterly_grades'] = updated.length;
+      await upsertQuarterlyGrades(db, updated);
+
+      final deleted = quarterlyGradesDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['quarterly_grades'] = deleted.length;
+      for (final id in deleted) {
+        await db.update(
+          DbTables.quarterlyGrades,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
           where: '${CommonCols.id} = ?',
           whereArgs: [id as String],
         );

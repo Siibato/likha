@@ -112,6 +112,28 @@ import 'package:likha/domain/learning_materials/usecases/get_materials.dart';
 import 'package:likha/domain/learning_materials/usecases/reorder_material.dart' as reorder;
 import 'package:likha/domain/learning_materials/usecases/update_material.dart';
 import 'package:likha/domain/learning_materials/usecases/upload_file.dart' as material;
+import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
+import 'package:likha/data/datasources/local/grading/impl/grading_local_datasource_impl.dart';
+import 'package:likha/data/datasources/remote/grading_remote_datasource.dart';
+import 'package:likha/data/repositories/grading/grading_repository_impl.dart';
+import 'package:likha/domain/grading/repositories/grading_repository.dart';
+import 'package:likha/domain/grading/usecases/clear_score_override.dart';
+import 'package:likha/domain/grading/usecases/compute_grades.dart';
+import 'package:likha/domain/grading/usecases/create_grade_item.dart';
+import 'package:likha/domain/grading/usecases/delete_grade_item.dart';
+import 'package:likha/domain/grading/usecases/get_final_grades.dart';
+import 'package:likha/domain/grading/usecases/get_grade_items.dart';
+import 'package:likha/domain/grading/usecases/get_grade_summary.dart';
+import 'package:likha/domain/grading/usecases/get_grading_config.dart';
+import 'package:likha/domain/grading/usecases/get_my_grade_detail.dart';
+import 'package:likha/domain/grading/usecases/get_my_grades.dart';
+import 'package:likha/domain/grading/usecases/get_quarterly_grades.dart';
+import 'package:likha/domain/grading/usecases/get_scores_by_item.dart';
+import 'package:likha/domain/grading/usecases/save_scores.dart';
+import 'package:likha/domain/grading/usecases/set_score_override.dart';
+import 'package:likha/domain/grading/usecases/setup_grading.dart';
+import 'package:likha/domain/grading/usecases/update_grade_item.dart';
+import 'package:likha/domain/grading/usecases/update_grading_config.dart';
 import 'package:likha/services/storage_service.dart';
 final sl = GetIt.instance;
 
@@ -395,4 +417,42 @@ Future<void> init() async {
   sl.registerLazySingleton(() => material.UploadFile(sl()));
   sl.registerLazySingleton(() => material.DeleteFile(sl()));
   sl.registerLazySingleton(() => material.DownloadFile(sl()));
+
+  // Grading - Remote Data Source
+  sl.registerLazySingleton<GradingRemoteDataSource>(
+    () => GradingRemoteDataSourceImpl(sl<DioClient>()),
+  );
+
+  // Grading - Local Data Source
+  sl.registerLazySingleton<GradingLocalDataSource>(
+    () => GradingLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
+  );
+
+  // Grading - Repository
+  sl.registerLazySingleton<GradingRepository>(
+    () => GradingRepositoryImpl(
+      remoteDataSource: sl<GradingRemoteDataSource>(),
+      localDataSource: sl<GradingLocalDataSource>(),
+      serverReachabilityService: sl<ServerReachabilityService>(),
+    ),
+  );
+
+  // Grading use cases
+  sl.registerLazySingleton(() => GetGradingConfig(sl()));
+  sl.registerLazySingleton(() => SetupGrading(sl()));
+  sl.registerLazySingleton(() => UpdateGradingConfig(sl()));
+  sl.registerLazySingleton(() => GetGradeItems(sl()));
+  sl.registerLazySingleton(() => CreateGradeItem(sl()));
+  sl.registerLazySingleton(() => UpdateGradeItem(sl()));
+  sl.registerLazySingleton(() => DeleteGradeItem(sl()));
+  sl.registerLazySingleton(() => GetScoresByItem(sl()));
+  sl.registerLazySingleton(() => SaveScores(sl()));
+  sl.registerLazySingleton(() => SetScoreOverride(sl()));
+  sl.registerLazySingleton(() => ClearScoreOverride(sl()));
+  sl.registerLazySingleton(() => GetQuarterlyGrades(sl()));
+  sl.registerLazySingleton(() => ComputeGrades(sl()));
+  sl.registerLazySingleton(() => GetGradeSummary(sl()));
+  sl.registerLazySingleton(() => GetFinalGrades(sl()));
+  sl.registerLazySingleton(() => GetMyGrades(sl()));
+  sl.registerLazySingleton(() => GetMyGradeDetail(sl()));
 }

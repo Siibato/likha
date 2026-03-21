@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 2,
+      version: 3,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onDowngrade: _downgradeDatabase,
@@ -105,6 +105,10 @@ class LocalDatabase {
           teacher_username TEXT NOT NULL DEFAULT '',
           teacher_full_name TEXT NOT NULL DEFAULT '',
           student_count INTEGER NOT NULL DEFAULT 0,
+          grade_level TEXT,
+          subject_group TEXT,
+          school_year TEXT,
+          semester INTEGER,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
@@ -405,6 +409,95 @@ class LocalDatabase {
         )
       ''');
 
+      // Grade components config table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS grade_components_config (
+          id TEXT PRIMARY KEY,
+          class_id TEXT NOT NULL,
+          quarter INTEGER NOT NULL,
+          ww_weight REAL NOT NULL DEFAULT 30.0,
+          pt_weight REAL NOT NULL DEFAULT 50.0,
+          qa_weight REAL NOT NULL DEFAULT 20.0,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          cached_at TEXT,
+          needs_sync INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
+          UNIQUE(class_id, quarter)
+        )
+      ''');
+
+      // Grade items table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS grade_items (
+          id TEXT PRIMARY KEY,
+          class_id TEXT NOT NULL,
+          title TEXT NOT NULL,
+          component TEXT NOT NULL,
+          quarter INTEGER NOT NULL,
+          total_points REAL NOT NULL,
+          is_departmental_exam INTEGER NOT NULL DEFAULT 0,
+          source_type TEXT NOT NULL DEFAULT 'manual',
+          source_id TEXT,
+          order_index INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          cached_at TEXT,
+          needs_sync INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Grade scores table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS grade_scores (
+          id TEXT PRIMARY KEY,
+          grade_item_id TEXT NOT NULL,
+          student_id TEXT NOT NULL,
+          score REAL,
+          is_auto_populated INTEGER NOT NULL DEFAULT 0,
+          override_score REAL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          cached_at TEXT,
+          needs_sync INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY(grade_item_id) REFERENCES grade_items(id) ON DELETE CASCADE,
+          FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
+          UNIQUE(grade_item_id, student_id)
+        )
+      ''');
+
+      // Quarterly grades table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS quarterly_grades (
+          id TEXT PRIMARY KEY,
+          class_id TEXT NOT NULL,
+          student_id TEXT NOT NULL,
+          quarter INTEGER NOT NULL,
+          ww_percentage REAL,
+          pt_percentage REAL,
+          qa_percentage REAL,
+          ww_weighted REAL,
+          pt_weighted REAL,
+          qa_weighted REAL,
+          initial_grade REAL,
+          transmuted_grade INTEGER,
+          is_complete INTEGER NOT NULL DEFAULT 0,
+          computed_at TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          cached_at TEXT,
+          needs_sync INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
+          FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
+          UNIQUE(class_id, student_id, quarter)
+        )
+      ''');
+
       // Create indexes
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_class_id ON class_participants(class_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_user_id ON class_participants(user_id)');
@@ -436,6 +529,18 @@ class LocalDatabase {
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_sync_metadata_key ON sync_metadata(key)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_activity_logs_user_id ON activity_logs(user_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created_at)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_grade_components_config_class_id ON grade_components_config(class_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_grade_items_class_id ON grade_items(class_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_grade_items_updated_at ON grade_items(updated_at)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_grade_items_deleted_at ON grade_items(deleted_at)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_grade_scores_grade_item_id ON grade_scores(grade_item_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_grade_scores_student_id ON grade_scores(student_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_grade_scores_updated_at ON grade_scores(updated_at)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_grade_scores_deleted_at ON grade_scores(deleted_at)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_quarterly_grades_class_id ON quarterly_grades(class_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_quarterly_grades_student_id ON quarterly_grades(student_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_quarterly_grades_updated_at ON quarterly_grades(updated_at)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_quarterly_grades_deleted_at ON quarterly_grades(deleted_at)');
     });
   }
 
@@ -449,6 +554,112 @@ class LocalDatabase {
           cached_at TEXT NOT NULL
         )
       ''');
+    }
+
+    // Handle upgrade: v2 → v3 adds grading system tables
+    if (oldVersion < 3) {
+      await db.execute('ALTER TABLE classes ADD COLUMN grade_level TEXT');
+      await db.execute('ALTER TABLE classes ADD COLUMN subject_group TEXT');
+      await db.execute('ALTER TABLE classes ADD COLUMN school_year TEXT');
+      await db.execute('ALTER TABLE classes ADD COLUMN semester INTEGER');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS grade_components_config (
+          id TEXT PRIMARY KEY,
+          class_id TEXT NOT NULL,
+          quarter INTEGER NOT NULL,
+          ww_weight REAL NOT NULL DEFAULT 30.0,
+          pt_weight REAL NOT NULL DEFAULT 50.0,
+          qa_weight REAL NOT NULL DEFAULT 20.0,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          cached_at TEXT,
+          needs_sync INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
+          UNIQUE(class_id, quarter)
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS grade_items (
+          id TEXT PRIMARY KEY,
+          class_id TEXT NOT NULL,
+          title TEXT NOT NULL,
+          component TEXT NOT NULL,
+          quarter INTEGER NOT NULL,
+          total_points REAL NOT NULL,
+          is_departmental_exam INTEGER NOT NULL DEFAULT 0,
+          source_type TEXT NOT NULL DEFAULT 'manual',
+          source_id TEXT,
+          order_index INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          cached_at TEXT,
+          needs_sync INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS grade_scores (
+          id TEXT PRIMARY KEY,
+          grade_item_id TEXT NOT NULL,
+          student_id TEXT NOT NULL,
+          score REAL,
+          is_auto_populated INTEGER NOT NULL DEFAULT 0,
+          override_score REAL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          cached_at TEXT,
+          needs_sync INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY(grade_item_id) REFERENCES grade_items(id) ON DELETE CASCADE,
+          FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
+          UNIQUE(grade_item_id, student_id)
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS quarterly_grades (
+          id TEXT PRIMARY KEY,
+          class_id TEXT NOT NULL,
+          student_id TEXT NOT NULL,
+          quarter INTEGER NOT NULL,
+          ww_percentage REAL,
+          pt_percentage REAL,
+          qa_percentage REAL,
+          ww_weighted REAL,
+          pt_weighted REAL,
+          qa_weighted REAL,
+          initial_grade REAL,
+          transmuted_grade INTEGER,
+          is_complete INTEGER NOT NULL DEFAULT 0,
+          computed_at TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          cached_at TEXT,
+          needs_sync INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
+          FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
+          UNIQUE(class_id, student_id, quarter)
+        )
+      ''');
+
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_components_config_class_id ON grade_components_config(class_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_items_class_id ON grade_items(class_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_items_updated_at ON grade_items(updated_at)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_items_deleted_at ON grade_items(deleted_at)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_scores_grade_item_id ON grade_scores(grade_item_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_scores_student_id ON grade_scores(student_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_scores_updated_at ON grade_scores(updated_at)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_scores_deleted_at ON grade_scores(deleted_at)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_quarterly_grades_class_id ON quarterly_grades(class_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_quarterly_grades_student_id ON quarterly_grades(student_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_quarterly_grades_updated_at ON quarterly_grades(updated_at)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_quarterly_grades_deleted_at ON quarterly_grades(deleted_at)');
     }
   }
 
@@ -484,6 +695,10 @@ class LocalDatabase {
       'sync_queue',
       'sync_metadata',
       'student_results_cache',
+      'quarterly_grades',
+      'grade_scores',
+      'grade_items',
+      'grade_components_config',
     ];
 
     for (final table in tables) {

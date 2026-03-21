@@ -467,4 +467,44 @@ class ApiEndpoints {
     '/api/v1/sync/deltas',
     (json) => json as Map<String, dynamic>,
   );
+
+  // ===== Grading Endpoints =====
+  static ApiEndpoint<Map<String, dynamic>> gradingConfig(String classId) =>
+      ApiEndpoint('/api/v1/classes/$classId/grading-config', (json) => json as Map<String, dynamic>);
+
+  static ApiEndpoint<Map<String, dynamic>> gradingConfigSetup(String classId) =>
+      ApiEndpoint('/api/v1/classes/$classId/grading-config/setup', (json) => json as Map<String, dynamic>);
+
+  static ApiEndpoint<Map<String, dynamic>> gradeItems(String classId) =>
+      ApiEndpoint('/api/v1/classes/$classId/grade-items', (json) => json as Map<String, dynamic>);
+
+  static ApiEndpoint<Map<String, dynamic>> gradeItemDetail(String itemId) =>
+      ApiEndpoint('/api/v1/grade-items/$itemId', (json) => json as Map<String, dynamic>);
+
+  static ApiEndpoint<Map<String, dynamic>> gradeItemScores(String itemId) =>
+      ApiEndpoint('/api/v1/grade-items/$itemId/scores', (json) => json as Map<String, dynamic>);
+
+  static ApiEndpoint<Map<String, dynamic>> gradeScoreOverride(String scoreId) =>
+      ApiEndpoint('/api/v1/grade-scores/$scoreId/override', (json) => json as Map<String, dynamic>);
+
+  static ApiEndpoint<Map<String, dynamic>> classGrades(String classId) =>
+      ApiEndpoint('/api/v1/classes/$classId/grades', (json) => json as Map<String, dynamic>);
+
+  static ApiEndpoint<Map<String, dynamic>> classGradesCompute(String classId) =>
+      ApiEndpoint('/api/v1/classes/$classId/grades/compute', (json) => json as Map<String, dynamic>);
+
+  static ApiEndpoint<Map<String, dynamic>> classGradesSummary(String classId) =>
+      ApiEndpoint('/api/v1/classes/$classId/grades/summary', (json) => json as Map<String, dynamic>);
+
+  static ApiEndpoint<Map<String, dynamic>> classGradesFinal(String classId) =>
+      ApiEndpoint('/api/v1/classes/$classId/grades/final', (json) => json as Map<String, dynamic>);
+
+  static ApiEndpoint<Map<String, dynamic>> myGrades(String classId) =>
+      ApiEndpoint('/api/v1/classes/$classId/my-grades', (json) => json as Map<String, dynamic>);
+
+  static ApiEndpoint<Map<String, dynamic>> myGradeDetail(String classId, int quarter) =>
+      ApiEndpoint('/api/v1/classes/$classId/my-grades/$quarter', (json) => json as Map<String, dynamic>);
+
+  static final depEdPresets = ApiEndpoint<Map<String, dynamic>>(
+      '/api/v1/grading/deped-presets', (json) => json as Map<String, dynamic>);
 }

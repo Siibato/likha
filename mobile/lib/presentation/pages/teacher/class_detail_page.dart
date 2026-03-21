@@ -4,6 +4,7 @@ import 'package:likha/presentation/pages/teacher/class_student_list.dart';
 import 'package:likha/presentation/pages/teacher/teacher_assessment_list_page.dart';
 import 'package:likha/presentation/pages/teacher/teacher_assignment_list_page.dart';
 import 'package:likha/presentation/pages/teacher/teacher_material_list_page.dart';
+import 'package:likha/presentation/pages/teacher/class_record_page.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/navigation_card.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
@@ -104,6 +105,18 @@ class _ClassDetailPageState extends ConsumerState<ClassDetailPage> {
                               context,
                               MaterialPageRoute(
                                 builder: (_) => ClassStudentListPage(classId: widget.classId),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          NavigationCard(
+                            icon: Icons.grading_outlined,
+                            title: 'Class Record',
+                            subtitle: 'Manage grades and scores',
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ClassRecordPage(classId: widget.classId),
                               ),
                             ),
                           ),

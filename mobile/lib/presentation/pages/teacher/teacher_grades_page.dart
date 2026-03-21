@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/navigation_card.dart';
-import 'package:likha/presentation/pages/teacher/teacher_grade_computation_page.dart';
+import 'package:likha/presentation/pages/teacher/class_record_page.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
 class TeacherGradesPage extends ConsumerStatefulWidget {
@@ -64,12 +64,13 @@ class _TeacherGradesPageState extends ConsumerState<TeacherGradesPage> {
                             ref.read(classProvider.notifier).loadClasses(),
                         color: const Color(0xFF2B2B2B),
                         child: ListView(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 16),
                           children: [
                             const Padding(
                               padding: EdgeInsets.only(bottom: 16),
                               child: Text(
-                                'Select a class to compute grades',
+                                'Select a class to manage grades',
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
@@ -79,20 +80,22 @@ class _TeacherGradesPageState extends ConsumerState<TeacherGradesPage> {
                               ),
                             ),
                             ...classState.classes.map(
-                              (cls) => NavigationCard(
-                                icon: Icons.grading_outlined,
-                                title: cls.title,
-                                subtitle: '${cls.studentCount} students',
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => TeacherGradeComputationPage(
-                                      classId: cls.id,
-                                      className: cls.title,
+                              (cls) => Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: NavigationCard(
+                                  icon: Icons.grading_outlined,
+                                  title: cls.title,
+                                  subtitle: '${cls.studentCount} students',
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          ClassRecordPage(classId: cls.id),
                                     ),
-                                  ),
-                                ).then((_) =>
-                                    ref.read(classProvider.notifier).loadClasses()),
+                                  ).then((_) => ref
+                                      .read(classProvider.notifier)
+                                      .loadClasses()),
+                                ),
                               ),
                             ),
                           ],

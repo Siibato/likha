@@ -306,6 +306,12 @@ class InboundSyncHandler {
 
         // Write student_results to cache
         await _upsertHelpers.upsertStudentResults(db, studentResults);
+
+        // Grading data
+        await _upsertHelpers.upsertGradeConfigs(db, batchData['grade_configs'] ?? []);
+        await _upsertHelpers.upsertGradeItems(db, batchData['grade_items'] ?? []);
+        await _upsertHelpers.upsertGradeScores(db, batchData['grade_scores'] ?? []);
+        await _upsertHelpers.upsertQuarterlyGrades(db, batchData['quarterly_grades'] ?? []);
       }
     }
 

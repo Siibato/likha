@@ -2,37 +2,33 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/transmutation_util.dart';
-import 'package:likha/domain/assignments/entities/assignment.dart';
-import 'package:likha/domain/assignments/usecases/get_assignments.dart';
+import 'package:likha/domain/grading/entities/quarterly_grade.dart';
+import 'package:likha/domain/grading/usecases/get_my_grades.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
-// Status string constants for assignment submission status
-const String kStatusGraded = 'graded';
-const String kStatusReturned = 'returned';
-
-/// Per-class grade data with transmuted score
+/// Per-class grade data derived from the DepEd quarterly grading system.
 class ClassGradeData {
   final String classId;
   final String className;
-  final int reportGrade; // transmuted: 60–100
-  final int gradedCount;
-  final int totalCount;
-  final List<Assignment> assignments; // full list for detail page
+  final List<QuarterlyGrade> quarterlyGrades;
+  final int? latestGrade; // transmuted grade from most recent quarter
+  final String latestDescriptor;
+  final int? latestQuarter; // which quarter the latest grade is from
 
   ClassGradeData({
     required this.classId,
     required this.className,
-    required this.reportGrade,
-    required this.gradedCount,
-    required this.totalCount,
-    required this.assignments,
+    required this.quarterlyGrades,
+    this.latestGrade,
+    this.latestDescriptor = '--',
+    this.latestQuarter,
   });
 }
 
 class StudentClassGradesState {
   final bool isLoading;
-  final List<ClassGradeData> classGrades; // sorted by className
+  final List<ClassGradeData> classGrades;
   final String? error;
 
   StudentClassGradesState({
@@ -60,18 +56,19 @@ class StudentClassGradesState {
   }
 }
 
-class StudentClassGradesNotifier extends StateNotifier<StudentClassGradesState> {
+class StudentClassGradesNotifier
+    extends StateNotifier<StudentClassGradesState> {
   StudentClassGradesNotifier(this._ref)
       : super(StudentClassGradesState.initial()) {
     _setupEventSubscriptions();
   }
 
   final Ref _ref;
-  late StreamSubscription<String?> _assignmentsChangedSub;
+  late StreamSubscription<void> _classesChangedSub;
 
   void _setupEventSubscriptions() {
-    // Reload grades when assignments change in any class
-    _assignmentsChangedSub = sl<DataEventBus>().onAssignmentsChanged.listen((_) {
+    // Reload grades when classes change (enrollment updates, sync, etc.)
+    _classesChangedSub = sl<DataEventBus>().onClassesChanged.listen((_) {
       if (state.classGrades.isNotEmpty) {
         loadAllClassGrades();
       }
@@ -82,7 +79,6 @@ class StudentClassGradesNotifier extends StateNotifier<StudentClassGradesState> 
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      // Get enrolled classes from classProvider
       final classState = _ref.read(classProvider);
       final enrolledClasses = classState.classes;
 
@@ -92,40 +88,42 @@ class StudentClassGradesNotifier extends StateNotifier<StudentClassGradesState> 
       }
 
       final allGrades = <ClassGradeData>[];
-      final getAssignmentsUseCase = sl<GetAssignments>();
+      final getMyGrades = sl<GetMyGrades>();
 
-      // For each class, load assignments and compute grade
       for (final cls in enrolledClasses) {
         try {
-          final result = await getAssignmentsUseCase(cls.id);
+          final result = await getMyGrades(cls.id);
 
           result.fold(
             (failure) {
               // Skip failed classes, continue with others
             },
-            (assignments) {
-              // Compute raw score and transmute
-              final rawScore =
-                  TransmutationUtil.computeRawScore(assignments);
-              final reportGrade = TransmutationUtil.transmute(rawScore);
-              final gradedCount = assignments
-                  .where((a) =>
-                      a.submissionStatus == kStatusGraded ||
-                      a.submissionStatus == kStatusReturned)
-                  .length;
+            (quarterlyGrades) {
+              // Find the most recent quarter with a transmuted grade
+              QuarterlyGrade? latest;
+              for (final qg in quarterlyGrades) {
+                if (qg.transmutedGrade != null) {
+                  if (latest == null || qg.quarter > latest.quarter) {
+                    latest = qg;
+                  }
+                }
+              }
 
               allGrades.add(ClassGradeData(
                 classId: cls.id,
                 className: cls.title,
-                reportGrade: reportGrade,
-                gradedCount: gradedCount,
-                totalCount: assignments.length,
-                assignments: assignments,
+                quarterlyGrades: quarterlyGrades,
+                latestGrade: latest?.transmutedGrade,
+                latestDescriptor: latest != null
+                    ? TransmutationUtil.getDescriptor(
+                        latest.transmutedGrade ?? 0)
+                    : '--',
+                latestQuarter: latest?.quarter,
               ));
             },
           );
         } catch (_) {
-          // Skip if error loading assignments for this class
+          // Skip if error loading grades for this class
         }
       }
 
@@ -143,13 +141,12 @@ class StudentClassGradesNotifier extends StateNotifier<StudentClassGradesState> 
 
   @override
   void dispose() {
-    _assignmentsChangedSub.cancel();
+    _classesChangedSub.cancel();
     super.dispose();
   }
 }
 
 final studentClassGradesProvider = StateNotifierProvider<
-    StudentClassGradesNotifier,
-    StudentClassGradesState>((ref) {
+    StudentClassGradesNotifier, StudentClassGradesState>((ref) {
   return StudentClassGradesNotifier(ref);
 });

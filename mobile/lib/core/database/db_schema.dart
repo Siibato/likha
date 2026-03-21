@@ -28,6 +28,10 @@ abstract final class DbTables {
   static const String syncQueue = 'sync_queue';
   static const String syncMetadata = 'sync_metadata';
   static const String studentResultsCache = 'student_results_cache';
+  static const String gradeComponentsConfig = 'grade_components_config';
+  static const String gradeItems = 'grade_items';
+  static const String gradeScores = 'grade_scores';
+  static const String quarterlyGrades = 'quarterly_grades';
 }
 
 // ─── Common columns ───────────────────────────────────────────────────────────
@@ -80,6 +84,10 @@ abstract final class ClassesCols {
   static const String teacherUsername = 'teacher_username';
   static const String teacherFullName = 'teacher_full_name';
   static const String studentCount = 'student_count';
+  static const String gradeLevel = 'grade_level';
+  static const String subjectGroup = 'subject_group';
+  static const String schoolYear = 'school_year';
+  static const String semester = 'semester';
 }
 
 abstract final class ClassParticipantsCols {
@@ -230,6 +238,50 @@ abstract final class SyncMetadataCols {
   static const String value = 'value';
 }
 
+abstract final class GradeComponentsConfigCols {
+  static const String classId = 'class_id';
+  static const String quarter = 'quarter';
+  static const String wwWeight = 'ww_weight';
+  static const String ptWeight = 'pt_weight';
+  static const String qaWeight = 'qa_weight';
+}
+
+abstract final class GradeItemsCols {
+  static const String classId = 'class_id';
+  static const String title = 'title';
+  static const String component = 'component';
+  static const String quarter = 'quarter';
+  static const String totalPoints = 'total_points';
+  static const String isDepartmentalExam = 'is_departmental_exam';
+  static const String sourceType = 'source_type';
+  static const String sourceId = 'source_id';
+  static const String orderIndex = 'order_index';
+}
+
+abstract final class GradeScoresCols {
+  static const String gradeItemId = 'grade_item_id';
+  static const String studentId = 'student_id';
+  static const String score = 'score';
+  static const String isAutoPopulated = 'is_auto_populated';
+  static const String overrideScore = 'override_score';
+}
+
+abstract final class QuarterlyGradesCols {
+  static const String classId = 'class_id';
+  static const String studentId = 'student_id';
+  static const String quarter = 'quarter';
+  static const String wwPercentage = 'ww_percentage';
+  static const String ptPercentage = 'pt_percentage';
+  static const String qaPercentage = 'qa_percentage';
+  static const String wwWeighted = 'ww_weighted';
+  static const String ptWeighted = 'pt_weighted';
+  static const String qaWeighted = 'qa_weighted';
+  static const String initialGrade = 'initial_grade';
+  static const String transmutedGrade = 'transmuted_grade';
+  static const String isComplete = 'is_complete';
+  static const String computedAt = 'computed_at';
+}
+
 abstract final class StudentResultsCacheCols {
   static const String submissionId = 'submission_id';
   static const String resultsJson = 'results_json';
@@ -252,4 +304,14 @@ abstract final class DbValues {
   static const String metaLastSyncAt = 'last_sync_at';
   static const String metaDataExpiryAt = 'data_expiry_at';
   static const String metaDeviceId = 'device_id';
+
+  // grade_items.component
+  static const String componentWrittenWork = 'written_work';
+  static const String componentPerformanceTask = 'performance_task';
+  static const String componentQuarterlyAssessment = 'quarterly_assessment';
+
+  // grade_items.source_type
+  static const String sourceManual = 'manual';
+  static const String sourceAssessment = 'assessment';
+  static const String sourceAssignment = 'assignment';
 }

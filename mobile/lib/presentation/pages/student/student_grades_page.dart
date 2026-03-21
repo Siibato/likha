@@ -75,8 +75,7 @@ class _StudentGradesPageState extends ConsumerState<StudentGradesPage> {
                         )
                       : RefreshIndicator(
                           onRefresh: () => ref
-                              .read(
-                                  studentClassGradesProvider.notifier)
+                              .read(studentClassGradesProvider.notifier)
                               .loadAllClassGrades(),
                           color: const Color(0xFF2B2B2B),
                           child: ListView.builder(
@@ -96,7 +95,6 @@ class _StudentGradesPageState extends ConsumerState<StudentGradesPage> {
                                           StudentClassGradeDetailPage(
                                         classId: classGrade.classId,
                                         className: classGrade.className,
-                                        classGrade: classGrade,
                                       ),
                                     ),
                                   );
@@ -124,9 +122,12 @@ class _ClassGradeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final descriptor = TransmutationUtil.getDescriptor(classGrade.reportGrade);
-    final badgeColor =
-        TransmutationUtil.getDescriptorColor(classGrade.reportGrade);
+    final hasGrade = classGrade.latestGrade != null;
+    final gradeDisplay = hasGrade ? '${classGrade.latestGrade}' : '--';
+    final descriptor = classGrade.latestDescriptor;
+    final badgeColor = hasGrade
+        ? TransmutationUtil.getDescriptorColor(classGrade.latestGrade!)
+        : 0xFFCCCCCC;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -165,7 +166,9 @@ class _ClassGradeCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '${classGrade.gradedCount} graded, ${classGrade.totalCount} total',
+                          hasGrade
+                              ? 'Q${classGrade.latestQuarter}'
+                              : 'No grades yet',
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
@@ -181,30 +184,32 @@ class _ClassGradeCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        '${classGrade.reportGrade}',
+                        gradeDisplay,
                         style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF2B2B2B),
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Color(badgeColor),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          descriptor,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                      if (hasGrade) ...[
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Color(badgeColor),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            descriptor,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ],
