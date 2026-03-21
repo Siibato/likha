@@ -18,6 +18,12 @@ class AssessmentDetailsSection extends StatelessWidget {
   final ValueChanged<bool> onShowResultsChanged;
   final ValueChanged<bool> onIsPublishedChanged;
   final VoidCallback? onCreateAssessment;
+  final int? selectedQuarter;
+  final String? selectedComponent;
+  final bool isDepartmentalExam;
+  final ValueChanged<int?>? onQuarterChanged;
+  final ValueChanged<String?>? onComponentChanged;
+  final ValueChanged<bool>? onDepartmentalExamChanged;
 
   const AssessmentDetailsSection({
     super.key,
@@ -35,6 +41,12 @@ class AssessmentDetailsSection extends StatelessWidget {
     required this.onShowResultsChanged,
     required this.onIsPublishedChanged,
     required this.onCreateAssessment,
+    this.selectedQuarter,
+    this.selectedComponent,
+    this.isDepartmentalExam = false,
+    this.onQuarterChanged,
+    this.onComponentChanged,
+    this.onDepartmentalExamChanged,
   });
 
   @override
@@ -169,6 +181,131 @@ class AssessmentDetailsSection extends StatelessWidget {
               onChanged: isLoading ? null : onIsPublishedChanged,
             ),
           ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<int?>(
+            value: selectedQuarter,
+            decoration: InputDecoration(
+              labelText: 'Quarter (for grading)',
+              labelStyle: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF999999),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFFE0E0E0),
+                  width: 1,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFFE0E0E0),
+                  width: 1,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFF2B2B2B),
+                  width: 1.5,
+                ),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
+            ),
+            items: [
+              const DropdownMenuItem(value: null, child: Text('None')),
+              ...List.generate(4, (i) => DropdownMenuItem(value: i + 1, child: Text('Quarter ${i + 1}'))),
+            ],
+            onChanged: isLoading ? null : onQuarterChanged,
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String?>(
+            value: selectedComponent,
+            decoration: InputDecoration(
+              labelText: 'Grade Component',
+              labelStyle: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF999999),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFFE0E0E0),
+                  width: 1,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFFE0E0E0),
+                  width: 1,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFF2B2B2B),
+                  width: 1.5,
+                ),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
+            ),
+            items: const [
+              DropdownMenuItem(value: null, child: Text('None')),
+              DropdownMenuItem(value: 'written_work', child: Text('Written Work')),
+              DropdownMenuItem(value: 'performance_task', child: Text('Performance Task')),
+              DropdownMenuItem(value: 'quarterly_assessment', child: Text('Quarterly Assessment')),
+            ],
+            onChanged: isLoading ? null : onComponentChanged,
+          ),
+          if (selectedComponent == 'quarterly_assessment') ...[
+            const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFFE0E0E0),
+                  width: 1,
+                ),
+              ),
+              child: SwitchListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
+                title: const Text(
+                  'Departmental Exam',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF2B2B2B),
+                  ),
+                ),
+                subtitle: const Text(
+                  'Mark as departmental quarterly exam',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF999999),
+                  ),
+                ),
+                value: isDepartmentalExam,
+                activeThumbColor: const Color(0xFF2B2B2B),
+                onChanged: isLoading ? null : onDepartmentalExamChanged,
+              ),
+            ),
+          ],
         ],
       ),
     );

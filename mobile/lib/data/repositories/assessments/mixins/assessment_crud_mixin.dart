@@ -21,6 +21,9 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
     bool? showResultsImmediately,
     bool isPublished = false,
     List<Map<String, dynamic>>? questions,
+    int? quarter,
+    String? component,
+    bool? isDepartmentalExam,
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
@@ -152,6 +155,9 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           // NEW: include questions atomically when publishing
           if (isPublished && questions != null && questions.isNotEmpty)
             'questions': questions,
+          if (quarter != null) 'quarter': quarter,
+          if (component != null) 'component': component,
+          if (isDepartmentalExam != null) 'is_departmental_exam': isDepartmentalExam,
         },
       );
 

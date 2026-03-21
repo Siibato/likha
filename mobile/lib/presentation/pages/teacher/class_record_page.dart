@@ -7,6 +7,8 @@ import 'package:likha/domain/grading/entities/grade_score.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/styled_button.dart';
 import 'package:likha/presentation/pages/teacher/class_grading_setup_page.dart';
+import 'package:likha/presentation/pages/teacher/grade_item_scores_page.dart';
+import 'package:likha/presentation/pages/teacher/grade_summary_page.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
 
@@ -597,12 +599,15 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage>
                         borderRadius: BorderRadius.circular(14),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(14),
-                          onTap: () {
-                            ref
-                                .read(quarterlyGradesProvider.notifier)
-                                .loadSummary(
-                                    widget.classId, _selectedQuarter);
-                          },
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => GradeSummaryPage(
+                                classId: widget.classId,
+                                initialQuarter: _selectedQuarter,
+                              ),
+                            ),
+                          ),
                           child: const Icon(
                             Icons.summarize_outlined,
                             color: Color(0xFF666666),
@@ -746,30 +751,46 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage>
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      ...items.map((item) => Container(
-                            width: cellWidth,
-                            alignment: Alignment.center,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  item.title,
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF666666),
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-                                Text(
-                                  '/${item.totalPoints.toStringAsFixed(0)}',
-                                  style: const TextStyle(
-                                    fontSize: 9,
-                                    color: Color(0xFF999999),
+                      ...items.map((item) => GestureDetector(
+                            onTap: () async {
+                              final result = await Navigator.push<bool>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => GradeItemScoresPage(
+                                    classId: widget.classId,
+                                    gradeItem: item,
                                   ),
                                 ),
-                              ],
+                              );
+                              if (result == true && mounted) {
+                                _loadItemsAndScores();
+                              }
+                            },
+                            child: Container(
+                              width: cellWidth,
+                              alignment: Alignment.center,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    item.title,
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF666666),
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                  Text(
+                                    '/${item.totalPoints.toStringAsFixed(0)}',
+                                    style: const TextStyle(
+                                      fontSize: 9,
+                                      color: Color(0xFF999999),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           )),
                       Container(

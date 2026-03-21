@@ -16,6 +16,7 @@ class QuarterlyGrade extends Equatable {
   final int? transmutedGrade;
   final bool isComplete;
   final String? computedAt;
+  final bool isPreview;
 
   const QuarterlyGrade({
     required this.id,
@@ -32,6 +33,7 @@ class QuarterlyGrade extends Equatable {
     this.transmutedGrade,
     required this.isComplete,
     this.computedAt,
+    this.isPreview = false,
   });
 
   String get descriptor =>
@@ -53,5 +55,6 @@ class QuarterlyGrade extends Equatable {
         transmutedGrade,
         isComplete,
         computedAt,
+        isPreview,
       ];
 }

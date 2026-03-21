@@ -30,28 +30,42 @@ class StudentClassGradesState {
   final bool isLoading;
   final List<ClassGradeData> classGrades;
   final String? error;
+  final double? generalAverage;
+  final String? generalAverageDescriptor;
 
   StudentClassGradesState({
     required this.isLoading,
     required this.classGrades,
     this.error,
+    this.generalAverage,
+    this.generalAverageDescriptor,
   });
 
   StudentClassGradesState.initial()
       : isLoading = false,
         classGrades = [],
-        error = null;
+        error = null,
+        generalAverage = null,
+        generalAverageDescriptor = null;
 
   StudentClassGradesState copyWith({
     bool? isLoading,
     List<ClassGradeData>? classGrades,
     String? error,
     bool clearError = false,
+    double? generalAverage,
+    String? generalAverageDescriptor,
+    bool clearGeneralAverage = false,
   }) {
     return StudentClassGradesState(
       isLoading: isLoading ?? this.isLoading,
       classGrades: classGrades ?? this.classGrades,
       error: clearError ? null : (error ?? this.error),
+      generalAverage:
+          clearGeneralAverage ? null : (generalAverage ?? this.generalAverage),
+      generalAverageDescriptor: clearGeneralAverage
+          ? null
+          : (generalAverageDescriptor ?? this.generalAverageDescriptor),
     );
   }
 }
@@ -130,7 +144,38 @@ class StudentClassGradesNotifier
       // Sort by className alphabetically
       allGrades.sort((a, b) => a.className.compareTo(b.className));
 
-      state = state.copyWith(isLoading: false, classGrades: allGrades);
+      // Compute general average across all classes
+      double? generalAverage;
+      String? generalAverageDescriptor;
+
+      final classAverages = <double>[];
+      for (final cg in allGrades) {
+        final withGrades = cg.quarterlyGrades
+            .where((qg) => qg.transmutedGrade != null)
+            .toList();
+        if (withGrades.isNotEmpty) {
+          final sum = withGrades.fold<int>(
+              0, (acc, qg) => acc + qg.transmutedGrade!);
+          classAverages.add(sum / withGrades.length);
+        }
+      }
+
+      if (classAverages.isNotEmpty) {
+        final total =
+            classAverages.fold<double>(0, (acc, avg) => acc + avg);
+        generalAverage =
+            double.parse((total / classAverages.length).toStringAsFixed(1));
+        generalAverageDescriptor =
+            TransmutationUtil.getDescriptor(generalAverage.round());
+      }
+
+      state = state.copyWith(
+        isLoading: false,
+        classGrades: allGrades,
+        generalAverage: generalAverage,
+        generalAverageDescriptor: generalAverageDescriptor,
+        clearGeneralAverage: generalAverage == null,
+      );
     } catch (e) {
       state = state.copyWith(
         isLoading: false,

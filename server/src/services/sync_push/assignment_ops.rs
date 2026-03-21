@@ -25,6 +25,9 @@ impl super::SyncPushService {
                     due_at: op.payload.get("due_at").and_then(|v| v.as_str()).map(|s| s.to_string())
                         .unwrap_or_else(|| Utc::now().to_rfc3339()),
                     is_published: op.payload.get("is_published").and_then(|v| v.as_bool()),
+                    quarter: op.payload.get("quarter").and_then(|v| v.as_i64()).map(|v| v as i32),
+                    component: op.payload.get("component").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                    no_submission_required: op.payload.get("no_submission_required").and_then(|v| v.as_bool()),
                 };
                 match self.assignment_service.create_assignment(class_id, request, user_id, client_id).await {
                     Ok(r) => self.success_result(op, Some(r.id.to_string()), Some(r.updated_at)),
@@ -41,6 +44,9 @@ impl super::SyncPushService {
                     allowed_file_types: None,
                     max_file_size_mb: None,
                     due_at: op.payload.get("due_at").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                    quarter: op.payload.get("quarter").and_then(|v| v.as_i64()).map(|v| v as i32),
+                    component: op.payload.get("component").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                    no_submission_required: op.payload.get("no_submission_required").and_then(|v| v.as_bool()),
                 };
                 match self.assignment_service.update_assignment(assignment_id, request, user_id).await {
                     Ok(r) => self.success_result(op, None, Some(r.updated_at)),

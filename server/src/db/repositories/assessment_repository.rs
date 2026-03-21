@@ -29,6 +29,9 @@ impl AssessmentRepository {
         order_index: i32,
         client_id: Option<Uuid>,
         is_published: bool,
+        quarter: Option<i32>,
+        component: Option<String>,
+        is_departmental_exam: Option<bool>,
     ) -> AppResult<assessments::Model> {
         let assessment = assessments::ActiveModel {
             id: Set(client_id.unwrap_or_else(Uuid::new_v4)),
@@ -46,9 +49,9 @@ impl AssessmentRepository {
             created_at: Set(Utc::now().naive_utc()),
             updated_at: Set(Utc::now().naive_utc()),
             deleted_at: Set(None),
-            quarter: Set(None),
-            is_departmental_exam: Set(None),
-            component: Set(None),
+            quarter: Set(quarter),
+            is_departmental_exam: Set(is_departmental_exam),
+            component: Set(component),
         };
 
         assessment
@@ -94,6 +97,9 @@ impl AssessmentRepository {
         open_at: Option<chrono::NaiveDateTime>,
         close_at: Option<chrono::NaiveDateTime>,
         show_results_immediately: Option<bool>,
+        quarter: Option<Option<i32>>,
+        component: Option<Option<String>>,
+        is_departmental_exam: Option<Option<bool>>,
     ) -> AppResult<assessments::Model> {
         let mut assessment: assessments::ActiveModel = assessments::Entity::find_by_id(id)
             .one(&self.db)
@@ -119,6 +125,15 @@ impl AssessmentRepository {
         }
         if let Some(show) = show_results_immediately {
             assessment.show_results_immediately = Set(show);
+        }
+        if let Some(q) = quarter {
+            assessment.quarter = Set(q);
+        }
+        if let Some(c) = component {
+            assessment.component = Set(c);
+        }
+        if let Some(d) = is_departmental_exam {
+            assessment.is_departmental_exam = Set(d);
         }
         assessment.updated_at = Set(Utc::now().naive_utc());
 

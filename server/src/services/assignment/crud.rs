@@ -2,6 +2,7 @@ use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
 use crate::utils::{parse_datetime, validators::Validator};
 use crate::schema::assignment_schema::*;
+use crate::services::grade_computation::auto_populate;
 
 impl super::AssignmentService {
 
@@ -51,6 +52,9 @@ impl super::AssignmentService {
                 order_index,
                 client_id,
                 request.is_published.unwrap_or(false),
+                request.quarter,
+                request.component.clone(),
+                request.no_submission_required,
             )
             .await?;
 
@@ -77,6 +81,9 @@ impl super::AssignmentService {
             order_index: assignment.order_index,
             submission_count: 0,
             graded_count: 0,
+            quarter: assignment.quarter,
+            component: assignment.component.clone(),
+            no_submission_required: assignment.no_submission_required,
             submission_status: None,
             submission_id: None,
             score: None,
@@ -145,6 +152,9 @@ impl super::AssignmentService {
                 order_index: a.order_index,
                 submission_count,
                 graded_count,
+                quarter: a.quarter,
+                component: a.component.clone(),
+                no_submission_required: a.no_submission_required,
                 submission_status,
                 submission_id,
                 score,
@@ -240,6 +250,9 @@ impl super::AssignmentService {
             order_index: assignment.order_index,
             submission_count,
             graded_count,
+            quarter: assignment.quarter,
+            component: assignment.component.clone(),
+            no_submission_required: assignment.no_submission_required,
             submission_status: None,
             submission_id: None,
             score: None,
@@ -310,6 +323,9 @@ impl super::AssignmentService {
                 allowed_file_types,
                 max_file_size_mb,
                 due_at,
+                request.quarter.map(|q| Some(q)),
+                request.component.clone().map(|c| Some(c)),
+                request.no_submission_required.map(|n| Some(n)),
             )
             .await?;
 
@@ -336,6 +352,9 @@ impl super::AssignmentService {
             order_index: updated.order_index,
             submission_count,
             graded_count,
+            quarter: updated.quarter,
+            component: updated.component.clone(),
+            no_submission_required: updated.no_submission_required,
             submission_status: None,
             submission_id: None,
             score: None,
@@ -413,6 +432,16 @@ impl super::AssignmentService {
             .publish_assignment(assignment_id)
             .await?;
 
+        // Auto-create linked grade item if grading metadata present
+        if let (Some(quarter), Some(ref component)) = (published.quarter, &published.component) {
+            let _ = auto_populate::create_linked_grade_item(
+                &self.db, "assignment", published.id, published.class_id,
+                &published.title, component, quarter,
+                published.total_points as f64,
+                false,
+            ).await;
+        }
+
         let _ = self
             .activity_log_repo
             .create_log(
@@ -436,6 +465,9 @@ impl super::AssignmentService {
             order_index: published.order_index,
             submission_count: 0,
             graded_count: 0,
+            quarter: published.quarter,
+            component: published.component.clone(),
+            no_submission_required: published.no_submission_required,
             submission_status: None,
             submission_id: None,
             score: None,
@@ -497,6 +529,9 @@ impl super::AssignmentService {
             order_index: unpublished.order_index,
             submission_count: 0,
             graded_count: 0,
+            quarter: unpublished.quarter,
+            component: unpublished.component.clone(),
+            no_submission_required: unpublished.no_submission_required,
             submission_status: None,
             submission_id: None,
             score: None,

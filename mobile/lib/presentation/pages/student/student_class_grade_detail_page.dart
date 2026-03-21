@@ -292,6 +292,9 @@ class _StudentClassGradeDetailPageState
           _buildEmptyQuarterState(),
         ],
 
+        // Final Grade section (shown when at least 2 quarters have grades)
+        _buildFinalGradeSection(),
+
         const SizedBox(height: 32),
       ],
     );
@@ -588,6 +591,83 @@ class _StudentClassGradeDetailPageState
             fontSize: 14,
             fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
             color: const Color(0xFF2B2B2B),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFinalGradeSection() {
+    final withGrades = _quarterlyGrades
+        .where((g) => g.transmutedGrade != null)
+        .toList();
+
+    if (withGrades.length < 2) return const SizedBox.shrink();
+
+    final sum =
+        withGrades.fold<int>(0, (acc, g) => acc + g.transmutedGrade!);
+    final finalGrade =
+        double.parse((sum / withGrades.length).toStringAsFixed(1));
+    final finalGradeRounded = finalGrade.round();
+    final descriptor = TransmutationUtil.getDescriptor(finalGradeRounded);
+    final descriptorColor =
+        TransmutationUtil.getDescriptorColor(finalGradeRounded);
+
+    return Column(
+      children: [
+        const SizedBox(height: 20),
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFE0E0E0),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(1, 1, 1, 3.5),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  const Text(
+                    'Final Grade',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF202020),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '$finalGradeRounded',
+                    style: const TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF2B2B2B),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Color(descriptorColor),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      descriptor,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ],

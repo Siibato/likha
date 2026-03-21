@@ -36,6 +36,9 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
   String _submissionType = 'text_or_file';
   DateTime _dueAt = DateTime.now().add(const Duration(days: 7));
   bool _isPublished = true;
+  int? _quarter;
+  String? _component = 'performance_task';
+  bool _noSubmissionRequired = false;
   String? _formError;
 
   @override
@@ -141,6 +144,9 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
             maxFileSizeMb: maxFileSizeMb,
             dueAt: _formatDateTimeForApi(_dueAt),
             isPublished: _isPublished,
+            quarter: _quarter,
+            component: _component,
+            noSubmissionRequired: _noSubmissionRequired ? true : null,
           ),
         );
 
@@ -232,6 +238,135 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
                 icon: Icons.event_rounded,
                 enabled: !assignState.isLoading,
                 onChanged: (dt) => setState(() => _dueAt = dt),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<int?>(
+                value: _quarter,
+                decoration: InputDecoration(
+                  labelText: 'Quarter (for grading)',
+                  labelStyle: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF999999),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Color(0xFFE0E0E0),
+                      width: 1,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Color(0xFFE0E0E0),
+                      width: 1,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF2B2B2B),
+                      width: 1.5,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
+                ),
+                items: [
+                  const DropdownMenuItem(value: null, child: Text('None')),
+                  ...List.generate(4, (i) => DropdownMenuItem(value: i + 1, child: Text('Quarter ${i + 1}'))),
+                ],
+                onChanged: assignState.isLoading
+                    ? null
+                    : (v) => setState(() => _quarter = v),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String?>(
+                value: _component,
+                decoration: InputDecoration(
+                  labelText: 'Grade Component',
+                  labelStyle: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF999999),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Color(0xFFE0E0E0),
+                      width: 1,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Color(0xFFE0E0E0),
+                      width: 1,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF2B2B2B),
+                      width: 1.5,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
+                ),
+                items: const [
+                  DropdownMenuItem(value: null, child: Text('None')),
+                  DropdownMenuItem(value: 'written_work', child: Text('Written Work')),
+                  DropdownMenuItem(value: 'performance_task', child: Text('Performance Task')),
+                  DropdownMenuItem(value: 'quarterly_assessment', child: Text('Quarterly Assessment')),
+                ],
+                onChanged: assignState.isLoading
+                    ? null
+                    : (v) => setState(() => _component = v),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFFE0E0E0),
+                    width: 1,
+                  ),
+                ),
+                child: SwitchListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  title: const Text(
+                    'No submission required',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2B2B2B),
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'Grade item only \u2014 no student submission expected',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF999999),
+                    ),
+                  ),
+                  value: _noSubmissionRequired,
+                  activeThumbColor: const Color(0xFF2B2B2B),
+                  onChanged: assignState.isLoading
+                      ? null
+                      : (v) => setState(() => _noSubmissionRequired = v),
+                ),
               ),
               const SizedBox(height: 16),
               Container(

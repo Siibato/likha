@@ -29,6 +29,9 @@ impl AssignmentRepository {
         order_index: i32,
         client_id: Option<Uuid>,
         is_published: bool,
+        quarter: Option<i32>,
+        component: Option<String>,
+        no_submission_required: Option<bool>,
     ) -> AppResult<assignments_hw::Model> {
         let assignment = assignments_hw::ActiveModel {
             id: Set(client_id.unwrap_or_else(Uuid::new_v4)),
@@ -45,9 +48,9 @@ impl AssignmentRepository {
             created_at: Set(Utc::now().naive_utc()),
             updated_at: Set(Utc::now().naive_utc()),
             deleted_at: Set(None),
-            quarter: Set(None),
-            no_submission_required: Set(None),
-            component: Set(None),
+            quarter: Set(quarter),
+            no_submission_required: Set(no_submission_required),
+            component: Set(component),
         };
 
         assignment
@@ -94,6 +97,9 @@ impl AssignmentRepository {
         allowed_file_types: Option<Option<String>>,
         max_file_size_mb: Option<Option<i32>>,
         due_at: Option<chrono::NaiveDateTime>,
+        quarter: Option<Option<i32>>,
+        component: Option<Option<String>>,
+        no_submission_required: Option<Option<bool>>,
     ) -> AppResult<assignments_hw::Model> {
         let mut assignment: assignments_hw::ActiveModel = assignments_hw::Entity::find_by_id(id)
             .one(&self.db)
@@ -122,6 +128,15 @@ impl AssignmentRepository {
         }
         if let Some(due) = due_at {
             assignment.due_at = Set(due);
+        }
+        if let Some(q) = quarter {
+            assignment.quarter = Set(q);
+        }
+        if let Some(c) = component {
+            assignment.component = Set(c);
+        }
+        if let Some(n) = no_submission_required {
+            assignment.no_submission_required = Set(n);
         }
         assignment.updated_at = Set(Utc::now().naive_utc());
 

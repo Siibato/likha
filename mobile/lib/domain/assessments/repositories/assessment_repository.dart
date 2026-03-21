@@ -16,6 +16,9 @@ abstract class AssessmentRepository {
     bool? showResultsImmediately,
     bool isPublished = true,
     List<Map<String, dynamic>>? questions,
+    int? quarter,
+    String? component,
+    bool? isDepartmentalExam,
   });
 
   ResultFuture<List<Assessment>> getAssessments({required String classId, bool publishedOnly = false, bool skipBackgroundRefresh = false});

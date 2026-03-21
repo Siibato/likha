@@ -15,6 +15,9 @@ abstract class AssignmentRepository {
     int? maxFileSizeMb,
     required String dueAt,
     bool isPublished = true,
+    int? quarter,
+    String? component,
+    bool? noSubmissionRequired,
   });
 
   ResultFuture<List<Assignment>> getAssignments({required String classId, bool publishedOnly = false, bool skipBackgroundRefresh = false});

@@ -37,6 +37,9 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
   DateTime _closeAt = DateTime.now().add(const Duration(days: 7));
   bool _showResultsImmediately = false;
   bool _isPublished = true;
+  int? _quarter;
+  String? _component;
+  bool _isDepartmentalExam = false;
   final List<QuestionDraft> _questions = [];
   bool _isSaving = false;
   bool _draftLoaded = false;
@@ -76,6 +79,9 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
         _closeAt = DateTime.parse(draft['closeAt'] as String? ?? DateTime.now().add(const Duration(days: 7)).toIso8601String());
         _showResultsImmediately = draft['showResultsImmediately'] as bool? ?? false;
         _isPublished = draft['isPublished'] as bool? ?? true;
+        _quarter = draft['quarter'] as int?;
+        _component = draft['component'] as String?;
+        _isDepartmentalExam = draft['isDepartmentalExam'] as bool? ?? false;
 
         final questions = draft['questions'] as List?;
         if (questions != null) {
@@ -103,6 +109,9 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
         'closeAt': _closeAt.toIso8601String(),
         'showResultsImmediately': _showResultsImmediately,
         'isPublished': _isPublished,
+        'quarter': _quarter,
+        'component': _component,
+        'isDepartmentalExam': _isDepartmentalExam,
         'questions': _questions.map((q) => q.toJson()).toList(),
       };
       await prefs.setString('assessment_draft_${widget.classId}', jsonEncode(draft));
@@ -143,6 +152,9 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
       _closeAt = DateTime.now().add(const Duration(days: 7));
       _showResultsImmediately = false;
       _isPublished = true;
+      _quarter = null;
+      _component = null;
+      _isDepartmentalExam = false;
       _questions.clear();
     }
   }
@@ -287,6 +299,9 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
               showResultsImmediately: _showResultsImmediately,
               isPublished: _isPublished,
               questions: _isPublished ? questionsData : null,
+              quarter: _quarter,
+              component: _component,
+              isDepartmentalExam: _isDepartmentalExam ? true : null,
             ),
           );
 
@@ -452,6 +467,12 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                             _formError = null;
                           });
                         },
+                        selectedQuarter: _quarter,
+                        selectedComponent: _component,
+                        isDepartmentalExam: _isDepartmentalExam,
+                        onQuarterChanged: (v) => setState(() { _quarter = v; _formError = null; }),
+                        onComponentChanged: (v) => setState(() { _component = v; _isDepartmentalExam = false; _formError = null; }),
+                        onDepartmentalExamChanged: (v) => setState(() { _isDepartmentalExam = v; _formError = null; }),
                         onCreateAssessment: null,
                       ),
                     ),

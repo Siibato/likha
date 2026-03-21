@@ -20,6 +20,9 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
     int? maxFileSizeMb,
     required String dueAt,
     bool isPublished = true,
+    int? quarter,
+    String? component,
+    bool? noSubmissionRequired,
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
@@ -40,6 +43,9 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
             if (maxFileSizeMb != null) 'max_file_size_mb': maxFileSizeMb,
             'due_at': dueAt,
             'is_published': isPublished,
+            if (quarter != null) 'quarter': quarter,
+            if (component != null) 'component': component,
+            if (noSubmissionRequired != null) 'no_submission_required': noSubmissionRequired,
           },
           status: SyncStatus.pending,
           retryCount: 0,
@@ -103,6 +109,9 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
           if (maxFileSizeMb != null) 'max_file_size_mb': maxFileSizeMb,
           'due_at': dueAt,
           'is_published': isPublished,
+          if (quarter != null) 'quarter': quarter,
+          if (component != null) 'component': component,
+          if (noSubmissionRequired != null) 'no_submission_required': noSubmissionRequired,
         },
       );
       // Cache the assignment locally so it persists across app restarts
