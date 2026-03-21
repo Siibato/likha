@@ -104,6 +104,48 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
     );
   }
 
+  @override
+  Future<void> updateItemFields(String id, Map<String, dynamic> data) async {
+    final db = await localDatabase.database;
+    final updates = <String, dynamic>{
+      CommonCols.updatedAt: DateTime.now().toIso8601String(),
+      CommonCols.cachedAt: DateTime.now().toIso8601String(),
+      CommonCols.needsSync: 1,
+    };
+    if (data.containsKey('title')) {
+      updates[GradeItemsCols.title] = data['title'];
+    }
+    if (data.containsKey('component')) {
+      updates[GradeItemsCols.component] = data['component'];
+    }
+    if (data.containsKey('total_points')) {
+      updates[GradeItemsCols.totalPoints] = data['total_points'];
+    }
+    if (data.containsKey('order_index')) {
+      updates[GradeItemsCols.orderIndex] = data['order_index'];
+    }
+    await db.update(
+      DbTables.gradeItems,
+      updates,
+      where: '${CommonCols.id} = ?',
+      whereArgs: [id],
+    );
+  }
+
+  @override
+  Future<void> softDeleteItem(String id) async {
+    final db = await localDatabase.database;
+    await db.update(
+      DbTables.gradeItems,
+      {
+        CommonCols.deletedAt: DateTime.now().toIso8601String(),
+        CommonCols.needsSync: 1,
+      },
+      where: '${CommonCols.id} = ?',
+      whereArgs: [id],
+    );
+  }
+
   // ===== Scores =====
 
   @override
@@ -129,6 +171,64 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
       );
     }
     await batch.commit(noResult: true);
+  }
+
+  @override
+  Future<void> upsertScoresByItem(
+    String gradeItemId,
+    List<GradeScoreModel> scores,
+  ) async {
+    final db = await localDatabase.database;
+    for (final score in scores) {
+      // Check for existing score by grade_item_id + student_id
+      final existing = await db.query(
+        DbTables.gradeScores,
+        where:
+            '${GradeScoresCols.gradeItemId} = ? AND ${GradeScoresCols.studentId} = ?',
+        whereArgs: [gradeItemId, score.studentId],
+      );
+
+      if (existing.isNotEmpty) {
+        // Update existing score
+        await db.update(
+          DbTables.gradeScores,
+          {
+            GradeScoresCols.score: score.score,
+            CommonCols.updatedAt: score.updatedAt,
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.needsSync: 1,
+          },
+          where: '${CommonCols.id} = ?',
+          whereArgs: [existing.first[CommonCols.id]],
+        );
+      } else {
+        // Insert new score with needsSync = 1
+        final map = score.toMap();
+        map[CommonCols.needsSync] = 1;
+        await db.insert(
+          DbTables.gradeScores,
+          map,
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    }
+  }
+
+  @override
+  Future<void> updateScoreOverride(
+      String scoreId, double? overrideScore) async {
+    final db = await localDatabase.database;
+    await db.update(
+      DbTables.gradeScores,
+      {
+        GradeScoresCols.overrideScore: overrideScore,
+        CommonCols.updatedAt: DateTime.now().toIso8601String(),
+        CommonCols.cachedAt: DateTime.now().toIso8601String(),
+        CommonCols.needsSync: 1,
+      },
+      where: '${CommonCols.id} = ?',
+      whereArgs: [scoreId],
+    );
   }
 
   // ===== Quarterly Grades =====

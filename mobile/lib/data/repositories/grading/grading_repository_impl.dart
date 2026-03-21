@@ -1,6 +1,8 @@
 import 'package:dartz/dartz.dart';
+import 'package:uuid/uuid.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
 import 'package:likha/data/datasources/remote/grading_remote_datasource.dart';
@@ -18,14 +20,17 @@ class GradingRepositoryImpl implements GradingRepository {
   final GradingRemoteDataSource _remoteDataSource;
   final GradingLocalDataSource _localDataSource;
   final ServerReachabilityService _serverReachabilityService;
+  final SyncQueue _syncQueue;
 
   GradingRepositoryImpl({
     required GradingRemoteDataSource remoteDataSource,
     required GradingLocalDataSource localDataSource,
     required ServerReachabilityService serverReachabilityService,
+    required SyncQueue syncQueue,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
-        _serverReachabilityService = serverReachabilityService;
+        _serverReachabilityService = serverReachabilityService,
+        _syncQueue = syncQueue;
 
   // ===== Helpers =====
 
@@ -77,6 +82,18 @@ class GradingRepositoryImpl implements GradingRepository {
         computedAt: m.computedAt,
       );
 
+  /// DepEd weight presets — mirrors class_grading_setup_page.dart
+  static const _weightPresets = {
+    'language': (ww: 30.0, pt: 50.0, qa: 20.0),
+    'ap_esp': (ww: 30.0, pt: 50.0, qa: 20.0),
+    'math_sci': (ww: 40.0, pt: 40.0, qa: 20.0),
+    'mapeh_tle': (ww: 20.0, pt: 60.0, qa: 20.0),
+    'shs_core': (ww: 25.0, pt: 50.0, qa: 25.0),
+    'shs_academic': (ww: 25.0, pt: 45.0, qa: 30.0),
+    'shs_tvl': (ww: 25.0, pt: 45.0, qa: 30.0),
+    'shs_immersion': (ww: 35.0, pt: 40.0, qa: 25.0),
+  };
+
   // ===== Config =====
 
   @override
@@ -116,22 +133,63 @@ class GradingRepositoryImpl implements GradingRepository {
     int? semester,
   }) async {
     try {
-      await _remoteDataSource.setupGrading(
-        classId: classId,
-        data: {
+      // Save locally first (optimistic)
+      final weights = _weightPresets[subjectGroup];
+      if (weights != null) {
+        final now = DateTime.now().toIso8601String();
+        final configs = <GradeConfigModel>[];
+        // Create config for quarter 1 (default)
+        configs.add(GradeConfigModel(
+          id: const Uuid().v4(),
+          classId: classId,
+          quarter: 1,
+          wwWeight: weights.ww,
+          ptWeight: weights.pt,
+          qaWeight: weights.qa,
+          createdAt: now,
+          updatedAt: now,
+        ));
+        await _localDataSource.saveConfigs(configs);
+      }
+
+      // Enqueue for sync
+      await _syncQueue.enqueue(SyncQueueEntry(
+        id: const Uuid().v4(),
+        entityType: SyncEntityType.gradeConfig,
+        operation: SyncOperation.setup,
+        payload: {
+          'class_id': classId,
           'grade_level': gradeLevel,
           'subject_group': subjectGroup,
           'school_year': schoolYear,
           if (semester != null) 'semester': semester,
         },
-      );
+        status: SyncStatus.pending,
+        retryCount: 0,
+        maxRetries: 3,
+        createdAt: DateTime.now(),
+      ));
+
+      // If online, also call remote (for immediate server-side processing)
+      if (_serverReachabilityService.isServerReachable) {
+        try {
+          await _remoteDataSource.setupGrading(
+            classId: classId,
+            data: {
+              'grade_level': gradeLevel,
+              'subject_group': subjectGroup,
+              'school_year': schoolYear,
+              if (semester != null) 'semester': semester,
+            },
+          );
+        } catch (_) {
+          // Remote call failed — sync queue will handle it
+        }
+      }
+
       return const Right(null);
-    } on ServerFailure catch (e) {
-      return Left(e);
-    } on Failure catch (e) {
-      return Left(e);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(CacheFailure(e.toString()));
     }
   }
 
@@ -141,17 +199,43 @@ class GradingRepositoryImpl implements GradingRepository {
     required List<Map<String, dynamic>> configs,
   }) async {
     try {
-      await _remoteDataSource.updateGradingConfig(
+      // Save locally (optimistic)
+      final now = DateTime.now().toIso8601String();
+      final models = configs.map((c) => GradeConfigModel(
+        id: c['id'] as String? ?? const Uuid().v4(),
         classId: classId,
-        configs: configs,
-      );
+        quarter: (c['quarter'] as num).toInt(),
+        wwWeight: (c['ww_weight'] as num).toDouble(),
+        ptWeight: (c['pt_weight'] as num).toDouble(),
+        qaWeight: (c['qa_weight'] as num).toDouble(),
+        createdAt: now,
+        updatedAt: now,
+      )).toList();
+      await _localDataSource.saveConfigs(models);
+
+      // Enqueue each config update
+      for (final config in configs) {
+        await _syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.gradeConfig,
+          operation: SyncOperation.update,
+          payload: {
+            'class_id': classId,
+            'quarter': config['quarter'],
+            'ww_weight': config['ww_weight'],
+            'pt_weight': config['pt_weight'],
+            'qa_weight': config['qa_weight'],
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 3,
+          createdAt: DateTime.now(),
+        ));
+      }
+
       return const Right(null);
-    } on ServerFailure catch (e) {
-      return Left(e);
-    } on Failure catch (e) {
-      return Left(e);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(CacheFailure(e.toString()));
     }
   }
 
@@ -203,18 +287,46 @@ class GradingRepositoryImpl implements GradingRepository {
     required Map<String, dynamic> data,
   }) async {
     try {
-      final model = await _remoteDataSource.createGradeItem(
+      final now = DateTime.now().toIso8601String();
+      final id = const Uuid().v4();
+
+      final model = GradeItemModel(
+        id: id,
         classId: classId,
-        data: data,
+        title: data['title'] as String,
+        component: data['component'] as String,
+        quarter: (data['quarter'] as num).toInt(),
+        totalPoints: (data['total_points'] as num).toDouble(),
+        isDepartmentalExam: data['is_departmental_exam'] == true,
+        sourceType: 'manual',
+        sourceId: null,
+        orderIndex: (data['order_index'] as num?)?.toInt() ?? 0,
+        createdAt: now,
+        updatedAt: now,
       );
+
+      // Save locally
       await _localDataSource.saveItem(model);
+
+      // Enqueue for sync
+      await _syncQueue.enqueue(SyncQueueEntry(
+        id: const Uuid().v4(),
+        entityType: SyncEntityType.gradeItem,
+        operation: SyncOperation.create,
+        payload: {
+          'id': id,
+          'class_id': classId,
+          ...data,
+        },
+        status: SyncStatus.pending,
+        retryCount: 0,
+        maxRetries: 3,
+        createdAt: DateTime.now(),
+      ));
+
       return Right(_itemToEntity(model));
-    } on ServerFailure catch (e) {
-      return Left(e);
-    } on Failure catch (e) {
-      return Left(e);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(CacheFailure(e.toString()));
     }
   }
 
@@ -224,29 +336,51 @@ class GradingRepositoryImpl implements GradingRepository {
     required Map<String, dynamic> data,
   }) async {
     try {
-      await _remoteDataSource.updateGradeItem(id: id, data: data);
+      // Update locally via raw update
+      await _localDataSource.updateItemFields(id, data);
+
+      // Enqueue for sync
+      await _syncQueue.enqueue(SyncQueueEntry(
+        id: const Uuid().v4(),
+        entityType: SyncEntityType.gradeItem,
+        operation: SyncOperation.update,
+        payload: {
+          'id': id,
+          ...data,
+        },
+        status: SyncStatus.pending,
+        retryCount: 0,
+        maxRetries: 3,
+        createdAt: DateTime.now(),
+      ));
+
       return const Right(null);
-    } on ServerFailure catch (e) {
-      return Left(e);
-    } on Failure catch (e) {
-      return Left(e);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(CacheFailure(e.toString()));
     }
   }
 
   @override
   ResultVoid deleteGradeItem({required String id}) async {
     try {
-      await _remoteDataSource.deleteGradeItem(id: id);
-      await _localDataSource.deleteItem(id);
+      // Soft-delete locally
+      await _localDataSource.softDeleteItem(id);
+
+      // Enqueue for sync
+      await _syncQueue.enqueue(SyncQueueEntry(
+        id: const Uuid().v4(),
+        entityType: SyncEntityType.gradeItem,
+        operation: SyncOperation.delete,
+        payload: {'id': id},
+        status: SyncStatus.pending,
+        retryCount: 0,
+        maxRetries: 3,
+        createdAt: DateTime.now(),
+      ));
+
       return const Right(null);
-    } on ServerFailure catch (e) {
-      return Left(e);
-    } on Failure catch (e) {
-      return Left(e);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(CacheFailure(e.toString()));
     }
   }
 
@@ -286,17 +420,39 @@ class GradingRepositoryImpl implements GradingRepository {
     required List<Map<String, dynamic>> scores,
   }) async {
     try {
-      await _remoteDataSource.saveScores(
+      final now = DateTime.now().toIso8601String();
+
+      // Save each score locally (optimistic)
+      final models = scores.map((s) => GradeScoreModel(
+        id: const Uuid().v4(),
         gradeItemId: gradeItemId,
-        scores: scores,
-      );
+        studentId: s['student_id'] as String,
+        score: (s['score'] as num).toDouble(),
+        isAutoPopulated: false,
+        overrideScore: null,
+        createdAt: now,
+        updatedAt: now,
+      )).toList();
+      await _localDataSource.upsertScoresByItem(gradeItemId, models);
+
+      // Enqueue batch save for sync
+      await _syncQueue.enqueue(SyncQueueEntry(
+        id: const Uuid().v4(),
+        entityType: SyncEntityType.gradeScore,
+        operation: SyncOperation.saveScores,
+        payload: {
+          'grade_item_id': gradeItemId,
+          'scores': scores,
+        },
+        status: SyncStatus.pending,
+        retryCount: 0,
+        maxRetries: 3,
+        createdAt: DateTime.now(),
+      ));
+
       return const Right(null);
-    } on ServerFailure catch (e) {
-      return Left(e);
-    } on Failure catch (e) {
-      return Left(e);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(CacheFailure(e.toString()));
     }
   }
 
@@ -306,31 +462,51 @@ class GradingRepositoryImpl implements GradingRepository {
     required double overrideScore,
   }) async {
     try {
-      await _remoteDataSource.setScoreOverride(
-        scoreId: scoreId,
-        overrideScore: overrideScore,
-      );
+      // Update locally
+      await _localDataSource.updateScoreOverride(scoreId, overrideScore);
+
+      // Enqueue for sync
+      await _syncQueue.enqueue(SyncQueueEntry(
+        id: const Uuid().v4(),
+        entityType: SyncEntityType.gradeScore,
+        operation: SyncOperation.setOverride,
+        payload: {
+          'score_id': scoreId,
+          'override_score': overrideScore,
+        },
+        status: SyncStatus.pending,
+        retryCount: 0,
+        maxRetries: 3,
+        createdAt: DateTime.now(),
+      ));
+
       return const Right(null);
-    } on ServerFailure catch (e) {
-      return Left(e);
-    } on Failure catch (e) {
-      return Left(e);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(CacheFailure(e.toString()));
     }
   }
 
   @override
   ResultVoid clearScoreOverride({required String scoreId}) async {
     try {
-      await _remoteDataSource.clearScoreOverride(scoreId: scoreId);
+      // Clear locally
+      await _localDataSource.updateScoreOverride(scoreId, null);
+
+      // Enqueue for sync
+      await _syncQueue.enqueue(SyncQueueEntry(
+        id: const Uuid().v4(),
+        entityType: SyncEntityType.gradeScore,
+        operation: SyncOperation.clearOverride,
+        payload: {'score_id': scoreId},
+        status: SyncStatus.pending,
+        retryCount: 0,
+        maxRetries: 3,
+        createdAt: DateTime.now(),
+      ));
+
       return const Right(null);
-    } on ServerFailure catch (e) {
-      return Left(e);
-    } on Failure catch (e) {
-      return Left(e);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(CacheFailure(e.toString()));
     }
   }
 
@@ -440,8 +616,6 @@ class GradingRepositoryImpl implements GradingRepository {
         await _localDataSource.saveQuarterlyGrades(models);
         return Right(models.map(_quarterlyToEntity).toList());
       }
-      // Offline fallback: we don't have a student-specific local query,
-      // but saveQuarterlyGrades stores them, so return empty for now
       return const Right([]);
     } on ServerFailure catch (e) {
       return Left(e);

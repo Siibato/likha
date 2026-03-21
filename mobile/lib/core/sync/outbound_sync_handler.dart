@@ -259,6 +259,21 @@ class OutboundSyncHandler {
                 where: '${CommonCols.id} = ?',
                 whereArgs: [payloadId],
               );
+            } else if (entityType == SyncEntityType.gradeItem.serverValue) {
+              // Reconcile grade_item ID
+              await db.update(
+                DbTables.gradeItems,
+                {CommonCols.id: serverId},
+                where: '${CommonCols.id} = ?',
+                whereArgs: [payloadId],
+              );
+              // Update any grade_scores referencing the old grade_item_id
+              await db.update(
+                DbTables.gradeScores,
+                {GradeScoresCols.gradeItemId: serverId},
+                where: '${GradeScoresCols.gradeItemId} = ?',
+                whereArgs: [payloadId],
+              );
             }
           }
         }

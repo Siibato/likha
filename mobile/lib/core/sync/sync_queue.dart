@@ -20,7 +20,10 @@ enum SyncEntityType {
   learningMaterial('learning_material'),
   materialFile('material_file'),
   adminUser('admin_user'),
-  activityLog('activityLog');
+  activityLog('activityLog'),
+  gradeConfig('grade_config'),
+  gradeItem('grade_item'),
+  gradeScore('grade_score');
 
   const SyncEntityType(this.serverValue);
   final String serverValue;
@@ -42,7 +45,11 @@ enum SyncOperation {
   releaseResults('release_results'),
   overrideAnswer('override_answer'),
   addEnrollment('add_enrollment'),
-  removeEnrollment('remove_enrollment');
+  removeEnrollment('remove_enrollment'),
+  saveScores('save_scores'),
+  setOverride('set_override'),
+  clearOverride('clear_override'),
+  setup('setup');
 
   const SyncOperation(this.serverValue);
   final String serverValue;

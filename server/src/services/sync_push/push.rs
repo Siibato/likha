@@ -117,6 +117,9 @@ impl super::SyncPushService {
             "submission_file" => self.handle_submission_file_operation(user_id, op).await,
             "material_file" => self.handle_material_file_operation(user_id, op).await,
             "activity_log" => self.handle_activity_log_operation(user_id, op).await,
+            "grade_config" => self.handle_grade_config_operation(user_id, user_role, op).await,
+            "grade_item" => self.handle_grade_item_operation(user_id, user_role, op).await,
+            "grade_score" => self.handle_grade_score_operation(user_id, user_role, op).await,
             _ => self.error_result(op, &format!("Unknown entity type: {}", op.entity_type)),
         }
     }

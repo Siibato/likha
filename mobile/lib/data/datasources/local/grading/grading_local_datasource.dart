@@ -18,9 +18,16 @@ abstract class GradingLocalDataSource {
   Future<void> saveItem(GradeItemModel item);
   Future<void> deleteItem(String id);
 
+  // Grade Item mutations
+  Future<void> updateItemFields(String id, Map<String, dynamic> data);
+  Future<void> softDeleteItem(String id);
+
   // Scores
   Future<List<GradeScoreModel>> getScoresByItem(String gradeItemId);
   Future<void> saveScores(List<GradeScoreModel> scores);
+  Future<void> upsertScoresByItem(
+      String gradeItemId, List<GradeScoreModel> scores);
+  Future<void> updateScoreOverride(String scoreId, double? overrideScore);
 
   // Quarterly Grades
   Future<List<QuarterlyGradeModel>> getQuarterlyGradesByClass(

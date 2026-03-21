@@ -165,6 +165,8 @@ async fn main() {
     ));
 
     let processed_ops_repo = Arc::new(ProcessedOperationsRepository::new(db.clone()));
+    let grade_computation_service = Arc::new(GradeComputationService::new(db.clone()));
+
     let sync_push_service = Arc::new(SyncPushService::new(
         entitlement_service.clone(),
         class_service.clone(),
@@ -172,6 +174,7 @@ async fn main() {
         assignment_service.clone(),
         material_service.clone(),
         auth_service.clone(),
+        grade_computation_service.clone(),
         processed_ops_repo,
     ));
 
@@ -188,8 +191,6 @@ async fn main() {
         manifest_repo.clone(),
         db.clone(),
     ));
-
-    let grade_computation_service = Arc::new(GradeComputationService::new(db.clone()));
 
     let app = create_app(
         auth_service,

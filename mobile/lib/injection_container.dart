@@ -434,6 +434,7 @@ Future<void> init() async {
       remoteDataSource: sl<GradingRemoteDataSource>(),
       localDataSource: sl<GradingLocalDataSource>(),
       serverReachabilityService: sl<ServerReachabilityService>(),
+      syncQueue: sl<SyncQueue>(),
     ),
   );
 

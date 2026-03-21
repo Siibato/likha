@@ -643,20 +643,64 @@ class SyncUpsertHelpers {
   ) async {
     int successCount = 0;
     int failedCount = 0;
+    int preservedCount = 0;
 
     for (final record in records) {
       try {
         if (record is! Map<String, dynamic>) continue;
 
+        final id = record['id'] as String;
+
+        // Check if local has a pending override that should take precedence
+        final existing = await db.query(
+          DbTables.gradeScores,
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id],
+        );
+
+        if (existing.isNotEmpty) {
+          final localOverride = existing.first[GradeScoresCols.overrideScore];
+          final localNeedsSync = existing.first[CommonCols.needsSync] as int?;
+
+          // If local has a pending override AND server score is auto-populated,
+          // update base score but preserve local override
+          if (localOverride != null &&
+              localNeedsSync == 1 &&
+              record['is_auto_populated'] == true) {
+            await db.update(
+              DbTables.gradeScores,
+              {
+                GradeScoresCols.score: record['score'] != null
+                    ? (record['score'] as num).toDouble()
+                    : null,
+                GradeScoresCols.isAutoPopulated: 1,
+                CommonCols.cachedAt: DateTime.now().toIso8601String(),
+                // DO NOT overwrite override_score or needsSync
+              },
+              where: '${CommonCols.id} = ?',
+              whereArgs: [id],
+            );
+            preservedCount++;
+            successCount++;
+            continue;
+          }
+        }
+
+        // Normal upsert (no conflict)
         await db.insert(
           DbTables.gradeScores,
           {
-            CommonCols.id: record['id'],
+            CommonCols.id: id,
             GradeScoresCols.gradeItemId: record['grade_item_id'],
             GradeScoresCols.studentId: record['student_id'],
-            GradeScoresCols.score: record['score'] != null ? (record['score'] as num).toDouble() : null,
-            GradeScoresCols.isAutoPopulated: (record['is_auto_populated'] == true) ? 1 : 0,
-            GradeScoresCols.overrideScore: record['override_score'] != null ? (record['override_score'] as num).toDouble() : null,
+            GradeScoresCols.score: record['score'] != null
+                ? (record['score'] as num).toDouble()
+                : null,
+            GradeScoresCols.isAutoPopulated:
+                (record['is_auto_populated'] == true) ? 1 : 0,
+            GradeScoresCols.overrideScore: record['override_score'] != null
+                ? (record['override_score'] as num).toDouble()
+                : null,
             CommonCols.createdAt: record['created_at'],
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
             CommonCols.deletedAt: record['deleted_at'],
@@ -673,6 +717,9 @@ class SyncUpsertHelpers {
     }
 
     _log.upsertSummary('grade_scores', successCount);
+    if (preservedCount > 0) {
+      _log.log('Preserved $preservedCount local score overrides during sync');
+    }
     if (failedCount > 0) {
       _log.warn('Failed to upsert grade scores', failedCount);
     }

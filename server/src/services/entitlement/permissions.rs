@@ -132,6 +132,14 @@ impl super::EntitlementService {
                 }
                 Ok(())
             }
+            ("grade_config", _) | ("grade_item", _) | ("grade_score", _) => {
+                if user_role != "teacher" && user_role != "admin" {
+                    return Err(AppError::Forbidden(
+                        "Only teachers can modify grading data".to_string(),
+                    ));
+                }
+                Ok(())
+            }
             _ => {
                 Err(AppError::BadRequest(format!(
                     "Unknown operation: {} on {}",
