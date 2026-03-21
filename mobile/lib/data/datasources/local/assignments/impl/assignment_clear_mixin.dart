@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:path_provider/path_provider.dart';
 import '../assignment_local_datasource_base.dart';
@@ -8,9 +9,9 @@ mixin AssignmentClearMixin on AssignmentLocalDataSourceBase {
   Future<void> clearAllCache() async {
     try {
       final db = await localDatabase.database;
-      await db.delete('assignments');
-      await db.delete('assignment_submissions');
-      await db.delete('submission_files');
+      await db.delete(DbTables.assignments);
+      await db.delete(DbTables.assignmentSubmissions);
+      await db.delete(DbTables.submissionFiles);
 
       try {
         final dir = await getApplicationDocumentsDirectory();

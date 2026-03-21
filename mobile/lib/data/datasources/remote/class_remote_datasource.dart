@@ -25,7 +25,7 @@ abstract class ClassRemoteDataSource {
     String? teacherId,
   });
 
-  Future<EnrollmentModel> addStudent({
+  Future<ParticipantModel> addStudent({
     required String classId,
     required String studentId,
   });
@@ -112,7 +112,7 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
   }
 
   @override
-  Future<EnrollmentModel> addStudent({
+  Future<ParticipantModel> addStudent({
     required String classId,
     required String studentId,
   }) async {

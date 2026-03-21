@@ -1,15 +1,8 @@
-use chrono::NaiveDateTime;
 use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
+use crate::utils::{parse_datetime, fmt_utc, validators::Validator};
 use crate::schema::assessment_schema::*;
 use md5;
-
-/// Format NaiveDateTime as ISO 8601 UTC with explicit Z suffix.
-/// Input: 2026-03-10 16:31:00 (stored as UTC, no tz marker)
-/// Output: "2026-03-10T16:31:00Z" (unambiguous UTC)
-fn fmt_utc(dt: NaiveDateTime) -> String {
-    dt.format("%Y-%m-%dT%H:%M:%SZ").to_string()
-}
 
 impl super::AssessmentService {
     pub async fn create_assessment(
@@ -26,12 +19,10 @@ impl super::AssessmentService {
             return Err(AppError::Forbidden("You can only create assessments in your own classes".to_string()));
         }
 
-        if request.title.trim().is_empty() {
-            return Err(AppError::BadRequest("Title is required".to_string()));
-        }
+        let title = Validator::validate_title(&request.title)?;
 
-        let open_at = Self::parse_datetime(&request.open_at)?;
-        let close_at = Self::parse_datetime(&request.close_at)?;
+        let open_at = parse_datetime(&request.open_at)?;
+        let close_at = parse_datetime(&request.close_at)?;
 
         if close_at <= open_at {
             return Err(AppError::BadRequest("Close date must be after open date".to_string()));
@@ -42,7 +33,7 @@ impl super::AssessmentService {
 
         let assessment = self.assessment_repo.create_assessment(
             class_id,
-            request.title.trim().to_string(),
+            title,
             request.description,
             request.time_limit_minutes,
             open_at,
@@ -141,7 +132,7 @@ impl super::AssessmentService {
         let assessment = self.assessment_repo.find_by_id(assessment_id).await?
             .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
 
-        let class = self.class_repo.find_by_id(assessment.class_id).await?
+        let _class = self.class_repo.find_by_id(assessment.class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
         if role == "student" && !assessment.is_published {
@@ -220,7 +211,7 @@ impl super::AssessmentService {
         let assessment = self.assessment_repo.find_by_id(assessment_id).await?
             .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
 
-        let class = self.class_repo.find_by_id(assessment.class_id).await?
+        let _class = self.class_repo.find_by_id(assessment.class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
         if !self.class_repo.is_teacher_of_class(teacher_id, assessment.class_id).await? {
@@ -231,18 +222,20 @@ impl super::AssessmentService {
             return Err(AppError::BadRequest("Cannot edit a published assessment".to_string()));
         }
 
+        let title = Validator::validate_optional_title(request.title)?;
+
         let open_at = match &request.open_at {
-            Some(s) => Some(Self::parse_datetime(s)?),
+            Some(s) => Some(parse_datetime(s)?),
             None => None,
         };
         let close_at = match &request.close_at {
-            Some(s) => Some(Self::parse_datetime(s)?),
+            Some(s) => Some(parse_datetime(s)?),
             None => None,
         };
 
         let updated = self.assessment_repo.update_assessment(
             assessment_id,
-            request.title,
+            title,
             request.description,
             request.time_limit_minutes,
             open_at,
@@ -284,7 +277,7 @@ impl super::AssessmentService {
         let assessment = self.assessment_repo.find_by_id(assessment_id).await?
             .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
 
-        let class = self.class_repo.find_by_id(assessment.class_id).await?
+        let _class = self.class_repo.find_by_id(assessment.class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
         if !self.class_repo.is_teacher_of_class(teacher_id, assessment.class_id).await? {

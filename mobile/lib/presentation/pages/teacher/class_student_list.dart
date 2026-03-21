@@ -24,7 +24,7 @@ class _ClassStudentListPageState extends ConsumerState<ClassStudentListPage> {
       // Load class detail to get enrolled students
       ref.read(classProvider.notifier).loadClassDetail(widget.classId);
       // Also load cached students immediately for offline display
-      ref.read(classProvider.notifier).loadEnrolledStudentsOffline(widget.classId);
+      ref.read(classProvider.notifier).loadParticipantsOffline(widget.classId);
     });
   }
 
@@ -38,7 +38,7 @@ class _ClassStudentListPageState extends ConsumerState<ClassStudentListPage> {
       if (currentClassDetail == null &&
           next.error != null &&
           prev?.error != next.error) {
-        ref.read(classProvider.notifier).loadEnrolledStudentsOffline(widget.classId);
+        ref.read(classProvider.notifier).loadParticipantsOffline(widget.classId);
       }
       // Show error messages
       if (next.error != null && prev?.error != next.error) {
@@ -87,8 +87,8 @@ class _ClassStudentListPageState extends ConsumerState<ClassStudentListPage> {
             itemCount: students.length,
             itemBuilder: (context, index) {
               final item = students[index];
-              // Handle both Enrollment (from API) and User (from offline)
-              final user = item is Enrollment ? item.student : item as User;
+              // Handle both Participant (from API) and User (from offline)
+              final user = item is Participant ? item.student : item as User;
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 14),

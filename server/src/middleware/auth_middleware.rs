@@ -12,7 +12,6 @@ use crate::utils::jwt::JwtService;
 #[derive(Debug, Clone)]
 pub struct AuthUser {
     pub user_id: uuid::Uuid,
-    pub username: String,
     pub role: String,
 }
 
@@ -90,7 +89,6 @@ where
 
             Ok(AuthUser {
                 user_id,
-                username: claims.username,
                 role: claims.role,
             })
         }

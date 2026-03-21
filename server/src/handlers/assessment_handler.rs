@@ -12,7 +12,7 @@ use crate::schema::assessment_schema::*;
 use crate::schema::auth_schema::MessageResponse;
 use crate::schema::common::success_response;
 use crate::services::assessment::AssessmentService;
-use crate::utils::error::AppError;
+use crate::utils::auth_guards::{require_teacher, require_student};
 
 // ===== TEACHER: ASSESSMENT CRUD =====
 
@@ -22,8 +22,8 @@ pub async fn create_assessment(
     Path(class_id): Path<Uuid>,
     Json(request): Json<CreateAssessmentRequest>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
 
     match service.create_assessment(class_id, request, auth_user.user_id, None).await {
@@ -66,8 +66,8 @@ pub async fn update_assessment(
     Path(assessment_id): Path<Uuid>,
     Json(request): Json<UpdateAssessmentRequest>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
 
     match service.update_assessment(assessment_id, request, auth_user.user_id).await {
@@ -81,8 +81,8 @@ pub async fn delete_assessment(
     auth_user: AuthUser,
     Path(assessment_id): Path<Uuid>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
 
     match service.delete_assessment(assessment_id, auth_user.user_id).await {
@@ -98,8 +98,8 @@ pub async fn publish_assessment(
     auth_user: AuthUser,
     Path(assessment_id): Path<Uuid>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
 
     match service.publish_assessment(assessment_id, auth_user.user_id).await {
@@ -113,8 +113,8 @@ pub async fn unpublish_assessment(
     auth_user: AuthUser,
     Path(assessment_id): Path<Uuid>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
 
     match service.unpublish_assessment(assessment_id, auth_user.user_id).await {
@@ -128,8 +128,8 @@ pub async fn release_results(
     auth_user: AuthUser,
     Path(assessment_id): Path<Uuid>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
 
     match service.release_results(assessment_id, auth_user.user_id).await {
@@ -146,8 +146,8 @@ pub async fn add_questions(
     Path(assessment_id): Path<Uuid>,
     Json(request): Json<AddQuestionsRequest>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
 
     match service.add_questions(assessment_id, request, auth_user.user_id).await {
@@ -162,8 +162,8 @@ pub async fn update_question(
     Path(question_id): Path<Uuid>,
     Json(request): Json<UpdateQuestionRequest>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
 
     match service.update_question(question_id, request, auth_user.user_id).await {
@@ -177,8 +177,8 @@ pub async fn delete_question(
     auth_user: AuthUser,
     Path(question_id): Path<Uuid>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
 
     match service.delete_question(question_id, auth_user.user_id).await {
@@ -195,8 +195,8 @@ pub async fn reorder_questions(
     Path(assessment_id): Path<Uuid>,
     Json(request): Json<ReorderQuestionsRequest>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
     match service.reorder_questions(assessment_id, request, auth_user.user_id).await {
         Ok(()) => success_response(
@@ -214,8 +214,8 @@ pub async fn get_submissions(
     auth_user: AuthUser,
     Path(assessment_id): Path<Uuid>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
 
     match service.get_submissions(assessment_id, auth_user.user_id).await {
@@ -229,8 +229,8 @@ pub async fn get_submission_detail(
     auth_user: AuthUser,
     Path(submission_id): Path<Uuid>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
 
     match service.get_submission_detail(submission_id, auth_user.user_id).await {
@@ -245,8 +245,8 @@ pub async fn override_answer(
     Path(answer_id): Path<Uuid>,
     Json(request): Json<OverrideAnswerRequest>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
 
     match service.override_answer(answer_id, request, auth_user.user_id).await {
@@ -260,8 +260,8 @@ pub async fn get_statistics(
     auth_user: AuthUser,
     Path(assessment_id): Path<Uuid>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
 
     match service.get_statistics(assessment_id, auth_user.user_id).await {
@@ -277,8 +277,8 @@ pub async fn start_assessment(
     auth_user: AuthUser,
     Path(assessment_id): Path<Uuid>,
 ) -> impl IntoResponse {
-    if auth_user.role != "student" {
-        return AppError::Forbidden("Student access required".to_string()).into_response();
+    if let Err(r) = require_student(&auth_user) {
+        return r;
     }
 
     match service.start_assessment(assessment_id, auth_user.user_id, None).await {
@@ -293,8 +293,8 @@ pub async fn save_answers(
     Path(submission_id): Path<Uuid>,
     Json(request): Json<SaveAnswersRequest>,
 ) -> impl IntoResponse {
-    if auth_user.role != "student" {
-        return AppError::Forbidden("Student access required".to_string()).into_response();
+    if let Err(r) = require_student(&auth_user) {
+        return r;
     }
 
     match service.save_answers(submission_id, request, auth_user.user_id).await {
@@ -310,8 +310,8 @@ pub async fn submit_assessment(
     auth_user: AuthUser,
     Path(submission_id): Path<Uuid>,
 ) -> impl IntoResponse {
-    if auth_user.role != "student" {
-        return AppError::Forbidden("Student access required".to_string()).into_response();
+    if let Err(r) = require_student(&auth_user) {
+        return r;
     }
 
     println!("📤 [HANDLER] submit_assessment() START - submission_id: {}, student_id: {}", submission_id, auth_user.user_id);
@@ -334,8 +334,8 @@ pub async fn get_student_results(
     auth_user: AuthUser,
     Path(submission_id): Path<Uuid>,
 ) -> impl IntoResponse {
-    if auth_user.role != "student" {
-        return AppError::Forbidden("Student access required".to_string()).into_response();
+    if let Err(r) = require_student(&auth_user) {
+        return r;
     }
 
     match service.get_student_results(submission_id, auth_user.user_id).await {
@@ -360,8 +360,8 @@ pub async fn reorder_assessments(
     Path(class_id): Path<Uuid>,
     Json(request): Json<ReorderAssessmentsRequest>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
     match service.reorder_assessments(class_id, request, auth_user.user_id).await {
         Ok(()) => success_response(
@@ -377,8 +377,8 @@ pub async fn get_student_assessment_submissions(
     auth_user: AuthUser,
     Path((class_id, student_id)): Path<(Uuid, Uuid)>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
     match service.get_student_assessment_submissions(class_id, student_id, auth_user.user_id).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),

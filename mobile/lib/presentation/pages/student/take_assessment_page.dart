@@ -13,7 +13,7 @@ import 'package:likha/presentation/pages/student/widgets/assessment_question_car
 import 'package:likha/presentation/pages/student/widgets/assessment_submit_section.dart';
 import 'package:likha/presentation/pages/student/widgets/assessment_dialogs.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
-import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/providers/student_assessment_provider.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 
 class TakeAssessmentPage extends ConsumerStatefulWidget {
@@ -78,7 +78,7 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
     if (user == null) return;
 
     await ref
-        .read(assessmentProvider.notifier)
+        .read(studentAssessmentProvider.notifier)
         .startAssessment(
           widget.assessmentId,
           user.id,
@@ -86,7 +86,7 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
           user.username,
         );
 
-    final state = ref.read(assessmentProvider);
+    final state = ref.read(studentAssessmentProvider);
     if (state.startResult != null) {
       final startResult = state.startResult!;
       _submissionId = startResult.submissionId;
@@ -210,7 +210,7 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
 
   Future<void> _saveAnswers() async {
     if (_submissionId == null) return;
-    await ref.read(assessmentProvider.notifier).saveAnswers(
+    await ref.read(studentAssessmentProvider.notifier).saveAnswers(
           SaveAnswersParams(
             submissionId: _submissionId!,
             answers: _buildAnswersPayload(),
@@ -228,7 +228,7 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
 
     if (_submissionId != null) {
       await ref
-          .read(assessmentProvider.notifier)
+          .read(studentAssessmentProvider.notifier)
           .submitAssessment(_submissionId!);
     }
 
@@ -254,18 +254,18 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
 
     if (_submissionId != null) {
       await ref
-          .read(assessmentProvider.notifier)
+          .read(studentAssessmentProvider.notifier)
           .submitAssessment(_submissionId!);
     }
 
-    final state = ref.read(assessmentProvider);
+    final state = ref.read(studentAssessmentProvider);
     if (mounted) {
       if (state.error != null) {
         setState(() {
           _isSubmitting = false;
           _formError = AppErrorMapper.toUserMessage(state.error);
         });
-        ref.read(assessmentProvider.notifier).clearMessages();
+        ref.read(studentAssessmentProvider.notifier).clearMessages();
         _startCountdown();
         _startAutoSave();
       } else {
@@ -281,14 +281,14 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(assessmentProvider);
+    final state = ref.watch(studentAssessmentProvider);
 
-    ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
+    ref.listen<StudentAssessmentState>(studentAssessmentProvider, (prev, next) {
       if (next.error != null &&
           prev?.error != next.error &&
           !_isSubmitting) {
         setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
-        ref.read(assessmentProvider.notifier).clearMessages();
+        ref.read(studentAssessmentProvider.notifier).clearMessages();
       }
     });
 
@@ -384,7 +384,7 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
     );
   }
 
-  Widget _buildLoadingOrErrorState(AssessmentState state) {
+  Widget _buildLoadingOrErrorState(StudentAssessmentState state) {
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(

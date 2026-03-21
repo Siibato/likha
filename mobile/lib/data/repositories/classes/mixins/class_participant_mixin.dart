@@ -9,9 +9,9 @@ import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:uuid/uuid.dart';
 
-mixin ClassEnrollmentMixin on ClassRepositoryBase {
+mixin ClassParticipantMixin on ClassRepositoryBase {
   @override
-  ResultFuture<Enrollment> addStudent({
+  ResultFuture<Participant> addStudent({
     required String classId,
     required String studentId,
   }) async {
@@ -32,23 +32,23 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
       // Server was thought reachable but API failed → fall back to offline queue
       return _addStudentOffline(classId, studentId);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
   }
 
-  Future<Right<Failure, Enrollment>> _addStudentOffline(
+  Future<Right<Failure, Participant>> _addStudentOffline(
     String classId,
     String studentId,
   ) async {
     // Prevent duplicate queue entries
     try {
-      final alreadyEnrolled = await localDataSource.getEnrolledStudentIds(classId);
-      if (alreadyEnrolled.contains(studentId)) {
+      final alreadyParticipating = await localDataSource.getParticipantIds(classId);
+      if (alreadyParticipating.contains(studentId)) {
         final cachedStudent = await localDataSource.getStudentById(studentId);
         final s = cachedStudent ?? _skeletonStudent(studentId);
-        return Right(Enrollment(id: '', student: s, joinedAt: DateTime.now()));
+        return Right(Participant(id: '', student: s, joinedAt: DateTime.now()));
       }
     } catch (_) {}
 
@@ -59,9 +59,9 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
 
     final studentModel = cachedStudent ?? _skeletonStudent(studentId);
 
-    String? enrollmentId;
+    String? participantId;
     try {
-      enrollmentId = await localDataSource.addStudentLocally(
+      participantId = await localDataSource.addStudentLocally(
         classId: classId,
         student: studentModel,
       );
@@ -76,7 +76,7 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
         'student_id': studentId,
         if (cachedStudent != null) 'student_username': cachedStudent.username,
         if (cachedStudent != null) 'student_full_name': cachedStudent.fullName,
-        if (enrollmentId != null) 'local_enrollment_id': enrollmentId,
+        if (participantId != null) 'local_enrollment_id': participantId,
       },
       status: SyncStatus.pending,
       retryCount: 0,
@@ -90,7 +90,7 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
       // Non-critical
     }
 
-    return Right(Enrollment(id: '', student: studentModel, joinedAt: DateTime.now()));
+    return Right(Participant(id: '', student: studentModel, joinedAt: DateTime.now()));
   }
 
   @override
@@ -115,7 +115,7 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
       // Server was thought reachable but API failed → fall back to offline queue
       return _removeStudentOffline(classId, studentId);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -180,9 +180,9 @@ mixin ClassEnrollmentMixin on ClassRepositoryBase {
   }
 
   @override
-  ResultFuture<List<User>> getEnrolledStudents({required String classId}) async {
+  ResultFuture<List<User>> getParticipants({required String classId}) async {
     try {
-      final students = await localDataSource.getCachedEnrolledStudents(classId);
+      final students = await localDataSource.getCachedParticipants(classId);
       return Right(students.cast<User>());
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));

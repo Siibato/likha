@@ -270,14 +270,14 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                         itemCount: classState.searchResults.length,
                         itemBuilder: (context, index) {
                           final student = classState.searchResults[index];
-                          final isEnrolled = classState.enrolledStudentIds.contains(student.id);
+                          final isParticipant = classState.participantIds.contains(student.id);
                           final isLoading = classState.loadingStudentIds.contains(student.id);
 
                           return StudentActionCard(
                             student: student,
-                            isEnrolled: isEnrolled,
+                            isParticipant: isParticipant,
                             isLoading: isLoading,
-                            onAdd: isEnrolled
+                            onAdd: isParticipant
                                 ? null
                                 : () {
                                     ref.read(classProvider.notifier).addStudent(
@@ -285,7 +285,7 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                                           studentId: student.id,
                                         );
                                   },
-                            onRemove: isEnrolled
+                            onRemove: isParticipant
                                 ? () {
                                     ref.read(classProvider.notifier).removeStudent(
                                           classId: widget.classId,

@@ -6,7 +6,7 @@ import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
-import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 
 class TeacherGradeComputationPage extends ConsumerStatefulWidget {
   final String classId;
@@ -38,7 +38,7 @@ class _TeacherGradeComputationPageState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(classProvider.notifier).loadClassDetail(widget.classId);
       ref.read(assignmentProvider.notifier).loadAssignments(widget.classId);
-      ref.read(assessmentProvider.notifier).loadAssessments(widget.classId);
+      ref.read(teacherAssessmentProvider.notifier).loadAssessments(widget.classId);
     });
   }
 

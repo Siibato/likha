@@ -31,7 +31,7 @@ class TaskCardSkeleton extends StatelessWidget {
           borderRadius:
               BorderRadius.circular(AppDimensions.kCardInnerRadius),
         ),
-        child: Row(
+        child: const Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Left color bar
@@ -40,7 +40,7 @@ class TaskCardSkeleton extends StatelessWidget {
               height: 70,
               borderRadius: 2,
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             // Content column
             Expanded(
               child: Column(
@@ -52,7 +52,7 @@ class TaskCardSkeleton extends StatelessWidget {
                     height: 14,
                     borderRadius: 4,
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   // Meta info
                   SkeletonBox(
                     width: double.infinity * 0.55,
@@ -63,7 +63,7 @@ class TaskCardSkeleton extends StatelessWidget {
               ),
             ),
             // Status badge
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             SkeletonBox(
               width: 60,
               height: 22,

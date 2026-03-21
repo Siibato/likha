@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/presentation/utils/formatters.dart';
 
 class AssessmentInfoCard extends StatelessWidget {
   final String? description;
@@ -25,31 +26,6 @@ class AssessmentInfoCard extends StatelessWidget {
     required this.canEdit,
     this.onEdit,
   });
-
-  String _formatDateTime(DateTime dt) {
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ];
-    final hour = dt.hour > 12
-        ? dt.hour - 12
-        : dt.hour == 0
-            ? 12
-            : dt.hour;
-    final minute = dt.minute.toString().padLeft(2, '0');
-    final period = dt.hour >= 12 ? 'PM' : 'AM';
-    return '${months[dt.month - 1]} ${dt.day}, ${dt.year} $hour:$minute $period';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -132,13 +108,13 @@ class AssessmentInfoCard extends StatelessWidget {
             _InfoRow(
               icon: Icons.calendar_today_rounded,
               label: 'Opens',
-              value: _formatDateTime(openAt),
+              value: formatDateTimeDisplay(openAt),
             ),
             const SizedBox(height: 10),
             _InfoRow(
               icon: Icons.event_rounded,
               label: 'Closes',
-              value: _formatDateTime(closeAt),
+              value: formatDateTimeDisplay(closeAt),
             ),
             const SizedBox(height: 10),
             _InfoRow(

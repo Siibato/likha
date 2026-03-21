@@ -24,7 +24,7 @@ mixin ClassQueryMixin on ClassRepositoryBase {
         return Right(freshClasses);
       }
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } on CacheException catch (e) {
@@ -57,7 +57,7 @@ mixin ClassQueryMixin on ClassRepositoryBase {
         return Right(freshClasses);
       }
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } on CacheException catch (e) {
@@ -83,7 +83,7 @@ mixin ClassQueryMixin on ClassRepositoryBase {
         } on CacheException {
           // No cache: try rebuilding from enrollments table
           try {
-            final rebuilt = await localDataSource.buildClassDetailFromEnrollments(classId);
+            final rebuilt = await localDataSource.buildClassDetailFromParticipants(classId);
             if (rebuilt != null) return Right(rebuilt);
             return const Left(CacheFailure('Class detail not available offline'));
           } catch (_) {

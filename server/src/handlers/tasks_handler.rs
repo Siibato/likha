@@ -8,15 +8,15 @@ use crate::middleware::auth_middleware::AuthUser;
 use crate::routes::tasks_routes::TasksState;
 use crate::schema::common::success_response;
 use crate::schema::tasks_schema::{TaskItemResponse, TaskListResponse};
-use crate::utils::error::AppError;
+use crate::utils::auth_guards::require_student;
 
 pub async fn get_student_tasks(
     State(state): State<Arc<TasksState>>,
     auth_user: AuthUser,
     Path(class_id): Path<Uuid>,
 ) -> impl IntoResponse {
-    if auth_user.role != "student" {
-        return AppError::Forbidden("Student access required".to_string()).into_response();
+    if let Err(r) = require_student(&auth_user) {
+        return r;
     }
 
     // Fetch published assignments with student submission data

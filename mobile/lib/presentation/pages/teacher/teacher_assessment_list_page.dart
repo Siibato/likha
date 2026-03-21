@@ -8,7 +8,7 @@ import 'package:likha/presentation/pages/teacher/create_assessment_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/empty_assessment_list_state.dart';
 import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
 import 'package:likha/presentation/pages/teacher/widgets/teacher_assessment_card.dart';
-import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
 
 class TeacherAssessmentListPage extends ConsumerStatefulWidget {
@@ -36,7 +36,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
       vsync: this,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(assessmentProvider.notifier).loadAssessments(widget.classId);
+      ref.read(teacherAssessmentProvider.notifier).loadAssessments(widget.classId);
     });
   }
 
@@ -54,7 +54,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
   }
 
   void _exitReorderMode() {
-    final notifier = ref.read(assessmentProvider.notifier);
+    final notifier = ref.read(teacherAssessmentProvider.notifier);
     notifier.reorderAllAssessments(
       classId: widget.classId,
       assessmentIds: _reorderBuffer.map((a) => a.id).toList(),
@@ -106,7 +106,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
           builder: (_) => AssessmentDetailPage(assessmentId: assessment.id),
         ),
       ).then((_) {
-        ref.read(assessmentProvider.notifier).loadAssessments(widget.classId);
+        ref.read(teacherAssessmentProvider.notifier).loadAssessments(widget.classId);
       }),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -200,13 +200,13 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
 
   @override
   Widget build(BuildContext context) {
-    final assessmentState = ref.watch(assessmentProvider);
+    final assessmentState = ref.watch(teacherAssessmentProvider);
 
     // Listen for sync completion to auto-refresh if data arrives after page opens
     ref.listen<SyncState>(syncProvider, (previous, next) {
       if (!(previous?.assessmentsReady ?? false) && next.assessmentsReady) {
         // Assessments just became ready in the DB — reload
-        ref.read(assessmentProvider.notifier).loadAssessments(widget.classId, skipBackgroundRefresh: true);
+        ref.read(teacherAssessmentProvider.notifier).loadAssessments(widget.classId, skipBackgroundRefresh: true);
       }
     });
 
@@ -216,7 +216,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
       body: SafeArea(
         child: Column(
           children: [
-            ClassSectionHeader(
+            const ClassSectionHeader(
               title: 'Assessments',
               showBackButton: true,
             ),
@@ -263,7 +263,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
                         ),
                       ).then((result) {
                         if (result == true) {
-                          ref.read(assessmentProvider.notifier).loadAssessments(widget.classId);
+                          ref.read(teacherAssessmentProvider.notifier).loadAssessments(widget.classId);
                         }
                       }),
                       style: ElevatedButton.styleFrom(
@@ -327,7 +327,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
                             )
                           : RefreshIndicator(
                               onRefresh: () => ref
-                                  .read(assessmentProvider.notifier)
+                                  .read(teacherAssessmentProvider.notifier)
                                   .loadAssessments(widget.classId),
                               color: const Color(0xFF2B2B2B),
                               child: ListView.builder(
@@ -345,7 +345,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
                                         ),
                                       ),
                                     ).then((_) => ref
-                                        .read(assessmentProvider.notifier)
+                                        .read(teacherAssessmentProvider.notifier)
                                         .loadAssessments(widget.classId)),
                                   );
                                 },

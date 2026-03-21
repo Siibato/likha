@@ -136,7 +136,7 @@ class StudentClassGradesNotifier extends StateNotifier<StudentClassGradesState> 
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: e.toString(),
+        error: 'Something went wrong. Please try again.',
       );
     }
   }

@@ -77,7 +77,7 @@ class AssignmentSubmissionModel extends AssignmentSubmission {
       gradedAt: map['graded_at'] != null
           ? DateTime.parse(map['graded_at'] as String)
           : null,
-      files: [],
+      files: const [],
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
       gradedBy: map['graded_by'] as String?,

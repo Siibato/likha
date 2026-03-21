@@ -153,7 +153,7 @@ class TeacherStudentDetailNotifier extends StateNotifier<TeacherStudentDetailSta
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: 'Error loading student details: ${e.toString()}',
+        error: 'Something went wrong. Please try again.',
       );
     }
   }

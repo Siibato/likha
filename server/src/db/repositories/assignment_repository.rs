@@ -128,14 +128,6 @@ impl AssignmentRepository {
             .map_err(|e| AppError::InternalServerError(format!("Failed to update assignment: {}", e)))
     }
 
-    pub async fn delete_assignment(&self, id: Uuid) -> AppResult<()> {
-        assignments_hw::Entity::delete_by_id(id)
-            .exec(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to delete assignment: {}", e)))?;
-        Ok(())
-    }
-
     pub async fn publish_assignment(&self, id: Uuid) -> AppResult<assignments_hw::Model> {
         let mut assignment: assignments_hw::ActiveModel = assignments_hw::Entity::find_by_id(id)
             .one(&self.db)
@@ -485,23 +477,7 @@ impl AssignmentRepository {
         Ok(result.flatten().unwrap_or(-1))
     }
 
-    pub async fn update_order_index(&self, id: Uuid, order_index: i32) -> AppResult<()> {
-        let assignment = assignments_hw::ActiveModel {
-            id: Set(id),
-            order_index: Set(order_index),
-            updated_at: Set(Utc::now().naive_utc()),
-            ..Default::default()
-        };
-
-        assignments_hw::Entity::update(assignment)
-            .exec(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to update order index: {}", e)))?;
-
-        Ok(())
-    }
-
-    pub async fn reorder_assignments(&self, class_id: Uuid, assignment_ids: Vec<Uuid>) -> AppResult<()> {
+    pub async fn reorder_assignments(&self, _class_id: Uuid, assignment_ids: Vec<Uuid>) -> AppResult<()> {
         for (index, id) in assignment_ids.iter().enumerate() {
             let assignment = assignments_hw::ActiveModel {
                 id: Set(*id),

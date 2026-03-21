@@ -78,10 +78,10 @@ class _StudentTasksPageState extends ConsumerState<StudentTasksPage> {
                     ),
                   )
                 : taskState.tasks.isEmpty
-                    ? Center(
+                    ? const Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
+                          children: [
                             Icon(
                               Icons.assignment_outlined,
                               size: 64,

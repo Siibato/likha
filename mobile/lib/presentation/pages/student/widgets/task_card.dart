@@ -80,7 +80,7 @@ class TaskCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: _kBlack.withOpacity(0.08),
+        color: _kBlack.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Container(
@@ -136,7 +136,7 @@ class TaskCard extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: _kBlack.withOpacity(0.06),
+                                color: _kBlack.withValues(alpha: 0.06),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -144,7 +144,7 @@ class TaskCard extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: _kBlack.withOpacity(0.5),
+                                  color: _kBlack.withValues(alpha: 0.5),
                                 ),
                               ),
                             ),
@@ -152,7 +152,7 @@ class TaskCard extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: _kBlue.withOpacity(0.12),
+                                color: _kBlue.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -175,7 +175,7 @@ class TaskCard extends StatelessWidget {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: _kBlack.withOpacity(0.06),
+                                  color: _kBlack.withValues(alpha: 0.06),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
@@ -183,7 +183,7 @@ class TaskCard extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
-                                    color: _kBlack.withOpacity(0.5),
+                                    color: _kBlack.withValues(alpha: 0.5),
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -198,7 +198,7 @@ class TaskCard extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
-                                    color: _kBlack.withOpacity(0.4),
+                                    color: _kBlack.withValues(alpha: 0.4),
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
@@ -211,7 +211,7 @@ class TaskCard extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
-                                    color: _kBlack.withOpacity(0.4),
+                                    color: _kBlack.withValues(alpha: 0.4),
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
@@ -236,7 +236,7 @@ class TaskCard extends StatelessWidget {
                         if (status == TaskStatus.graded && score != null)
                           Text(
                             '$score/$totalPoints',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
                               color: _kWhite,
@@ -247,7 +247,7 @@ class TaskCard extends StatelessWidget {
                         else
                           Text(
                             _getStatusLabel(),
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
                               color: _kWhite,

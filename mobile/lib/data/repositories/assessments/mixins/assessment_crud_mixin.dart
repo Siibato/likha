@@ -160,7 +160,7 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
 
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -238,7 +238,7 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
       await localDataSource.cacheAssessments([result]);
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -268,7 +268,7 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
       await localDataSource.deleteAssessmentLocally(assessmentId: assessmentId);
       return const Right(null);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -303,7 +303,7 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
       );
       return const Right(null);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {

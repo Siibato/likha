@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/domain/auth/entities/user.dart';
@@ -9,7 +10,7 @@ import 'package:likha/domain/classes/usecases/add_student.dart';
 import 'package:likha/domain/classes/usecases/create_class.dart';
 import 'package:likha/domain/classes/usecases/get_all_classes.dart';
 import 'package:likha/domain/classes/usecases/get_class_detail.dart';
-import 'package:likha/domain/classes/usecases/get_enrolled_students.dart';
+import 'package:likha/domain/classes/usecases/get_participants.dart';
 import 'package:likha/domain/classes/usecases/get_my_classes.dart';
 import 'package:likha/domain/classes/usecases/remove_student.dart';
 import 'package:likha/domain/classes/usecases/search_students.dart';
@@ -23,7 +24,7 @@ class ClassState {
   final bool isLoading;
   final String? error;
   final String? successMessage;
-  final Set<String> enrolledStudentIds; // ids of students enrolled in currentClassDetail
+  final Set<String> participantIds; // ids of students enrolled in currentClassDetail
   final Set<String> loadingStudentIds; // ids of students being added/removed
 
   ClassState({
@@ -33,7 +34,7 @@ class ClassState {
     this.isLoading = false,
     this.error,
     this.successMessage,
-    this.enrolledStudentIds = const {},
+    this.participantIds = const {},
     this.loadingStudentIds = const {},
   });
 
@@ -44,7 +45,7 @@ class ClassState {
     bool? isLoading,
     String? error,
     String? successMessage,
-    Set<String>? enrolledStudentIds,
+    Set<String>? participantIds,
     Set<String>? loadingStudentIds,
     bool clearError = false,
     bool clearSuccess = false,
@@ -61,7 +62,7 @@ class ClassState {
       error: clearError ? null : (error ?? this.error),
       successMessage:
           clearSuccess ? null : (successMessage ?? this.successMessage),
-      enrolledStudentIds: clearEnrolled ? {} : (enrolledStudentIds ?? this.enrolledStudentIds),
+      participantIds: clearEnrolled ? {} : (participantIds ?? this.participantIds),
       loadingStudentIds: loadingStudentIds ?? this.loadingStudentIds,
     );
   }
@@ -76,7 +77,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
   final AddStudent _addStudent;
   final RemoveStudent _removeStudent;
   final SearchStudents _searchStudents;
-  final GetEnrolledStudents _getEnrolledStudents;
+  final GetParticipants _getParticipants;
 
   late StreamSubscription<void> _refreshSub;
   bool _isAdminMode = false;
@@ -90,7 +91,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
     this._addStudent,
     this._removeStudent,
     this._searchStudents,
-    this._getEnrolledStudents,
+    this._getParticipants,
   ) : super(ClassState()) {
     _refreshSub = sl<DataEventBus>().onClassesChanged.listen((_) {
       if (_isAdminMode) {
@@ -110,7 +111,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: failure.message,
+        error: AppErrorMapper.fromFailure(failure),
       ),
       (classes) => state = state.copyWith(
         isLoading: false,
@@ -128,7 +129,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: failure.message,
+        error: AppErrorMapper.fromFailure(failure),
       ),
       (classes) => state = state.copyWith(
         isLoading: false,
@@ -157,7 +158,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: failure.message,
+        error: AppErrorMapper.fromFailure(failure),
       ),
       (newClass) => state = state.copyWith(
         isLoading: false,
@@ -181,7 +182,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
         state = state.copyWith(
           isLoading: false,
           currentClassDetail: detail,
-          enrolledStudentIds: ids,
+          participantIds: ids,
         );
       },
     );
@@ -190,14 +191,10 @@ class ClassNotifier extends StateNotifier<ClassState> {
     if (result.isLeft()) {
       final failure = result.fold((f) => f, (d) => null);
       if (failure != null) {
-        // For offline cache misses, don't show error - user can still see cached students
-        // Only show error for actual server issues
-        final showError = !failure.message.contains('offline') &&
-                         !failure.message.contains('Cache');
-
+        // Type-safe error mapping: NetworkFailure and CacheFailure naturally return null
         state = state.copyWith(
           isLoading: false,
-          error: showError ? failure.message : null,
+          error: AppErrorMapper.fromFailure(failure),
         );
       }
     }
@@ -219,7 +216,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: failure.message,
+        error: AppErrorMapper.fromFailure(failure),
       ),
       (updatedClass) {
         // Update the class in the classes list
@@ -269,7 +266,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
 
     // Optimistic update: immediately show student as added
     if (currentDetail != null) {
-      final optimisticEnrollment = Enrollment(
+      final optimisticParticipant = Participant(
         id: 'temp_${studentToAdd.id}', // Temporary ID that will be updated on sync
         student: studentToAdd,
         joinedAt: DateTime.now(),
@@ -281,14 +278,14 @@ class ClassNotifier extends StateNotifier<ClassState> {
         description: currentDetail.description,
         teacherId: currentDetail.teacherId,
         isArchived: currentDetail.isArchived,
-        students: [optimisticEnrollment, ...currentDetail.students],
+        students: [optimisticParticipant, ...currentDetail.students],
         createdAt: currentDetail.createdAt,
         updatedAt: currentDetail.updatedAt,
       );
 
       state = state.copyWith(
         currentClassDetail: updatedDetail,
-        enrolledStudentIds: {...state.enrolledStudentIds, studentId},
+        participantIds: {...state.participantIds, studentId},
       );
     }
 
@@ -314,19 +311,19 @@ class ClassNotifier extends StateNotifier<ClassState> {
           );
           state = state.copyWith(
             currentClassDetail: revertedDetail,
-            enrolledStudentIds: Set<String>.from(state.enrolledStudentIds)..remove(studentId),
-            error: failure.message,
+            participantIds: Set<String>.from(state.participantIds)..remove(studentId),
+            error: AppErrorMapper.fromFailure(failure),
             loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
           );
         } else {
           state = state.copyWith(
-            error: failure.message,
+            error: AppErrorMapper.fromFailure(failure),
             loadingStudentIds: state.loadingStudentIds..remove(studentId),
           );
         }
       },
-      (enrollment) {
-        // On success, update with real enrollment data from server
+      (participant) {
+        // On success, update with real participant data from server
         if (currentDetail != null) {
           final updatedDetail = ClassDetail(
             id: currentDetail.id,
@@ -335,9 +332,9 @@ class ClassNotifier extends StateNotifier<ClassState> {
             teacherId: currentDetail.teacherId,
             isArchived: currentDetail.isArchived,
             students: currentDetail.students.map((s) {
-              // Replace temp enrollment with real one
+              // Replace temp participant with real one
               if (s.id.startsWith('temp_') && s.student.id == studentId) {
-                return enrollment;
+                return participant;
               }
               return s;
             }).toList(),
@@ -373,7 +370,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
 
     final currentDetail = state.currentClassDetail;
     final removedStudent = currentDetail?.students
-        .cast<Enrollment?>()
+        .cast<Participant?>()
         .firstWhere((e) => e?.student.id == studentId, orElse: () => null);
 
     // Optimistic update: immediately remove the student
@@ -392,7 +389,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
       );
       state = state.copyWith(
         currentClassDetail: updatedDetail,
-        enrolledStudentIds: Set<String>.from(state.enrolledStudentIds)..remove(studentId),
+        participantIds: Set<String>.from(state.participantIds)..remove(studentId),
       );
     }
 
@@ -408,13 +405,13 @@ class ClassNotifier extends StateNotifier<ClassState> {
         if (currentDetail != null && removedStudent != null) {
           state = state.copyWith(
             currentClassDetail: currentDetail, // Restore original detail
-            enrolledStudentIds: Set<String>.from(state.enrolledStudentIds)..add(studentId),
-            error: failure.message,
+            participantIds: Set<String>.from(state.participantIds)..add(studentId),
+            error: AppErrorMapper.fromFailure(failure),
             loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
           );
         } else {
           state = state.copyWith(
-            error: failure.message,
+            error: AppErrorMapper.fromFailure(failure),
             loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
           );
         }
@@ -439,7 +436,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: failure.message,
+        error: AppErrorMapper.fromFailure(failure),
       ),
       (students) => state = state.copyWith(
         isLoading: false,
@@ -448,11 +445,11 @@ class ClassNotifier extends StateNotifier<ClassState> {
     );
   }
 
-  Future<void> loadEnrolledStudentsOffline(String classId) async {
+  Future<void> loadParticipantsOffline(String classId) async {
     state = state.copyWith(isLoading: true, clearError: true);
-    final result = await _getEnrolledStudents(classId: classId);
+    final result = await _getParticipants(classId: classId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (students) => state = state.copyWith(isLoading: false, searchResults: students),
     );
   }
@@ -482,6 +479,6 @@ final classProvider = StateNotifierProvider<ClassNotifier, ClassState>((ref) {
     sl<AddStudent>(),
     sl<RemoveStudent>(),
     sl<SearchStudents>(),
-    sl<GetEnrolledStudents>(),
+    sl<GetParticipants>(),
   );
 });

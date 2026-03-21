@@ -10,7 +10,6 @@ use crate::services::entitlement::EntitlementService;
 pub struct DeltaRequest {
     pub device_id: String,
     pub last_sync_at: String, // ISO8601
-    pub data_expiry_at: Option<String>,
 }
 
 /// Entity deltas (updated and deleted records)

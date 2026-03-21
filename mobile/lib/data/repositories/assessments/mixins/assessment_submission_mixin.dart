@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:dartz/dartz.dart';
+import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -38,9 +40,9 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
         } on CacheException {
           // No cache available
         }
-        return Left(NetworkFailure('No network connection and no cached submissions'));
+        return const Left(NetworkFailure('No network connection and no cached submissions'));
       } on ServerException catch (e) {
-        return Left(ServerFailure(e.message));
+        return Left(ServerFailure(e.message, statusCode: e.statusCode));
       }
     } catch (e) {
       return Left(ServerFailure(e.toString()));
@@ -66,7 +68,7 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
       unawaited(localDataSource.cacheSubmissionDetail(result));
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -100,7 +102,7 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
           answerId: answerId, isCorrect: isCorrect);
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -130,7 +132,7 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
         return Left(ServerFailure(e.message));
       }
     } catch (e) {
-      return Left(CacheFailure('Statistics not available offline'));
+      return const Left(CacheFailure('Statistics not available offline'));
     }
   }
 
@@ -158,20 +160,20 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
     required String studentUsername,
   }) async {
     try {
-      print('🚀 [Repo] startAssessment() - assessmentId: $assessmentId, studentId: $studentId, serverReachable: ${serverReachabilityService.isServerReachable}');
+      RepoLogger.instance.log('startAssessment() - assessmentId: $assessmentId, studentId: $studentId, serverReachable: ${serverReachabilityService.isServerReachable}');
 
       if (!serverReachabilityService.isServerReachable) {
-        print('🚀 [Repo] startAssessment() - OFFLINE PATH');
+        RepoLogger.instance.log('startAssessment() - OFFLINE PATH');
         try {
           // Guard: check for existing in-progress submission before creating a duplicate
           final existingSubmission = await localDataSource.getCachedStudentSubmission(
             assessmentId,
             studentId,
           );
-          print('🚀 [Repo] startAssessment() - existingSubmission: $existingSubmission');
+          RepoLogger.instance.log('startAssessment() - existingSubmission: $existingSubmission');
 
           if (existingSubmission != null && !existingSubmission.isSubmitted) {
-            print('🚀 [Repo] startAssessment() - RESUMING EXISTING SUBMISSION ${existingSubmission.id}');
+            RepoLogger.instance.log('startAssessment() - RESUMING EXISTING SUBMISSION ${existingSubmission.id}');
             // Return the existing submission — resume it, don't create a new one
             final (_, questions) =
                 await localDataSource.getCachedAssessmentDetail(assessmentId);
@@ -200,7 +202,7 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
             ));
           }
 
-          print('🚀 [Repo] startAssessment() - CREATING NEW OFFLINE SUBMISSION');
+          RepoLogger.instance.log('startAssessment() - CREATING NEW OFFLINE SUBMISSION');
           final (_, questions) =
               await localDataSource.getCachedAssessmentDetail(assessmentId);
           final localId = await localDataSource.startAssessmentLocally(
@@ -236,23 +238,23 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
             questions: questionMaps,
           ));
         } on CacheException catch (e) {
-          print('❌ [Repo] startAssessment() OFFLINE ERROR: $e');
+          RepoLogger.instance.error('startAssessment() OFFLINE ERROR', e);
           return Left(
               CacheFailure('Assessment not available offline: ${e.message}'));
         }
       }
 
-      print('🚀 [Repo] startAssessment() - ONLINE PATH - STARTING');
+      RepoLogger.instance.log('startAssessment() - ONLINE PATH - STARTING');
 
       // Guard: check for existing in-progress submission before calling server
       final existingSubmission = await localDataSource.getCachedStudentSubmission(
         assessmentId,
         studentId,
       );
-      print('🚀 [Repo] startAssessment() - ONLINE PATH - existingSubmission: $existingSubmission');
+      RepoLogger.instance.log('startAssessment() - ONLINE PATH - existingSubmission: $existingSubmission');
 
       if (existingSubmission != null && !existingSubmission.isSubmitted) {
-        print('🚀 [Repo] startAssessment() - ONLINE PATH - RESUMING EXISTING SUBMISSION ${existingSubmission.id}');
+        RepoLogger.instance.log('startAssessment() - ONLINE PATH - RESUMING EXISTING SUBMISSION ${existingSubmission.id}');
         // Return the existing submission — resume it, don't call server
         final (_, questions) =
             await localDataSource.getCachedAssessmentDetail(assessmentId);
@@ -283,14 +285,14 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
 
       // ✅ If submission exists AND is submitted, don't hit server
       if (existingSubmission != null && existingSubmission.isSubmitted) {
-        print('🚀 [Repo] startAssessment() - ONLINE PATH - SUBMISSION ALREADY SUBMITTED');
-        return Left(const ServerFailure('Assessment already submitted'));
+        RepoLogger.instance.log('startAssessment() - ONLINE PATH - SUBMISSION ALREADY SUBMITTED');
+        return const Left(ServerFailure('Assessment already submitted'));
       }
 
-      print('🚀 [Repo] startAssessment() - ONLINE PATH - NO EXISTING SUBMISSION, CALLING SERVER');
+      RepoLogger.instance.log('startAssessment() - ONLINE PATH - NO EXISTING SUBMISSION, CALLING SERVER');
       final result =
           await remoteDataSource.startAssessment(assessmentId: assessmentId);
-      print('🚀 [Repo] startAssessment() - ONLINE SUCCESS - submissionId: ${result.submissionId}');
+      RepoLogger.instance.log('startAssessment() - ONLINE SUCCESS - submissionId: ${result.submissionId}');
 
       await localDataSource.cacheStartSubmissionResult(
         submissionId: result.submissionId,
@@ -303,13 +305,13 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
 
       return Right(result);
     } on ServerException catch (e) {
-      print('❌ [Repo] startAssessment() SERVER ERROR: ${e.message}');
+      RepoLogger.instance.error('startAssessment() SERVER ERROR', e);
       return Left(ServerFailure(e.message));
     } on NetworkException catch (e) {
-      print('❌ [Repo] startAssessment() NETWORK ERROR: ${e.message}');
+      RepoLogger.instance.error('startAssessment() NETWORK ERROR', e);
       return Left(NetworkFailure(e.message));
     } catch (e) {
-      print('❌ [Repo] startAssessment() UNEXPECTED ERROR: $e');
+      RepoLogger.instance.error('startAssessment() UNEXPECTED ERROR', e);
       return Left(ServerFailure(e.toString()));
     }
   }
@@ -332,7 +334,7 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
           submissionId: submissionId, answers: answers);
       return const Right(null);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -344,10 +346,10 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
   ResultFuture<SubmissionSummary> submitAssessment({
     required String submissionId,
   }) async {
-    print('📤 [Repo] submitAssessment() START - submissionId: $submissionId, serverReachable: ${serverReachabilityService.isServerReachable}');
+    RepoLogger.instance.log('submitAssessment() START - submissionId: $submissionId, serverReachable: ${serverReachabilityService.isServerReachable}');
     try {
       if (!serverReachabilityService.isServerReachable) {
-        print('📤 [Repo] submitAssessment() - OFFLINE PATH');
+        RepoLogger.instance.log('submitAssessment() - OFFLINE PATH');
         final cached =
             await localDataSource.getCachedSubmissionDetail(submissionId);
         final assessmentId = cached?.assessmentId ?? '';
@@ -387,16 +389,16 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
       final result =
           await remoteDataSource.submitAssessment(submissionId: submissionId);
 
-      print('🔄 [Repo] submitAssessment() ONLINE - caching result immediately');
+      RepoLogger.instance.log('submitAssessment() ONLINE - caching result immediately');
 
       // ✅ Immediately cache the submission with updated is_submitted=true and submitted_at timestamp
       try {
         // Get the assessmentId from cached submission
         final cachedSubmission = await localDataSource.getCachedSubmissionDetail(submissionId);
-        print('💾 [Repo] submitAssessment() - retrieved cachedSubmission: id=${cachedSubmission?.id}, isSubmitted=${cachedSubmission?.isSubmitted}');
+        RepoLogger.instance.log('submitAssessment() - retrieved cachedSubmission: id=${cachedSubmission?.id}, isSubmitted=${cachedSubmission?.isSubmitted}');
 
         if (cachedSubmission != null) {
-          print('💾 [Repo] submitAssessment() - about to cache with: isSubmitted=true, submittedAt=${result.submittedAt}');
+          RepoLogger.instance.log('submitAssessment() - about to cache with: isSubmitted=true, submittedAt=${result.submittedAt}');
 
           final modelToCache = SubmissionDetailModel(
             id: result.id,
@@ -412,21 +414,20 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
             answers: cachedSubmission.answers, // ← Preserve existing answers
           );
 
-          print('💾 [Repo] submitAssessment() - SubmissionDetailModel created: isSubmitted=${modelToCache.isSubmitted}, submittedAt=${modelToCache.submittedAt}');
+          RepoLogger.instance.log('submitAssessment() - SubmissionDetailModel created: isSubmitted=${modelToCache.isSubmitted}, submittedAt=${modelToCache.submittedAt}');
 
           await localDataSource.cacheSubmissionDetail(modelToCache);
 
-          print('✅ [Repo] submitAssessment() - SUCCESSFULLY cached submission with is_submitted=true');
+          RepoLogger.instance.log('submitAssessment() - SUCCESSFULLY cached submission with is_submitted=true');
 
           // Verify what was cached
           final verifyCache = await localDataSource.getCachedSubmissionDetail(submissionId);
-          print('✅ [Repo] submitAssessment() - VERIFICATION: cached submission now has isSubmitted=${verifyCache?.isSubmitted}, submittedAt=${verifyCache?.submittedAt}');
+          RepoLogger.instance.log('submitAssessment() - VERIFICATION: cached submission now has isSubmitted=${verifyCache?.isSubmitted}, submittedAt=${verifyCache?.submittedAt}');
         } else {
-          print('❌ [Repo] submitAssessment() - cachedSubmission was NULL, cannot cache');
+          RepoLogger.instance.warn('submitAssessment() - cachedSubmission was NULL, cannot cache');
         }
       } catch (e, st) {
-        print('❌ [Repo] submitAssessment() ONLINE - EXCEPTION during cache: $e');
-        print('❌ [Repo] submitAssessment() - STACK TRACE: $st');
+        RepoLogger.instance.error('submitAssessment() ONLINE - EXCEPTION during cache', e);
         // Non-fatal: submission succeeded on server, caching failed
         // Sync will update it later
       }
@@ -439,21 +440,21 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
           final assessmentDetail = await localDataSource
               .getCachedAssessmentDetail(cached.assessmentId);
           if (assessmentDetail.$1.showResultsImmediately == true) {
-            print('🔄 [Repo] submitAssessment() ONLINE - showResultsImmediately=true, fetching student results');
+            RepoLogger.instance.log('submitAssessment() ONLINE - showResultsImmediately=true, fetching student results');
             final studentResults =
                 await remoteDataSource.getStudentResults(submissionId: submissionId);
             await localDataSource.cacheStudentResults(studentResults);
-            print('🔄 [Repo] submitAssessment() ONLINE - cached student results');
+            RepoLogger.instance.log('submitAssessment() ONLINE - cached student results');
           }
         }
       } catch (e) {
-        print('⚠️  [Repo] submitAssessment() ONLINE - failed to cache student results: $e');
+        RepoLogger.instance.warn('submitAssessment() ONLINE - failed to cache student results', e);
         // Silently fail — don't block submission if result caching fails
       }
 
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -483,7 +484,7 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
         return Left(ServerFailure(e.message));
       }
     } catch (e) {
-      return Left(const CacheFailure('Student results not available offline'));
+      return const Left(CacheFailure('Student results not available offline'));
     }
   }
 }

@@ -15,7 +15,7 @@ impl super::AuthService {
     pub async fn lock_account(
         &self,
         request: crate::schema::auth_schema::LockAccountRequest,
-        admin_id: Uuid,
+        _admin_id: Uuid,
     ) -> AppResult<UserResponse> {
         let user = self
             .user_repo

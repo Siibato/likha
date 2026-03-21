@@ -109,7 +109,7 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
       await localDataSource.cacheAssignments([result]);
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -185,7 +185,7 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
       await localDataSource.cacheAssignments([result]);
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -217,7 +217,7 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
       await localDataSource.deleteAssignmentLocal(assignmentId: assignmentId);
       return const Right(null);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -269,7 +269,7 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
       );
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -309,7 +309,7 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
       );
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -344,7 +344,7 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
       );
       return const Right(null);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {

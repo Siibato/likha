@@ -1,3 +1,4 @@
+import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/assessments/assessment_model.dart';
 import 'package:likha/data/models/assessments/question_model.dart';
@@ -9,13 +10,13 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final where = publishedOnly
-          ? 'class_id = ? AND is_published = 1 AND deleted_at IS NULL'
-          : 'class_id = ? AND deleted_at IS NULL';
+          ? '${AssessmentsCols.classId} = ? AND ${AssessmentsCols.isPublished} = 1 AND ${CommonCols.deletedAt} IS NULL'
+          : '${AssessmentsCols.classId} = ? AND ${CommonCols.deletedAt} IS NULL';
       final results = await db.query(
-        'assessments',
+        DbTables.assessments,
         where: where,
         whereArgs: [classId],
-        orderBy: 'order_index ASC',
+        orderBy: '${AssessmentsCols.orderIndex} ASC',
       );
       if (results.isEmpty) return [];
 
@@ -25,14 +26,14 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
       for (final result in results) {
         final assessment = AssessmentModel.fromMap(result);
         final statsResult = await db.rawQuery(
-          'SELECT COUNT(*) as count, SUM(points) as total_points FROM assessment_questions WHERE assessment_id = ? AND deleted_at IS NULL',
+          'SELECT COUNT(*) as count, SUM(points) as total_points FROM ${DbTables.assessmentQuestions} WHERE assessment_id = ? AND deleted_at IS NULL',
           [assessment.id],
         );
         final actualCount = statsResult.first['count'] as int? ?? 0;
         final computedTotalPoints = statsResult.first['total_points'] as int? ?? 0;
 
         final subCountResult = await db.rawQuery(
-          'SELECT COUNT(*) as count FROM assessment_submissions WHERE assessment_id = ? AND deleted_at IS NULL',
+          'SELECT COUNT(*) as count FROM ${DbTables.assessmentSubmissions} WHERE assessment_id = ? AND deleted_at IS NULL',
           [assessment.id],
         );
         final liveSubCount = subCountResult.first['count'] as int? ?? 0;
@@ -76,18 +77,18 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final assessmentResults = await db.query(
-        'assessments',
-        where: 'id = ? AND deleted_at IS NULL',
+        DbTables.assessments,
+        where: '${CommonCols.id} = ? AND ${CommonCols.deletedAt} IS NULL',
         whereArgs: [assessmentId],
       );
       if (assessmentResults.isEmpty) throw CacheException('Assessment $assessmentId not cached');
 
       final assessment = AssessmentModel.fromMap(assessmentResults.first);
       final questionResults = await db.query(
-        'assessment_questions',
-        where: 'assessment_id = ? AND deleted_at IS NULL',
+        DbTables.assessmentQuestions,
+        where: '${AssessmentQuestionsCols.assessmentId} = ? AND ${CommonCols.deletedAt} IS NULL',
         whereArgs: [assessmentId],
-        orderBy: 'order_index ASC',
+        orderBy: '${AssessmentQuestionsCols.orderIndex} ASC',
       );
 
       final questions = <QuestionModel>[];
@@ -96,10 +97,10 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
 
         // Fetch choices for this question
         final choicesResults = await db.query(
-          'question_choices',
-          where: 'question_id = ?',
+          DbTables.questionChoices,
+          where: '${QuestionChoicesCols.questionId} = ?',
           whereArgs: [questionId],
-          orderBy: 'order_index ASC',
+          orderBy: '${QuestionChoicesCols.orderIndex} ASC',
         );
 
         final choices = choicesResults.map((c) {
@@ -113,9 +114,9 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
 
         // Fetch answer keys and acceptable answers for this question
         final answerKeysResults = await db.query(
-          'answer_keys',
-          columns: ['id', 'item_type'],
-          where: 'question_id = ?',
+          DbTables.answerKeys,
+          columns: [CommonCols.id, AnswerKeysCols.itemType],
+          where: '${AnswerKeysCols.questionId} = ?',
           whereArgs: [questionId],
         );
 
@@ -126,12 +127,12 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
           final answerKeyId = answerKey['id'] as String;
           final itemType = answerKey['item_type'] as String? ?? 'correct_answer';
           final acceptableAnswersResults = await db.query(
-            'answer_key_acceptable_answers',
-            where: 'answer_key_id = ?',
+            DbTables.answerKeyAcceptableAnswers,
+            where: '${AnswerKeyAcceptableAnswersCols.answerKeyId} = ?',
             whereArgs: [answerKeyId],
           );
 
-          if (itemType == 'enumeration_item') {
+          if (itemType == DbValues.itemTypeEnumerationItem) {
             // Always include enumeration items — students have no acceptable_answers, but count is still needed
             enumerationItems.add({
               'id': answerKeyId,
@@ -176,7 +177,7 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
 
       // Compute dynamic submission count from submissions table (E9: fixes stale cache guard)
       final countResult = await db.rawQuery(
-        'SELECT COUNT(*) as count FROM assessment_submissions WHERE assessment_id = ? AND deleted_at IS NULL',
+        'SELECT COUNT(*) as count FROM ${DbTables.assessmentSubmissions} WHERE assessment_id = ? AND deleted_at IS NULL',
         [assessmentId],
       );
       final liveSubmissionCount = (countResult.first['count'] as int?) ?? 0;

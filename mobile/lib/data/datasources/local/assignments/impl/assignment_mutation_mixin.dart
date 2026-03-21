@@ -1,3 +1,4 @@
+import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:uuid/uuid.dart';
@@ -17,17 +18,17 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
       final now = DateTime.now();
       await db.transaction((txn) async {
         await txn.insert(
-          'assignment_submissions',
+          DbTables.assignmentSubmissions,
           {
-            'id': submissionId,
-            'assignment_id': assignmentId,
-            'student_id': studentId,
-            'status': 'draft',
-            'text_content': textContent ?? '',
-            'created_at': now.toIso8601String(),
-            'updated_at': now.toIso8601String(),
-            'cached_at': now.toIso8601String(),
-            'needs_sync': 1,
+            CommonCols.id: submissionId,
+            AssignmentSubmissionsCols.assignmentId: assignmentId,
+            AssignmentSubmissionsCols.studentId: studentId,
+            AssignmentSubmissionsCols.status: DbValues.statusDraft,
+            AssignmentSubmissionsCols.textContent: textContent ?? '',
+            CommonCols.createdAt: now.toIso8601String(),
+            CommonCols.updatedAt: now.toIso8601String(),
+            CommonCols.cachedAt: now.toIso8601String(),
+            CommonCols.needsSync: 1,
           },
         );
         await syncQueue.enqueue(SyncQueueEntry(
@@ -57,14 +58,14 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
       final now = DateTime.now();
       await db.transaction((txn) async {
         await txn.update(
-          'assignment_submissions',
+          DbTables.assignmentSubmissions,
           {
-            'text_content': textContent,
-            'updated_at': now.toIso8601String(),
-            'needs_sync': 1,
-            'cached_at': now.toIso8601String(),
+            AssignmentSubmissionsCols.textContent: textContent,
+            CommonCols.updatedAt: now.toIso8601String(),
+            CommonCols.needsSync: 1,
+            CommonCols.cachedAt: now.toIso8601String(),
           },
-          where: 'id = ?',
+          where: '${CommonCols.id} = ?',
           whereArgs: [submissionId],
         );
         await syncQueue.enqueue(SyncQueueEntry(
@@ -94,24 +95,24 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
 
       // Fetch current text_content before closing transaction
       final result = await db.query(
-        'assignment_submissions',
-        columns: ['text_content'],
-        where: 'id = ?',
+        DbTables.assignmentSubmissions,
+        columns: [AssignmentSubmissionsCols.textContent],
+        where: '${CommonCols.id} = ?',
         whereArgs: [submissionId],
       );
-      final textContent = result.isNotEmpty ? result.first['text_content'] as String? : null;
+      final textContent = result.isNotEmpty ? result.first[AssignmentSubmissionsCols.textContent] as String? : null;
 
       await db.transaction((txn) async {
         await txn.update(
-          'assignment_submissions',
+          DbTables.assignmentSubmissions,
           {
-            'status': 'submitted',
-            'submitted_at': now.toIso8601String(),
-            'updated_at': now.toIso8601String(),
-            'needs_sync': 1,
-            'cached_at': now.toIso8601String(),
+            AssignmentSubmissionsCols.status: DbValues.statusSubmitted,
+            AssignmentSubmissionsCols.submittedAt: now.toIso8601String(),
+            CommonCols.updatedAt: now.toIso8601String(),
+            CommonCols.needsSync: 1,
+            CommonCols.cachedAt: now.toIso8601String(),
           },
-          where: 'id = ?',
+          where: '${CommonCols.id} = ?',
           whereArgs: [submissionId],
         );
         await syncQueue.enqueue(SyncQueueEntry(
@@ -145,17 +146,17 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
       final now = DateTime.now();
       await db.transaction((txn) async {
         await txn.update(
-          'assignment_submissions',
+          DbTables.assignmentSubmissions,
           {
-            'points': score,
-            'feedback': feedback,
-            'graded_at': now.toIso8601String(),
-            'status': 'graded',
-            'needs_sync': 1,
-            'updated_at': now.toIso8601String(),
-            'cached_at': now.toIso8601String(),
+            AssignmentSubmissionsCols.points: score,
+            AssignmentSubmissionsCols.feedback: feedback,
+            AssignmentSubmissionsCols.gradedAt: now.toIso8601String(),
+            AssignmentSubmissionsCols.status: DbValues.statusGraded,
+            CommonCols.needsSync: 1,
+            CommonCols.updatedAt: now.toIso8601String(),
+            CommonCols.cachedAt: now.toIso8601String(),
           },
-          where: 'id = ?',
+          where: '${CommonCols.id} = ?',
           whereArgs: [submissionId],
         );
         await syncQueue.enqueue(SyncQueueEntry(
@@ -187,14 +188,14 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
       final now = DateTime.now();
       await db.transaction((txn) async {
         await txn.update(
-          'assignment_submissions',
+          DbTables.assignmentSubmissions,
           {
-            'status': 'returned',
-            'needs_sync': 1,
-            'updated_at': now.toIso8601String(),
-            'cached_at': now.toIso8601String(),
+            AssignmentSubmissionsCols.status: DbValues.statusReturned,
+            CommonCols.needsSync: 1,
+            CommonCols.updatedAt: now.toIso8601String(),
+            CommonCols.cachedAt: now.toIso8601String(),
           },
-          where: 'id = ?',
+          where: '${CommonCols.id} = ?',
           whereArgs: [submissionId],
         );
         await syncQueue.enqueue(SyncQueueEntry(
@@ -220,14 +221,14 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
       final now = DateTime.now();
       await db.transaction((txn) async {
         await txn.update(
-          'assignments',
+          DbTables.assignments,
           {
-            'is_published': 1,
-            'updated_at': now.toIso8601String(),
-            'cached_at': now.toIso8601String(),
-            'needs_sync': 1,
+            AssignmentsCols.isPublished: 1,
+            CommonCols.updatedAt: now.toIso8601String(),
+            CommonCols.cachedAt: now.toIso8601String(),
+            CommonCols.needsSync: 1,
           },
-          where: 'id = ?',
+          where: '${CommonCols.id} = ?',
           whereArgs: [assignmentId],
         );
         await syncQueue.enqueue(SyncQueueEntry(
@@ -253,14 +254,14 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
       final now = DateTime.now();
       await db.transaction((txn) async {
         await txn.update(
-          'assignments',
+          DbTables.assignments,
           {
-            'is_published': 0,
-            'updated_at': now.toIso8601String(),
-            'cached_at': now.toIso8601String(),
-            'needs_sync': 1,
+            AssignmentsCols.isPublished: 0,
+            CommonCols.updatedAt: now.toIso8601String(),
+            CommonCols.cachedAt: now.toIso8601String(),
+            CommonCols.needsSync: 1,
           },
-          where: 'id = ?',
+          where: '${CommonCols.id} = ?',
           whereArgs: [assignmentId],
         );
         await syncQueue.enqueue(SyncQueueEntry(
@@ -284,8 +285,8 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       await db.delete(
-        'submission_files',
-        where: 'id = ?',
+        DbTables.submissionFiles,
+        where: '${CommonCols.id} = ?',
         whereArgs: [fileId],
       );
     } catch (e) {

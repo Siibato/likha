@@ -11,14 +11,7 @@ use crate::schema::auth_schema::{CreateAccountRequest, LockAccountRequest, Reset
 use crate::schema::common::success_response;
 use crate::services::auth::AuthService;
 use crate::middleware::auth_middleware::AuthUser;
-use crate::utils::error::AppError;
-
-fn require_admin(auth_user: &AuthUser) -> Result<(), AppError> {
-    if auth_user.role != "admin" {
-        return Err(AppError::Forbidden("Admin access required".to_string()));
-    }
-    Ok(())
-}
+use crate::utils::auth_guards::require_admin;
 
 pub async fn create_account(
     State(auth_service): State<Arc<AuthService>>,

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/auth/entities/user.dart';
@@ -131,7 +132,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       (failure) {
         state = state.copyWith(
           isLoading: false,
-          error: failure.message,
+          error: AppErrorMapper.fromFailure(failure),
         );
       },
       (checkResult) {
@@ -198,7 +199,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         } else {
           state = state.copyWith(
             isLoading: false,
-            error: failure.message,
+            error: AppErrorMapper.fromFailure(failure),
           );
         }
       },
@@ -232,7 +233,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       (failure) {
         state = state.copyWith(
           isLoading: false,
-          error: failure.message,
+          error: AppErrorMapper.fromFailure(failure),
         );
       },
       (user) {
@@ -305,7 +306,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       (failure) {
         state = state.copyWith(
           isLoading: false,
-          error: failure.message,
+          error: AppErrorMapper.fromFailure(failure),
         );
       },
       (user) {

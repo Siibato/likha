@@ -278,7 +278,7 @@ impl super::LearningMaterialService {
             .await?
             .ok_or_else(|| AppError::NotFound("Material not found".to_string()))?;
 
-        let class = self
+        let _class = self
             .class_repo
             .find_by_id(material.class_id)
             .await?

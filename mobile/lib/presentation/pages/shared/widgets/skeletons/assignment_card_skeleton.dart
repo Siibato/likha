@@ -31,7 +31,7 @@ class AssignmentCardSkeleton extends StatelessWidget {
           borderRadius:
               BorderRadius.circular(AppDimensions.kCardInnerRadius),
         ),
-        child: Column(
+        child: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header row: icon + title + badges
@@ -44,7 +44,7 @@ class AssignmentCardSkeleton extends StatelessWidget {
                   height: 36,
                   borderRadius: AppDimensions.kIconSlotRadius,
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 // Title column
                 Expanded(
                   child: SkeletonBox(
@@ -54,7 +54,7 @@ class AssignmentCardSkeleton extends StatelessWidget {
                   ),
                 ),
                 // Right badges
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 SkeletonBox(
                   width: 60,
                   height: 18,
@@ -62,7 +62,7 @@ class AssignmentCardSkeleton extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             // Info chips row
             Row(
               children: [
@@ -71,13 +71,13 @@ class AssignmentCardSkeleton extends StatelessWidget {
                   height: 11,
                   borderRadius: 4,
                 ),
-                const SizedBox(width: 14),
+                SizedBox(width: 14),
                 SkeletonBox(
                   width: 50,
                   height: 11,
                   borderRadius: 4,
                 ),
-                const SizedBox(width: 14),
+                SizedBox(width: 14),
                 SkeletonBox(
                   width: 50,
                   height: 11,

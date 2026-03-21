@@ -214,7 +214,7 @@ class _TeacherMaterialListPageState extends ConsumerState<TeacherMaterialListPag
       body: SafeArea(
         child: Column(
           children: [
-            ClassSectionHeader(
+            const ClassSectionHeader(
               title: 'Learning Modules',
               showBackButton: true,
             ),
@@ -290,10 +290,10 @@ class _TeacherMaterialListPageState extends ConsumerState<TeacherMaterialListPag
                       ),
                     )
                   : materialState.materials.isEmpty
-                      ? Center(
+                      ? const Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
+                            children: [
                               Icon(Icons.library_books_outlined, size: 64, color: Color(0xFFCCCCCC)),
                               SizedBox(height: 16),
                               Text('No modules yet', style: TextStyle(fontSize: 16, color: Color(0xFF999999))),

@@ -110,26 +110,30 @@ class _MultipleChoiceInputState extends State<_MultipleChoiceInput> {
       );
     } else {
       final selectedId = _selected.isEmpty ? null : _selected.first;
-      return Column(
-        children: choices
-            .map((choice) => RadioListTile<String>(
-                  title: Text(
-                    choice.choiceText,
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  value: choice.id,
-                  groupValue: selectedId,
-                  onChanged: (value) {
-                    setState(() {
-                      _selected = {value!};
-                    });
-                    widget.onChanged(_selected);
-                  },
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                  activeColor: const Color(0xFFFFBD59),
-                ))
-            .toList(),
+      return RadioGroup<String>(
+        groupValue: selectedId,
+        onChanged: (value) {
+          if (value != null) {
+            setState(() {
+              _selected = {value};
+            });
+            widget.onChanged(_selected);
+          }
+        },
+        child: Column(
+          children: choices
+              .map((choice) => RadioListTile<String>(
+                    title: Text(
+                      choice.choiceText,
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    value: choice.id,
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    activeColor: const Color(0xFFFFBD59),
+                  ))
+              .toList(),
+        ),
       );
     }
   }

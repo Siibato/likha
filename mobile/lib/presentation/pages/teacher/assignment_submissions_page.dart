@@ -96,7 +96,7 @@ class _AssignmentSubmissionsPageState
             ),
           ],
         ),
-        actions: [],
+        actions: const [],
       ),
       body: state.isLoading && state.submissions.isEmpty
           ? const Center(
@@ -145,11 +145,11 @@ class _AssignmentSubmissionsPageState
           ? null
           : Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.white,
                 border: Border(
                   top: BorderSide(
-                    color: const Color(0xFFE0E0E0),
+                    color: Color(0xFFE0E0E0),
                     width: 1,
                   ),
                 ),
@@ -164,7 +164,7 @@ class _AssignmentSubmissionsPageState
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: _isDownloadingAll
-                    ? SizedBox(
+                    ? const SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
@@ -172,12 +172,12 @@ class _AssignmentSubmissionsPageState
                           color: Colors.white,
                         ),
                       )
-                    : Row(
+                    : const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.download_for_offline_rounded, size: 20),
-                          const SizedBox(width: 8),
-                          const Text(
+                          Icon(Icons.download_for_offline_rounded, size: 20),
+                          SizedBox(width: 8),
+                          Text(
                             'Download All Files',
                             style: TextStyle(
                               fontSize: 15,

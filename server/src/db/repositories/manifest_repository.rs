@@ -12,6 +12,7 @@ use ::entity::{
 
 /// Record entry in the manifest (id + updated_at + deleted flag)
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct ManifestEntry {
     pub id: Uuid,
     pub updated_at: NaiveDateTime,
@@ -22,7 +23,6 @@ pub struct ManifestEntry {
 #[derive(Debug, Clone)]
 pub struct PaginatedRecords {
     pub records: Vec<Value>,
-    pub has_more: bool,
 }
 
 /// Repository for building and querying manifests
@@ -353,7 +353,6 @@ impl ManifestRepository {
             // No classes, return empty result
             return Ok(PaginatedRecords {
                 records: vec![],
-                has_more: false,
             });
         }
 
@@ -503,7 +502,6 @@ impl ManifestRepository {
 
         Ok(PaginatedRecords {
             records: result,
-            has_more: false,
         })
     }
 
@@ -524,62 +522,6 @@ impl ManifestRepository {
                 "points": r.points,
                 "order_index": r.order_index,
                 "is_multi_select": r.is_multi_select,
-                "updated_at": r.updated_at.to_string(),
-                "deleted_at": r.deleted_at.map(|d| d.to_string()),
-            })
-        })
-        .await
-    }
-
-    /// Get full paginated records for assessment submissions (user-specific)
-    pub async fn get_assessment_submissions_paginated(
-        &self,
-        user_id: Uuid,
-        submission_ids: Vec<Uuid>,
-        limit: i64,
-    ) -> AppResult<PaginatedRecords> {
-        let query = assessment_submissions::Entity::find()
-            .filter(assessment_submissions::Column::UserId.eq(user_id))
-            .filter(assessment_submissions::Column::Id.is_in(submission_ids));
-        Self::paginate_query(&self.db, query, limit, |r| {
-            json!({
-                "id": r.id.to_string(),
-                "assessment_id": r.assessment_id.to_string(),
-                "user_id": r.user_id.to_string(),
-                "started_at": r.started_at.to_string(),
-                "submitted_at": r.submitted_at.map(|d| d.to_string()),
-                "total_points": r.total_points,
-                "created_at": r.created_at.to_string(),
-                "updated_at": r.updated_at.to_string(),
-                "deleted_at": r.deleted_at.map(|d| d.to_string()),
-            })
-        })
-        .await
-    }
-
-    /// Get full paginated records for assignment submissions (user-specific)
-    pub async fn get_assignment_submissions_paginated(
-        &self,
-        user_id: Uuid,
-        submission_ids: Vec<Uuid>,
-        limit: i64,
-    ) -> AppResult<PaginatedRecords> {
-        let query = assignment_submissions::Entity::find()
-            .filter(assignment_submissions::Column::StudentId.eq(user_id))
-            .filter(assignment_submissions::Column::Id.is_in(submission_ids));
-        Self::paginate_query(&self.db, query, limit, |r| {
-            json!({
-                "id": r.id.to_string(),
-                "assignment_id": r.assignment_id.to_string(),
-                "student_id": r.student_id.to_string(),
-                "status": r.status,
-                "text_content": r.text_content,
-                "is_late": r.is_late,
-                "submitted_at": r.submitted_at.map(|d| d.to_string()),
-                "points": r.points,
-                "feedback": r.feedback,
-                "graded_at": r.graded_at.map(|d| d.to_string()),
-                "created_at": r.created_at.to_string(),
                 "updated_at": r.updated_at.to_string(),
                 "deleted_at": r.deleted_at.map(|d| d.to_string()),
             })
@@ -616,26 +558,6 @@ impl ManifestRepository {
                 deleted: false, // Activity logs are never soft-deleted
             })
             .collect())
-    }
-
-    /// Get full paginated records for activity logs
-    pub async fn get_activity_logs_paginated(
-        &self,
-        activity_log_ids: Vec<Uuid>,
-        limit: i64,
-    ) -> AppResult<PaginatedRecords> {
-        let query = activity_logs::Entity::find()
-            .filter(activity_logs::Column::Id.is_in(activity_log_ids));
-        Self::paginate_query(&self.db, query, limit, |r| {
-            json!({
-                "id": r.id.to_string(),
-                "user_id": r.user_id.to_string(),
-                "action": r.action,
-                "details": r.details,
-                "created_at": r.created_at.to_string(),
-            })
-        })
-        .await
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -908,7 +830,7 @@ impl ManifestRepository {
     /// Get assignment submissions that have been updated since a given time
     pub async fn get_assignment_submissions_since(
         &self,
-        user_id: Uuid,
+        _user_id: Uuid,
         submission_ids: Vec<Uuid>,
         since: NaiveDateTime,
     ) -> AppResult<Vec<Value>> {
@@ -933,35 +855,6 @@ impl ManifestRepository {
                     "points": r.points,
                     "updated_at": r.updated_at.to_string(),
                     "deleted_at": r.deleted_at.map(|d| d.to_string()),
-                })
-            })
-            .collect();
-
-        Ok(records)
-    }
-
-    /// Get activity logs that have been created since a given time
-    pub async fn get_activity_logs_since(
-        &self,
-        activity_log_ids: Vec<Uuid>,
-        since: NaiveDateTime,
-    ) -> AppResult<Vec<Value>> {
-        let records = activity_logs::Entity::find()
-            .filter(activity_logs::Column::Id.is_in(activity_log_ids))
-            .filter(activity_logs::Column::CreatedAt.gt(since))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        let records: Vec<Value> = records
-            .into_iter()
-            .map(|r| {
-                json!({
-                    "id": r.id.to_string(),
-                    "user_id": r.user_id.to_string(),
-                    "action": r.action,
-                    "details": r.details,
-                    "created_at": r.created_at.to_string(),
                 })
             })
             .collect();
@@ -1180,12 +1073,11 @@ impl ManifestRepository {
             .all(db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        let has_more = records.len() > effective_limit as usize;
         let records: Vec<Value> = records
             .into_iter()
             .take(effective_limit as usize)
             .map(mapper)
             .collect();
-        Ok(PaginatedRecords { records, has_more })
+        Ok(PaginatedRecords { records })
     }
 }

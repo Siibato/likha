@@ -2,23 +2,15 @@ use uuid::Uuid;
 use chrono::Utc;
 use crate::schema::auth_schema::{CreateAccountRequest, UpdateAccountRequest, ResetAccountRequest, LockAccountRequest};
 use super::sync_push_service::{OperationResult, SyncQueueEntry};
+use super::extract_field;
 
 impl super::SyncPushService {
     pub(super) async fn handle_admin_user_operation(&self, user_id: Uuid, op: &SyncQueueEntry) -> OperationResult {
         match op.operation.as_str() {
             "create" => {
-                let username = match self.parse_str_field(&op.payload, "username") {
-                    Ok(v) => v,
-                    Err(e) => return self.error_result(op, &e),
-                };
-                let full_name = match self.parse_str_field(&op.payload, "full_name") {
-                    Ok(v) => v,
-                    Err(e) => return self.error_result(op, &e),
-                };
-                let role = match self.parse_str_field(&op.payload, "role") {
-                    Ok(v) => v,
-                    Err(e) => return self.error_result(op, &e),
-                };
+                let username = extract_field!(self, op, parse_str_field, "username");
+                let full_name = extract_field!(self, op, parse_str_field, "full_name");
+                let role = extract_field!(self, op, parse_str_field, "role");
                 let client_id = self.parse_uuid_field(&op.payload, "id").ok();
                 let request = CreateAccountRequest { username, full_name, role };
                 match self.auth_service.create_account(request, user_id, client_id).await {
@@ -27,10 +19,7 @@ impl super::SyncPushService {
                 }
             }
             "update" => {
-                let target_user_id = match self.parse_uuid_field(&op.payload, "id") {
-                    Ok(id) => id,
-                    Err(e) => return self.error_result(op, &e),
-                };
+                let target_user_id = extract_field!(self, op, parse_uuid_field, "id");
                 let action = op.payload.get("action").and_then(|v| v.as_str()).unwrap_or("update");
 
                 match action {

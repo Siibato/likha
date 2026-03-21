@@ -38,14 +38,14 @@ class SubmissionCardSkeleton extends StatelessWidget {
             Container(
               width: 40,
               height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0F0F0),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF0F0F0),
                 shape: BoxShape.circle,
               ),
             ),
             const SizedBox(width: 14),
             // Text column
-            Expanded(
+            const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -55,7 +55,7 @@ class SubmissionCardSkeleton extends StatelessWidget {
                     height: 13,
                     borderRadius: 4,
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   // Username
                   SkeletonBox(
                     width: double.infinity * 0.4,
@@ -67,7 +67,7 @@ class SubmissionCardSkeleton extends StatelessWidget {
             ),
             // Score badge
             const SizedBox(width: 12),
-            SkeletonBox(
+            const SkeletonBox(
               width: 45,
               height: 20,
               borderRadius: 6,

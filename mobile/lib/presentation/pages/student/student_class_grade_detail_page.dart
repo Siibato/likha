@@ -5,7 +5,7 @@ import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/student/assessment_results_page.dart';
-import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/providers/student_assessment_provider.dart';
 import 'package:likha/presentation/providers/student_class_grades_provider.dart';
 
 class StudentClassGradeDetailPage extends ConsumerStatefulWidget {
@@ -32,14 +32,14 @@ class _StudentClassGradeDetailPageState
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
-          .read(assessmentProvider.notifier)
+          .read(studentAssessmentProvider.notifier)
           .loadAssessments(widget.classId, publishedOnly: true);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final assessmentState = ref.watch(assessmentProvider);
+    final assessmentState = ref.watch(studentAssessmentProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
@@ -55,7 +55,7 @@ class _StudentClassGradeDetailPageState
               child: RefreshIndicator(
                 onRefresh: () async {
                   ref
-                      .read(assessmentProvider.notifier)
+                      .read(studentAssessmentProvider.notifier)
                       .loadAssessments(widget.classId, publishedOnly: true);
                 },
                 color: const Color(0xFF2B2B2B),

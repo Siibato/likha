@@ -165,7 +165,7 @@ class _MCAnswerDetail extends StatelessWidget {
               color: const Color(0xFFFFF8ED),
               borderRadius: BorderRadius.circular(6),
               border: Border.all(
-                color: const Color(0xFFFFBD59).withOpacity(0.3),
+                color: const Color(0xFFFFBD59).withValues(alpha: 0.3),
               ),
             ),
             child: Text(
@@ -223,7 +223,7 @@ class _IdentificationAnswerDetail extends StatelessWidget {
               color: const Color(0xFFFFF8ED),
               borderRadius: BorderRadius.circular(6),
               border: Border.all(
-                color: const Color(0xFFFFBD59).withOpacity(0.3),
+                color: const Color(0xFFFFBD59).withValues(alpha: 0.3),
               ),
             ),
             child: Text(
@@ -307,7 +307,7 @@ class _EnumerationAnswerDetail extends StatelessWidget {
                 color: const Color(0xFFFFF8ED),
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                  color: const Color(0xFFFFBD59).withOpacity(0.3),
+                  color: const Color(0xFFFFBD59).withValues(alpha: 0.3),
                 ),
               ),
               child: Text(

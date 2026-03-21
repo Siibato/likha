@@ -92,7 +92,7 @@ import 'package:likha/domain/classes/usecases/add_student.dart';
 import 'package:likha/domain/classes/usecases/create_class.dart';
 import 'package:likha/domain/classes/usecases/get_all_classes.dart';
 import 'package:likha/domain/classes/usecases/get_class_detail.dart';
-import 'package:likha/domain/classes/usecases/get_enrolled_students.dart';
+import 'package:likha/domain/classes/usecases/get_participants.dart';
 import 'package:likha/domain/classes/usecases/get_my_classes.dart';
 import 'package:likha/domain/classes/usecases/remove_student.dart';
 import 'package:likha/domain/classes/usecases/search_students.dart';
@@ -338,7 +338,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => AddStudent(sl()));
   sl.registerLazySingleton(() => RemoveStudent(sl()));
   sl.registerLazySingleton(() => SearchStudents(sl()));
-  sl.registerLazySingleton(() => GetEnrolledStudents(sl()));
+  sl.registerLazySingleton(() => GetParticipants(sl()));
 
   // Assessment use cases
   sl.registerLazySingleton(() => CreateAssessment(sl()));

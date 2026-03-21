@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:likha/core/logging/validation_logger.dart';
 import 'package:likha/core/validation/services/data_validator.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
@@ -43,11 +43,11 @@ class ValidationService {
 
       // If data is outdated, clear cache so repository will refetch fresh data
       if (result.isOutdated) {
-        debugPrint('Data outdated for $entityType - clearing cache to force refetch');
+        ValidationLogger.instance.log('Data outdated for $entityType - clearing cache to force refetch');
         await _clearCacheForEntity(entityType);
       }
     } catch (e) {
-      debugPrint('Validation error for $entityType: $e');
+      ValidationLogger.instance.error('Validation error for $entityType', e);
     }
   }
 
@@ -68,9 +68,9 @@ class ValidationService {
           await _materialLocal.clearAllCache();
           break;
       }
-      debugPrint('Cleared cache for $entityType');
+      ValidationLogger.instance.log('Cleared cache for $entityType');
     } catch (e) {
-      debugPrint('Error clearing cache for $entityType: $e');
+      ValidationLogger.instance.error('Error clearing cache for $entityType', e);
     }
   }
 
@@ -79,9 +79,9 @@ class ValidationService {
     try {
       // Note: In real implementation, this would be called from the repository
       // which has the context (teacher_id or student_id)
-      debugPrint('Syncing classes...');
+      ValidationLogger.instance.log('Syncing classes...');
     } catch (e) {
-      debugPrint('Error syncing classes: $e');
+      ValidationLogger.instance.error('Error syncing classes', e);
     }
   }
 
@@ -90,9 +90,9 @@ class ValidationService {
     try {
       final fresh = await _assessmentRemote.getAssessments(classId: classId);
       await _assessmentLocal.cacheAssessments(fresh);
-      debugPrint('Synced assessments for class $classId');
+      ValidationLogger.instance.log('Synced assessments for class $classId');
     } catch (e) {
-      debugPrint('Error syncing assessments: $e');
+      ValidationLogger.instance.error('Error syncing assessments', e);
     }
   }
 
@@ -101,9 +101,9 @@ class ValidationService {
     try {
       final fresh = await _assignmentRemote.getAssignments(classId: classId);
       await _assignmentLocal.cacheAssignments(fresh);
-      debugPrint('Synced assignments for class $classId');
+      ValidationLogger.instance.log('Synced assignments for class $classId');
     } catch (e) {
-      debugPrint('Error syncing assignments: $e');
+      ValidationLogger.instance.error('Error syncing assignments', e);
     }
   }
 
@@ -112,9 +112,9 @@ class ValidationService {
     try {
       final fresh = await _materialRemote.getMaterials(classId: classId);
       await _materialLocal.cacheMaterials(fresh);
-      debugPrint('Synced learning materials for class $classId');
+      ValidationLogger.instance.log('Synced learning materials for class $classId');
     } catch (e) {
-      debugPrint('Error syncing learning materials: $e');
+      ValidationLogger.instance.error('Error syncing learning materials', e);
     }
   }
 }

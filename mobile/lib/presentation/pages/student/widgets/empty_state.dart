@@ -9,13 +9,13 @@ class EmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.inbox_outlined,
             size: 64,
             color: Color(0xFFD0D0D0),
           ),
-          const SizedBox(height: 16),
-          const Text(
+          SizedBox(height: 16),
+          Text(
             'No classes yet',
             style: TextStyle(
               fontSize: 18,
@@ -23,8 +23,8 @@ class EmptyState extends StatelessWidget {
               color: Color(0xFF2B2B2B),
             ),
           ),
-          const SizedBox(height: 6),
-          const Text(
+          SizedBox(height: 6),
+          Text(
             'Check back later',
             style: TextStyle(
               fontSize: 14,

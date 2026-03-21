@@ -39,11 +39,6 @@ pub struct SubmitTextRequest {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct ReorderAssignmentRequest {
-    pub new_order_index: i32,
-}
-
-#[derive(Debug, Deserialize)]
 pub struct ReorderAssignmentsRequest {
     pub assignment_ids: Vec<Uuid>,
 }

@@ -31,7 +31,7 @@ class BaseCardSmSkeleton extends StatelessWidget {
           borderRadius:
               BorderRadius.circular(AppDimensions.kCardSmInnerRadius),
         ),
-        child: Column(
+        child: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Title shimmer
@@ -40,7 +40,7 @@ class BaseCardSmSkeleton extends StatelessWidget {
               height: 18,
               borderRadius: 4,
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             // Subtitle shimmer
             SkeletonBox(
               width: double.infinity * 0.55,

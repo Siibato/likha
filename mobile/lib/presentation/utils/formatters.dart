@@ -76,3 +76,32 @@ class Formatters {
     }
   }
 }
+
+/// Formats bytes as "N KB", "N.N MB", or "N B"
+String formatFileSize(int bytes) {
+  if (bytes < 1024) return '$bytes B';
+  if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+  return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+}
+
+/// Formats a UTC DateTime for user display as "Jan 15, 2024 · 3:00 PM"
+String formatDateTimeDisplay(DateTime utcDt) {
+  final local = utcDt.toLocal();
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+  final hour = local.hour > 12
+      ? local.hour - 12
+      : local.hour == 0
+          ? 12
+          : local.hour;
+  final minute = local.minute.toString().padLeft(2, '0');
+  final period = local.hour >= 12 ? 'PM' : 'AM';
+  return '${months[local.month - 1]} ${local.day}, ${local.year} · $hour:$minute $period';
+}
+
+/// Formats a DateTime as UTC ISO8601 without timezone suffix (for API params)
+String formatDateTimeForApi(DateTime dt) {
+  return dt.toUtc().toIso8601String().replaceAll('Z', '');
+}

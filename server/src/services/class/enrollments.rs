@@ -139,8 +139,6 @@ impl super::ClassService {
 
         self.class_repo.remove_student(class_id, student_id).await?;
 
-        let enrollment_id = Uuid::new_v4();
-
         Ok(())
     }
 

@@ -4,7 +4,7 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/student/widgets/score_summary_card.dart';
 import 'package:likha/presentation/pages/student/widgets/answer_result_card.dart';
-import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/providers/student_assessment_provider.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 
 class AssessmentResultsPage extends ConsumerStatefulWidget {
@@ -34,7 +34,7 @@ class _AssessmentResultsPageState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.submissionId != null) {
         ref
-            .read(assessmentProvider.notifier)
+            .read(studentAssessmentProvider.notifier)
             .loadStudentResults(widget.submissionId!);
       } else if (widget.assessmentId != null) {
         _loadViaAssessment();
@@ -46,7 +46,7 @@ class _AssessmentResultsPageState
     final user = ref.read(authProvider).user;
     if (user == null) return;
     await ref
-        .read(assessmentProvider.notifier)
+        .read(studentAssessmentProvider.notifier)
         .loadStudentResultsByAssessment(widget.assessmentId!, user.id);
   }
 
@@ -71,27 +71,27 @@ class _AssessmentResultsPageState
                 color: const Color(0xFFE0E0E0),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.hourglass_bottom_rounded,
                 size: 24,
                 color: AppColors.foregroundTertiary,
               ),
             ),
             const SizedBox(width: 16),
-            Expanded(
+            const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Results Pending',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF2B2B2B),
                       letterSpacing: -0.3,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Text(
                     'Your teacher hasn\'t released results yet',
                     style: TextStyle(
@@ -130,27 +130,27 @@ class _AssessmentResultsPageState
                 color: const Color(0xFFFFE0E0),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.info_outline_rounded,
                 size: 24,
-                color: const Color(0xFFD32F2F),
+                color: Color(0xFFD32F2F),
               ),
             ),
             const SizedBox(width: 16),
-            Expanded(
+            const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Results Not Yet Available',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF2B2B2B),
                       letterSpacing: -0.3,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Text(
                     'Your results will appear here once your teacher releases them',
                     style: TextStyle(
@@ -170,7 +170,7 @@ class _AssessmentResultsPageState
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(assessmentProvider);
+    final state = ref.watch(studentAssessmentProvider);
     final result = state.studentResult;
     final isResultsNotReleased =
         state.error?.toLowerCase().contains('not been released') ?? false;

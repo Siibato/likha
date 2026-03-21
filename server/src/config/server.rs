@@ -7,9 +7,6 @@ pub struct ServerConfig {
     pub database_url: String,
     pub jwt_secret: String,
     pub jwt_expiration: i64,
-    pub materials_path: String,
-    pub submissions_path: String,
-    pub exports_path: String,
     pub file_storage_path: String,
 }
 
@@ -28,12 +25,6 @@ impl ServerConfig {
                 .unwrap_or_else(|_| "86400".to_string())
                 .parse()
                 .expect("JWT_EXPIRATION must be a valid number"),
-            materials_path: env::var("MATERIALS_PATH")
-                .unwrap_or_else(|_| "./storage/materials".to_string()),
-            submissions_path: env::var("SUBMISSIONS_PATH")
-                .unwrap_or_else(|_| "./storage/submissions".to_string()),
-            exports_path: env::var("EXPORTS_PATH")
-                .unwrap_or_else(|_| "./storage/exports".to_string()),
             file_storage_path: env::var("FILE_STORAGE_PATH")
                 .unwrap_or_else(|_| "./uploads".to_string()),
         }

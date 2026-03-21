@@ -103,7 +103,7 @@ class AssessmentDateTimePicker extends StatelessWidget {
           ),
           prefixIcon: Icon(
             icon,
-            color: Color(0xFF666666),
+            color: const Color(0xFF666666),
             size: 20,
           ),
           suffixIcon: const Icon(

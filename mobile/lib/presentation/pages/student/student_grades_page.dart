@@ -44,10 +44,10 @@ class _StudentGradesPageState extends ConsumerState<StudentGradesPage> {
                       ),
                     )
                   : gradesState.classGrades.isEmpty
-                      ? Center(
+                      ? const Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
+                            children: [
                               Icon(
                                 Icons.school_outlined,
                                 size: 64,

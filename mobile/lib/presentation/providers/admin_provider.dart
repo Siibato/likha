@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/auth/entities/activity_log.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/domain/auth/usecases/check_username.dart';
@@ -72,7 +73,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: failure.message,
+        error: AppErrorMapper.fromFailure(failure),
       ),
       (accounts) => state = state.copyWith(
         isLoading: false,
@@ -116,7 +117,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: failure.message,
+        error: AppErrorMapper.fromFailure(failure),
       ),
       (user) {
         state = state.copyWith(
@@ -136,7 +137,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: failure.message,
+        error: AppErrorMapper.fromFailure(failure),
       ),
       (updatedUser) {
         final updatedAccounts = state.accounts.map((a) {
@@ -163,7 +164,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: failure.message,
+        error: AppErrorMapper.fromFailure(failure),
       ),
       (updatedUser) {
         final updatedAccounts = state.accounts.map((a) {
@@ -186,7 +187,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: failure.message,
+        error: AppErrorMapper.fromFailure(failure),
       ),
       (logs) => state = state.copyWith(
         isLoading: false,
@@ -215,7 +216,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: failure.message,
+        error: AppErrorMapper.fromFailure(failure),
       ),
       (updatedUser) {
         final updatedAccounts = state.accounts.map((a) {

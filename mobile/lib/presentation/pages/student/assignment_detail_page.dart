@@ -15,8 +15,10 @@ import 'package:likha/domain/assignments/usecases/upload_file.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/markdown_display.dart';
+import 'package:likha/presentation/pages/shared/widgets/cards/score_display_card.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/card_icon_slot.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/utils/formatters.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/pages/student/widgets/assignment_instructions_card.dart';
 import 'package:likha/presentation/pages/student/widgets/assignment_returned_banner.dart';
@@ -374,9 +376,19 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                         if (isGraded) ...[
                           const SizedBox(height: 16),
                           if (submission != null && submission.score != null)
-                            _buildScoreCard(submission.score!, gradedAt: submission.gradedAt)
+                            ScoreDisplayCard(
+                              score: submission.score!,
+                              totalPoints: widget.totalPoints ?? 0,
+                              useBaseCardStyle: true,
+                              gradedAt: submission.gradedAt,
+                              formatDateTime: (dt) => formatDateTimeDisplay(dt),
+                            )
                           else if (widget.score != null)
-                            _buildScoreCard(widget.score!),
+                            ScoreDisplayCard(
+                              score: widget.score!,
+                              totalPoints: widget.totalPoints ?? 0,
+                              useBaseCardStyle: true,
+                            ),
                         ],
 
                         // Feedback for graded or returned
@@ -454,99 +466,6 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     } catch (_) {
       // Fallback: leave as empty or could insert as plain text if needed
     }
-  }
-
-  Widget _buildScoreCard(int score, {DateTime? gradedAt}) {
-    final percentage = widget.totalPoints > 0
-        ? (score / widget.totalPoints * 100)
-        : 0.0;
-
-    return BaseCard(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(28),
-      child: Column(
-        children: [
-          const Text(
-            'Your Score',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.foregroundSecondary,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                '$score',
-                style: const TextStyle(
-                  fontSize: 52,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF2B2B2B),
-                  letterSpacing: -1.5,
-                ),
-              ),
-              Text(
-                ' / ${widget.totalPoints}',
-                style: const TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF999999),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FA),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: const Color(0xFFE0E0E0),
-              ),
-            ),
-            child: Text(
-              '${percentage.toStringAsFixed(1)}%',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF2B2B2B),
-                letterSpacing: -0.3,
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: widget.totalPoints > 0
-                  ? score / widget.totalPoints
-                  : 0,
-              minHeight: 10,
-              backgroundColor: const Color(0xFFF0F0F0),
-              valueColor:
-                  const AlwaysStoppedAnimation<Color>(Color(0xFF2B2B2B)),
-            ),
-          ),
-          if (gradedAt != null) ...[
-            const SizedBox(height: 16),
-            Text(
-              'Graded: ${_formatDateTime(gradedAt)}',
-              style: const TextStyle(
-                fontSize: 12,
-                color: Color(0xFF999999),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
   }
 
   Widget _buildFeedbackCard(String feedback) {

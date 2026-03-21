@@ -17,17 +17,17 @@ class AssignmentReturnedBanner extends StatelessWidget {
         color: const Color(0xFFFFF8ED),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppColors.deprecatedWarningYellow.withOpacity(0.3),
+          color: AppColors.deprecatedWarningYellow.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(Icons.replay_rounded, color: AppColors.deprecatedWarningYellow, size: 22),
-              const SizedBox(width: 10),
-              const Text(
+              SizedBox(width: 10),
+              Text(
                 'Returned for Revision',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,

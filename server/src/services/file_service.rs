@@ -1,5 +1,5 @@
 use sha2::{Digest, Sha256};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use uuid::Uuid;
 
 /// Compute SHA-256 hash of file bytes

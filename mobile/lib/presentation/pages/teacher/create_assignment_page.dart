@@ -12,6 +12,7 @@ import 'package:likha/presentation/pages/teacher/widgets/assignment_instructions
 import 'package:likha/presentation/pages/teacher/widgets/assignment_points_field.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assignment_title_field.dart';
 import 'package:likha/presentation/pages/teacher/widgets/submission_type_dropdown.dart';
+import 'package:likha/presentation/pages/teacher/widgets/file_type_picker_sheet.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 
@@ -94,196 +95,17 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
 
 
   Future<void> _showFileTypesPicker() async {
-    showModalBottomSheet(
+    final result = await showModalBottomSheet<Set<String>>(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (_) => StatefulBuilder(
-        builder: (context, setLocalState) {
-          // Local temporary selection for instant UI updates
-          Set<String> tempSelection = Set.from(_selectedFileTypes);
-
-          /// Get category selection state based on tempSelection
-          int getCategoryState(FileTypeCategory category) {
-            final selectedCount = category.types
-                .where((type) => tempSelection.contains(type))
-                .length;
-            if (selectedCount == 0) return 0;
-            if (selectedCount == category.types.length) return 2;
-            return 1;
-          }
-
-          /// Toggle category in temp selection
-          void toggleCategoryLocal(FileTypeCategory category) {
-            final state = getCategoryState(category);
-            if (state == 2) {
-              // All selected → deselect all
-              for (final type in category.types) {
-                tempSelection.remove(type);
-              }
-            } else {
-              // None or partial → select all
-              for (final type in category.types) {
-                tempSelection.add(type);
-              }
-            }
-            // Update local UI
-            setLocalState(() {});
-            // Persist to parent immediately
-            setState(() => _selectedFileTypes = Set.from(tempSelection));
-          }
-
-          return DraggableScrollableSheet(
-            expand: false,
-            initialChildSize: 0.6,
-            maxChildSize: 0.85,
-            minChildSize: 0.4,
-            builder: (context, scrollController) => Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'Allowed File Types',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF2B2B2B),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: ListView(
-                      controller: scrollController,
-                      children: [
-                        for (final category in kFileTypeCategories) ...[
-                          Container(
-                            margin: const EdgeInsets.only(top: 16, bottom: 12),
-                            decoration: BoxDecoration(
-                              color: getCategoryState(category) > 0
-                                  ? const Color(0xFF2B2B2B).withOpacity(0.05)
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: getCategoryState(category) > 0
-                                    ? const Color(0xFF2B2B2B).withOpacity(0.2)
-                                    : Colors.transparent,
-                              ),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
-                              ),
-                              child: Row(
-                                children: [
-                                  Checkbox(
-                                    value: getCategoryState(category) == 2
-                                        ? true
-                                        : getCategoryState(category) == 1
-                                            ? null
-                                            : false,
-                                    tristate: true,
-                                    onChanged: (_) =>
-                                        toggleCategoryLocal(category),
-                                    activeColor: const Color(0xFF2B2B2B),
-                                    materialTapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      category.label,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: getCategoryState(category) > 0
-                                            ? const Color(0xFF2B2B2B)
-                                            : const Color(0xFF666666),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              for (final type in category.types)
-                                FilterChip(
-                                  label: Text(type),
-                                  selected: tempSelection.contains(type),
-                                  onSelected: (selected) {
-                                    setLocalState(() {
-                                      if (selected) {
-                                        tempSelection.add(type);
-                                      } else {
-                                        tempSelection.remove(type);
-                                      }
-                                    });
-                                    // Persist to parent immediately
-                                    setState(() =>
-                                        _selectedFileTypes =
-                                            Set.from(tempSelection));
-                                  },
-                                  selectedColor: const Color(0xFF2B2B2B),
-                                  labelStyle: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: tempSelection.contains(type)
-                                        ? Colors.white
-                                        : const Color(0xFF2B2B2B),
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                    side: BorderSide(
-                                      color: tempSelection.contains(type)
-                                          ? const Color(0xFF2B2B2B)
-                                          : const Color(0xFFE0E0E0),
-                                    ),
-                                  ),
-                                  backgroundColor: Colors.white,
-                                  showCheckmark: false,
-                                ),
-                            ],
-                          ),
-                          if (category != kFileTypeCategories.last)
-                            const SizedBox(height: 8),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2B2B2B),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'Done',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
+      builder: (_) => FileTypePickerSheet(initialSelection: _selectedFileTypes),
     );
+    if (result != null) {
+      setState(() => _selectedFileTypes = result);
+    }
   }
 
   Future<void> _handleCreate() async {
@@ -442,7 +264,7 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
                     ),
                   ),
                   value: _isPublished,
-                  activeColor: const Color(0xFF2B2B2B),
+                  activeThumbColor: const Color(0xFF2B2B2B),
                   onChanged: assignState.isLoading
                       ? null
                       : (value) => setState(() => _isPublished = value),
@@ -535,9 +357,9 @@ class _AllowedFileTypesSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           'Allowed File Types (optional)',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             color: Color(0xFF999999),
             fontWeight: FontWeight.w400,

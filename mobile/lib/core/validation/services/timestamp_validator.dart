@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:likha/core/logging/validation_logger.dart';
 import 'package:likha/core/validation/services/data_validator.dart';
 import 'package:likha/core/validation/models/validation_metadata.dart';
 import 'package:likha/core/validation/models/validation_result.dart';
@@ -85,7 +85,7 @@ class TimestampValidator implements DataValidator {
     // This is the primary cache invalidation mechanism
     if (local.databaseId != null && server.databaseId != null) {
       if (local.databaseId != server.databaseId) {
-        debugPrint('Database ID changed! Invalidating all caches.');
+        ValidationLogger.instance.warn('Database ID changed! Invalidating all caches.');
         return true; // Database was reset/recreated, invalidate everything
       }
     }

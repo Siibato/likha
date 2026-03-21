@@ -7,7 +7,7 @@ class AddStudent {
 
   AddStudent(this._repository);
 
-  ResultFuture<Enrollment> call(AddStudentParams params) {
+  ResultFuture<Participant> call(AddStudentParams params) {
     return _repository.addStudent(
       classId: params.classId,
       studentId: params.studentId,

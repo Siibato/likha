@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
@@ -135,7 +136,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     final result = await _getAssignments(classId, publishedOnly: publishedOnly, skipBackgroundRefresh: skipBackgroundRefresh);
     result.fold(
       (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+          state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (assignments) =>
           state = state.copyWith(isLoading: false, assignments: assignments),
     );
@@ -147,7 +148,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     final result = await _createAssignment(params);
     result.fold(
       (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+          state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (assignment) {
         state = state.copyWith(
           isLoading: false,
@@ -164,7 +165,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     final result = await _getAssignmentDetail(assignmentId);
     result.fold(
       (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+          state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (assignment) => state = state.copyWith(
         isLoading: false,
         currentAssignment: assignment,
@@ -178,7 +179,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     final result = await _updateAssignment(params);
     result.fold(
       (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+          state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (assignment) => state = state.copyWith(
         isLoading: false,
         currentAssignment: assignment,
@@ -193,7 +194,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     final result = await _publishAssignment(assignmentId);
     result.fold(
       (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+          state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (assignment) => state = state.copyWith(
         isLoading: false,
         currentAssignment: assignment,
@@ -208,7 +209,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     final result = await _unpublishAssignment(assignmentId);
     result.fold(
       (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+          state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (assignment) => state = state.copyWith(
         isLoading: false,
         currentAssignment: assignment,
@@ -223,7 +224,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     final result = await _deleteAssignment(assignmentId);
     result.fold(
       (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+          state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (_) {
         state = state.copyWith(
           isLoading: false,
@@ -248,7 +249,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
       assignmentIds: assignmentIds,
     );
     result.fold(
-      (failure) => state = state.copyWith(error: failure.message),
+      (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
       (_) {},
     );
   }
@@ -309,7 +310,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     final result = await _getSubmissions(assignmentId);
     result.fold(
       (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+          state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (submissions) {
         state = state.copyWith(isLoading: false, submissions: submissions);
         // Background: refresh assignment counts now that submissions are cached
@@ -323,7 +324,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     final result = await _getSubmissionDetail(submissionId);
     result.fold(
       (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+          state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (submission) => state =
           state.copyWith(isLoading: false, currentSubmission: submission),
     );
@@ -335,7 +336,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     final result = await _gradeSubmission(params);
     result.fold(
       (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+          state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (submission) => state = state.copyWith(
         isLoading: false,
         currentSubmission: submission,
@@ -350,7 +351,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     final result = await _returnSubmission(submissionId);
     result.fold(
       (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+          state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (submission) => state = state.copyWith(
         isLoading: false,
         currentSubmission: submission,
@@ -366,7 +367,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     final result = await _createSubmission(params);
     result.fold(
       (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+          state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (submission) => state = state.copyWith(
         isLoading: false,
         currentSubmission: submission,
@@ -381,7 +382,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     final result = await _uploadFile(params);
     result.fold(
       (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+          state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (_) => state = state.copyWith(
         isLoading: false,
         successMessage: 'File uploaded',
@@ -395,7 +396,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     final result = await _deleteFile(fileId);
     result.fold(
       (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+          state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (_) => state = state.copyWith(
         isLoading: false,
         successMessage: 'File deleted',
@@ -409,7 +410,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     final result = await _submitAssignment(submissionId);
     result.fold(
       (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+          state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (submission) => state = state.copyWith(
         isLoading: false,
         currentSubmission: submission,
@@ -424,7 +425,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     state = state.copyWith(isLoading: false);
     List<int>? fileBytes;
     result.fold(
-      (failure) => state = state.copyWith(error: failure.message),
+      (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
       (bytes) {
         fileBytes = bytes;
         // Reload submission detail to reflect updated localPath from DB (mirrors learningMaterialProvider.downloadFile)

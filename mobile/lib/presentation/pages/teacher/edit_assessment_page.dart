@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/usecases/update_assessment.dart';
-import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_field.dart';
 import 'package:likha/presentation/pages/teacher/widgets/date_time_picker_field.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
@@ -94,7 +94,7 @@ class _EditAssessmentPageState extends ConsumerState<EditAssessmentPage> {
       return;
     }
 
-    await ref.read(assessmentProvider.notifier).updateAssessment(
+    await ref.read(teacherAssessmentProvider.notifier).updateAssessment(
           UpdateAssessmentParams(
             assessmentId: widget.assessment.id,
             title: _titleController.text.trim(),
@@ -109,18 +109,18 @@ class _EditAssessmentPageState extends ConsumerState<EditAssessmentPage> {
         );
 
     if (!mounted) return;
-    final state = ref.read(assessmentProvider);
+    final state = ref.read(teacherAssessmentProvider);
     if (state.error == null) {
       Navigator.pop(context, true);
     } else {
       setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
-      ref.read(assessmentProvider.notifier).clearMessages();
+      ref.read(teacherAssessmentProvider.notifier).clearMessages();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(assessmentProvider);
+    final state = ref.watch(teacherAssessmentProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
@@ -273,7 +273,7 @@ class _EditAssessmentPageState extends ConsumerState<EditAssessmentPage> {
                     ),
                   ),
                   value: _showResultsImmediately,
-                  activeColor: const Color(0xFF2B2B2B),
+                  activeThumbColor: const Color(0xFF2B2B2B),
                   onChanged: state.isLoading
                       ? null
                       : (value) => setState(() => _showResultsImmediately = value),
