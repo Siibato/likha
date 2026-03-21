@@ -1,4 +1,26 @@
+import 'package:likha/core/errors/failures.dart';
+
 class AppErrorMapper {
+  /// Type-safe error mapping from Failure objects using ErrorCategory
+  static String? fromFailure(Failure failure) {
+    switch (failure.category) {
+      case ErrorCategory.network:
+        return null; // Suppress — expected in offline-first app
+      case ErrorCategory.unauthorized:
+        return 'Session expired. Please log in again.';
+      case ErrorCategory.forbidden:
+        return "You don't have permission for this action.";
+      case ErrorCategory.notFound:
+        return 'Resource not found.';
+      case ErrorCategory.serverError:
+      case ErrorCategory.cache:
+      case ErrorCategory.unknown:
+        return 'Something went wrong. Try again later.';
+      case ErrorCategory.validation:
+        return failure.message; // Already user-friendly
+    }
+  }
+
   static String? toUserMessage(String? rawError) {
     if (rawError == null) return null;
 

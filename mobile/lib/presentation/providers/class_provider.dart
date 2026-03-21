@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/domain/auth/entities/user.dart';
@@ -110,7 +111,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: failure.message,
+        error: AppErrorMapper.fromFailure(failure),
       ),
       (classes) => state = state.copyWith(
         isLoading: false,
@@ -128,7 +129,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: failure.message,
+        error: AppErrorMapper.fromFailure(failure),
       ),
       (classes) => state = state.copyWith(
         isLoading: false,
@@ -157,7 +158,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: failure.message,
+        error: AppErrorMapper.fromFailure(failure),
       ),
       (newClass) => state = state.copyWith(
         isLoading: false,
@@ -190,14 +191,10 @@ class ClassNotifier extends StateNotifier<ClassState> {
     if (result.isLeft()) {
       final failure = result.fold((f) => f, (d) => null);
       if (failure != null) {
-        // For offline cache misses, don't show error - user can still see cached students
-        // Only show error for actual server issues
-        final showError = !failure.message.contains('offline') &&
-                         !failure.message.contains('Cache');
-
+        // Type-safe error mapping: NetworkFailure and CacheFailure naturally return null
         state = state.copyWith(
           isLoading: false,
-          error: showError ? failure.message : null,
+          error: AppErrorMapper.fromFailure(failure),
         );
       }
     }
@@ -219,7 +216,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: failure.message,
+        error: AppErrorMapper.fromFailure(failure),
       ),
       (updatedClass) {
         // Update the class in the classes list
@@ -315,12 +312,12 @@ class ClassNotifier extends StateNotifier<ClassState> {
           state = state.copyWith(
             currentClassDetail: revertedDetail,
             participantIds: Set<String>.from(state.participantIds)..remove(studentId),
-            error: failure.message,
+            error: AppErrorMapper.fromFailure(failure),
             loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
           );
         } else {
           state = state.copyWith(
-            error: failure.message,
+            error: AppErrorMapper.fromFailure(failure),
             loadingStudentIds: state.loadingStudentIds..remove(studentId),
           );
         }
@@ -409,12 +406,12 @@ class ClassNotifier extends StateNotifier<ClassState> {
           state = state.copyWith(
             currentClassDetail: currentDetail, // Restore original detail
             participantIds: Set<String>.from(state.participantIds)..add(studentId),
-            error: failure.message,
+            error: AppErrorMapper.fromFailure(failure),
             loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
           );
         } else {
           state = state.copyWith(
-            error: failure.message,
+            error: AppErrorMapper.fromFailure(failure),
             loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
           );
         }
@@ -439,7 +436,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: failure.message,
+        error: AppErrorMapper.fromFailure(failure),
       ),
       (students) => state = state.copyWith(
         isLoading: false,
@@ -452,7 +449,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
     state = state.copyWith(isLoading: true, clearError: true);
     final result = await _getParticipants(classId: classId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (students) => state = state.copyWith(isLoading: false, searchResults: students),
     );
   }

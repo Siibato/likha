@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
@@ -127,7 +128,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     state = state.copyWith(isLoading: true, error: null);
     final result = await _getAssessments(classId, publishedOnly: publishedOnly, skipBackgroundRefresh: skipBackgroundRefresh);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (assessments) => state = state.copyWith(isLoading: false, assessments: assessments),
     );
   }
@@ -138,7 +139,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     final result = await _createAssessment(params);
     result.fold(
       (failure) {
-        state = state.copyWith(isLoading: false, error: failure.message);
+        state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure));
         completer.complete(null);
       },
       (assessment) {
@@ -158,7 +159,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     state = state.copyWith(isLoading: true, error: null);
     final result = await _getAssessmentDetail(assessmentId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (data) {
         final (assessment, questions) = data;
         state = state.copyWith(
@@ -174,7 +175,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _publishAssessment(assessmentId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (assessment) {
         final updatedList = assessment.classId.isEmpty
             ? state.assessments.map((a) {
@@ -217,7 +218,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _unpublishAssessment(assessmentId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (assessment) {
         final updatedList = assessment.classId.isEmpty
             ? state.assessments.map((a) {
@@ -260,7 +261,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _deleteAssessment(assessmentId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (_) {
         state = state.copyWith(
           isLoading: false,
@@ -280,7 +281,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     state = state.copyWith(assessments: orderedAssessments);
     final result = await _reorderAllAssessments(classId: classId, assessmentIds: assessmentIds);
     result.fold(
-      (failure) => state = state.copyWith(error: failure.message),
+      (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
       (_) {},
     );
   }
@@ -293,7 +294,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     state = state.copyWith(questions: orderedQuestions);
     final result = await _reorderAllQuestions(assessmentId: assessmentId, questionIds: questionIds);
     result.fold(
-      (failure) => state = state.copyWith(error: failure.message),
+      (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
       (_) {},
     );
   }
@@ -302,7 +303,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _addQuestions(params);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (questions) => state = state.copyWith(
         isLoading: false,
         questions: [...state.questions, ...questions],
@@ -315,7 +316,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _updateAssessment(params);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (assessment) => state = state.copyWith(
         isLoading: false,
         currentAssessment: assessment,
@@ -328,7 +329,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _updateQuestion(params);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (question) => state = state.copyWith(
         isLoading: false,
         successMessage: 'Question updated',
@@ -340,7 +341,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _deleteQuestion(questionId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (_) => state = state.copyWith(
         isLoading: false,
         successMessage: 'Question deleted',
@@ -352,7 +353,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _releaseResults(assessmentId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (assessment) {
         final updatedList = state.assessments.map((a) => a.id == assessmentId ? assessment : a).toList();
         state = state.copyWith(
@@ -369,7 +370,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     state = state.copyWith(isLoading: true, error: null);
     final result = await _getSubmissions(assessmentId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (submissions) => state = state.copyWith(isLoading: false, submissions: submissions),
     );
   }
@@ -378,7 +379,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     state = state.copyWith(isLoading: true, error: null);
     final result = await _getSubmissionDetail(submissionId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (detail) => state = state.copyWith(isLoading: false, currentSubmission: detail),
     );
   }
@@ -387,7 +388,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _overrideAnswer(params);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (_) => state = state.copyWith(
         isLoading: false,
         successMessage: 'Grade overridden',
@@ -399,7 +400,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     state = state.copyWith(isLoading: true, error: null);
     final result = await _getStatistics(assessmentId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (stats) => state = state.copyWith(isLoading: false, statistics: stats),
     );
   }

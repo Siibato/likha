@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/logging/provider_logger.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
@@ -80,7 +81,7 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
     state = state.copyWith(isLoading: true, error: null);
     final result = await _getAssessments(classId, publishedOnly: publishedOnly, skipBackgroundRefresh: skipBackgroundRefresh);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (assessments) => state = state.copyWith(isLoading: false, assessments: assessments),
     );
   }
@@ -89,7 +90,7 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
     state = state.copyWith(isLoading: true, error: null);
     final result = await _getAssessmentDetail(assessmentId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (data) {
         final (assessment, _) = data;
         state = state.copyWith(isLoading: false, currentAssessment: assessment);
@@ -111,7 +112,7 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
       studentUsername: studentUsername,
     ));
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (startResult) => state = state.copyWith(isLoading: false, startResult: startResult),
     );
   }
@@ -119,7 +120,7 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
   Future<void> saveAnswers(SaveAnswersParams params) async {
     final result = await _saveAnswers(params);
     result.fold(
-      (failure) => state = state.copyWith(error: failure.message),
+      (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
       (_) {},
     );
   }
@@ -128,7 +129,7 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
     state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _submitAssessment(submissionId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (_) => state = state.copyWith(
         isLoading: false,
         successMessage: 'Assessment submitted',
@@ -141,7 +142,7 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
     state = state.copyWith(isLoading: true, error: null);
     final result = await _getStudentResults(submissionId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (studentResult) => state = state.copyWith(isLoading: false, studentResult: studentResult),
     );
   }
@@ -180,7 +181,7 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
     await submissionResult.fold(
       (failure) async {
         ProviderLogger.instance.error('loadScorePreview() FAILED', Exception(failure.message));
-        state = state.copyWith(isLoading: false, error: failure.message);
+        state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure));
       },
       (submission) async {
         ProviderLogger.instance.log('loadScorePreview() GOT SUBMISSION');

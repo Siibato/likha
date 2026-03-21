@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/logging/provider_logger.dart';
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/domain/learning_materials/entities/learning_material.dart';
@@ -99,7 +100,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     state = state.copyWith(isLoading: true, clearError: true);
     final result = await _getMaterials(classId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (materials) {
         ProviderLogger.instance.log('Loaded ${materials.length} materials');
         state = state.copyWith(isLoading: false, materials: materials);
@@ -112,7 +113,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     state = state.copyWith(isLoading: true, clearError: true);
     final result = await _getMaterialDetail(materialId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (detail) => state = state.copyWith(isLoading: false, currentMaterial: detail),
     );
   }
@@ -131,7 +132,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
       contentText: contentText,
     );
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (material) {
         final updatedMaterials = [...state.materials, material];
         state = state.copyWith(
@@ -169,7 +170,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
       contentText: contentText,
     );
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (material) {
         final updatedMaterials = state.materials
             .map((m) => m.id == materialId ? material : m)
@@ -205,7 +206,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
     final result = await _deleteMaterial(materialId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (_) {
         final updatedMaterials = state.materials.where((m) => m.id != materialId).toList();
         state = state.copyWith(
@@ -223,7 +224,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
       newOrderIndex: newOrderIndex,
     );
     result.fold(
-      (failure) => state = state.copyWith(error: failure.message),
+      (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
       (mat) {
         final updatedMaterials = state.materials
             .map((m) => m.id == materialId ? mat : m)
@@ -269,7 +270,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
       fileName: fileName,
     );
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (file) {
         state = state.copyWith(
           isLoading: false,
@@ -287,7 +288,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
     final result = await _deleteFile(fileId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (_) {
         state = state.copyWith(
           isLoading: false,
@@ -303,7 +304,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     final result = await _downloadFile(fileId);
     state = state.copyWith(isLoading: false);
     result.fold(
-      (failure) => state = state.copyWith(error: failure.message),
+      (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
       (_) {
         // Reload detail to reflect updated localPath from DB
         if (state.currentMaterial != null) {
