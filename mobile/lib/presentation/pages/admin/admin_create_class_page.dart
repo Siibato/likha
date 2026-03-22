@@ -20,6 +20,7 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   String? _selectedTeacherId;
+  bool _isAdvisory = false;
   String? _formError;
 
   @override
@@ -56,6 +57,7 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
           teacherId: _selectedTeacherId,
           teacherUsername: selectedTeacher.username,
           teacherFullName: selectedTeacher.fullName,
+          isAdvisory: _isAdvisory,
         );
 
     if (mounted) {
@@ -207,6 +209,40 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
                     });
                   },
                   enabled: !classState.isLoading,
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                  ),
+                  child: SwitchListTile(
+                    value: _isAdvisory,
+                    onChanged: classState.isLoading
+                        ? null
+                        : (value) => setState(() => _isAdvisory = value),
+                    title: const Text(
+                      'Advisory Class',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2B2B2B),
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'Enables SF9/SF10 report card access for this teacher',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF999999),
+                      ),
+                    ),
+                    activeColor: const Color(0xFF2B2B2B),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 32),
                 StyledButton(

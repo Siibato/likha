@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
+import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 import 'package:likha/presentation/pages/teacher/widgets/question_type_dropdown.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_field.dart';
@@ -13,8 +14,17 @@ export 'package:likha/presentation/pages/teacher/widgets/question_editor_body.da
 
 class AddQuestionPage extends ConsumerStatefulWidget {
   final String assessmentId;
+  final String? tosId;
+  final List<TosCompetency> tosCompetencies;
+  final String classificationMode;
 
-  const AddQuestionPage({super.key, required this.assessmentId});
+  const AddQuestionPage({
+    super.key,
+    required this.assessmentId,
+    this.tosId,
+    this.tosCompetencies = const [],
+    this.classificationMode = 'blooms',
+  });
 
   @override
   ConsumerState<AddQuestionPage> createState() => _AddQuestionPageState();
@@ -26,6 +36,8 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
   final _pointsController = TextEditingController(text: '1');
   String _questionType = 'multiple_choice';
   bool _isMultiSelect = false;
+  String? _selectedCompetencyId;
+  String? _selectedCognitiveLevel;
   String? _formError;
 
   // Multiple choice
@@ -76,6 +88,10 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
       'question_text': _questionTextController.text.trim(),
       'points': points,
       'order_index': 0,
+      if (_selectedCompetencyId != null)
+        'tos_competency_id': _selectedCompetencyId,
+      if (_selectedCognitiveLevel != null)
+        'cognitive_level': _selectedCognitiveLevel,
     };
 
     if (_questionType == 'multiple_choice') {
@@ -242,6 +258,80 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
                 enabled: !state.isLoading,
                 onChanged: (_) => setState(() => _formError = null),
               ),
+              // TOS competency & cognitive level dropdowns
+              if (widget.tosId != null && widget.tosCompetencies.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                  ),
+                  child: DropdownButtonFormField<String?>(
+                    value: _selectedCompetencyId,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Competency (optional)',
+                      prefixIcon: Icon(Icons.list_alt_rounded, color: Color(0xFF999999), size: 20),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      labelStyle: TextStyle(fontSize: 14, color: Color(0xFF999999)),
+                    ),
+                    items: [
+                      const DropdownMenuItem(value: null, child: Text('None')),
+                      ...widget.tosCompetencies.map((c) => DropdownMenuItem(
+                            value: c.id,
+                            child: Text(
+                              c.competencyCode != null
+                                  ? '${c.competencyCode} - ${c.competencyText}'
+                                  : c.competencyText,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          )),
+                    ],
+                    onChanged: state.isLoading
+                        ? null
+                        : (v) => setState(() => _selectedCompetencyId = v),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                  ),
+                  child: DropdownButtonFormField<String?>(
+                    value: _selectedCognitiveLevel,
+                    decoration: const InputDecoration(
+                      labelText: 'Cognitive Level (optional)',
+                      prefixIcon: Icon(Icons.psychology_outlined, color: Color(0xFF999999), size: 20),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      labelStyle: TextStyle(fontSize: 14, color: Color(0xFF999999)),
+                    ),
+                    items: [
+                      const DropdownMenuItem(value: null, child: Text('None')),
+                      if (widget.classificationMode == 'blooms') ...[
+                        const DropdownMenuItem(value: 'Remembering', child: Text('Remembering')),
+                        const DropdownMenuItem(value: 'Understanding', child: Text('Understanding')),
+                        const DropdownMenuItem(value: 'Applying', child: Text('Applying')),
+                        const DropdownMenuItem(value: 'Analyzing', child: Text('Analyzing')),
+                        const DropdownMenuItem(value: 'Evaluating', child: Text('Evaluating')),
+                        const DropdownMenuItem(value: 'Creating', child: Text('Creating')),
+                      ] else ...[
+                        const DropdownMenuItem(value: 'Easy', child: Text('Easy')),
+                        const DropdownMenuItem(value: 'Average', child: Text('Average')),
+                        const DropdownMenuItem(value: 'Difficult', child: Text('Difficult')),
+                      ],
+                    ],
+                    onChanged: state.isLoading
+                        ? null
+                        : (v) => setState(() => _selectedCognitiveLevel = v),
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
               if (_questionType == 'multiple_choice')
                 QuestionEditorBody(

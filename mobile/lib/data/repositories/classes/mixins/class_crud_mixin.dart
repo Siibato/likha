@@ -16,6 +16,7 @@ mixin ClassCrudMixin on ClassRepositoryBase {
     String? teacherId,
     String? teacherUsername,
     String? teacherFullName,
+    bool isAdvisory = false,
   }) async {
     try {
       // Client-side duplicate check before creating
@@ -48,6 +49,7 @@ mixin ClassCrudMixin on ClassRepositoryBase {
             'title': title,
             'description': description,
             if (teacherId != null) 'teacher_id': teacherId,
+            'is_advisory': isAdvisory,
           },
           status: SyncStatus.pending,
           retryCount: 0,
@@ -64,6 +66,7 @@ mixin ClassCrudMixin on ClassRepositoryBase {
           teacherUsername: teacherUsername ?? '',
           teacherFullName: teacherFullName ?? '',
           isArchived: false,
+          isAdvisory: isAdvisory,
           studentCount: 0,
           createdAt: now,
           updatedAt: now,
@@ -84,6 +87,7 @@ mixin ClassCrudMixin on ClassRepositoryBase {
         title: title,
         description: description,
         teacherId: teacherId,
+        isAdvisory: isAdvisory,
       );
 
       // Cache the result immediately so it appears in the list

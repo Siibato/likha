@@ -9,6 +9,7 @@ import 'package:likha/domain/assessments/usecases/add_questions.dart';
 import 'package:likha/domain/assessments/usecases/create_assessment.dart';
 import 'package:likha/presentation/pages/teacher/widgets/question_draft.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
+import 'package:likha/presentation/providers/tos_provider.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_details_section.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_questions_section.dart';
 import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
@@ -40,6 +41,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
   int? _quarter;
   String? _component;
   bool _isDepartmentalExam = false;
+  String? _linkedTosId;
   final List<QuestionDraft> _questions = [];
   bool _isSaving = false;
   bool _draftLoaded = false;
@@ -52,6 +54,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadDraft();
+      ref.read(tosProvider.notifier).loadTosList(widget.classId);
     });
   }
 
@@ -473,6 +476,9 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                         onQuarterChanged: (v) => setState(() { _quarter = v; _formError = null; }),
                         onComponentChanged: (v) => setState(() { _component = v; _isDepartmentalExam = false; _formError = null; }),
                         onDepartmentalExamChanged: (v) => setState(() { _isDepartmentalExam = v; _formError = null; }),
+                        selectedTosId: _linkedTosId,
+                        tosList: ref.watch(tosProvider).tosList,
+                        onTosChanged: (v) => setState(() { _linkedTosId = v; _formError = null; }),
                         onCreateAssessment: null,
                       ),
                     ),

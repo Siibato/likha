@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_field.dart';
 import 'package:likha/presentation/pages/teacher/widgets/shared_due_date_time_picker.dart';
 
@@ -24,6 +25,9 @@ class AssessmentDetailsSection extends StatelessWidget {
   final ValueChanged<int?>? onQuarterChanged;
   final ValueChanged<String?>? onComponentChanged;
   final ValueChanged<bool>? onDepartmentalExamChanged;
+  final String? selectedTosId;
+  final List<TableOfSpecifications> tosList;
+  final ValueChanged<String?>? onTosChanged;
 
   const AssessmentDetailsSection({
     super.key,
@@ -47,6 +51,9 @@ class AssessmentDetailsSection extends StatelessWidget {
     this.onQuarterChanged,
     this.onComponentChanged,
     this.onDepartmentalExamChanged,
+    this.selectedTosId,
+    this.tosList = const [],
+    this.onTosChanged,
   });
 
   @override
@@ -304,6 +311,54 @@ class AssessmentDetailsSection extends StatelessWidget {
                 activeThumbColor: const Color(0xFF2B2B2B),
                 onChanged: isLoading ? null : onDepartmentalExamChanged,
               ),
+            ),
+          ],
+          if (tosList.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String?>(
+              value: selectedTosId,
+              decoration: InputDecoration(
+                labelText: 'Link to TOS (optional)',
+                labelStyle: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF999999),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: Color(0xFFE0E0E0),
+                    width: 1,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: Color(0xFFE0E0E0),
+                    width: 1,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF2B2B2B),
+                    width: 1.5,
+                  ),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+              ),
+              items: [
+                const DropdownMenuItem(value: null, child: Text('None')),
+                ...tosList.map((tos) => DropdownMenuItem(
+                      value: tos.id,
+                      child: Text('${tos.title} (Q${tos.quarter})'),
+                    )),
+              ],
+              onChanged: isLoading ? null : onTosChanged,
             ),
           ],
         ],

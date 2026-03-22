@@ -4,6 +4,7 @@ import 'package:likha/core/utils/transmutation_util.dart';
 import 'package:likha/domain/grading/usecases/get_final_grades.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
+import 'package:likha/presentation/providers/general_average_provider.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
 
 class GradeSummaryPage extends ConsumerStatefulWidget {
@@ -43,8 +44,9 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
 
   void _onTabChanged() {
     if (!_tabController.indexIsChanging) return;
-    if (_tabController.index == 1 && _finalGrades == null) {
-      _loadFinalGrades();
+    if (_tabController.index == 1) {
+      if (_finalGrades == null) _loadFinalGrades();
+      ref.read(generalAverageProvider.notifier).loadGeneralAverages(widget.classId);
     }
   }
 
@@ -540,8 +542,12 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
     const nameWidth = 130.0;
     const cellWidth = 64.0;
     const fgWidth = 80.0;
+    const gaWidth = 64.0;
     const descriptorWidth = 130.0;
     const cellHeight = 44.0;
+
+    final gaState = ref.watch(generalAverageProvider);
+    final gaStudents = gaState.response?.students ?? [];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
@@ -573,6 +579,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                     _headerCell('Q3', cellWidth),
                     _headerCell('Q4', cellWidth),
                     _headerCell('Final', fgWidth),
+                    _headerCell('GA', gaWidth),
                     _headerCell('Descriptor', descriptorWidth),
                   ],
                 ),
@@ -639,6 +646,28 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                               : const Color(0xFFCCCCCC),
                         ),
                       ),
+                      // GA column
+                      () {
+                        final studentId = row['student_id'] as String?;
+                        final gaMatch = gaStudents.cast<dynamic>().firstWhere(
+                          (s) => s.studentId == studentId ||
+                              s.studentName == studentName,
+                          orElse: () => null,
+                        );
+                        final ga = gaMatch?.generalAverage;
+                        return _dataCell(
+                          ga?.toString() ?? '--',
+                          gaWidth,
+                          cellHeight,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: ga != null
+                                ? const Color(0xFF2B2B2B)
+                                : const Color(0xFFCCCCCC),
+                          ),
+                        );
+                      }(),
                       SizedBox(
                         width: descriptorWidth,
                         height: cellHeight,

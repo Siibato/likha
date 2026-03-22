@@ -10,6 +10,7 @@ abstract class ClassRepository {
     String? teacherId,
     String? teacherUsername,
     String? teacherFullName,
+    bool isAdvisory = false,
   });
 
   ResultFuture<List<ClassEntity>> getMyClasses({bool skipBackgroundRefresh = false});

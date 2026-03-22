@@ -144,6 +144,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
     String? teacherId,
     String? teacherUsername,
     String? teacherFullName,
+    bool isAdvisory = false,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
 
@@ -153,6 +154,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
       teacherId: teacherId,
       teacherUsername: teacherUsername,
       teacherFullName: teacherFullName,
+      isAdvisory: isAdvisory,
     ));
 
     result.fold(

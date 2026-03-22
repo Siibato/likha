@@ -144,6 +144,32 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                               value: classInfo.teacherUsername,
                             ),
                           ],
+                          if (classInfo != null && classInfo.isAdvisory) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFF4CAF50).withValues(alpha: 0.3)),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.star_rounded, size: 16, color: Color(0xFF4CAF50)),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Advisory Class',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF4CAF50),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),

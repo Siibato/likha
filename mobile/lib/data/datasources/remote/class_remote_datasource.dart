@@ -10,6 +10,7 @@ abstract class ClassRemoteDataSource {
     required String title,
     String? description,
     String? teacherId,
+    bool isAdvisory = false,
   });
 
   Future<List<ClassModel>> getMyClasses();
@@ -48,6 +49,7 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
     required String title,
     String? description,
     String? teacherId,
+    bool isAdvisory = false,
   }) async {
     try {
       return await _dioClient.postTyped(
@@ -56,6 +58,7 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
           'title': title,
           if (description != null) 'description': description,
           if (teacherId != null) 'teacher_id': teacherId,
+          'is_advisory': isAdvisory,
         },
       );
     } on DioException catch (e) {
