@@ -168,6 +168,65 @@ pub struct ClassGradingSetupResponse {
     pub configs: Vec<GradingConfigResponse>,
 }
 
+// ===== GENERAL AVERAGE (GSA) SCHEMAS =====
+
+#[derive(Debug, Serialize)]
+pub struct GeneralAverageResponse {
+    pub class_id: String,
+    pub students: Vec<StudentGeneralAverage>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct StudentGeneralAverage {
+    pub student_id: String,
+    pub student_name: String,
+    pub general_average: Option<i32>,
+    pub subject_count: usize,
+    pub subjects: Vec<SubjectGrade>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SubjectGrade {
+    pub class_id: String,
+    pub class_title: String,
+    pub final_grade: Option<i32>,
+}
+
+// ===== SF9/SF10 SCHEMAS =====
+
+#[derive(Debug, Serialize)]
+pub struct Sf9Response {
+    pub student_id: String,
+    pub student_name: String,
+    pub grade_level: Option<String>,
+    pub school_year: Option<String>,
+    pub section: Option<String>,
+    pub subjects: Vec<Sf9SubjectRow>,
+    pub general_average: Option<Sf9QuarterlyAverages>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct Sf9SubjectRow {
+    pub class_title: String,
+    pub subject_group: Option<String>,
+    pub q1: Option<i32>,
+    pub q2: Option<i32>,
+    pub q3: Option<i32>,
+    pub q4: Option<i32>,
+    pub final_grade: Option<i32>,
+    pub descriptor: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct Sf9QuarterlyAverages {
+    pub q1: Option<i32>,
+    pub q2: Option<i32>,
+    pub q3: Option<i32>,
+    pub q4: Option<i32>,
+    pub final_average: Option<i32>,
+    pub descriptor: Option<String>,
+}
+
 // ===== FROM CONVERSIONS =====
 
 impl From<::entity::grade_components_config::Model> for GradingConfigResponse {

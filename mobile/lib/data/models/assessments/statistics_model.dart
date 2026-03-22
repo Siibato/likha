@@ -8,6 +8,8 @@ class AssessmentStatisticsModel extends AssessmentStatistics {
     required super.submissionCount,
     required super.classStatistics,
     required super.questionStatistics,
+    super.itemAnalysis,
+    super.testSummary,
   });
 
   factory AssessmentStatisticsModel.fromJson(Map<String, dynamic> json) {
@@ -22,6 +24,15 @@ class AssessmentStatisticsModel extends AssessmentStatistics {
           .map((e) =>
               QuestionStatisticsModel.fromJson(e as Map<String, dynamic>))
           .toList(),
+      itemAnalysis: (json['item_analysis'] as List<dynamic>?)
+              ?.map((e) =>
+                  ItemAnalysisModel.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      testSummary: json['test_summary'] != null
+          ? TestSummaryModel.fromJson(
+              json['test_summary'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -34,6 +45,11 @@ class AssessmentStatisticsModel extends AssessmentStatistics {
     'question_statistics': (questionStatistics as List<QuestionStatisticsModel>)
         .map((e) => e.toJson())
         .toList(),
+    'item_analysis': itemAnalysis
+        .map((e) => (e as ItemAnalysisModel).toJson())
+        .toList(),
+    if (testSummary != null)
+      'test_summary': (testSummary as TestSummaryModel).toJson(),
   };
 }
 
@@ -116,5 +132,125 @@ class QuestionStatisticsModel extends QuestionStatistics {
     'correct_count': correctCount,
     'incorrect_count': incorrectCount,
     'correct_percentage': correctPercentage,
+  };
+}
+
+class ItemAnalysisModel extends ItemAnalysis {
+  const ItemAnalysisModel({
+    required super.questionId,
+    required super.questionText,
+    required super.questionType,
+    required super.points,
+    required super.difficultyIndex,
+    required super.difficultyLabel,
+    required super.discriminationIndex,
+    required super.discriminationLabel,
+    required super.verdict,
+    super.distractors,
+  });
+
+  factory ItemAnalysisModel.fromJson(Map<String, dynamic> json) {
+    return ItemAnalysisModel(
+      questionId: json['question_id'] as String,
+      questionText: json['question_text'] as String,
+      questionType: json['question_type'] as String,
+      points: json['points'] as int,
+      difficultyIndex: (json['difficulty_index'] as num).toDouble(),
+      difficultyLabel: json['difficulty_label'] as String,
+      discriminationIndex: (json['discrimination_index'] as num).toDouble(),
+      discriminationLabel: json['discrimination_label'] as String,
+      verdict: json['verdict'] as String,
+      distractors: (json['distractors'] as List<dynamic>?)
+          ?.map((e) =>
+              DistractorAnalysisModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'question_id': questionId,
+    'question_text': questionText,
+    'question_type': questionType,
+    'points': points,
+    'difficulty_index': difficultyIndex,
+    'difficulty_label': difficultyLabel,
+    'discrimination_index': discriminationIndex,
+    'discrimination_label': discriminationLabel,
+    'verdict': verdict,
+    if (distractors != null)
+      'distractors': distractors!
+          .map((e) => (e as DistractorAnalysisModel).toJson())
+          .toList(),
+  };
+}
+
+class DistractorAnalysisModel extends DistractorAnalysis {
+  const DistractorAnalysisModel({
+    required super.choiceId,
+    required super.choiceText,
+    required super.isCorrect,
+    required super.upperCount,
+    required super.lowerCount,
+    required super.totalPercentage,
+    required super.isEffective,
+  });
+
+  factory DistractorAnalysisModel.fromJson(Map<String, dynamic> json) {
+    return DistractorAnalysisModel(
+      choiceId: json['choice_id'] as String,
+      choiceText: json['choice_text'] as String,
+      isCorrect: json['is_correct'] as bool,
+      upperCount: json['upper_count'] as int,
+      lowerCount: json['lower_count'] as int,
+      totalPercentage: (json['total_percentage'] as num).toDouble(),
+      isEffective: json['is_effective'] as bool,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'choice_id': choiceId,
+    'choice_text': choiceText,
+    'is_correct': isCorrect,
+    'upper_count': upperCount,
+    'lower_count': lowerCount,
+    'total_percentage': totalPercentage,
+    'is_effective': isEffective,
+  };
+}
+
+class TestSummaryModel extends TestSummary {
+  const TestSummaryModel({
+    required super.meanDifficulty,
+    required super.meanDiscrimination,
+    required super.retainCount,
+    required super.reviseCount,
+    required super.discardCount,
+    required super.totalItemsAnalyzed,
+    required super.upperGroupSize,
+    required super.lowerGroupSize,
+  });
+
+  factory TestSummaryModel.fromJson(Map<String, dynamic> json) {
+    return TestSummaryModel(
+      meanDifficulty: (json['mean_difficulty'] as num).toDouble(),
+      meanDiscrimination: (json['mean_discrimination'] as num).toDouble(),
+      retainCount: json['retain_count'] as int,
+      reviseCount: json['revise_count'] as int,
+      discardCount: json['discard_count'] as int,
+      totalItemsAnalyzed: json['total_items_analyzed'] as int,
+      upperGroupSize: json['upper_group_size'] as int,
+      lowerGroupSize: json['lower_group_size'] as int,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'mean_difficulty': meanDifficulty,
+    'mean_discrimination': meanDiscrimination,
+    'retain_count': retainCount,
+    'revise_count': reviseCount,
+    'discard_count': discardCount,
+    'total_items_analyzed': totalItemsAnalyzed,
+    'upper_group_size': upperGroupSize,
+    'lower_group_size': lowerGroupSize,
   };
 }

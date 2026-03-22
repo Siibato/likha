@@ -32,6 +32,9 @@ abstract final class DbTables {
   static const String gradeItems = 'grade_items';
   static const String gradeScores = 'grade_scores';
   static const String quarterlyGrades = 'quarterly_grades';
+  static const String tableOfSpecifications = 'table_of_specifications';
+  static const String tosCompetencies = 'tos_competencies';
+  static const String melcs = 'melcs';
 }
 
 // ─── Common columns ───────────────────────────────────────────────────────────
@@ -88,6 +91,7 @@ abstract final class ClassesCols {
   static const String subjectGroup = 'subject_group';
   static const String schoolYear = 'school_year';
   static const String semester = 'semester';
+  static const String isAdvisory = 'is_advisory';
 }
 
 abstract final class ClassParticipantsCols {
@@ -120,6 +124,8 @@ abstract final class AssessmentQuestionsCols {
   static const String points = 'points';
   static const String orderIndex = 'order_index';
   static const String isMultiSelect = 'is_multi_select';
+  static const String tosCompetencyId = 'tos_competency_id';
+  static const String cognitiveLevel = 'cognitive_level';
 }
 
 abstract final class AnswerKeysCols {
@@ -285,6 +291,31 @@ abstract final class QuarterlyGradesCols {
 abstract final class StudentResultsCacheCols {
   static const String submissionId = 'submission_id';
   static const String resultsJson = 'results_json';
+}
+
+abstract final class TosCols {
+  static const String classId = 'class_id';
+  static const String quarter = 'quarter';
+  static const String title = 'title';
+  static const String classificationMode = 'classification_mode';
+  static const String totalItems = 'total_items';
+}
+
+abstract final class TosCompetenciesCols {
+  static const String tosId = 'tos_id';
+  static const String competencyCode = 'competency_code';
+  static const String competencyText = 'competency_text';
+  static const String daysTaught = 'days_taught';
+  static const String orderIndex = 'order_index';
+}
+
+abstract final class MelcsCols {
+  static const String subject = 'subject';
+  static const String gradeLevel = 'grade_level';
+  static const String quarter = 'quarter';
+  static const String competencyCode = 'competency_code';
+  static const String competencyText = 'competency_text';
+  static const String domain = 'domain';
 }
 
 // ─── Domain value strings ─────────────────────────────────────────────────────

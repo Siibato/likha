@@ -46,6 +46,7 @@ impl super::ClassService {
             description: class.description,
             teacher_id: teacher.id,
             is_archived: class.is_archived,
+            is_advisory: class.is_advisory,
             students,
             created_at: class.created_at.to_string(),
             updated_at: class.updated_at.to_string(),

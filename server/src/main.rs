@@ -29,6 +29,7 @@ use crate::services::sync_push::SyncPushService;
 use crate::services::sync_conflict_service::SyncConflictService;
 use crate::services::sync_full::SyncFullService;
 use crate::services::sync_delta::SyncDeltaService;
+use crate::services::tos::TosService;
 use crate::db::repositories::{
     manifest_repository::ManifestRepository,
     processed_operations_repository::ProcessedOperationsRepository,
@@ -166,6 +167,7 @@ async fn main() {
 
     let processed_ops_repo = Arc::new(ProcessedOperationsRepository::new(db.clone()));
     let grade_computation_service = Arc::new(GradeComputationService::new(db.clone()));
+    let tos_service = Arc::new(TosService::new(db.clone()));
 
     let sync_push_service = Arc::new(SyncPushService::new(
         entitlement_service.clone(),
@@ -199,6 +201,7 @@ async fn main() {
         assignment_service,
         material_service,
         grade_computation_service,
+        tos_service,
         sync_push_service,
         sync_conflict_service,
         sync_full_service,
@@ -225,6 +228,7 @@ fn create_app(
     assignment_service: Arc<AssignmentService>,
     material_service: Arc<LearningMaterialService>,
     grade_computation_service: Arc<GradeComputationService>,
+    tos_service: Arc<TosService>,
     sync_push_service: Arc<SyncPushService>,
     sync_conflict_service: Arc<SyncConflictService>,
     sync_full_service: Arc<SyncFullService>,
@@ -245,6 +249,7 @@ fn create_app(
                 assignment_service,
                 material_service,
                 grade_computation_service,
+                tos_service,
                 sync_push_service,
                 sync_conflict_service,
                 sync_full_service,

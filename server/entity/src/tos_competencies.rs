@@ -2,21 +2,18 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Serialize, Deserialize)]
-#[sea_orm(table_name = "classes")]
+#[sea_orm(table_name = "tos_competencies")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
-    pub title: String,
-    pub description: Option<String>,
-    pub is_archived: bool,
+    pub tos_id: Uuid,
+    pub competency_code: Option<String>,
+    pub competency_text: String,
+    pub days_taught: i32,
+    pub order_index: i32,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
     pub deleted_at: Option<chrono::NaiveDateTime>,
-    pub grade_level: Option<String>,
-    pub subject_group: Option<String>,
-    pub school_year: Option<String>,
-    pub semester: Option<i32>,
-    pub is_advisory: bool,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

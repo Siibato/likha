@@ -4,7 +4,7 @@ use uuid::Uuid;
 use crate::utils::{AppError, AppResult};
 use crate::services::sync_common::enrich_questions;
 
-use super::sync_delta_service::{DeltaRequest, DeltaResponse, DeltaPayload};
+use super::sync_delta_service::{DeltaRequest, DeltaResponse, DeltaPayload, EntityDeltas};
 use super::separate_deltas::separate_deltas;
 
 impl super::SyncDeltaService {
@@ -217,6 +217,8 @@ impl super::SyncDeltaService {
                 grade_items: grade_items_deltas,
                 grade_scores: grade_scores_deltas,
                 quarterly_grades: quarterly_grades_deltas,
+                table_of_specifications: EntityDeltas { updated: vec![], deleted: vec![] },
+                tos_competencies: EntityDeltas { updated: vec![], deleted: vec![] },
             },
         })
     }

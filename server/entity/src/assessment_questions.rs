@@ -15,6 +15,8 @@ pub struct Model {
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
     pub deleted_at: Option<chrono::NaiveDateTime>,
+    pub tos_competency_id: Option<String>,
+    pub cognitive_level: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -87,5 +87,19 @@ pub fn routes(grade_service: Arc<GradeComputationService>) -> Router {
             "/grading/deped-presets",
             get(grading_handler::get_deped_presets),
         )
+        // General Average (GSA)
+        .route(
+            "/classes/{class_id}/grades/general-average",
+            get(grading_handler::get_general_averages),
+        )
+        // SF9/SF10
+        .route(
+            "/classes/{class_id}/sf9/{student_id}",
+            get(grading_handler::get_sf9),
+        )
+        .route(
+            "/classes/{class_id}/sf10/{student_id}",
+            get(grading_handler::get_sf10),
+        )
         .with_state(grade_service)
 }

@@ -20,6 +20,8 @@ pub mod refresh_tokens;
 pub mod submission_answer_items;
 pub mod submission_answers;
 pub mod submission_files;
+pub mod table_of_specifications;
+pub mod tos_competencies;
 pub mod users;
 
 pub use activity_logs::Entity as ActivityLogs;
@@ -44,6 +46,8 @@ pub use refresh_tokens::Entity as RefreshTokens;
 pub use submission_answer_items::Entity as SubmissionAnswerItems;
 pub use submission_answers::Entity as SubmissionAnswers;
 pub use submission_files::Entity as SubmissionFiles;
+pub use table_of_specifications::Entity as TableOfSpecifications;
+pub use tos_competencies::Entity as TosCompetencies;
 pub use users::Entity as Users;
 
 pub mod prelude {
@@ -69,5 +73,7 @@ pub mod prelude {
     pub use super::submission_answer_items::{self, Entity as SubmissionAnswerItems};
     pub use super::submission_answers::{self, Entity as SubmissionAnswers};
     pub use super::submission_files::{self, Entity as SubmissionFiles};
+    pub use super::table_of_specifications::{self, Entity as TableOfSpecifications};
+    pub use super::tos_competencies::{self, Entity as TosCompetencies};
     pub use super::users::{self, Entity as Users};
 }

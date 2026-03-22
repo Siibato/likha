@@ -7,3 +7,4 @@ pub mod common;
 pub mod grading_schema;
 pub mod learning_material_schema;
 pub mod tasks_schema;
+pub mod tos_schema;

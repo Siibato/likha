@@ -44,6 +44,8 @@ pub struct AddQuestionRequest {
     pub choices: Option<Vec<ChoiceInput>>,
     pub correct_answers: Option<Vec<String>>,
     pub enumeration_items: Option<Vec<EnumerationItemInput>>,
+    pub tos_competency_id: Option<String>,
+    pub cognitive_level: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -60,6 +62,8 @@ pub struct UpdateQuestionRequest {
     pub choices: Option<Vec<ChoiceInput>>,
     pub correct_answers: Option<Vec<String>>,
     pub enumeration_items: Option<Vec<EnumerationItemInput>>,
+    pub tos_competency_id: Option<String>,
+    pub cognitive_level: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -171,6 +175,8 @@ pub struct QuestionResponse {
     pub choices: Option<Vec<ChoiceResponse>>,
     pub correct_answers: Option<Vec<CorrectAnswerResponse>>,
     pub enumeration_items: Option<Vec<EnumerationItemResponse>>,
+    pub tos_competency_id: Option<String>,
+    pub cognitive_level: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -337,6 +343,8 @@ pub struct AssessmentStatisticsResponse {
     pub submission_count: usize,
     pub class_statistics: ClassStatistics,
     pub question_statistics: Vec<QuestionStatistics>,
+    pub item_analysis: Vec<ItemAnalysis>,
+    pub test_summary: Option<TestSummary>,
 }
 
 #[derive(Debug, Serialize)]
@@ -363,6 +371,45 @@ pub struct QuestionStatistics {
     pub correct_count: usize,
     pub incorrect_count: usize,
     pub correct_percentage: f64,
+}
+
+// ===== ITEM ANALYSIS SCHEMAS =====
+
+#[derive(Debug, Serialize)]
+pub struct ItemAnalysis {
+    pub question_id: Uuid,
+    pub question_text: String,
+    pub question_type: String,
+    pub points: i32,
+    pub difficulty_index: f64,
+    pub difficulty_label: String,
+    pub discrimination_index: f64,
+    pub discrimination_label: String,
+    pub verdict: String,
+    pub distractors: Option<Vec<DistractorAnalysis>>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct DistractorAnalysis {
+    pub choice_id: Uuid,
+    pub choice_text: String,
+    pub is_correct: bool,
+    pub upper_count: usize,
+    pub lower_count: usize,
+    pub total_percentage: f64,
+    pub is_effective: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct TestSummary {
+    pub mean_difficulty: f64,
+    pub mean_discrimination: f64,
+    pub retain_count: usize,
+    pub revise_count: usize,
+    pub discard_count: usize,
+    pub total_items_analyzed: usize,
+    pub upper_group_size: usize,
+    pub lower_group_size: usize,
 }
 
 // ===== STUDENT SUBMISSION STATUS SCHEMAS =====

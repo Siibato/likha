@@ -593,4 +593,82 @@ impl GradeComputationRepository {
 
         Ok(participants.into_iter().map(|p| p.user_id).collect())
     }
+
+    // ===== CROSS-CLASS QUERIES (GSA / SF9) =====
+
+    /// Get all classes a student is enrolled in, optionally filtered by school_year.
+    /// Returns (class_id, title, subject_group, school_year).
+    pub async fn get_student_enrolled_classes(
+        &self,
+        student_id: Uuid,
+        school_year: Option<&str>,
+    ) -> AppResult<Vec<StudentEnrolledClass>> {
+        let mut sql = String::from(
+            r#"
+            SELECT c.id, c.title, c.subject_group, c.school_year
+            FROM classes c
+            JOIN class_participants cp ON cp.class_id = c.id
+            WHERE cp.user_id = $1
+              AND cp.removed_at IS NULL
+              AND c.deleted_at IS NULL
+            "#,
+        );
+        let mut params: Vec<sea_orm::Value> = vec![student_id.into()];
+
+        if let Some(sy) = school_year {
+            params.push(sy.into());
+            sql.push_str(&format!(" AND c.school_year = ${}", params.len()));
+        }
+
+        sql.push_str(" ORDER BY c.title");
+
+        let rows = self
+            .db
+            .query_all(sea_orm::Statement::from_sql_and_values(
+                sea_orm::DbBackend::Sqlite,
+                &sql,
+                params,
+            ))
+            .await
+            .map_err(|e| {
+                AppError::InternalServerError(format!("Failed to get student classes: {}", e))
+            })?;
+
+        let mut results = Vec::new();
+        for row in rows {
+            let id_str: String = row.try_get("", "id").unwrap_or_default();
+            results.push(StudentEnrolledClass {
+                class_id: Uuid::parse_str(&id_str).unwrap_or_default(),
+                title: row.try_get("", "title").unwrap_or_default(),
+                subject_group: row.try_get("", "subject_group").ok(),
+                school_year: row.try_get("", "school_year").ok(),
+            });
+        }
+
+        Ok(results)
+    }
+
+    /// Get all quarterly grades for a student in a specific class.
+    pub async fn get_quarterly_grades_for_student_class(
+        &self,
+        student_id: Uuid,
+        class_id: Uuid,
+    ) -> AppResult<Vec<quarterly_grades::Model>> {
+        quarterly_grades::Entity::find()
+            .filter(quarterly_grades::Column::StudentId.eq(student_id))
+            .filter(quarterly_grades::Column::ClassId.eq(class_id))
+            .filter(quarterly_grades::Column::DeletedAt.is_null())
+            .order_by_asc(quarterly_grades::Column::Quarter)
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+    }
+}
+
+#[derive(Debug)]
+pub struct StudentEnrolledClass {
+    pub class_id: Uuid,
+    pub title: String,
+    pub subject_group: Option<String>,
+    pub school_year: Option<String>,
 }

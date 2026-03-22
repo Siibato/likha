@@ -15,7 +15,8 @@ impl super::SyncPushService {
                     .and_then(|v| v.as_str())
                     .and_then(|s| Uuid::parse_str(s).ok());
                 let client_id = self.parse_uuid_field(&op.payload, "id").ok();
-                let request = CreateClassRequest { title, description, teacher_id };
+                let is_advisory = op.payload.get("is_advisory").and_then(|v| v.as_bool());
+                let request = CreateClassRequest { title, description, teacher_id, is_advisory };
 
                 match self.class_service.create_class(request, user_id, client_id).await {
                     Ok(r) => self.success_result(op, Some(r.id.to_string()), Some(r.updated_at)),
@@ -30,7 +31,8 @@ impl super::SyncPushService {
                     .get("teacher_id")
                     .and_then(|v| v.as_str())
                     .and_then(|s| Uuid::parse_str(s).ok());
-                let request = UpdateClassRequest { title, description, teacher_id };
+                let is_advisory = op.payload.get("is_advisory").and_then(|v| v.as_bool());
+                let request = UpdateClassRequest { title, description, teacher_id, is_advisory };
 
                 match self.class_service.update_class(class_id, request, user_id, user_role).await {
                     Ok(r) => self.success_result(op, None, Some(r.updated_at)),

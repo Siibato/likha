@@ -64,6 +64,8 @@ impl super::AssessmentService {
             choices,
             correct_answers,
             enumeration_items,
+            tos_competency_id: question.tos_competency_id.clone(),
+            cognitive_level: question.cognitive_level.clone(),
         })
     }
 }

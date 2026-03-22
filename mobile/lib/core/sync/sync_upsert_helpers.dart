@@ -35,6 +35,7 @@ class SyncUpsertHelpers {
             ClassesCols.teacherUsername: record['teacher_username'] ?? '',
             ClassesCols.teacherFullName: record['teacher_full_name'] ?? '',
             ClassesCols.isArchived: (record['is_archived'] == true) ? 1 : 0,
+            ClassesCols.isAdvisory: (record['is_advisory'] == true) ? 1 : 0,
             ClassesCols.studentCount: record['student_count'] ?? 0,
             ClassesCols.gradeLevel: record['grade_level'],
             ClassesCols.subjectGroup: record['subject_group'],
@@ -252,6 +253,8 @@ class SyncUpsertHelpers {
           AssessmentQuestionsCols.points: data['points'] ?? 0,
           AssessmentQuestionsCols.orderIndex: data['order_index'] ?? 0,
           AssessmentQuestionsCols.isMultiSelect: (data['is_multi_select'] == true) ? 1 : 0,
+          AssessmentQuestionsCols.tosCompetencyId: data['tos_competency_id'],
+          AssessmentQuestionsCols.cognitiveLevel: data['cognitive_level'],
           CommonCols.createdAt: data['created_at'] ?? DateTime.now().toIso8601String(),
           CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
           CommonCols.deletedAt: data['deleted_at'],
@@ -775,6 +778,90 @@ class SyncUpsertHelpers {
     }
   }
 
+  /// Upsert table_of_specifications
+  Future<void> upsertTableOfSpecifications(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+
+        await db.insert(
+          DbTables.tableOfSpecifications,
+          {
+            CommonCols.id: record['id'],
+            TosCols.classId: record['class_id'],
+            TosCols.quarter: (record['quarter'] as num).toInt(),
+            TosCols.title: record['title'],
+            TosCols.classificationMode: record['classification_mode'],
+            TosCols.totalItems: (record['total_items'] as num).toInt(),
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+            CommonCols.deletedAt: record['deleted_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.needsSync: 0,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert table_of_specifications', e);
+      }
+    }
+
+    _log.upsertSummary('table_of_specifications', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert table_of_specifications', failedCount);
+    }
+  }
+
+  /// Upsert tos_competencies
+  Future<void> upsertTosCompetencies(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+
+        await db.insert(
+          DbTables.tosCompetencies,
+          {
+            CommonCols.id: record['id'],
+            TosCompetenciesCols.tosId: record['tos_id'],
+            TosCompetenciesCols.competencyCode: record['competency_code'],
+            TosCompetenciesCols.competencyText: record['competency_text'],
+            TosCompetenciesCols.daysTaught: (record['days_taught'] as num).toInt(),
+            TosCompetenciesCols.orderIndex: (record['order_index'] as num?)?.toInt() ?? 0,
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+            CommonCols.deletedAt: record['deleted_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.needsSync: 0,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert tos_competency', e);
+      }
+    }
+
+    _log.upsertSummary('tos_competencies', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert tos_competencies', failedCount);
+    }
+  }
+
   /// Save sync token (last_sync_at) to sync_metadata
   Future<void> saveSyncToken(Database db, String syncToken) async {
     await db.insert(
@@ -1128,6 +1215,44 @@ class SyncUpsertHelpers {
       for (final id in deleted) {
         await db.update(
           DbTables.quarterlyGrades,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle table_of_specifications delta
+    final tosDeltas = deltas['table_of_specifications'] as Map<String, dynamic>?;
+    if (tosDeltas != null) {
+      final updated = tosDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['table_of_specifications'] = updated.length;
+      await upsertTableOfSpecifications(db, updated);
+
+      final deleted = tosDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['table_of_specifications'] = deleted.length;
+      for (final id in deleted) {
+        await db.update(
+          DbTables.tableOfSpecifications,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle tos_competencies delta
+    final tosCompetenciesDeltas = deltas['tos_competencies'] as Map<String, dynamic>?;
+    if (tosCompetenciesDeltas != null) {
+      final updated = tosCompetenciesDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['tos_competencies'] = updated.length;
+      await upsertTosCompetencies(db, updated);
+
+      final deleted = tosCompetenciesDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['tos_competencies'] = deleted.length;
+      for (final id in deleted) {
+        await db.update(
+          DbTables.tosCompetencies,
           {CommonCols.deletedAt: DateTime.now().toIso8601String()},
           where: '${CommonCols.id} = ?',
           whereArgs: [id as String],

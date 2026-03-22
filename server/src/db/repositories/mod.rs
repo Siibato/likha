@@ -9,4 +9,5 @@ pub mod login_attempt_repository;
 pub mod manifest_repository;
 pub mod processed_operations_repository;
 pub mod submission_repository;
+pub mod tos_repository;
 pub mod user_repository;

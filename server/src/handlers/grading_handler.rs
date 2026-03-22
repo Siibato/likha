@@ -342,3 +342,50 @@ pub async fn get_deped_presets(
     )
     .into_response()
 }
+
+// ===== GENERAL AVERAGE =====
+
+pub async fn get_general_averages(
+    State(service): State<Arc<GradeComputationService>>,
+    auth_user: AuthUser,
+    Path(class_id): Path<Uuid>,
+) -> impl IntoResponse {
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
+    }
+    match service.compute_general_averages(class_id, auth_user.user_id).await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+// ===== SF9/SF10 =====
+
+pub async fn get_sf9(
+    State(service): State<Arc<GradeComputationService>>,
+    auth_user: AuthUser,
+    Path((class_id, student_id)): Path<(Uuid, Uuid)>,
+) -> impl IntoResponse {
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
+    }
+    match service.compute_sf9(class_id, student_id, auth_user.user_id).await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+pub async fn get_sf10(
+    State(service): State<Arc<GradeComputationService>>,
+    auth_user: AuthUser,
+    Path((class_id, student_id)): Path<(Uuid, Uuid)>,
+) -> impl IntoResponse {
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
+    }
+    // SF10 initially returns the same data as SF9 (current school year only)
+    match service.compute_sf9(class_id, student_id, auth_user.user_id).await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}

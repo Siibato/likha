@@ -41,6 +41,7 @@ impl ClassRepository {
             subject_group: Set(None),
             school_year: Set(None),
             semester: Set(None),
+            is_advisory: Set(false),
         };
 
         let created_class = class

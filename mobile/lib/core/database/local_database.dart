@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 3,
+      version: 4,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onDowngrade: _downgradeDatabase,
@@ -109,6 +109,7 @@ class LocalDatabase {
           subject_group TEXT,
           school_year TEXT,
           semester INTEGER,
+          is_advisory INTEGER NOT NULL DEFAULT 0,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
@@ -169,6 +170,8 @@ class LocalDatabase {
           points INTEGER NOT NULL DEFAULT 0,
           order_index INTEGER NOT NULL DEFAULT 0,
           is_multi_select INTEGER NOT NULL DEFAULT 0,
+          tos_competency_id TEXT,
+          cognitive_level TEXT,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
@@ -498,6 +501,55 @@ class LocalDatabase {
         )
       ''');
 
+      // Table of Specifications
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS table_of_specifications (
+          id TEXT PRIMARY KEY,
+          class_id TEXT NOT NULL,
+          quarter INTEGER NOT NULL,
+          title TEXT NOT NULL,
+          classification_mode TEXT NOT NULL,
+          total_items INTEGER NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          cached_at TEXT,
+          needs_sync INTEGER NOT NULL DEFAULT 0,
+          UNIQUE(class_id, quarter)
+        )
+      ''');
+
+      // TOS Competencies
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS tos_competencies (
+          id TEXT PRIMARY KEY,
+          tos_id TEXT NOT NULL,
+          competency_code TEXT,
+          competency_text TEXT NOT NULL,
+          days_taught INTEGER NOT NULL,
+          order_index INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          cached_at TEXT,
+          needs_sync INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY (tos_id) REFERENCES table_of_specifications(id)
+        )
+      ''');
+
+      // MELCs reference table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS melcs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          subject TEXT NOT NULL,
+          grade_level TEXT NOT NULL,
+          quarter INTEGER,
+          competency_code TEXT NOT NULL,
+          competency_text TEXT NOT NULL,
+          domain TEXT
+        )
+      ''');
+
       // Create indexes
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_class_id ON class_participants(class_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_user_id ON class_participants(user_id)');
@@ -661,6 +713,59 @@ class LocalDatabase {
       await db.execute('CREATE INDEX IF NOT EXISTS idx_quarterly_grades_updated_at ON quarterly_grades(updated_at)');
       await db.execute('CREATE INDEX IF NOT EXISTS idx_quarterly_grades_deleted_at ON quarterly_grades(deleted_at)');
     }
+
+    // Handle upgrade: v3 → v4 adds TOS, competencies, MELCs, and new columns
+    if (oldVersion < 4) {
+      await db.execute('ALTER TABLE classes ADD COLUMN is_advisory INTEGER NOT NULL DEFAULT 0');
+      await db.execute('ALTER TABLE assessment_questions ADD COLUMN tos_competency_id TEXT');
+      await db.execute('ALTER TABLE assessment_questions ADD COLUMN cognitive_level TEXT');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS table_of_specifications (
+          id TEXT PRIMARY KEY,
+          class_id TEXT NOT NULL,
+          quarter INTEGER NOT NULL,
+          title TEXT NOT NULL,
+          classification_mode TEXT NOT NULL,
+          total_items INTEGER NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          cached_at TEXT,
+          needs_sync INTEGER NOT NULL DEFAULT 0,
+          UNIQUE(class_id, quarter)
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS tos_competencies (
+          id TEXT PRIMARY KEY,
+          tos_id TEXT NOT NULL,
+          competency_code TEXT,
+          competency_text TEXT NOT NULL,
+          days_taught INTEGER NOT NULL,
+          order_index INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          cached_at TEXT,
+          needs_sync INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY (tos_id) REFERENCES table_of_specifications(id)
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS melcs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          subject TEXT NOT NULL,
+          grade_level TEXT NOT NULL,
+          quarter INTEGER,
+          competency_code TEXT NOT NULL,
+          competency_text TEXT NOT NULL,
+          domain TEXT
+        )
+      ''');
+    }
   }
 
   Future<void> _downgradeDatabase(Database db, int oldVersion, int newVersion) async {
@@ -699,6 +804,9 @@ class LocalDatabase {
       'grade_scores',
       'grade_items',
       'grade_components_config',
+      'tos_competencies',
+      'table_of_specifications',
+      'melcs',
     ];
 
     for (final table in tables) {

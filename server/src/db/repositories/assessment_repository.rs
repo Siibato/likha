@@ -239,6 +239,8 @@ impl AssessmentRepository {
             created_at: Set(Utc::now().naive_utc()),
             updated_at: Set(Utc::now().naive_utc()),
             deleted_at: Set(None),
+            tos_competency_id: Set(None),
+            cognitive_level: Set(None),
         };
 
         question

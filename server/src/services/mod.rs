@@ -11,4 +11,5 @@ pub mod learning_material;
 pub mod sync_conflict_service;
 pub mod sync_delta;
 pub mod sync_full;
+pub mod tos;
 pub mod file_service;

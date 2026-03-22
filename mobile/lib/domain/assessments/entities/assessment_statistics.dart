@@ -7,6 +7,8 @@ class AssessmentStatistics extends Equatable {
   final int submissionCount;
   final ClassStatistics classStatistics;
   final List<QuestionStatistics> questionStatistics;
+  final List<ItemAnalysis> itemAnalysis;
+  final TestSummary? testSummary;
 
   const AssessmentStatistics({
     required this.assessmentId,
@@ -15,6 +17,8 @@ class AssessmentStatistics extends Equatable {
     required this.submissionCount,
     required this.classStatistics,
     required this.questionStatistics,
+    this.itemAnalysis = const [],
+    this.testSummary,
   });
 
   @override
@@ -71,4 +75,81 @@ class QuestionStatistics extends Equatable {
 
   @override
   List<Object?> get props => [questionId, correctPercentage];
+}
+
+class ItemAnalysis extends Equatable {
+  final String questionId;
+  final String questionText;
+  final String questionType;
+  final int points;
+  final double difficultyIndex;
+  final String difficultyLabel;
+  final double discriminationIndex;
+  final String discriminationLabel;
+  final String verdict;
+  final List<DistractorAnalysis>? distractors;
+
+  const ItemAnalysis({
+    required this.questionId,
+    required this.questionText,
+    required this.questionType,
+    required this.points,
+    required this.difficultyIndex,
+    required this.difficultyLabel,
+    required this.discriminationIndex,
+    required this.discriminationLabel,
+    required this.verdict,
+    this.distractors,
+  });
+
+  @override
+  List<Object?> get props => [questionId, verdict];
+}
+
+class DistractorAnalysis extends Equatable {
+  final String choiceId;
+  final String choiceText;
+  final bool isCorrect;
+  final int upperCount;
+  final int lowerCount;
+  final double totalPercentage;
+  final bool isEffective;
+
+  const DistractorAnalysis({
+    required this.choiceId,
+    required this.choiceText,
+    required this.isCorrect,
+    required this.upperCount,
+    required this.lowerCount,
+    required this.totalPercentage,
+    required this.isEffective,
+  });
+
+  @override
+  List<Object?> get props => [choiceId, isCorrect];
+}
+
+class TestSummary extends Equatable {
+  final double meanDifficulty;
+  final double meanDiscrimination;
+  final int retainCount;
+  final int reviseCount;
+  final int discardCount;
+  final int totalItemsAnalyzed;
+  final int upperGroupSize;
+  final int lowerGroupSize;
+
+  const TestSummary({
+    required this.meanDifficulty,
+    required this.meanDiscrimination,
+    required this.retainCount,
+    required this.reviseCount,
+    required this.discardCount,
+    required this.totalItemsAnalyzed,
+    required this.upperGroupSize,
+    required this.lowerGroupSize,
+  });
+
+  @override
+  List<Object?> get props => [totalItemsAnalyzed, meanDifficulty];
 }

@@ -29,6 +29,9 @@ impl super::SyncPushService {
                     let correct_answers = Self::parse_correct_answers(q);
                     let enumeration_items = Self::parse_enumeration_items(q);
 
+                    let tos_competency_id = q.get("tos_competency_id").and_then(|v| v.as_str()).map(|s| s.to_string());
+                    let cognitive_level = q.get("cognitive_level").and_then(|v| v.as_str()).map(|s| s.to_string());
+
                     questions.push(AddQuestionRequest {
                         id,
                         question_type,
@@ -39,6 +42,8 @@ impl super::SyncPushService {
                         choices,
                         correct_answers,
                         enumeration_items,
+                        tos_competency_id,
+                        cognitive_level,
                     });
                 }
 
@@ -60,6 +65,8 @@ impl super::SyncPushService {
                     choices: Self::parse_choices(&op.payload),
                     correct_answers: Self::parse_correct_answers(&op.payload),
                     enumeration_items: Self::parse_enumeration_items(&op.payload),
+                    tos_competency_id: op.payload.get("tos_competency_id").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                    cognitive_level: op.payload.get("cognitive_level").and_then(|v| v.as_str()).map(|s| s.to_string()),
                 };
                 match self.assessment_service.update_question(question_id, request, user_id).await {
                     Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),

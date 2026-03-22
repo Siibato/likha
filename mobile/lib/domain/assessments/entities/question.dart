@@ -8,6 +8,8 @@ class Question extends Equatable {
   final int points;
   final int orderIndex;
   final bool isMultiSelect;
+  final String? tosCompetencyId;
+  final String? cognitiveLevel;
   final List<Choice>? choices;
   final List<CorrectAnswer>? correctAnswers;
   final List<EnumerationItem>? enumerationItems;
@@ -24,6 +26,8 @@ class Question extends Equatable {
     required this.points,
     required this.orderIndex,
     required this.isMultiSelect,
+    this.tosCompetencyId,
+    this.cognitiveLevel,
     this.choices,
     this.correctAnswers,
     this.enumerationItems,
