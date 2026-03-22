@@ -134,6 +134,24 @@ import 'package:likha/domain/grading/usecases/set_score_override.dart';
 import 'package:likha/domain/grading/usecases/setup_grading.dart';
 import 'package:likha/domain/grading/usecases/update_grade_item.dart';
 import 'package:likha/domain/grading/usecases/update_grading_config.dart';
+import 'package:likha/domain/grading/usecases/get_general_averages.dart';
+import 'package:likha/domain/grading/usecases/get_sf9.dart';
+import 'package:likha/domain/grading/usecases/get_sf10.dart';
+import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
+import 'package:likha/data/datasources/local/tos/impl/tos_local_datasource_impl.dart';
+import 'package:likha/data/datasources/remote/tos_remote_datasource.dart';
+import 'package:likha/data/repositories/tos/tos_repository_impl.dart';
+import 'package:likha/domain/tos/repositories/tos_repository.dart';
+import 'package:likha/domain/tos/usecases/get_tos_list.dart';
+import 'package:likha/domain/tos/usecases/get_tos_detail.dart';
+import 'package:likha/domain/tos/usecases/create_tos.dart';
+import 'package:likha/domain/tos/usecases/update_tos.dart';
+import 'package:likha/domain/tos/usecases/delete_tos.dart';
+import 'package:likha/domain/tos/usecases/add_competency.dart';
+import 'package:likha/domain/tos/usecases/update_competency.dart';
+import 'package:likha/domain/tos/usecases/delete_competency.dart';
+import 'package:likha/domain/tos/usecases/bulk_add_competencies.dart';
+import 'package:likha/domain/tos/usecases/search_melcs.dart';
 import 'package:likha/services/storage_service.dart';
 final sl = GetIt.instance;
 
@@ -456,4 +474,41 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetFinalGrades(sl()));
   sl.registerLazySingleton(() => GetMyGrades(sl()));
   sl.registerLazySingleton(() => GetMyGradeDetail(sl()));
+
+  // GSA/SF9/SF10 use cases
+  sl.registerLazySingleton(() => GetGeneralAverages(sl()));
+  sl.registerLazySingleton(() => GetSf9(sl()));
+  sl.registerLazySingleton(() => GetSf10(sl()));
+
+  // TOS - Remote Data Source
+  sl.registerLazySingleton<TosRemoteDataSource>(
+    () => TosRemoteDataSourceImpl(sl<DioClient>()),
+  );
+
+  // TOS - Local Data Source
+  sl.registerLazySingleton<TosLocalDataSource>(
+    () => TosLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
+  );
+
+  // TOS - Repository
+  sl.registerLazySingleton<TosRepository>(
+    () => TosRepositoryImpl(
+      remoteDataSource: sl<TosRemoteDataSource>(),
+      localDataSource: sl<TosLocalDataSource>(),
+      serverReachabilityService: sl<ServerReachabilityService>(),
+      syncQueue: sl<SyncQueue>(),
+    ),
+  );
+
+  // TOS use cases
+  sl.registerLazySingleton(() => GetTosList(sl()));
+  sl.registerLazySingleton(() => GetTosDetail(sl()));
+  sl.registerLazySingleton(() => CreateTos(sl()));
+  sl.registerLazySingleton(() => UpdateTos(sl()));
+  sl.registerLazySingleton(() => DeleteTos(sl()));
+  sl.registerLazySingleton(() => AddCompetency(sl()));
+  sl.registerLazySingleton(() => UpdateCompetency(sl()));
+  sl.registerLazySingleton(() => DeleteCompetency(sl()));
+  sl.registerLazySingleton(() => BulkAddCompetencies(sl()));
+  sl.registerLazySingleton(() => SearchMelcs(sl()));
 }

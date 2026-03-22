@@ -3,6 +3,8 @@ import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
 import 'package:likha/domain/grading/entities/quarterly_grade.dart';
+import 'package:likha/domain/grading/entities/general_average.dart';
+import 'package:likha/domain/grading/entities/sf9.dart';
 
 abstract class GradingRepository {
   // Config
@@ -83,5 +85,21 @@ abstract class GradingRepository {
   ResultFuture<Map<String, dynamic>> getMyGradeDetail({
     required String classId,
     required int quarter,
+  });
+
+  // General Average
+  ResultFuture<GeneralAverageResponse> getGeneralAverages({
+    required String classId,
+  });
+
+  // SF9/SF10
+  ResultFuture<Sf9Response> getSf9({
+    required String classId,
+    required String studentId,
+  });
+
+  ResultFuture<Sf9Response> getSf10({
+    required String classId,
+    required String studentId,
   });
 }

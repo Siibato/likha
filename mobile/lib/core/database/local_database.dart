@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 4,
+      version: 5,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onDowngrade: _downgradeDatabase,
@@ -550,6 +550,15 @@ class LocalDatabase {
         )
       ''');
 
+      // Assessment statistics cache table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS assessment_statistics_cache (
+          assessment_id TEXT PRIMARY KEY,
+          statistics_json TEXT NOT NULL,
+          cached_at TEXT NOT NULL
+        )
+      ''');
+
       // Create indexes
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_class_id ON class_participants(class_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_user_id ON class_participants(user_id)');
@@ -766,6 +775,17 @@ class LocalDatabase {
         )
       ''');
     }
+
+    // Handle upgrade: v4 → v5 adds assessment_statistics_cache table
+    if (oldVersion < 5) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS assessment_statistics_cache (
+          assessment_id TEXT PRIMARY KEY,
+          statistics_json TEXT NOT NULL,
+          cached_at TEXT NOT NULL
+        )
+      ''');
+    }
   }
 
   Future<void> _downgradeDatabase(Database db, int oldVersion, int newVersion) async {
@@ -807,6 +827,7 @@ class LocalDatabase {
       'tos_competencies',
       'table_of_specifications',
       'melcs',
+      'assessment_statistics_cache',
     ];
 
     for (final table in tables) {

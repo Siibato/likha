@@ -14,6 +14,8 @@ import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
 import 'package:likha/domain/grading/entities/quarterly_grade.dart';
+import 'package:likha/domain/grading/entities/general_average.dart';
+import 'package:likha/domain/grading/entities/sf9.dart';
 import 'package:likha/domain/grading/repositories/grading_repository.dart';
 
 class GradingRepositoryImpl implements GradingRepository {
@@ -637,6 +639,68 @@ class GradingRepositoryImpl implements GradingRepository {
         quarter: quarter,
       );
       return Right(detail);
+    } on ServerFailure catch (e) {
+      return Left(e);
+    } on Failure catch (e) {
+      return Left(e);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  // ===== General Average =====
+
+  @override
+  ResultFuture<GeneralAverageResponse> getGeneralAverages({
+    required String classId,
+  }) async {
+    try {
+      final model = await _remoteDataSource.getGeneralAverages(
+        classId: classId,
+      );
+      return Right(model);
+    } on ServerFailure catch (e) {
+      return Left(e);
+    } on Failure catch (e) {
+      return Left(e);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  // ===== SF9/SF10 =====
+
+  @override
+  ResultFuture<Sf9Response> getSf9({
+    required String classId,
+    required String studentId,
+  }) async {
+    try {
+      final model = await _remoteDataSource.getSf9(
+        classId: classId,
+        studentId: studentId,
+      );
+      return Right(model);
+    } on ServerFailure catch (e) {
+      return Left(e);
+    } on Failure catch (e) {
+      return Left(e);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  ResultFuture<Sf9Response> getSf10({
+    required String classId,
+    required String studentId,
+  }) async {
+    try {
+      final model = await _remoteDataSource.getSf10(
+        classId: classId,
+        studentId: studentId,
+      );
+      return Right(model);
     } on ServerFailure catch (e) {
       return Left(e);
     } on Failure catch (e) {

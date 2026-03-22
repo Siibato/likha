@@ -6,6 +6,8 @@ import 'package:likha/data/models/grading/grade_config_model.dart';
 import 'package:likha/data/models/grading/grade_item_model.dart';
 import 'package:likha/data/models/grading/grade_score_model.dart';
 import 'package:likha/data/models/grading/quarterly_grade_model.dart';
+import 'package:likha/data/models/grading/general_average_model.dart';
+import 'package:likha/data/models/grading/sf9_model.dart';
 
 abstract class GradingRemoteDataSource {
   // Config
@@ -71,6 +73,21 @@ abstract class GradingRemoteDataSource {
 
   // Presets
   Future<Map<String, dynamic>> getDepEdPresets();
+
+  // General Average
+  Future<GeneralAverageResponseModel> getGeneralAverages({
+    required String classId,
+  });
+
+  // SF9/SF10
+  Future<Sf9ResponseModel> getSf9({
+    required String classId,
+    required String studentId,
+  });
+  Future<Sf9ResponseModel> getSf10({
+    required String classId,
+    required String studentId,
+  });
 }
 
 class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
@@ -375,6 +392,59 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
         ApiEndpoints.depEdPresets.path,
       );
       return (response.data['data'] ?? response.data) as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _dioClient.handleError(e);
+    }
+  }
+
+  // ===== General Average =====
+
+  @override
+  Future<GeneralAverageResponseModel> getGeneralAverages({
+    required String classId,
+  }) async {
+    try {
+      final response = await _dioClient.dio.get(
+        ApiEndpoints.generalAverage(classId).path,
+      );
+      final data = response.data['data'] ?? response.data;
+      return GeneralAverageResponseModel.fromJson(
+        data as Map<String, dynamic>,
+      );
+    } on DioException catch (e) {
+      throw _dioClient.handleError(e);
+    }
+  }
+
+  // ===== SF9/SF10 =====
+
+  @override
+  Future<Sf9ResponseModel> getSf9({
+    required String classId,
+    required String studentId,
+  }) async {
+    try {
+      final response = await _dioClient.dio.get(
+        ApiEndpoints.sf9(classId, studentId).path,
+      );
+      final data = response.data['data'] ?? response.data;
+      return Sf9ResponseModel.fromJson(data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _dioClient.handleError(e);
+    }
+  }
+
+  @override
+  Future<Sf9ResponseModel> getSf10({
+    required String classId,
+    required String studentId,
+  }) async {
+    try {
+      final response = await _dioClient.dio.get(
+        ApiEndpoints.sf10(classId, studentId).path,
+      );
+      final data = response.data['data'] ?? response.data;
+      return Sf9ResponseModel.fromJson(data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
