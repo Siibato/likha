@@ -4,6 +4,7 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/grade_submission_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/widgets/submission_data_table.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 
 class AssignmentSubmissionsDesktop extends ConsumerStatefulWidget {
@@ -58,149 +59,88 @@ class _AssignmentSubmissionsDesktopState
             color: AppColors.foregroundDark,
           ),
         ),
-        body: _buildBody(state.isLoading, submissions),
-      ),
-    );
-  }
-
-  Widget _buildBody(bool isLoading, List<SubmissionListItem> submissions) {
-    if (isLoading && submissions.isEmpty) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(48),
-          child: CircularProgressIndicator(
-            color: AppColors.foregroundPrimary,
-            strokeWidth: 2.5,
-          ),
-        ),
-      );
-    }
-
-    if (submissions.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.assignment_outlined,
-              size: 48,
-              color: AppColors.foregroundTertiary,
-            ),
-            SizedBox(height: 12),
-            Text(
-              'No submissions yet',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: AppColors.foregroundTertiary,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: DataTable(
-          showCheckboxColumn: false,
-          headingRowColor:
-              WidgetStateProperty.all(AppColors.backgroundTertiary),
-          dataRowMaxHeight: 56,
-          horizontalMargin: 20,
-          columnSpacing: 24,
-          columns: const [
-            DataColumn(
-              label: Text('Student Name', style: _headerStyle),
-            ),
-            DataColumn(
-              label: Text('Username', style: _headerStyle),
-            ),
-            DataColumn(
-              label: Text('Status', style: _headerStyle),
-            ),
-            DataColumn(
-              label: Text('Late', style: _headerStyle),
-            ),
-            DataColumn(
-              label: Text('Score', style: _headerStyle),
-              numeric: true,
-            ),
-            DataColumn(
-              label: Text('Submitted At', style: _headerStyle),
-            ),
-          ],
-          rows: submissions.map((submission) {
-            return DataRow(
-              onSelectChanged: (_) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => GradeSubmissionDesktop(
-                      submissionId: submission.id,
-                      totalPoints: widget.totalPoints,
-                    ),
+        body: state.isLoading && submissions.isEmpty
+            ? const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(48),
+                  child: CircularProgressIndicator(
+                    color: AppColors.foregroundPrimary,
+                    strokeWidth: 2.5,
                   ),
-                ).then((_) {
-                  ref
-                      .read(assignmentProvider.notifier)
-                      .loadSubmissions(widget.assignmentId);
-                });
-              },
-              cells: [
-                DataCell(Text(
-                  submission.studentName,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.foregroundDark,
-                  ),
-                )),
-                DataCell(Text(
-                  submission.studentUsername,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.foregroundSecondary,
-                  ),
-                )),
-                DataCell(_buildStatusBadge(submission.status)),
-                DataCell(
-                  submission.isLate
-                      ? _buildLateBadge()
-                      : const Text(
-                          '--',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.foregroundTertiary,
-                          ),
-                        ),
                 ),
-                DataCell(Text(
-                  submission.score != null
-                      ? '${submission.score}/${widget.totalPoints}'
-                      : '--',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.foregroundSecondary,
+              )
+            : SubmissionDataTable(
+                columns: [
+                  const SubmissionColumn(
+                    key: 'studentName',
+                    label: 'Student Name',
+                    sortable: true,
                   ),
-                )),
-                DataCell(Text(
-                  _formatDate(submission.submittedAt),
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.foregroundTertiary,
+                  const SubmissionColumn(
+                    key: 'studentUsername',
+                    label: 'Username',
                   ),
-                )),
-              ],
-            );
-          }).toList(),
-        ),
+                  SubmissionColumn(
+                    key: 'status',
+                    label: 'Status',
+                    cellBuilder: (value) =>
+                        _buildStatusBadge(value as String? ?? 'pending'),
+                  ),
+                  SubmissionColumn(
+                    key: 'isLate',
+                    label: 'Late',
+                    cellBuilder: (value) => value == true
+                        ? _buildLateBadge()
+                        : const Text(
+                            '--',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.foregroundTertiary,
+                            ),
+                          ),
+                  ),
+                  const SubmissionColumn(
+                    key: 'score',
+                    label: 'Score',
+                    numeric: true,
+                  ),
+                  const SubmissionColumn(
+                    key: 'submittedAt',
+                    label: 'Submitted At',
+                  ),
+                ],
+                rows: submissions
+                    .map((s) => {
+                          'id': s.id,
+                          'studentName': s.studentName,
+                          'studentUsername': s.studentUsername,
+                          'status': s.status,
+                          'isLate': s.isLate,
+                          'score': s.score != null
+                              ? '${s.score}/${widget.totalPoints}'
+                              : '--',
+                          'submittedAt': _formatDate(s.submittedAt),
+                        })
+                    .toList(),
+                onTap: (row) {
+                  final submission = submissions.firstWhere(
+                    (s) => s.id == row['id'],
+                  );
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => GradeSubmissionDesktop(
+                        submissionId: submission.id,
+                        totalPoints: widget.totalPoints,
+                      ),
+                    ),
+                  ).then((_) {
+                    ref
+                        .read(assignmentProvider.notifier)
+                        .loadSubmissions(widget.assignmentId);
+                  });
+                },
+              ),
       ),
     );
   }
@@ -255,10 +195,4 @@ class _AssignmentSubmissionsDesktopState
       ),
     );
   }
-
-  static const _headerStyle = TextStyle(
-    fontSize: 13,
-    fontWeight: FontWeight.w700,
-    color: AppColors.foregroundSecondary,
-  );
 }

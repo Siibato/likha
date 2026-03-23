@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_navigation_rail.dart';
@@ -22,9 +24,26 @@ class _TeacherDesktopShellState extends ConsumerState<TeacherDesktopShell> {
     setState(() => _currentIndex = index);
   }
 
+  bool get _isMacOS {
+    if (kIsWeb) return false;
+    return defaultTargetPlatform == TargetPlatform.macOS;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+
+    return CallbackShortcuts(
+      bindings: {
+        SingleActivator(LogicalKeyboardKey.digit1, meta: _isMacOS, control: !_isMacOS):
+            () => _navigateToIndex(0),
+        SingleActivator(LogicalKeyboardKey.digit2, meta: _isMacOS, control: !_isMacOS):
+            () => _navigateToIndex(1),
+        SingleActivator(LogicalKeyboardKey.digit3, meta: _isMacOS, control: !_isMacOS):
+            () => _navigateToIndex(2),
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
       body: Row(
         children: [
@@ -67,6 +86,7 @@ class _TeacherDesktopShellState extends ConsumerState<TeacherDesktopShell> {
           ),
         ],
       ),
+    )),
     );
   }
 }

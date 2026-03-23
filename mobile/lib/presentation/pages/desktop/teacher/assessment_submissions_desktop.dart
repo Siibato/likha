@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/submission_review_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/widgets/submission_data_table.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 
 class AssessmentSubmissionsDesktop extends ConsumerStatefulWidget {
@@ -30,6 +31,15 @@ class _AssessmentSubmissionsDesktopState
     });
   }
 
+  String _formatDate(DateTime? date) {
+    if (date == null) return '—';
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$month/$day $hour:$minute';
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(teacherAssessmentProvider);
@@ -46,123 +56,78 @@ class _AssessmentSubmissionsDesktopState
             color: AppColors.foregroundDark,
           ),
         ),
-        body: _buildBody(state.isLoading, submissions),
-      ),
-    );
-  }
-
-  Widget _buildBody(bool isLoading, List submissions) {
-    if (isLoading && submissions.isEmpty) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(48),
-          child: CircularProgressIndicator(
-            color: AppColors.foregroundPrimary,
-            strokeWidth: 2.5,
-          ),
-        ),
-      );
-    }
-
-    if (submissions.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.assignment_outlined,
-              size: 48,
-              color: AppColors.foregroundTertiary,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'No submissions yet',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: AppColors.foregroundTertiary,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: DataTable(
-          showCheckboxColumn: false,
-          headingRowColor:
-              WidgetStateProperty.all(AppColors.backgroundTertiary),
-          columns: const [
-            DataColumn(label: Text('Student Name')),
-            DataColumn(label: Text('Username')),
-            DataColumn(label: Text('Status')),
-            DataColumn(label: Text('Auto Score')),
-            DataColumn(label: Text('Final Score')),
-            DataColumn(label: Text('Submitted At')),
-          ],
-          rows: submissions.map((submission) {
-            return DataRow(
-              onSelectChanged: (_) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => SubmissionReviewDesktop(
-                      submissionId: submission.id,
+        body: state.isLoading && submissions.isEmpty
+            ? const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(48),
+                  child: CircularProgressIndicator(
+                    color: AppColors.foregroundPrimary,
+                    strokeWidth: 2.5,
+                  ),
+                ),
+              )
+            : SubmissionDataTable(
+                columns: [
+                  const SubmissionColumn(
+                    key: 'studentName',
+                    label: 'Student Name',
+                    sortable: true,
+                  ),
+                  const SubmissionColumn(
+                    key: 'studentUsername',
+                    label: 'Username',
+                  ),
+                  SubmissionColumn(
+                    key: 'isSubmitted',
+                    label: 'Status',
+                    cellBuilder: (value) => _buildStatusBadge(value == true),
+                  ),
+                  const SubmissionColumn(
+                    key: 'autoScore',
+                    label: 'Auto Score',
+                    numeric: true,
+                  ),
+                  const SubmissionColumn(
+                    key: 'finalScore',
+                    label: 'Final Score',
+                    numeric: true,
+                  ),
+                  const SubmissionColumn(
+                    key: 'submittedAt',
+                    label: 'Submitted At',
+                  ),
+                ],
+                rows: submissions
+                    .map((s) => {
+                          'id': s.id,
+                          'studentName': s.studentName,
+                          'studentUsername': s.studentUsername,
+                          'isSubmitted': s.isSubmitted,
+                          'autoScore':
+                              '${s.autoScore}/${s.totalPoints}',
+                          'finalScore':
+                              '${s.finalScore}/${s.totalPoints}',
+                          'submittedAt': _formatDate(s.submittedAt),
+                        })
+                    .toList(),
+                onTap: (row) {
+                  final submission = submissions.firstWhere(
+                    (s) => s.id == row['id'],
+                  );
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SubmissionReviewDesktop(
+                        submissionId: submission.id,
+                      ),
                     ),
-                  ),
-                ).then((_) {
-                  ref
-                      .read(teacherAssessmentProvider.notifier)
-                      .loadSubmissions(widget.assessmentId);
-                });
-              },
-              cells: [
-                DataCell(Text(
-                  submission.studentName,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.foregroundPrimary,
-                  ),
-                )),
-                DataCell(Text(
-                  submission.studentUsername,
-                  style: const TextStyle(
-                    color: AppColors.foregroundSecondary,
-                  ),
-                )),
-                DataCell(_buildStatusBadge(submission.isSubmitted)),
-                DataCell(Text(
-                  '${submission.autoScore}/${submission.totalPoints}',
-                  style: const TextStyle(
-                    color: AppColors.foregroundSecondary,
-                  ),
-                )),
-                DataCell(Text(
-                  '${submission.finalScore}/${submission.totalPoints}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.foregroundPrimary,
-                  ),
-                )),
-                DataCell(Text(
-                  _formatDate(submission.submittedAt),
-                  style: const TextStyle(
-                    color: AppColors.foregroundSecondary,
-                    fontSize: 13,
-                  ),
-                )),
-              ],
-            );
-          }).toList(),
-        ),
+                  ).then((_) {
+                    ref
+                        .read(teacherAssessmentProvider.notifier)
+                        .loadSubmissions(widget.assessmentId);
+                  });
+                },
+              ),
       ),
     );
   }
@@ -185,14 +150,5 @@ class _AssessmentSubmissionsDesktopState
         ),
       ),
     );
-  }
-
-  String _formatDate(DateTime? date) {
-    if (date == null) return '—';
-    final month = date.month.toString().padLeft(2, '0');
-    final day = date.day.toString().padLeft(2, '0');
-    final hour = date.hour.toString().padLeft(2, '0');
-    final minute = date.minute.toString().padLeft(2, '0');
-    return '$month/$day $hour:$minute';
   }
 }

@@ -14,11 +14,18 @@ import 'package:likha/presentation/pages/desktop/teacher/widgets/assignment_data
 import 'package:likha/presentation/pages/desktop/teacher/widgets/class_overview_panel.dart';
 import 'package:likha/presentation/pages/desktop/teacher/widgets/material_data_table.dart';
 import 'package:likha/presentation/pages/desktop/teacher/widgets/student_data_table.dart';
+import 'package:likha/presentation/pages/desktop/teacher/create_tos_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/sf9_detail_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/sf9_student_list_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/tos_detail_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/tos_list_desktop.dart';
 import 'package:likha/presentation/pages/teacher/class_grading_setup_page.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
+import 'package:likha/presentation/providers/sf9_provider.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
+import 'package:likha/presentation/providers/tos_provider.dart';
 
 class TeacherClassDetailDesktop extends ConsumerStatefulWidget {
   final String classId;
@@ -39,7 +46,7 @@ class _TeacherClassDetailDesktopState
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 7, vsync: this);
     _tabController.addListener(_onTabChanged);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -68,6 +75,12 @@ class _TeacherClassDetailDesktopState
         ref
             .read(learningMaterialProvider.notifier)
             .loadMaterials(widget.classId);
+        break;
+      case 5: // TOS
+        ref.read(tosProvider.notifier).loadTosList(widget.classId);
+        break;
+      case 6: // SF9
+        ref.read(sf9Provider.notifier).loadStudents(widget.classId);
         break;
     }
   }
@@ -135,6 +148,8 @@ class _TeacherClassDetailDesktopState
                         Tab(text: 'Assessments'),
                         Tab(text: 'Assignments'),
                         Tab(text: 'Materials'),
+                        Tab(text: 'TOS'),
+                        Tab(text: 'SF9'),
                       ],
                     ),
                   ),
@@ -182,6 +197,12 @@ class _TeacherClassDetailDesktopState
 
                         // Materials tab
                         _MaterialsTab(classId: widget.classId),
+
+                        // TOS tab
+                        _TosTab(classId: widget.classId),
+
+                        // SF9 tab
+                        _Sf9Tab(classId: widget.classId),
                       ],
                     ),
                   ),
@@ -407,6 +428,290 @@ class _MaterialsTab extends ConsumerWidget {
               ).then((_) => ref
                   .read(learningMaterialProvider.notifier)
                   .loadMaterials(classId)),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TosTab extends ConsumerWidget {
+  final String classId;
+
+  const _TosTab({required this.classId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(tosProvider);
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              FilledButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CreateTosDesktop(classId: classId),
+                  ),
+                ).then((result) {
+                  if (result == true) {
+                    ref.read(tosProvider.notifier).loadTosList(classId);
+                  }
+                }),
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('Create TOS'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.foregroundDark,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 12),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (state.isLoading && state.tosList.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: CircularProgressIndicator(
+                  color: AppColors.foregroundPrimary,
+                  strokeWidth: 2.5,
+                ),
+              ),
+            )
+          else if (state.tosList.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(48),
+                child: Column(
+                  children: [
+                    Icon(Icons.table_chart_outlined,
+                        size: 48, color: AppColors.borderLight),
+                    SizedBox(height: 12),
+                    Text(
+                      'No TOS created yet',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.foregroundTertiary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.borderLight),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: DataTable(
+                  headingRowColor:
+                      WidgetStateProperty.all(AppColors.backgroundTertiary),
+                  showCheckboxColumn: false,
+                  columns: const [
+                    DataColumn(label: Text('Title',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.foregroundSecondary))),
+                    DataColumn(label: Text('Quarter',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.foregroundSecondary))),
+                    DataColumn(label: Text('Mode',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.foregroundSecondary))),
+                    DataColumn(label: Text('Items',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.foregroundSecondary)),
+                        numeric: true),
+                  ],
+                  rows: state.tosList.map((tos) {
+                    return DataRow(
+                      onSelectChanged: (_) => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => TosDetailDesktop(
+                            tosId: tos.id,
+                            classId: classId,
+                          ),
+                        ),
+                      ).then((_) => ref
+                          .read(tosProvider.notifier)
+                          .loadTosList(classId)),
+                      cells: [
+                        DataCell(Text(
+                          tos.title,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.foregroundDark,
+                          ),
+                        )),
+                        DataCell(Text(
+                          'Q${tos.quarter}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.foregroundSecondary,
+                          ),
+                        )),
+                        DataCell(Text(
+                          tos.classificationMode == 'blooms'
+                              ? "Bloom's"
+                              : 'Difficulty',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.foregroundTertiary,
+                          ),
+                        )),
+                        DataCell(Text(
+                          '${tos.totalItems}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.foregroundSecondary,
+                          ),
+                        )),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Sf9Tab extends ConsumerWidget {
+  final String classId;
+
+  const _Sf9Tab({required this.classId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(sf9Provider);
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (state.isLoading && state.students.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: CircularProgressIndicator(
+                  color: AppColors.foregroundPrimary,
+                  strokeWidth: 2.5,
+                ),
+              ),
+            )
+          else if (state.error != null)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  state.error!,
+                  style: const TextStyle(
+                    color: AppColors.semanticError,
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            )
+          else if (state.students.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(48),
+                child: Column(
+                  children: [
+                    Icon(Icons.people_outline_rounded,
+                        size: 48, color: AppColors.borderLight),
+                    SizedBox(height: 12),
+                    Text(
+                      'No students found',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.foregroundTertiary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.borderLight),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: DataTable(
+                  headingRowColor:
+                      WidgetStateProperty.all(AppColors.backgroundTertiary),
+                  showCheckboxColumn: false,
+                  columns: const [
+                    DataColumn(label: Text('Student Name',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.foregroundSecondary))),
+                    DataColumn(label: Text('General Average',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.foregroundSecondary)),
+                        numeric: true),
+                    DataColumn(label: Text('Subjects',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.foregroundSecondary)),
+                        numeric: true),
+                  ],
+                  rows: state.students.map((student) {
+                    return DataRow(
+                      onSelectChanged: (_) => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => Sf9DetailDesktop(
+                            classId: classId,
+                            studentId: student.studentId,
+                            studentName: student.studentName,
+                          ),
+                        ),
+                      ),
+                      cells: [
+                        DataCell(Text(
+                          student.studentName,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.foregroundDark,
+                          ),
+                        )),
+                        DataCell(Text(
+                          student.generalAverage?.toString() ?? '--',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.foregroundSecondary,
+                          ),
+                        )),
+                        DataCell(Text(
+                          '${student.subjectCount}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.foregroundSecondary,
+                          ),
+                        )),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
             ),
         ],
       ),
