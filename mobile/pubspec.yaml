@@ -51,6 +51,9 @@ dependencies:
   pdf: ^3.11.1
   printing: ^5.13.3
 
+  # Charts
+  fl_chart: ^0.69.0
+
 dependency_overrides:
   shared_preferences_android: 2.4.17
 
