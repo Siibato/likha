@@ -143,7 +143,30 @@ flutter run -d <device_id>
 - If `emulator` command not found, ensure `$ANDROID_HOME/emulator` is in your PATH
 - For physical devices, ensure USB debugging is enabled and the device is authorized
 
-### 4. Building an APK
+### 4. Run the desktop app (macOS / Windows)
+
+Both macOS and Windows desktop targets are already configured in the project.
+
+```bash
+cd mobile
+
+# macOS
+flutter run -d macos
+
+# Windows
+flutter run -d windows
+```
+
+To build a release binary:
+
+```bash
+flutter build macos   # on macOS
+flutter build windows # on Windows
+```
+
+> **Note:** You can only build for the platform you're currently on.
+
+### 5. Building an APK
 
 To build an APK for distribution or testing:
 
