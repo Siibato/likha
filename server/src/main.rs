@@ -14,6 +14,7 @@ use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter, ColumnTrait, ActiveM
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
+use axum::http::header::{AUTHORIZATION, CONTENT_TYPE, ACCEPT};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::timeout::TimeoutLayer;
 use uuid::Uuid;
@@ -237,7 +238,7 @@ fn create_app(
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods(Any)
-        .allow_headers(Any);
+        .allow_headers([AUTHORIZATION, CONTENT_TYPE, ACCEPT]);
 
     Router::new()
         .nest(
