@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
+import 'package:likha/core/services/school_setup_service.dart';
+import 'package:likha/injection_container.dart' as di;
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
+import 'package:likha/presentation/pages/setup/school_setup_page.dart';
 import 'package:likha/presentation/pages/shared/widgets/auth_desktop_layout.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.dart';
@@ -18,6 +21,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   String? _formError;
+  String? _schoolName;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSchoolName();
+  }
+
+  Future<void> _loadSchoolName() async {
+    final config = await di.sl<SchoolSetupService>().getSchoolConfig();
+    if (mounted) {
+      setState(() => _schoolName = config?.schoolName);
+    }
+  }
 
   @override
   void dispose() {
@@ -38,6 +55,80 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (state.error != null) {
       setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
     }
+  }
+
+  Future<void> _showDisconnectModal() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Change school?'),
+        content: const Text(
+          'This will remove your current school connection. '
+          'You will need to scan a QR code or enter a school code to reconnect.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text(
+              'Change School',
+              style: TextStyle(color: Color(0xFFD32F2F)),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await di.sl<SchoolSetupService>().clearSchoolConfig();
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const SchoolSetupPage()),
+        );
+      }
+    }
+  }
+
+  Widget _buildSchoolIndicator() {
+    if (_schoolName == null) return const SizedBox.shrink();
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F5F5),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.school_outlined, size: 16, color: Color(0xFF7A7A7A)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              _schoolName!,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF7A7A7A),
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: _showDisconnectModal,
+            child: const Text(
+              'Not your school?',
+              style: TextStyle(
+                fontSize: 12,
+                color: Color(0xFF999999),
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildFormBody(bool isLoading) {
@@ -76,7 +167,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 48),
+            const SizedBox(height: 32),
+            _buildSchoolIndicator(),
             FormMessage(
               message: _formError,
               severity: MessageSeverity.error,

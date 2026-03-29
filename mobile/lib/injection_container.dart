@@ -2,7 +2,10 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:likha/core/constants/api_constants.dart';
+import 'package:likha/core/services/school_setup_service.dart';
+import 'package:likha/core/services/impl/school_setup_service_impl.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/connectivity_service.dart';
@@ -161,6 +164,21 @@ Future<void> init() async {
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
   sl.registerLazySingleton(() => secureStorage);
+
+  final sharedPrefs = await SharedPreferences.getInstance();
+  sl.registerSingleton<SharedPreferences>(sharedPrefs);
+
+  // School setup service — registered early so ApiConstants.baseUrl can be set
+  // before any network service is initialized.
+  sl.registerLazySingleton<SchoolSetupService>(
+    () => SchoolSetupServiceImpl(sl<SharedPreferences>(), Dio()),
+  );
+
+  // Bootstrap runtime base URL from stored school config (if available).
+  final schoolConfig = await sl<SchoolSetupService>().getSchoolConfig();
+  if (schoolConfig != null) {
+    ApiConstants.setRuntimeBaseUrl(schoolConfig.serverUrl);
+  }
 
   // Core - Database (first, depends on nothing)
   final localDb = LocalDatabase();

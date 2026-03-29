@@ -1,4 +1,5 @@
 pub mod admin_handler;
+pub mod setup_handler;
 pub mod assessment_handler;
 pub mod assignment_handler;
 pub mod auth_handler;
