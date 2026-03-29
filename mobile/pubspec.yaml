@@ -57,7 +57,6 @@ dependencies:
   fl_chart: ^0.69.0
 
   # School setup flow
-  encrypt: ^5.0.3           # AES-256-CBC for QR/code decryption
   app_links: ^6.3.2         # Deep link handling (likha://setup?server=cloud)
   mobile_scanner: ^5.2.3    # QR camera scanner
 

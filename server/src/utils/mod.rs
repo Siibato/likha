@@ -1,5 +1,4 @@
 pub mod auth_guards;
-pub mod setup_crypto;
 pub mod datetime;
 pub mod error;
 pub mod jwt;

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:likha/core/constants/api_constants.dart';
+import 'package:likha/core/network/dio_client.dart';
+import 'package:likha/injection_container.dart' as di;
 import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
 import 'package:likha/presentation/pages/shared/widgets/tokens/app_text_styles.dart';
 
@@ -36,31 +38,61 @@ class _AdminSchoolSettingsPageState extends State<AdminSchoolSettingsPage> {
 
   Future<void> _loadSettings() async {
     setState(() => _isLoading = true);
-    final prefs = await SharedPreferences.getInstance();
-    _schoolNameController.text = prefs.getString('school_name') ?? '';
-    _regionController.text = prefs.getString('school_region') ?? '';
-    _divisionController.text = prefs.getString('school_division') ?? '';
-    _schoolYearController.text = prefs.getString('school_year') ?? '';
-    setState(() => _isLoading = false);
+    try {
+      final response = await di.sl<DioClient>().dio.get(
+        '${ApiConstants.baseUrl}/api/v1/admin/setup/school-settings',
+      );
+      final data = response.data['data'] as Map<String, dynamic>?;
+      if (data != null) {
+        _schoolNameController.text = data['school_name'] as String? ?? '';
+        _regionController.text = data['school_region'] as String? ?? '';
+        _divisionController.text = data['school_division'] as String? ?? '';
+        _schoolYearController.text = data['school_year'] as String? ?? '';
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load settings')),
+        );
+      }
+    }
+    if (mounted) setState(() => _isLoading = false);
   }
 
   Future<void> _handleSave() async {
     setState(() => _isSaving = true);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('school_name', _schoolNameController.text.trim());
-    await prefs.setString('school_region', _regionController.text.trim());
-    await prefs.setString('school_division', _divisionController.text.trim());
-    await prefs.setString('school_year', _schoolYearController.text.trim());
-    setState(() => _isSaving = false);
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Settings saved'),
-          duration: Duration(seconds: 2),
-        ),
+    try {
+      await di.sl<DioClient>().dio.put(
+        '${ApiConstants.baseUrl}/api/v1/admin/setup/school-settings',
+        data: {
+          'school_name': _schoolNameController.text.trim(),
+          'school_region': _regionController.text.trim().isEmpty
+              ? null
+              : _regionController.text.trim(),
+          'school_division': _divisionController.text.trim().isEmpty
+              ? null
+              : _divisionController.text.trim(),
+          'school_year': _schoolYearController.text.trim().isEmpty
+              ? null
+              : _schoolYearController.text.trim(),
+        },
       );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Settings saved'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to save settings')),
+        );
+      }
     }
+    if (mounted) setState(() => _isSaving = false);
   }
 
   @override

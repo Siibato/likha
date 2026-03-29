@@ -4,15 +4,16 @@ import 'package:likha/domain/setup/entities/school_config.dart';
 
 /// Abstract contract for the school onboarding setup flow.
 ///
-/// Implementations handle:
-/// - Decrypting QR / short-code payloads
-/// - Pinging a manual URL to verify connectivity
-/// - Persisting and clearing the stored school config
+/// School codes are verified server-side against the Pi server.
+/// The cloud test code is checked client-side (no server call).
+/// QR payloads contain the plain school code text.
 abstract class SchoolSetupService {
-  /// Decrypts a Base64-encoded QR payload and returns a [SchoolConfig].
-  Future<Either<Failure, SchoolConfig>> resolveQrPayload(String base64Payload);
+  /// Verifies a QR payload (plain school code text) via [resolveShortCode].
+  Future<Either<Failure, SchoolConfig>> resolveQrPayload(String payload);
 
-  /// Matches a 6-char code against the two known server codes (Pi + Cloud).
+  /// Verifies a 6-char school code:
+  /// - If it matches the cloud test code → connects to cloud URL (client-side)
+  /// - Otherwise → sends to default Pi server for verification
   Future<Either<Failure, SchoolConfig>> resolveShortCode(String code);
 
   /// Pings [url]/api/v1/health and returns a [SchoolConfig] on success.

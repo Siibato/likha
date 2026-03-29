@@ -9,6 +9,7 @@ import 'package:likha/core/services/school_setup_service.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/injection_container.dart' as di;
 import 'package:likha/presentation/pages/activate_account_page.dart';
+import 'package:likha/presentation/pages/admin/school_details_setup_page.dart';
 import 'package:likha/presentation/pages/home_page.dart';
 import 'package:likha/presentation/pages/login_page.dart';
 import 'package:likha/presentation/pages/login_password_page.dart';
@@ -33,6 +34,10 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
   // School config check
   bool _schoolConfigInitialized = false;
   bool _hasSchoolConfig = false;
+
+  // Admin school details check (after login)
+  bool _adminSchoolDetailsChecked = false;
+  bool _adminSchoolDetailsExist = false;
 
   StreamSubscription<Uri>? _deepLinkSub;
 
@@ -124,13 +129,30 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
     if (authState.isAuthenticated) {
       if (_lastSyncedUserId != authState.user?.id) {
         _lastSyncedUserId = authState.user?.id;
+        _adminSchoolDetailsChecked = false;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           di.sl<SyncManager>().start();
 
           if (authState.user?.role == 'admin') {
             ref.read(adminProvider.notifier).cacheAccountsOffline();
+            _checkAdminSchoolDetails();
+          } else {
+            setState(() {
+              _adminSchoolDetailsChecked = true;
+              _adminSchoolDetailsExist = true;
+            });
           }
         });
+      }
+
+      // Admin school details check — block dashboard if not set
+      if (authState.user?.role == 'admin' && !_adminSchoolDetailsChecked) {
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        );
+      }
+      if (authState.user?.role == 'admin' && !_adminSchoolDetailsExist) {
+        return const SchoolDetailsSetupPage();
       }
 
       final syncState = ref.watch(syncProvider);
@@ -157,6 +179,30 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
     }
 
     return const LoginPage();
+  }
+
+  Future<void> _checkAdminSchoolDetails() async {
+    try {
+      final response = await di.sl<DioClient>().dio.get(
+        '${ApiConstants.baseUrl}/api/v1/setup/info',
+      );
+      final data = response.data['data'] as Map<String, dynamic>?;
+      final schoolName = data?['school_name'] as String?;
+      if (mounted) {
+        setState(() {
+          _adminSchoolDetailsChecked = true;
+          _adminSchoolDetailsExist = schoolName != null && schoolName.isNotEmpty;
+        });
+      }
+    } catch (_) {
+      // If check fails (e.g., offline), allow access to dashboard
+      if (mounted) {
+        setState(() {
+          _adminSchoolDetailsChecked = true;
+          _adminSchoolDetailsExist = true;
+        });
+      }
+    }
   }
 
   void _acknowledgeSyncFailure() {

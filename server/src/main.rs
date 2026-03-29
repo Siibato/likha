@@ -171,11 +171,9 @@ async fn main() {
     let grade_computation_service = Arc::new(GradeComputationService::new(db.clone()));
     let tos_service = Arc::new(TosService::new(db.clone()));
 
-    let setup_service = Arc::new(SetupService::new(
-        std::env::var("SETUP_SECRET").unwrap_or_default(),
-        std::env::var("SCHOOL_URL").unwrap_or_else(|_| "http://192.168.1.1:8080".to_string()),
-        std::env::var("SCHOOL_NAME").unwrap_or_else(|_| "Pi School".to_string()),
-    ));
+    let setup_service = Arc::new(
+        SetupService::new(db.clone(), config.school_code.clone()).await,
+    );
 
     let sync_push_service = Arc::new(SyncPushService::new(
         entitlement_service.clone(),
