@@ -6,14 +6,16 @@ class DesktopNavigationRail extends StatelessWidget {
   final int selectedIndex;
   final List<DesktopNavDestination> destinations;
   final ValueChanged<int> onDestinationSelected;
-  final VoidCallback onLogout;
+  final VoidCallback? onLogout;
+  final Widget? header;
 
   const DesktopNavigationRail({
     super.key,
     required this.selectedIndex,
     required this.destinations,
     required this.onDestinationSelected,
-    required this.onLogout,
+    this.onLogout,
+    this.header,
   });
 
   @override
@@ -30,17 +32,20 @@ class DesktopNavigationRail extends StatelessWidget {
           color: Colors.white,
           child: Column(
             children: [
-              // Logo
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  vertical: 24,
-                  horizontal: isCompact ? 16 : 24,
+              // Header
+              if (header != null)
+                header!
+              else
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    vertical: 24,
+                    horizontal: isCompact ? 16 : 24,
+                  ),
+                  child: Image.asset(
+                    'assets/images/likha-logo.png',
+                    height: isCompact ? 32 : 40,
+                  ),
                 ),
-                child: Image.asset(
-                  'assets/images/likha-logo.png',
-                  height: isCompact ? 32 : 40,
-                ),
-              ),
               const Divider(height: 1, color: AppColors.borderLight),
               const SizedBox(height: 8),
 
@@ -61,17 +66,19 @@ class DesktopNavigationRail extends StatelessWidget {
 
               const Spacer(),
 
-              // Logout button
-              const Divider(height: 1, color: AppColors.borderLight),
-              _NavItem(
-                icon: Icons.logout_rounded,
-                selectedIcon: Icons.logout_rounded,
-                label: 'Log out',
-                isSelected: false,
-                isCompact: isCompact,
-                onTap: onLogout,
-              ),
-              const SizedBox(height: 16),
+              // Logout button (optional)
+              if (onLogout != null) ...[
+                const Divider(height: 1, color: AppColors.borderLight),
+                _NavItem(
+                  icon: Icons.logout_rounded,
+                  selectedIcon: Icons.logout_rounded,
+                  label: 'Log out',
+                  isSelected: false,
+                  isCompact: isCompact,
+                  onTap: onLogout!,
+                ),
+                const SizedBox(height: 16),
+              ],
             ],
           ),
         );
