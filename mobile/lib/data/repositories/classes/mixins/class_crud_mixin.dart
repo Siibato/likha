@@ -175,6 +175,7 @@ mixin ClassCrudMixin on ClassRepositoryBase {
             teacherUsername: current.teacherUsername,
             teacherFullName: current.teacherFullName,
             isArchived: current.isArchived,
+            isAdvisory: isAdvisory ?? current.isAdvisory,
             studentCount: current.studentCount,
             createdAt: current.createdAt,
             updatedAt: DateTime.now(),
