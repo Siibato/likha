@@ -5,12 +5,14 @@ import 'package:likha/domain/classes/entities/class_entity.dart';
 class ClassDataTable extends StatefulWidget {
   final List<ClassEntity> classes;
   final ValueChanged<ClassEntity> onTap;
+  final ValueChanged<ClassEntity>? onDelete;
   final int rowsPerPage;
 
   const ClassDataTable({
     super.key,
     required this.classes,
     required this.onTap,
+    this.onDelete,
     this.rowsPerPage = 20,
   });
 
@@ -109,6 +111,7 @@ class _ClassDataTableState extends State<ClassDataTable> {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: DataTable(
+              showCheckboxColumn: false,
               sortColumnIndex: _sortColumnIndex,
               sortAscending: _sortAscending,
               headingRowColor:
@@ -148,6 +151,10 @@ class _ClassDataTableState extends State<ClassDataTable> {
                 const DataColumn(
                   label: Text('Created', style: _headerStyle),
                 ),
+                if (widget.onDelete != null)
+                  const DataColumn(
+                    label: Text('', style: _headerStyle),
+                  ),
               ],
               rows: _pageClasses.map((cls) {
                 final teacherLabel = cls.teacherFullName.isNotEmpty
@@ -218,6 +225,18 @@ class _ClassDataTableState extends State<ClassDataTable> {
                         color: AppColors.foregroundTertiary,
                       ),
                     )),
+                    if (widget.onDelete != null)
+                      DataCell(
+                        IconButton(
+                          icon: const Icon(
+                            Icons.delete_outline_rounded,
+                            color: Color(0xFFDC3545),
+                            size: 20,
+                          ),
+                          tooltip: 'Delete class',
+                          onPressed: () => widget.onDelete!(cls),
+                        ),
+                      ),
                   ],
                 );
               }).toList(),

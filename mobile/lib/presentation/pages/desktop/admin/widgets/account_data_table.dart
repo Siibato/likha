@@ -5,12 +5,18 @@ import 'package:likha/domain/auth/entities/user.dart';
 class AccountDataTable extends StatefulWidget {
   final List<User> accounts;
   final ValueChanged<User> onTap;
+  final void Function(User user, bool locked)? onLock;
+  final ValueChanged<User>? onResetPassword;
+  final ValueChanged<User>? onDelete;
   final int rowsPerPage;
 
   const AccountDataTable({
     super.key,
     required this.accounts,
     required this.onTap,
+    this.onLock,
+    this.onResetPassword,
+    this.onDelete,
     this.rowsPerPage = 20,
   });
 
@@ -97,6 +103,11 @@ class _AccountDataTableState extends State<AccountDataTable> {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
+  bool get _hasActions =>
+      widget.onLock != null ||
+      widget.onResetPassword != null ||
+      widget.onDelete != null;
+
   @override
   Widget build(BuildContext context) {
     if (widget.accounts.isEmpty) {
@@ -127,36 +138,49 @@ class _AccountDataTableState extends State<AccountDataTable> {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: DataTable(
+              showCheckboxColumn: false,
               sortColumnIndex: _sortColumnIndex,
               sortAscending: _sortAscending,
-              headingRowColor: WidgetStateProperty.all(AppColors.backgroundTertiary),
+              headingRowColor:
+                  WidgetStateProperty.all(AppColors.backgroundTertiary),
               dataRowMaxHeight: 56,
               horizontalMargin: 20,
               columnSpacing: 24,
               columns: [
                 DataColumn(
                   label: const Text('Name', style: _headerStyle),
-                  onSort: (i, asc) =>
-                      setState(() { _sortColumnIndex = i; _sortAscending = asc; }),
+                  onSort: (i, asc) => setState(() {
+                    _sortColumnIndex = i;
+                    _sortAscending = asc;
+                  }),
                 ),
                 const DataColumn(
                   label: Text('Username', style: _headerStyle),
                 ),
                 DataColumn(
                   label: const Text('Role', style: _headerStyle),
-                  onSort: (i, asc) =>
-                      setState(() { _sortColumnIndex = i; _sortAscending = asc; }),
+                  onSort: (i, asc) => setState(() {
+                    _sortColumnIndex = i;
+                    _sortAscending = asc;
+                  }),
                 ),
                 DataColumn(
                   label: const Text('Status', style: _headerStyle),
-                  onSort: (i, asc) =>
-                      setState(() { _sortColumnIndex = i; _sortAscending = asc; }),
+                  onSort: (i, asc) => setState(() {
+                    _sortColumnIndex = i;
+                    _sortAscending = asc;
+                  }),
                 ),
                 const DataColumn(
                   label: Text('Created', style: _headerStyle),
                 ),
+                if (_hasActions)
+                  const DataColumn(
+                    label: Text('', style: _headerStyle),
+                  ),
               ],
               rows: _pageAccounts.map((user) {
+                final isLocked = user.accountStatus == 'locked';
                 return DataRow(
                   onSelectChanged: (_) => widget.onTap(user),
                   cells: [
@@ -237,6 +261,96 @@ class _AccountDataTableState extends State<AccountDataTable> {
                         color: AppColors.foregroundTertiary,
                       ),
                     )),
+                    if (_hasActions)
+                      DataCell(
+                        PopupMenuButton<String>(
+                          icon: const Icon(
+                            Icons.more_vert_rounded,
+                            size: 20,
+                            color: AppColors.foregroundSecondary,
+                          ),
+                          tooltip: 'Actions',
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          onSelected: (value) {
+                            switch (value) {
+                              case 'lock':
+                                widget.onLock?.call(user, !isLocked);
+                                break;
+                              case 'reset':
+                                widget.onResetPassword?.call(user);
+                                break;
+                              case 'delete':
+                                widget.onDelete?.call(user);
+                                break;
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            if (widget.onLock != null)
+                              PopupMenuItem(
+                                value: 'lock',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      isLocked
+                                          ? Icons.lock_open_rounded
+                                          : Icons.lock_rounded,
+                                      size: 18,
+                                      color: AppColors.foregroundSecondary,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      isLocked ? 'Unlock' : 'Lock',
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (widget.onResetPassword != null)
+                              PopupMenuItem(
+                                value: 'reset',
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.refresh_rounded,
+                                      size: 18,
+                                      color: AppColors.foregroundSecondary,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    const Text(
+                                      'Reset Password',
+                                      style: TextStyle(fontSize: 14),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (widget.onDelete != null) ...[
+                              const PopupMenuDivider(),
+                              PopupMenuItem(
+                                value: 'delete',
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.delete_outline_rounded,
+                                      size: 18,
+                                      color: Color(0xFFDC3545),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    const Text(
+                                      'Delete',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Color(0xFFDC3545),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
                   ],
                 );
               }).toList(),
@@ -251,7 +365,7 @@ class _AccountDataTableState extends State<AccountDataTable> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Showing ${_currentPage * widget.rowsPerPage + 1}–${((_currentPage + 1) * widget.rowsPerPage).clamp(0, widget.accounts.length)} of ${widget.accounts.length}',
+                'Showing ${_currentPage * widget.rowsPerPage + 1}\u2013${((_currentPage + 1) * widget.rowsPerPage).clamp(0, widget.accounts.length)} of ${widget.accounts.length}',
                 style: const TextStyle(
                   fontSize: 13,
                   color: AppColors.foregroundTertiary,
@@ -268,9 +382,8 @@ class _AccountDataTableState extends State<AccountDataTable> {
                   ...List.generate(
                     _totalPages.clamp(0, 5),
                     (i) {
-                      final page = _currentPage < 3
-                          ? i
-                          : _currentPage + i - 2;
+                      final page =
+                          _currentPage < 3 ? i : _currentPage + i - 2;
                       if (page >= _totalPages) return const SizedBox.shrink();
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 2),

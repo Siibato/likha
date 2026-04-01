@@ -360,6 +360,20 @@ mixin AuthAdminMixin on AuthRepositoryBase {
     }
   }
 
+  @override
+  ResultVoid deleteAccount({required String userId}) async {
+    try {
+      await remoteDataSource.deleteAccount(userId: userId);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
   /// Builds the list of optimistic [UserModel]s from pending sync queue entries.
   /// Includes both pending AND failed entries to prevent duplicate usernames.
   Future<List<UserModel>> _buildPendingAccounts() async {

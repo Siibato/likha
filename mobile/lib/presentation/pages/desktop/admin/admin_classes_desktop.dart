@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/domain/classes/entities/class_entity.dart';
 import 'package:likha/presentation/pages/desktop/admin/admin_class_detail_desktop.dart';
 import 'package:likha/presentation/pages/desktop/admin/admin_create_class_desktop.dart';
 import 'package:likha/presentation/pages/desktop/admin/widgets/class_data_table.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
+import 'package:likha/presentation/widgets/styled_dialog.dart';
 
 class AdminClassesDesktop extends ConsumerStatefulWidget {
   const AdminClassesDesktop({super.key});
@@ -24,6 +26,20 @@ class _AdminClassesDesktopState extends ConsumerState<AdminClassesDesktop> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(classProvider.notifier).loadAllClasses();
     });
+  }
+
+  void _showDeleteConfirmation(ClassEntity cls) {
+    showDialog(
+      context: context,
+      builder: (ctx) => _DeleteClassDialog(
+        className: cls.title,
+        studentCount: cls.studentCount,
+        onConfirm: () {
+          Navigator.pop(ctx);
+          ref.read(classProvider.notifier).deleteClass(cls.id);
+        },
+      ),
+    );
   }
 
   @override
@@ -117,9 +133,140 @@ class _AdminClassesDesktopState extends ConsumerState<AdminClassesDesktop> {
                 ),
               ).then(
                   (_) => ref.read(classProvider.notifier).loadAllClasses()),
+              onDelete: (cls) => _showDeleteConfirmation(cls),
             ),
         ],
       ),
+    );
+  }
+}
+
+class _DeleteClassDialog extends StatefulWidget {
+  final String className;
+  final int studentCount;
+  final VoidCallback onConfirm;
+
+  const _DeleteClassDialog({
+    required this.className,
+    required this.studentCount,
+    required this.onConfirm,
+  });
+
+  @override
+  State<_DeleteClassDialog> createState() => _DeleteClassDialogState();
+}
+
+class _DeleteClassDialogState extends State<_DeleteClassDialog> {
+  final _controller = TextEditingController();
+  bool _canConfirm = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() {
+      final match = _controller.text.trim() == 'DELETE';
+      if (match != _canConfirm) setState(() => _canConfirm = match);
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StyledDialog(
+      title: 'Delete Class',
+      warningBox: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFDC3545).withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: const Color(0xFFDC3545).withValues(alpha: 0.2),
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.warning_rounded,
+                size: 18, color: Color(0xFFDC3545)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'This will remove all ${widget.studentCount} student(s) and the teacher from "${widget.className}". This action cannot be undone.',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFFDC3545),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Type DELETE to confirm:',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF666666),
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            decoration: InputDecoration(
+              hintText: 'DELETE',
+              hintStyle: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFFCCCCCC),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(
+                    color: Color(0xFFDC3545), width: 1.5),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12, vertical: 12),
+              filled: true,
+              fillColor: Colors.white,
+            ),
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF202020),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        StyledDialogAction(
+          label: 'Cancel',
+          onPressed: () => Navigator.pop(context),
+        ),
+        StyledDialogAction(
+          label: 'Delete Class',
+          isPrimary: true,
+          isDestructive: true,
+          onPressed: _canConfirm ? widget.onConfirm : () {},
+        ),
+      ],
     );
   }
 }

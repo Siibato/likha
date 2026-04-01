@@ -93,6 +93,8 @@ import 'package:likha/data/datasources/remote/class_remote_datasource.dart';
 import 'package:likha/data/repositories/classes/class_repository_impl.dart';
 import 'package:likha/domain/classes/repositories/class_repository.dart';
 import 'package:likha/domain/classes/usecases/add_student.dart';
+import 'package:likha/domain/auth/usecases/delete_account.dart';
+import 'package:likha/domain/classes/usecases/delete_class.dart';
 import 'package:likha/domain/classes/usecases/create_class.dart';
 import 'package:likha/domain/classes/usecases/get_all_classes.dart';
 import 'package:likha/domain/classes/usecases/get_class_detail.dart';
@@ -389,6 +391,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => LockAccount(sl()));
   sl.registerLazySingleton(() => GetActivityLogs(sl()));
   sl.registerLazySingleton(() => UpdateAccount(sl()));
+  sl.registerLazySingleton(() => DeleteAccount(sl()));
 
   // Class use cases
   sl.registerLazySingleton(() => CreateClass(sl()));
@@ -400,6 +403,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => RemoveStudent(sl()));
   sl.registerLazySingleton(() => SearchStudents(sl()));
   sl.registerLazySingleton(() => GetParticipants(sl()));
+  sl.registerLazySingleton(() => DeleteClass(sl()));
 
   // Assessment use cases
   sl.registerLazySingleton(() => CreateAssessment(sl()));

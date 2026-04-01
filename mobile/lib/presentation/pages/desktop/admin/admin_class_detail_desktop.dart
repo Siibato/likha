@@ -1,8 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/domain/classes/entities/class_detail.dart';
+import 'package:likha/presentation/pages/desktop/admin/admin_edit_class_desktop.dart';
+import 'package:likha/presentation/pages/desktop/admin/admin_manage_enrollment_desktop.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/info_row.dart';
@@ -21,63 +22,25 @@ class AdminClassDetailDesktop extends ConsumerStatefulWidget {
 
 class _AdminClassDetailDesktopState
     extends ConsumerState<AdminClassDetailDesktop> {
-  late TextEditingController _searchController;
-  String _searchQuery = '';
-  Timer? _debounce;
   int _currentPage = 0;
   static const int _pageSize = 10;
 
   @override
   void initState() {
     super.initState();
-    _searchController = TextEditingController();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(classProvider.notifier).loadClassDetail(widget.classId);
-      ref.read(classProvider.notifier).searchStudents(query: null);
-    });
-
-    _searchController.addListener(_onSearchChanged);
-  }
-
-  void _onSearchChanged() {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 400), () {
-      final query = _searchController.text.trim();
-      setState(() {
-        _searchQuery = query;
-        _currentPage = 0;
-      });
-
-      if (query.isNotEmpty) {
-        ref.read(classProvider.notifier).searchStudents(query: query);
-      } else {
-        ref.read(classProvider.notifier).clearSearch();
-      }
     });
   }
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _debounce?.cancel();
-    super.dispose();
+  String _formatDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
     final classState = ref.watch(classProvider);
     final detail = classState.currentClassDetail;
-
-    ref.listen<ClassState>(classProvider, (prev, next) {
-      if (next.successMessage != null &&
-          prev?.successMessage != next.successMessage) {
-        ref.read(classProvider.notifier).clearMessages();
-      }
-      if (next.error != null && prev?.error != next.error) {
-        ref.read(classProvider.notifier).clearMessages();
-      }
-    });
 
     final classInfo = classState.classes.cast<dynamic>().firstWhere(
           (c) => c?.id == widget.classId,
@@ -88,6 +51,9 @@ class _AdminClassDetailDesktopState
             ? classInfo.teacherFullName
             : classInfo.teacherUsername)
         : 'Unknown';
+
+    final isAdvisory =
+        detail?.isAdvisory == true || (classInfo?.isAdvisory == true);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
@@ -129,7 +95,7 @@ class _AdminClassDetailDesktopState
                             value: classInfo.teacherUsername,
                           ),
                         ],
-                        if (classInfo != null && classInfo.isAdvisory) ...[
+                        if (isAdvisory) ...[
                           const SizedBox(height: 12),
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -164,303 +130,326 @@ class _AdminClassDetailDesktopState
                       ],
                     ),
                   ),
+
+                  // Edit button
+                  if (classInfo != null) ...[
+                    const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AdminEditClassDesktop(
+                              classEntity: classInfo,
+                            ),
+                          ),
+                        ).then((_) {
+                          ref.read(classProvider.notifier).loadAllClasses();
+                          ref
+                              .read(classProvider.notifier)
+                              .loadClassDetail(widget.classId);
+                        }),
+                        icon: const Icon(Icons.edit_rounded, size: 16),
+                        label: const Text('Edit Class'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.foregroundPrimary,
+                          side: const BorderSide(color: AppColors.borderLight),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                        ),
+                      ),
+                    ),
+                  ],
+
                   const SizedBox(height: 32),
 
-                  // Student enrollment section
-                  const Text(
-                    'Student Enrollment',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.foregroundDark,
-                      letterSpacing: -0.4,
-                    ),
+                  // Student list header with Manage Enrollment button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Students (${detail.students.length})',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.foregroundDark,
+                          letterSpacing: -0.4,
+                        ),
+                      ),
+                      FilledButton.icon(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AdminManageEnrollmentDesktop(
+                              classId: widget.classId,
+                              classTitle: detail.title,
+                            ),
+                          ),
+                        ).then((_) {
+                          ref
+                              .read(classProvider.notifier)
+                              .loadClassDetail(widget.classId);
+                        }),
+                        icon: const Icon(Icons.group_add_rounded, size: 18),
+                        label: const Text('Manage Enrollment'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.foregroundDark,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 12),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
 
-                  // Search bar
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.borderLight),
-                    ),
-                    child: Row(
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.only(left: 12),
-                          child: Icon(
-                            Icons.search_rounded,
-                            color: AppColors.foregroundTertiary,
-                            size: 20,
-                          ),
-                        ),
-                        Expanded(
-                          child: TextField(
-                            controller: _searchController,
-                            decoration: const InputDecoration(
-                              hintText: 'Search students...',
-                              hintStyle: TextStyle(
-                                color: AppColors.foregroundTertiary,
-                                fontSize: 14,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 14),
-                            ),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: AppColors.foregroundPrimary,
-                            ),
-                          ),
-                        ),
-                        if (_searchQuery.isNotEmpty)
-                          IconButton(
-                            icon: const Icon(Icons.clear_rounded,
-                                size: 20, color: AppColors.foregroundTertiary),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() => _searchQuery = '');
-                              ref
-                                  .read(classProvider.notifier)
-                                  .clearSearch();
-                            },
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Students count
-                  Text(
-                    _searchQuery.isEmpty
-                        ? 'All Students (${classState.searchResults.length})'
-                        : 'Search Results (${classState.searchResults.length})',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.foregroundSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Student list
-                  if (classState.isLoading &&
-                      classState.searchResults.isEmpty)
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(32),
-                        child: CircularProgressIndicator(
-                          color: AppColors.foregroundPrimary,
-                          strokeWidth: 2.5,
-                        ),
-                      ),
-                    )
-                  else if (classState.searchResults.isEmpty)
+                  // Read-only student list
+                  if (detail.students.isEmpty)
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.all(32),
                         child: Column(
                           children: [
-                            Icon(
-                              _searchQuery.isEmpty
-                                  ? Icons.person_outline_rounded
-                                  : Icons.person_search_rounded,
+                            const Icon(
+                              Icons.person_outline_rounded,
                               size: 48,
                               color: AppColors.borderLight,
                             ),
                             const SizedBox(height: 8),
-                            Text(
-                              _searchQuery.isEmpty
-                                  ? 'No students available'
-                                  : 'No students found',
-                              style: const TextStyle(
+                            const Text(
+                              'No students enrolled',
+                              style: TextStyle(
                                 fontSize: 14,
                                 color: AppColors.foregroundTertiary,
                               ),
+                            ),
+                            const SizedBox(height: 16),
+                            TextButton(
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      AdminManageEnrollmentDesktop(
+                                    classId: widget.classId,
+                                    classTitle: detail.title,
+                                  ),
+                                ),
+                              ).then((_) {
+                                ref
+                                    .read(classProvider.notifier)
+                                    .loadClassDetail(widget.classId);
+                              }),
+                              child: const Text('Add students'),
                             ),
                           ],
                         ),
                       ),
                     )
                   else
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.borderLight),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: DataTable(
-                          headingRowColor: WidgetStateProperty.all(
-                              AppColors.backgroundTertiary),
-                          dataRowMaxHeight: 56,
-                          horizontalMargin: 20,
-                          columnSpacing: 24,
-                          columns: const [
-                            DataColumn(
-                              label: Text('Student',
-                                  style: _headerStyle),
-                            ),
-                            DataColumn(
-                              label: Text('Username',
-                                  style: _headerStyle),
-                            ),
-                            DataColumn(
-                              label:
-                                  Text('Status', style: _headerStyle),
-                            ),
-                            DataColumn(
-                              label:
-                                  Text('Action', style: _headerStyle),
-                            ),
-                          ],
-                          rows: classState.searchResults.map((student) {
-                            final isParticipant = classState.participantIds
-                                .contains(student.id);
-                            final isStudentLoading = classState
-                                .loadingStudentIds
-                                .contains(student.id);
-
-                            return DataRow(cells: [
-                              DataCell(
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      width: 32,
-                                      height: 32,
-                                      alignment: Alignment.center,
-                                      decoration: BoxDecoration(
-                                        color: AppColors.backgroundTertiary,
-                                        borderRadius:
-                                            BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        student.fullName.isNotEmpty
-                                            ? student.fullName[0]
-                                                .toUpperCase()
-                                            : '?',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w700,
-                                          color:
-                                              AppColors.foregroundPrimary,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      student.fullName,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.foregroundDark,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              DataCell(Text(
-                                student.username,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: AppColors.foregroundSecondary,
-                                ),
-                              )),
-                              DataCell(
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isParticipant
-                                        ? const Color(0xFF28A745)
-                                            .withValues(alpha: 0.12)
-                                        : AppColors.foregroundTertiary
-                                            .withValues(alpha: 0.12),
-                                    borderRadius:
-                                        BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    isParticipant
-                                        ? 'Enrolled'
-                                        : 'Not enrolled',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: isParticipant
-                                          ? const Color(0xFF28A745)
-                                          : AppColors.foregroundTertiary,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              DataCell(
-                                isStudentLoading
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child:
-                                            CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color:
-                                              AppColors.foregroundPrimary,
-                                        ),
-                                      )
-                                    : isParticipant
-                                        ? IconButton(
-                                            icon: const Icon(
-                                              Icons
-                                                  .remove_circle_outline_rounded,
-                                              color: Color(0xFFDC3545),
-                                              size: 20,
-                                            ),
-                                            tooltip: 'Remove student',
-                                            onPressed: () {
-                                              ref
-                                                  .read(classProvider
-                                                      .notifier)
-                                                  .removeStudent(
-                                                    classId:
-                                                        widget.classId,
-                                                    studentId:
-                                                        student.id,
-                                                  );
-                                            },
-                                          )
-                                        : IconButton(
-                                            icon: const Icon(
-                                              Icons
-                                                  .add_circle_outline_rounded,
-                                              color: Color(0xFF28A745),
-                                              size: 20,
-                                            ),
-                                            tooltip: 'Add student',
-                                            onPressed: () {
-                                              ref
-                                                  .read(classProvider
-                                                      .notifier)
-                                                  .addStudent(
-                                                    classId:
-                                                        widget.classId,
-                                                    studentId:
-                                                        student.id,
-                                                  );
-                                            },
-                                          ),
-                              ),
-                            ]);
-                          }).toList(),
-                        ),
-                      ),
-                    ),
+                    ..._buildStudentTable(detail.students),
                 ],
               ),
       ),
     );
+  }
+
+  List<Widget> _buildStudentTable(List<Participant> students) {
+    final totalPages = (students.length / _pageSize).ceil();
+    if (_currentPage >= totalPages && totalPages > 0) {
+      _currentPage = totalPages - 1;
+    }
+    final start = _currentPage * _pageSize;
+    final end = (start + _pageSize).clamp(0, students.length);
+    final pageStudents = students.sublist(start, end);
+
+    return [
+      Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.borderLight),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Column(
+            children: [
+              // Header row
+              Container(
+                color: AppColors.backgroundTertiary,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                child: Row(
+                  children: [
+                    Expanded(
+                        child: Text('Student', style: _headerStyle)),
+                    SizedBox(
+                        width: 150,
+                        child: Text('Username', style: _headerStyle)),
+                    SizedBox(
+                        width: 120,
+                        child: Text('Joined', style: _headerStyle)),
+                  ],
+                ),
+              ),
+              // Data rows
+              ...pageStudents.asMap().entries.map((entry) {
+                final index = entry.key;
+                final participant = entry.value;
+                final student = participant.student;
+
+                return Column(
+                  children: [
+                    if (index > 0)
+                      const Divider(height: 1, color: AppColors.borderLight),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
+                      child: Row(
+                        children: [
+                          // Student name (expanded)
+                          Expanded(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.backgroundTertiary,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    student.fullName.isNotEmpty
+                                        ? student.fullName[0].toUpperCase()
+                                        : '?',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.foregroundPrimary,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Flexible(
+                                  child: Text(
+                                    student.fullName,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.foregroundDark,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Username (fixed)
+                          SizedBox(
+                            width: 150,
+                            child: Text(
+                              student.username,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppColors.foregroundSecondary,
+                              ),
+                            ),
+                          ),
+                          // Joined date (fixed)
+                          SizedBox(
+                            width: 120,
+                            child: Text(
+                              _formatDate(participant.joinedAt),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppColors.foregroundTertiary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+      if (totalPages > 1) ...[
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Showing ${start + 1}-$end of ${students.length} students',
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.foregroundTertiary,
+              ),
+            ),
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chevron_left_rounded, size: 24),
+                  color: _currentPage > 0
+                      ? AppColors.foregroundPrimary
+                      : AppColors.borderLight,
+                  onPressed: _currentPage > 0
+                      ? () => setState(() => _currentPage--)
+                      : null,
+                ),
+                ...List.generate(totalPages, (index) {
+                  final isActive = index == _currentPage;
+                  return GestureDetector(
+                    onTap: () => setState(() => _currentPage = index),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      margin: const EdgeInsets.symmetric(horizontal: 2),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? AppColors.foregroundPrimary
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${index + 1}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isActive
+                              ? Colors.white
+                              : AppColors.foregroundSecondary,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right_rounded, size: 24),
+                  color: _currentPage < totalPages - 1
+                      ? AppColors.foregroundPrimary
+                      : AppColors.borderLight,
+                  onPressed: _currentPage < totalPages - 1
+                      ? () => setState(() => _currentPage++)
+                      : null,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    ];
   }
 
   static const _headerStyle = TextStyle(

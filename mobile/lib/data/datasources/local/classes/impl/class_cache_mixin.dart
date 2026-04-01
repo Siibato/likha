@@ -82,6 +82,7 @@ mixin ClassCacheMixin on ClassLocalDataSourceBase {
           teacherUsername: teacherUsername,
           teacherFullName: teacherFullName,
           isArchived: classDetail.isArchived,
+          isAdvisory: classDetail.isAdvisory,
           studentCount: classDetail.students.length,
           createdAt: classDetail.createdAt,
           updatedAt: classDetail.updatedAt,

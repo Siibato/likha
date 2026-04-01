@@ -24,6 +24,7 @@ abstract class ClassRepository {
     String? title,
     String? description,
     String? teacherId,
+    bool? isAdvisory,
   });
 
   ResultFuture<Participant> addStudent({
@@ -39,4 +40,6 @@ abstract class ClassRepository {
   ResultFuture<List<User>> searchStudents({String? query});
 
   ResultFuture<List<User>> getParticipants({required String classId});
+
+  ResultVoid deleteClass({required String classId});
 }

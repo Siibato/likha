@@ -12,6 +12,7 @@ import 'package:likha/domain/classes/usecases/get_all_classes.dart';
 import 'package:likha/domain/classes/usecases/get_class_detail.dart';
 import 'package:likha/domain/classes/usecases/get_participants.dart';
 import 'package:likha/domain/classes/usecases/get_my_classes.dart';
+import 'package:likha/domain/classes/usecases/delete_class.dart';
 import 'package:likha/domain/classes/usecases/remove_student.dart';
 import 'package:likha/domain/classes/usecases/search_students.dart';
 import 'package:likha/domain/classes/usecases/update_class.dart';
@@ -78,6 +79,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
   final RemoveStudent _removeStudent;
   final SearchStudents _searchStudents;
   final GetParticipants _getParticipants;
+  final DeleteClass _deleteClass;
 
   late StreamSubscription<void> _refreshSub;
   bool _isAdminMode = false;
@@ -92,6 +94,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
     this._removeStudent,
     this._searchStudents,
     this._getParticipants,
+    this._deleteClass,
   ) : super(ClassState()) {
     _refreshSub = sl<DataEventBus>().onClassesChanged.listen((_) {
       if (_isAdminMode) {
@@ -206,6 +209,8 @@ class ClassNotifier extends StateNotifier<ClassState> {
     required String classId,
     String? title,
     String? description,
+    String? teacherId,
+    bool? isAdvisory,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
 
@@ -213,6 +218,8 @@ class ClassNotifier extends StateNotifier<ClassState> {
       classId: classId,
       title: title,
       description: description,
+      teacherId: teacherId,
+      isAdvisory: isAdvisory,
     ));
 
     result.fold(
@@ -280,6 +287,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
         description: currentDetail.description,
         teacherId: currentDetail.teacherId,
         isArchived: currentDetail.isArchived,
+        isAdvisory: currentDetail.isAdvisory,
         students: [optimisticParticipant, ...currentDetail.students],
         createdAt: currentDetail.createdAt,
         updatedAt: currentDetail.updatedAt,
@@ -307,6 +315,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
             description: currentDetail.description,
             teacherId: currentDetail.teacherId,
             isArchived: currentDetail.isArchived,
+            isAdvisory: currentDetail.isAdvisory,
             students: currentDetail.students, // Revert to original students
             createdAt: currentDetail.createdAt,
             updatedAt: currentDetail.updatedAt,
@@ -333,6 +342,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
             description: currentDetail.description,
             teacherId: currentDetail.teacherId,
             isArchived: currentDetail.isArchived,
+            isAdvisory: currentDetail.isAdvisory,
             students: currentDetail.students.map((s) {
               // Replace temp participant with real one
               if (s.id.startsWith('temp_') && s.student.id == studentId) {
@@ -383,6 +393,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
         description: currentDetail.description,
         teacherId: currentDetail.teacherId,
         isArchived: currentDetail.isArchived,
+        isAdvisory: currentDetail.isAdvisory,
         students: currentDetail.students
             .where((e) => e.student.id != studentId)
             .toList(),
@@ -456,6 +467,24 @@ class ClassNotifier extends StateNotifier<ClassState> {
     );
   }
 
+  Future<void> deleteClass(String classId) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    final result = await _deleteClass(classId: classId);
+
+    result.fold(
+      (failure) => state = state.copyWith(
+        isLoading: false,
+        error: AppErrorMapper.fromFailure(failure),
+      ),
+      (_) => state = state.copyWith(
+        isLoading: false,
+        classes: state.classes.where((c) => c.id != classId).toList(),
+        successMessage: 'Class deleted successfully',
+      ),
+    );
+  }
+
   void clearMessages() {
     state = state.copyWith(clearError: true, clearSuccess: true);
   }
@@ -482,5 +511,6 @@ final classProvider = StateNotifierProvider<ClassNotifier, ClassState>((ref) {
     sl<RemoveStudent>(),
     sl<SearchStudents>(),
     sl<GetParticipants>(),
+    sl<DeleteClass>(),
   );
 });

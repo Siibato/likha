@@ -81,6 +81,12 @@ class ApiEndpoints {
         UserModel.fromJson,
       );
 
+  static ApiEndpoint<void> accountDelete(String userId) =>
+      ApiEndpoint(
+        '/api/v1/auth/accounts/$userId',
+        (_) {},
+      );
+
   static ApiEndpoint<List<ActivityLogModel>> accountLogs(String userId) =>
       ApiEndpoint(
         '/api/v1/auth/accounts/$userId/logs',
@@ -117,6 +123,12 @@ class ApiEndpoints {
       ApiEndpoint<ClassModel>.fromModel(
         '/api/v1/classes/$classId',
         ClassModel.fromJson,
+      );
+
+  static ApiEndpoint<void> classDelete(String classId) =>
+      ApiEndpoint(
+        '/api/v1/classes/$classId',
+        (_) {},
       );
 
   static ApiEndpoint<ParticipantModel> classStudents(String classId) =>
