@@ -24,6 +24,8 @@ class _AdminClassDetailDesktopState
   late TextEditingController _searchController;
   String _searchQuery = '';
   Timer? _debounce;
+  int _currentPage = 0;
+  static const int _pageSize = 10;
 
   @override
   void initState() {
@@ -42,7 +44,10 @@ class _AdminClassDetailDesktopState
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 400), () {
       final query = _searchController.text.trim();
-      setState(() => _searchQuery = query);
+      setState(() {
+        _searchQuery = query;
+        _currentPage = 0;
+      });
 
       if (query.isNotEmpty) {
         ref.read(classProvider.notifier).searchStudents(query: query);

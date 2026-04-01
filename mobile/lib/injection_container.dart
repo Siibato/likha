@@ -1,5 +1,6 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -198,7 +199,9 @@ Future<void> init() async {
   sl.registerSingleton<DataEventBus>(DataEventBus());
 
   // Core - General
-  sl.registerLazySingleton(() => StorageService(sl<FlutterSecureStorage>()));
+  sl.registerLazySingleton(() => kIsWeb
+      ? StorageService(sl<FlutterSecureStorage>(), sl<SharedPreferences>())
+      : StorageService(sl<FlutterSecureStorage>()));
 
   // Core - Server Reachability (must be before DioClient to avoid circular dependency)
   // Standalone Dio for health checks — does NOT go through DioClient.
