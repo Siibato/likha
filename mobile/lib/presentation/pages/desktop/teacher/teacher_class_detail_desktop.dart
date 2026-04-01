@@ -106,6 +106,7 @@ class _TeacherClassDetailDesktopState
       backgroundColor: AppColors.backgroundSecondary,
       body: DesktopPageScaffold(
         title: detail?.title ?? 'Class Detail',
+        scrollable: false,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
           color: AppColors.foregroundPrimary,

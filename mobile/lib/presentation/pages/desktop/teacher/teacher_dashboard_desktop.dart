@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/teacher_class_detail_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/widgets/teacher_stats_row.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/navigation_card.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
@@ -31,10 +32,6 @@ class _TeacherDashboardDesktopState
     final classState = ref.watch(classProvider);
     final classes = classState.classes;
 
-    final totalStudents =
-        classes.fold<int>(0, (sum, c) => sum + c.studentCount);
-    final advisoryCount = classes.where((c) => c.isAdvisory).length;
-
     return DesktopPageScaffold(
       title: 'Dashboard',
       subtitle: 'Welcome',
@@ -42,30 +39,7 @@ class _TeacherDashboardDesktopState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Stats row
-          Row(
-            children: [
-              _StatCard(
-                icon: Icons.school_rounded,
-                iconColor: const Color(0xFF5C6BC0),
-                label: 'Total Classes',
-                value: '${classes.length}',
-              ),
-              const SizedBox(width: 16),
-              _StatCard(
-                icon: Icons.people_rounded,
-                iconColor: const Color(0xFF26A69A),
-                label: 'Total Students',
-                value: '$totalStudents',
-              ),
-              const SizedBox(width: 16),
-              _StatCard(
-                icon: Icons.star_rounded,
-                iconColor: const Color(0xFF4CAF50),
-                label: 'Advisory Classes',
-                value: '$advisoryCount',
-              ),
-            ],
-          ),
+          TeacherStatsRow(classes: classes),
           const SizedBox(height: 32),
 
           // Classes section
@@ -138,71 +112,6 @@ class _TeacherDashboardDesktopState
               }).toList(),
             ),
         ],
-      ),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String label;
-  final String value;
-
-  const _StatCard({
-    required this.icon,
-    required this.iconColor,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.borderLight),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: iconColor, size: 22),
-            ),
-            const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.foregroundDark,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.foregroundTertiary,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -8,6 +8,7 @@ class DesktopPageScaffold extends StatelessWidget {
   final Widget body;
   final double maxWidth;
   final Widget? leading;
+  final bool scrollable;
 
   const DesktopPageScaffold({
     super.key,
@@ -17,6 +18,7 @@ class DesktopPageScaffold extends StatelessWidget {
     required this.body,
     this.maxWidth = 1200,
     this.leading,
+    this.scrollable = true,
   });
 
   @override
@@ -77,15 +79,25 @@ class DesktopPageScaffold extends StatelessWidget {
           child: Container(
             color: AppColors.backgroundSecondary,
             width: double.infinity,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(32),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: maxWidth),
-                  child: body,
-                ),
-              ),
-            ),
+            child: scrollable
+                ? SingleChildScrollView(
+                    padding: const EdgeInsets.all(32),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: maxWidth),
+                        child: body,
+                      ),
+                    ),
+                  )
+                : Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: maxWidth),
+                        child: body,
+                      ),
+                    ),
+                  ),
           ),
         ),
       ],
