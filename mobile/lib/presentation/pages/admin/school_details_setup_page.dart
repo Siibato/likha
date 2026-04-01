@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:likha/core/constants/api_constants.dart';
 import 'package:likha/core/network/dio_client.dart';
+import 'package:likha/core/services/school_setup_service.dart';
+import 'package:likha/domain/setup/entities/school_config.dart';
 import 'package:likha/injection_container.dart' as di;
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
 import 'package:likha/presentation/pages/shared/widgets/auth_desktop_layout.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/school_settings_form.dart';
 import 'package:likha/presentation/widgets/auth_wrapper.dart';
 
 /// Shown after admin's first login when school_name is null.
@@ -65,6 +66,15 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
         },
       );
 
+      // Update SharedPreferences so login page shows the correct school name
+      final setupService = di.sl<SchoolSetupService>();
+      final config = await setupService.getSchoolConfig();
+      if (config != null) {
+        await setupService.saveSchoolConfig(
+          SchoolConfig(serverUrl: config.serverUrl, schoolName: name),
+        );
+      }
+
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const AuthWrapper()),
@@ -110,37 +120,13 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
           const SizedBox(height: 32),
           if (_error != null)
             FormMessage(message: _error, severity: MessageSeverity.error),
-          StyledTextField(
-            controller: _schoolNameController,
-            label: 'School Name',
-            icon: Icons.school_outlined,
+          SchoolSettingsForm(
+            schoolNameController: _schoolNameController,
+            regionController: _regionController,
+            divisionController: _divisionController,
+            schoolYearController: _schoolYearController,
             enabled: !_isSaving,
-            hintText: 'e.g., Mabini National High School',
-            onChanged: (_) => setState(() => _error = null),
-          ),
-          const SizedBox(height: 16),
-          StyledTextField(
-            controller: _regionController,
-            label: 'Region',
-            icon: Icons.map_outlined,
-            enabled: !_isSaving,
-            hintText: 'e.g., Region IV-A (CALABARZON)',
-          ),
-          const SizedBox(height: 16),
-          StyledTextField(
-            controller: _divisionController,
-            label: 'Division',
-            icon: Icons.location_city_outlined,
-            enabled: !_isSaving,
-            hintText: 'e.g., Division of Batangas',
-          ),
-          const SizedBox(height: 16),
-          StyledTextField(
-            controller: _schoolYearController,
-            label: 'School Year',
-            icon: Icons.calendar_today_outlined,
-            enabled: !_isSaving,
-            hintText: 'e.g., 2025-2026',
+            onSchoolNameChanged: (_) => setState(() => _error = null),
           ),
           const SizedBox(height: 32),
           Container(
