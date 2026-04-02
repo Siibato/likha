@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 import 'package:likha/core/constants/api_constants.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/core/services/school_setup_service.dart';
@@ -8,7 +9,6 @@ import 'package:likha/injection_container.dart' as di;
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/school_settings_form.dart';
-import 'package:likha/presentation/pages/shared/widgets/tokens/app_text_styles.dart';
 
 class AdminSchoolSettingsDesktop extends StatefulWidget {
   const AdminSchoolSettingsDesktop({super.key});
@@ -24,6 +24,8 @@ class _AdminSchoolSettingsDesktopState
   final _regionController = TextEditingController();
   final _divisionController = TextEditingController();
   final _schoolYearController = TextEditingController();
+  final _schoolCodeController = TextEditingController();
+  late String _originalSchoolCode;
   bool _isLoading = false;
   bool _isSaving = false;
 
@@ -39,6 +41,7 @@ class _AdminSchoolSettingsDesktopState
     _regionController.dispose();
     _divisionController.dispose();
     _schoolYearController.dispose();
+    _schoolCodeController.dispose();
     super.dispose();
   }
 
@@ -54,6 +57,9 @@ class _AdminSchoolSettingsDesktopState
         _regionController.text = data['school_region'] as String? ?? '';
         _divisionController.text = data['school_division'] as String? ?? '';
         _schoolYearController.text = data['school_year'] as String? ?? '';
+        final code = data['school_code'] as String? ?? '';
+        _schoolCodeController.text = code;
+        _originalSchoolCode = code;
       }
     } catch (_) {
       if (mounted) {
@@ -65,9 +71,97 @@ class _AdminSchoolSettingsDesktopState
     if (mounted) setState(() => _isLoading = false);
   }
 
+  Future<void> _showQrCodeDialog() async {
+    try {
+      final response = await di.sl<DioClient>().dio.get(
+        '${ApiConstants.baseUrl}/api/v1/admin/setup/qr',
+      );
+      final data = response.data['data'] as Map<String, dynamic>?;
+      if (data != null && mounted) {
+        final qrBase64 = data['qr_png_base64'] as String?;
+        final code = data['code'] as String?;
+        if (qrBase64 != null) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('School QR Code'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.memory(
+                    base64Decode(qrBase64),
+                    width: 200,
+                    height: 200,
+                  ),
+                  const SizedBox(height: 16),
+                  if (code != null)
+                    Text(
+                      'Code: $code',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Close'),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load QR code')),
+        );
+      }
+    }
+  }
+
   Future<void> _handleSave() async {
+    final newCode = _schoolCodeController.text.trim().toUpperCase();
+    final codeChanged = newCode != _originalSchoolCode;
+
+    // Show confirmation dialog if code changed
+    if (codeChanged) {
+      final shouldProceed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Change School Code?'),
+          content: const Text(
+            'Changing the code will affect new student and teacher setups. Existing users will not be impacted. Are you sure?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Confirm'),
+            ),
+          ],
+        ),
+      );
+
+      if (!mounted) return;
+      if (shouldProceed != true) return;
+    }
+
     setState(() => _isSaving = true);
     try {
+      // Update school code if it changed
+      if (codeChanged) {
+        await di.sl<DioClient>().dio.put(
+          '${ApiConstants.baseUrl}/api/v1/admin/setup/code',
+          data: {'code': newCode},
+        );
+        _originalSchoolCode = newCode;
+      }
+
+      // Update school settings
       final name = _schoolNameController.text.trim();
       await di.sl<DioClient>().dio.put(
         '${ApiConstants.baseUrl}/api/v1/admin/setup/school-settings',
@@ -141,7 +235,11 @@ class _AdminSchoolSettingsDesktopState
                     InfoPanel(
                       child: Text(
                         'These settings are used in printed reports (TOS, Item Analysis) for DepEd-formatted headers.',
-                        style: AppTextStyles.cardSubtitleMd,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.foregroundSecondary,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -150,6 +248,7 @@ class _AdminSchoolSettingsDesktopState
                       regionController: _regionController,
                       divisionController: _divisionController,
                       schoolYearController: _schoolYearController,
+                      schoolCodeController: _schoolCodeController,
                       enabled: !_isSaving,
                     ),
                     const SizedBox(height: 32),
@@ -181,6 +280,18 @@ class _AdminSchoolSettingsDesktopState
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      onPressed: _isSaving ? null : _showQrCodeDialog,
+                      icon: const Icon(Icons.qr_code),
+                      label: const Text('View QR Code'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ],

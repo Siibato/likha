@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.dart';
 
-/// Shared form widget for school settings (name, region, division, school year).
+/// Shared form widget for school settings (name, region, division, school year, and optional code).
 /// Used by both the first-time setup page and the admin settings page.
 class SchoolSettingsForm extends StatelessWidget {
   final TextEditingController schoolNameController;
   final TextEditingController regionController;
   final TextEditingController divisionController;
   final TextEditingController schoolYearController;
+  final TextEditingController? schoolCodeController;
   final bool enabled;
   final ValueChanged<String>? onSchoolNameChanged;
 
@@ -18,6 +21,7 @@ class SchoolSettingsForm extends StatelessWidget {
     required this.regionController,
     required this.divisionController,
     required this.schoolYearController,
+    this.schoolCodeController,
     this.enabled = true,
     this.onSchoolNameChanged,
   });
@@ -65,6 +69,31 @@ class SchoolSettingsForm extends StatelessWidget {
             LengthLimitingTextInputFormatter(9),
           ],
         ),
+        if (schoolCodeController != null) ...[
+          const SizedBox(height: 16),
+          const InfoPanel(
+            child: Text(
+              'This 6-character code is used by students and teachers to connect to your school during initial setup. Changing it will only affect new device registrations.',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: AppColors.foregroundSecondary,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: schoolCodeController!,
+            label: 'School Code',
+            icon: Icons.vpn_key_outlined,
+            enabled: enabled,
+            hintText: 'e.g., ESATQL',
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(6),
+              FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
+            ],
+          ),
+        ],
       ],
     );
   }

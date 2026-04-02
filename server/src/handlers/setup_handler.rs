@@ -70,7 +70,7 @@ pub async fn update_school_code(
     if let Err(e) = require_admin(&auth_user) {
         return e.into_response();
     }
-    match setup_service.update_code(request.code).await {
+    match setup_service.update_code(request.code, auth_user.user_id).await {
         Ok(()) => success_response("School code updated", StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }

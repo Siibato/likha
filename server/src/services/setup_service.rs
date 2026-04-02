@@ -3,9 +3,11 @@ use chrono::Utc;
 use image::ImageEncoder;
 use qrcode::QrCode;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set,
+    ActiveModelTrait, DatabaseConnection, EntityTrait, Set,
 };
+use uuid::Uuid;
 
+use crate::db::repositories::activity_log_repository::ActivityLogRepository;
 use crate::schema::setup_schema::{
     QrCodeResponse, SchoolSettingsResponse, ShortCodeResponse, UpdateSchoolSettingsRequest,
     VerifyResponse,
@@ -14,12 +16,16 @@ use crate::utils::error::AppError;
 
 pub struct SetupService {
     db: DatabaseConnection,
+    activity_log_repo: ActivityLogRepository,
 }
 
 impl SetupService {
     /// Creates the service and seeds the school_settings row if it doesn't exist.
     pub async fn new(db: DatabaseConnection, default_school_code: String) -> Self {
-        let service = Self { db };
+        let service = Self {
+            db: db.clone(),
+            activity_log_repo: ActivityLogRepository::new(db),
+        };
         if let Err(e) = service.seed_if_needed(&default_school_code).await {
             tracing::error!("Failed to seed school_settings: {}", e);
         }
@@ -122,20 +128,33 @@ impl SetupService {
     }
 
     /// Updates the school code in the database.
-    pub async fn update_code(&self, new_code: String) -> Result<(), AppError> {
+    pub async fn update_code(&self, new_code: String, admin_id: Uuid) -> Result<(), AppError> {
         use entity::school_settings;
         let trimmed = new_code.trim().to_uppercase();
-        if trimmed.is_empty() || trimmed.len() > 10 {
-            return Err(AppError::BadRequest("Code must be 1-10 characters".to_string()));
+        if trimmed.len() != 6 || !trimmed.chars().all(|c| c.is_ascii_alphanumeric()) {
+            return Err(AppError::BadRequest(
+                "Code must be exactly 6 alphanumeric characters".to_string(),
+            ));
         }
         let row = self.get_settings_row().await?;
         let mut active: school_settings::ActiveModel = row.into();
-        active.school_code = Set(trimmed);
+        active.school_code = Set(trimmed.clone());
         active.updated_at = Set(Utc::now().naive_utc());
         active
             .update(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("DB error: {}", e)))?;
+
+        // Log the school code change
+        let _ = self
+            .activity_log_repo
+            .create_log(
+                admin_id,
+                "school_code_updated",
+                Some(format!("School code updated to: {}", trimmed)),
+            )
+            .await;
+
         Ok(())
     }
 
