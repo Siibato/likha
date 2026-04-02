@@ -66,6 +66,7 @@ class _AccountDetailDesktopState extends ConsumerState<AccountDetailDesktop> {
           children: [
             // Left: Account info + actions
             Expanded(
+              flex: 2,
               child: AccountDetailPanel(
                 user: user,
                 isLoading: adminState.isLoading,
@@ -94,6 +95,7 @@ class _AccountDetailDesktopState extends ConsumerState<AccountDetailDesktop> {
 
             // Right: Activity log
             Expanded(
+              flex: 3,
               child: ActivityLogTable(
                 logs: adminState.activityLogs,
                 isLoading: adminState.isLoading,

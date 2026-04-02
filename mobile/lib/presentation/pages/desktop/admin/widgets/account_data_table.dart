@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/auth/entities/user.dart';
+import 'account_actions_menu.dart';
 
 class AccountDataTable extends StatefulWidget {
   final List<User> accounts;
@@ -263,92 +264,11 @@ class _AccountDataTableState extends State<AccountDataTable> {
                     )),
                     if (_hasActions)
                       DataCell(
-                        PopupMenuButton<String>(
-                          icon: const Icon(
-                            Icons.more_vert_rounded,
-                            size: 20,
-                            color: AppColors.foregroundSecondary,
-                          ),
-                          tooltip: 'Actions',
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          onSelected: (value) {
-                            switch (value) {
-                              case 'lock':
-                                widget.onLock?.call(user, !isLocked);
-                                break;
-                              case 'reset':
-                                widget.onResetPassword?.call(user);
-                                break;
-                              case 'delete':
-                                widget.onDelete?.call(user);
-                                break;
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            if (widget.onLock != null)
-                              PopupMenuItem(
-                                value: 'lock',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      isLocked
-                                          ? Icons.lock_open_rounded
-                                          : Icons.lock_rounded,
-                                      size: 18,
-                                      color: AppColors.foregroundSecondary,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      isLocked ? 'Unlock' : 'Lock',
-                                      style: const TextStyle(fontSize: 14),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            if (widget.onResetPassword != null)
-                              PopupMenuItem(
-                                value: 'reset',
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.refresh_rounded,
-                                      size: 18,
-                                      color: AppColors.foregroundSecondary,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    const Text(
-                                      'Reset Password',
-                                      style: TextStyle(fontSize: 14),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            if (widget.onDelete != null) ...[
-                              const PopupMenuDivider(),
-                              PopupMenuItem(
-                                value: 'delete',
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.delete_outline_rounded,
-                                      size: 18,
-                                      color: Color(0xFFDC3545),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    const Text(
-                                      'Delete',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Color(0xFFDC3545),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ],
+                        AccountActionsMenu(
+                          user: user,
+                          onLock: widget.onLock,
+                          onResetPassword: widget.onResetPassword,
+                          onDelete: widget.onDelete,
                         ),
                       ),
                   ],

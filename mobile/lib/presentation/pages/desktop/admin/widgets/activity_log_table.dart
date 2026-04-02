@@ -65,6 +65,7 @@ class ActivityLogTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -113,7 +114,9 @@ class ActivityLogTable extends StatelessWidget {
                 bottomLeft: Radius.circular(16),
                 bottomRight: Radius.circular(16),
               ),
-              child: DataTable(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: double.infinity),
+                child: DataTable(
                 headingRowColor:
                     WidgetStateProperty.all(AppColors.backgroundTertiary),
                 dataRowMaxHeight: 56,
@@ -177,6 +180,7 @@ class ActivityLogTable extends StatelessWidget {
                     )),
                   ]);
                 }).toList(),
+              ),
               ),
             ),
         ],
