@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io' show File;
+import 'package:flutter/foundation.dart';
 import 'package:likha/core/constants/api_constants.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/core/services/school_setup_service.dart';
@@ -11,6 +12,7 @@ import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart
 import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/school_settings_form.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:file_saver/file_saver.dart';
 import 'widgets/qr_code_dialog.dart';
 
 class AdminSchoolSettingsDesktop extends StatefulWidget {
@@ -84,8 +86,24 @@ class _AdminSchoolSettingsDesktopState
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final fileName = 'school_qr_${_schoolCode}_$timestamp.png';
 
-      if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
-        // Desktop: save to Downloads folder
+      if (kIsWeb) {
+        // Web: Use file_saver package
+        await FileSaver.instance.saveFile(
+          name: fileName,
+          bytes: bytes,
+          ext: 'png',
+          mimeType: MimeType.png,
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('QR code downloaded'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      } else {
+        // Native platforms: Save to Downloads directory
         final downloadsDir = await getDownloadsDirectory();
         if (downloadsDir != null) {
           final file = File('${downloadsDir.path}/$fileName');
