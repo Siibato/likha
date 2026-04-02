@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'dart:io';
 import 'package:likha/core/constants/api_constants.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/core/services/school_setup_service.dart';
@@ -9,6 +10,8 @@ import 'package:likha/injection_container.dart' as di;
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/school_settings_form.dart';
+import 'package:path_provider/path_provider.dart';
+import 'widgets/qr_code_dialog.dart';
 
 class AdminSchoolSettingsDesktop extends StatefulWidget {
   const AdminSchoolSettingsDesktop({super.key});
@@ -28,6 +31,8 @@ class _AdminSchoolSettingsDesktopState
   late String _originalSchoolCode;
   bool _isLoading = false;
   bool _isSaving = false;
+  String? _qrBase64;
+  String? _schoolCode;
 
   @override
   void initState() {
@@ -71,6 +76,39 @@ class _AdminSchoolSettingsDesktopState
     if (mounted) setState(() => _isLoading = false);
   }
 
+  Future<void> _downloadQrCode() async {
+    if (_qrBase64 == null) return;
+
+    try {
+      final bytes = base64Decode(_qrBase64!);
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final fileName = 'school_qr_${_schoolCode}_$timestamp.png';
+
+      if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+        // Desktop: save to Downloads folder
+        final downloadsDir = await getDownloadsDirectory();
+        if (downloadsDir != null) {
+          final file = File('${downloadsDir.path}/$fileName');
+          await file.writeAsBytes(bytes);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('QR code saved to ${downloadsDir.path}'),
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to download QR code: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _showQrCodeDialog() async {
     try {
       final response = await di.sl<DioClient>().dio.get(
@@ -81,32 +119,15 @@ class _AdminSchoolSettingsDesktopState
         final qrBase64 = data['qr_png_base64'] as String?;
         final code = data['code'] as String?;
         if (qrBase64 != null) {
+          _qrBase64 = qrBase64;
+          _schoolCode = code;
+
           showDialog(
             context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('School QR Code'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.memory(
-                    base64Decode(qrBase64),
-                    width: 200,
-                    height: 200,
-                  ),
-                  const SizedBox(height: 16),
-                  if (code != null)
-                    Text(
-                      'Code: $code',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Close'),
-                ),
-              ],
+            builder: (ctx) => QrCodeDialog(
+              qrBase64: qrBase64,
+              schoolCode: code,
+              onDownload: _downloadQrCode,
             ),
           );
         }
@@ -283,14 +304,21 @@ class _AdminSchoolSettingsDesktopState
                       ),
                     ),
                     const SizedBox(height: 16),
-                    OutlinedButton.icon(
-                      onPressed: _isSaving ? null : _showQrCodeDialog,
-                      icon: const Icon(Icons.qr_code),
-                      label: const Text('View QR Code'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    SizedBox(
+                      height: 48,
+                      child: OutlinedButton.icon(
+                        onPressed: _isSaving ? null : _showQrCodeDialog,
+                        icon: const Icon(Icons.qr_code),
+                        label: const Text('View QR Code'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.foregroundPrimary,
+                          side: const BorderSide(
+                            color: AppColors.borderLight,
+                            width: 1.5,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
