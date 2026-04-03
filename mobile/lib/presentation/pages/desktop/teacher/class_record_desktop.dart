@@ -12,6 +12,7 @@ import 'package:likha/presentation/pages/desktop/teacher/grade_summary_desktop.d
 import 'package:likha/presentation/pages/desktop/teacher/widgets/grade_spreadsheet.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
+import 'package:likha/presentation/widgets/styled_dialog.dart';
 
 class ClassRecordDesktop extends ConsumerStatefulWidget {
   final String classId;
@@ -111,134 +112,16 @@ class _ClassRecordDesktopState extends ConsumerState<ClassRecordDesktop>
   }
 
   void _showAddItemDialog() {
-    final titleController = TextEditingController();
-    final pointsController = TextEditingController();
     final component = _componentKeys[_tabController.index];
     final componentLabel = _componentLabels[_tabController.index];
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.backgroundPrimary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
-          'Add Grade Item',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: AppColors.foregroundDark,
-          ),
-        ),
-        content: SizedBox(
-          width: 400,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Component: $componentLabel',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.foregroundSecondary,
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: titleController,
-                decoration: InputDecoration(
-                  labelText: 'Title',
-                  labelStyle: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.foregroundSecondary,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AppColors.borderLight),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AppColors.borderPrimary),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                ),
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.foregroundPrimary,
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: pointsController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
-                ],
-                decoration: InputDecoration(
-                  labelText: 'Total Points',
-                  labelStyle: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.foregroundSecondary,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AppColors.borderLight),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AppColors.borderPrimary),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                ),
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.foregroundPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: AppColors.foregroundSecondary),
-            ),
-          ),
-          FilledButton(
-            onPressed: () {
-              final title = titleController.text.trim();
-              final points = double.tryParse(pointsController.text.trim());
-              if (title.isEmpty || points == null || points <= 0) return;
-
-              ref.read(gradeItemsProvider.notifier).createItem(
-                widget.classId,
-                {
-                  'title': title,
-                  'component': component,
-                  'quarter': _selectedQuarter,
-                  'total_points': points,
-                },
-              );
-              Navigator.pop(ctx);
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.foregroundPrimary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('Add Item'),
-          ),
-        ],
+      builder: (_) => _AddGradeItemDialog(
+        classId: widget.classId,
+        component: component,
+        componentLabel: componentLabel,
+        quarter: _selectedQuarter,
       ),
     );
   }
@@ -248,106 +131,12 @@ class _ClassRecordDesktopState extends ConsumerState<ClassRecordDesktop>
     GradeItem item,
     GradeScore? existingScore,
   ) {
-    final scoreController = TextEditingController(
-      text: existingScore?.effectiveScore?.toString() ?? '',
-    );
-
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.backgroundPrimary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Text(
-          participant.student.fullName,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: AppColors.foregroundDark,
-          ),
-        ),
-        content: SizedBox(
-          width: 360,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${item.title} (/${item.totalPoints})',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.foregroundSecondary,
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: scoreController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
-                ],
-                autofocus: true,
-                decoration: InputDecoration(
-                  labelText: 'Score',
-                  labelStyle: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.foregroundSecondary,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AppColors.borderLight),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AppColors.borderPrimary),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                ),
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.foregroundPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: AppColors.foregroundSecondary),
-            ),
-          ),
-          FilledButton(
-            onPressed: () {
-              final score = double.tryParse(scoreController.text.trim());
-              if (score == null) return;
-
-              ref.read(gradeScoresProvider.notifier).saveScores(
-                item.id,
-                [
-                  {
-                    'student_id': participant.student.id,
-                    'score': score,
-                  },
-                ],
-              );
-              Navigator.pop(ctx);
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.foregroundPrimary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('Save'),
-          ),
-        ],
+      builder: (_) => _ScoreEntryDialog(
+        participant: participant,
+        item: item,
+        existingScore: existingScore,
       ),
     );
   }
@@ -606,6 +395,185 @@ class _ClassRecordDesktopState extends ConsumerState<ClassRecordDesktop>
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Dialog to add a new grade item to a component.
+class _AddGradeItemDialog extends ConsumerStatefulWidget {
+  final String classId;
+  final String component;
+  final String componentLabel;
+  final int quarter;
+
+  const _AddGradeItemDialog({
+    required this.classId,
+    required this.component,
+    required this.componentLabel,
+    required this.quarter,
+  });
+
+  @override
+  ConsumerState<_AddGradeItemDialog> createState() =>
+      _AddGradeItemDialogState();
+}
+
+class _AddGradeItemDialogState extends ConsumerState<_AddGradeItemDialog> {
+  late final TextEditingController _titleController;
+  late final TextEditingController _pointsController;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController();
+    _pointsController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _pointsController.dispose();
+    super.dispose();
+  }
+
+  void _handleAddItem() {
+    final title = _titleController.text.trim();
+    final points = double.tryParse(_pointsController.text.trim());
+    if (title.isEmpty || points == null || points <= 0) return;
+
+    ref.read(gradeItemsProvider.notifier).createItem(
+      widget.classId,
+      {
+        'title': title,
+        'component': widget.component,
+        'quarter': widget.quarter,
+        'total_points': points,
+      },
+    );
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StyledDialog(
+      title: 'Add Grade Item',
+      subtitle: 'Component: ${widget.componentLabel}',
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _titleController,
+              decoration: StyledTextFieldDecoration.styled(
+                labelText: 'Title',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _pointsController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+              ],
+              decoration: StyledTextFieldDecoration.styled(
+                labelText: 'Total Points',
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        StyledDialogAction(
+          label: 'Cancel',
+          onPressed: () => Navigator.pop(context),
+        ),
+        StyledDialogAction(
+          label: 'Add Item',
+          isPrimary: true,
+          onPressed: _handleAddItem,
+        ),
+      ],
+    );
+  }
+}
+
+/// Dialog to enter a score for a participant's grade item.
+class _ScoreEntryDialog extends ConsumerStatefulWidget {
+  final Participant participant;
+  final GradeItem item;
+  final GradeScore? existingScore;
+
+  const _ScoreEntryDialog({
+    required this.participant,
+    required this.item,
+    this.existingScore,
+  });
+
+  @override
+  ConsumerState<_ScoreEntryDialog> createState() => _ScoreEntryDialogState();
+}
+
+class _ScoreEntryDialogState extends ConsumerState<_ScoreEntryDialog> {
+  late final TextEditingController _scoreController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scoreController = TextEditingController(
+      text: widget.existingScore?.effectiveScore?.toString() ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _scoreController.dispose();
+    super.dispose();
+  }
+
+  void _handleSave() {
+    final score = double.tryParse(_scoreController.text.trim());
+    if (score == null) return;
+
+    ref.read(gradeScoresProvider.notifier).saveScores(
+      widget.item.id,
+      [
+        {
+          'student_id': widget.participant.student.id,
+          'score': score,
+        },
+      ],
+    );
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StyledDialog(
+      title: widget.participant.student.fullName,
+      subtitle: '${widget.item.title} (/${widget.item.totalPoints})',
+      content: TextField(
+        controller: _scoreController,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+        ],
+        autofocus: true,
+        decoration: StyledTextFieldDecoration.styled(
+          labelText: 'Score',
+        ),
+      ),
+      actions: [
+        StyledDialogAction(
+          label: 'Cancel',
+          onPressed: () => Navigator.pop(context),
+        ),
+        StyledDialogAction(
+          label: 'Save',
+          isPrimary: true,
+          onPressed: _handleSave,
+        ),
+      ],
     );
   }
 }

@@ -44,125 +44,9 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
   }
 
   void _editMaterial(dynamic material) {
-    final titleController = TextEditingController(text: material.title);
-    final descController = TextEditingController(text: material.description ?? '');
-    late final FleatherController contentController;
-
-    // Initialize content controller with existing content
-    if (material.contentText != null && material.contentText!.isNotEmpty) {
-      try {
-        final doc = ParchmentDocument.fromJson(jsonDecode(material.contentText));
-        contentController = FleatherController(document: doc);
-      } catch (e) {
-        contentController = FleatherController();
-      }
-    } else {
-      contentController = FleatherController();
-    }
-
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFFFAFAFA),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Edit Module'),
-        content: SingleChildScrollView(
-          child: SizedBox(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: titleController,
-                  decoration: InputDecoration(
-                    labelText: 'Title',
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: descController,
-                  decoration: InputDecoration(
-                    labelText: 'Description (Optional)',
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-                    ),
-                  ),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 16),
-                RichTextField(
-                  controller: contentController,
-                  label: 'Content (Optional)',
-                  icon: Icons.description_outlined,
-                  minHeight: 150,
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final newTitle = titleController.text.trim();
-              if (newTitle.isEmpty) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text('Title is required')),
-                );
-                return;
-              }
-
-              Navigator.pop(ctx);
-
-              final contentPlainText = contentController.document.toPlainText().trim();
-              final contentJson = contentPlainText.isEmpty
-                  ? null
-                  : jsonEncode(contentController.document.toJson());
-
-              await ref.read(learningMaterialProvider.notifier).updateMaterial(
-                    materialId: material.id,
-                    title: newTitle,
-                    description: descController.text.trim().isEmpty ? null : descController.text.trim(),
-                    contentText: contentJson,
-                  );
-
-              if (!mounted) return;
-
-              final state = ref.read(learningMaterialProvider);
-              final errMsg = AppErrorMapper.toUserMessage(state.error);
-              if (errMsg != null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(errMsg)),
-                );
-              }
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF2B2B2B),
-            ),
-            child: const Text('Save Changes'),
-          ),
-        ],
-      ),
+      builder: (_) => _EditMaterialDialog(material: material),
     );
   }
 
@@ -578,6 +462,137 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
           }),
         ],
       ),
+    );
+  }
+}
+
+/// Dialog to edit a learning material's title, description, and content.
+class _EditMaterialDialog extends ConsumerStatefulWidget {
+  final dynamic material;
+
+  const _EditMaterialDialog({required this.material});
+
+  @override
+  ConsumerState<_EditMaterialDialog> createState() =>
+      _EditMaterialDialogState();
+}
+
+class _EditMaterialDialogState extends ConsumerState<_EditMaterialDialog> {
+  late final TextEditingController _titleController;
+  late final TextEditingController _descController;
+  late final FleatherController _contentController;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController =
+        TextEditingController(text: widget.material.title);
+    _descController =
+        TextEditingController(text: widget.material.description ?? '');
+
+    // Initialize content controller with existing content
+    if (widget.material.contentText != null &&
+        widget.material.contentText!.isNotEmpty) {
+      try {
+        final doc = ParchmentDocument.fromJson(
+            jsonDecode(widget.material.contentText));
+        _contentController = FleatherController(document: doc);
+      } catch (e) {
+        _contentController = FleatherController();
+      }
+    } else {
+      _contentController = FleatherController();
+    }
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descController.dispose();
+    _contentController.dispose();
+    super.dispose();
+  }
+
+  void _handleSave() async {
+    final newTitle = _titleController.text.trim();
+    if (newTitle.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Title is required')),
+      );
+      return;
+    }
+
+    Navigator.pop(context);
+
+    final contentPlainText =
+        _contentController.document.toPlainText().trim();
+    final contentJson = contentPlainText.isEmpty
+        ? null
+        : jsonEncode(_contentController.document.toJson());
+
+    await ref.read(learningMaterialProvider.notifier).updateMaterial(
+      materialId: widget.material.id,
+      title: newTitle,
+      description: _descController.text.trim().isEmpty
+          ? null
+          : _descController.text.trim(),
+      contentText: contentJson,
+    );
+
+    if (!mounted) return;
+
+    final state = ref.read(learningMaterialProvider);
+    final errMsg = AppErrorMapper.toUserMessage(state.error);
+    if (errMsg != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errMsg)),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StyledDialog(
+      title: 'Edit Module',
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: _titleController,
+              decoration: StyledTextFieldDecoration.styled(
+                labelText: 'Title',
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _descController,
+              decoration: StyledTextFieldDecoration.styled(
+                labelText: 'Description (Optional)',
+              ),
+              maxLines: 3,
+            ),
+            const SizedBox(height: 16),
+            RichTextField(
+              controller: _contentController,
+              label: 'Content (Optional)',
+              icon: Icons.description_outlined,
+              minHeight: 150,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        StyledDialogAction(
+          label: 'Cancel',
+          onPressed: () => Navigator.pop(context),
+        ),
+        StyledDialogAction(
+          label: 'Save Changes',
+          isPrimary: true,
+          onPressed: _handleSave,
+        ),
+      ],
     );
   }
 }

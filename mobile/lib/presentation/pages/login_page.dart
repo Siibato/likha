@@ -9,6 +9,7 @@ import 'package:likha/presentation/pages/shared/widgets/auth_desktop_layout.dart
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
+import 'package:likha/presentation/widgets/styled_dialog.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -60,26 +61,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Future<void> _showDisconnectModal() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Change school?'),
-        content: const Text(
-          'This will remove your current school connection. '
-          'You will need to scan a QR code or enter a school code to reconnect.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text(
-              'Change School',
-              style: TextStyle(color: Color(0xFFD32F2F)),
-            ),
-          ),
-        ],
-      ),
+      builder: (_) => const _ChangeSchoolDialog(),
     );
 
     if (confirmed == true && mounted) {
@@ -249,6 +231,34 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           : SafeArea(
               child: Center(child: _buildFormBody(authState.isLoading)),
             ),
+    );
+  }
+}
+
+/// Dialog to confirm changing the school connection.
+class _ChangeSchoolDialog extends StatelessWidget {
+  const _ChangeSchoolDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    return StyledDialog(
+      title: 'Change school?',
+      content: const Text(
+        'This will remove your current school connection. '
+        'You will need to scan a QR code or enter a school code to reconnect.',
+      ),
+      actions: [
+        StyledDialogAction(
+          label: 'Cancel',
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        StyledDialogAction(
+          label: 'Change School',
+          isPrimary: true,
+          isDestructive: true,
+          onPressed: () => Navigator.pop(context, true),
+        ),
+      ],
     );
   }
 }

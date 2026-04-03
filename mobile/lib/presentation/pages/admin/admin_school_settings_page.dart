@@ -83,30 +83,9 @@ class _AdminSchoolSettingsPageState extends State<AdminSchoolSettingsPage> {
         if (qrBase64 != null) {
           showDialog(
             context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('School QR Code'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.memory(
-                    base64Decode(qrBase64),
-                    width: 200,
-                    height: 200,
-                  ),
-                  const SizedBox(height: 16),
-                  if (code != null)
-                    Text(
-                      'Code: $code',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Close'),
-                ),
-              ],
+            builder: (_) => _SchoolQrCodeDialog(
+              qrBase64: qrBase64,
+              code: code,
             ),
           );
         }
@@ -309,6 +288,48 @@ class _AdminSchoolSettingsPageState extends State<AdminSchoolSettingsPage> {
                 ],
               ),
             ),
+    );
+  }
+}
+
+/// Dialog to display the school QR code.
+class _SchoolQrCodeDialog extends StatelessWidget {
+  final String qrBase64;
+  final String? code;
+
+  const _SchoolQrCodeDialog({
+    required this.qrBase64,
+    this.code,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return StyledDialog(
+      title: 'School QR Code',
+      subtitle: code != null ? 'Code: $code' : null,
+      content: Center(
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFFE8E8E8),
+              width: 1,
+            ),
+          ),
+          child: Image.memory(
+            base64Decode(qrBase64),
+            width: 200,
+            height: 200,
+            fit: BoxFit.contain,
+          ),
+        ),
+      ),
+      actions: [
+        StyledDialogAction(
+          label: 'Close',
+          onPressed: () => Navigator.pop(context),
+        ),
+      ],
     );
   }
 }

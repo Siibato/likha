@@ -14,6 +14,7 @@ import 'package:likha/presentation/pages/teacher/widgets/question_draft.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 import 'package:likha/presentation/utils/formatters.dart';
+import 'package:likha/presentation/widgets/styled_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CreateAssessmentDesktop extends ConsumerStatefulWidget {
@@ -201,40 +202,18 @@ class _CreateAssessmentDesktopState
   }
 
   void _showQuestionMoveDialog(int currentIndex) {
-    final posController = TextEditingController();
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Move Question'),
-        content: TextField(
-          controller: posController,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: InputDecoration(
-            labelText: 'New position (1-${_questions.length})',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              final newPos = int.tryParse(posController.text);
-              if (newPos != null && newPos >= 1 && newPos <= _questions.length) {
-                final targetIndex = newPos - 1;
-                setState(() {
-                  final q = _questions.removeAt(currentIndex);
-                  _questions.insert(targetIndex, q);
-                });
-                _scheduleAutoSave();
-              }
-              Navigator.pop(ctx);
-            },
-            child: const Text('Move'),
-          ),
-        ],
+      builder: (_) => _MoveQuestionDialog(
+        currentIndex: currentIndex,
+        questionCount: _questions.length,
+        onMove: (int ci, int ni) {
+          setState(() {
+            final q = _questions.removeAt(ci);
+            _questions.insert(ni, q);
+          });
+          _scheduleAutoSave();
+        },
       ),
     );
   }
@@ -1644,6 +1623,75 @@ class _CreateAssessmentDesktopState
               foregroundColor: const Color(0xFF666666),
             ),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Dialog to move a question to a new position.
+class _MoveQuestionDialog extends StatefulWidget {
+  final int currentIndex;
+  final int questionCount;
+  final void Function(int currentIndex, int newIndex) onMove;
+
+  const _MoveQuestionDialog({
+    required this.currentIndex,
+    required this.questionCount,
+    required this.onMove,
+  });
+
+  @override
+  State<_MoveQuestionDialog> createState() => _MoveQuestionDialogState();
+}
+
+class _MoveQuestionDialogState extends State<_MoveQuestionDialog> {
+  late final TextEditingController _posController;
+
+  @override
+  void initState() {
+    super.initState();
+    _posController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _posController.dispose();
+    super.dispose();
+  }
+
+  void _handleMove() {
+    final newPos = int.tryParse(_posController.text);
+    if (newPos != null && newPos >= 1 && newPos <= widget.questionCount) {
+      final targetIndex = newPos - 1;
+      widget.onMove(widget.currentIndex, targetIndex);
+      Navigator.pop(context);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StyledDialog(
+      title: 'Move Question',
+      subtitle: 'Question ${widget.currentIndex + 1} of ${widget.questionCount}',
+      content: TextField(
+        controller: _posController,
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        autofocus: true,
+        decoration: StyledTextFieldDecoration.styled(
+          labelText: 'New position (1–${widget.questionCount})',
+        ),
+      ),
+      actions: [
+        StyledDialogAction(
+          label: 'Cancel',
+          onPressed: () => Navigator.pop(context),
+        ),
+        StyledDialogAction(
+          label: 'Move',
+          isPrimary: true,
+          onPressed: _handleMove,
         ),
       ],
     );

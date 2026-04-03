@@ -8,6 +8,7 @@ import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/utils/formatters.dart';
+import 'package:likha/presentation/widgets/styled_dialog.dart';
 
 class MaterialDetailDesktop extends ConsumerStatefulWidget {
   final String materialId;
@@ -74,99 +75,12 @@ class _MaterialDetailDesktopState
     final material = ref.read(learningMaterialProvider).currentMaterial;
     if (material == null) return;
 
-    final titleController = TextEditingController(text: material.title);
-    final contentController =
-        TextEditingController(text: material.contentText ?? '');
-
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.backgroundSecondary,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Edit Module'),
-        content: SingleChildScrollView(
-          child: SizedBox(
-            width: 500,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: titleController,
-                  decoration: InputDecoration(
-                    labelText: 'Title',
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: AppColors.borderLight),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: AppColors.borderLight),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: contentController,
-                  decoration: InputDecoration(
-                    labelText: 'Content (Optional)',
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: AppColors.borderLight),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: AppColors.borderLight),
-                    ),
-                  ),
-                  maxLines: 8,
-                  minLines: 4,
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final newTitle = titleController.text.trim();
-              if (newTitle.isEmpty) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text('Title is required')),
-                );
-                return;
-              }
-
-              Navigator.pop(ctx);
-
-              final content = contentController.text.trim();
-              await ref
-                  .read(learningMaterialProvider.notifier)
-                  .updateMaterial(
-                    materialId: material.id,
-                    title: newTitle,
-                    description: null,
-                    contentText: content.isEmpty ? null : content,
-                  );
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.foregroundPrimary,
-            ),
-            child: const Text('Save Changes'),
-          ),
-        ],
+      builder: (_) => _EditMaterialDialogDesktop(
+        materialId: material.id,
+        initialTitle: material.title,
+        initialContent: material.contentText,
       ),
     );
   }
@@ -587,6 +501,104 @@ class _MaterialDetailDesktopState
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Dialog to edit a learning material's title and content (desktop version).
+class _EditMaterialDialogDesktop extends ConsumerStatefulWidget {
+  final String materialId;
+  final String initialTitle;
+  final String? initialContent;
+
+  const _EditMaterialDialogDesktop({
+    required this.materialId,
+    required this.initialTitle,
+    this.initialContent,
+  });
+
+  @override
+  ConsumerState<_EditMaterialDialogDesktop> createState() =>
+      _EditMaterialDialogDesktopState();
+}
+
+class _EditMaterialDialogDesktopState
+    extends ConsumerState<_EditMaterialDialogDesktop> {
+  late final TextEditingController _titleController;
+  late final TextEditingController _contentController;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.initialTitle);
+    _contentController =
+        TextEditingController(text: widget.initialContent ?? '');
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _contentController.dispose();
+    super.dispose();
+  }
+
+  void _handleSave() {
+    final newTitle = _titleController.text.trim();
+    if (newTitle.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Title is required')),
+      );
+      return;
+    }
+
+    Navigator.pop(context);
+
+    final content = _contentController.text.trim();
+    ref.read(learningMaterialProvider.notifier).updateMaterial(
+      materialId: widget.materialId,
+      title: newTitle,
+      description: null,
+      contentText: content.isEmpty ? null : content,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StyledDialog(
+      title: 'Edit Module',
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: _titleController,
+              decoration: StyledTextFieldDecoration.styled(
+                labelText: 'Title',
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _contentController,
+              decoration: StyledTextFieldDecoration.styled(
+                labelText: 'Content (Optional)',
+              ),
+              maxLines: 8,
+              minLines: 4,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        StyledDialogAction(
+          label: 'Cancel',
+          onPressed: () => Navigator.pop(context),
+        ),
+        StyledDialogAction(
+          label: 'Save Changes',
+          isPrimary: true,
+          onPressed: _handleSave,
+        ),
+      ],
     );
   }
 }
