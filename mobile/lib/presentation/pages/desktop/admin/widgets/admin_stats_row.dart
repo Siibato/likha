@@ -27,19 +27,19 @@ class AdminStatsRow extends StatelessWidget {
         ),
         _StatCard(
           icon: Icons.check_circle_rounded,
-          iconColor: const Color(0xFF28A745),
+          iconColor: AppColors.foregroundPrimary,
           count: active,
           label: 'Active',
         ),
         _StatCard(
           icon: Icons.lock_rounded,
-          iconColor: const Color(0xFFDC3545),
+          iconColor: AppColors.foregroundPrimary,
           count: locked,
           label: 'Locked',
         ),
         _StatCard(
           icon: Icons.pending_rounded,
-          iconColor: const Color(0xFFFFC107),
+          iconColor: AppColors.foregroundPrimary,
           count: pending,
           label: 'Pending',
         ),

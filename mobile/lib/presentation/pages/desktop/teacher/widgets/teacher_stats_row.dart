@@ -19,19 +19,19 @@ class TeacherStatsRow extends StatelessWidget {
       children: [
         _StatCard(
           icon: Icons.school_rounded,
-          iconColor: const Color(0xFF5C6BC0),
+          iconColor: AppColors.foregroundPrimary,
           count: classes.length,
           label: 'Total Classes',
         ),
         _StatCard(
           icon: Icons.people_rounded,
-          iconColor: const Color(0xFF26A69A),
+          iconColor: AppColors.foregroundPrimary,
           count: totalStudents,
           label: 'Total Students',
         ),
         _StatCard(
           icon: Icons.star_rounded,
-          iconColor: const Color(0xFF4CAF50),
+          iconColor: AppColors.foregroundPrimary,
           count: advisoryCount,
           label: 'Advisory Classes',
         ),
@@ -56,7 +56,7 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 200,
+      width: 240,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
