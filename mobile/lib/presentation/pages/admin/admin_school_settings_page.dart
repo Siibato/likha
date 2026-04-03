@@ -8,6 +8,7 @@ import 'package:likha/domain/setup/entities/school_config.dart';
 import 'package:likha/injection_container.dart' as di;
 import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/school_settings_form.dart';
+import 'package:likha/presentation/widgets/styled_dialog.dart';
 
 class AdminSchoolSettingsPage extends StatefulWidget {
   const AdminSchoolSettingsPage({super.key});
@@ -18,6 +19,7 @@ class AdminSchoolSettingsPage extends StatefulWidget {
 }
 
 class _AdminSchoolSettingsPageState extends State<AdminSchoolSettingsPage> {
+  final _formKey = GlobalKey<FormState>();
   final _schoolNameController = TextEditingController();
   final _regionController = TextEditingController();
   final _divisionController = TextEditingController();
@@ -119,6 +121,8 @@ class _AdminSchoolSettingsPageState extends State<AdminSchoolSettingsPage> {
   }
 
   Future<void> _handleSave() async {
+    if (!_formKey.currentState!.validate()) return;
+
     final newCode = _schoolCodeController.text.trim().toUpperCase();
     final codeChanged = newCode != _originalSchoolCode;
 
@@ -126,19 +130,20 @@ class _AdminSchoolSettingsPageState extends State<AdminSchoolSettingsPage> {
     if (codeChanged) {
       final shouldProceed = await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Change School Code?'),
+        builder: (context) => StyledDialog(
+          title: 'Change School Code?',
           content: const Text(
             'Changing the code will affect new student and teacher setups. Existing users will not be impacted. Are you sure?',
           ),
           actions: [
-            TextButton(
+            StyledDialogAction(
+              label: 'Cancel',
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
             ),
-            TextButton(
+            StyledDialogAction(
+              label: 'Confirm',
+              isPrimary: true,
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Confirm'),
             ),
           ],
         ),
@@ -247,13 +252,16 @@ class _AdminSchoolSettingsPageState extends State<AdminSchoolSettingsPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  SchoolSettingsForm(
-                    schoolNameController: _schoolNameController,
-                    regionController: _regionController,
-                    divisionController: _divisionController,
-                    schoolYearController: _schoolYearController,
-                    schoolCodeController: _schoolCodeController,
-                    enabled: !_isSaving,
+                  Form(
+                    key: _formKey,
+                    child: SchoolSettingsForm(
+                      schoolNameController: _schoolNameController,
+                      regionController: _regionController,
+                      divisionController: _divisionController,
+                      schoolYearController: _schoolYearController,
+                      schoolCodeController: _schoolCodeController,
+                      enabled: !_isSaving,
+                    ),
                   ),
                   const SizedBox(height: 32),
                   SizedBox(

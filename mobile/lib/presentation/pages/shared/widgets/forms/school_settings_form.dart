@@ -4,6 +4,20 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.dart';
 
+/// Custom input formatter to convert text to uppercase
+class UppercaseInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    return newValue.copyWith(
+      text: newValue.text.toUpperCase(),
+      selection: newValue.selection,
+    );
+  }
+}
+
 /// Shared form widget for school settings (name, region, division, school year, and optional code).
 /// Used by both the first-time setup page and the admin settings page.
 class SchoolSettingsForm extends StatelessWidget {
@@ -89,9 +103,19 @@ class SchoolSettingsForm extends StatelessWidget {
             enabled: enabled,
             hintText: 'e.g., ESATQL',
             inputFormatters: [
+              UppercaseInputFormatter(),
               LengthLimitingTextInputFormatter(6),
               FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
             ],
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'School code is required';
+              }
+              if (value.length != 6) {
+                return 'School code must be exactly 6 characters';
+              }
+              return null;
+            },
           ),
         ],
       ],
