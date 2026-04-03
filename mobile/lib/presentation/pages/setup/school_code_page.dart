@@ -74,6 +74,9 @@ class _SchoolCodePageState extends ConsumerState<SchoolCodePage> {
             inputFormatters: [
               LengthLimitingTextInputFormatter(6),
               FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+              TextInputFormatter.withFunction((oldValue, newValue) {
+                return newValue.copyWith(text: newValue.text.toUpperCase());
+              }),
             ],
             onChanged: (_) =>
                 ref.read(schoolSetupProvider.notifier).clearError(),
@@ -87,8 +90,8 @@ class _SchoolCodePageState extends ConsumerState<SchoolCodePage> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<SchoolSetupState>(schoolSetupProvider, (_, next) {
-      if (next.isConnected) _restartApp();
+    ref.listen<SchoolSetupState>(schoolSetupProvider, (prev, next) {
+      if (prev?.isConnected != true && next.isConnected) _restartApp();
     });
 
     final state = ref.watch(schoolSetupProvider);

@@ -19,8 +19,8 @@ class SchoolPickerPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.listen<SchoolSetupState>(schoolSetupProvider, (_, next) {
-      if (next.isConnected) {
+    ref.listen<SchoolSetupState>(schoolSetupProvider, (prev, next) {
+      if (prev?.isConnected != true && next.isConnected) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const LoginPage()),
         );

@@ -34,7 +34,7 @@ class _QrScanPageState extends ConsumerState<QrScanPage> {
   @override
   Widget build(BuildContext context) {
     ref.listen<SchoolSetupState>(schoolSetupProvider, (prev, next) {
-      if (next.isConnected) _restartApp();
+      if (prev?.isConnected != true && next.isConnected) _restartApp();
       // Allow re-scanning if there was an error
       if (next.error != null) setState(() => _qrScanned = false);
     });
