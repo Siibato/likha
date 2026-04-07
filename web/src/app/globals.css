@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+
+@theme inline {
+  --color-background: #fafafa;
+  --color-foreground: #2b2b2b;
+  --color-muted: #999999;
+  --color-muted-foreground: #666666;
+  --color-border: #e0e0e0;
+  --color-card: #ffffff;
+  --color-primary: #34a853;
+  --color-primary-foreground: #ffffff;
+  --color-accent: #34a853;
+  --color-accent-foreground: #ffffff;
+  --color-destructive: #ea4335;
+  --color-destructive-foreground: #ffffff;
+  --color-secondary: #f8f9fa;
+  --color-secondary-foreground: #2b2b2b;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #2b2b2b;
+  --color-input: #ffffff;
+  --color-ring: #34a853;
+  --font-sans: var(--font-inter);
+  --radius: 0.5rem;
+}
+
+:root {
+  --font-inter: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
