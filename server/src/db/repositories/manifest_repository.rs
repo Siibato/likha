@@ -8,10 +8,12 @@ use ::entity::{
     classes, class_participants, assessments, assessment_questions, assessment_submissions,
     assignments_hw, assignment_submissions, learning_materials, activity_logs, users,
     material_files, submission_files,
+    grade_components_config, grade_items, grade_scores, quarterly_grades,
 };
 
 /// Record entry in the manifest (id + updated_at + deleted flag)
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct ManifestEntry {
     pub id: Uuid,
     pub updated_at: NaiveDateTime,
@@ -22,7 +24,6 @@ pub struct ManifestEntry {
 #[derive(Debug, Clone)]
 pub struct PaginatedRecords {
     pub records: Vec<Value>,
-    pub has_more: bool,
 }
 
 /// Repository for building and querying manifests
@@ -353,7 +354,6 @@ impl ManifestRepository {
             // No classes, return empty result
             return Ok(PaginatedRecords {
                 records: vec![],
-                has_more: false,
             });
         }
 
@@ -372,6 +372,7 @@ impl ManifestRepository {
                 "title": r.title,
                 "description": r.description,
                 "is_archived": r.is_archived,
+                "is_advisory": r.is_advisory,
                 "teacher_id": teacher_id,
                 "teacher_username": teacher_username,
                 "teacher_full_name": teacher_full_name,
@@ -503,7 +504,6 @@ impl ManifestRepository {
 
         Ok(PaginatedRecords {
             records: result,
-            has_more: false,
         })
     }
 
@@ -524,62 +524,6 @@ impl ManifestRepository {
                 "points": r.points,
                 "order_index": r.order_index,
                 "is_multi_select": r.is_multi_select,
-                "updated_at": r.updated_at.to_string(),
-                "deleted_at": r.deleted_at.map(|d| d.to_string()),
-            })
-        })
-        .await
-    }
-
-    /// Get full paginated records for assessment submissions (user-specific)
-    pub async fn get_assessment_submissions_paginated(
-        &self,
-        user_id: Uuid,
-        submission_ids: Vec<Uuid>,
-        limit: i64,
-    ) -> AppResult<PaginatedRecords> {
-        let query = assessment_submissions::Entity::find()
-            .filter(assessment_submissions::Column::UserId.eq(user_id))
-            .filter(assessment_submissions::Column::Id.is_in(submission_ids));
-        Self::paginate_query(&self.db, query, limit, |r| {
-            json!({
-                "id": r.id.to_string(),
-                "assessment_id": r.assessment_id.to_string(),
-                "user_id": r.user_id.to_string(),
-                "started_at": r.started_at.to_string(),
-                "submitted_at": r.submitted_at.map(|d| d.to_string()),
-                "total_points": r.total_points,
-                "created_at": r.created_at.to_string(),
-                "updated_at": r.updated_at.to_string(),
-                "deleted_at": r.deleted_at.map(|d| d.to_string()),
-            })
-        })
-        .await
-    }
-
-    /// Get full paginated records for assignment submissions (user-specific)
-    pub async fn get_assignment_submissions_paginated(
-        &self,
-        user_id: Uuid,
-        submission_ids: Vec<Uuid>,
-        limit: i64,
-    ) -> AppResult<PaginatedRecords> {
-        let query = assignment_submissions::Entity::find()
-            .filter(assignment_submissions::Column::StudentId.eq(user_id))
-            .filter(assignment_submissions::Column::Id.is_in(submission_ids));
-        Self::paginate_query(&self.db, query, limit, |r| {
-            json!({
-                "id": r.id.to_string(),
-                "assignment_id": r.assignment_id.to_string(),
-                "student_id": r.student_id.to_string(),
-                "status": r.status,
-                "text_content": r.text_content,
-                "is_late": r.is_late,
-                "submitted_at": r.submitted_at.map(|d| d.to_string()),
-                "points": r.points,
-                "feedback": r.feedback,
-                "graded_at": r.graded_at.map(|d| d.to_string()),
-                "created_at": r.created_at.to_string(),
                 "updated_at": r.updated_at.to_string(),
                 "deleted_at": r.deleted_at.map(|d| d.to_string()),
             })
@@ -616,26 +560,6 @@ impl ManifestRepository {
                 deleted: false, // Activity logs are never soft-deleted
             })
             .collect())
-    }
-
-    /// Get full paginated records for activity logs
-    pub async fn get_activity_logs_paginated(
-        &self,
-        activity_log_ids: Vec<Uuid>,
-        limit: i64,
-    ) -> AppResult<PaginatedRecords> {
-        let query = activity_logs::Entity::find()
-            .filter(activity_logs::Column::Id.is_in(activity_log_ids));
-        Self::paginate_query(&self.db, query, limit, |r| {
-            json!({
-                "id": r.id.to_string(),
-                "user_id": r.user_id.to_string(),
-                "action": r.action,
-                "details": r.details,
-                "created_at": r.created_at.to_string(),
-            })
-        })
-        .await
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -676,6 +600,7 @@ impl ManifestRepository {
                     "title": r.title,
                     "description": r.description,
                     "is_archived": r.is_archived,
+                    "is_advisory": r.is_advisory,
                     "teacher_id": teacher_id,
                     "teacher_username": teacher_username,
                     "teacher_full_name": teacher_full_name,
@@ -908,7 +833,7 @@ impl ManifestRepository {
     /// Get assignment submissions that have been updated since a given time
     pub async fn get_assignment_submissions_since(
         &self,
-        user_id: Uuid,
+        _user_id: Uuid,
         submission_ids: Vec<Uuid>,
         since: NaiveDateTime,
     ) -> AppResult<Vec<Value>> {
@@ -933,35 +858,6 @@ impl ManifestRepository {
                     "points": r.points,
                     "updated_at": r.updated_at.to_string(),
                     "deleted_at": r.deleted_at.map(|d| d.to_string()),
-                })
-            })
-            .collect();
-
-        Ok(records)
-    }
-
-    /// Get activity logs that have been created since a given time
-    pub async fn get_activity_logs_since(
-        &self,
-        activity_log_ids: Vec<Uuid>,
-        since: NaiveDateTime,
-    ) -> AppResult<Vec<Value>> {
-        let records = activity_logs::Entity::find()
-            .filter(activity_logs::Column::Id.is_in(activity_log_ids))
-            .filter(activity_logs::Column::CreatedAt.gt(since))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        let records: Vec<Value> = records
-            .into_iter()
-            .map(|r| {
-                json!({
-                    "id": r.id.to_string(),
-                    "user_id": r.user_id.to_string(),
-                    "action": r.action,
-                    "details": r.details,
-                    "created_at": r.created_at.to_string(),
                 })
             })
             .collect();
@@ -1180,12 +1076,215 @@ impl ManifestRepository {
             .all(db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        let has_more = records.len() > effective_limit as usize;
         let records: Vec<Value> = records
             .into_iter()
             .take(effective_limit as usize)
             .map(mapper)
             .collect();
-        Ok(PaginatedRecords { records, has_more })
+        Ok(PaginatedRecords { records })
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // SECTION E: Grading Sync Queries
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    fn grade_config_to_json(r: grade_components_config::Model) -> Value {
+        json!({
+            "id": r.id.to_string(),
+            "class_id": r.class_id.to_string(),
+            "quarter": r.quarter,
+            "ww_weight": r.ww_weight,
+            "pt_weight": r.pt_weight,
+            "qa_weight": r.qa_weight,
+            "created_at": r.created_at.to_string(),
+            "updated_at": r.updated_at.to_string(),
+            "deleted_at": r.deleted_at.map(|d| d.to_string()),
+        })
+    }
+
+    fn grade_item_to_json(r: grade_items::Model) -> Value {
+        json!({
+            "id": r.id.to_string(),
+            "class_id": r.class_id.to_string(),
+            "title": r.title,
+            "component": r.component,
+            "quarter": r.quarter,
+            "total_points": r.total_points,
+            "is_departmental_exam": r.is_departmental_exam,
+            "source_type": r.source_type,
+            "source_id": r.source_id,
+            "order_index": r.order_index,
+            "created_at": r.created_at.to_string(),
+            "updated_at": r.updated_at.to_string(),
+            "deleted_at": r.deleted_at.map(|d| d.to_string()),
+        })
+    }
+
+    fn grade_score_to_json(r: grade_scores::Model) -> Value {
+        json!({
+            "id": r.id.to_string(),
+            "grade_item_id": r.grade_item_id.to_string(),
+            "student_id": r.student_id.to_string(),
+            "score": r.score,
+            "is_auto_populated": r.is_auto_populated,
+            "override_score": r.override_score,
+            "created_at": r.created_at.to_string(),
+            "updated_at": r.updated_at.to_string(),
+            "deleted_at": r.deleted_at.map(|d| d.to_string()),
+        })
+    }
+
+    fn quarterly_grade_to_json(r: quarterly_grades::Model) -> Value {
+        json!({
+            "id": r.id.to_string(),
+            "class_id": r.class_id.to_string(),
+            "student_id": r.student_id.to_string(),
+            "quarter": r.quarter,
+            "ww_percentage": r.ww_percentage,
+            "pt_percentage": r.pt_percentage,
+            "qa_percentage": r.qa_percentage,
+            "ww_weighted": r.ww_weighted,
+            "pt_weighted": r.pt_weighted,
+            "qa_weighted": r.qa_weighted,
+            "initial_grade": r.initial_grade,
+            "transmuted_grade": r.transmuted_grade,
+            "is_complete": r.is_complete,
+            "computed_at": r.computed_at.map(|d| d.to_string()),
+            "created_at": r.created_at.to_string(),
+            "updated_at": r.updated_at.to_string(),
+            "deleted_at": r.deleted_at.map(|d| d.to_string()),
+        })
+    }
+
+    // --- Full sync (paginated) ---
+
+    pub async fn get_grade_configs_for_classes(&self, class_ids: Vec<Uuid>) -> AppResult<Vec<Value>> {
+        if class_ids.is_empty() { return Ok(vec![]); }
+        let records = grade_components_config::Entity::find()
+            .filter(grade_components_config::Column::ClassId.is_in(class_ids))
+            .all(&self.db).await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+        Ok(records.into_iter().map(Self::grade_config_to_json).collect())
+    }
+
+    pub async fn get_grade_items_for_classes(&self, class_ids: Vec<Uuid>) -> AppResult<Vec<Value>> {
+        if class_ids.is_empty() { return Ok(vec![]); }
+        let records = grade_items::Entity::find()
+            .filter(grade_items::Column::ClassId.is_in(class_ids))
+            .all(&self.db).await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+        Ok(records.into_iter().map(Self::grade_item_to_json).collect())
+    }
+
+    pub async fn get_all_grade_scores(&self, grade_item_ids: Vec<Uuid>) -> AppResult<Vec<Value>> {
+        if grade_item_ids.is_empty() { return Ok(vec![]); }
+        let records = grade_scores::Entity::find()
+            .filter(grade_scores::Column::GradeItemId.is_in(grade_item_ids))
+            .all(&self.db).await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+        Ok(records.into_iter().map(Self::grade_score_to_json).collect())
+    }
+
+    pub async fn get_student_grade_scores(&self, student_id: Uuid, grade_item_ids: Vec<Uuid>) -> AppResult<Vec<Value>> {
+        if grade_item_ids.is_empty() { return Ok(vec![]); }
+        let records = grade_scores::Entity::find()
+            .filter(grade_scores::Column::GradeItemId.is_in(grade_item_ids))
+            .filter(grade_scores::Column::StudentId.eq(student_id))
+            .all(&self.db).await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+        Ok(records.into_iter().map(Self::grade_score_to_json).collect())
+    }
+
+    pub async fn get_all_quarterly_grades(&self, class_ids: Vec<Uuid>) -> AppResult<Vec<Value>> {
+        if class_ids.is_empty() { return Ok(vec![]); }
+        let records = quarterly_grades::Entity::find()
+            .filter(quarterly_grades::Column::ClassId.is_in(class_ids))
+            .all(&self.db).await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+        Ok(records.into_iter().map(Self::quarterly_grade_to_json).collect())
+    }
+
+    pub async fn get_student_quarterly_grades(&self, student_id: Uuid, class_ids: Vec<Uuid>) -> AppResult<Vec<Value>> {
+        if class_ids.is_empty() { return Ok(vec![]); }
+        let records = quarterly_grades::Entity::find()
+            .filter(quarterly_grades::Column::ClassId.is_in(class_ids))
+            .filter(quarterly_grades::Column::StudentId.eq(student_id))
+            .all(&self.db).await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+        Ok(records.into_iter().map(Self::quarterly_grade_to_json).collect())
+    }
+
+    // --- Delta sync (since) ---
+
+    pub async fn get_grade_configs_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> AppResult<Vec<Value>> {
+        if class_ids.is_empty() { return Ok(vec![]); }
+        let records = grade_components_config::Entity::find()
+            .filter(grade_components_config::Column::ClassId.is_in(class_ids))
+            .filter(grade_components_config::Column::UpdatedAt.gt(since))
+            .all(&self.db).await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+        Ok(records.into_iter().map(Self::grade_config_to_json).collect())
+    }
+
+    pub async fn get_grade_items_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> AppResult<Vec<Value>> {
+        if class_ids.is_empty() { return Ok(vec![]); }
+        let records = grade_items::Entity::find()
+            .filter(grade_items::Column::ClassId.is_in(class_ids))
+            .filter(grade_items::Column::UpdatedAt.gt(since))
+            .all(&self.db).await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+        Ok(records.into_iter().map(Self::grade_item_to_json).collect())
+    }
+
+    pub async fn get_all_grade_scores_since(&self, grade_item_ids: Vec<Uuid>, since: NaiveDateTime) -> AppResult<Vec<Value>> {
+        if grade_item_ids.is_empty() { return Ok(vec![]); }
+        let records = grade_scores::Entity::find()
+            .filter(grade_scores::Column::GradeItemId.is_in(grade_item_ids))
+            .filter(grade_scores::Column::UpdatedAt.gt(since))
+            .all(&self.db).await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+        Ok(records.into_iter().map(Self::grade_score_to_json).collect())
+    }
+
+    pub async fn get_student_grade_scores_since(&self, student_id: Uuid, grade_item_ids: Vec<Uuid>, since: NaiveDateTime) -> AppResult<Vec<Value>> {
+        if grade_item_ids.is_empty() { return Ok(vec![]); }
+        let records = grade_scores::Entity::find()
+            .filter(grade_scores::Column::GradeItemId.is_in(grade_item_ids))
+            .filter(grade_scores::Column::StudentId.eq(student_id))
+            .filter(grade_scores::Column::UpdatedAt.gt(since))
+            .all(&self.db).await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+        Ok(records.into_iter().map(Self::grade_score_to_json).collect())
+    }
+
+    pub async fn get_all_quarterly_grades_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> AppResult<Vec<Value>> {
+        if class_ids.is_empty() { return Ok(vec![]); }
+        let records = quarterly_grades::Entity::find()
+            .filter(quarterly_grades::Column::ClassId.is_in(class_ids))
+            .filter(quarterly_grades::Column::UpdatedAt.gt(since))
+            .all(&self.db).await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+        Ok(records.into_iter().map(Self::quarterly_grade_to_json).collect())
+    }
+
+    pub async fn get_student_quarterly_grades_since(&self, student_id: Uuid, class_ids: Vec<Uuid>, since: NaiveDateTime) -> AppResult<Vec<Value>> {
+        if class_ids.is_empty() { return Ok(vec![]); }
+        let records = quarterly_grades::Entity::find()
+            .filter(quarterly_grades::Column::ClassId.is_in(class_ids))
+            .filter(quarterly_grades::Column::StudentId.eq(student_id))
+            .filter(quarterly_grades::Column::UpdatedAt.gt(since))
+            .all(&self.db).await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+        Ok(records.into_iter().map(Self::quarterly_grade_to_json).collect())
+    }
+
+    /// Get all grade_item IDs for given classes (used by delta sync to scope score queries)
+    pub async fn get_grade_item_ids_for_classes(&self, class_ids: Vec<Uuid>) -> AppResult<Vec<Uuid>> {
+        if class_ids.is_empty() { return Ok(vec![]); }
+        let records = grade_items::Entity::find()
+            .filter(grade_items::Column::ClassId.is_in(class_ids))
+            .all(&self.db).await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+        Ok(records.into_iter().map(|r| r.id).collect())
     }
 }

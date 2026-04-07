@@ -2,6 +2,7 @@ use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
 use crate::schema::assessment_schema::*;
 use crate::services::grading::GradingService;
+use crate::services::grade_computation::auto_populate;
 
 impl super::AssessmentService {
     pub async fn get_submissions(
@@ -12,7 +13,7 @@ impl super::AssessmentService {
         let assessment = self.assessment_repo.find_by_id(assessment_id).await?
             .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
 
-        let class = self.class_repo.find_by_id(assessment.class_id).await?
+        let _class = self.class_repo.find_by_id(assessment.class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
         if !self.class_repo.is_teacher_of_class(teacher_id, assessment.class_id).await? {
@@ -56,7 +57,7 @@ impl super::AssessmentService {
         let assessment = self.assessment_repo.find_by_id(submission.assessment_id).await?
             .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
 
-        let class = self.class_repo.find_by_id(assessment.class_id).await?
+        let _class = self.class_repo.find_by_id(assessment.class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
         if !self.class_repo.is_teacher_of_class(teacher_id, assessment.class_id).await? {
@@ -160,7 +161,7 @@ impl super::AssessmentService {
         let assessment = self.assessment_repo.find_by_id(submission.assessment_id).await?
             .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
 
-        let class = self.class_repo.find_by_id(assessment.class_id).await?
+        let _class = self.class_repo.find_by_id(assessment.class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
         if !self.class_repo.is_teacher_of_class(teacher_id, assessment.class_id).await? {
@@ -176,7 +177,12 @@ impl super::AssessmentService {
             .override_answer(answer_id, request.is_correct, points)
             .await?;
 
-        GradingService::recalculate_final_score(submission.id, &self.submission_repo).await?;
+        let final_score = GradingService::recalculate_final_score(submission.id, &self.submission_repo).await?;
+
+        // Auto-populate grade score
+        let _ = auto_populate::auto_populate_score(
+            &self.db, "assessment", submission.assessment_id, submission.user_id, final_score,
+        ).await;
 
         Ok(SubmissionAnswerResponse {
             id: updated.id,

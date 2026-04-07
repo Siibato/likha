@@ -1,5 +1,4 @@
-import 'dart:convert';
-
+import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/sync/sync_logger.dart';
 import 'package:likha/core/sync/sync_state.dart';
@@ -13,18 +12,7 @@ class InboundSyncHandler {
   final LocalDatabase _localDatabase;
   final SyncLogger _log;
   final SyncUpsertHelpers _upsertHelpers;
-  final void Function({
-    SyncPhase? phase,
-    int? pendingCount,
-    int? failedCount,
-    String? lastError,
-    DateTime? lastSyncAt,
-    double? progress,
-    String? currentStep,
-    bool? assessmentsReady,
-    bool? assignmentsReady,
-    bool? materialsReady,
-  }) _updateState;
+  final SyncStateUpdater _updateState;
 
   InboundSyncHandler(
     this._syncRemoteDataSource,
@@ -41,18 +29,18 @@ class InboundSyncHandler {
 
     // Check for last_sync_at
     final rows = await db.query(
-      'sync_metadata',
-      where: 'key = ?',
-      whereArgs: ['last_sync_at'],
+      DbTables.syncMetadata,
+      where: '${SyncMetadataCols.key} = ?',
+      whereArgs: [DbValues.metaLastSyncAt],
     );
-    final lastSyncAt = rows.isNotEmpty ? rows.first['value'] as String? : null;
+    final lastSyncAt = rows.isNotEmpty ? rows.first[SyncMetadataCols.value] as String? : null;
 
     final expiryRows = await db.query(
-      'sync_metadata',
-      where: 'key = ?',
-      whereArgs: ['data_expiry_at'],
+      DbTables.syncMetadata,
+      where: '${SyncMetadataCols.key} = ?',
+      whereArgs: [DbValues.metaDataExpiryAt],
     );
-    final dataExpiryAt = expiryRows.isNotEmpty ? expiryRows.first['value'] as String? : null;
+    final dataExpiryAt = expiryRows.isNotEmpty ? expiryRows.first[SyncMetadataCols.value] as String? : null;
 
     if (lastSyncAt == null) {
       // FIRST LOGIN: full sync
@@ -72,14 +60,7 @@ class InboundSyncHandler {
   Future<String?> runFullSync() async {
     // Get device ID (or generate and store)
     final db = await _localDatabase.database;
-    final deviceIdRows = await db.query(
-      'sync_metadata',
-      where: 'key = ?',
-      whereArgs: ['device_id'],
-    );
-    final deviceId = deviceIdRows.isNotEmpty
-        ? deviceIdRows.first['value'] as String
-        : generateAndStoreDeviceId(db);
+    final deviceId = await _getOrCreateDeviceId(db);
 
     // STEP 0: Initialize progress
     _updateState(progress: 0.0, currentStep: 'Preparing Likha for you…');
@@ -108,18 +89,18 @@ class InboundSyncHandler {
     }
 
     // Upsert base response data (user, classes, enrollments, enrolled_students)
-    var enrolledStudents = (baseData['enrolled_students'] as List?) ?? [];
+    var participantUsers = (baseData['enrolled_students'] as List?) ?? [];
     final userData = baseData['user'] as Map<String, dynamic>?;
 
     // Ensure current user is always in the list (may not be in enrolled_students if only teacher enrolled them)
-    if (userData != null && enrolledStudents.every((s) => (s as Map<String, dynamic>?)?['id'] != userData['id'])) {
-      enrolledStudents = [userData, ...enrolledStudents];
+    if (userData != null && participantUsers.every((s) => (s as Map<String, dynamic>?)?['id'] != userData['id'])) {
+      participantUsers = [userData, ...participantUsers];
     }
 
     // Track students per class
-    final rawEnrollments = (baseData['enrollments'] as List?) ?? [];
+    final rawParticipants = (baseData['enrollments'] as List?) ?? [];
     final studentsPerClassCount = <String, int>{};
-    for (final e in rawEnrollments) {
+    for (final e in rawParticipants) {
       if (e is! Map<String, dynamic>) continue;
       final cid = e['class_id']?.toString();
       if (cid != null) studentsPerClassCount[cid] = (studentsPerClassCount[cid] ?? 0) + 1;
@@ -127,36 +108,20 @@ class InboundSyncHandler {
 
     // Cache the logged-in user from sync response (BEFORE enrollment upserts to avoid CASCADE DELETE)
     if (userData != null) {
-      await db.insert(
-        'users',
-        {
-          'id': userData['id'],
-          'username': userData['username'],
-          'full_name': userData['full_name'],
-          'role': userData['role'],
-          'account_status': userData['account_status'],
-          'activated_at': userData['activated_at'],
-          'created_at': userData['created_at'],
-          'updated_at': userData['updated_at'] ?? userData['created_at'],
-          'deleted_at': userData['deleted_at'],
-          'cached_at': DateTime.now().toIso8601String(),
-          'needs_sync': 0,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      await _upsertHelpers.upsertCurrentUser(db, userData);
     }
 
     // Upsert all base response data sequentially (proper await ensures committed before verification)
     _log.warn('Starting base response data upsert (classes, enrollments, students)...');
     await _upsertHelpers.upsertClasses(db, baseData['classes'] ?? []);
-    await _upsertHelpers.upsertEnrolledStudents(db, enrolledStudents);
-    await _upsertHelpers.upsertEnrollments(db, baseData['enrollments'] ?? [], enrolledStudents);
+    await _upsertHelpers.upsertEnrolledStudents(db, participantUsers);
+    await _upsertHelpers.upsertParticipants(db, baseData['enrollments'] ?? [], participantUsers);
     await _upsertHelpers.recalculateClassStudentCounts(db);
 
     _log.baseResponse(
       classes: (baseData['classes'] as List?)?.length ?? 0,
-      enrollments: rawEnrollments.length,
-      students: enrolledStudents.length,
+      participants: rawParticipants.length,
+      students: participantUsers.length,
     );
 
     // Log per-class student counts
@@ -227,7 +192,7 @@ class InboundSyncHandler {
 
     // Build student map for submission enrichment
     final studentMap = <String, dynamic>{};
-    for (final s in enrolledStudents) {
+    for (final s in participantUsers) {
       if (s is! Map<String, dynamic>) continue;
       final id = s['id']?.toString();
       if (id != null && id.isNotEmpty) {
@@ -239,8 +204,8 @@ class InboundSyncHandler {
     if (classBatches.isNotEmpty) {
       for (int batchIndex = 0; batchIndex < classBatches.length; batchIndex++) {
         final batch = classBatches[batchIndex];
-        final progressBase = 0.1;
-        final progressRange = 0.85;
+        const progressBase = 0.1;
+        const progressRange = 0.85;
         final batchProgress = progressBase + (progressRange * (batchIndex / classBatches.length));
 
         // Create step description with batch titles
@@ -275,8 +240,8 @@ class InboundSyncHandler {
         final studentResults = batchData['student_results'] ?? [];
 
         // NEW: Extract enrolled_students and enrollments from batch (for full offline support)
-        final batchEnrolledStudents = (batchData['enrolled_students'] as List?) ?? [];
-        final batchEnrollments = (batchData['enrollments'] as List?) ?? [];
+        final batchParticipantUsers = (batchData['enrolled_students'] as List?) ?? [];
+        final batchParticipants = (batchData['enrollments'] as List?) ?? [];
 
         _log.batchReceived(batchIndex, classBatches.length, {
           'assessments': assessments.length,
@@ -289,8 +254,8 @@ class InboundSyncHandler {
           'submission_files': submissionFiles.length,
           'assessment_statistics': assessmentStatistics.length,
           'student_results': studentResults.length,
-          'enrolled_students': batchEnrolledStudents.length,  // NEW: for offline support
-          'enrollments': batchEnrollments.length,              // NEW: for offline support
+          'enrolled_students': batchParticipantUsers.length,  // NEW: for offline support
+          'enrollments': batchParticipants.length,              // NEW: for offline support
         });
 
         // Log questions per assessment
@@ -313,11 +278,11 @@ class InboundSyncHandler {
         }
 
         // NEW: Upsert batch enrolled_students and enrollments (for full offline support)
-        await _upsertHelpers.upsertEnrolledStudents(db, batchEnrolledStudents);
-        await _upsertHelpers.upsertEnrollments(db, batchEnrollments, batchEnrolledStudents);
+        await _upsertHelpers.upsertEnrolledStudents(db, batchParticipantUsers);
+        await _upsertHelpers.upsertParticipants(db, batchParticipants, batchParticipantUsers);
 
         // Update in-memory studentMap with batch students so submissions can reference them
-        for (final s in batchEnrolledStudents) {
+        for (final s in batchParticipantUsers) {
           if (s is! Map<String, dynamic>) continue;
           final id = s['id']?.toString();
           if (id != null && id.isNotEmpty) {
@@ -340,34 +305,17 @@ class InboundSyncHandler {
         );
 
         // Write student_results to cache
-        if (studentResults.isNotEmpty) {
-          await db.transaction((txn) async {
-            for (final result in studentResults) {
-              try {
-                final data = result as Map<String, dynamic>;
-                final submissionId = data['submission_id']?.toString();
-                if (submissionId == null || submissionId.isEmpty) {
-                  _log.warn('Student result missing submission_id, skipping');
-                  continue;
-                }
+        await _upsertHelpers.upsertStudentResults(db, studentResults);
 
-                final now = DateTime.now().toIso8601String();
-                await txn.insert(
-                  'student_results_cache',
-                  {
-                    'submission_id': submissionId,
-                    'results_json': jsonEncode(data),
-                    'cached_at': now,
-                  },
-                  conflictAlgorithm: ConflictAlgorithm.replace,
-                );
-              } catch (e) {
-                _log.warn('Failed to cache student result: $e');
-              }
-            }
-          });
-          _log.upsertSummary('student_results_cache', studentResults.length);
-        }
+        // Grading data
+        await _upsertHelpers.upsertGradeConfigs(db, batchData['grade_configs'] ?? []);
+        await _upsertHelpers.upsertGradeItems(db, batchData['grade_items'] ?? []);
+        await _upsertHelpers.upsertGradeScores(db, batchData['grade_scores'] ?? []);
+        await _upsertHelpers.upsertQuarterlyGrades(db, batchData['quarterly_grades'] ?? []);
+
+        // TOS data
+        await _upsertHelpers.upsertTableOfSpecifications(db, batchData['table_of_specifications'] ?? []);
+        await _upsertHelpers.upsertTosCompetencies(db, batchData['tos_competencies'] ?? []);
       }
     }
 
@@ -388,16 +336,8 @@ class InboundSyncHandler {
 
     // Save sync metadata
     final expiryAt = DateTime.now().add(const Duration(days: 30)).toIso8601String();
-    await db.insert(
-      'sync_metadata',
-      {'key': 'last_sync_at', 'value': syncToken},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-    await db.insert(
-      'sync_metadata',
-      {'key': 'data_expiry_at', 'value': expiryAt},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await _upsertHelpers.saveSyncToken(db, syncToken);
+    await _upsertHelpers.saveSyncExpiry(db, expiryAt);
 
     return serverTime ?? syncToken;
   }
@@ -407,14 +347,7 @@ class InboundSyncHandler {
   Future<String?> runDeltaSync(String lastSyncAt, String? dataExpiryAt) async {
     // Get device ID
     final db = await _localDatabase.database;
-    final deviceIdRows = await db.query(
-      'sync_metadata',
-      where: 'key = ?',
-      whereArgs: ['device_id'],
-    );
-    final deviceId = deviceIdRows.isNotEmpty
-        ? deviceIdRows.first['value'] as String
-        : generateAndStoreDeviceId(db);
+    final deviceId = await _getOrCreateDeviceId(db);
 
     // Fetch deltas
     final response =
@@ -458,26 +391,30 @@ class InboundSyncHandler {
 
     // Update sync metadata
     final expiryAt = DateTime.now().add(const Duration(days: 30)).toIso8601String();
-    await db.insert(
-      'sync_metadata',
-      {'key': 'last_sync_at', 'value': syncToken},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-    await db.insert(
-      'sync_metadata',
-      {'key': 'data_expiry_at', 'value': expiryAt},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await _upsertHelpers.saveSyncToken(db, syncToken);
+    await _upsertHelpers.saveSyncExpiry(db, expiryAt);
 
     return serverTime ?? syncToken;
   }
 
+  /// Get existing device ID or generate and store a new one
+  Future<String> _getOrCreateDeviceId(Database db) async {
+    final rows = await db.query(
+      DbTables.syncMetadata,
+      where: '${SyncMetadataCols.key} = ?',
+      whereArgs: [DbValues.metaDeviceId],
+    );
+    return rows.isNotEmpty
+        ? rows.first[SyncMetadataCols.value] as String
+        : await generateAndStoreDeviceId(db);
+  }
+
   /// Generate and store a device ID
-  String generateAndStoreDeviceId(Database db) {
+  Future<String> generateAndStoreDeviceId(Database db) async {
     final deviceId = const Uuid().v4();
-    db.insert(
-      'sync_metadata',
-      {'key': 'device_id', 'value': deviceId},
+    await db.insert(
+      DbTables.syncMetadata,
+      {SyncMetadataCols.key: DbValues.metaDeviceId, SyncMetadataCols.value: deviceId},
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
     return deviceId;

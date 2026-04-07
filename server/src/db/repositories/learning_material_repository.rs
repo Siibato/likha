@@ -92,14 +92,6 @@ impl LearningMaterialRepository {
             .map_err(|e| AppError::InternalServerError(format!("Failed to update material: {}", e)))
     }
 
-    pub async fn delete_material(&self, id: Uuid) -> AppResult<()> {
-        learning_materials::Entity::delete_by_id(id)
-            .exec(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to delete material: {}", e)))?;
-        Ok(())
-    }
-
     pub async fn update_order_index(&self, id: Uuid, order_index: i32) -> AppResult<learning_materials::Model> {
         let mut material: learning_materials::ActiveModel = learning_materials::Entity::find_by_id(id)
             .one(&self.db)

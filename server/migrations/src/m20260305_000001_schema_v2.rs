@@ -335,26 +335,16 @@ enum ClassParticipants {
 #[derive(DeriveIden)]
 enum ClassEnrollments {
     Table,
-    Id,
-    ClassId,
-    StudentId,
-    EnrolledAt,
-    RemovedAt,
 }
 
 #[derive(DeriveIden)]
 enum Classes {
     Table,
     Id,
-    TeacherId,
-    CreatedAt,
 }
 
 #[derive(DeriveIden)]
 enum Users {
     Table,
     Id,
-    IsActive,
-    CreatedBy,
-    DeletedAt,
 }

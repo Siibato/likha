@@ -1,0 +1,324 @@
+import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/domain/classes/entities/class_entity.dart';
+
+class ClassDataTable extends StatefulWidget {
+  final List<ClassEntity> classes;
+  final ValueChanged<ClassEntity> onTap;
+  final ValueChanged<ClassEntity>? onDelete;
+  final int rowsPerPage;
+
+  const ClassDataTable({
+    super.key,
+    required this.classes,
+    required this.onTap,
+    this.onDelete,
+    this.rowsPerPage = 20,
+  });
+
+  @override
+  State<ClassDataTable> createState() => _ClassDataTableState();
+}
+
+class _ClassDataTableState extends State<ClassDataTable> {
+  int _sortColumnIndex = 0;
+  bool _sortAscending = true;
+  int _currentPage = 0;
+
+  List<ClassEntity> get _sortedClasses {
+    final sorted = List<ClassEntity>.from(widget.classes);
+    sorted.sort((a, b) {
+      int result;
+      switch (_sortColumnIndex) {
+        case 0:
+          result = a.title.toLowerCase().compareTo(b.title.toLowerCase());
+          break;
+        case 1:
+          result = a.teacherFullName
+              .toLowerCase()
+              .compareTo(b.teacherFullName.toLowerCase());
+          break;
+        case 2:
+          result = a.studentCount.compareTo(b.studentCount);
+          break;
+        default:
+          result = a.title.toLowerCase().compareTo(b.title.toLowerCase());
+      }
+      return _sortAscending ? result : -result;
+    });
+    return sorted;
+  }
+
+  int get _totalPages =>
+      (widget.classes.length / widget.rowsPerPage).ceil().clamp(1, 999);
+
+  List<ClassEntity> get _pageClasses {
+    final sorted = _sortedClasses;
+    final start = _currentPage * widget.rowsPerPage;
+    final end = (start + widget.rowsPerPage).clamp(0, sorted.length);
+    if (start >= sorted.length) return [];
+    return sorted.sublist(start, end);
+  }
+
+  @override
+  void didUpdateWidget(ClassDataTable oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.classes.length != oldWidget.classes.length) {
+      final maxPage = _totalPages - 1;
+      if (_currentPage > maxPage) {
+        _currentPage = maxPage.clamp(0, maxPage);
+      }
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.classes.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(48),
+          child: Column(
+            children: [
+              Icon(Icons.class_outlined, size: 48, color: AppColors.borderLight),
+              SizedBox(height: 12),
+              Text(
+                'No classes found',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.foregroundTertiary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.borderLight),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: DataTable(
+              showCheckboxColumn: false,
+              sortColumnIndex: _sortColumnIndex,
+              sortAscending: _sortAscending,
+              headingRowColor:
+                  WidgetStateProperty.all(AppColors.backgroundTertiary),
+              dataRowMaxHeight: 56,
+              horizontalMargin: 20,
+              columnSpacing: 24,
+              columns: [
+                DataColumn(
+                  label: const Text('Class Title', style: _headerStyle),
+                  onSort: (i, asc) => setState(() {
+                    _sortColumnIndex = i;
+                    _sortAscending = asc;
+                  }),
+                ),
+                DataColumn(
+                  label: const Text('Teacher', style: _headerStyle),
+                  onSort: (i, asc) => setState(() {
+                    _sortColumnIndex = i;
+                    _sortAscending = asc;
+                  }),
+                ),
+                DataColumn(
+                  label: const Text('Students', style: _headerStyle),
+                  numeric: true,
+                  onSort: (i, asc) => setState(() {
+                    _sortColumnIndex = i;
+                    _sortAscending = asc;
+                  }),
+                ),
+                const DataColumn(
+                  label: Text('Advisory', style: _headerStyle),
+                ),
+                const DataColumn(
+                  label: Text('Status', style: _headerStyle),
+                ),
+                const DataColumn(
+                  label: Text('Created', style: _headerStyle),
+                ),
+                if (widget.onDelete != null)
+                  const DataColumn(
+                    label: Text('', style: _headerStyle),
+                  ),
+              ],
+              rows: _pageClasses.map((cls) {
+                final teacherLabel = cls.teacherFullName.isNotEmpty
+                    ? cls.teacherFullName
+                    : cls.teacherUsername;
+
+                return DataRow(
+                  onSelectChanged: (_) => widget.onTap(cls),
+                  cells: [
+                    DataCell(Text(
+                      cls.title,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.foregroundDark,
+                      ),
+                    )),
+                    DataCell(Text(
+                      teacherLabel,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.foregroundSecondary,
+                      ),
+                    )),
+                    DataCell(Text(
+                      '${cls.studentCount}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.foregroundSecondary,
+                      ),
+                    )),
+                    DataCell(
+                      cls.isAdvisory
+                          ? const Icon(Icons.star_rounded,
+                              size: 18, color: Color(0xFF4CAF50))
+                          : const SizedBox.shrink(),
+                    ),
+                    DataCell(
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: cls.isArchived
+                              ? AppColors.foregroundTertiary
+                                  .withValues(alpha: 0.12)
+                              : const Color(0xFF28A745)
+                                  .withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          cls.isArchived ? 'Archived' : 'Active',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: cls.isArchived
+                                ? AppColors.foregroundTertiary
+                                : const Color(0xFF28A745),
+                          ),
+                        ),
+                      ),
+                    ),
+                    DataCell(Text(
+                      _formatDate(cls.createdAt),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.foregroundTertiary,
+                      ),
+                    )),
+                    if (widget.onDelete != null)
+                      DataCell(
+                        IconButton(
+                          icon: const Icon(
+                            Icons.delete_outline_rounded,
+                            color: Color(0xFFDC3545),
+                            size: 20,
+                          ),
+                          tooltip: 'Delete class',
+                          onPressed: () => widget.onDelete!(cls),
+                        ),
+                      ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+
+        // Pagination
+        if (_totalPages > 1) ...[
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Showing ${_currentPage * widget.rowsPerPage + 1}–${((_currentPage + 1) * widget.rowsPerPage).clamp(0, widget.classes.length)} of ${widget.classes.length}',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.foregroundTertiary,
+                ),
+              ),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left_rounded, size: 20),
+                    onPressed: _currentPage > 0
+                        ? () => setState(() => _currentPage--)
+                        : null,
+                  ),
+                  ...List.generate(
+                    _totalPages.clamp(0, 5),
+                    (i) {
+                      final page =
+                          _currentPage < 3 ? i : _currentPage + i - 2;
+                      if (page >= _totalPages) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: () => setState(() => _currentPage = page),
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: page == _currentPage
+                                  ? AppColors.foregroundDark
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '${page + 1}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: page == _currentPage
+                                    ? Colors.white
+                                    : AppColors.foregroundSecondary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right_rounded, size: 20),
+                    onPressed: _currentPage < _totalPages - 1
+                        ? () => setState(() => _currentPage++)
+                        : null,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  static const _headerStyle = TextStyle(
+    fontSize: 13,
+    fontWeight: FontWeight.w700,
+    color: AppColors.foregroundSecondary,
+  );
+}

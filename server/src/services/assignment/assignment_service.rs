@@ -8,15 +8,18 @@ pub struct AssignmentService {
     pub class_repo: ClassRepository,
     pub activity_log_repo: ActivityLogRepository,
     pub file_storage_path: String,
+    pub db: DatabaseConnection,
 }
 
 impl AssignmentService {
     pub fn new(db: DatabaseConnection, file_storage_path: String) -> Self {
+        let db_clone = db.clone();
         Self {
             assignment_repo: AssignmentRepository::new(db.clone()),
             class_repo: ClassRepository::new(db.clone()),
             activity_log_repo: ActivityLogRepository::new(db),
             file_storage_path,
+            db: db_clone,
         }
     }
 }

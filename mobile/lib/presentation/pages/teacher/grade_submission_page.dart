@@ -403,7 +403,7 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
         ),
         if (isLate) ...[
           const SizedBox(width: 8),
-          StatusBadge(
+          const StatusBadge(
             label: 'Late',
             color: AppColors.semanticError,
             variant: BadgeVariant.outlined,

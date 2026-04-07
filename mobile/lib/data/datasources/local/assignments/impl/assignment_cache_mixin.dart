@@ -2,6 +2,7 @@ import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/assignments/assignment_model.dart';
 import 'package:likha/data/models/assignments/assignment_submission_model.dart';
 import 'package:likha/data/models/assignments/submission_file_model.dart';
+import 'package:likha/core/database/db_schema.dart';
 import 'package:sqflite/sqflite.dart';
 import '../assignment_local_datasource_base.dart';
 
@@ -13,12 +14,12 @@ mixin AssignmentCacheMixin on AssignmentLocalDataSourceBase {
       await db.transaction((txn) async {
         for (final assignment in assignments) {
           final map = assignment.toMap();
-          map['cached_at'] = DateTime.now().toIso8601String();
-          map['needs_sync'] = 0;
+          map[CommonCols.cachedAt] = DateTime.now().toIso8601String();
+          map[CommonCols.needsSync] = 0;
           // Use update-first pattern to avoid CASCADE DELETE on assignment_submissions
-          final updated = await txn.update('assignments', map, where: 'id = ?', whereArgs: [map['id']]);
+          final updated = await txn.update(DbTables.assignments, map, where: '${CommonCols.id} = ?', whereArgs: [map[CommonCols.id]]);
           if (updated == 0) {
-            await txn.insert('assignments', map);
+            await txn.insert(DbTables.assignments, map);
           }
         }
       });
@@ -35,9 +36,9 @@ mixin AssignmentCacheMixin on AssignmentLocalDataSourceBase {
       map['cached_at'] = DateTime.now().toIso8601String();
       map['needs_sync'] = 0;
       // Use update-first pattern to avoid CASCADE DELETE on assignment_submissions
-      final updated = await db.update('assignments', map, where: 'id = ?', whereArgs: [map['id']]);
+      final updated = await db.update(DbTables.assignments, map, where: '${CommonCols.id} = ?', whereArgs: [map[CommonCols.id]]);
       if (updated == 0) {
-        await db.insert('assignments', map);
+        await db.insert(DbTables.assignments, map);
       }
     } catch (e) {
       throw CacheException('Failed to cache assignment detail: $e');
@@ -52,22 +53,22 @@ mixin AssignmentCacheMixin on AssignmentLocalDataSourceBase {
       await db.transaction((txn) async {
         for (final submission in submissions) {
           final map = {
-            'id': submission.id,
-            'assignment_id': assignmentId,
-            'student_id': submission.studentId,
-            'status': submission.status,
-            'submitted_at': submission.submittedAt?.toIso8601String(),
-            'is_late': submission.isLate ? 1 : 0,
-            'points': submission.score,
-            'created_at': now.toIso8601String(),
-            'updated_at': now.toIso8601String(),
-            'cached_at': now.toIso8601String(),
-            'needs_sync': 0,
+            CommonCols.id: submission.id,
+            AssignmentSubmissionsCols.assignmentId: assignmentId,
+            AssignmentSubmissionsCols.studentId: submission.studentId,
+            AssignmentSubmissionsCols.status: submission.status,
+            AssignmentSubmissionsCols.submittedAt: submission.submittedAt?.toIso8601String(),
+            AssignmentSubmissionsCols.isLate: submission.isLate ? 1 : 0,
+            AssignmentSubmissionsCols.points: submission.score,
+            CommonCols.createdAt: now.toIso8601String(),
+            CommonCols.updatedAt: now.toIso8601String(),
+            CommonCols.cachedAt: now.toIso8601String(),
+            CommonCols.needsSync: 0,
           };
           // Update-first pattern: only touch columns in the list API response, preserve text_content
-          final updated = await txn.update('assignment_submissions', map, where: 'id = ?', whereArgs: [map['id']]);
+          final updated = await txn.update(DbTables.assignmentSubmissions, map, where: '${CommonCols.id} = ?', whereArgs: [map[CommonCols.id]]);
           if (updated == 0) {
-            await txn.insert('assignment_submissions', map);
+            await txn.insert(DbTables.assignmentSubmissions, map);
           }
         }
       });
@@ -83,42 +84,42 @@ mixin AssignmentCacheMixin on AssignmentLocalDataSourceBase {
       final now = DateTime.now().toIso8601String();
       await db.transaction((txn) async {
         await txn.insert(
-          'assignment_submissions',
+          DbTables.assignmentSubmissions,
           {
-            'id': submission.id,
-            'assignment_id': submission.assignmentId,
-            'student_id': submission.studentId,
-            'status': submission.status,
-            'text_content': submission.textContent,
-            'submitted_at': submission.submittedAt?.toIso8601String(),
-            'is_late': submission.isLate ? 1 : 0,
-            'points': submission.score,
-            'feedback': submission.feedback,
-            'graded_at': submission.gradedAt?.toIso8601String(),
-            'created_at': submission.createdAt.toIso8601String(),
-            'updated_at': submission.updatedAt.toIso8601String(),
-            'cached_at': now,
-            'needs_sync': 0,
+            CommonCols.id: submission.id,
+            AssignmentSubmissionsCols.assignmentId: submission.assignmentId,
+            AssignmentSubmissionsCols.studentId: submission.studentId,
+            AssignmentSubmissionsCols.status: submission.status,
+            AssignmentSubmissionsCols.textContent: submission.textContent,
+            AssignmentSubmissionsCols.submittedAt: submission.submittedAt?.toIso8601String(),
+            AssignmentSubmissionsCols.isLate: submission.isLate ? 1 : 0,
+            AssignmentSubmissionsCols.points: submission.score,
+            AssignmentSubmissionsCols.feedback: submission.feedback,
+            AssignmentSubmissionsCols.gradedAt: submission.gradedAt?.toIso8601String(),
+            CommonCols.createdAt: submission.createdAt.toIso8601String(),
+            CommonCols.updatedAt: submission.updatedAt.toIso8601String(),
+            CommonCols.cachedAt: now,
+            CommonCols.needsSync: 0,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
         // Cache submission files metadata
         for (final file in submission.files) {
           final existing = await txn.query(
-            'submission_files',
-            where: 'id = ?',
+            DbTables.submissionFiles,
+            where: '${CommonCols.id} = ?',
             whereArgs: [file.id],
           );
           if (existing.isEmpty) {
-            await txn.insert('submission_files', {
-              'id': file.id,
-              'submission_id': submission.id,
-              'file_name': file.fileName,
-              'file_type': file.fileType,
-              'file_size': file.fileSize,
-              'uploaded_at': file.uploadedAt.toIso8601String(),
-              'local_path': '',
-              'cached_at': now,
+            await txn.insert(DbTables.submissionFiles, {
+              CommonCols.id: file.id,
+              SubmissionFilesCols.submissionId: submission.id,
+              SubmissionFilesCols.fileName: file.fileName,
+              SubmissionFilesCols.fileType: file.fileType,
+              SubmissionFilesCols.fileSize: file.fileSize,
+              SubmissionFilesCols.uploadedAt: file.uploadedAt.toIso8601String(),
+              SubmissionFilesCols.localPath: '',
+              CommonCols.cachedAt: now,
             }, conflictAlgorithm: ConflictAlgorithm.ignore);
           }
         }
@@ -134,20 +135,20 @@ mixin AssignmentCacheMixin on AssignmentLocalDataSourceBase {
       final db = await localDatabase.database;
       final now = DateTime.now().toIso8601String();
       final existing = await db.query(
-        'submission_files',
-        where: 'id = ?',
+        DbTables.submissionFiles,
+        where: '${CommonCols.id} = ?',
         whereArgs: [file.id],
       );
       if (existing.isEmpty) {
-        await db.insert('submission_files', {
-          'id': file.id,
-          'submission_id': submissionId,
-          'file_name': file.fileName,
-          'file_type': file.fileType,
-          'file_size': file.fileSize,
-          'uploaded_at': file.uploadedAt.toIso8601String(),
-          'local_path': '',
-          'cached_at': now,
+        await db.insert(DbTables.submissionFiles, {
+          CommonCols.id: file.id,
+          SubmissionFilesCols.submissionId: submissionId,
+          SubmissionFilesCols.fileName: file.fileName,
+          SubmissionFilesCols.fileType: file.fileType,
+          SubmissionFilesCols.fileSize: file.fileSize,
+          SubmissionFilesCols.uploadedAt: file.uploadedAt.toIso8601String(),
+          SubmissionFilesCols.localPath: '',
+          CommonCols.cachedAt: now,
         }, conflictAlgorithm: ConflictAlgorithm.ignore);
       }
     } catch (e) {

@@ -144,6 +144,32 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                               value: classInfo.teacherUsername,
                             ),
                           ],
+                          if (classInfo != null && classInfo.isAdvisory) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFF4CAF50).withValues(alpha: 0.3)),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.star_rounded, size: 16, color: Color(0xFF4CAF50)),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Advisory Class',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF4CAF50),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -270,14 +296,14 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                         itemCount: classState.searchResults.length,
                         itemBuilder: (context, index) {
                           final student = classState.searchResults[index];
-                          final isEnrolled = classState.enrolledStudentIds.contains(student.id);
+                          final isParticipant = classState.participantIds.contains(student.id);
                           final isLoading = classState.loadingStudentIds.contains(student.id);
 
                           return StudentActionCard(
                             student: student,
-                            isEnrolled: isEnrolled,
+                            isParticipant: isParticipant,
                             isLoading: isLoading,
-                            onAdd: isEnrolled
+                            onAdd: isParticipant
                                 ? null
                                 : () {
                                     ref.read(classProvider.notifier).addStudent(
@@ -285,7 +311,7 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                                           studentId: student.id,
                                         );
                                   },
-                            onRemove: isEnrolled
+                            onRemove: isParticipant
                                 ? () {
                                     ref.read(classProvider.notifier).removeStudent(
                                           classId: widget.classId,

@@ -51,3 +51,16 @@ class SyncState {
     );
   }
 }
+
+typedef SyncStateUpdater = void Function({
+  SyncPhase? phase,
+  int? pendingCount,
+  int? failedCount,
+  String? lastError,
+  DateTime? lastSyncAt,
+  double? progress,
+  String? currentStep,
+  bool? assessmentsReady,
+  bool? assignmentsReady,
+  bool? materialsReady,
+});

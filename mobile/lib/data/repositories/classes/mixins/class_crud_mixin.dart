@@ -16,6 +16,7 @@ mixin ClassCrudMixin on ClassRepositoryBase {
     String? teacherId,
     String? teacherUsername,
     String? teacherFullName,
+    bool isAdvisory = false,
   }) async {
     try {
       // Client-side duplicate check before creating
@@ -48,6 +49,7 @@ mixin ClassCrudMixin on ClassRepositoryBase {
             'title': title,
             'description': description,
             if (teacherId != null) 'teacher_id': teacherId,
+            'is_advisory': isAdvisory,
           },
           status: SyncStatus.pending,
           retryCount: 0,
@@ -64,6 +66,7 @@ mixin ClassCrudMixin on ClassRepositoryBase {
           teacherUsername: teacherUsername ?? '',
           teacherFullName: teacherFullName ?? '',
           isArchived: false,
+          isAdvisory: isAdvisory,
           studentCount: 0,
           createdAt: now,
           updatedAt: now,
@@ -84,6 +87,7 @@ mixin ClassCrudMixin on ClassRepositoryBase {
         title: title,
         description: description,
         teacherId: teacherId,
+        isAdvisory: isAdvisory,
       );
 
       // Cache the result immediately so it appears in the list
@@ -98,7 +102,29 @@ mixin ClassCrudMixin on ClassRepositoryBase {
 
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  ResultVoid deleteClass({required String classId}) async {
+    try {
+      await remoteDataSource.deleteClass(classId: classId);
+
+      // Remove from local cache
+      try {
+        final cached = await localDataSource.getCachedClasses();
+        final updated = cached.where((c) => c.id != classId).toList();
+        await localDataSource.cacheClasses(updated);
+      } catch (_) {}
+
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -112,6 +138,7 @@ mixin ClassCrudMixin on ClassRepositoryBase {
     String? title,
     String? description,
     String? teacherId,
+    bool? isAdvisory,
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
@@ -124,6 +151,7 @@ mixin ClassCrudMixin on ClassRepositoryBase {
             if (title != null) 'title': title,
             if (description != null) 'description': description,
             if (teacherId != null) 'teacher_id': teacherId,
+            if (isAdvisory != null) 'is_advisory': isAdvisory,
           },
           status: SyncStatus.pending,
           retryCount: 0,
@@ -147,6 +175,7 @@ mixin ClassCrudMixin on ClassRepositoryBase {
             teacherUsername: current.teacherUsername,
             teacherFullName: current.teacherFullName,
             isArchived: current.isArchived,
+            isAdvisory: isAdvisory ?? current.isAdvisory,
             studentCount: current.studentCount,
             createdAt: current.createdAt,
             updatedAt: DateTime.now(),
@@ -161,13 +190,14 @@ mixin ClassCrudMixin on ClassRepositoryBase {
         title: title,
         description: description,
         teacherId: teacherId,
+        isAdvisory: isAdvisory,
       );
 
       syncInBackgroundForClass(classId);
 
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {

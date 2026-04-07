@@ -49,6 +49,8 @@ abstract class AuthRemoteDataSource {
     String? fullName,
     String? role,
   });
+
+  Future<void> deleteAccount({required String userId});
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -285,6 +287,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         ApiEndpoints.accountUpdate(userId),
         data: data,
       );
+    } on DioException catch (e) {
+      throw _dioClient.handleError(e);
+    }
+  }
+
+  @override
+  Future<void> deleteAccount({required String userId}) async {
+    try {
+      await _dioClient.deleteTyped(ApiEndpoints.accountDelete(userId));
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }

@@ -4,6 +4,9 @@ import 'package:likha/presentation/pages/teacher/class_student_list.dart';
 import 'package:likha/presentation/pages/teacher/teacher_assessment_list_page.dart';
 import 'package:likha/presentation/pages/teacher/teacher_assignment_list_page.dart';
 import 'package:likha/presentation/pages/teacher/teacher_material_list_page.dart';
+import 'package:likha/presentation/pages/teacher/class_record_page.dart';
+import 'package:likha/presentation/pages/teacher/sf9_student_list_page.dart';
+import 'package:likha/presentation/pages/teacher/tos_list_page.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/navigation_card.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
@@ -107,6 +110,45 @@ class _ClassDetailPageState extends ConsumerState<ClassDetailPage> {
                               ),
                             ),
                           ),
+                          const SizedBox(height: 16),
+                          NavigationCard(
+                            icon: Icons.grading_outlined,
+                            title: 'Class Record',
+                            subtitle: 'Manage grades and scores',
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ClassRecordPage(classId: widget.classId),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          NavigationCard(
+                            icon: Icons.table_chart_outlined,
+                            title: 'Table of Specifications',
+                            subtitle: 'Manage TOS and competencies',
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => TosListPage(classId: widget.classId),
+                              ),
+                            ),
+                          ),
+                          // SF9/SF10 card for advisory classes
+                          if (classState.classes.any((c) => c.id == widget.classId && c.isAdvisory)) ...[
+                            const SizedBox(height: 16),
+                            NavigationCard(
+                              icon: Icons.assignment_ind_outlined,
+                              title: 'SF9 / SF10 Records',
+                              subtitle: 'View student report cards',
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => Sf9StudentListPage(classId: widget.classId),
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),

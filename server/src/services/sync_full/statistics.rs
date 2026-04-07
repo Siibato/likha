@@ -110,7 +110,7 @@ pub fn format_student_results(
         let assessment_id = submission.get("assessment_id").and_then(|v| v.as_str()).unwrap_or("");
         let total_points = assessment_map.get(assessment_id).copied().unwrap_or(0);
         let auto_score = submission.get("auto_score").and_then(|v| v.as_f64()).unwrap_or(0.0);
-        let final_score = submission.get("final_score").and_then(|v| v.as_f64()).unwrap_or(auto_score);
+        let _final_score = submission.get("final_score").and_then(|v| v.as_f64()).unwrap_or(auto_score);
         let submitted_at = submission.get("submitted_at").and_then(|v| v.as_str()).unwrap_or("");
 
         // Transform answers: convert selected_choices from [object] to [string]

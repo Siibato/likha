@@ -1,20 +1,10 @@
-use chrono::NaiveDateTime;
 use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
+use crate::utils::{parse_datetime, validators::Validator};
 use crate::schema::assignment_schema::*;
+use crate::services::grade_computation::auto_populate;
 
 impl super::AssignmentService {
-    fn parse_datetime(s: &str) -> AppResult<NaiveDateTime> {
-        NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S")
-            .or_else(|_| NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S"))
-            .or_else(|_| NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S%.f"))
-            .map_err(|_| {
-                AppError::BadRequest(format!(
-                    "Invalid datetime format: {}. Use YYYY-MM-DDTHH:MM:SS",
-                    s
-                ))
-            })
-    }
 
     pub async fn create_assignment(
         &self,
@@ -35,43 +25,15 @@ impl super::AssignmentService {
             ));
         }
 
-        let title = request.title.trim().to_string();
-        if title.is_empty() || title.len() > 200 {
-            return Err(AppError::BadRequest(
-                "Title is required and must be at most 200 characters".to_string(),
-            ));
-        }
-
-        let instructions = request.instructions.trim().to_string();
-        if instructions.is_empty() || instructions.len() > 10000 {
-            return Err(AppError::BadRequest(
-                "Instructions are required and must be at most 10000 characters".to_string(),
-            ));
-        }
-
-        if request.total_points < 1 || request.total_points > 1000 {
-            return Err(AppError::BadRequest(
-                "Total points must be between 1 and 1000".to_string(),
-            ));
-        }
-
-        let valid_types = ["text", "file", "text_or_file"];
-        if !valid_types.contains(&request.submission_type.as_str()) {
-            return Err(AppError::BadRequest(format!(
-                "Invalid submission type. Must be one of: {:?}",
-                valid_types
-            )));
-        }
-
+        let title = Validator::validate_title(&request.title)?;
+        let instructions = Validator::validate_instructions(&request.instructions)?;
+        Validator::validate_points(request.total_points)?;
+        Validator::validate_submission_type(&request.submission_type)?;
         if let Some(max_size) = request.max_file_size_mb {
-            if max_size < 1 || max_size > 50 {
-                return Err(AppError::BadRequest(
-                    "Max file size must be between 1 and 50 MB".to_string(),
-                ));
-            }
+            Validator::validate_max_file_size(max_size)?;
         }
 
-        let due_at = Self::parse_datetime(&request.due_at)?;
+        let due_at = parse_datetime(&request.due_at)?;
 
         let max_order = self.assignment_repo.get_max_order_index(class_id).await?;
         let order_index = max_order + 1;
@@ -90,6 +52,9 @@ impl super::AssignmentService {
                 order_index,
                 client_id,
                 request.is_published.unwrap_or(false),
+                request.quarter,
+                request.component.clone(),
+                request.no_submission_required,
             )
             .await?;
 
@@ -116,6 +81,9 @@ impl super::AssignmentService {
             order_index: assignment.order_index,
             submission_count: 0,
             graded_count: 0,
+            quarter: assignment.quarter,
+            component: assignment.component.clone(),
+            no_submission_required: assignment.no_submission_required,
             submission_status: None,
             submission_id: None,
             score: None,
@@ -184,6 +152,9 @@ impl super::AssignmentService {
                 order_index: a.order_index,
                 submission_count,
                 graded_count,
+                quarter: a.quarter,
+                component: a.component.clone(),
+                no_submission_required: a.no_submission_required,
                 submission_status,
                 submission_id,
                 score,
@@ -242,7 +213,7 @@ impl super::AssignmentService {
             .await?
             .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
 
-        let class = self
+        let _class = self
             .class_repo
             .find_by_id(assignment.class_id)
             .await?
@@ -279,6 +250,9 @@ impl super::AssignmentService {
             order_index: assignment.order_index,
             submission_count,
             graded_count,
+            quarter: assignment.quarter,
+            component: assignment.component.clone(),
+            no_submission_required: assignment.no_submission_required,
             submission_status: None,
             submission_id: None,
             score: None,
@@ -315,42 +289,15 @@ impl super::AssignmentService {
             ));
         }
 
-        if let Some(ref title) = request.title {
-            if title.trim().is_empty() || title.len() > 200 {
-                return Err(AppError::BadRequest(
-                    "Title must be between 1 and 200 characters".to_string(),
-                ));
-            }
-        }
+        let title = Validator::validate_optional_title(request.title)?;
+        let instructions = Validator::validate_optional_instructions(request.instructions)?;
+        Validator::validate_optional_points(request.total_points)?;
+        Validator::validate_optional_submission_type(request.submission_type.clone())?;
 
-        if let Some(ref instructions) = request.instructions {
-            if instructions.trim().is_empty() || instructions.len() > 10000 {
-                return Err(AppError::BadRequest(
-                    "Instructions must be between 1 and 10000 characters".to_string(),
-                ));
-            }
-        }
-
-        if let Some(tp) = request.total_points {
-            if tp < 1 || tp > 1000 {
-                return Err(AppError::BadRequest(
-                    "Total points must be between 1 and 1000".to_string(),
-                ));
-            }
-        }
-
-        if let Some(ref st) = request.submission_type {
-            let valid_types = ["text", "file", "text_or_file"];
-            if !valid_types.contains(&st.as_str()) {
-                return Err(AppError::BadRequest(format!(
-                    "Invalid submission type. Must be one of: {:?}",
-                    valid_types
-                )));
-            }
-        }
+        Validator::validate_optional_max_file_size(request.max_file_size_mb)?;
 
         let due_at = match &request.due_at {
-            Some(s) => Some(Self::parse_datetime(s)?),
+            Some(s) => Some(parse_datetime(s)?),
             None => None,
         };
 
@@ -369,13 +316,16 @@ impl super::AssignmentService {
             .assignment_repo
             .update_assignment(
                 assignment_id,
-                request.title,
-                request.instructions,
+                title,
+                instructions,
                 request.total_points,
                 request.submission_type,
                 allowed_file_types,
                 max_file_size_mb,
                 due_at,
+                request.quarter.map(|q| Some(q)),
+                request.component.clone().map(|c| Some(c)),
+                request.no_submission_required.map(|n| Some(n)),
             )
             .await?;
 
@@ -402,6 +352,9 @@ impl super::AssignmentService {
             order_index: updated.order_index,
             submission_count,
             graded_count,
+            quarter: updated.quarter,
+            component: updated.component.clone(),
+            no_submission_required: updated.no_submission_required,
             submission_status: None,
             submission_id: None,
             score: None,
@@ -479,6 +432,16 @@ impl super::AssignmentService {
             .publish_assignment(assignment_id)
             .await?;
 
+        // Auto-create linked grade item if grading metadata present
+        if let (Some(quarter), Some(ref component)) = (published.quarter, &published.component) {
+            let _ = auto_populate::create_linked_grade_item(
+                &self.db, "assignment", published.id, published.class_id,
+                &published.title, component, quarter,
+                published.total_points as f64,
+                false,
+            ).await;
+        }
+
         let _ = self
             .activity_log_repo
             .create_log(
@@ -502,6 +465,9 @@ impl super::AssignmentService {
             order_index: published.order_index,
             submission_count: 0,
             graded_count: 0,
+            quarter: published.quarter,
+            component: published.component.clone(),
+            no_submission_required: published.no_submission_required,
             submission_status: None,
             submission_id: None,
             score: None,
@@ -563,6 +529,9 @@ impl super::AssignmentService {
             order_index: unpublished.order_index,
             submission_count: 0,
             graded_count: 0,
+            quarter: unpublished.quarter,
+            component: unpublished.component.clone(),
+            no_submission_required: unpublished.no_submission_required,
             submission_status: None,
             submission_id: None,
             score: None,
@@ -578,7 +547,7 @@ impl super::AssignmentService {
             .await?
             .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
 
-        let class = self
+        let _class = self
             .class_repo
             .find_by_id(assignment.class_id)
             .await?

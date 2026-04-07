@@ -1,8 +1,9 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 
 import 'package:sqflite/sqflite.dart';
+import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
+import 'package:likha/core/logging/core_logger.dart';
 
 // Re-export Transaction type from sqflite for convenience
 export 'package:sqflite/sqflite.dart' show Transaction;
@@ -19,7 +20,12 @@ enum SyncEntityType {
   learningMaterial('learning_material'),
   materialFile('material_file'),
   adminUser('admin_user'),
-  activityLog('activityLog');
+  activityLog('activityLog'),
+  gradeConfig('grade_config'),
+  gradeItem('grade_item'),
+  gradeScore('grade_score'),
+  tableOfSpecifications('table_of_specifications'),
+  tosCompetency('tos_competency');
 
   const SyncEntityType(this.serverValue);
   final String serverValue;
@@ -41,7 +47,11 @@ enum SyncOperation {
   releaseResults('release_results'),
   overrideAnswer('override_answer'),
   addEnrollment('add_enrollment'),
-  removeEnrollment('remove_enrollment');
+  removeEnrollment('remove_enrollment'),
+  saveScores('save_scores'),
+  setOverride('set_override'),
+  clearOverride('clear_override'),
+  setup('setup');
 
   const SyncOperation(this.serverValue);
   final String serverValue;
@@ -85,39 +95,39 @@ class SyncQueueEntry {
 
   factory SyncQueueEntry.fromMap(Map<String, dynamic> map) {
     return SyncQueueEntry(
-      id: map['id'] as String,
+      id: map[CommonCols.id] as String,
       entityType: SyncEntityType.values.firstWhere(
-        (e) => e.dbValue == map['entity_type'],
+        (e) => e.dbValue == map[SyncQueueCols.entityType],
       ),
       operation: SyncOperation.values.firstWhere(
-        (e) => e.dbValue == map['operation'],
+        (e) => e.dbValue == map[SyncQueueCols.operation],
       ),
-      payload: _parseJsonString(map['payload'] as String),
+      payload: _parseJsonString(map[SyncQueueCols.payload] as String),
       status: SyncStatus.values.firstWhere(
-        (e) => e.dbValue == map['status'],
+        (e) => e.dbValue == map[SyncQueueCols.status],
       ),
-      retryCount: map['retry_count'] as int,
-      maxRetries: map['max_retries'] as int,
-      createdAt: DateTime.parse(map['created_at'] as String),
-      lastAttemptedAt: map['last_attempted_at'] != null
-          ? DateTime.parse(map['last_attempted_at'] as String)
+      retryCount: map[SyncQueueCols.retryCount] as int,
+      maxRetries: map[SyncQueueCols.maxRetries] as int,
+      createdAt: DateTime.parse(map[CommonCols.createdAt] as String),
+      lastAttemptedAt: map[SyncQueueCols.lastAttemptedAt] != null
+          ? DateTime.parse(map[SyncQueueCols.lastAttemptedAt] as String)
           : null,
-      errorMessage: map['error_message'] as String?,
+      errorMessage: map[SyncQueueCols.errorMessage] as String?,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
-      'entity_type': entityType.dbValue,
-      'operation': operation.dbValue,
-      'payload': _stringifyJson(payload),
-      'status': status.dbValue,
-      'retry_count': retryCount,
-      'max_retries': maxRetries,
-      'created_at': createdAt.toIso8601String(),
-      'last_attempted_at': lastAttemptedAt?.toIso8601String(),
-      'error_message': errorMessage,
+      CommonCols.id: id,
+      SyncQueueCols.entityType: entityType.dbValue,
+      SyncQueueCols.operation: operation.dbValue,
+      SyncQueueCols.payload: _stringifyJson(payload),
+      SyncQueueCols.status: status.dbValue,
+      SyncQueueCols.retryCount: retryCount,
+      SyncQueueCols.maxRetries: maxRetries,
+      CommonCols.createdAt: createdAt.toIso8601String(),
+      SyncQueueCols.lastAttemptedAt: lastAttemptedAt?.toIso8601String(),
+      SyncQueueCols.errorMessage: errorMessage,
     };
   }
 }
@@ -142,36 +152,36 @@ class SyncQueueImpl implements SyncQueue {
 
   @override
   Future<void> enqueue(SyncQueueEntry entry, {Transaction? txn}) async {
-    debugPrint('[SyncQueue] enqueue: Adding ${entry.entityType.dbValue} ${entry.operation.dbValue} to queue, ID=${entry.id}');
+    CoreLogger.instance.log('enqueue: Adding ${entry.entityType.dbValue} ${entry.operation.dbValue} to queue, ID=${entry.id}');
 
     if (txn != null) {
-      debugPrint('[SyncQueue] enqueue: Using provided transaction object');
+      CoreLogger.instance.log('enqueue: Using provided transaction object');
       await txn.insert(
-        'sync_queue',
+        DbTables.syncQueue,
         entry.toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
     } else {
-      debugPrint('[SyncQueue] enqueue: Getting database connection');
+      CoreLogger.instance.log('enqueue: Getting database connection');
       final db = await _localDatabase.database;
       await db.insert(
-        'sync_queue',
+        DbTables.syncQueue,
         entry.toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
     }
 
-    debugPrint('[SyncQueue] enqueue: Entry added to queue successfully');
+    CoreLogger.instance.log('enqueue: Entry added to queue successfully');
   }
 
   @override
   Future<List<SyncQueueEntry>> getAllRetriable() async {
     final db = await _localDatabase.database;
     final results = await db.query(
-      'sync_queue',
-      where: 'status = ? AND retry_count < max_retries',
-      whereArgs: ['pending'],
-      orderBy: 'created_at ASC',
+      DbTables.syncQueue,
+      where: '${SyncQueueCols.status} = ? AND ${SyncQueueCols.retryCount} < ${SyncQueueCols.maxRetries}',
+      whereArgs: [SyncStatus.pending.dbValue],
+      orderBy: '${CommonCols.createdAt} ASC',
     );
     return results.map(SyncQueueEntry.fromMap).toList();
   }
@@ -180,9 +190,9 @@ class SyncQueueImpl implements SyncQueue {
   Future<void> markSucceeded(String id) async {
     final db = await _localDatabase.database;
     await db.update(
-      'sync_queue',
-      {'status': 'succeeded'},
-      where: 'id = ?',
+      DbTables.syncQueue,
+      {SyncQueueCols.status: 'succeeded'},
+      where: '${CommonCols.id} = ?',
       whereArgs: [id],
     );
   }
@@ -191,13 +201,13 @@ class SyncQueueImpl implements SyncQueue {
   Future<void> markFailed(String id, String errorMessage) async {
     final db = await _localDatabase.database;
     await db.update(
-      'sync_queue',
+      DbTables.syncQueue,
       {
-        'status': 'failed',
-        'error_message': errorMessage,
-        'last_attempted_at': DateTime.now().toIso8601String(),
+        SyncQueueCols.status: SyncStatus.failed.dbValue,
+        SyncQueueCols.errorMessage: errorMessage,
+        SyncQueueCols.lastAttemptedAt: DateTime.now().toIso8601String(),
       },
-      where: 'id = ?',
+      where: '${CommonCols.id} = ?',
       whereArgs: [id],
     );
   }
@@ -206,7 +216,7 @@ class SyncQueueImpl implements SyncQueue {
   Future<void> incrementRetry(String id) async {
     final db = await _localDatabase.database;
     await db.rawUpdate(
-      'UPDATE sync_queue SET retry_count = retry_count + 1, last_attempted_at = ? WHERE id = ?',
+      'UPDATE ${DbTables.syncQueue} SET ${SyncQueueCols.retryCount} = ${SyncQueueCols.retryCount} + 1, ${SyncQueueCols.lastAttemptedAt} = ? WHERE ${CommonCols.id} = ?',
       [DateTime.now().toIso8601String(), id],
     );
   }
@@ -214,15 +224,15 @@ class SyncQueueImpl implements SyncQueue {
   @override
   Future<void> clear() async {
     final db = await _localDatabase.database;
-    await db.delete('sync_queue');
+    await db.delete(DbTables.syncQueue);
   }
 
   @override
   Future<SyncQueueEntry?> getById(String id) async {
     final db = await _localDatabase.database;
     final results = await db.query(
-      'sync_queue',
-      where: 'id = ?',
+      DbTables.syncQueue,
+      where: '${CommonCols.id} = ?',
       whereArgs: [id],
     );
     if (results.isEmpty) return null;
@@ -233,7 +243,7 @@ class SyncQueueImpl implements SyncQueue {
   Future<int> getPendingCount() async {
     final db = await _localDatabase.database;
     final result = await db.rawQuery(
-      "SELECT COUNT(*) as count FROM sync_queue WHERE status = 'pending'",
+      "SELECT COUNT(*) as count FROM ${DbTables.syncQueue} WHERE ${SyncQueueCols.status} = '${SyncStatus.pending.dbValue}'",
     );
     return Sqflite.firstIntValue(result) ?? 0;
   }
@@ -242,13 +252,13 @@ class SyncQueueImpl implements SyncQueue {
   Future<List<SyncQueueEntry>> getByEntityAndOperation(SyncEntityType entityType, SyncOperation operation) async {
     final db = await _localDatabase.database;
     final results = await db.query(
-      'sync_queue',
-      where: 'entity_type = ? AND operation = ?',
+      DbTables.syncQueue,
+      where: '${SyncQueueCols.entityType} = ? AND ${SyncQueueCols.operation} = ?',
       whereArgs: [
         entityType.dbValue,
         operation.dbValue,
       ],
-      orderBy: 'created_at ASC',
+      orderBy: '${CommonCols.createdAt} ASC',
     );
     return results.map(SyncQueueEntry.fromMap).toList();
   }
@@ -257,10 +267,10 @@ class SyncQueueImpl implements SyncQueue {
   Future<void> updatePendingSubmissionIds(String oldId, String newId) async {
     final db = await _localDatabase.database;
     await db.rawUpdate(
-      '''UPDATE sync_queue
-         SET payload = json_replace(payload, '\$.submission_id', ?)
-         WHERE status = 'pending'
-           AND json_extract(payload, '\$.submission_id') = ?''',
+      '''UPDATE ${DbTables.syncQueue}
+         SET ${SyncQueueCols.payload} = json_replace(${SyncQueueCols.payload}, '\$.submission_id', ?)
+         WHERE ${SyncQueueCols.status} = '${SyncStatus.pending.dbValue}'
+           AND json_extract(${SyncQueueCols.payload}, '\$.submission_id') = ?''',
       [newId, oldId],
     );
   }
@@ -268,8 +278,8 @@ class SyncQueueImpl implements SyncQueue {
   Future<void> deleteEntry(String id) async {
     final db = await _localDatabase.database;
     await db.delete(
-      'sync_queue',
-      where: 'id = ?',
+      DbTables.syncQueue,
+      where: '${CommonCols.id} = ?',
       whereArgs: [id],
     );
   }

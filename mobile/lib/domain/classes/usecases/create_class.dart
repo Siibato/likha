@@ -14,6 +14,7 @@ class CreateClass {
       teacherId: params.teacherId,
       teacherUsername: params.teacherUsername,
       teacherFullName: params.teacherFullName,
+      isAdvisory: params.isAdvisory,
     );
   }
 }
@@ -24,6 +25,7 @@ class CreateClassParams {
   final String? teacherId;
   final String? teacherUsername;
   final String? teacherFullName;
+  final bool isAdvisory;
 
   CreateClassParams({
     required this.title,
@@ -31,5 +33,6 @@ class CreateClassParams {
     this.teacherId,
     this.teacherUsername,
     this.teacherFullName,
+    this.isAdvisory = false,
   });
 }

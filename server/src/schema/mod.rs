@@ -1,9 +1,11 @@
 pub mod admin_schema;
+pub mod setup_schema;
 pub mod assessment_schema;
 pub mod assignment_schema;
 pub mod auth_schema;
 pub mod class_schema;
 pub mod common;
+pub mod grading_schema;
 pub mod learning_material_schema;
-pub mod sync_schema;
 pub mod tasks_schema;
+pub mod tos_schema;

@@ -10,6 +10,7 @@ abstract class ClassRepository {
     String? teacherId,
     String? teacherUsername,
     String? teacherFullName,
+    bool isAdvisory = false,
   });
 
   ResultFuture<List<ClassEntity>> getMyClasses({bool skipBackgroundRefresh = false});
@@ -23,9 +24,10 @@ abstract class ClassRepository {
     String? title,
     String? description,
     String? teacherId,
+    bool? isAdvisory,
   });
 
-  ResultFuture<Enrollment> addStudent({
+  ResultFuture<Participant> addStudent({
     required String classId,
     required String studentId,
   });
@@ -37,5 +39,7 @@ abstract class ClassRepository {
 
   ResultFuture<List<User>> searchStudents({String? query});
 
-  ResultFuture<List<User>> getEnrolledStudents({required String classId});
+  ResultFuture<List<User>> getParticipants({required String classId});
+
+  ResultVoid deleteClass({required String classId});
 }

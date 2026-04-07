@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/presentation/pages/teacher/widgets/question_draft.dart';
 import 'package:likha/presentation/pages/teacher/widgets/question_type_dropdown.dart';
+import 'package:likha/presentation/pages/teacher/widgets/question_editor_body.dart';
+export 'package:likha/presentation/pages/teacher/widgets/question_editor_body.dart'
+    show ChoiceEntry, EnumerationItemEntry, EditorStyleVariant;
 
 class QuestionCard extends StatelessWidget {
   final int index;
@@ -474,22 +477,72 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
           ),
           const SizedBox(height: 16),
           if (widget.question.type == 'multiple_choice')
-            _MultipleChoiceSection(
-              question: widget.question,
-              onChanged: widget.onChanged,
-              onStructuralChange: () => setState(() {}),
+            QuestionEditorBody(
+              questionType: 'multiple_choice',
+              choices: widget.question.choices,
+              isMultiSelect: widget.question.isMultiSelect,
+              variant: EditorStyleVariant.questionCard,
+              onMultiSelectChanged: (value) => setState(() {
+                widget.question.isMultiSelect = value;
+                if (!value) {
+                  bool found = false;
+                  for (final c in widget.question.choices) {
+                    if (c.isCorrect && found) c.isCorrect = false;
+                    if (c.isCorrect) found = true;
+                  }
+                }
+              }),
+              onChoiceCorrectChanged: (index, isCorrect) => setState(() {
+                widget.question.choices[index].isCorrect = isCorrect;
+              }),
+              onChoiceTextChanged: (index, text) => setState(() {
+                widget.question.choices[index].text = text;
+              }),
+              onAddChoice: () => setState(() {
+                widget.question.choices.add(ChoiceDraft());
+              }),
+              onRemoveChoice: (index) => setState(() {
+                widget.question.choices.removeAt(index);
+              }),
+              onStructuralChange: () => setState(() => widget.onChanged()),
             ),
           if (widget.question.type == 'identification')
-            _IdentificationSection(
-              question: widget.question,
-              onChanged: widget.onChanged,
-              onStructuralChange: () => setState(() {}),
+            QuestionEditorBody(
+              questionType: 'identification',
+              answerItems: widget.question.acceptableAnswers,
+              variant: EditorStyleVariant.questionCard,
+              onAnswerChanged: (index, text) => setState(() {
+                widget.question.acceptableAnswers[index] = text;
+              }),
+              onAddAnswer: () => setState(() {
+                widget.question.acceptableAnswers.add('');
+              }),
+              onRemoveAnswer: (index) => setState(() {
+                widget.question.acceptableAnswers.removeAt(index);
+              }),
+              onStructuralChange: () => setState(() => widget.onChanged()),
             ),
           if (widget.question.type == 'enumeration')
-            _EnumerationSection(
-              question: widget.question,
-              onChanged: widget.onChanged,
-              onStructuralChange: () => setState(() {}),
+            QuestionEditorBody(
+              questionType: 'enumeration',
+              enumerationItems: widget.question.enumerationItems,
+              variant: EditorStyleVariant.questionCard,
+              onEnumAnswerChanged: (itemIndex, answerIndex, text) => setState(() {
+                widget.question.enumerationItems[itemIndex].answers[answerIndex] = text;
+              }),
+              onAddEnumItem: () => setState(() {
+                widget.question.enumerationItems.add(EnumerationItemDraft());
+              }),
+              onRemoveEnumItem: (itemIndex) => setState(() {
+                widget.question.enumerationItems.removeAt(itemIndex);
+              }),
+              onAddEnumAnswer: (itemIndex) => setState(() {
+                widget.question.enumerationItems[itemIndex].answers.add('');
+              }),
+              onRemoveEnumAnswer: (itemIndex, answerIndex) => setState(() {
+                widget.question.enumerationItems[itemIndex].answers.removeAt(answerIndex);
+              }),
+              onStructuralChange: () => setState(() => widget.onChanged()),
             ),
           ],
         ),
@@ -498,449 +551,3 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
   }
 }
 
-// Rest of the code stays the same (_MultipleChoiceSection, _IdentificationSection, _EnumerationSection)
-
-class _MultipleChoiceSection extends StatelessWidget {
-  final QuestionDraft question;
-  final VoidCallback onChanged;
-  final VoidCallback onStructuralChange;
-
-  const _MultipleChoiceSection({
-    required this.question,
-    required this.onChanged,
-    required this.onStructuralChange,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFFAFAFA),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: SwitchListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-            title: const Text(
-              'Allow multiple correct answers',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF2B2B2B),
-              ),
-            ),
-            value: question.isMultiSelect,
-            activeColor: const Color(0xFF2B2B2B),
-            onChanged: (value) {
-              question.isMultiSelect = value;
-              if (!value) {
-                bool found = false;
-                for (final c in question.choices) {
-                  if (c.isCorrect && found) {
-                    c.isCorrect = false;
-                  }
-                  if (c.isCorrect) found = true;
-                }
-              }
-              onStructuralChange();
-              onChanged();
-            },
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...question.choices.asMap().entries.map((entry) {
-          final ci = entry.key;
-          final choice = entry.value;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              children: [
-                Checkbox(
-                  value: choice.isCorrect,
-                  activeColor: const Color(0xFF2B2B2B),
-                  onChanged: (value) {
-                    if (!question.isMultiSelect) {
-                      for (final c in question.choices) {
-                        c.isCorrect = false;
-                      }
-                    }
-                    choice.isCorrect = value ?? false;
-                    onStructuralChange();
-                    onChanged();
-                  },
-                ),const SizedBox(width: 8),
-                Expanded(
-                  child: TextFormField(
-                    initialValue: choice.text,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF2B2B2B),
-                    ),
-                    decoration: InputDecoration(
-                      labelText: 'Choice ${ci + 1}',
-                      labelStyle: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF999999),
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFFFAFAFA),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFE0E0E0),
-                          width: 1,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFE0E0E0),
-                          width: 1,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFF2B2B2B),
-                          width: 1.5,
-                        ),
-                      ),
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
-                    ),
-                    onChanged: (value) {
-                      choice.text = value;
-                    },
-                  ),
-                ),
-                if (question.choices.length > 2)
-                  IconButton(
-                    icon: const Icon(
-                      Icons.close_rounded,
-                      size: 20,
-                      color: Color(0xFFEF5350),
-                    ),
-                    onPressed: () {
-                      question.choices.removeAt(ci);
-                      onStructuralChange();
-                      onChanged();
-                    },
-                  ),
-              ],
-            ),
-          );
-        }),
-        const SizedBox(height: 8),
-        TextButton.icon(
-          onPressed: () {
-            question.choices.add(ChoiceDraft());
-            onStructuralChange();
-            onChanged();
-          },
-          icon: const Icon(Icons.add_rounded, size: 18),
-          label: const Text('Add Choice'),
-          style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF2B2B2B),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _IdentificationSection extends StatelessWidget {
-  final QuestionDraft question;
-  final VoidCallback onChanged;
-  final VoidCallback onStructuralChange;
-
-  const _IdentificationSection({
-    required this.question,
-    required this.onChanged,
-    required this.onStructuralChange,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Acceptable Answers',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-            color: Color(0xFF2B2B2B),
-          ),
-        ),
-        const SizedBox(height: 8),
-        ...question.acceptableAnswers.asMap().entries.map((entry) {
-          final ai = entry.key;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    initialValue: entry.value,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF2B2B2B),
-                    ),
-                    decoration: InputDecoration(
-                      labelText: 'Answer ${ai + 1}',
-                      labelStyle: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF999999),
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFFFAFAFA),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFE0E0E0),
-                          width: 1,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFE0E0E0),
-                          width: 1,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFF2B2B2B),
-                          width: 1.5,
-                        ),
-                      ),
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
-                    ),
-                    onChanged: (value) {
-                      question.acceptableAnswers[ai] = value;
-                    },
-                  ),
-                ),
-                if (question.acceptableAnswers.length > 1)
-                  IconButton(
-                    icon: const Icon(
-                      Icons.close_rounded,
-                      size: 20,
-                      color: Color(0xFFEF5350),
-                    ),
-                    onPressed: () {
-                      question.acceptableAnswers.removeAt(ai);
-                      onStructuralChange();
-                      onChanged();
-                    },
-                  ),
-              ],
-            ),
-          );
-        }),
-        TextButton.icon(
-          onPressed: () {
-            question.acceptableAnswers.add('');
-            onStructuralChange();
-            onChanged();
-          },
-          icon: const Icon(Icons.add_rounded, size: 18),
-          label: const Text('Add Acceptable Answer'),
-          style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF2B2B2B),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _EnumerationSection extends StatelessWidget {
-  final QuestionDraft question;
-  final VoidCallback onChanged;
-  final VoidCallback onStructuralChange;
-
-  const _EnumerationSection({
-    required this.question,
-    required this.onChanged,
-    required this.onStructuralChange,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ...question.enumerationItems.asMap().entries.map((entry) {
-          final ii = entry.key;
-          final item = entry.value;
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FA),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: const Color(0xFFE0E0E0),
-                width: 1,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      'Item ${ii + 1}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: Color(0xFF2B2B2B),
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.delete_outline_rounded,
-                        size: 20,
-                        color: Color(0xFFEF5350),
-                      ),
-                      onPressed: () {
-                        question.enumerationItems.removeAt(ii);
-                        onStructuralChange();
-                        onChanged();
-                      },
-                      constraints: const BoxConstraints(),
-                      padding: const EdgeInsets.all(4),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                ...item.answers.asMap().entries.map((ae) {
-                  final ai = ae.key;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            initialValue: ae.value,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF2B2B2B),
-                            ),
-                            decoration: InputDecoration(
-                              labelText: 'Variant ${ai + 1}',
-                              labelStyle: const TextStyle(
-                                fontSize: 13,
-                                color: Color(0xFF999999),
-                              ),
-                              filled: true,
-                              fillColor: Colors.white,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFFE0E0E0),
-                                  width: 1,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFFE0E0E0),
-                                  width: 1,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFF2B2B2B),
-                                  width: 1.5,
-                                ),
-                              ),
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
-                              ),
-                            ),
-                            onChanged: (value) {
-                              item.answers[ai] = value;
-                            },
-                          ),
-                        ),
-                        if (item.answers.length > 1)
-                          IconButton(
-                            icon: const Icon(
-                              Icons.close_rounded,
-                              size: 18,
-                              color: Color(0xFFEF5350),
-                            ),
-                            onPressed: () {
-                              item.answers.removeAt(ai);
-                              onStructuralChange();
-                              onChanged();
-                            },
-                            constraints: const BoxConstraints(),
-                            padding: const EdgeInsets.all(4),
-                          ),
-                      ],
-                    ),
-                  );
-                }),
-                TextButton.icon(
-                  onPressed: () {
-                    item.answers.add('');
-                    onStructuralChange();
-                    onChanged();
-                  },
-                  icon: const Icon(Icons.add_rounded, size: 16),
-                  label: const Text(
-                    'Add Variant',
-                    style: TextStyle(fontSize: 13),
-                  ),
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF2B2B2B),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-        const SizedBox(height: 8),
-        TextButton.icon(
-          onPressed: () {
-            question.enumerationItems.add(EnumerationItemDraft());
-            onStructuralChange();
-            onChanged();
-          },
-          icon: const Icon(Icons.add_rounded, size: 18),
-          label: const Text('Add Enumeration Item'),
-          style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF2B2B2B),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          ),
-        ),
-      ],
-    );
-  }
-}

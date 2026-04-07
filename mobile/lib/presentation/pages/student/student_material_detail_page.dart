@@ -120,7 +120,7 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.error_outline_rounded, size: 64, color: const Color(0xFFCCCCCC)),
+                        const Icon(Icons.error_outline_rounded, size: 64, color: Color(0xFFCCCCCC)),
                         const SizedBox(height: 16),
                         const Text('Failed to load module', style: TextStyle(fontSize: 16, color: Color(0xFF666666))),
                         const SizedBox(height: 24),
@@ -226,9 +226,9 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
           ),
           if (material.needsSync) ...[
             const SizedBox(height: 12),
-            StatusBadge(
+            const StatusBadge(
               label: 'Pending sync',
-              color: const Color(0xFF999999),
+              color: Color(0xFF999999),
               variant: BadgeVariant.outlined,
             ),
           ],
@@ -263,8 +263,8 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
   }
 
   Widget _buildDownloadStatusBanner() {
-    return InfoPanel(
-      padding: const EdgeInsets.all(14),
+    return const InfoPanel(
+      padding: EdgeInsets.all(14),
       child: Row(
         children: [
           Icon(
@@ -272,8 +272,8 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
             color: AppColors.semanticSuccess,
             size: 18,
           ),
-          const SizedBox(width: 10),
-          const Text(
+          SizedBox(width: 10),
+          Text(
             'All files downloaded',
             style: TextStyle(
               fontSize: 14,

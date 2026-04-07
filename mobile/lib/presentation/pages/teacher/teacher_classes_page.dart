@@ -102,7 +102,9 @@ class _TeacherClassesPageState extends ConsumerState<TeacherClassesPage> {
                                   final cls = filteredClasses[index];
                                   return ClassCard(
                                     title: cls.title,
-                                    subtitle: '${cls.studentCount} student${cls.studentCount != 1 ? 's' : ''}',
+                                    subtitle: cls.isAdvisory
+                                        ? '${cls.studentCount} student${cls.studentCount != 1 ? 's' : ''} | Advisory'
+                                        : '${cls.studentCount} student${cls.studentCount != 1 ? 's' : ''}',
                                     onTap: () => Navigator.push(
                                       context,
                                       MaterialPageRoute(

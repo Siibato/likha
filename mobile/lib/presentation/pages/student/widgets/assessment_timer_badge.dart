@@ -22,10 +22,10 @@ class AssessmentTimerBadge extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: _timerColor().withOpacity(0.08),
+        color: _timerColor().withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: _timerColor().withOpacity(0.2),
+          color: _timerColor().withValues(alpha: 0.2),
         ),
       ),
       child: Row(

@@ -51,7 +51,6 @@ impl super::LearningMaterialService {
         // Check if this file already exists
         if let Ok(Some(existing_path)) = self.material_repo.find_active_file_path_by_hash(&file_hash).await {
             // File already exists, reuse it
-            let file_id = Uuid::new_v4();
             let file = self
                 .material_repo
                 .save_file(material_id, file_name.clone(), file_type.clone(), file_size, existing_path, file_hash)

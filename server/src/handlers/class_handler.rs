@@ -8,11 +8,12 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::schema::auth_schema::MessageResponse;
-use crate::schema::class_schema::{AddStudentRequest, CreateClassRequest, SearchStudentsQuery, UpdateClassRequest, ClassMetadataResponse};
+use crate::schema::class_schema::{AddStudentRequest, CreateClassRequest, SearchStudentsQuery, UpdateClassRequest};
 use crate::schema::common::success_response;
 use crate::services::auth::AuthService;
 use crate::services::class::ClassService;
 use crate::middleware::auth_middleware::AuthUser;
+use crate::utils::auth_guards::require_teacher_or_admin;
 use crate::utils::error::AppError;
 
 pub async fn create_class(
@@ -20,8 +21,8 @@ pub async fn create_class(
     auth_user: AuthUser,
     Json(request): Json<CreateClassRequest>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" && auth_user.role != "admin" {
-        return AppError::Forbidden("Teacher or admin access required".to_string()).into_response();
+    if let Err(r) = require_teacher_or_admin(&auth_user) {
+        return r;
     }
 
     match class_service.create_class(request, auth_user.user_id, None).await {
@@ -36,8 +37,8 @@ pub async fn update_class(
     Path(class_id): Path<Uuid>,
     Json(request): Json<UpdateClassRequest>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" && auth_user.role != "admin" {
-        return AppError::Forbidden("Teacher or admin access required".to_string()).into_response();
+    if let Err(r) = require_teacher_or_admin(&auth_user) {
+        return r;
     }
 
     match class_service.update_class(class_id, request, auth_user.user_id, &auth_user.role).await {
@@ -80,8 +81,8 @@ pub async fn add_student(
     Path(class_id): Path<Uuid>,
     Json(request): Json<AddStudentRequest>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" && auth_user.role != "admin" {
-        return AppError::Forbidden("Teacher or admin access required".to_string()).into_response();
+    if let Err(r) = require_teacher_or_admin(&auth_user) {
+        return r;
     }
 
     match class_service
@@ -98,8 +99,8 @@ pub async fn remove_student(
     auth_user: AuthUser,
     Path((class_id, student_id)): Path<(Uuid, Uuid)>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" && auth_user.role != "admin" {
-        return AppError::Forbidden("Teacher or admin access required".to_string()).into_response();
+    if let Err(r) = require_teacher_or_admin(&auth_user) {
+        return r;
     }
 
     match class_service
@@ -108,6 +109,26 @@ pub async fn remove_student(
     {
         Ok(_) => success_response(MessageResponse {
             message: "Student removed from class".to_string(),
+        }, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+pub async fn delete_class(
+    State(class_service): State<Arc<ClassService>>,
+    auth_user: AuthUser,
+    Path(class_id): Path<Uuid>,
+) -> impl IntoResponse {
+    if let Err(r) = require_teacher_or_admin(&auth_user) {
+        return r;
+    }
+
+    match class_service
+        .soft_delete(class_id, auth_user.user_id, &auth_user.role)
+        .await
+    {
+        Ok(_) => success_response(MessageResponse {
+            message: "Class deleted successfully".to_string(),
         }, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }

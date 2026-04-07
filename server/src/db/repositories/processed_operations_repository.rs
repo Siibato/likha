@@ -115,24 +115,4 @@ impl ProcessedOperationsRepository {
         Ok(())
     }
 
-    /// Cleanup old processed operations (maintenance task)
-    /// Call periodically to manage cache and DB size
-    pub async fn cleanup_old_operations(&self, days_old: i32) -> Result<u64, String> {
-        // Clear RAM cache
-        let mut cache = self.cache.write().await;
-        let count = cache.len() as u64;
-        cache.clear();
-
-        // Delete old entries from DB
-        let sql = format!(
-            "DELETE FROM processed_operations WHERE created_at < datetime('now', '-{} days')",
-            days_old
-        );
-        let statement = Statement::from_sql_and_values(DbBackend::Sqlite, &sql, []);
-
-        self.db.execute(statement).await
-            .map_err(|e| format!("Cleanup failed: {}", e))?;
-
-        Ok(count)
-    }
 }

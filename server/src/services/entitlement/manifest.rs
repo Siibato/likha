@@ -12,61 +12,8 @@ pub struct UserManifest {
     pub assignments: Vec<ManifestEntry>,
     pub assignment_submissions: Vec<ManifestEntry>,
     pub learning_materials: Vec<ManifestEntry>,
+    #[allow(dead_code)]
     pub activity_logs: Vec<ManifestEntry>,
-}
-
-impl UserManifest {
-    pub fn to_json(&self) -> serde_json::Value {
-        use serde_json::json;
-
-        json!({
-            "classes": self.classes.iter().map(|e| json!({
-                "id": e.id.to_string(),
-                "updated_at": e.updated_at.to_string(),
-                "deleted": e.deleted
-            })).collect::<Vec<_>>(),
-            "enrollments": self.enrollments.iter().map(|e| json!({
-                "id": e.id.to_string(),
-                "updated_at": e.updated_at.to_string(),
-                "deleted": e.deleted
-            })).collect::<Vec<_>>(),
-            "assessments": self.assessments.iter().map(|e| json!({
-                "id": e.id.to_string(),
-                "updated_at": e.updated_at.to_string(),
-                "deleted": e.deleted
-            })).collect::<Vec<_>>(),
-            "assessment_questions": self.assessment_questions.iter().map(|e| json!({
-                "id": e.id.to_string(),
-                "updated_at": e.updated_at.to_string(),
-                "deleted": e.deleted
-            })).collect::<Vec<_>>(),
-            "assessment_submissions": self.assessment_submissions.iter().map(|e| json!({
-                "id": e.id.to_string(),
-                "updated_at": e.updated_at.to_string(),
-                "deleted": e.deleted
-            })).collect::<Vec<_>>(),
-            "assignments": self.assignments.iter().map(|e| json!({
-                "id": e.id.to_string(),
-                "updated_at": e.updated_at.to_string(),
-                "deleted": e.deleted
-            })).collect::<Vec<_>>(),
-            "assignment_submissions": self.assignment_submissions.iter().map(|e| json!({
-                "id": e.id.to_string(),
-                "updated_at": e.updated_at.to_string(),
-                "deleted": e.deleted
-            })).collect::<Vec<_>>(),
-            "learning_materials": self.learning_materials.iter().map(|e| json!({
-                "id": e.id.to_string(),
-                "updated_at": e.updated_at.to_string(),
-                "deleted": e.deleted
-            })).collect::<Vec<_>>(),
-            "activity_logs": self.activity_logs.iter().map(|e| json!({
-                "id": e.id.to_string(),
-                "updated_at": e.updated_at.to_string(),
-                "deleted": e.deleted
-            })).collect::<Vec<_>>(),
-        })
-    }
 }
 
 impl super::EntitlementService {

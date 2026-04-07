@@ -1,4 +1,6 @@
 import 'dart:convert';
+
+import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/sync/sync_logger.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -24,20 +26,25 @@ class SyncUpsertHelpers {
         }
 
         await db.insert(
-          'classes',
+          DbTables.classes,
           {
-            'id': record['id'],
-            'title': record['title'],
-            'description': record['description'],
-            'teacher_id': teacherId,
-            'teacher_username': record['teacher_username'] ?? '',
-            'teacher_full_name': record['teacher_full_name'] ?? '',
-            'is_archived': (record['is_archived'] == true) ? 1 : 0,
-            'student_count': record['student_count'] ?? 0,
-            'created_at': record['created_at'],
-            'updated_at': record['updated_at'] ?? record['created_at'],
-            'cached_at': DateTime.now().toIso8601String(),
-            'needs_sync': 0,
+            CommonCols.id: record['id'],
+            ClassesCols.title: record['title'],
+            ClassesCols.description: record['description'],
+            ClassesCols.teacherId: teacherId,
+            ClassesCols.teacherUsername: record['teacher_username'] ?? '',
+            ClassesCols.teacherFullName: record['teacher_full_name'] ?? '',
+            ClassesCols.isArchived: (record['is_archived'] == true) ? 1 : 0,
+            ClassesCols.isAdvisory: (record['is_advisory'] == true) ? 1 : 0,
+            ClassesCols.studentCount: record['student_count'] ?? 0,
+            ClassesCols.gradeLevel: record['grade_level'],
+            ClassesCols.subjectGroup: record['subject_group'],
+            ClassesCols.schoolYear: record['school_year'],
+            ClassesCols.semester: record['semester'] != null ? (record['semester'] as num).toInt() : null,
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.needsSync: 0,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
@@ -59,8 +66,8 @@ class SyncUpsertHelpers {
   Future<void> populateTeacherInfoFromAccounts(Database db) async {
     try {
       final classesNeedingTeacher = await db.query(
-        'classes',
-        where: 'teacher_username = ?',
+        DbTables.classes,
+        where: '${ClassesCols.teacherUsername} = ?',
         whereArgs: [''],
       );
 
@@ -69,14 +76,14 @@ class SyncUpsertHelpers {
       _log.warn('Found ${classesNeedingTeacher.length} classes missing teacher info, attempting fallback');
 
       // Get cached user accounts
-      final cachedUsers = await db.query('users');
+      final cachedUsers = await db.query(DbTables.users);
 
       // Build teacher map: teacher_id -> (username, full_name)
       final teacherMap = <String, Map<String, String>>{};
       for (final user in cachedUsers) {
-        final userId = user['id'] as String?;
-        final username = user['username'] as String?;
-        final fullName = user['full_name'] as String?;
+        final userId = user[CommonCols.id] as String?;
+        final username = user[UsersCols.username] as String?;
+        final fullName = user[UsersCols.fullName] as String?;
         if (userId != null && username != null && fullName != null) {
           teacherMap[userId] = {
             'username': username,
@@ -87,17 +94,17 @@ class SyncUpsertHelpers {
 
       int updatedCount = 0;
       for (final cls in classesNeedingTeacher) {
-        final teacherId = cls['teacher_id'] as String?;
+        final teacherId = cls[ClassesCols.teacherId] as String?;
         if (teacherId != null && teacherMap.containsKey(teacherId)) {
           final teacherInfo = teacherMap[teacherId]!;
           await db.update(
-            'classes',
+            DbTables.classes,
             {
-              'teacher_username': teacherInfo['username'],
-              'teacher_full_name': teacherInfo['full_name'],
+              ClassesCols.teacherUsername: teacherInfo['username'],
+              ClassesCols.teacherFullName: teacherInfo['full_name'],
             },
-            where: 'id = ?',
-            whereArgs: [cls['id']],
+            where: '${CommonCols.id} = ?',
+            whereArgs: [cls[CommonCols.id]],
           );
           updatedCount++;
         }
@@ -108,14 +115,14 @@ class SyncUpsertHelpers {
     }
   }
 
-  Future<void> upsertEnrollments(
+  Future<void> upsertParticipants(
     Database db,
-    List<dynamic> enrollments,
-    List<dynamic> enrolledStudents,
+    List<dynamic> participants,
+    List<dynamic> participantUsers,
   ) async {
     // Build lookup map: user_id -> student data
     final studentMap = <String, Map<String, dynamic>>{};
-    for (final s in enrolledStudents) {
+    for (final s in participantUsers) {
       if (s is! Map<String, dynamic>) continue;
       final id = s['id']?.toString();
       if (id != null && id.isNotEmpty) {
@@ -123,24 +130,24 @@ class SyncUpsertHelpers {
       }
     }
 
-    for (final enrollment in enrollments) {
-      if (enrollment is! Map<String, dynamic>) continue;
-      final e = enrollment;
+    for (final participant in participants) {
+      if (participant is! Map<String, dynamic>) continue;
+      final e = participant;
       // Accept both user_id (new) and student_id (old) for backward compat
       final userId = (e['user_id'] ?? e['student_id'])?.toString();
       if (userId == null || userId.isEmpty) continue;
 
       await db.insert(
-        'class_participants',
+        DbTables.classParticipants,
         {
-          'id': e['id'],
-          'class_id': e['class_id'],
-          'user_id': userId,
-          'joined_at': e['joined_at'] ?? e['enrolled_at'],
-          'updated_at': e['joined_at'] ?? e['enrolled_at'],
-          'removed_at': e['removed_at'],
-          'cached_at': DateTime.now().toIso8601String(),
-          'needs_sync': 0,
+          CommonCols.id: e['id'],
+          ClassParticipantsCols.classId: e['class_id'],
+          ClassParticipantsCols.userId: userId,
+          ClassParticipantsCols.joinedAt: e['joined_at'] ?? e['enrolled_at'],
+          CommonCols.updatedAt: e['joined_at'] ?? e['enrolled_at'],
+          ClassParticipantsCols.removedAt: e['removed_at'],
+          CommonCols.cachedAt: DateTime.now().toIso8601String(),
+          CommonCols.needsSync: 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -172,19 +179,19 @@ class SyncUpsertHelpers {
       if (record is! Map<String, dynamic>) continue;
       // Only insert columns that exist in the users table
       await db.insert(
-        'users',
+        DbTables.users,
         {
-          'id': record['id'],
-          'username': record['username'],
-          'full_name': record['full_name'],
-          'role': record['role'],
-          'account_status': record['account_status'],
-          'activated_at': record['activated_at'],
-          'created_at': record['created_at'],
-          'updated_at': record['updated_at'] ?? record['created_at'],
-          'deleted_at': record['deleted_at'],
-          'cached_at': DateTime.now().toIso8601String(),
-          'needs_sync': 0,
+          CommonCols.id: record['id'],
+          UsersCols.username: record['username'],
+          UsersCols.fullName: record['full_name'],
+          UsersCols.role: record['role'],
+          UsersCols.accountStatus: record['account_status'],
+          UsersCols.activatedAt: record['activated_at'],
+          CommonCols.createdAt: record['created_at'],
+          CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+          CommonCols.deletedAt: record['deleted_at'],
+          CommonCols.cachedAt: DateTime.now().toIso8601String(),
+          CommonCols.needsSync: 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -200,30 +207,30 @@ class SyncUpsertHelpers {
       final data = record as Map<String, dynamic>;
       final assessmentId = data['id'];
       final map = {
-        'id': assessmentId,
-        'class_id': data['class_id'],
-        'title': data['title'],
-        'description': data['description'],
-        'time_limit_minutes': data['time_limit_minutes'] ?? 0,
-        'open_at': data['open_at'] ?? DateTime.now().toIso8601String(),
-        'close_at': data['close_at'] ?? DateTime.now().toIso8601String(),
-        'show_results_immediately': (data['show_results_immediately'] == true) ? 1 : 0,
-        'results_released': (data['results_released'] == true) ? 1 : 0,
-        'is_published': (data['is_published'] == true) ? 1 : 0,
-        'order_index': data['order_index'] ?? 0,
-        'total_points': data['total_points'] ?? 0,
-        'question_count': data['question_count'] ?? 0,
-        'submission_count': data['submission_count'] ?? 0,
-        'created_at': data['created_at'] ?? DateTime.now().toIso8601String(),
-        'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
-        'deleted_at': data['deleted_at'],
-        'cached_at': DateTime.now().toIso8601String(),
-        'needs_sync': 0,
+        CommonCols.id: assessmentId,
+        AssessmentsCols.classId: data['class_id'],
+        AssessmentsCols.title: data['title'],
+        AssessmentsCols.description: data['description'],
+        AssessmentsCols.timeLimitMinutes: data['time_limit_minutes'] ?? 0,
+        AssessmentsCols.openAt: data['open_at'] ?? DateTime.now().toIso8601String(),
+        AssessmentsCols.closeAt: data['close_at'] ?? DateTime.now().toIso8601String(),
+        AssessmentsCols.showResultsImmediately: (data['show_results_immediately'] == true) ? 1 : 0,
+        AssessmentsCols.resultsReleased: (data['results_released'] == true) ? 1 : 0,
+        AssessmentsCols.isPublished: (data['is_published'] == true) ? 1 : 0,
+        AssessmentsCols.orderIndex: data['order_index'] ?? 0,
+        AssessmentsCols.totalPoints: data['total_points'] ?? 0,
+        AssessmentsCols.questionCount: data['question_count'] ?? 0,
+        AssessmentsCols.submissionCount: data['submission_count'] ?? 0,
+        CommonCols.createdAt: data['created_at'] ?? DateTime.now().toIso8601String(),
+        CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
+        CommonCols.deletedAt: data['deleted_at'],
+        CommonCols.cachedAt: DateTime.now().toIso8601String(),
+        CommonCols.needsSync: 0,
       };
       // Use update-first pattern to avoid CASCADE DELETE on assessment_submissions
-      final updated = await db.update('assessments', map, where: 'id = ?', whereArgs: [assessmentId]);
+      final updated = await db.update(DbTables.assessments, map, where: '${CommonCols.id} = ?', whereArgs: [assessmentId]);
       if (updated == 0) {
-        await db.insert('assessments', map);
+        await db.insert(DbTables.assessments, map);
       }
     }
   }
@@ -237,20 +244,22 @@ class SyncUpsertHelpers {
       final data = record as Map<String, dynamic>;
 
       await db.insert(
-        'assessment_questions',
+        DbTables.assessmentQuestions,
         {
-          'id': data['id'],
-          'assessment_id': data['assessment_id'],
-          'question_type': data['question_type'],
-          'question_text': data['question_text'],
-          'points': data['points'] ?? 0,
-          'order_index': data['order_index'] ?? 0,
-          'is_multi_select': (data['is_multi_select'] == true) ? 1 : 0,
-          'created_at': data['created_at'] ?? DateTime.now().toIso8601String(),
-          'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
-          'deleted_at': data['deleted_at'],
-          'cached_at': DateTime.now().toIso8601String(),
-          'needs_sync': 0,
+          CommonCols.id: data['id'],
+          AssessmentQuestionsCols.assessmentId: data['assessment_id'],
+          AssessmentQuestionsCols.questionType: data['question_type'],
+          AssessmentQuestionsCols.questionText: data['question_text'],
+          AssessmentQuestionsCols.points: data['points'] ?? 0,
+          AssessmentQuestionsCols.orderIndex: data['order_index'] ?? 0,
+          AssessmentQuestionsCols.isMultiSelect: (data['is_multi_select'] == true) ? 1 : 0,
+          AssessmentQuestionsCols.tosCompetencyId: data['tos_competency_id'],
+          AssessmentQuestionsCols.cognitiveLevel: data['cognitive_level'],
+          CommonCols.createdAt: data['created_at'] ?? DateTime.now().toIso8601String(),
+          CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
+          CommonCols.deletedAt: data['deleted_at'],
+          CommonCols.cachedAt: DateTime.now().toIso8601String(),
+          CommonCols.needsSync: 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -259,19 +268,19 @@ class SyncUpsertHelpers {
       final choices = data['choices'];
       if (choices is List && choices.isNotEmpty) {
         // Delete stale choices before inserting fresh ones
-        await db.delete('question_choices', where: 'question_id = ?', whereArgs: [data['id']]);
+        await db.delete(DbTables.questionChoices, where: '${QuestionChoicesCols.questionId} = ?', whereArgs: [data['id']]);
         for (final choice in choices) {
           if (choice is! Map<String, dynamic>) continue;
           await db.insert(
-            'question_choices',
+            DbTables.questionChoices,
             {
-              'id': choice['id'],
-              'question_id': data['id'],
-              'choice_text': choice['choice_text'],
-              'is_correct': (choice['is_correct'] == true) ? 1 : 0,
-              'order_index': choice['order_index'] ?? 0,
-              'cached_at': DateTime.now().toIso8601String(),
-              'needs_sync': 0,
+              CommonCols.id: choice['id'],
+              QuestionChoicesCols.questionId: data['id'],
+              QuestionChoicesCols.choiceText: choice['choice_text'],
+              QuestionChoicesCols.isCorrect: (choice['is_correct'] == true) ? 1 : 0,
+              QuestionChoicesCols.orderIndex: choice['order_index'] ?? 0,
+              CommonCols.cachedAt: DateTime.now().toIso8601String(),
+              CommonCols.needsSync: 0,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
@@ -284,13 +293,13 @@ class SyncUpsertHelpers {
         for (final answer in correctAnswers) {
           if (answer is! Map<String, dynamic>) continue;
           await db.insert(
-            'answer_keys',
+            DbTables.answerKeys,
             {
-              'id': answer['id'],
-              'question_id': data['id'],
-              'item_type': answer['item_type'] as String? ?? 'correct_answer',
-              'cached_at': DateTime.now().toIso8601String(),
-              'needs_sync': 0,
+              CommonCols.id: answer['id'],
+              AnswerKeysCols.questionId: data['id'],
+              AnswerKeysCols.itemType: answer['item_type'] as String? ?? DbValues.itemTypeCorrectAnswer,
+              CommonCols.cachedAt: DateTime.now().toIso8601String(),
+              CommonCols.needsSync: 0,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
@@ -301,13 +310,13 @@ class SyncUpsertHelpers {
             for (final acceptable in acceptableAnswers) {
               if (acceptable is! Map<String, dynamic>) continue;
               await db.insert(
-                'answer_key_acceptable_answers',
+                DbTables.answerKeyAcceptableAnswers,
                 {
-                  'id': acceptable['id'],
-                  'answer_key_id': answer['id'],
-                  'answer_text': acceptable['answer_text'],
-                  'cached_at': DateTime.now().toIso8601String(),
-                  'needs_sync': 0,
+                  CommonCols.id: acceptable['id'],
+                  AnswerKeyAcceptableAnswersCols.answerKeyId: answer['id'],
+                  AnswerKeyAcceptableAnswersCols.answerText: acceptable['answer_text'],
+                  CommonCols.cachedAt: DateTime.now().toIso8601String(),
+                  CommonCols.needsSync: 0,
                 },
                 conflictAlgorithm: ConflictAlgorithm.replace,
               );
@@ -322,13 +331,13 @@ class SyncUpsertHelpers {
         for (final item in enumerationItems) {
           if (item is! Map<String, dynamic>) continue;
           await db.insert(
-            'answer_keys',
+            DbTables.answerKeys,
             {
-              'id': item['id'],
-              'question_id': data['id'],
-              'item_type': 'enumeration_item',
-              'cached_at': DateTime.now().toIso8601String(),
-              'needs_sync': 0,
+              CommonCols.id: item['id'],
+              AnswerKeysCols.questionId: data['id'],
+              AnswerKeysCols.itemType: DbValues.itemTypeEnumerationItem,
+              CommonCols.cachedAt: DateTime.now().toIso8601String(),
+              CommonCols.needsSync: 0,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
@@ -337,13 +346,13 @@ class SyncUpsertHelpers {
             for (final acceptable in acceptableAnswers) {
               if (acceptable is! Map<String, dynamic>) continue;
               await db.insert(
-                'answer_key_acceptable_answers',
+                DbTables.answerKeyAcceptableAnswers,
                 {
-                  'id': acceptable['id'],
-                  'answer_key_id': item['id'],
-                  'answer_text': acceptable['answer_text'],
-                  'cached_at': DateTime.now().toIso8601String(),
-                  'needs_sync': 0,
+                  CommonCols.id: acceptable['id'],
+                  AnswerKeyAcceptableAnswersCols.answerKeyId: item['id'],
+                  AnswerKeyAcceptableAnswersCols.answerText: acceptable['answer_text'],
+                  CommonCols.cachedAt: DateTime.now().toIso8601String(),
+                  CommonCols.needsSync: 0,
                 },
                 conflictAlgorithm: ConflictAlgorithm.replace,
               );
@@ -363,32 +372,32 @@ class SyncUpsertHelpers {
       final data = record as Map<String, dynamic>;
       final assignmentId = data['id'];
       final map = {
-        'id': assignmentId,
-        'class_id': data['class_id'],
-        'title': data['title'],
-        'instructions': data['instructions'],
-        'total_points': data['total_points'] ?? 0,
-        'submission_type': data['submission_type'] ?? 'text_only',
-        'allowed_file_types': data['allowed_file_types'],
-        'max_file_size_mb': data['max_file_size_mb'],
-        'due_at': data['due_at'] ?? '',
-        'submission_status': data['submission_status'],
-        'submission_id': data['submission_id'],
-        'score': data['score'],
-        'is_published': (data['is_published'] == true) ? 1 : 0,
-        'submission_count': data['submission_count'] ?? 0,
-        'graded_count': data['graded_count'] ?? 0,
-        'order_index': data['order_index'] ?? 0,
-        'created_at': data['created_at'] ?? DateTime.now().toIso8601String(),
-        'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
-        'deleted_at': data['deleted_at'],
-        'cached_at': DateTime.now().toIso8601String(),
-        'needs_sync': 0,
+        CommonCols.id: assignmentId,
+        AssignmentsCols.classId: data['class_id'],
+        AssignmentsCols.title: data['title'],
+        AssignmentsCols.instructions: data['instructions'],
+        AssignmentsCols.totalPoints: data['total_points'] ?? 0,
+        AssignmentsCols.submissionType: data['submission_type'] ?? 'text_only',
+        AssignmentsCols.allowedFileTypes: data['allowed_file_types'],
+        AssignmentsCols.maxFileSizeMb: data['max_file_size_mb'],
+        AssignmentsCols.dueAt: data['due_at'] ?? '',
+        AssignmentsCols.submissionStatus: data['submission_status'],
+        AssignmentsCols.submissionId: data['submission_id'],
+        AssignmentsCols.score: data['score'],
+        AssignmentsCols.isPublished: (data['is_published'] == true) ? 1 : 0,
+        AssignmentsCols.submissionCount: data['submission_count'] ?? 0,
+        AssignmentsCols.gradedCount: data['graded_count'] ?? 0,
+        AssignmentsCols.orderIndex: data['order_index'] ?? 0,
+        CommonCols.createdAt: data['created_at'] ?? DateTime.now().toIso8601String(),
+        CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
+        CommonCols.deletedAt: data['deleted_at'],
+        CommonCols.cachedAt: DateTime.now().toIso8601String(),
+        CommonCols.needsSync: 0,
       };
       // Use update-first pattern to avoid CASCADE DELETE on assignment_submissions
-      final updated = await db.update('assignments', map, where: 'id = ?', whereArgs: [assignmentId]);
+      final updated = await db.update(DbTables.assignments, map, where: '${CommonCols.id} = ?', whereArgs: [assignmentId]);
       if (updated == 0) {
-        await db.insert('assignments', map);
+        await db.insert(DbTables.assignments, map);
       }
     }
   }
@@ -401,19 +410,19 @@ class SyncUpsertHelpers {
     for (final record in records) {
       final data = record as Map<String, dynamic>;
       await db.insert(
-        'learning_materials',
+        DbTables.learningMaterials,
         {
-          'id': data['id'],
-          'class_id': data['class_id'],
-          'title': data['title'],
-          'description': data['description'],
-          'content_text': data['content_text'],
-          'order_index': data['order_index'] ?? 0,
-          'created_at': data['created_at'] ?? DateTime.now().toIso8601String(),
-          'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
-          'deleted_at': data['deleted_at'],
-          'cached_at': DateTime.now().toIso8601String(),
-          'needs_sync': 0,
+          CommonCols.id: data['id'],
+          LearningMaterialsCols.classId: data['class_id'],
+          LearningMaterialsCols.title: data['title'],
+          LearningMaterialsCols.description: data['description'],
+          LearningMaterialsCols.contentText: data['content_text'],
+          LearningMaterialsCols.orderIndex: data['order_index'] ?? 0,
+          CommonCols.createdAt: data['created_at'] ?? DateTime.now().toIso8601String(),
+          CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
+          CommonCols.deletedAt: data['deleted_at'],
+          CommonCols.cachedAt: DateTime.now().toIso8601String(),
+          CommonCols.needsSync: 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -437,20 +446,20 @@ class SyncUpsertHelpers {
       }
 
       await db.insert(
-        'assessment_submissions',
+        DbTables.assessmentSubmissions,
         {
-          'id': data['id'],
-          'assessment_id': data['assessment_id'],
-          'user_id': userId,
-          'started_at': data['started_at'] ?? DateTime.now().toIso8601String(),
-          'submitted_at': data['submitted_at'],
-          'total_points': data['total_points'] ?? 0,
-          'earned_points': ((data['earned_points'] ?? data['auto_score'] ?? data['final_score'] ?? data['total_points']) as num?)?.toDouble() ?? 0.0,
-          'created_at': data['created_at'] ?? DateTime.now().toIso8601String(),
-          'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
-          'deleted_at': data['deleted_at'],
-          'cached_at': DateTime.now().toIso8601String(),
-          'needs_sync': 0,
+          CommonCols.id: data['id'],
+          AssessmentSubmissionsCols.assessmentId: data['assessment_id'],
+          AssessmentSubmissionsCols.userId: userId,
+          AssessmentSubmissionsCols.startedAt: data['started_at'] ?? DateTime.now().toIso8601String(),
+          AssessmentSubmissionsCols.submittedAt: data['submitted_at'],
+          AssessmentSubmissionsCols.totalPoints: data['total_points'] ?? 0,
+          AssessmentSubmissionsCols.earnedPoints: ((data['earned_points'] ?? data['auto_score'] ?? data['final_score'] ?? data['total_points']) as num?)?.toDouble() ?? 0.0,
+          CommonCols.createdAt: data['created_at'] ?? DateTime.now().toIso8601String(),
+          CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
+          CommonCols.deletedAt: data['deleted_at'],
+          CommonCols.cachedAt: DateTime.now().toIso8601String(),
+          CommonCols.needsSync: 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -467,27 +476,58 @@ class SyncUpsertHelpers {
       final data = record as Map<String, dynamic>;
 
       await db.insert(
-        'assignment_submissions',
+        DbTables.assignmentSubmissions,
         {
-          'id': data['id'],
-          'assignment_id': data['assignment_id'],
-          'student_id': data['student_id'],
-          'status': data['status'] ?? 'pending',
-          'text_content': data['text_content'],
-          'submitted_at': data['submitted_at'],
-          'is_late': (data['is_late'] == true) ? 1 : 0,
-          'points': data['score'],
-          'feedback': data['feedback'],
-          'graded_at': data['graded_at'],
-          'graded_by': data['graded_by'],
-          'created_at': data['created_at'] ?? DateTime.now().toIso8601String(),
-          'updated_at': data['updated_at'] ?? DateTime.now().toIso8601String(),
-          'deleted_at': data['deleted_at'],
-          'cached_at': DateTime.now().toIso8601String(),
-          'needs_sync': 0,
+          CommonCols.id: data['id'],
+          AssignmentSubmissionsCols.assignmentId: data['assignment_id'],
+          AssignmentSubmissionsCols.studentId: data['student_id'],
+          AssignmentSubmissionsCols.status: data['status'] ?? 'pending',
+          AssignmentSubmissionsCols.textContent: data['text_content'],
+          AssignmentSubmissionsCols.submittedAt: data['submitted_at'],
+          AssignmentSubmissionsCols.isLate: (data['is_late'] == true) ? 1 : 0,
+          AssignmentSubmissionsCols.points: data['score'],
+          AssignmentSubmissionsCols.feedback: data['feedback'],
+          AssignmentSubmissionsCols.gradedAt: data['graded_at'],
+          AssignmentSubmissionsCols.gradedBy: data['graded_by'],
+          CommonCols.createdAt: data['created_at'] ?? DateTime.now().toIso8601String(),
+          CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
+          CommonCols.deletedAt: data['deleted_at'],
+          CommonCols.cachedAt: DateTime.now().toIso8601String(),
+          CommonCols.needsSync: 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
+    }
+  }
+
+  Future<void> _preserveLocalPathUpsert(
+    Database db,
+    String table,
+    String fkColumn,
+    Map<String, dynamic> data,
+  ) async {
+    final existing = await db.query(table,
+        columns: [SubmissionFilesCols.localPath], where: '${CommonCols.id} = ?', whereArgs: [data['id']]);
+    if (existing.isEmpty) {
+      await db.insert(table, {
+        CommonCols.id: data['id'],
+        fkColumn: data[fkColumn],
+        SubmissionFilesCols.fileName: data['file_name'],
+        SubmissionFilesCols.fileType: data['file_type'],
+        SubmissionFilesCols.fileSize: data['file_size'] ?? 0,
+        SubmissionFilesCols.localPath: '',
+        SubmissionFilesCols.uploadedAt: data['uploaded_at'] ?? DateTime.now().toIso8601String(),
+        CommonCols.cachedAt: DateTime.now().toIso8601String(),
+        CommonCols.needsSync: 0,
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+    } else {
+      await db.update(table, {
+        SubmissionFilesCols.fileName: data['file_name'],
+        SubmissionFilesCols.fileType: data['file_type'],
+        SubmissionFilesCols.fileSize: data['file_size'] ?? 0,
+        SubmissionFilesCols.uploadedAt: data['uploaded_at'] ?? DateTime.now().toIso8601String(),
+        CommonCols.cachedAt: DateTime.now().toIso8601String(),
+      }, where: '${CommonCols.id} = ?', whereArgs: [data['id']]);
     }
   }
 
@@ -497,47 +537,7 @@ class SyncUpsertHelpers {
     List<dynamic> records,
   ) async {
     for (final record in records) {
-      final data = record as Map<String, dynamic>;
-
-      // Preserve local_path if row exists (don't overwrite with null)
-      final existing = await db.query(
-        'material_files',
-        columns: ['local_path'],
-        where: 'id = ?',
-        whereArgs: [data['id']],
-      );
-
-      if (existing.isEmpty) {
-        await db.insert(
-          'material_files',
-          {
-            'id': data['id'],
-            'material_id': data['material_id'],
-            'file_name': data['file_name'],
-            'file_type': data['file_type'],
-            'file_size': data['file_size'] ?? 0,
-            'local_path': '',
-            'uploaded_at': data['uploaded_at'] ?? DateTime.now().toIso8601String(),
-            'cached_at': DateTime.now().toIso8601String(),
-            'needs_sync': 0,
-          },
-          conflictAlgorithm: ConflictAlgorithm.ignore,
-        );
-      } else {
-        // Only update server-side metadata — preserve local cache state
-        await db.update(
-          'material_files',
-          {
-            'file_name': data['file_name'],
-            'file_type': data['file_type'],
-            'file_size': data['file_size'] ?? 0,
-            'uploaded_at': data['uploaded_at'] ?? DateTime.now().toIso8601String(),
-            'cached_at': DateTime.now().toIso8601String(),
-          },
-          where: 'id = ?',
-          whereArgs: [data['id']],
-        );
-      }
+      await _preserveLocalPathUpsert(db, DbTables.materialFiles, MaterialFilesCols.materialId, record as Map<String, dynamic>);
     }
   }
 
@@ -547,47 +547,358 @@ class SyncUpsertHelpers {
     List<dynamic> records,
   ) async {
     for (final record in records) {
-      final data = record as Map<String, dynamic>;
+      await _preserveLocalPathUpsert(db, DbTables.submissionFiles, SubmissionFilesCols.submissionId, record as Map<String, dynamic>);
+    }
+  }
 
-      final existing = await db.query(
-        'submission_files',
-        columns: ['local_path'],
-        where: 'id = ?',
-        whereArgs: [data['id']],
-      );
+  /// Upsert grade component configurations
+  Future<void> upsertGradeConfigs(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
 
-      if (existing.isEmpty) {
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+
         await db.insert(
-          'submission_files',
+          DbTables.gradeComponentsConfig,
           {
-            'id': data['id'],
-            'submission_id': data['submission_id'],
-            'file_name': data['file_name'],
-            'file_type': data['file_type'],
-            'file_size': data['file_size'] ?? 0,
-            'local_path': '',
-            'uploaded_at': data['uploaded_at'] ?? DateTime.now().toIso8601String(),
-            'cached_at': DateTime.now().toIso8601String(),
-            'needs_sync': 0,
+            CommonCols.id: record['id'],
+            GradeComponentsConfigCols.classId: record['class_id'],
+            GradeComponentsConfigCols.quarter: (record['quarter'] as num).toInt(),
+            GradeComponentsConfigCols.wwWeight: (record['ww_weight'] as num).toDouble(),
+            GradeComponentsConfigCols.ptWeight: (record['pt_weight'] as num).toDouble(),
+            GradeComponentsConfigCols.qaWeight: (record['qa_weight'] as num).toDouble(),
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+            CommonCols.deletedAt: record['deleted_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.needsSync: 0,
           },
-          conflictAlgorithm: ConflictAlgorithm.ignore,
+          conflictAlgorithm: ConflictAlgorithm.replace,
         );
-      } else {
-        // Only update server-side metadata — preserve local cache state
-        await db.update(
-          'submission_files',
-          {
-            'file_name': data['file_name'],
-            'file_type': data['file_type'],
-            'file_size': data['file_size'] ?? 0,
-            'uploaded_at': data['uploaded_at'] ?? DateTime.now().toIso8601String(),
-            'cached_at': DateTime.now().toIso8601String(),
-          },
-          where: 'id = ?',
-          whereArgs: [data['id']],
-        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert grade config', e);
       }
     }
+
+    _log.upsertSummary('grade_components_config', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert grade configs', failedCount);
+    }
+  }
+
+  /// Upsert grade items
+  Future<void> upsertGradeItems(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+
+        await db.insert(
+          DbTables.gradeItems,
+          {
+            CommonCols.id: record['id'],
+            GradeItemsCols.classId: record['class_id'],
+            GradeItemsCols.title: record['title'],
+            GradeItemsCols.component: record['component'],
+            GradeItemsCols.quarter: (record['quarter'] as num).toInt(),
+            GradeItemsCols.totalPoints: (record['total_points'] as num).toDouble(),
+            GradeItemsCols.isDepartmentalExam: (record['is_departmental_exam'] == true) ? 1 : 0,
+            GradeItemsCols.sourceType: record['source_type'] ?? 'manual',
+            GradeItemsCols.sourceId: record['source_id'],
+            GradeItemsCols.orderIndex: (record['order_index'] as num?)?.toInt() ?? 0,
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+            CommonCols.deletedAt: record['deleted_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.needsSync: 0,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert grade item', e);
+      }
+    }
+
+    _log.upsertSummary('grade_items', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert grade items', failedCount);
+    }
+  }
+
+  /// Upsert grade scores
+  Future<void> upsertGradeScores(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+    int preservedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+
+        final id = record['id'] as String;
+
+        // Check if local has a pending override that should take precedence
+        final existing = await db.query(
+          DbTables.gradeScores,
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id],
+        );
+
+        if (existing.isNotEmpty) {
+          final localOverride = existing.first[GradeScoresCols.overrideScore];
+          final localNeedsSync = existing.first[CommonCols.needsSync] as int?;
+
+          // If local has a pending override AND server score is auto-populated,
+          // update base score but preserve local override
+          if (localOverride != null &&
+              localNeedsSync == 1 &&
+              record['is_auto_populated'] == true) {
+            await db.update(
+              DbTables.gradeScores,
+              {
+                GradeScoresCols.score: record['score'] != null
+                    ? (record['score'] as num).toDouble()
+                    : null,
+                GradeScoresCols.isAutoPopulated: 1,
+                CommonCols.cachedAt: DateTime.now().toIso8601String(),
+                // DO NOT overwrite override_score or needsSync
+              },
+              where: '${CommonCols.id} = ?',
+              whereArgs: [id],
+            );
+            preservedCount++;
+            successCount++;
+            continue;
+          }
+        }
+
+        // Normal upsert (no conflict)
+        await db.insert(
+          DbTables.gradeScores,
+          {
+            CommonCols.id: id,
+            GradeScoresCols.gradeItemId: record['grade_item_id'],
+            GradeScoresCols.studentId: record['student_id'],
+            GradeScoresCols.score: record['score'] != null
+                ? (record['score'] as num).toDouble()
+                : null,
+            GradeScoresCols.isAutoPopulated:
+                (record['is_auto_populated'] == true) ? 1 : 0,
+            GradeScoresCols.overrideScore: record['override_score'] != null
+                ? (record['override_score'] as num).toDouble()
+                : null,
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+            CommonCols.deletedAt: record['deleted_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.needsSync: 0,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert grade score', e);
+      }
+    }
+
+    _log.upsertSummary('grade_scores', successCount);
+    if (preservedCount > 0) {
+      _log.log('Preserved $preservedCount local score overrides during sync');
+    }
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert grade scores', failedCount);
+    }
+  }
+
+  /// Upsert quarterly grades
+  Future<void> upsertQuarterlyGrades(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+
+        await db.insert(
+          DbTables.quarterlyGrades,
+          {
+            CommonCols.id: record['id'],
+            QuarterlyGradesCols.classId: record['class_id'],
+            QuarterlyGradesCols.studentId: record['student_id'],
+            QuarterlyGradesCols.quarter: (record['quarter'] as num).toInt(),
+            QuarterlyGradesCols.wwPercentage: record['ww_percentage'] != null ? (record['ww_percentage'] as num).toDouble() : null,
+            QuarterlyGradesCols.ptPercentage: record['pt_percentage'] != null ? (record['pt_percentage'] as num).toDouble() : null,
+            QuarterlyGradesCols.qaPercentage: record['qa_percentage'] != null ? (record['qa_percentage'] as num).toDouble() : null,
+            QuarterlyGradesCols.wwWeighted: record['ww_weighted'] != null ? (record['ww_weighted'] as num).toDouble() : null,
+            QuarterlyGradesCols.ptWeighted: record['pt_weighted'] != null ? (record['pt_weighted'] as num).toDouble() : null,
+            QuarterlyGradesCols.qaWeighted: record['qa_weighted'] != null ? (record['qa_weighted'] as num).toDouble() : null,
+            QuarterlyGradesCols.initialGrade: record['initial_grade'] != null ? (record['initial_grade'] as num).toDouble() : null,
+            QuarterlyGradesCols.transmutedGrade: record['transmuted_grade'] != null ? (record['transmuted_grade'] as num).toInt() : null,
+            QuarterlyGradesCols.isComplete: (record['is_complete'] == true) ? 1 : 0,
+            QuarterlyGradesCols.computedAt: record['computed_at'],
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+            CommonCols.deletedAt: record['deleted_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.needsSync: 0,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert quarterly grade', e);
+      }
+    }
+
+    _log.upsertSummary('quarterly_grades', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert quarterly grades', failedCount);
+    }
+  }
+
+  /// Upsert table_of_specifications
+  Future<void> upsertTableOfSpecifications(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+
+        await db.insert(
+          DbTables.tableOfSpecifications,
+          {
+            CommonCols.id: record['id'],
+            TosCols.classId: record['class_id'],
+            TosCols.quarter: (record['quarter'] as num).toInt(),
+            TosCols.title: record['title'],
+            TosCols.classificationMode: record['classification_mode'],
+            TosCols.totalItems: (record['total_items'] as num).toInt(),
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+            CommonCols.deletedAt: record['deleted_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.needsSync: 0,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert table_of_specifications', e);
+      }
+    }
+
+    _log.upsertSummary('table_of_specifications', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert table_of_specifications', failedCount);
+    }
+  }
+
+  /// Upsert tos_competencies
+  Future<void> upsertTosCompetencies(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+
+        await db.insert(
+          DbTables.tosCompetencies,
+          {
+            CommonCols.id: record['id'],
+            TosCompetenciesCols.tosId: record['tos_id'],
+            TosCompetenciesCols.competencyCode: record['competency_code'],
+            TosCompetenciesCols.competencyText: record['competency_text'],
+            TosCompetenciesCols.daysTaught: (record['days_taught'] as num).toInt(),
+            TosCompetenciesCols.orderIndex: (record['order_index'] as num?)?.toInt() ?? 0,
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+            CommonCols.deletedAt: record['deleted_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.needsSync: 0,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert tos_competency', e);
+      }
+    }
+
+    _log.upsertSummary('tos_competencies', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert tos_competencies', failedCount);
+    }
+  }
+
+  /// Save sync token (last_sync_at) to sync_metadata
+  Future<void> saveSyncToken(Database db, String syncToken) async {
+    await db.insert(
+      DbTables.syncMetadata,
+      {SyncMetadataCols.key: DbValues.metaLastSyncAt, SyncMetadataCols.value: syncToken},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  /// Save sync expiry timestamp to sync_metadata
+  Future<void> saveSyncExpiry(Database db, String expiryAt) async {
+    await db.insert(
+      DbTables.syncMetadata,
+      {SyncMetadataCols.key: DbValues.metaDataExpiryAt, SyncMetadataCols.value: expiryAt},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  /// Upsert current logged-in user
+  Future<void> upsertCurrentUser(Database db, Map<String, dynamic> userData) async {
+    await db.insert(
+      DbTables.users,
+      {
+        CommonCols.id: userData['id'],
+        UsersCols.username: userData['username'],
+        UsersCols.fullName: userData['full_name'],
+        UsersCols.role: userData['role'],
+        UsersCols.accountStatus: userData['account_status'],
+        UsersCols.activatedAt: userData['activated_at'],
+        CommonCols.createdAt: userData['created_at'],
+        CommonCols.updatedAt: userData['updated_at'] ?? userData['created_at'],
+        CommonCols.deletedAt: userData['deleted_at'],
+        CommonCols.cachedAt: DateTime.now().toIso8601String(),
+        CommonCols.needsSync: 0,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   /// DEPRECATED: assessment_statistics_cache table doesn't exist in schema
@@ -601,15 +912,37 @@ class SyncUpsertHelpers {
     // Table doesn't exist - method is a no-op
   }
 
-  /// DEPRECATED: student_results_cache table doesn't exist in schema
-  /// This method is kept for reference but is never called.
-  @Deprecated('Table student_results_cache does not exist in local_database schema')
+  /// Upsert student results cache (assessment performance data)
   Future<void> upsertStudentResults(
     Database db,
     List<dynamic> records,
   ) async {
-    _log.warn('upsertStudentResults called but table does not exist; skipping');
-    // Table doesn't exist - method is a no-op
+    if (records.isEmpty) return;
+    await db.transaction((txn) async {
+      for (final result in records) {
+        try {
+          final data = result as Map<String, dynamic>;
+          final submissionId = data['submission_id']?.toString();
+          if (submissionId == null || submissionId.isEmpty) {
+            _log.warn('Student result missing submission_id, skipping');
+            continue;
+          }
+          final now = DateTime.now().toIso8601String();
+          await txn.insert(
+            DbTables.studentResultsCache,
+            {
+              StudentResultsCacheCols.submissionId: submissionId,
+              StudentResultsCacheCols.resultsJson: jsonEncode(data),
+              CommonCols.cachedAt: now,
+            },
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        } catch (e) {
+          _log.warn('Failed to cache student result: $e');
+        }
+      }
+    });
+    _log.upsertSummary(DbTables.studentResultsCache, records.length);
   }
 
   /// Process delta payload: upsert updated, soft-delete removed
@@ -631,9 +964,9 @@ class SyncUpsertHelpers {
       deletedCounts['classes'] = deleted.length;
       for (final id in deleted) {
         await db.update(
-          'classes',
-          {'deleted_at': DateTime.now().toIso8601String()},
-          where: 'id = ?',
+          DbTables.classes,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
           whereArgs: [id as String],
         );
       }
@@ -644,44 +977,19 @@ class SyncUpsertHelpers {
     if (enrollmentDeltas != null) {
       final updated = enrollmentDeltas['updated'] as List<dynamic>? ?? [];
       updatedCounts['enrollments'] = updated.length;
-      // For delta, students should already be in the users table
-      for (final enrollment in updated) {
-        final e = enrollment as Map<String, dynamic>;
-        // Accept both user_id (new) and student_id (old) for backward compat
-        final userId = (e['user_id'] ?? e['student_id']) as String;
+      await upsertParticipants(db, updated, []);
 
-        // Look up student from local users table
-        await db.insert(
-          'class_participants',
-          {
-            'id': e['id'],
-            'class_id': e['class_id'],
-            'user_id': userId,
-            'joined_at': e['joined_at'] ?? e['enrolled_at'],
-            'updated_at': e['joined_at'] ?? e['enrolled_at'],
-            'removed_at': null,
-            'cached_at': DateTime.now().toIso8601String(),
-            'needs_sync': 0,
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
-      }
-
-      // Soft-delete removed enrollments (student was unenrolled)
       final deleted = enrollmentDeltas['deleted'] as List<dynamic>? ?? [];
       deletedCounts['enrollments'] = deleted.length;
       for (final id in deleted) {
-        await db.update(
-          'class_participants',
-          {'removed_at': DateTime.now().toIso8601String()},
-          where: 'id = ?',
-          whereArgs: [id as String],
-        );
+        await db.update(DbTables.classParticipants,
+            {ClassParticipantsCols.removedAt: DateTime.now().toIso8601String()},
+            where: '${CommonCols.id} = ?', whereArgs: [id as String]);
       }
     }
 
     // Build student map from local cache for submission enrichment
-    final cachedUsers = await db.query('users');
+    final cachedUsers = await db.query(DbTables.users);
     final studentMap = <String, dynamic>{};
     for (final u in cachedUsers) {
       studentMap[u['id'] as String] = u;
@@ -698,9 +1006,9 @@ class SyncUpsertHelpers {
       deletedCounts['assessments'] = deleted.length;
       for (final id in deleted) {
         await db.update(
-          'assessments',
-          {'deleted_at': DateTime.now().toIso8601String()},
-          where: 'id = ?',
+          DbTables.assessments,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
           whereArgs: [id as String],
         );
       }
@@ -717,9 +1025,9 @@ class SyncUpsertHelpers {
       deletedCounts['questions'] = deleted.length;
       for (final id in deleted) {
         await db.update(
-          'assessment_questions',
-          {'deleted_at': DateTime.now().toIso8601String()},
-          where: 'id = ?',
+          DbTables.assessmentQuestions,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
           whereArgs: [id as String],
         );
       }
@@ -736,9 +1044,9 @@ class SyncUpsertHelpers {
       deletedCounts['assessment_submissions'] = deleted.length;
       for (final id in deleted) {
         await db.update(
-          'assessment_submissions',
-          {'deleted_at': DateTime.now().toIso8601String()},
-          where: 'id = ?',
+          DbTables.assessmentSubmissions,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
           whereArgs: [id as String],
         );
       }
@@ -755,9 +1063,9 @@ class SyncUpsertHelpers {
       deletedCounts['assignments'] = deleted.length;
       for (final id in deleted) {
         await db.update(
-          'assignments',
-          {'deleted_at': DateTime.now().toIso8601String()},
-          where: 'id = ?',
+          DbTables.assignments,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
           whereArgs: [id as String],
         );
       }
@@ -774,9 +1082,9 @@ class SyncUpsertHelpers {
       deletedCounts['assignment_submissions'] = deleted.length;
       for (final id in deleted) {
         await db.update(
-          'assignment_submissions',
-          {'deleted_at': DateTime.now().toIso8601String()},
-          where: 'id = ?',
+          DbTables.assignmentSubmissions,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
           whereArgs: [id as String],
         );
       }
@@ -793,9 +1101,9 @@ class SyncUpsertHelpers {
       deletedCounts['learning_materials'] = deleted.length;
       for (final id in deleted) {
         await db.update(
-          'learning_materials',
-          {'deleted_at': DateTime.now().toIso8601String()},
-          where: 'id = ?',
+          DbTables.learningMaterials,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
           whereArgs: [id as String],
         );
       }
@@ -812,9 +1120,9 @@ class SyncUpsertHelpers {
       deletedCounts['material_files'] = deleted.length;
       for (final id in deleted) {
         await db.update(
-          'material_files',
-          {'deleted_at': DateTime.now().toIso8601String()},
-          where: 'id = ?',
+          DbTables.materialFiles,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
           whereArgs: [id as String],
         );
       }
@@ -831,8 +1139,122 @@ class SyncUpsertHelpers {
       deletedCounts['submission_files'] = deleted.length;
       for (final id in deleted) {
         await db.delete(
-          'submission_files',
-          where: 'id = ?',
+          DbTables.submissionFiles,
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle grade configs delta
+    final gradeConfigsDeltas = deltas['grade_configs'] as Map<String, dynamic>?;
+    if (gradeConfigsDeltas != null) {
+      final updated = gradeConfigsDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['grade_configs'] = updated.length;
+      await upsertGradeConfigs(db, updated);
+
+      final deleted = gradeConfigsDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['grade_configs'] = deleted.length;
+      for (final id in deleted) {
+        await db.update(
+          DbTables.gradeComponentsConfig,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle grade items delta
+    final gradeItemsDeltas = deltas['grade_items'] as Map<String, dynamic>?;
+    if (gradeItemsDeltas != null) {
+      final updated = gradeItemsDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['grade_items'] = updated.length;
+      await upsertGradeItems(db, updated);
+
+      final deleted = gradeItemsDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['grade_items'] = deleted.length;
+      for (final id in deleted) {
+        await db.update(
+          DbTables.gradeItems,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle grade scores delta
+    final gradeScoresDeltas = deltas['grade_scores'] as Map<String, dynamic>?;
+    if (gradeScoresDeltas != null) {
+      final updated = gradeScoresDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['grade_scores'] = updated.length;
+      await upsertGradeScores(db, updated);
+
+      final deleted = gradeScoresDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['grade_scores'] = deleted.length;
+      for (final id in deleted) {
+        await db.update(
+          DbTables.gradeScores,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle quarterly grades delta
+    final quarterlyGradesDeltas = deltas['quarterly_grades'] as Map<String, dynamic>?;
+    if (quarterlyGradesDeltas != null) {
+      final updated = quarterlyGradesDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['quarterly_grades'] = updated.length;
+      await upsertQuarterlyGrades(db, updated);
+
+      final deleted = quarterlyGradesDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['quarterly_grades'] = deleted.length;
+      for (final id in deleted) {
+        await db.update(
+          DbTables.quarterlyGrades,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle table_of_specifications delta
+    final tosDeltas = deltas['table_of_specifications'] as Map<String, dynamic>?;
+    if (tosDeltas != null) {
+      final updated = tosDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['table_of_specifications'] = updated.length;
+      await upsertTableOfSpecifications(db, updated);
+
+      final deleted = tosDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['table_of_specifications'] = deleted.length;
+      for (final id in deleted) {
+        await db.update(
+          DbTables.tableOfSpecifications,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id as String],
+        );
+      }
+    }
+
+    // Handle tos_competencies delta
+    final tosCompetenciesDeltas = deltas['tos_competencies'] as Map<String, dynamic>?;
+    if (tosCompetenciesDeltas != null) {
+      final updated = tosCompetenciesDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['tos_competencies'] = updated.length;
+      await upsertTosCompetencies(db, updated);
+
+      final deleted = tosCompetenciesDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['tos_competencies'] = deleted.length;
+      for (final id in deleted) {
+        await db.update(
+          DbTables.tosCompetencies,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
           whereArgs: [id as String],
         );
       }

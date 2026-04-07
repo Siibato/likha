@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/auth/entities/activity_log.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/domain/auth/usecases/check_username.dart';
@@ -7,6 +8,7 @@ import 'package:likha/domain/auth/usecases/get_activity_logs.dart';
 import 'package:likha/domain/auth/usecases/get_all_accounts.dart';
 import 'package:likha/domain/auth/usecases/lock_account.dart';
 import 'package:likha/domain/auth/usecases/reset_account.dart';
+import 'package:likha/domain/auth/usecases/delete_account.dart';
 import 'package:likha/domain/auth/usecases/update_account.dart';
 import 'package:likha/injection_container.dart';
 
@@ -53,6 +55,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
   final LockAccount _lockAccount;
   final GetActivityLogs _getActivityLogs;
   final UpdateAccount _updateAccount;
+  final DeleteAccount _deleteAccount;
 
   AdminNotifier(
     this._getAllAccounts,
@@ -62,6 +65,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
     this._lockAccount,
     this._getActivityLogs,
     this._updateAccount,
+    this._deleteAccount,
   ) : super(AdminState());
 
   Future<void> loadAccounts() async {
@@ -72,7 +76,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: failure.message,
+        error: AppErrorMapper.fromFailure(failure),
       ),
       (accounts) => state = state.copyWith(
         isLoading: false,
@@ -116,7 +120,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: failure.message,
+        error: AppErrorMapper.fromFailure(failure),
       ),
       (user) {
         state = state.copyWith(
@@ -136,7 +140,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: failure.message,
+        error: AppErrorMapper.fromFailure(failure),
       ),
       (updatedUser) {
         final updatedAccounts = state.accounts.map((a) {
@@ -163,7 +167,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: failure.message,
+        error: AppErrorMapper.fromFailure(failure),
       ),
       (updatedUser) {
         final updatedAccounts = state.accounts.map((a) {
@@ -186,7 +190,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: failure.message,
+        error: AppErrorMapper.fromFailure(failure),
       ),
       (logs) => state = state.copyWith(
         isLoading: false,
@@ -215,7 +219,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: failure.message,
+        error: AppErrorMapper.fromFailure(failure),
       ),
       (updatedUser) {
         final updatedAccounts = state.accounts.map((a) {
@@ -227,6 +231,24 @@ class AdminNotifier extends StateNotifier<AdminState> {
           successMessage: 'Account updated successfully',
         );
       },
+    );
+  }
+
+  Future<void> deleteAccount(String userId) async {
+    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+
+    final result = await _deleteAccount(userId: userId);
+
+    result.fold(
+      (failure) => state = state.copyWith(
+        isLoading: false,
+        error: AppErrorMapper.fromFailure(failure),
+      ),
+      (_) => state = state.copyWith(
+        isLoading: false,
+        accounts: state.accounts.where((a) => a.id != userId).toList(),
+        successMessage: 'Account deleted successfully',
+      ),
     );
   }
 
@@ -259,5 +281,6 @@ final adminProvider = StateNotifierProvider<AdminNotifier, AdminState>((ref) {
     sl<LockAccount>(),
     sl<GetActivityLogs>(),
     sl<UpdateAccount>(),
+    sl<DeleteAccount>(),
   );
 });

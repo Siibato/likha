@@ -10,7 +10,6 @@ use crate::services::entitlement::EntitlementService;
 pub struct DeltaRequest {
     pub device_id: String,
     pub last_sync_at: String, // ISO8601
-    pub data_expiry_at: Option<String>,
 }
 
 /// Entity deltas (updated and deleted records)
@@ -31,6 +30,12 @@ pub struct DeltaPayload {
     pub assignments: EntityDeltas,
     pub assignment_submissions: EntityDeltas,
     pub learning_materials: EntityDeltas,
+    pub grade_configs: EntityDeltas,
+    pub grade_items: EntityDeltas,
+    pub grade_scores: EntityDeltas,
+    pub quarterly_grades: EntityDeltas,
+    pub table_of_specifications: EntityDeltas,
+    pub tos_competencies: EntityDeltas,
 }
 
 /// Response variants

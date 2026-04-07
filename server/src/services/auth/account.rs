@@ -9,7 +9,7 @@ impl super::AuthService {
     pub async fn create_account(
         &self,
         request: CreateAccountRequest,
-        admin_id: Uuid,
+        _admin_id: Uuid,
         client_id: Option<Uuid>,
     ) -> AppResult<UserResponse> {
         Validator::validate_username(&request.username)?;
@@ -100,7 +100,7 @@ impl super::AuthService {
     pub async fn reset_account(
         &self,
         request: ResetAccountRequest,
-        admin_id: Uuid,
+        _admin_id: Uuid,
     ) -> AppResult<UserResponse> {
         let user = self
             .user_repo

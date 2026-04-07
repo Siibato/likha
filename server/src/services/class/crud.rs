@@ -1,5 +1,6 @@
 use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
+use crate::utils::validators::Validator;
 use crate::schema::class_schema::{
     ClassResponse, ClassListResponse, CreateClassRequest, UpdateClassRequest,
 };
@@ -11,9 +12,7 @@ impl super::ClassService {
         teacher_id: Uuid,
         client_id: Option<Uuid>,
     ) -> AppResult<ClassResponse> {
-        if request.title.trim().is_empty() {
-            return Err(AppError::BadRequest("Class title is required".to_string()));
-        }
+        let title = Validator::validate_title(&request.title)?;
 
         // Use admin-provided teacher_id if present, otherwise use the requesting user's id
         let actual_teacher_id = request.teacher_id.unwrap_or(teacher_id);
@@ -25,20 +24,20 @@ impl super::ClassService {
             .ok_or_else(|| AppError::NotFound("Teacher not found".to_string()))?;
 
         let existing_classes = self.class_repo.find_by_teacher_id(actual_teacher_id).await?;
-        let normalized_title = request.title.trim().to_lowercase();
+        let normalized_title = title.to_lowercase();
 
         if existing_classes
             .iter()
             .any(|c| c.title.to_lowercase() == normalized_title)
         {
             return Err(AppError::BadRequest(
-                format!("A class named '{}' already exists for this teacher", request.title.trim())
+                format!("A class named '{}' already exists for this teacher", title)
             ));
         }
 
         let class = self
             .class_repo
-            .create_class(request.title.trim().to_string(), request.description, actual_teacher_id, client_id)
+            .create_class(title, request.description, actual_teacher_id, client_id, request.is_advisory.unwrap_or(false))
             .await?;
 
 
@@ -50,6 +49,7 @@ impl super::ClassService {
             teacher_username: teacher.username,
             teacher_full_name: teacher.full_name,
             is_archived: class.is_archived,
+            is_advisory: class.is_advisory,
             student_count: 0,
             created_at: class.created_at.to_string(),
             updated_at: class.updated_at.to_string(),
@@ -63,7 +63,7 @@ impl super::ClassService {
         teacher_id: Uuid,
         caller_role: &str,
     ) -> AppResult<ClassResponse> {
-        let class = self
+        let _class = self
             .class_repo
             .find_by_id(class_id)
             .await?
@@ -76,11 +76,7 @@ impl super::ClassService {
             ));
         }
 
-        if let Some(ref title) = request.title {
-            if title.trim().is_empty() {
-                return Err(AppError::BadRequest("Class title cannot be empty".to_string()));
-            }
-        }
+        let title = Validator::validate_optional_title(request.title)?;
 
         let description = request.description.map(|d| {
             let trimmed = d.trim();
@@ -95,8 +91,9 @@ impl super::ClassService {
             .class_repo
             .update_class(
                 class_id,
-                request.title.map(|t| t.trim().to_string()),
+                title,
                 description,
+                request.is_advisory,
             )
             .await?;
 
@@ -137,6 +134,7 @@ impl super::ClassService {
             teacher_username: teacher_model.username,
             teacher_full_name: teacher_model.full_name,
             is_archived: updated_class.is_archived,
+            is_advisory: updated_class.is_advisory,
             student_count,
             created_at: updated_class.created_at.to_string(),
             updated_at: updated_class.updated_at.to_string(),
@@ -163,6 +161,7 @@ impl super::ClassService {
                 teacher_username: teacher.username.clone(),
                 teacher_full_name: teacher.full_name.clone(),
                 is_archived: class.is_archived,
+                is_advisory: class.is_advisory,
                 student_count,
                 created_at: class.created_at.to_string(),
                 updated_at: class.updated_at.to_string(),
@@ -197,6 +196,7 @@ impl super::ClassService {
                 teacher_username: teacher.username,
                 teacher_full_name: teacher.full_name,
                 is_archived: class.is_archived,
+                is_advisory: class.is_advisory,
                 student_count,
                 created_at: class.created_at.to_string(),
                 updated_at: class.updated_at.to_string(),
@@ -228,6 +228,7 @@ impl super::ClassService {
                 teacher_username: teacher.username,
                 teacher_full_name: teacher.full_name,
                 is_archived: class.is_archived,
+                is_advisory: class.is_advisory,
                 student_count,
                 created_at: class.created_at.to_string(),
                 updated_at: class.updated_at.to_string(),
@@ -239,21 +240,22 @@ impl super::ClassService {
         })
     }
 
-    pub async fn soft_delete(&self, class_id: Uuid, teacher_id: Uuid) -> AppResult<()> {
-        let class = self
+    pub async fn soft_delete(&self, class_id: Uuid, user_id: Uuid, role: &str) -> AppResult<()> {
+        let _class = self
             .class_repo
             .find_by_id(class_id)
             .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
+        if role != "admin" && !self.class_repo.is_teacher_of_class(user_id, class_id).await? {
             return Err(AppError::Forbidden(
                 "You can only delete your own classes".to_string(),
             ));
         }
 
+        // Soft-delete all participants (students and teachers) first
+        self.class_repo.remove_all_participants(class_id).await?;
         self.class_repo.soft_delete(class_id).await?;
-
 
         Ok(())
     }

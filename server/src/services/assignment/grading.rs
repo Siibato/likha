@@ -1,6 +1,7 @@
 use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
 use crate::schema::assignment_schema::*;
+use crate::services::grade_computation::auto_populate;
 
 impl super::AssignmentService {
     pub async fn get_submissions(
@@ -14,7 +15,7 @@ impl super::AssignmentService {
             .await?
             .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
 
-        let class = self
+        let _class = self
             .class_repo
             .find_by_id(assignment.class_id)
             .await?
@@ -64,7 +65,7 @@ impl super::AssignmentService {
             .await?
             .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
 
-        let class = self
+        let _class = self
             .class_repo
             .find_by_id(assignment.class_id)
             .await?
@@ -100,6 +101,11 @@ impl super::AssignmentService {
             .assignment_repo
             .grade_submission(submission_id, request.score, request.feedback, Some(teacher_id))
             .await?;
+
+        // Auto-populate grade score
+        let _ = auto_populate::auto_populate_score(
+            &self.db, "assignment", submission.assignment_id, submission.student_id, request.score as f64,
+        ).await;
 
         let _ = self
             .activity_log_repo
@@ -142,7 +148,7 @@ impl super::AssignmentService {
             .await?
             .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
 
-        let class = self
+        let _class = self
             .class_repo
             .find_by_id(assignment.class_id)
             .await?

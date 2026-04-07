@@ -1,3 +1,4 @@
+import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/classes/class_detail_model.dart';
 import 'package:likha/data/models/classes/class_model.dart';
@@ -12,9 +13,9 @@ mixin ClassCacheMixin on ClassLocalDataSourceBase {
       await db.transaction((txn) async {
         for (final classModel in classes) {
           final map = classModel.toMap();
-          map['cached_at'] = DateTime.now().toIso8601String();
-          map['needs_sync'] = 0;
-          await txn.insert('classes', map, conflictAlgorithm: ConflictAlgorithm.replace);
+          map[CommonCols.cachedAt] = DateTime.now().toIso8601String();
+          map[CommonCols.needsSync] = 0;
+          await txn.insert(DbTables.classes, map, conflictAlgorithm: ConflictAlgorithm.replace);
         }
       });
     } catch (e) {
@@ -33,16 +34,16 @@ mixin ClassCacheMixin on ClassLocalDataSourceBase {
       final now = DateTime.now();
       final syntheticId = 'local_${classId}_$userId';
       await db.insert(
-        'class_participants',
+        DbTables.classParticipants,
         {
-          'id': syntheticId,
-          'class_id': classId,
-          'user_id': userId,
-          'joined_at': joinedAt.toIso8601String(),
-          'updated_at': now.toIso8601String(),
-          'removed_at': null,
-          'cached_at': now.toIso8601String(),
-          'needs_sync': 0, 
+          CommonCols.id: syntheticId,
+          ClassParticipantsCols.classId: classId,
+          ClassParticipantsCols.userId: userId,
+          ClassParticipantsCols.joinedAt: joinedAt.toIso8601String(),
+          CommonCols.updatedAt: now.toIso8601String(),
+          ClassParticipantsCols.removedAt: null,
+          CommonCols.cachedAt: now.toIso8601String(),
+          CommonCols.needsSync: 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -81,27 +82,28 @@ mixin ClassCacheMixin on ClassLocalDataSourceBase {
           teacherUsername: teacherUsername,
           teacherFullName: teacherFullName,
           isArchived: classDetail.isArchived,
+          isAdvisory: classDetail.isAdvisory,
           studentCount: classDetail.students.length,
           createdAt: classDetail.createdAt,
           updatedAt: classDetail.updatedAt,
         ).toMap();
-        classMap['cached_at'] = DateTime.now().toIso8601String();
-        classMap['needs_sync'] = 0;
-        await txn.insert('classes', classMap, conflictAlgorithm: ConflictAlgorithm.replace);
+        classMap[CommonCols.cachedAt] = DateTime.now().toIso8601String();
+        classMap[CommonCols.needsSync] = 0;
+        await txn.insert(DbTables.classes, classMap, conflictAlgorithm: ConflictAlgorithm.replace);
 
         // Cache students as class_participants (v18 - no user detail columns)
-        for (final enrollment in classDetail.students) {
+        for (final participant in classDetail.students) {
           await txn.insert(
-            'class_participants',
+            DbTables.classParticipants,
             {
-              'id': enrollment.id,
-              'class_id': classDetail.id,
-              'user_id': enrollment.student.id,
-              'joined_at': enrollment.joinedAt.toIso8601String(),
-              'updated_at': DateTime.now().toIso8601String(),
-              'removed_at': null,
-              'cached_at': DateTime.now().toIso8601String(),
-              'needs_sync': 0,
+              CommonCols.id: participant.id,
+              ClassParticipantsCols.classId: classDetail.id,
+              ClassParticipantsCols.userId: participant.student.id,
+              ClassParticipantsCols.joinedAt: participant.joinedAt.toIso8601String(),
+              CommonCols.updatedAt: DateTime.now().toIso8601String(),
+              ClassParticipantsCols.removedAt: null,
+              CommonCols.cachedAt: DateTime.now().toIso8601String(),
+              CommonCols.needsSync: 0,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
@@ -116,8 +118,8 @@ mixin ClassCacheMixin on ClassLocalDataSourceBase {
   Future<void> clearAllCache() async {
     try {
       final db = await localDatabase.database;
-      await db.delete('class_participants');
-      await db.delete('classes');
+      await db.delete(DbTables.classParticipants);
+      await db.delete(DbTables.classes);
     } catch (e) {
       throw CacheException('Failed to clear class cache: $e');
     }

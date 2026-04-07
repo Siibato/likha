@@ -22,7 +22,7 @@ class SubmissionTypeDropdown extends StatelessWidget {
         splashColor: const Color(0xFFFAFAFA),
       ),
       child: DropdownButtonFormField<String>(
-        value: value,
+        initialValue: value,
         onChanged: enabled ? onChanged : null,
         decoration: InputDecoration(
           labelText: 'Submission Type',

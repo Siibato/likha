@@ -61,11 +61,11 @@ class StudentProfilePage extends ConsumerWidget {
                                     ),
                                   ),
                                   const SizedBox(width: 16),
-                                  Expanded(
+                                  const Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       mainAxisSize: MainAxisSize.min,
-                                      children: const [
+                                      children: [
                                         Text(
                                           'View My Grades',
                                           style: TextStyle(

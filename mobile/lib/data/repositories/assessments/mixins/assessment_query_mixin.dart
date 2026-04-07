@@ -1,4 +1,6 @@
 import 'package:dartz/dartz.dart';
+
+import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -18,24 +20,21 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
     try {
       try {
         // STEP 1: Try cache first (immediate, non-blocking)
-        print('📚 [QueryMixin] getAssessments() - loading from cache for classId: $classId');
+        RepoLogger.instance.log('getAssessments() - loading from cache for classId: $classId');
         final cachedAssessments = await localDataSource.getCachedAssessments(classId, publishedOnly: publishedOnly);
-        print('📚 [QueryMixin] getAssessments() - loaded ${cachedAssessments.length} cached assessments (before dynamic computation)');
-        for (final a in cachedAssessments) {
-          print('📚 [QueryMixin]   - ${a.title}: submissionCount=${a.submissionCount}');
-        }
+        RepoLogger.instance.log('getAssessments() - loaded ${cachedAssessments.length} cached assessments');
 
         // STEP 1b: Get current student ID for submission state check
         String? currentStudentId;
         try {
           currentStudentId = await storageService.getUserId();
-          print('📚 [QueryMixin] getAssessments() - got currentStudentId: $currentStudentId');
+          RepoLogger.instance.log('getAssessments() - got currentStudentId: $currentStudentId');
         } catch (e) {
-          print('⚠️  [QueryMixin] getAssessments() - could not get current student ID: $e');
+          RepoLogger.instance.warn('Could not get current student ID', e);
         }
 
         // STEP 1c: Compute submissionCount dynamically from actual submissions in DB
-        print('📚 [QueryMixin] getAssessments() - computing dynamic submission counts and isSubmitted flags...');
+        RepoLogger.instance.log('getAssessments() - computing dynamic submission counts and isSubmitted flags');
         final assessmentsWithDynamicCounts = <Assessment>[];
         for (final assessment in cachedAssessments) {
           try {
@@ -49,13 +48,12 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
                   assessment.id,
                   currentStudentId,
                 );
-                print('📚 [QueryMixin]   - ${assessment.title}: isSubmitted=$isSubmitted');
               } catch (e) {
-                print('⚠️  [QueryMixin]   - ${assessment.title}: error getting submission status: $e');
+                RepoLogger.instance.warn('Error getting submission status for ${assessment.title}', e);
               }
             }
 
-            print('📚 [QueryMixin]   - ${assessment.title}: cached=${assessment.submissionCount}, actual=$actualSubmissionCount, isSubmitted=$isSubmitted');
+            RepoLogger.instance.log('${assessment.title}: cached=${assessment.submissionCount}, actual=$actualSubmissionCount, isSubmitted=$isSubmitted');
             if (actualSubmissionCount != assessment.submissionCount || isSubmitted != null) {
               // Create new assessment with updated submissionCount and isSubmitted
               assessmentsWithDynamicCounts.add(Assessment(
@@ -81,7 +79,7 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
               assessmentsWithDynamicCounts.add(assessment);
             }
           } catch (e) {
-            print('⚠️  [QueryMixin]   - ${assessment.title}: error getting submission count/status, using cached: $e');
+            RepoLogger.instance.warn('Error getting submission count/status for ${assessment.title}, using cached', e);
             assessmentsWithDynamicCounts.add(assessment);
           }
         }
@@ -171,9 +169,11 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
         final (_, questions) =
             await localDataSource.getCachedAssessmentDetail(assessmentId);
         if (questions.isEmpty) {
-          return Left(ValidationFailure(
-              'Assessment must have at least one question to publish'));
+          throw ValidationException(
+              'Assessment must have at least one question to publish');
         }
+      } on ValidationException catch (e) {
+        return Left(ValidationFailure(e.message));
       } catch (e) {
         return Left(CacheFailure('Cannot validate assessment: ${e.toString()}'));
       }
@@ -219,7 +219,7 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
       await localDataSource.markAssessmentPublishedLocally(assessmentId: assessmentId);
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -284,7 +284,7 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
       await localDataSource.markAssessmentUnpublishedLocally(assessmentId: assessmentId);
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -349,7 +349,7 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
       await localDataSource.cacheAssessments([result]);
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -364,23 +364,20 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
   void _backgroundFetchAssessments(String classId, {bool publishedOnly = false}) {
     Future.microtask(() async {
       try {
-        print('🔄 [QueryMixin] _backgroundFetchAssessments() - fetching fresh assessments for classId: $classId');
+        RepoLogger.instance.log('_backgroundFetchAssessments() - fetching fresh assessments for classId: $classId');
         final fresh =
             await remoteDataSource.getAssessments(classId: classId);
-        print('🔄 [QueryMixin] _backgroundFetchAssessments() - received ${fresh.length} fresh assessments');
-        for (final a in fresh) {
-          print('🔄 [QueryMixin]   - ${a.title}: submissionCount=${a.submissionCount}');
-        }
+        RepoLogger.instance.log('_backgroundFetchAssessments() - received ${fresh.length} fresh assessments');
 
         // Try to read current cache
         final List<Assessment> cached;
         try {
           cached = await localDataSource.getCachedAssessments(classId, publishedOnly: publishedOnly);
-          print('🔄 [QueryMixin] _backgroundFetchAssessments() - cached ${cached.length} assessments found');
+          RepoLogger.instance.log('_backgroundFetchAssessments() - cached ${cached.length} assessments found');
         } on CacheException {
           // Cache miss: initial sync may not have completed yet
           // Write fresh data and notify page to reload with populated cache
-          print('🔄 [QueryMixin] _backgroundFetchAssessments() - cache miss, writing fresh data');
+          RepoLogger.instance.log('_backgroundFetchAssessments() - cache miss, writing fresh data');
           await localDataSource.cacheAssessments(fresh);
           dataEventBus.notifyAssessmentsChanged(classId);
           return;
@@ -388,22 +385,22 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
 
         // Cache hit: compare and update only if changed
         if (_assessmentsHaveChanged(cached, fresh)) {
-          print('🔄 [QueryMixin] _backgroundFetchAssessments() - assessments changed, updating cache');
+          RepoLogger.instance.log('_backgroundFetchAssessments() - assessments changed, updating cache');
           await localDataSource.cacheAssessments(fresh);
           dataEventBus.notifyAssessmentsChanged(classId);
         } else {
-          print('🔄 [QueryMixin] _backgroundFetchAssessments() - no changes detected, skipping cache update');
+          RepoLogger.instance.log('_backgroundFetchAssessments() - no changes detected, skipping cache update');
         }
         // If nothing changed, do nothing (no DB write, no notification)
       } on NetworkException {
         // Network failure during background fetch: silent fail, cache persists
-        print('❌ [QueryMixin] _backgroundFetchAssessments() - network error, cache persists');
+        RepoLogger.instance.warn('_backgroundFetchAssessments() - network error, cache persists');
       } on ServerException {
         // Server error during background fetch: silent fail, cache persists
-        print('❌ [QueryMixin] _backgroundFetchAssessments() - server error, cache persists');
+        RepoLogger.instance.warn('_backgroundFetchAssessments() - server error, cache persists');
       } catch (e) {
         // Other errors — silent fail, stale cache stays
-        print('❌ [QueryMixin] _backgroundFetchAssessments() - unexpected error: $e, cache persists');
+        RepoLogger.instance.error('_backgroundFetchAssessments() - unexpected error, cache persists', e);
       }
     });
   }

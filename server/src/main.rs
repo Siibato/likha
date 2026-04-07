@@ -14,6 +14,7 @@ use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter, ColumnTrait, ActiveM
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
+use axum::http::header::{AUTHORIZATION, CONTENT_TYPE, ACCEPT};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::timeout::TimeoutLayer;
 use uuid::Uuid;
@@ -22,12 +23,15 @@ use crate::services::assessment::AssessmentService;
 use crate::services::assignment::AssignmentService;
 use crate::services::auth::AuthService;
 use crate::services::class::ClassService;
+use crate::services::grade_computation::GradeComputationService;
 use crate::services::learning_material::LearningMaterialService;
 use crate::services::entitlement::EntitlementService;
+use crate::services::setup_service::SetupService;
 use crate::services::sync_push::SyncPushService;
 use crate::services::sync_conflict_service::SyncConflictService;
 use crate::services::sync_full::SyncFullService;
 use crate::services::sync_delta::SyncDeltaService;
+use crate::services::tos::TosService;
 use crate::db::repositories::{
     manifest_repository::ManifestRepository,
     processed_operations_repository::ProcessedOperationsRepository,
@@ -164,6 +168,13 @@ async fn main() {
     ));
 
     let processed_ops_repo = Arc::new(ProcessedOperationsRepository::new(db.clone()));
+    let grade_computation_service = Arc::new(GradeComputationService::new(db.clone()));
+    let tos_service = Arc::new(TosService::new(db.clone()));
+
+    let setup_service = Arc::new(
+        SetupService::new(db.clone(), config.school_code.clone()).await,
+    );
+
     let sync_push_service = Arc::new(SyncPushService::new(
         entitlement_service.clone(),
         class_service.clone(),
@@ -171,6 +182,7 @@ async fn main() {
         assignment_service.clone(),
         material_service.clone(),
         auth_service.clone(),
+        grade_computation_service.clone(),
         processed_ops_repo,
     ));
 
@@ -194,6 +206,9 @@ async fn main() {
         assessment_service,
         assignment_service,
         material_service,
+        grade_computation_service,
+        tos_service,
+        setup_service,
         sync_push_service,
         sync_conflict_service,
         sync_full_service,
@@ -219,6 +234,9 @@ fn create_app(
     assessment_service: Arc<AssessmentService>,
     assignment_service: Arc<AssignmentService>,
     material_service: Arc<LearningMaterialService>,
+    grade_computation_service: Arc<GradeComputationService>,
+    tos_service: Arc<TosService>,
+    setup_service: Arc<SetupService>,
     sync_push_service: Arc<SyncPushService>,
     sync_conflict_service: Arc<SyncConflictService>,
     sync_full_service: Arc<SyncFullService>,
@@ -227,7 +245,7 @@ fn create_app(
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods(Any)
-        .allow_headers(Any);
+        .allow_headers([AUTHORIZATION, CONTENT_TYPE, ACCEPT]);
 
     Router::new()
         .nest(
@@ -238,13 +256,16 @@ fn create_app(
                 assessment_service,
                 assignment_service,
                 material_service,
+                grade_computation_service,
+                tos_service,
+                setup_service,
                 sync_push_service,
                 sync_conflict_service,
                 sync_full_service,
                 sync_delta_service,
             ),
         )
-        .layer(TimeoutLayer::new(Duration::from_secs(60)))
+        .layer(TimeoutLayer::with_status_code(axum::http::StatusCode::REQUEST_TIMEOUT, Duration::from_secs(60)))
         .layer(cors)
         .layer(middleware::logging_middleware())
 }

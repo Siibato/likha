@@ -133,7 +133,7 @@ pub async fn enrich_assessment_submissions(
                                 });
 
                                 if let Some(choice_id) = item.choice_id {
-                                    let (choice_text, is_correct) = choice_meta
+                                    let (choice_text, _is_correct) = choice_meta
                                         .get(&choice_id)
                                         .map(|(t, c)| (t.as_str(), *c))
                                         .unwrap_or(("", false));

@@ -228,4 +228,20 @@ impl UserRepository {
 
         Ok(result.rows_affected())
     }
+
+    pub async fn soft_delete(&self, user_id: Uuid) -> AppResult<()> {
+        let now = Utc::now().naive_utc();
+        let user = users::ActiveModel {
+            id: Set(user_id),
+            deleted_at: Set(Some(now)),
+            updated_at: Set(now),
+            ..Default::default()
+        };
+
+        user.update(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to delete account: {}", e)))?;
+
+        Ok(())
+    }
 }

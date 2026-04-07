@@ -11,10 +11,11 @@ import 'package:likha/presentation/pages/teacher/edit_question_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_info_card.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_status_card.dart';
 import 'package:likha/presentation/pages/teacher/widgets/questions_section.dart';
+import 'package:likha/presentation/pages/teacher/widgets/question_reorder_list.dart';
 import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
-import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 
 class AssessmentDetailPage extends ConsumerStatefulWidget {
   final String assessmentId;
@@ -43,7 +44,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
-          .read(assessmentProvider.notifier)
+          .read(teacherAssessmentProvider.notifier)
           .loadAssessmentDetail(widget.assessmentId);
     });
   }
@@ -60,7 +61,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
       title: 'Publish Assessment',
       body: 'Publish "${assessment.title}"? Once published, questions can no longer be edited.',
       confirmLabel: 'Publish',
-      onConfirm: () => ref.read(assessmentProvider.notifier).publishAssessment(widget.assessmentId),
+      onConfirm: () => ref.read(teacherAssessmentProvider.notifier).publishAssessment(widget.assessmentId),
     );
   }
 
@@ -70,7 +71,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
       title: 'Move to Draft',
       body: 'Move "${assessment.title}" back to draft? Students will no longer be able to access it.',
       confirmLabel: 'Move to Draft',
-      onConfirm: () => ref.read(assessmentProvider.notifier).unpublishAssessment(widget.assessmentId),
+      onConfirm: () => ref.read(teacherAssessmentProvider.notifier).unpublishAssessment(widget.assessmentId),
     );
   }
 
@@ -106,7 +107,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
       title: 'Delete Assessment',
       body: 'Delete "${assessment.title}"? This cannot be undone.',
       confirmLabel: 'Delete',
-      onConfirm: () => ref.read(assessmentProvider.notifier).deleteAssessment(widget.assessmentId),
+      onConfirm: () => ref.read(teacherAssessmentProvider.notifier).deleteAssessment(widget.assessmentId),
       warningBox: warningBox,
     );
   }
@@ -117,12 +118,12 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
       title: 'Release Results',
       body: 'Release results for "${assessment.title}"? Students will be able to see their scores.',
       confirmLabel: 'Release',
-      onConfirm: () => ref.read(assessmentProvider.notifier).releaseResults(widget.assessmentId),
+      onConfirm: () => ref.read(teacherAssessmentProvider.notifier).releaseResults(widget.assessmentId),
     );
   }
 
   void _confirmDeleteQuestion(Question question, bool hasSubmissions) {
-    final assessment = ref.read(assessmentProvider).currentAssessment;
+    final assessment = ref.read(teacherAssessmentProvider).currentAssessment;
     final warningBox = hasSubmissions && assessment != null
         ? Container(
             padding: const EdgeInsets.all(12),
@@ -151,7 +152,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
       title: 'Delete Question',
       body: 'Delete this question? This cannot be undone.',
       confirmLabel: 'Delete',
-      onConfirm: () => ref.read(assessmentProvider.notifier).deleteQuestion(question.id),
+      onConfirm: () => ref.read(teacherAssessmentProvider.notifier).deleteQuestion(question.id),
       warningBox: warningBox,
     );
   }
@@ -168,7 +169,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
     ).then((result) {
       if (result == true) {
         ref
-            .read(assessmentProvider.notifier)
+            .read(teacherAssessmentProvider.notifier)
             .loadAssessmentDetail(widget.assessmentId);
       }
     });
@@ -196,7 +197,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
     });
 
     final questionIds = _questionReorderBuffer.map((q) => q.id).toList();
-    await ref.read(assessmentProvider.notifier).reorderAllQuestions(
+    await ref.read(teacherAssessmentProvider.notifier).reorderAllQuestions(
       assessmentId: assessmentId,
       questionIds: questionIds,
       orderedQuestions: _questionReorderBuffer,
@@ -234,28 +235,28 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(assessmentProvider);
-    final assessment = state.currentAssessment;
-    final questions = state.questions;
+    final assessmentState = ref.watch(teacherAssessmentProvider);
+    final assessment = assessmentState.currentAssessment;
+    final questions = assessmentState.questions;
 
-    ref.listen<AssessmentState>(assessmentProvider, (prev, next) {
+    ref.listen<TeacherAssessmentState>(teacherAssessmentProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
         setState(() => _formError = null);
-        ref.read(assessmentProvider.notifier).clearMessages();
+        ref.read(teacherAssessmentProvider.notifier).clearMessages();
         if (next.successMessage == 'Assessment deleted') {
           Navigator.pop(context, true);
         }
         if (next.successMessage == 'Question deleted' ||
             next.successMessage == 'Questions added') {
           ref
-              .read(assessmentProvider.notifier)
+              .read(teacherAssessmentProvider.notifier)
               .loadAssessmentDetail(widget.assessmentId);
         }
       }
       if (next.error != null && prev?.error != next.error) {
         setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
-        ref.read(assessmentProvider.notifier).clearMessages();
+        ref.read(teacherAssessmentProvider.notifier).clearMessages();
       }
     });
 
@@ -290,7 +291,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                     ).then((result) {
                       if (result == true) {
                         ref
-                            .read(assessmentProvider.notifier)
+                            .read(teacherAssessmentProvider.notifier)
                             .loadAssessmentDetail(widget.assessmentId);
                       }
                     });
@@ -416,7 +417,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
           ],
         ],
       ),
-      body: state.isLoading && assessment == null
+      body: assessmentState.isLoading && assessment == null
           ? const Center(
               child: CircularProgressIndicator(
                 color: Color(0xFF2B2B2B),
@@ -435,7 +436,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                 )
               : RefreshIndicator(
                   onRefresh: () => ref
-                      .read(assessmentProvider.notifier)
+                      .read(teacherAssessmentProvider.notifier)
                       .loadAssessmentDetail(widget.assessmentId),
                   color: const Color(0xFF2B2B2B),
                   child: SingleChildScrollView(
@@ -471,7 +472,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                                   ).then((result) {
                                     if (result == true) {
                                       ref
-                                          .read(assessmentProvider.notifier)
+                                          .read(teacherAssessmentProvider.notifier)
                                           .loadAssessmentDetail(
                                               widget.assessmentId);
                                     }
@@ -575,142 +576,13 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                           const SizedBox(height: 16),
                         ],
                         if (_isQuestionReorderMode)
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: const Color(0xFFE0E0E0),
-                                width: 1,
-                              ),
-                            ),
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      'Questions (${_questionReorderBuffer.length})',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF202020),
-                                        letterSpacing: -0.3,
-                                      ),
-                                    ),
-                                    const Spacer(),
-                                    TextButton(
-                                      onPressed: _cancelQuestionReorderMode,
-                                      child: const Text('Cancel'),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    ElevatedButton(
-                                      onPressed: () => _exitQuestionReorderMode(widget.assessmentId),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF2B2B2B),
-                                        foregroundColor: Colors.white,
-                                      ),
-                                      child: const Text('Done'),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                AnimatedBuilder(
-                                  animation: _questionAnimController,
-                                  builder: (context, _) => Column(
-                                    children: _questionReorderBuffer.asMap().entries.map((entry) {
-                                      final index = entry.key;
-                                      final question = entry.value;
-                                      final oldIndex = _questionAnimatingIndices[question.id];
-                                      double animOffset = 0;
-                                      if (oldIndex != null && oldIndex != index) {
-                                        const cardHeight = 92.0;
-                                        animOffset = (oldIndex - index) * cardHeight;
-                                      }
-                                      final currentOffset = Tween<double>(begin: animOffset, end: 0)
-                                          .evaluate(_questionAnimController);
-                                      return Transform.translate(
-                                        key: ValueKey(question.id),
-                                        offset: Offset(0, currentOffset),
-                                        child: GestureDetector(
-                                          onTap: () => _showQuestionMoveDialog(index),
-                                          child: Container(
-                                            margin: const EdgeInsets.only(bottom: 12),
-                                            padding: const EdgeInsets.all(12),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFFAFAFA),
-                                              borderRadius: BorderRadius.circular(8),
-                                              border: Border.all(
-                                                color: const Color(0xFFE0E0E0),
-                                              ),
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                Container(
-                                                  width: 32,
-                                                  height: 32,
-                                                  decoration: BoxDecoration(
-                                                    border: Border.all(
-                                                      color: const Color(0xFF2B2B2B),
-                                                      width: 1.5,
-                                                    ),
-                                                    borderRadius: BorderRadius.circular(4),
-                                                  ),
-                                                  child: Center(
-                                                    child: Text(
-                                                      '${index + 1}',
-                                                      style: const TextStyle(
-                                                        fontSize: 14,
-                                                        fontWeight: FontWeight.w600,
-                                                        color: Color(0xFF2B2B2B),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 12),
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      Text(
-                                                        question.questionText,
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow.ellipsis,
-                                                        style: const TextStyle(
-                                                          fontSize: 14,
-                                                          fontWeight: FontWeight.w500,
-                                                          color: Color(0xFF202020),
-                                                        ),
-                                                      ),
-                                                      const SizedBox(height: 4),
-                                                      Chip(
-                                                        label: Text(
-                                                          question.questionType,
-                                                          style: const TextStyle(
-                                                            fontSize: 12,
-                                                          ),
-                                                        ),
-                                                        labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-                                                        visualDensity: VisualDensity.compact,
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                const Icon(
-                                                  Icons.chevron_right_rounded,
-                                                  color: Color(0xFF999999),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
-                                  ),
-                                ),
-                              ],
-                            ),
+                          QuestionReorderList(
+                            reorderBuffer: _questionReorderBuffer,
+                            questionAnimatingIndices: _questionAnimatingIndices,
+                            animationController: _questionAnimController,
+                            onShowMoveDialog: _showQuestionMoveDialog,
+                            onCancel: _cancelQuestionReorderMode,
+                            onConfirm: () => _exitQuestionReorderMode(widget.assessmentId),
                           )
                         else
                           QuestionsSection(
@@ -729,7 +601,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                                     ).then((result) {
                                       if (result == true) {
                                         ref
-                                            .read(assessmentProvider.notifier)
+                                            .read(teacherAssessmentProvider.notifier)
                                             .loadAssessmentDetail(
                                                 widget.assessmentId);
                                       }

@@ -31,7 +31,7 @@ class ClassCardSkeleton extends StatelessWidget {
           borderRadius:
               BorderRadius.circular(AppDimensions.kCardInnerRadius),
         ),
-        child: Row(
+        child: const Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Icon slot
@@ -40,7 +40,7 @@ class ClassCardSkeleton extends StatelessWidget {
               height: 36,
               borderRadius: AppDimensions.kIconSlotRadius,
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: 16),
             // Text column
             Expanded(
               child: Column(
@@ -52,7 +52,7 @@ class ClassCardSkeleton extends StatelessWidget {
                     height: 14,
                     borderRadius: 4,
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   // Subtitle
                   SkeletonBox(
                     width: double.infinity * 0.4,
@@ -63,7 +63,7 @@ class ClassCardSkeleton extends StatelessWidget {
               ),
             ),
             // Chevron
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             SkeletonBox(
               width: 16,
               height: 16,

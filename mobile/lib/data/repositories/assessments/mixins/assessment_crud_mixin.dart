@@ -21,6 +21,9 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
     bool? showResultsImmediately,
     bool isPublished = false,
     List<Map<String, dynamic>>? questions,
+    int? quarter,
+    String? component,
+    bool? isDepartmentalExam,
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
@@ -152,6 +155,9 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           // NEW: include questions atomically when publishing
           if (isPublished && questions != null && questions.isNotEmpty)
             'questions': questions,
+          if (quarter != null) 'quarter': quarter,
+          if (component != null) 'component': component,
+          if (isDepartmentalExam != null) 'is_departmental_exam': isDepartmentalExam,
         },
       );
 
@@ -160,7 +166,7 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
 
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -238,7 +244,7 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
       await localDataSource.cacheAssessments([result]);
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -268,7 +274,7 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
       await localDataSource.deleteAssessmentLocally(assessmentId: assessmentId);
       return const Right(null);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -303,7 +309,7 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
       );
       return const Right(null);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {

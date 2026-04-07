@@ -10,6 +10,7 @@ pub struct CreateClassRequest {
     pub title: String,
     pub description: Option<String>,
     pub teacher_id: Option<Uuid>,
+    pub is_advisory: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -17,6 +18,7 @@ pub struct UpdateClassRequest {
     pub title: Option<String>,
     pub description: Option<String>,
     pub teacher_id: Option<Uuid>,
+    pub is_advisory: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -40,6 +42,7 @@ pub struct ClassResponse {
     pub teacher_username: String,
     pub teacher_full_name: String,
     pub is_archived: bool,
+    pub is_advisory: bool,
     pub student_count: usize,
     pub created_at: String,
     pub updated_at: String,
@@ -52,6 +55,7 @@ pub struct ClassDetailResponse {
     pub description: Option<String>,
     pub teacher_id: Uuid,
     pub is_archived: bool,
+    pub is_advisory: bool,
     pub students: Vec<EnrollmentResponse>,
     pub created_at: String,
     pub updated_at: String,

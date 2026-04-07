@@ -3,19 +3,29 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
+import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/domain/assessments/usecases/update_question.dart';
-import 'package:likha/presentation/providers/assessment_provider.dart';
+import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_field.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/pages/teacher/widgets/question_editor_body.dart';
+export 'package:likha/presentation/pages/teacher/widgets/question_editor_body.dart'
+    show ChoiceEntry, EnumerationItemEntry, EditorStyleVariant;
 
 class EditQuestionPage extends ConsumerStatefulWidget {
   final Question question;
   final bool hasSubmissions;
+  final String? tosId;
+  final List<TosCompetency> tosCompetencies;
+  final String classificationMode;
 
   const EditQuestionPage({
     super.key,
     required this.question,
     required this.hasSubmissions,
+    this.tosId,
+    this.tosCompetencies = const [],
+    this.classificationMode = 'blooms',
   });
 
   @override
@@ -28,16 +38,18 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
   late TextEditingController _pointsController;
   late String _questionType;
   late bool _isMultiSelect;
+  String? _selectedCompetencyId;
+  String? _selectedCognitiveLevel;
   String? _formError;
 
   // Multiple choice
-  late List<_ChoiceEdit> _choices;
+  late List<ChoiceEntry> _choices;
 
   // Identification
   late List<TextEditingController> _acceptableAnswerControllers;
 
   // Enumeration
-  late List<_EnumerationItemEdit> _enumerationItems;
+  late List<EnumerationItemEntry> _enumerationItems;
 
   @override
   void initState() {
@@ -48,16 +60,18 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
         TextEditingController(text: widget.question.points.toString());
     _questionType = widget.question.questionType;
     _isMultiSelect = widget.question.isMultiSelect;
+    _selectedCompetencyId = widget.question.tosCompetencyId;
+    _selectedCognitiveLevel = widget.question.cognitiveLevel;
 
     // Initialize choices
     _choices = widget.question.choices
-            ?.map((c) => _ChoiceEdit(
+            ?.map((c) => ChoiceEntry(
                   id: c.id,
                   controller: TextEditingController(text: c.choiceText),
                   isCorrect: c.isCorrect,
                 ))
             .toList() ??
-        [_ChoiceEdit(), _ChoiceEdit()];
+        [ChoiceEntry(), ChoiceEntry()];
 
     // Initialize acceptable answers
     _acceptableAnswerControllers = widget.question.correctAnswers
@@ -67,7 +81,7 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
 
     // Initialize enumeration items
     _enumerationItems = widget.question.enumerationItems
-            ?.map((item) => _EnumerationItemEdit(
+            ?.map((item) => EnumerationItemEntry(
                   id: item.id,
                   answerControllers: item.acceptableAnswers
                       .map((a) => TextEditingController(text: a.answerText))
@@ -82,15 +96,13 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
     _questionTextController.dispose();
     _pointsController.dispose();
     for (final c in _choices) {
-      c.controller.dispose();
+      c.dispose();
     }
     for (final c in _acceptableAnswerControllers) {
       c.dispose();
     }
     for (final item in _enumerationItems) {
-      for (final c in item.answerControllers) {
-        c.dispose();
-      }
+      item.dispose();
     }
     super.dispose();
   }
@@ -108,6 +120,10 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
     final data = <String, dynamic>{
       'question_text': _questionTextController.text.trim(),
       'points': points,
+      if (_selectedCompetencyId != null)
+        'tos_competency_id': _selectedCompetencyId,
+      if (_selectedCognitiveLevel != null)
+        'cognitive_level': _selectedCognitiveLevel,
     };
 
     if (_questionType == 'multiple_choice') {
@@ -161,7 +177,7 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
       }).toList();
     }
 
-    await ref.read(assessmentProvider.notifier).updateQuestion(
+    await ref.read(teacherAssessmentProvider.notifier).updateQuestion(
           UpdateQuestionParams(
             questionId: widget.question.id,
             data: data,
@@ -169,18 +185,18 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
         );
 
     if (!mounted) return;
-    final state = ref.read(assessmentProvider);
+    final state = ref.read(teacherAssessmentProvider);
     if (state.error == null) {
       Navigator.pop(context, true);
     } else {
       setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
-      ref.read(assessmentProvider.notifier).clearMessages();
+      ref.read(teacherAssessmentProvider.notifier).clearMessages();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(assessmentProvider);
+    final state = ref.watch(teacherAssessmentProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
@@ -303,13 +319,156 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
                 enabled: !state.isLoading,
                 onChanged: (_) => setState(() => _formError = null),
               ),
+              // TOS competency & cognitive level dropdowns
+              if (widget.tosId != null && widget.tosCompetencies.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                  ),
+                  child: DropdownButtonFormField<String?>(
+                    value: _selectedCompetencyId,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Competency (optional)',
+                      prefixIcon: Icon(Icons.list_alt_rounded, color: Color(0xFF999999), size: 20),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      labelStyle: TextStyle(fontSize: 14, color: Color(0xFF999999)),
+                    ),
+                    items: [
+                      const DropdownMenuItem(value: null, child: Text('None')),
+                      ...widget.tosCompetencies.map((c) => DropdownMenuItem(
+                            value: c.id,
+                            child: Text(
+                              c.competencyCode != null
+                                  ? '${c.competencyCode} - ${c.competencyText}'
+                                  : c.competencyText,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          )),
+                    ],
+                    onChanged: state.isLoading
+                        ? null
+                        : (v) => setState(() => _selectedCompetencyId = v),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                  ),
+                  child: DropdownButtonFormField<String?>(
+                    value: _selectedCognitiveLevel,
+                    decoration: const InputDecoration(
+                      labelText: 'Cognitive Level (optional)',
+                      prefixIcon: Icon(Icons.psychology_outlined, color: Color(0xFF999999), size: 20),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      labelStyle: TextStyle(fontSize: 14, color: Color(0xFF999999)),
+                    ),
+                    items: [
+                      const DropdownMenuItem(value: null, child: Text('None')),
+                      if (widget.classificationMode == 'blooms') ...[
+                        const DropdownMenuItem(value: 'Remembering', child: Text('Remembering')),
+                        const DropdownMenuItem(value: 'Understanding', child: Text('Understanding')),
+                        const DropdownMenuItem(value: 'Applying', child: Text('Applying')),
+                        const DropdownMenuItem(value: 'Analyzing', child: Text('Analyzing')),
+                        const DropdownMenuItem(value: 'Evaluating', child: Text('Evaluating')),
+                        const DropdownMenuItem(value: 'Creating', child: Text('Creating')),
+                      ] else ...[
+                        const DropdownMenuItem(value: 'Easy', child: Text('Easy')),
+                        const DropdownMenuItem(value: 'Average', child: Text('Average')),
+                        const DropdownMenuItem(value: 'Difficult', child: Text('Difficult')),
+                      ],
+                    ],
+                    onChanged: state.isLoading
+                        ? null
+                        : (v) => setState(() => _selectedCognitiveLevel = v),
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
               if (_questionType == 'multiple_choice')
-                _buildMultipleChoiceSection(state.isLoading),
+                QuestionEditorBody(
+                  questionType: 'multiple_choice',
+                  choices: _choices,
+                  isMultiSelect: _isMultiSelect,
+                  isLoading: state.isLoading,
+                  variant: EditorStyleVariant.form,
+                  onMultiSelectChanged: (value) => setState(() {
+                    _isMultiSelect = value;
+                    if (!value) {
+                      bool found = false;
+                      for (final c in _choices) {
+                        if (c.isCorrect && found) c.isCorrect = false;
+                        if (c.isCorrect) found = true;
+                      }
+                    }
+                  }),
+                  onChoiceCorrectChanged: (index, isCorrect) => setState(() {
+                    _choices[index].isCorrect = isCorrect;
+                  }),
+                  onChoiceTextChanged: (index, text) => setState(() {
+                    _choices[index].controller.text = text;
+                  }),
+                  onAddChoice: () => setState(() => _choices.add(ChoiceEntry())),
+                  onRemoveChoice: (index) => setState(() {
+                    _choices[index].dispose();
+                    _choices.removeAt(index);
+                  }),
+                  onStructuralChange: () => setState(() {}),
+                ),
               if (_questionType == 'identification')
-                _buildIdentificationSection(state.isLoading),
+                QuestionEditorBody(
+                  questionType: 'identification',
+                  answerItems: _acceptableAnswerControllers,
+                  isLoading: state.isLoading,
+                  variant: EditorStyleVariant.form,
+                  onAnswerChanged: (index, text) => setState(() {
+                    _acceptableAnswerControllers[index].text = text;
+                  }),
+                  onAddAnswer: () => setState(() {
+                    _acceptableAnswerControllers.add(TextEditingController());
+                  }),
+                  onRemoveAnswer: (index) => setState(() {
+                    _acceptableAnswerControllers[index].dispose();
+                    _acceptableAnswerControllers.removeAt(index);
+                  }),
+                  onStructuralChange: () => setState(() {}),
+                ),
               if (_questionType == 'enumeration')
-                _buildEnumerationSection(state.isLoading),
+                QuestionEditorBody(
+                  questionType: 'enumeration',
+                  enumerationItems: _enumerationItems,
+                  isLoading: state.isLoading,
+                  variant: EditorStyleVariant.form,
+                  onEnumAnswerChanged: (itemIndex, answerIndex, text) => setState(() {
+                    _enumerationItems[itemIndex].answerControllers[answerIndex].text = text;
+                  }),
+                  onAddEnumItem: () => setState(() {
+                    _enumerationItems.add(EnumerationItemEntry(
+                      answerControllers: [TextEditingController()],
+                    ));
+                  }),
+                  onRemoveEnumItem: (itemIndex) => setState(() {
+                    _enumerationItems[itemIndex].dispose();
+                    _enumerationItems.removeAt(itemIndex);
+                  }),
+                  onAddEnumAnswer: (itemIndex) => setState(() {
+                    _enumerationItems[itemIndex].answerControllers.add(TextEditingController());
+                  }),
+                  onRemoveEnumAnswer: (itemIndex, answerIndex) => setState(() {
+                    _enumerationItems[itemIndex].answerControllers[answerIndex].dispose();
+                    _enumerationItems[itemIndex].answerControllers.removeAt(answerIndex);
+                  }),
+                  onStructuralChange: () => setState(() {}),
+                ),
             ],
           ),
         ),
@@ -366,449 +525,4 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
     );
   }
 
-  Widget _buildMultipleChoiceSection(bool isLoading) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE0E0E0)),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          margin: const EdgeInsets.only(bottom: 16),
-          child: SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Allow multiple correct answers'),
-            value: _isMultiSelect,
-            activeColor: const Color(0xFF2B2B2B),
-            onChanged: isLoading
-                ? null
-                : (value) {
-                    setState(() {
-                      _isMultiSelect = value;
-                      if (!value) {
-                        // Keep only first correct
-                        bool found = false;
-                        for (final c in _choices) {
-                          if (c.isCorrect && found) {
-                            c.isCorrect = false;
-                          }
-                          if (c.isCorrect) found = true;
-                        }
-                      }
-                    });
-                  },
-          ),
-        ),
-        const Text('Choices',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 15,
-              color: Color(0xFF2B2B2B),
-              letterSpacing: -0.2,
-            )),
-        const SizedBox(height: 8),
-        ..._choices.asMap().entries.map((entry) {
-          final index = entry.key;
-          final choice = entry.value;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              children: [
-                Checkbox(
-                  value: choice.isCorrect,
-                  activeColor: const Color(0xFF2B2B2B),
-                  checkColor: Colors.white,
-                  onChanged: isLoading
-                      ? null
-                      : (value) {
-                          setState(() {
-                            if (!_isMultiSelect) {
-                              for (final c in _choices) {
-                                c.isCorrect = false;
-                              }
-                            }
-                            choice.isCorrect = value ?? false;
-                          });
-                        },
-                ),
-                Expanded(
-                  child: TextFormField(
-                    controller: choice.controller,
-                    decoration: InputDecoration(
-                      labelText: 'Choice ${index + 1}',
-                      labelStyle: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF999999),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFE0E0E0),
-                          width: 1,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFE0E0E0),
-                          width: 1,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFF2B2B2B),
-                          width: 1.5,
-                        ),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFEF5350),
-                          width: 1,
-                        ),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFEF5350),
-                          width: 1.5,
-                        ),
-                      ),
-                      isDense: true,
-                    ),
-                    enabled: !isLoading,
-                  ),
-                ),
-                if (_choices.length > 2)
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF666666)),
-                    onPressed: isLoading
-                        ? null
-                        : () {
-                            setState(() {
-                              _choices[index].controller.dispose();
-                              _choices.removeAt(index);
-                            });
-                          },
-                  ),
-              ],
-            ),
-          );
-        }),
-        TextButton.icon(
-          onPressed: isLoading
-              ? null
-              : () {
-                  setState(() {
-                    _choices.add(_ChoiceEdit());
-                  });
-                },
-          style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF2B2B2B),
-          ),
-          icon: const Icon(Icons.add, size: 18),
-          label: const Text('Add Choice'),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildIdentificationSection(bool isLoading) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Acceptable Answers',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 15,
-              color: Color(0xFF2B2B2B),
-              letterSpacing: -0.2,
-            )),
-        const SizedBox(height: 4),
-        Text(
-          'Students can enter any of these answers (case-insensitive)',
-          style: const TextStyle(color: Color(0xFF999999), fontSize: 13),
-        ),
-        const SizedBox(height: 12),
-        ..._acceptableAnswerControllers.asMap().entries.map((entry) {
-          final index = entry.key;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: entry.value,
-                    decoration: InputDecoration(
-                      labelText: 'Answer ${index + 1}',
-                      labelStyle: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF999999),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFE0E0E0),
-                          width: 1,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFE0E0E0),
-                          width: 1,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFF2B2B2B),
-                          width: 1.5,
-                        ),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFEF5350),
-                          width: 1,
-                        ),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFEF5350),
-                          width: 1.5,
-                        ),
-                      ),
-                      isDense: true,
-                    ),
-                    enabled: !isLoading,
-                  ),
-                ),
-                if (_acceptableAnswerControllers.length > 1)
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF666666)),
-                    onPressed: isLoading
-                        ? null
-                        : () {
-                            setState(() {
-                              _acceptableAnswerControllers[index].dispose();
-                              _acceptableAnswerControllers.removeAt(index);
-                            });
-                          },
-                  ),
-              ],
-            ),
-          );
-        }),
-        TextButton.icon(
-          onPressed: isLoading
-              ? null
-              : () {
-                  setState(() {
-                    _acceptableAnswerControllers.add(TextEditingController());
-                  });
-                },
-          style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF2B2B2B),
-          ),
-          icon: const Icon(Icons.add, size: 18),
-          label: const Text('Add Acceptable Answer'),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEnumerationSection(bool isLoading) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Enumeration Items',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 15,
-              color: Color(0xFF2B2B2B),
-              letterSpacing: -0.2,
-            )),
-        const SizedBox(height: 4),
-        Text(
-          'Each item can have multiple acceptable answers',
-          style: const TextStyle(color: Color(0xFF999999), fontSize: 13),
-        ),
-        const SizedBox(height: 12),
-        ..._enumerationItems.asMap().entries.map((entry) {
-          final itemIndex = entry.key;
-          final item = entry.value;
-          return Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE0E0E0)),
-            ),
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      'Item ${itemIndex + 1}',
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline_rounded,
-                          size: 20, color: Color(0xFFEA4335)),
-                      onPressed: isLoading
-                          ? null
-                          : () {
-                              setState(() {
-                                for (final c in item.answerControllers) {
-                                  c.dispose();
-                                }
-                                _enumerationItems.removeAt(itemIndex);
-                              });
-                            },
-                    ),
-                  ],
-                ),
-                ...item.answerControllers.asMap().entries.map((ae) {
-                  final answerIndex = ae.key;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: ae.value,
-                            decoration: InputDecoration(
-                              labelText: 'Variant ${answerIndex + 1}',
-                              labelStyle: const TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF999999),
-                              ),
-                              filled: true,
-                              fillColor: Colors.white,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFFE0E0E0),
-                                  width: 1,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFFE0E0E0),
-                                  width: 1,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFF2B2B2B),
-                                  width: 1.5,
-                                ),
-                              ),
-                              errorBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFFEF5350),
-                                  width: 1,
-                                ),
-                              ),
-                              focusedErrorBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFFEF5350),
-                                  width: 1.5,
-                                ),
-                              ),
-                              isDense: true,
-                            ),
-                            enabled: !isLoading,
-                          ),
-                        ),
-                        if (item.answerControllers.length > 1)
-                          IconButton(
-                            icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF666666)),
-                            onPressed: isLoading
-                                ? null
-                                : () {
-                                    setState(() {
-                                      item.answerControllers[answerIndex]
-                                          .dispose();
-                                      item.answerControllers
-                                          .removeAt(answerIndex);
-                                    });
-                                  },
-                          ),
-                      ],
-                    ),
-                  );
-                }),
-                TextButton.icon(
-                  onPressed: isLoading
-                      ? null
-                      : () {
-                          setState(() {
-                            item.answerControllers
-                                .add(TextEditingController());
-                          });
-                        },
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF2B2B2B),
-                  ),
-                  icon: const Icon(Icons.add, size: 16),
-                  label:
-                      const Text('Add Variant', style: TextStyle(fontSize: 13)),
-                ),
-              ],
-            ),
-          );
-        }),
-        TextButton.icon(
-          onPressed: isLoading
-              ? null
-              : () {
-                  setState(() {
-                    _enumerationItems.add(_EnumerationItemEdit(
-                      answerControllers: [TextEditingController()],
-                    ));
-                  });
-                },
-          style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF2B2B2B),
-          ),
-          icon: const Icon(Icons.add, size: 18),
-          label: const Text('Add Enumeration Item'),
-        ),
-      ],
-    );
-  }
-}
-
-class _ChoiceEdit {
-  final String? id;
-  final TextEditingController controller;
-  bool isCorrect;
-
-  _ChoiceEdit({this.id, TextEditingController? controller, this.isCorrect = false})
-      : controller = controller ?? TextEditingController();
-}
-
-class _EnumerationItemEdit {
-  final String? id;
-  final List<TextEditingController> answerControllers;
-
-  _EnumerationItemEdit({this.id, required this.answerControllers});
 }

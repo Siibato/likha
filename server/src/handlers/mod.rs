@@ -1,8 +1,10 @@
 pub mod admin_handler;
+pub mod setup_handler;
 pub mod assessment_handler;
 pub mod assignment_handler;
 pub mod auth_handler;
 pub mod class_handler;
+pub mod grading_handler;
 pub mod health_handler;
 pub mod learning_material_handler;
 pub mod sync_conflict_handler;
@@ -10,3 +12,4 @@ pub mod sync_delta_handler;
 pub mod sync_full_handler;
 pub mod sync_push_handler;
 pub mod tasks_handler;
+pub mod tos_handler;

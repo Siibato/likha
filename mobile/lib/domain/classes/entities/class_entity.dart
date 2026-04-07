@@ -8,6 +8,7 @@ class ClassEntity extends Equatable {
   final String teacherUsername;
   final String teacherFullName;
   final bool isArchived;
+  final bool isAdvisory;
   final int studentCount;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -22,6 +23,7 @@ class ClassEntity extends Equatable {
     required this.teacherUsername,
     required this.teacherFullName,
     required this.isArchived,
+    this.isAdvisory = false,
     required this.studentCount,
     required this.createdAt,
     required this.updatedAt,
@@ -38,6 +40,7 @@ class ClassEntity extends Equatable {
     teacherUsername,
     teacherFullName,
     isArchived,
+    isAdvisory,
     studentCount,
     createdAt,
     updatedAt,

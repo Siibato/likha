@@ -62,7 +62,6 @@ class SyncManager {
       _syncQueue,
       _syncRemoteDataSource,
       _localDatabase,
-      _storageService,
       _log,
       _updateState,
     );

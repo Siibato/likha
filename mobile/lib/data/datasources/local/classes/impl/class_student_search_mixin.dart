@@ -1,5 +1,6 @@
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/auth/user_model.dart';
+import 'package:likha/core/database/db_schema.dart';
 import 'package:sqflite/sqflite.dart';
 import '../class_local_datasource_base.dart';
 
@@ -9,8 +10,8 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final results = await db.query(
-        'users',
-        where: 'id = ?',
+        DbTables.users,
+        where: '${CommonCols.id} = ?',
         whereArgs: [studentId],
         limit: 1,
       );
@@ -30,19 +31,19 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
           // Use ConflictAlgorithm.replace to update existing student data
           // This ensures stale data from prior sync/searches is updated
           await txn.insert(
-            'users',
+            DbTables.users,
             {
-              'id': student.id,
-              'username': student.username,
-              'full_name': student.fullName,
-              'role': student.role,
-              'account_status': student.accountStatus,
-              'activated_at': student.activatedAt?.toIso8601String(),
-              'created_at': student.createdAt.toIso8601String(),
-              'updated_at': DateTime.now().toIso8601String(),
-              'deleted_at': student.deletedAt?.toIso8601String(),
-              'cached_at': DateTime.now().toIso8601String(),
-              'needs_sync': 0,
+              CommonCols.id: student.id,
+              UsersCols.username: student.username,
+              UsersCols.fullName: student.fullName,
+              UsersCols.role: student.role,
+              UsersCols.accountStatus: student.accountStatus,
+              UsersCols.activatedAt: student.activatedAt?.toIso8601String(),
+              CommonCols.createdAt: student.createdAt.toIso8601String(),
+              CommonCols.updatedAt: DateTime.now().toIso8601String(),
+              CommonCols.deletedAt: student.deletedAt?.toIso8601String(),
+              CommonCols.cachedAt: DateTime.now().toIso8601String(),
+              CommonCols.needsSync: 0,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
@@ -58,10 +59,10 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final results = await db.query(
-        'users',
-        where: '(username LIKE ? OR full_name LIKE ?) AND role = ?',
+        DbTables.users,
+        where: '(${UsersCols.username} LIKE ? OR ${UsersCols.fullName} LIKE ?) AND ${UsersCols.role} = ?',
         whereArgs: ['%$query%', '%$query%', 'student'],
-        orderBy: 'full_name ASC',
+        orderBy: '${UsersCols.fullName} ASC',
       );
       return results.map(UserModel.fromMap).toList();
     } catch (e) {
@@ -70,15 +71,15 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
   }
 
   @override
-  Future<List<UserModel>> getCachedEnrolledStudents(String classId) async {
+  Future<List<UserModel>> getCachedParticipants(String classId) async {
     try {
       final db = await localDatabase.database;
       // v18: Join with users table to get student details
       final rows = await db.rawQuery('''
         SELECT cp.id, cp.class_id, cp.user_id, cp.joined_at,
                u.username, u.full_name, u.role, u.account_status, u.activated_at, u.created_at
-        FROM class_participants cp
-        JOIN users u ON u.id = cp.user_id
+        FROM ${DbTables.classParticipants} cp
+        JOIN ${DbTables.users} u ON u.id = cp.user_id
         WHERE cp.class_id = ? AND cp.removed_at IS NULL
         ORDER BY u.full_name ASC
       ''', [classId]);
@@ -105,7 +106,7 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
         );
       }).toList();
     } catch (e) {
-      throw CacheException('Failed to get enrolled students: $e');
+      throw CacheException('Failed to get participants: $e');
     }
   }
 }

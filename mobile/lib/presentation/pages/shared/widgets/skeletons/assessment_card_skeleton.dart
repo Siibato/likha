@@ -31,7 +31,7 @@ class AssessmentCardSkeleton extends StatelessWidget {
           borderRadius:
               BorderRadius.circular(AppDimensions.kCardInnerRadius),
         ),
-        child: Column(
+        child: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header: title + badge
@@ -45,7 +45,7 @@ class AssessmentCardSkeleton extends StatelessWidget {
                     borderRadius: 4,
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 SkeletonBox(
                   width: 80,
                   height: 22,
@@ -53,20 +53,20 @@ class AssessmentCardSkeleton extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             // Description (2 lines)
             SkeletonBox(
               width: double.infinity * 0.9,
               height: 12,
               borderRadius: 4,
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             SkeletonBox(
               width: double.infinity * 0.7,
               height: 12,
               borderRadius: 4,
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             // Info chips (3 items)
             Row(
               children: [
@@ -75,13 +75,13 @@ class AssessmentCardSkeleton extends StatelessWidget {
                   height: 18,
                   borderRadius: 4,
                 ),
-                const SizedBox(width: 14),
+                SizedBox(width: 14),
                 SkeletonBox(
                   width: 50,
                   height: 18,
                   borderRadius: 4,
                 ),
-                const SizedBox(width: 14),
+                SizedBox(width: 14),
                 SkeletonBox(
                   width: 50,
                   height: 18,
@@ -89,20 +89,20 @@ class AssessmentCardSkeleton extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             // Date rows (2x)
             SkeletonBox(
               width: double.infinity * 0.75,
               height: 11,
               borderRadius: 4,
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             SkeletonBox(
               width: double.infinity * 0.75,
               height: 11,
               borderRadius: 4,
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             // Action hint
             Align(
               alignment: Alignment.centerRight,

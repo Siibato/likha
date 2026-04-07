@@ -7,18 +7,11 @@ use axum::{
 use std::sync::Arc;
 use uuid::Uuid;
 
-use crate::schema::auth_schema::{CreateAccountRequest, LockAccountRequest, ResetAccountRequest, UpdateAccountRequest};
+use crate::schema::auth_schema::{CreateAccountRequest, LockAccountRequest, MessageResponse, ResetAccountRequest, UpdateAccountRequest};
 use crate::schema::common::success_response;
 use crate::services::auth::AuthService;
 use crate::middleware::auth_middleware::AuthUser;
-use crate::utils::error::AppError;
-
-fn require_admin(auth_user: &AuthUser) -> Result<(), AppError> {
-    if auth_user.role != "admin" {
-        return Err(AppError::Forbidden("Admin access required".to_string()));
-    }
-    Ok(())
-}
+use crate::utils::auth_guards::require_admin;
 
 pub async fn create_account(
     State(auth_service): State<Arc<AuthService>>,
@@ -121,6 +114,24 @@ pub async fn get_account(
 
     match auth_service.get_account(user_id).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+pub async fn delete_account(
+    State(auth_service): State<Arc<AuthService>>,
+    auth_user: AuthUser,
+    Path(user_id): Path<Uuid>,
+) -> impl IntoResponse {
+    if let Err(e) = require_admin(&auth_user) {
+        return e.into_response();
+    }
+
+    match auth_service.delete_account(user_id, auth_user.user_id).await {
+        Ok(_) => success_response(
+            MessageResponse { message: "Account deleted successfully".to_string() },
+            StatusCode::OK,
+        ).into_response(),
         Err(e) => e.into_response(),
     }
 }

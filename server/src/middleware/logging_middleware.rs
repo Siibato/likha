@@ -1,5 +1,3 @@
-use axum::{body::Body, http::Request, middleware::Next, response::Response};
-use tower::Layer;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
 use tracing::Level;
 

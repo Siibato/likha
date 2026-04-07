@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:likha/data/models/assessments/statistics_model.dart';
 import 'package:likha/data/models/assessments/submission_model.dart';
+import 'package:likha/core/database/db_schema.dart';
 import 'package:sqflite/sqflite.dart';
 import '../assessment_local_datasource_base.dart';
 
@@ -10,12 +11,12 @@ mixin StatisticsDataSourceMixin on AssessmentLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final results = await db.query(
-        'assessment_statistics_cache',
-        where: 'assessment_id = ?',
+        DbTables.assessmentStatisticsCache,
+        where: '${AssessmentStatisticsCacheCols.assessmentId} = ?',
         whereArgs: [assessmentId],
       );
       if (results.isEmpty) return null;
-      final json = jsonDecode(results.first['statistics_json'] as String) as Map<String, dynamic>;
+      final json = jsonDecode(results.first[AssessmentStatisticsCacheCols.statisticsJson] as String) as Map<String, dynamic>;
       return AssessmentStatisticsModel.fromJson(json);
     } catch (e) {
       return null;
@@ -28,11 +29,11 @@ mixin StatisticsDataSourceMixin on AssessmentLocalDataSourceBase {
       final db = await localDatabase.database;
       final now = DateTime.now().toIso8601String();
       await db.insert(
-        'assessment_statistics_cache',
+        DbTables.assessmentStatisticsCache,
         {
-          'assessment_id': statistics.assessmentId,
-          'statistics_json': jsonEncode(statistics.toJson()),
-          'cached_at': now,
+          AssessmentStatisticsCacheCols.assessmentId: statistics.assessmentId,
+          AssessmentStatisticsCacheCols.statisticsJson: jsonEncode(statistics.toJson()),
+          CommonCols.cachedAt: now,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -46,8 +47,8 @@ mixin StatisticsDataSourceMixin on AssessmentLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       final results = await db.query(
-        'student_results_cache',
-        where: 'submission_id = ?',
+        DbTables.studentResultsCache,
+        where: '${StudentResultsCacheCols.submissionId} = ?',
         whereArgs: [submissionId],
       );
       if (results.isEmpty) return null;
@@ -64,11 +65,11 @@ mixin StatisticsDataSourceMixin on AssessmentLocalDataSourceBase {
       final db = await localDatabase.database;
       final now = DateTime.now().toIso8601String();
       await db.insert(
-        'student_results_cache',
+        DbTables.studentResultsCache,
         {
-          'submission_id': result.submissionId,
-          'results_json': jsonEncode(result.toJson()),
-          'cached_at': now,
+          StudentResultsCacheCols.submissionId: result.submissionId,
+          StudentResultsCacheCols.resultsJson: jsonEncode(result.toJson()),
+          CommonCols.cachedAt: now,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );

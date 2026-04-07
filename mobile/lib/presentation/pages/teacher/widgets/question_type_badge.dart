@@ -55,7 +55,7 @@ class QuestionTypeBadge extends StatelessWidget {
             'Question type cannot be changed',
             style: TextStyle(
               fontSize: 12,
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
               fontWeight: FontWeight.w500,
             ),
           ),

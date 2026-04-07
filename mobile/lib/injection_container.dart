@@ -1,8 +1,12 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:likha/core/constants/api_constants.dart';
+import 'package:likha/core/services/school_setup_service.dart';
+import 'package:likha/core/services/impl/school_setup_service_impl.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/connectivity_service.dart';
@@ -89,10 +93,12 @@ import 'package:likha/data/datasources/remote/class_remote_datasource.dart';
 import 'package:likha/data/repositories/classes/class_repository_impl.dart';
 import 'package:likha/domain/classes/repositories/class_repository.dart';
 import 'package:likha/domain/classes/usecases/add_student.dart';
+import 'package:likha/domain/auth/usecases/delete_account.dart';
+import 'package:likha/domain/classes/usecases/delete_class.dart';
 import 'package:likha/domain/classes/usecases/create_class.dart';
 import 'package:likha/domain/classes/usecases/get_all_classes.dart';
 import 'package:likha/domain/classes/usecases/get_class_detail.dart';
-import 'package:likha/domain/classes/usecases/get_enrolled_students.dart';
+import 'package:likha/domain/classes/usecases/get_participants.dart';
 import 'package:likha/domain/classes/usecases/get_my_classes.dart';
 import 'package:likha/domain/classes/usecases/remove_student.dart';
 import 'package:likha/domain/classes/usecases/search_students.dart';
@@ -112,6 +118,46 @@ import 'package:likha/domain/learning_materials/usecases/get_materials.dart';
 import 'package:likha/domain/learning_materials/usecases/reorder_material.dart' as reorder;
 import 'package:likha/domain/learning_materials/usecases/update_material.dart';
 import 'package:likha/domain/learning_materials/usecases/upload_file.dart' as material;
+import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
+import 'package:likha/data/datasources/local/grading/impl/grading_local_datasource_impl.dart';
+import 'package:likha/data/datasources/remote/grading_remote_datasource.dart';
+import 'package:likha/data/repositories/grading/grading_repository_impl.dart';
+import 'package:likha/domain/grading/repositories/grading_repository.dart';
+import 'package:likha/domain/grading/usecases/clear_score_override.dart';
+import 'package:likha/domain/grading/usecases/compute_grades.dart';
+import 'package:likha/domain/grading/usecases/create_grade_item.dart';
+import 'package:likha/domain/grading/usecases/delete_grade_item.dart';
+import 'package:likha/domain/grading/usecases/get_final_grades.dart';
+import 'package:likha/domain/grading/usecases/get_grade_items.dart';
+import 'package:likha/domain/grading/usecases/get_grade_summary.dart';
+import 'package:likha/domain/grading/usecases/get_grading_config.dart';
+import 'package:likha/domain/grading/usecases/get_my_grade_detail.dart';
+import 'package:likha/domain/grading/usecases/get_my_grades.dart';
+import 'package:likha/domain/grading/usecases/get_quarterly_grades.dart';
+import 'package:likha/domain/grading/usecases/get_scores_by_item.dart';
+import 'package:likha/domain/grading/usecases/save_scores.dart';
+import 'package:likha/domain/grading/usecases/set_score_override.dart';
+import 'package:likha/domain/grading/usecases/setup_grading.dart';
+import 'package:likha/domain/grading/usecases/update_grade_item.dart';
+import 'package:likha/domain/grading/usecases/update_grading_config.dart';
+import 'package:likha/domain/grading/usecases/get_general_averages.dart';
+import 'package:likha/domain/grading/usecases/get_sf9.dart';
+import 'package:likha/domain/grading/usecases/get_sf10.dart';
+import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
+import 'package:likha/data/datasources/local/tos/impl/tos_local_datasource_impl.dart';
+import 'package:likha/data/datasources/remote/tos_remote_datasource.dart';
+import 'package:likha/data/repositories/tos/tos_repository_impl.dart';
+import 'package:likha/domain/tos/repositories/tos_repository.dart';
+import 'package:likha/domain/tos/usecases/get_tos_list.dart';
+import 'package:likha/domain/tos/usecases/get_tos_detail.dart';
+import 'package:likha/domain/tos/usecases/create_tos.dart';
+import 'package:likha/domain/tos/usecases/update_tos.dart';
+import 'package:likha/domain/tos/usecases/delete_tos.dart';
+import 'package:likha/domain/tos/usecases/add_competency.dart';
+import 'package:likha/domain/tos/usecases/update_competency.dart';
+import 'package:likha/domain/tos/usecases/delete_competency.dart';
+import 'package:likha/domain/tos/usecases/bulk_add_competencies.dart';
+import 'package:likha/domain/tos/usecases/search_melcs.dart';
 import 'package:likha/services/storage_service.dart';
 final sl = GetIt.instance;
 
@@ -121,6 +167,21 @@ Future<void> init() async {
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
   sl.registerLazySingleton(() => secureStorage);
+
+  final sharedPrefs = await SharedPreferences.getInstance();
+  sl.registerSingleton<SharedPreferences>(sharedPrefs);
+
+  // School setup service — registered early so ApiConstants.baseUrl can be set
+  // before any network service is initialized.
+  sl.registerLazySingleton<SchoolSetupService>(
+    () => SchoolSetupServiceImpl(sl<SharedPreferences>(), Dio()),
+  );
+
+  // Bootstrap runtime base URL from stored school config (if available).
+  final schoolConfig = await sl<SchoolSetupService>().getSchoolConfig();
+  if (schoolConfig != null) {
+    ApiConstants.setRuntimeBaseUrl(schoolConfig.serverUrl);
+  }
 
   // Core - Database (first, depends on nothing)
   final localDb = LocalDatabase();
@@ -140,7 +201,9 @@ Future<void> init() async {
   sl.registerSingleton<DataEventBus>(DataEventBus());
 
   // Core - General
-  sl.registerLazySingleton(() => StorageService(sl<FlutterSecureStorage>()));
+  sl.registerLazySingleton(() => kIsWeb
+      ? StorageService(sl<FlutterSecureStorage>(), sl<SharedPreferences>())
+      : StorageService(sl<FlutterSecureStorage>()));
 
   // Core - Server Reachability (must be before DioClient to avoid circular dependency)
   // Standalone Dio for health checks — does NOT go through DioClient.
@@ -328,6 +391,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => LockAccount(sl()));
   sl.registerLazySingleton(() => GetActivityLogs(sl()));
   sl.registerLazySingleton(() => UpdateAccount(sl()));
+  sl.registerLazySingleton(() => DeleteAccount(sl()));
 
   // Class use cases
   sl.registerLazySingleton(() => CreateClass(sl()));
@@ -338,7 +402,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => AddStudent(sl()));
   sl.registerLazySingleton(() => RemoveStudent(sl()));
   sl.registerLazySingleton(() => SearchStudents(sl()));
-  sl.registerLazySingleton(() => GetEnrolledStudents(sl()));
+  sl.registerLazySingleton(() => GetParticipants(sl()));
+  sl.registerLazySingleton(() => DeleteClass(sl()));
 
   // Assessment use cases
   sl.registerLazySingleton(() => CreateAssessment(sl()));
@@ -395,4 +460,80 @@ Future<void> init() async {
   sl.registerLazySingleton(() => material.UploadFile(sl()));
   sl.registerLazySingleton(() => material.DeleteFile(sl()));
   sl.registerLazySingleton(() => material.DownloadFile(sl()));
+
+  // Grading - Remote Data Source
+  sl.registerLazySingleton<GradingRemoteDataSource>(
+    () => GradingRemoteDataSourceImpl(sl<DioClient>()),
+  );
+
+  // Grading - Local Data Source
+  sl.registerLazySingleton<GradingLocalDataSource>(
+    () => GradingLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
+  );
+
+  // Grading - Repository
+  sl.registerLazySingleton<GradingRepository>(
+    () => GradingRepositoryImpl(
+      remoteDataSource: sl<GradingRemoteDataSource>(),
+      localDataSource: sl<GradingLocalDataSource>(),
+      serverReachabilityService: sl<ServerReachabilityService>(),
+      syncQueue: sl<SyncQueue>(),
+    ),
+  );
+
+  // Grading use cases
+  sl.registerLazySingleton(() => GetGradingConfig(sl()));
+  sl.registerLazySingleton(() => SetupGrading(sl()));
+  sl.registerLazySingleton(() => UpdateGradingConfig(sl()));
+  sl.registerLazySingleton(() => GetGradeItems(sl()));
+  sl.registerLazySingleton(() => CreateGradeItem(sl()));
+  sl.registerLazySingleton(() => UpdateGradeItem(sl()));
+  sl.registerLazySingleton(() => DeleteGradeItem(sl()));
+  sl.registerLazySingleton(() => GetScoresByItem(sl()));
+  sl.registerLazySingleton(() => SaveScores(sl()));
+  sl.registerLazySingleton(() => SetScoreOverride(sl()));
+  sl.registerLazySingleton(() => ClearScoreOverride(sl()));
+  sl.registerLazySingleton(() => GetQuarterlyGrades(sl()));
+  sl.registerLazySingleton(() => ComputeGrades(sl()));
+  sl.registerLazySingleton(() => GetGradeSummary(sl()));
+  sl.registerLazySingleton(() => GetFinalGrades(sl()));
+  sl.registerLazySingleton(() => GetMyGrades(sl()));
+  sl.registerLazySingleton(() => GetMyGradeDetail(sl()));
+
+  // GSA/SF9/SF10 use cases
+  sl.registerLazySingleton(() => GetGeneralAverages(sl()));
+  sl.registerLazySingleton(() => GetSf9(sl()));
+  sl.registerLazySingleton(() => GetSf10(sl()));
+
+  // TOS - Remote Data Source
+  sl.registerLazySingleton<TosRemoteDataSource>(
+    () => TosRemoteDataSourceImpl(sl<DioClient>()),
+  );
+
+  // TOS - Local Data Source
+  sl.registerLazySingleton<TosLocalDataSource>(
+    () => TosLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
+  );
+
+  // TOS - Repository
+  sl.registerLazySingleton<TosRepository>(
+    () => TosRepositoryImpl(
+      remoteDataSource: sl<TosRemoteDataSource>(),
+      localDataSource: sl<TosLocalDataSource>(),
+      serverReachabilityService: sl<ServerReachabilityService>(),
+      syncQueue: sl<SyncQueue>(),
+    ),
+  );
+
+  // TOS use cases
+  sl.registerLazySingleton(() => GetTosList(sl()));
+  sl.registerLazySingleton(() => GetTosDetail(sl()));
+  sl.registerLazySingleton(() => CreateTos(sl()));
+  sl.registerLazySingleton(() => UpdateTos(sl()));
+  sl.registerLazySingleton(() => DeleteTos(sl()));
+  sl.registerLazySingleton(() => AddCompetency(sl()));
+  sl.registerLazySingleton(() => UpdateCompetency(sl()));
+  sl.registerLazySingleton(() => DeleteCompetency(sl()));
+  sl.registerLazySingleton(() => BulkAddCompetencies(sl()));
+  sl.registerLazySingleton(() => SearchMelcs(sl()));
 }

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
@@ -33,9 +34,9 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
 
       await db.transaction((txn) async {
         final map = material.toMap();
-        map['cached_at'] = now.toIso8601String();
-        map['needs_sync'] = 1;
-        await txn.insert('learning_materials', map);
+        map[CommonCols.cachedAt] = now.toIso8601String();
+        map[CommonCols.needsSync] = 1;
+        await txn.insert(DbTables.learningMaterials, map);
 
         await syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),
@@ -74,16 +75,16 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
 
       await db.transaction((txn) async {
         await txn.update(
-          'learning_materials',
+          DbTables.learningMaterials,
           {
-            'title': title,
-            'description': description,
-            'content_text': contentText,
-            'updated_at': now.toIso8601String(),
-            'needs_sync': 1,
-            'cached_at': now.toIso8601String(),
+            LearningMaterialsCols.title: title,
+            LearningMaterialsCols.description: description,
+            LearningMaterialsCols.contentText: contentText,
+            CommonCols.updatedAt: now.toIso8601String(),
+            CommonCols.needsSync: 1,
+            CommonCols.cachedAt: now.toIso8601String(),
           },
-          where: 'id = ?',
+          where: '${CommonCols.id} = ?',
           whereArgs: [materialId],
         );
 
@@ -115,13 +116,13 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
       final now = DateTime.now();
       await db.transaction((txn) async {
         await txn.update(
-          'learning_materials',
+          DbTables.learningMaterials,
           {
-            'deleted_at': now.toIso8601String(),
-            'needs_sync': 1,
-            'updated_at': now.toIso8601String(),
+            CommonCols.deletedAt: now.toIso8601String(),
+            CommonCols.needsSync: 1,
+            CommonCols.updatedAt: now.toIso8601String(),
           },
-          where: 'id = ?',
+          where: '${CommonCols.id} = ?',
           whereArgs: [materialId],
         );
         await syncQueue.enqueue(SyncQueueEntry(
@@ -167,17 +168,17 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
 
       await db.transaction((txn) async {
         await txn.insert(
-          'material_files',
+          DbTables.materialFiles,
           {
-            'id': fileId,
-            'material_id': materialId,
-            'file_name': fileName,
-            'file_type': fileType,
-            'file_size': fileSize,
-            'local_path': stagedPath,
-            'uploaded_at': now.toIso8601String(),
-            'cached_at': now.toIso8601String(),
-            'needs_sync': 1,
+            CommonCols.id: fileId,
+            MaterialFilesCols.materialId: materialId,
+            MaterialFilesCols.fileName: fileName,
+            MaterialFilesCols.fileType: fileType,
+            MaterialFilesCols.fileSize: fileSize,
+            MaterialFilesCols.localPath: stagedPath,
+            MaterialFilesCols.uploadedAt: now.toIso8601String(),
+            CommonCols.cachedAt: now.toIso8601String(),
+            CommonCols.needsSync: 1,
           },
         );
         await syncQueue.enqueue(SyncQueueEntry(
@@ -207,7 +208,7 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
   Future<void> deleteMaterialFileLocally(String fileId) async {
     try {
       final db = await localDatabase.database;
-      await db.delete('material_files', where: 'id = ?', whereArgs: [fileId]);
+      await db.delete(DbTables.materialFiles, where: '${CommonCols.id} = ?', whereArgs: [fileId]);
     } catch (e) {
       throw CacheException('Failed to delete material file locally: $e');
     }

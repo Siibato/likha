@@ -13,6 +13,7 @@ use crate::schema::auth_schema::MessageResponse;
 use crate::schema::common::success_response;
 use crate::schema::learning_material_schema::*;
 use crate::services::learning_material::LearningMaterialService;
+use crate::utils::auth_guards::require_teacher;
 use crate::utils::error::AppError;
 
 // ===== MATERIAL CRUD =====
@@ -23,8 +24,8 @@ pub async fn create_material(
     Path(class_id): Path<Uuid>,
     Json(request): Json<CreateMaterialRequest>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
 
     match service
@@ -70,8 +71,8 @@ pub async fn update_material(
     Path(id): Path<Uuid>,
     Json(request): Json<UpdateMaterialRequest>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
 
     match service
@@ -88,8 +89,8 @@ pub async fn delete_material(
     auth_user: AuthUser,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
 
     match service.delete_material(id, auth_user.user_id).await {
@@ -106,8 +107,8 @@ pub async fn reorder_material(
     Path(id): Path<Uuid>,
     Json(request): Json<ReorderMaterialRequest>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
 
     match service
@@ -125,8 +126,8 @@ pub async fn reorder_materials(
     Path(class_id): Path<Uuid>,
     Json(request): Json<ReorderMaterialsRequest>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
 
     match service.reorder_materials(class_id, request, auth_user.user_id).await {
@@ -145,8 +146,8 @@ pub async fn upload_file(
     Path(id): Path<Uuid>,
     mut multipart: Multipart,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
 
     while let Ok(Some(field)) = multipart.next_field().await {
@@ -187,8 +188,8 @@ pub async fn delete_file(
     auth_user: AuthUser,
     Path(file_id): Path<Uuid>,
 ) -> impl IntoResponse {
-    if auth_user.role != "teacher" {
-        return AppError::Forbidden("Teacher access required".to_string()).into_response();
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
     }
 
     match service.delete_file(file_id, auth_user.user_id).await {

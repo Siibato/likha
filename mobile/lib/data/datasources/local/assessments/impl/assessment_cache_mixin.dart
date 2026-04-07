@@ -2,6 +2,7 @@ import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/assessments/assessment_model.dart';
 import 'package:likha/data/models/assessments/question_model.dart';
+import 'package:likha/core/database/db_schema.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 import '../assessment_local_datasource_base.dart';
@@ -14,13 +15,13 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
       await db.transaction((txn) async {
         for (final assessment in assessments) {
           final map = assessment.toMap();
-          map['cached_at'] = DateTime.now().toIso8601String();
-          map['needs_sync'] = 0;
+          map[CommonCols.cachedAt] = DateTime.now().toIso8601String();
+          map[CommonCols.needsSync] = 0;
           // Use update-first pattern to avoid CASCADE DELETE on assessment_submissions
-          final assessmentId = map['id'] as String;
-          final updated = await txn.update('assessments', map, where: 'id = ?', whereArgs: [assessmentId]);
+          final assessmentId = map[CommonCols.id] as String;
+          final updated = await txn.update(DbTables.assessments, map, where: '${CommonCols.id} = ?', whereArgs: [assessmentId]);
           if (updated == 0) {
-            await txn.insert('assessments', map);
+            await txn.insert(DbTables.assessments, map);
           }
         }
       });
@@ -35,36 +36,36 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
       final db = await localDatabase.database;
       await db.transaction((txn) async {
         final assessmentMap = assessment.toMap();
-        assessmentMap['cached_at'] = DateTime.now().toIso8601String();
-        assessmentMap['needs_sync'] = 0;
+        assessmentMap[CommonCols.cachedAt] = DateTime.now().toIso8601String();
+        assessmentMap[CommonCols.needsSync] = 0;
         // Use update-first pattern to avoid CASCADE DELETE on assessment_submissions
-        final assessmentId = assessmentMap['id'] as String;
-        final updated = await txn.update('assessments', assessmentMap, where: 'id = ?', whereArgs: [assessmentId]);
+        final assessmentId = assessmentMap[CommonCols.id] as String;
+        final updated = await txn.update(DbTables.assessments, assessmentMap, where: '${CommonCols.id} = ?', whereArgs: [assessmentId]);
         if (updated == 0) {
-          await txn.insert('assessments', assessmentMap);
+          await txn.insert(DbTables.assessments, assessmentMap);
         }
 
         for (final question in questions) {
           final now = DateTime.now().toIso8601String();
           // Delete stale child rows before re-inserting (prevents orphan accumulation)
-          await txn.delete('answer_keys', where: 'question_id = ?', whereArgs: [question.id]);
-          await txn.delete('question_choices', where: 'question_id = ?', whereArgs: [question.id]);
+          await txn.delete(DbTables.answerKeys, where: '${AnswerKeysCols.questionId} = ?', whereArgs: [question.id]);
+          await txn.delete(DbTables.questionChoices, where: '${QuestionChoicesCols.questionId} = ?', whereArgs: [question.id]);
 
           // Insert assessment_questions (v18 - renamed from 'questions')
           await txn.insert(
-            'assessment_questions',
+            DbTables.assessmentQuestions,
             {
-              'id': question.id,
-              'assessment_id': assessment.id,
-              'question_type': question.questionType,
-              'question_text': question.questionText,
-              'points': question.points,
-              'order_index': question.orderIndex,
-              'is_multi_select': question.isMultiSelect ? 1 : 0,
-              'created_at': question.createdAt?.toIso8601String() ?? now,
-              'updated_at': question.updatedAt?.toIso8601String() ?? now,
-              'cached_at': now,
-              'needs_sync': 0,
+              CommonCols.id: question.id,
+              AssessmentQuestionsCols.assessmentId: assessment.id,
+              AssessmentQuestionsCols.questionType: question.questionType,
+              AssessmentQuestionsCols.questionText: question.questionText,
+              AssessmentQuestionsCols.points: question.points,
+              AssessmentQuestionsCols.orderIndex: question.orderIndex,
+              AssessmentQuestionsCols.isMultiSelect: question.isMultiSelect ? 1 : 0,
+              CommonCols.createdAt: question.createdAt?.toIso8601String() ?? now,
+              CommonCols.updatedAt: question.updatedAt?.toIso8601String() ?? now,
+              CommonCols.cachedAt: now,
+              CommonCols.needsSync: 0,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
@@ -73,15 +74,15 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
           if (question.choices != null) {
             for (final choice in question.choices!) {
               await txn.insert(
-                'question_choices',
+                DbTables.questionChoices,
                 {
-                  'id': choice.id,
-                  'question_id': question.id,
-                  'choice_text': choice.choiceText,
-                  'is_correct': choice.isCorrect ? 1 : 0,
-                  'order_index': choice.orderIndex,
-                  'cached_at': now,
-                  'needs_sync': 0,
+                  CommonCols.id: choice.id,
+                  QuestionChoicesCols.questionId: question.id,
+                  QuestionChoicesCols.choiceText: choice.choiceText,
+                  QuestionChoicesCols.isCorrect: choice.isCorrect ? 1 : 0,
+                  QuestionChoicesCols.orderIndex: choice.orderIndex,
+                  CommonCols.cachedAt: now,
+                  CommonCols.needsSync: 0,
                 },
                 conflictAlgorithm: ConflictAlgorithm.replace,
               );
@@ -93,13 +94,13 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
             // Use stable ID for correctAnswers (composite ID)
             final answerKeyId = '${question.id}_correct_key';
             await txn.insert(
-              'answer_keys',
+              DbTables.answerKeys,
               {
-                'id': answerKeyId,
-                'question_id': question.id,
-                'item_type': 'correct_answer',
-                'cached_at': now,
-                'needs_sync': 0,
+                CommonCols.id: answerKeyId,
+                AnswerKeysCols.questionId: question.id,
+                AnswerKeysCols.itemType: DbValues.itemTypeCorrectAnswer,
+                CommonCols.cachedAt: now,
+                CommonCols.needsSync: 0,
               },
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
@@ -107,13 +108,13 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
             // Insert acceptable answers
             for (final answer in question.correctAnswers!) {
               await txn.insert(
-                'answer_key_acceptable_answers',
+                DbTables.answerKeyAcceptableAnswers,
                 {
-                  'id': answer.id,
-                  'answer_key_id': answerKeyId,
-                  'answer_text': answer.answerText,
-                  'cached_at': now,
-                  'needs_sync': 0,
+                  CommonCols.id: answer.id,
+                  AnswerKeyAcceptableAnswersCols.answerKeyId: answerKeyId,
+                  AnswerKeyAcceptableAnswersCols.answerText: answer.answerText,
+                  CommonCols.cachedAt: now,
+                  CommonCols.needsSync: 0,
                 },
                 conflictAlgorithm: ConflictAlgorithm.replace,
               );
@@ -126,13 +127,13 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
               // Use server ID for enumeration items
               final answerKeyId = enumItem.id;
               await txn.insert(
-                'answer_keys',
+                DbTables.answerKeys,
                 {
-                  'id': answerKeyId,
-                  'question_id': question.id,
-                  'item_type': 'enumeration_item',
-                  'cached_at': now,
-                  'needs_sync': 0,
+                  CommonCols.id: answerKeyId,
+                  AnswerKeysCols.questionId: question.id,
+                  AnswerKeysCols.itemType: DbValues.itemTypeEnumerationItem,
+                  CommonCols.cachedAt: now,
+                  CommonCols.needsSync: 0,
                 },
                 conflictAlgorithm: ConflictAlgorithm.replace,
               );
@@ -140,13 +141,13 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
               // Insert acceptable answers for this enumeration item
               for (final acceptableAnswer in enumItem.acceptableAnswers) {
                 await txn.insert(
-                  'answer_key_acceptable_answers',
+                  DbTables.answerKeyAcceptableAnswers,
                   {
-                    'id': acceptableAnswer.id,
-                    'answer_key_id': answerKeyId,
-                    'answer_text': acceptableAnswer.answerText,
-                    'cached_at': now,
-                    'needs_sync': 0,
+                    CommonCols.id: acceptableAnswer.id,
+                    AnswerKeyAcceptableAnswersCols.answerKeyId: answerKeyId,
+                    AnswerKeyAcceptableAnswersCols.answerText: acceptableAnswer.answerText,
+                    CommonCols.cachedAt: now,
+                    CommonCols.needsSync: 0,
                   },
                   conflictAlgorithm: ConflictAlgorithm.replace,
                 );
@@ -171,7 +172,7 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
 
       // Verify assessment exists before inserting questions (FK constraint check)
       final assessmentExists = await db.rawQuery(
-        'SELECT id FROM assessments WHERE id = ? LIMIT 1',
+        'SELECT id FROM ${DbTables.assessments} WHERE id = ? LIMIT 1',
         [assessmentId],
       );
 
@@ -186,24 +187,24 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
         for (final question in questions) {
           final now = DateTime.now().toIso8601String();
           // Delete stale child rows before re-inserting (prevents orphan accumulation)
-          await txn.delete('answer_keys', where: 'question_id = ?', whereArgs: [question.id]);
-          await txn.delete('question_choices', where: 'question_id = ?', whereArgs: [question.id]);
+          await txn.delete(DbTables.answerKeys, where: '${AnswerKeysCols.questionId} = ?', whereArgs: [question.id]);
+          await txn.delete(DbTables.questionChoices, where: '${QuestionChoicesCols.questionId} = ?', whereArgs: [question.id]);
 
           // Insert into assessment_questions (v18 - renamed from 'questions')
           await txn.insert(
-            'assessment_questions',
+            DbTables.assessmentQuestions,
             {
-              'id': question.id,
-              'assessment_id': assessmentId,
-              'question_type': question.questionType,
-              'question_text': question.questionText,
-              'points': question.points,
-              'order_index': question.orderIndex,
-              'is_multi_select': question.isMultiSelect ? 1 : 0,
-              'created_at': question.createdAt?.toIso8601String() ?? now,
-              'updated_at': question.updatedAt?.toIso8601String() ?? now,
-              'cached_at': now,
-              'needs_sync': isServerConfirmed ? 0 : 1,
+              CommonCols.id: question.id,
+              AssessmentQuestionsCols.assessmentId: assessmentId,
+              AssessmentQuestionsCols.questionType: question.questionType,
+              AssessmentQuestionsCols.questionText: question.questionText,
+              AssessmentQuestionsCols.points: question.points,
+              AssessmentQuestionsCols.orderIndex: question.orderIndex,
+              AssessmentQuestionsCols.isMultiSelect: question.isMultiSelect ? 1 : 0,
+              CommonCols.createdAt: question.createdAt?.toIso8601String() ?? now,
+              CommonCols.updatedAt: question.updatedAt?.toIso8601String() ?? now,
+              CommonCols.cachedAt: now,
+              CommonCols.needsSync: isServerConfirmed ? 0 : 1,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
@@ -212,15 +213,15 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
           if (question.choices != null) {
             for (final choice in question.choices!) {
               await txn.insert(
-                'question_choices',
+                DbTables.questionChoices,
                 {
-                  'id': choice.id,
-                  'question_id': question.id,
-                  'choice_text': choice.choiceText,
-                  'is_correct': choice.isCorrect ? 1 : 0,
-                  'order_index': choice.orderIndex,
-                  'cached_at': now,
-                  'needs_sync': 0,
+                  CommonCols.id: choice.id,
+                  QuestionChoicesCols.questionId: question.id,
+                  QuestionChoicesCols.choiceText: choice.choiceText,
+                  QuestionChoicesCols.isCorrect: choice.isCorrect ? 1 : 0,
+                  QuestionChoicesCols.orderIndex: choice.orderIndex,
+                  CommonCols.cachedAt: now,
+                  CommonCols.needsSync: 0,
                 },
                 conflictAlgorithm: ConflictAlgorithm.replace,
               );
@@ -231,26 +232,26 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
           if (question.correctAnswers != null && question.correctAnswers!.isNotEmpty) {
             final answerKeyId = '${question.id}_correct_key';
             await txn.insert(
-              'answer_keys',
+              DbTables.answerKeys,
               {
-                'id': answerKeyId,
-                'question_id': question.id,
-                'item_type': 'correct_answer',
-                'cached_at': now,
-                'needs_sync': 0,
+                CommonCols.id: answerKeyId,
+                AnswerKeysCols.questionId: question.id,
+                AnswerKeysCols.itemType: DbValues.itemTypeCorrectAnswer,
+                CommonCols.cachedAt: now,
+                CommonCols.needsSync: 0,
               },
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
 
             for (final answer in question.correctAnswers!) {
               await txn.insert(
-                'answer_key_acceptable_answers',
+                DbTables.answerKeyAcceptableAnswers,
                 {
-                  'id': answer.id,
-                  'answer_key_id': answerKeyId,
-                  'answer_text': answer.answerText,
-                  'cached_at': now,
-                  'needs_sync': 0,
+                  CommonCols.id: answer.id,
+                  AnswerKeyAcceptableAnswersCols.answerKeyId: answerKeyId,
+                  AnswerKeyAcceptableAnswersCols.answerText: answer.answerText,
+                  CommonCols.cachedAt: now,
+                  CommonCols.needsSync: 0,
                 },
                 conflictAlgorithm: ConflictAlgorithm.replace,
               );
@@ -262,26 +263,26 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
             for (final enumItem in question.enumerationItems!) {
               final answerKeyId = enumItem.id;
               await txn.insert(
-                'answer_keys',
+                DbTables.answerKeys,
                 {
-                  'id': answerKeyId,
-                  'question_id': question.id,
-                  'item_type': 'enumeration_item',
-                  'cached_at': now,
-                  'needs_sync': 0,
+                  CommonCols.id: answerKeyId,
+                  AnswerKeysCols.questionId: question.id,
+                  AnswerKeysCols.itemType: DbValues.itemTypeEnumerationItem,
+                  CommonCols.cachedAt: now,
+                  CommonCols.needsSync: 0,
                 },
                 conflictAlgorithm: ConflictAlgorithm.replace,
               );
 
               for (final acceptableAnswer in enumItem.acceptableAnswers) {
                 await txn.insert(
-                  'answer_key_acceptable_answers',
+                  DbTables.answerKeyAcceptableAnswers,
                   {
-                    'id': acceptableAnswer.id,
-                    'answer_key_id': answerKeyId,
-                    'answer_text': acceptableAnswer.answerText,
-                    'cached_at': now,
-                    'needs_sync': 0,
+                    CommonCols.id: acceptableAnswer.id,
+                    AnswerKeyAcceptableAnswersCols.answerKeyId: answerKeyId,
+                    AnswerKeyAcceptableAnswersCols.answerText: acceptableAnswer.answerText,
+                    CommonCols.cachedAt: now,
+                    CommonCols.needsSync: 0,
                   },
                   conflictAlgorithm: ConflictAlgorithm.replace,
                 );
@@ -302,14 +303,14 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
       final now = DateTime.now();
       await db.transaction((txn) async {
         await txn.update(
-          'assessments',
+          DbTables.assessments,
           {
-            'results_released': 1,
-            'needs_sync': 1,
-            'updated_at': now.toIso8601String(),
-            'cached_at': now.toIso8601String(),
+            AssessmentsCols.resultsReleased: 1,
+            CommonCols.needsSync: 1,
+            CommonCols.updatedAt: now.toIso8601String(),
+            CommonCols.cachedAt: now.toIso8601String(),
           },
-          where: 'id = ?',
+          where: '${CommonCols.id} = ?',
           whereArgs: [assessmentId],
         );
         await syncQueue.enqueue(SyncQueueEntry(
@@ -333,13 +334,13 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
     try {
       final db = await localDatabase.database;
       await db.update(
-        'assessments',
+        DbTables.assessments,
         {
-          'deleted_at': DateTime.now().toIso8601String(),
-          'needs_sync': 1,
-          'updated_at': DateTime.now().toIso8601String(),
+          CommonCols.deletedAt: DateTime.now().toIso8601String(),
+          CommonCols.needsSync: 1,
+          CommonCols.updatedAt: DateTime.now().toIso8601String(),
         },
-        where: 'id = ?',
+        where: '${CommonCols.id} = ?',
         whereArgs: [assessmentId],
       );
     } catch (e) {
@@ -351,14 +352,14 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
   Future<void> clearAllCache() async {
     try {
       final db = await localDatabase.database;
-      await db.delete('assessments');
-      await db.delete('assessment_questions');
-      await db.delete('question_choices');
-      await db.delete('answer_keys');
-      await db.delete('answer_key_acceptable_answers');
-      await db.delete('submission_answers');
-      await db.delete('submission_answer_items');
-      await db.delete('assessment_submissions');
+      await db.delete(DbTables.assessments);
+      await db.delete(DbTables.assessmentQuestions);
+      await db.delete(DbTables.questionChoices);
+      await db.delete(DbTables.answerKeys);
+      await db.delete(DbTables.answerKeyAcceptableAnswers);
+      await db.delete(DbTables.submissionAnswers);
+      await db.delete(DbTables.submissionAnswerItems);
+      await db.delete(DbTables.assessmentSubmissions);
     } catch (e) {
       throw CacheException('Failed to clear assessment cache: $e');
     }

@@ -145,9 +145,14 @@ class DioClient {
         ];
 
         if (!publicEndpoints.contains(options.path)) {
-          final token = await _storageService.getAccessToken();
-          if (token != null) {
-            options.headers['Authorization'] = 'Bearer $token';
+          try {
+            final token = await _storageService.getAccessToken();
+            if (token != null) {
+              options.headers['Authorization'] = 'Bearer $token';
+            }
+          } catch (e) {
+            // Degrade gracefully — request proceeds without auth header,
+            // will get 401 which triggers the refresh/logout flow.
           }
         }
 
@@ -216,7 +221,12 @@ class DioClient {
   // Refresh token logic
   Future<bool> _refreshToken() async {
     try {
-      final refreshToken = await _storageService.getRefreshToken();
+      String? refreshToken;
+      try {
+        refreshToken = await _storageService.getRefreshToken();
+      } catch (e) {
+        return false;
+      }
       if (refreshToken == null) return false;
 
       final response = await _dio.post(

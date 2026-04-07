@@ -42,7 +42,7 @@ impl LoginAttemptRepository {
     /// This is a simplified version that just logs the attempt
     pub async fn record_failed_attempt(
         &self,
-        username: &str,
+        _username: &str,
         ip: &str,
     ) -> AppResult<(i32, Option<chrono::NaiveDateTime>)> {
         // Create a deterministic device_id from IP for tracking
@@ -73,7 +73,7 @@ impl LoginAttemptRepository {
     /// Check if user is locked out - kept for backward compatibility
     pub async fn check_lockout(
         &self,
-        username: &str,
+        _username: &str,
         ip: &str,
     ) -> AppResult<(bool, i64)> {
         let device_id = format!("ip-{}", ip);
@@ -103,7 +103,7 @@ impl LoginAttemptRepository {
     }
 
     /// Clear attempts - kept for backward compatibility
-    pub async fn clear_attempts(&self, username: &str, ip: &str) -> AppResult<()> {
+    pub async fn clear_attempts(&self, _username: &str, _ip: &str) -> AppResult<()> {
         // In new schema, we don't delete attempts (they're audit records)
         // This is a no-op to maintain API compatibility
         Ok(())

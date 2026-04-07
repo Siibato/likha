@@ -52,7 +52,7 @@ class StyledDialog extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 16,
               offset: const Offset(0, 8),
             ),
@@ -174,7 +174,7 @@ class StyledDialog extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         foregroundColor: const Color(0xFF666666),
         side: const BorderSide(
-          color: const Color(0xFFE0E0E0),
+          color: Color(0xFFE0E0E0),
           width: 1.5,
         ),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),

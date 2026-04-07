@@ -31,7 +31,7 @@ class MaterialCardSkeleton extends StatelessWidget {
           borderRadius:
               BorderRadius.circular(AppDimensions.kCardSmInnerRadius),
         ),
-        child: Row(
+        child: const Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Icon slot
@@ -40,7 +40,7 @@ class MaterialCardSkeleton extends StatelessWidget {
               height: 36,
               borderRadius: 10,
             ),
-            const SizedBox(width: 14),
+            SizedBox(width: 14),
             // Text column
             Expanded(
               child: Column(
@@ -52,7 +52,7 @@ class MaterialCardSkeleton extends StatelessWidget {
                     height: 13,
                     borderRadius: 4,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   // File count
                   SkeletonBox(
                     width: double.infinity * 0.45,
@@ -63,7 +63,7 @@ class MaterialCardSkeleton extends StatelessWidget {
               ),
             ),
             // Chevron
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             SkeletonBox(
               width: 16,
               height: 16,

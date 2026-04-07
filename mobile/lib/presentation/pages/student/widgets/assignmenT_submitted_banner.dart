@@ -7,8 +7,8 @@ class AssignmentSubmittedBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InfoPanel(
-      padding: const EdgeInsets.all(14),
+    return const InfoPanel(
+      padding: EdgeInsets.all(14),
       child: Row(
         children: [
           Icon(
@@ -16,8 +16,8 @@ class AssignmentSubmittedBanner extends StatelessWidget {
             color: AppColors.foregroundSecondary,
             size: 22,
           ),
-          const SizedBox(width: 12),
-          const Expanded(
+          SizedBox(width: 12),
+          Expanded(
             child: Text(
               'Assignment submitted. Waiting for teacher to grade.',
               style: TextStyle(

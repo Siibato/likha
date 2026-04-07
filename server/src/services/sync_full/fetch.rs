@@ -1,9 +1,9 @@
 use chrono::Utc;
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 
-use crate::utils::{AppResult, AppError};
+use crate::utils::AppResult;
 use crate::services::sync_common::enrich_questions;
 
 use super::sync_full_service::{FullSyncRequest, FullSyncResponse};
@@ -147,6 +147,12 @@ impl super::SyncFullService {
                 submission_files: vec![],
                 assessment_statistics: vec![],
                 student_results: vec![],
+                grade_configs: vec![],
+                grade_items: vec![],
+                grade_scores: vec![],
+                quarterly_grades: vec![],
+                table_of_specifications: vec![],
+                tos_competencies: vec![],
             });
         }
 
@@ -181,6 +187,12 @@ impl super::SyncFullService {
                 submission_files: vec![],
                 assessment_statistics: vec![],
                 student_results: vec![],
+                grade_configs: vec![],
+                grade_items: vec![],
+                grade_scores: vec![],
+                quarterly_grades: vec![],
+                table_of_specifications: vec![],
+                tos_competencies: vec![],
             });
         }
 
@@ -220,7 +232,6 @@ impl super::SyncFullService {
         let batch_enrollment_data = if batch_enrollment_ids.is_empty() {
             crate::db::repositories::manifest_repository::PaginatedRecords {
                 records: Vec::new(),
-                has_more: false,
             }
         } else {
             self.manifest_repo
@@ -422,6 +433,56 @@ impl super::SyncFullService {
             }
         };
 
+        // Fetch grading data for batch classes
+        tracing::debug!("Fetching grading data for batch");
+        let grade_configs = self.manifest_repo
+            .get_grade_configs_for_classes(batch_class_ids.clone())
+            .await?;
+        let grade_items_data = self.manifest_repo
+            .get_grade_items_for_classes(batch_class_ids.clone())
+            .await?;
+
+        // Get grade_item IDs for score fetching
+        let grade_item_ids: Vec<Uuid> = grade_items_data
+            .iter()
+            .filter_map(|gi| gi.get("id").and_then(|id| id.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+            .collect();
+
+        // Role-aware grade scores
+        let grade_scores_data = if grade_item_ids.is_empty() {
+            Vec::new()
+        } else {
+            match user_role {
+                "student" => {
+                    self.manifest_repo
+                        .get_student_grade_scores(user_id, grade_item_ids)
+                        .await?
+                }
+                _ => {
+                    self.manifest_repo
+                        .get_all_grade_scores(grade_item_ids)
+                        .await?
+                }
+            }
+        };
+
+        // Role-aware quarterly grades
+        let quarterly_grades_data = match user_role {
+            "student" => {
+                self.manifest_repo
+                    .get_student_quarterly_grades(user_id, batch_class_ids.clone())
+                    .await?
+            }
+            _ => {
+                self.manifest_repo
+                    .get_all_quarterly_grades(batch_class_ids.clone())
+                    .await?
+            }
+        };
+
+        tracing::debug!("Fetched grading data: configs={}, items={}, scores={}, quarterly={}",
+            grade_configs.len(), grade_items_data.len(), grade_scores_data.len(), quarterly_grades_data.len());
+
         let now = Utc::now();
         let sync_token = now.to_rfc3339();
         let server_time = now.to_rfc3339();
@@ -462,6 +523,12 @@ impl super::SyncFullService {
             submission_files,
             assessment_statistics,
             student_results,
+            grade_configs,
+            grade_items: grade_items_data,
+            grade_scores: grade_scores_data,
+            quarterly_grades: quarterly_grades_data,
+            table_of_specifications: vec![], // TOS data fetched when available
+            tos_competencies: vec![],
         })
     }
 

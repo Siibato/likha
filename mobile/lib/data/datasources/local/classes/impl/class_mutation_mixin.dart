@@ -1,3 +1,4 @@
+import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/classes/class_model.dart';
@@ -32,9 +33,9 @@ mixin ClassMutationMixin on ClassLocalDataSourceBase {
 
       await db.transaction((txn) async {
         final map = classModel.toMap();
-        map['cached_at'] = now.toIso8601String();
-        map['needs_sync'] = 1;
-        await txn.insert('classes', map);
+        map[CommonCols.cachedAt] = now.toIso8601String();
+        map[CommonCols.needsSync] = 1;
+        await txn.insert(DbTables.classes, map);
 
         await syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),
@@ -66,28 +67,35 @@ mixin ClassMutationMixin on ClassLocalDataSourceBase {
     required String classId,
     required String title,
     required String description,
+    bool? isAdvisory,
   }) async {
     try {
       final db = await localDatabase.database;
       final now = DateTime.now();
       await db.transaction((txn) async {
         await txn.update(
-          'classes',
+          DbTables.classes,
           {
-            'title': title,
-            'description': description,
-            'updated_at': now.toIso8601String(),
-            'needs_sync': 1,
-            'cached_at': now.toIso8601String(),
+            ClassesCols.title: title,
+            ClassesCols.description: description,
+            if (isAdvisory != null) ClassesCols.isAdvisory: isAdvisory ? 1 : 0,
+            CommonCols.updatedAt: now.toIso8601String(),
+            CommonCols.needsSync: 1,
+            CommonCols.cachedAt: now.toIso8601String(),
           },
-          where: 'id = ?',
+          where: '${CommonCols.id} = ?',
           whereArgs: [classId],
         );
         await syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),
           entityType: SyncEntityType.classEntity,
           operation: SyncOperation.update,
-          payload: {'id': classId, 'title': title, 'description': description},
+          payload: {
+            'id': classId,
+            'title': title,
+            'description': description,
+            if (isAdvisory != null) 'is_advisory': isAdvisory,
+          },
           status: SyncStatus.pending,
           retryCount: 0,
           maxRetries: 3,

@@ -14,6 +14,9 @@ pub struct CreateAssignmentRequest {
     pub due_at: String,
     #[serde(default)]
     pub is_published: Option<bool>,
+    pub quarter: Option<i32>,
+    pub component: Option<String>,
+    pub no_submission_required: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -25,6 +28,9 @@ pub struct UpdateAssignmentRequest {
     pub allowed_file_types: Option<String>,
     pub max_file_size_mb: Option<i32>,
     pub due_at: Option<String>,
+    pub quarter: Option<i32>,
+    pub component: Option<String>,
+    pub no_submission_required: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -36,11 +42,6 @@ pub struct GradeSubmissionRequest {
 #[derive(Debug, Deserialize)]
 pub struct SubmitTextRequest {
     pub text_content: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct ReorderAssignmentRequest {
-    pub new_order_index: i32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -65,6 +66,9 @@ pub struct AssignmentResponse {
     pub order_index: i32,
     pub submission_count: usize,
     pub graded_count: usize,
+    pub quarter: Option<i32>,
+    pub component: Option<String>,
+    pub no_submission_required: Option<bool>,
     pub submission_status: Option<String>,
     pub submission_id: Option<Uuid>,
     pub score: Option<i32>,

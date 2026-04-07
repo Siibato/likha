@@ -23,6 +23,9 @@ mod m20260313_000001_schema_v3;
 mod m20260315_migrate_file_storage;
 mod m20260316_000001_drop_file_data_columns;
 mod m20260316_000002_float_submission_score;
+mod m20260322_000001_grading_system;
+mod m20260322_000002_advisory_and_tos;
+mod m20260329_000001_create_school_settings;
 
 pub struct Migrator;
 
@@ -53,6 +56,9 @@ impl MigratorTrait for Migrator {
             Box::new(m20260315_migrate_file_storage::Migration),
             Box::new(m20260316_000001_drop_file_data_columns::Migration),
             Box::new(m20260316_000002_float_submission_score::Migration),
+            Box::new(m20260322_000001_grading_system::Migration),
+            Box::new(m20260322_000002_advisory_and_tos::Migration),
+            Box::new(m20260329_000001_create_school_settings::Migration),
         ]
     }
 }

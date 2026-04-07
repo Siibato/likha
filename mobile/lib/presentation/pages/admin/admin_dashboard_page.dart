@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/admin/account_management_page.dart';
 import 'package:likha/presentation/pages/admin/admin_classes_page.dart';
+import 'package:likha/presentation/pages/admin/admin_school_settings_page.dart';
 import 'package:likha/presentation/pages/admin/create_account_page.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/navigation_card.dart';
@@ -13,7 +14,7 @@ class AdminDashboardPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
+    ref.watch(authProvider);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -22,7 +23,7 @@ class AdminDashboardPage extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClassSectionHeader(
+              const ClassSectionHeader(
                 title: 'Admin Dashboard',
                 fontSize: 28,
               ),
@@ -63,6 +64,18 @@ class AdminDashboardPage extends ConsumerWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => const CreateAccountPage(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    NavigationCard(
+                      icon: Icons.settings_outlined,
+                      title: 'School Settings',
+                      subtitle: 'Configure school info for printed reports',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AdminSchoolSettingsPage(),
                         ),
                       ),
                     ),

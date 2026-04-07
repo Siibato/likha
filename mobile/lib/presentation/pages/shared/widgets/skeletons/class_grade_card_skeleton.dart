@@ -31,7 +31,7 @@ class ClassGradeCardSkeleton extends StatelessWidget {
           borderRadius:
               BorderRadius.circular(AppDimensions.kCardInnerRadius),
         ),
-        child: Row(
+        child: const Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Icon slot
@@ -40,7 +40,7 @@ class ClassGradeCardSkeleton extends StatelessWidget {
               height: 36,
               borderRadius: AppDimensions.kIconSlotRadius,
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: 16),
             // Class name
             Expanded(
               child: SkeletonBox(
@@ -50,7 +50,7 @@ class ClassGradeCardSkeleton extends StatelessWidget {
               ),
             ),
             // Grade pill
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             SkeletonBox(
               width: 50,
               height: 22,

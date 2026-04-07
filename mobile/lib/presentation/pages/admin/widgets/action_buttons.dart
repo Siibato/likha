@@ -119,6 +119,6 @@ class _ActionButton extends StatelessWidget {
 
   Color _getLightBackground() {
     // Create a light tinted background while maintaining semantic color
-    return backgroundColor.withOpacity(0.12);
+    return backgroundColor.withValues(alpha: 0.12);
   }
 }

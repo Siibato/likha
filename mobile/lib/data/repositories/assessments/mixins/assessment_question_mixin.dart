@@ -130,7 +130,7 @@ mixin AssessmentQuestionMixin on AssessmentRepositoryBase {
       await localDataSource.cacheQuestions(assessmentId, result, isServerConfirmed: true);
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -148,7 +148,7 @@ mixin AssessmentQuestionMixin on AssessmentRepositoryBase {
         // Fetch current question from cache to get assessmentId and other fields
         final currentQuestion = await localDataSource.getCachedQuestion(questionId);
         if (currentQuestion == null) {
-          return Left(ServerFailure('Question not found in local cache'));
+          return const Left(ServerFailure('Question not found in local cache'));
         }
 
         await localDataSource.updateQuestionLocally(
@@ -197,7 +197,7 @@ mixin AssessmentQuestionMixin on AssessmentRepositoryBase {
       );
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -228,7 +228,7 @@ mixin AssessmentQuestionMixin on AssessmentRepositoryBase {
       await localDataSource.deleteQuestionLocally(questionId: questionId);
       return const Right(null);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -263,7 +263,7 @@ mixin AssessmentQuestionMixin on AssessmentRepositoryBase {
       );
       return const Right(null);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {

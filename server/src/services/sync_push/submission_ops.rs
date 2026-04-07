@@ -3,15 +3,13 @@ use chrono::Utc;
 use crate::schema::assessment_schema::{SaveAnswersRequest, OverrideAnswerRequest};
 use crate::schema::assignment_schema::GradeSubmissionRequest;
 use super::sync_push_service::{OperationResult, SyncQueueEntry};
+use super::extract_field;
 
 impl super::SyncPushService {
     pub(super) async fn handle_assessment_submission_operation(&self, user_id: Uuid, op: &SyncQueueEntry) -> OperationResult {
         match op.operation.as_str() {
             "create" => {
-                let assessment_id = match self.parse_uuid_field(&op.payload, "assessment_id") {
-                    Ok(id) => id,
-                    Err(e) => return self.error_result(op, &e),
-                };
+                let assessment_id = extract_field!(self, op, parse_uuid_field, "assessment_id");
                 // Idempotency: return existing server_id so downstream saveAnswers/submit can proceed
                 if let Ok(Some(existing)) = self.assessment_service.submission_repo
                     .find_by_student_and_assessment(user_id, assessment_id).await
@@ -52,20 +50,14 @@ impl super::SyncPushService {
                 }
             }
             "submit" => {
-                let submission_id = match self.parse_uuid_field(&op.payload, "submission_id") {
-                    Ok(id) => id,
-                    Err(e) => return self.error_result(op, &e),
-                };
+                let submission_id = extract_field!(self, op, parse_uuid_field, "submission_id");
                 match self.assessment_service.submit_assessment(submission_id, user_id).await {
                     Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }
             }
             "override_answer" => {
-                let answer_id = match self.parse_uuid_field(&op.payload, "answer_id") {
-                    Ok(id) => id,
-                    Err(e) => return self.error_result(op, &e),
-                };
+                let answer_id = extract_field!(self, op, parse_uuid_field, "answer_id");
                 let is_correct = op.payload.get("is_correct").and_then(|v| v.as_bool()).unwrap_or(false);
                 match self.assessment_service.override_answer(answer_id, OverrideAnswerRequest { is_correct }, user_id).await {
                     Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
@@ -79,10 +71,7 @@ impl super::SyncPushService {
     pub(super) async fn handle_assignment_submission_operation(&self, user_id: Uuid, op: &SyncQueueEntry) -> OperationResult {
         match op.operation.as_str() {
             "create" => {
-                let assignment_id = match self.parse_uuid_field(&op.payload, "assignment_id") {
-                    Ok(id) => id,
-                    Err(e) => return self.error_result(op, &e),
-                };
+                let assignment_id = extract_field!(self, op, parse_uuid_field, "assignment_id");
                 // Extract optional submission_id from payload (client-provided UUID)
                 let submission_id = self.parse_uuid_field(&op.payload, "id").ok();
 
@@ -92,10 +81,7 @@ impl super::SyncPushService {
                 }
             }
             "submit" => {
-                let submission_id = match self.parse_uuid_field(&op.payload, "submission_id") {
-                    Ok(id) => id,
-                    Err(e) => return self.error_result(op, &e),
-                };
+                let submission_id = extract_field!(self, op, parse_uuid_field, "submission_id");
                 let text_content = op.payload.get("text_content").and_then(|v| v.as_str()).map(|s| s.to_string());
                 match self.assignment_service.submit_assignment(submission_id, user_id, text_content).await {
                     Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
@@ -103,14 +89,8 @@ impl super::SyncPushService {
                 }
             }
             "grade" => {
-                let submission_id = match self.parse_uuid_field(&op.payload, "id") {
-                    Ok(id) => id,
-                    Err(e) => return self.error_result(op, &e),
-                };
-                let score = match self.parse_i32_field(&op.payload, "score") {
-                    Ok(v) => v,
-                    Err(e) => return self.error_result(op, &e),
-                };
+                let submission_id = extract_field!(self, op, parse_uuid_field, "id");
+                let score = extract_field!(self, op, parse_i32_field, "score");
                 let request = GradeSubmissionRequest {
                     score,
                     feedback: op.payload.get("feedback").and_then(|v| v.as_str()).map(|s| s.to_string()),
@@ -121,10 +101,7 @@ impl super::SyncPushService {
                 }
             }
             "update" => {
-                let submission_id = match self.parse_uuid_field(&op.payload, "id") {
-                    Ok(id) => id,
-                    Err(e) => return self.error_result(op, &e),
-                };
+                let submission_id = extract_field!(self, op, parse_uuid_field, "id");
                 let action = op.payload.get("action").and_then(|v| v.as_str()).unwrap_or("");
                 match action {
                     "return" => match self.assignment_service.return_submission(submission_id, user_id).await {
@@ -141,10 +118,7 @@ impl super::SyncPushService {
     pub(super) async fn handle_submission_file_operation(&self, user_id: Uuid, op: &SyncQueueEntry) -> OperationResult {
         match op.operation.as_str() {
             "delete" => {
-                let file_id = match self.parse_uuid_field(&op.payload, "file_id") {
-                    Ok(id) => id,
-                    Err(e) => return self.error_result(op, &e),
-                };
+                let file_id = extract_field!(self, op, parse_uuid_field, "file_id");
                 match self.assignment_service.delete_file(file_id, user_id).await {
                     Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
                     Err(e) => self.error_result(op, &e.to_string()),
@@ -157,10 +131,7 @@ impl super::SyncPushService {
     pub(super) async fn handle_material_file_operation(&self, user_id: Uuid, op: &SyncQueueEntry) -> OperationResult {
         match op.operation.as_str() {
             "delete" => {
-                let file_id = match self.parse_uuid_field(&op.payload, "file_id") {
-                    Ok(id) => id,
-                    Err(e) => return self.error_result(op, &e),
-                };
+                let file_id = extract_field!(self, op, parse_uuid_field, "file_id");
                 match self.material_service.delete_file(file_id, user_id).await {
                     Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
                     Err(e) => self.error_result(op, &e.to_string()),

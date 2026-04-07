@@ -1,5 +1,7 @@
 import 'dart:async';
+
 import 'package:dartz/dartz.dart';
+import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -56,7 +58,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
       } on NetworkException catch (e) {
         return Left(NetworkFailure(e.message));
       } on ServerException catch (e) {
-        return Left(ServerFailure(e.message));
+        return Left(ServerFailure(e.message, statusCode: e.statusCode));
       }
     } catch (e) {
       return Left(ServerFailure(e.toString()));
@@ -107,7 +109,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
         rethrow;
       }
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -123,22 +125,22 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
   void _backgroundRefreshSubmission(String submissionId) {
     Future.microtask(() async {
       try {
-        print('[BG_REFRESH] 🔄 Starting background refresh for submissionId=$submissionId');
+        RepoLogger.instance.log('_backgroundRefreshSubmission() - Starting background refresh for submissionId=$submissionId');
         final fresh = await remoteDataSource.getSubmissionDetail(
             submissionId: submissionId);
         // Get currently cached data to compare against fresh
         final cached = await localDataSource.getCachedSubmission(submissionId);
 
         if (_submissionDataHasChanged(cached, fresh)) {
-          print('[BG_REFRESH] ✅ Data changed! Caching and notifying...');
+          RepoLogger.instance.log('_backgroundRefreshSubmission() - Data changed! Caching and notifying...');
           await localDataSource.cacheSubmissionDetail(fresh);
-          print('[BG_REFRESH] 📢 Calling dataEventBus.notifySubmissionDetailChanged($submissionId)');
+          RepoLogger.instance.log('_backgroundRefreshSubmission() - Calling dataEventBus.notifySubmissionDetailChanged($submissionId)');
           dataEventBus.notifySubmissionDetailChanged(submissionId);
         } else {
-          print('[BG_REFRESH] ⚫ Data unchanged, no notification');
+          RepoLogger.instance.log('_backgroundRefreshSubmission() - Data unchanged, no notification');
         }
       } catch (e) {
-        print('[BG_REFRESH] ❌ Error in background refresh: $e');
+        RepoLogger.instance.error('_backgroundRefreshSubmission() - Error in background refresh', e);
       }
     });
   }
@@ -219,7 +221,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
       await localDataSource.cacheSubmissionDetail(result);
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -264,7 +266,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
       await localDataSource.cacheSubmissionDetail(result);
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -315,7 +317,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
       unawaited(localDataSource.cacheSubmissionDetail(result));
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -364,7 +366,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
       unawaited(localDataSource.cacheSubmissionFile(submissionId, result));
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -394,7 +396,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
       await remoteDataSource.deleteFile(fileId: fileId);
       return const Right(null);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -463,7 +465,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
 
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -484,7 +486,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
       await localDataSource.cacheFileBytes(fileId, '', result);
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
@@ -500,7 +502,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
     try {
       final record = await localDataSource
           .getStudentSubmissionForAssignment(assignmentId, studentId);
-      if (record == null) return Right(null);
+      if (record == null) return const Right(null);
       return Right(StudentAssignmentStatus(
         submissionId: record.$1,
         status: record.$2,
