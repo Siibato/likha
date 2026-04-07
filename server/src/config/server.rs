@@ -8,6 +8,7 @@ pub struct ServerConfig {
     pub jwt_secret: String,
     pub jwt_expiration: i64,
     pub file_storage_path: String,
+    pub school_code: String,
 }
 
 impl ServerConfig {
@@ -27,6 +28,8 @@ impl ServerConfig {
                 .expect("JWT_EXPIRATION must be a valid number"),
             file_storage_path: env::var("FILE_STORAGE_PATH")
                 .unwrap_or_else(|_| "./uploads".to_string()),
+            school_code: env::var("SCHOOL_CODE")
+                .unwrap_or_else(|_| "CHANGE_ME".to_string()),
         }
     }
 }

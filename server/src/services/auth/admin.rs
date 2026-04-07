@@ -71,4 +71,37 @@ impl super::AuthService {
         let students = self.user_repo.search_students(query).await?;
         Ok(students.iter().map(Self::user_to_response).collect())
     }
+
+    pub async fn delete_account(
+        &self,
+        user_id: Uuid,
+        admin_id: Uuid,
+    ) -> AppResult<()> {
+        if user_id == admin_id {
+            return Err(AppError::BadRequest("Cannot delete your own account".to_string()));
+        }
+
+        let user = self
+            .user_repo
+            .find_by_id(user_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("User not found".to_string()))?;
+
+        if user.role == "admin" {
+            return Err(AppError::Forbidden("Cannot delete admin accounts".to_string()));
+        }
+
+        // Revoke all refresh tokens
+        self.user_repo.revoke_all_tokens_for_user(user_id).await?;
+
+        // Soft-delete the user
+        self.user_repo.soft_delete(user_id).await?;
+
+        // Log the action
+        self.activity_log_repo
+            .create_log(user_id, "account_deleted", Some(format!("Deleted by admin")))
+            .await?;
+
+        Ok(())
+    }
 }

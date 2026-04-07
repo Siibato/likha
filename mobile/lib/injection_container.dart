@@ -1,8 +1,12 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:likha/core/constants/api_constants.dart';
+import 'package:likha/core/services/school_setup_service.dart';
+import 'package:likha/core/services/impl/school_setup_service_impl.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/connectivity_service.dart';
@@ -89,6 +93,8 @@ import 'package:likha/data/datasources/remote/class_remote_datasource.dart';
 import 'package:likha/data/repositories/classes/class_repository_impl.dart';
 import 'package:likha/domain/classes/repositories/class_repository.dart';
 import 'package:likha/domain/classes/usecases/add_student.dart';
+import 'package:likha/domain/auth/usecases/delete_account.dart';
+import 'package:likha/domain/classes/usecases/delete_class.dart';
 import 'package:likha/domain/classes/usecases/create_class.dart';
 import 'package:likha/domain/classes/usecases/get_all_classes.dart';
 import 'package:likha/domain/classes/usecases/get_class_detail.dart';
@@ -162,6 +168,21 @@ Future<void> init() async {
   );
   sl.registerLazySingleton(() => secureStorage);
 
+  final sharedPrefs = await SharedPreferences.getInstance();
+  sl.registerSingleton<SharedPreferences>(sharedPrefs);
+
+  // School setup service — registered early so ApiConstants.baseUrl can be set
+  // before any network service is initialized.
+  sl.registerLazySingleton<SchoolSetupService>(
+    () => SchoolSetupServiceImpl(sl<SharedPreferences>(), Dio()),
+  );
+
+  // Bootstrap runtime base URL from stored school config (if available).
+  final schoolConfig = await sl<SchoolSetupService>().getSchoolConfig();
+  if (schoolConfig != null) {
+    ApiConstants.setRuntimeBaseUrl(schoolConfig.serverUrl);
+  }
+
   // Core - Database (first, depends on nothing)
   final localDb = LocalDatabase();
   await localDb.initialize();
@@ -180,7 +201,9 @@ Future<void> init() async {
   sl.registerSingleton<DataEventBus>(DataEventBus());
 
   // Core - General
-  sl.registerLazySingleton(() => StorageService(sl<FlutterSecureStorage>()));
+  sl.registerLazySingleton(() => kIsWeb
+      ? StorageService(sl<FlutterSecureStorage>(), sl<SharedPreferences>())
+      : StorageService(sl<FlutterSecureStorage>()));
 
   // Core - Server Reachability (must be before DioClient to avoid circular dependency)
   // Standalone Dio for health checks — does NOT go through DioClient.
@@ -368,6 +391,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => LockAccount(sl()));
   sl.registerLazySingleton(() => GetActivityLogs(sl()));
   sl.registerLazySingleton(() => UpdateAccount(sl()));
+  sl.registerLazySingleton(() => DeleteAccount(sl()));
 
   // Class use cases
   sl.registerLazySingleton(() => CreateClass(sl()));
@@ -379,6 +403,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => RemoveStudent(sl()));
   sl.registerLazySingleton(() => SearchStudents(sl()));
   sl.registerLazySingleton(() => GetParticipants(sl()));
+  sl.registerLazySingleton(() => DeleteClass(sl()));
 
   // Assessment use cases
   sl.registerLazySingleton(() => CreateAssessment(sl()));

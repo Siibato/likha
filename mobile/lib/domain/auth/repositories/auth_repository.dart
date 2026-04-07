@@ -46,4 +46,6 @@ abstract class AuthRepository {
     String? fullName,
     String? role,
   });
+
+  ResultVoid deleteAccount({required String userId});
 }

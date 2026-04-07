@@ -24,6 +24,7 @@ abstract class ClassRemoteDataSource {
     String? title,
     String? description,
     String? teacherId,
+    bool? isAdvisory,
   });
 
   Future<ParticipantModel> addStudent({
@@ -37,6 +38,8 @@ abstract class ClassRemoteDataSource {
   });
 
   Future<List<UserModel>> searchStudents({String? query});
+
+  Future<void> deleteClass({required String classId});
 }
 
 class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
@@ -99,6 +102,7 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
     String? title,
     String? description,
     String? teacherId,
+    bool? isAdvisory,
   }) async {
     try {
       return await _dioClient.putTyped(
@@ -107,6 +111,7 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
           if (title != null) 'title': title,
           if (description != null) 'description': description,
           if (teacherId != null) 'teacher_id': teacherId,
+          if (isAdvisory != null) 'is_advisory': isAdvisory,
         },
       );
     } on DioException catch (e) {
@@ -137,6 +142,17 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
     try {
       await _dioClient.deleteTyped(
         ApiEndpoints.classStudent(classId, studentId),
+      );
+    } on DioException catch (e) {
+      throw _dioClient.handleError(e);
+    }
+  }
+
+  @override
+  Future<void> deleteClass({required String classId}) async {
+    try {
+      await _dioClient.deleteTyped(
+        ApiEndpoints.classDelete(classId),
       );
     } on DioException catch (e) {
       throw _dioClient.handleError(e);

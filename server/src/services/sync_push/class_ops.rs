@@ -41,7 +41,7 @@ impl super::SyncPushService {
             }
             "delete" => {
                 let class_id = extract_field!(self, op, parse_uuid_field, "id");
-                match self.class_service.soft_delete(class_id, user_id).await {
+                match self.class_service.soft_delete(class_id, user_id, user_role).await {
                     Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }

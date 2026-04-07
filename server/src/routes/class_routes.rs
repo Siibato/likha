@@ -15,6 +15,7 @@ pub fn routes(class_service: Arc<ClassService>, auth_service: Arc<AuthService>) 
         .route("/classes/metadata", get(class_handler::get_classes_metadata))
         .route("/classes/{id}", get(class_handler::get_class_detail))
         .route("/classes/{id}", put(class_handler::update_class))
+        .route("/classes/{id}", delete(class_handler::delete_class))
         .route(
             "/classes/{id}/students",
             post(class_handler::add_student),

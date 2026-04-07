@@ -37,7 +37,7 @@ impl super::ClassService {
 
         let class = self
             .class_repo
-            .create_class(title, request.description, actual_teacher_id, client_id)
+            .create_class(title, request.description, actual_teacher_id, client_id, request.is_advisory.unwrap_or(false))
             .await?;
 
 
@@ -93,6 +93,7 @@ impl super::ClassService {
                 class_id,
                 title,
                 description,
+                request.is_advisory,
             )
             .await?;
 
@@ -239,21 +240,22 @@ impl super::ClassService {
         })
     }
 
-    pub async fn soft_delete(&self, class_id: Uuid, teacher_id: Uuid) -> AppResult<()> {
+    pub async fn soft_delete(&self, class_id: Uuid, user_id: Uuid, role: &str) -> AppResult<()> {
         let _class = self
             .class_repo
             .find_by_id(class_id)
             .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
+        if role != "admin" && !self.class_repo.is_teacher_of_class(user_id, class_id).await? {
             return Err(AppError::Forbidden(
                 "You can only delete your own classes".to_string(),
             ));
         }
 
+        // Soft-delete all participants (students and teachers) first
+        self.class_repo.remove_all_participants(class_id).await?;
         self.class_repo.soft_delete(class_id).await?;
-
 
         Ok(())
     }

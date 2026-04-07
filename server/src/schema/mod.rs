@@ -1,4 +1,5 @@
 pub mod admin_schema;
+pub mod setup_schema;
 pub mod assessment_schema;
 pub mod assignment_schema;
 pub mod auth_schema;

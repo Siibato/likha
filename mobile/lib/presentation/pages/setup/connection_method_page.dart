@@ -1,0 +1,114 @@
+import 'package:flutter/material.dart';
+import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
+import 'package:likha/presentation/pages/setup/school_code_page.dart';
+import 'package:likha/presentation/pages/setup/qr_scan_page.dart';
+import 'package:likha/presentation/pages/shared/widgets/auth_desktop_layout.dart';
+
+/// Second step: user picks how to connect (code or QR).
+class ConnectionMethodPage extends StatelessWidget {
+  const ConnectionMethodPage({super.key});
+
+  Widget _buildContent(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Connect to your school',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF202020),
+              letterSpacing: -0.3,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'How would you like to connect?',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF999999),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 40),
+          _OptionButton(
+            icon: Icons.tag_rounded,
+            label: 'I have a school code',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SchoolCodePage()),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _OptionButton(
+            icon: Icons.qr_code_scanner_rounded,
+            label: 'Scan QR code',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const QrScanPage()),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: PlatformDetector.isDesktop
+          ? AuthDesktopLayout(formContent: _buildContent(context))
+          : SafeArea(child: Center(child: _buildContent(context))),
+    );
+  }
+}
+
+class _OptionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _OptionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: const Color(0xFF2B2B2B),
+        side: const BorderSide(color: Color(0xFFE0E0E0), width: 1.5),
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 20, color: const Color(0xFF7A7A7A)),
+          const SizedBox(width: 10),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

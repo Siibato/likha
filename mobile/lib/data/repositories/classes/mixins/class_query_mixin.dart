@@ -174,6 +174,7 @@ mixin ClassQueryMixin on ClassRepositoryBase {
       final l = localById[r.id];
       if (l == null) return true;
       if (l.updatedAt.isBefore(r.updatedAt)) return true;
+      if (l.isAdvisory != r.isAdvisory) return true;
     }
     return false;
   }

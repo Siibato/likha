@@ -21,6 +21,7 @@ impl ClassRepository {
         description: Option<String>,
         teacher_id: Uuid,
         client_id: Option<Uuid>,
+        is_advisory: bool,
     ) -> AppResult<classes::Model> {
         // Start a transaction for atomic class + teacher participant creation
         let txn = self.db.begin().await
@@ -41,7 +42,7 @@ impl ClassRepository {
             subject_group: Set(None),
             school_year: Set(None),
             semester: Set(None),
-            is_advisory: Set(false),
+            is_advisory: Set(is_advisory),
         };
 
         let created_class = class
@@ -130,6 +131,7 @@ impl ClassRepository {
         id: Uuid,
         title: Option<String>,
         description: Option<Option<String>>,
+        is_advisory: Option<bool>,
     ) -> AppResult<classes::Model> {
         let class = classes::Entity::find_by_id(id)
             .one(&self.db)
@@ -146,6 +148,10 @@ impl ClassRepository {
 
         if let Some(description) = description {
             active_class.description = Set(description);
+        }
+
+        if let Some(is_advisory) = is_advisory {
+            active_class.is_advisory = Set(is_advisory);
         }
 
         active_class
@@ -417,6 +423,33 @@ impl ClassRepository {
 
     pub async fn find_student_enrollments(&self, student_id: Uuid) -> AppResult<Vec<class_participants::Model>> {
         self.find_participants_by_user_id(student_id, Some("student")).await
+    }
+
+    pub async fn remove_all_participants(&self, class_id: Uuid) -> AppResult<()> {
+        let participants = class_participants::Entity::find()
+            .filter(class_participants::Column::ClassId.eq(class_id))
+            .filter(class_participants::Column::RemovedAt.is_null())
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        let now = Utc::now().naive_utc();
+        for participant in participants {
+            let update = class_participants::ActiveModel {
+                id: Set(participant.id),
+                removed_at: Set(Some(now)),
+                updated_at: Set(now),
+                ..Default::default()
+            };
+            update
+                .update(&self.db)
+                .await
+                .map_err(|e| {
+                    AppError::InternalServerError(format!("Failed to remove participant: {}", e))
+                })?;
+        }
+
+        Ok(())
     }
 
     pub async fn soft_delete(&self, id: Uuid) -> AppResult<()> {

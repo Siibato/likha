@@ -26,6 +26,7 @@ abstract class ClassLocalDataSource {
     required String classId,
     required String title,
     required String description,
+    bool? isAdvisory,
   });
   Future<String> addStudentLocally({
     required String classId,

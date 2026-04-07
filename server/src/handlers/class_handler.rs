@@ -114,6 +114,26 @@ pub async fn remove_student(
     }
 }
 
+pub async fn delete_class(
+    State(class_service): State<Arc<ClassService>>,
+    auth_user: AuthUser,
+    Path(class_id): Path<Uuid>,
+) -> impl IntoResponse {
+    if let Err(r) = require_teacher_or_admin(&auth_user) {
+        return r;
+    }
+
+    match class_service
+        .soft_delete(class_id, auth_user.user_id, &auth_user.role)
+        .await
+    {
+        Ok(_) => success_response(MessageResponse {
+            message: "Class deleted successfully".to_string(),
+        }, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
 pub async fn search_students(
     State(auth_service): State<Arc<AuthService>>,
     _auth_user: AuthUser,

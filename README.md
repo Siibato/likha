@@ -143,7 +143,69 @@ flutter run -d <device_id>
 - If `emulator` command not found, ensure `$ANDROID_HOME/emulator` is in your PATH
 - For physical devices, ensure USB debugging is enabled and the device is authorized
 
-### 4. Building an APK
+### 4. Run the web app (Chrome)
+
+The web version shows the desktop UI (side navigation rail) and uses IndexedDB for local storage in the browser.
+
+#### First-time setup
+
+Run this once to copy the required SQLite web worker files:
+
+```bash
+cd mobile
+dart run sqflite_common_ffi_web:setup
+```
+
+#### Configure the API URL
+
+In `mobile/.env`, make sure the API URL points to localhost:
+
+```env
+API_BASE_URL=http://localhost:8080
+```
+
+#### Run
+
+```bash
+cd mobile
+flutter run -d chrome
+```
+
+### 5. Run the desktop app (macOS / Windows)
+
+Both macOS and Windows desktop targets are already configured in the project.
+
+```bash
+cd mobile
+
+# macOS
+flutter run -d macos
+
+# Windows
+flutter run -d windows
+```
+
+To build a release binary:
+
+```bash
+flutter build macos   # on macOS
+flutter build windows # on Windows
+```
+
+> **Note:** You can only build for the platform you're currently on. Full Xcode is required for macOS builds.
+
+#### Clearing desktop local data (SQLite)
+
+The desktop app stores its local database as a SQLite file:
+
+- **macOS:** `~/Library/Application Support/com.example.likha/likha.db` (or similar)
+- **Windows:** `C:\Users\<you>\AppData\Roaming\com.example.likha\likha.db`
+
+Delete the `.db` file to reset local app data.
+
+---
+
+### 7. Building an APK
 
 To build an APK for distribution or testing:
 

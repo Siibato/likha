@@ -67,6 +67,7 @@ mixin ClassMutationMixin on ClassLocalDataSourceBase {
     required String classId,
     required String title,
     required String description,
+    bool? isAdvisory,
   }) async {
     try {
       final db = await localDatabase.database;
@@ -77,6 +78,7 @@ mixin ClassMutationMixin on ClassLocalDataSourceBase {
           {
             ClassesCols.title: title,
             ClassesCols.description: description,
+            if (isAdvisory != null) ClassesCols.isAdvisory: isAdvisory ? 1 : 0,
             CommonCols.updatedAt: now.toIso8601String(),
             CommonCols.needsSync: 1,
             CommonCols.cachedAt: now.toIso8601String(),
@@ -88,7 +90,12 @@ mixin ClassMutationMixin on ClassLocalDataSourceBase {
           id: const Uuid().v4(),
           entityType: SyncEntityType.classEntity,
           operation: SyncOperation.update,
-          payload: {'id': classId, 'title': title, 'description': description},
+          payload: {
+            'id': classId,
+            'title': title,
+            'description': description,
+            if (isAdvisory != null) 'is_advisory': isAdvisory,
+          },
           status: SyncStatus.pending,
           retryCount: 0,
           maxRetries: 3,

@@ -8,6 +8,7 @@ import 'package:likha/domain/auth/usecases/get_activity_logs.dart';
 import 'package:likha/domain/auth/usecases/get_all_accounts.dart';
 import 'package:likha/domain/auth/usecases/lock_account.dart';
 import 'package:likha/domain/auth/usecases/reset_account.dart';
+import 'package:likha/domain/auth/usecases/delete_account.dart';
 import 'package:likha/domain/auth/usecases/update_account.dart';
 import 'package:likha/injection_container.dart';
 
@@ -54,6 +55,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
   final LockAccount _lockAccount;
   final GetActivityLogs _getActivityLogs;
   final UpdateAccount _updateAccount;
+  final DeleteAccount _deleteAccount;
 
   AdminNotifier(
     this._getAllAccounts,
@@ -63,6 +65,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
     this._lockAccount,
     this._getActivityLogs,
     this._updateAccount,
+    this._deleteAccount,
   ) : super(AdminState());
 
   Future<void> loadAccounts() async {
@@ -231,6 +234,24 @@ class AdminNotifier extends StateNotifier<AdminState> {
     );
   }
 
+  Future<void> deleteAccount(String userId) async {
+    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+
+    final result = await _deleteAccount(userId: userId);
+
+    result.fold(
+      (failure) => state = state.copyWith(
+        isLoading: false,
+        error: AppErrorMapper.fromFailure(failure),
+      ),
+      (_) => state = state.copyWith(
+        isLoading: false,
+        accounts: state.accounts.where((a) => a.id != userId).toList(),
+        successMessage: 'Account deleted successfully',
+      ),
+    );
+  }
+
   void clearMessages() {
     state = state.copyWith(clearError: true, clearSuccess: true);
   }
@@ -260,5 +281,6 @@ final adminProvider = StateNotifierProvider<AdminNotifier, AdminState>((ref) {
     sl<LockAccount>(),
     sl<GetActivityLogs>(),
     sl<UpdateAccount>(),
+    sl<DeleteAccount>(),
   );
 });
