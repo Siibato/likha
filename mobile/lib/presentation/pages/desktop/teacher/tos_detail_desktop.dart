@@ -6,6 +6,8 @@ import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart
 import 'package:likha/presentation/pages/desktop/teacher/edit_tos_desktop.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.dart';
+import 'package:likha/presentation/widgets/styled_dialog.dart';
 import 'package:likha/presentation/pages/teacher/widgets/bulk_paste_sheet.dart';
 import 'package:likha/presentation/pages/teacher/widgets/melcs_search_sheet.dart';
 import 'package:likha/presentation/pages/teacher/widgets/tos_grid_table.dart';
@@ -29,6 +31,7 @@ class TosDetailDesktop extends ConsumerStatefulWidget {
 
 class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
   final _competencyController = TextEditingController();
+  final _daysTaughtController = TextEditingController();
 
   @override
   void initState() {
@@ -41,6 +44,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
   @override
   void dispose() {
     _competencyController.dispose();
+    _daysTaughtController.dispose();
     super.dispose();
   }
 
@@ -72,27 +76,57 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
     );
   }
 
-  void _handleAddCompetency() {
+  void _handleAddCompetency(String timeUnit) {
     _competencyController.clear();
-    AppDialogs.showInput(
+    _daysTaughtController.text = '1';
+    final unitLabel = timeUnit == 'hours' ? 'Hours' : 'Days';
+    showDialog(
       context: context,
-      title: 'Add Competency',
-      controller: _competencyController,
-      labelText: 'Competency description',
-      confirmLabel: 'Add',
-      onConfirm: () {
-        final text = _competencyController.text;
-        if (text.trim().isNotEmpty) {
-          ref.read(tosProvider.notifier).addCompetency(
-            widget.tosId,
-            {
-              'competency_text': text.trim(),
-              'days_taught': 1,
-              'order_index': ref.read(tosProvider).competencies.length,
+      builder: (ctx) => StyledDialog(
+        title: 'Add Competency',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            StyledTextField(
+              controller: _competencyController,
+              label: 'Competency description',
+              icon: Icons.edit_rounded,
+            ),
+            const SizedBox(height: 12),
+            StyledTextField(
+              controller: _daysTaughtController,
+              label: '$unitLabel taught',
+              icon: Icons.schedule_outlined,
+              keyboardType: TextInputType.number,
+              hintText: '1',
+            ),
+          ],
+        ),
+        actions: [
+          StyledDialogAction(
+            label: 'Cancel',
+            onPressed: () => Navigator.pop(ctx),
+          ),
+          StyledDialogAction(
+            label: 'Add',
+            isPrimary: true,
+            onPressed: () {
+              Navigator.pop(ctx);
+              final text = _competencyController.text;
+              if (text.trim().isNotEmpty) {
+                ref.read(tosProvider.notifier).addCompetency(
+                  widget.tosId,
+                  {
+                    'competency_text': text.trim(),
+                    'days_taught': int.tryParse(_daysTaughtController.text.trim()) ?? 1,
+                    'order_index': ref.read(tosProvider).competencies.length,
+                  },
+                );
+              }
             },
-          );
-        }
-      },
+          ),
+        ],
+      ),
     );
   }
 
@@ -169,6 +203,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
                     children: [
                       // Left column: Settings + Competencies
                       Expanded(
+                        flex: 2,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -210,7 +245,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
                               )
                             else
                               ...competencies.map(
-                                  (c) => _buildCompetencyTile(c)),
+                                  (c) => _buildCompetencyTile(c, tos.timeUnit)),
 
                             const SizedBox(height: 16),
 
@@ -220,7 +255,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
                               runSpacing: 8,
                               children: [
                                 OutlinedButton.icon(
-                                  onPressed: _handleAddCompetency,
+                                  onPressed: () => _handleAddCompetency(tos.timeUnit),
                                   icon: const Icon(Icons.add, size: 18),
                                   label: const Text('Add Competency'),
                                   style: OutlinedButton.styleFrom(
@@ -264,6 +299,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
 
                       // Right column: TOS Matrix
                       Expanded(
+                        flex: 3,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -341,7 +377,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
           _settingsRow('Mode', modeLabel),
           _settingsRow('Total Items', '${tos.totalItems}'),
           _settingsRow('Competencies', '${competencies.length}'),
-          _settingsRow('Total Days', '$totalDays'),
+          _settingsRow('Total ${tos.timeUnit == 'hours' ? 'Hours' : 'Days'}', '$totalDays'),
         ],
       ),
     );
@@ -373,7 +409,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
     );
   }
 
-  Widget _buildCompetencyTile(TosCompetency competency) {
+  Widget _buildCompetencyTile(TosCompetency competency, String timeUnit) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -398,7 +434,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${competency.daysTaught} day${competency.daysTaught == 1 ? '' : 's'} taught',
+                  '${competency.daysTaught} ${timeUnit == 'hours' ? (competency.daysTaught == 1 ? 'hour' : 'hours') : (competency.daysTaught == 1 ? 'day' : 'days')} taught',
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.foregroundSecondary,

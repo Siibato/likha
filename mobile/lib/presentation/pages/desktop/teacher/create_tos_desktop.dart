@@ -5,6 +5,7 @@ import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart
 import 'package:likha/presentation/pages/desktop/teacher/tos_detail_desktop.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/teacher/widgets/classification_mode_toggle.dart';
+import 'package:likha/presentation/pages/teacher/widgets/time_unit_toggle.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 
 class CreateTosDesktop extends ConsumerStatefulWidget {
@@ -22,6 +23,7 @@ class _CreateTosDesktopState extends ConsumerState<CreateTosDesktop> {
   final _totalItemsController = TextEditingController(text: '50');
   int? _selectedQuarter;
   String _classificationMode = 'blooms';
+  String _timeUnit = 'days';
 
   @override
   void dispose() {
@@ -41,6 +43,7 @@ class _CreateTosDesktopState extends ConsumerState<CreateTosDesktop> {
         'quarter': _selectedQuarter!,
         'classification_mode': _classificationMode,
         'total_items': int.tryParse(_totalItemsController.text.trim()) ?? 50,
+        'time_unit': _timeUnit,
       },
     );
 
@@ -149,6 +152,11 @@ class _CreateTosDesktopState extends ConsumerState<CreateTosDesktop> {
                   value: _classificationMode,
                   onChanged: (v) =>
                       setState(() => _classificationMode = v),
+                ),
+                const SizedBox(height: 24),
+                TimeUnitToggle(
+                  value: _timeUnit,
+                  onChanged: (v) => setState(() => _timeUnit = v),
                 ),
                 const SizedBox(height: 32),
                 SizedBox(

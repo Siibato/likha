@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.dart';
+import 'package:likha/presentation/widgets/styled_dialog.dart';
 import 'package:likha/presentation/pages/teacher/edit_tos_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/bulk_paste_sheet.dart';
 import 'package:likha/presentation/pages/teacher/widgets/melcs_search_sheet.dart';
@@ -38,6 +40,7 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
   @override
   void dispose() {
     _competencyController.dispose();
+    _daysTaughtController.dispose();
     _cellOverrideController.dispose();
     super.dispose();
   }
@@ -56,30 +59,60 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
   }
 
   final _competencyController = TextEditingController();
+  final _daysTaughtController = TextEditingController();
   final _cellOverrideController = TextEditingController();
 
   void _handleAddCompetency(String timeUnit) {
     _competencyController.clear();
-    AppDialogs.showInput(
+    _daysTaughtController.text = '1';
+    final unitLabel = timeUnit == 'hours' ? 'Hours' : 'Days';
+    showDialog(
       context: context,
-      title: 'Add Competency',
-      subtitle: 'Time taught defaults to 1 $timeUnit. You can edit it after adding.',
-      controller: _competencyController,
-      labelText: 'Competency description',
-      confirmLabel: 'Add',
-      onConfirm: () {
-        final text = _competencyController.text;
-        if (text.trim().isNotEmpty) {
-          ref.read(tosProvider.notifier).addCompetency(
-            widget.tosId,
-            {
-              'competency_text': text.trim(),
-              'days_taught': 1,
-              'order_index': ref.read(tosProvider).competencies.length,
+      builder: (ctx) => StyledDialog(
+        title: 'Add Competency',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            StyledTextField(
+              controller: _competencyController,
+              label: 'Competency description',
+              icon: Icons.edit_rounded,
+            ),
+            const SizedBox(height: 12),
+            StyledTextField(
+              controller: _daysTaughtController,
+              label: '$unitLabel taught',
+              icon: Icons.schedule_outlined,
+              keyboardType: TextInputType.number,
+              hintText: '1',
+            ),
+          ],
+        ),
+        actions: [
+          StyledDialogAction(
+            label: 'Cancel',
+            onPressed: () => Navigator.pop(ctx),
+          ),
+          StyledDialogAction(
+            label: 'Add',
+            isPrimary: true,
+            onPressed: () {
+              Navigator.pop(ctx);
+              final text = _competencyController.text;
+              if (text.trim().isNotEmpty) {
+                ref.read(tosProvider.notifier).addCompetency(
+                  widget.tosId,
+                  {
+                    'competency_text': text.trim(),
+                    'days_taught': int.tryParse(_daysTaughtController.text.trim()) ?? 1,
+                    'order_index': ref.read(tosProvider).competencies.length,
+                  },
+                );
+              }
             },
-          );
-        }
-      },
+          ),
+        ],
+      ),
     );
   }
 

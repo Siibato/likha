@@ -5,6 +5,7 @@ import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/teacher/widgets/classification_mode_toggle.dart';
+import 'package:likha/presentation/pages/teacher/widgets/time_unit_toggle.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 
 class EditTosDesktop extends ConsumerStatefulWidget {
@@ -22,6 +23,7 @@ class _EditTosDesktopState extends ConsumerState<EditTosDesktop> {
   late final TextEditingController _totalItemsController;
   late int _selectedQuarter;
   late String _classificationMode;
+  late String _timeUnit;
 
   @override
   void initState() {
@@ -31,6 +33,7 @@ class _EditTosDesktopState extends ConsumerState<EditTosDesktop> {
         TextEditingController(text: '${widget.tos.totalItems}');
     _selectedQuarter = widget.tos.quarter;
     _classificationMode = widget.tos.classificationMode;
+    _timeUnit = widget.tos.timeUnit;
   }
 
   @override
@@ -50,6 +53,7 @@ class _EditTosDesktopState extends ConsumerState<EditTosDesktop> {
         'quarter': _selectedQuarter,
         'classification_mode': _classificationMode,
         'total_items': int.tryParse(_totalItemsController.text.trim()) ?? 50,
+        'time_unit': _timeUnit,
       },
     );
 
@@ -152,6 +156,11 @@ class _EditTosDesktopState extends ConsumerState<EditTosDesktop> {
                   value: _classificationMode,
                   onChanged: (v) =>
                       setState(() => _classificationMode = v),
+                ),
+                const SizedBox(height: 24),
+                TimeUnitToggle(
+                  value: _timeUnit,
+                  onChanged: (v) => setState(() => _timeUnit = v),
                 ),
                 const SizedBox(height: 32),
                 SizedBox(
