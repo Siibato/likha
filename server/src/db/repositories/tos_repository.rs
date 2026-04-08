@@ -28,6 +28,12 @@ impl TosRepository {
         easy_percentage: f64,
         medium_percentage: f64,
         hard_percentage: f64,
+        remembering_percentage: f64,
+        understanding_percentage: f64,
+        applying_percentage: f64,
+        analyzing_percentage: f64,
+        evaluating_percentage: f64,
+        creating_percentage: f64,
     ) -> AppResult<table_of_specifications::Model> {
         let now = Utc::now().naive_utc();
         let tos = table_of_specifications::ActiveModel {
@@ -41,6 +47,12 @@ impl TosRepository {
             easy_percentage: Set(easy_percentage),
             medium_percentage: Set(medium_percentage),
             hard_percentage: Set(hard_percentage),
+            remembering_percentage: Set(remembering_percentage),
+            understanding_percentage: Set(understanding_percentage),
+            applying_percentage: Set(applying_percentage),
+            analyzing_percentage: Set(analyzing_percentage),
+            evaluating_percentage: Set(evaluating_percentage),
+            creating_percentage: Set(creating_percentage),
             created_at: Set(now),
             updated_at: Set(now),
             deleted_at: Set(None),
@@ -99,6 +111,12 @@ impl TosRepository {
         easy_percentage: Option<f64>,
         medium_percentage: Option<f64>,
         hard_percentage: Option<f64>,
+        remembering_percentage: Option<f64>,
+        understanding_percentage: Option<f64>,
+        applying_percentage: Option<f64>,
+        analyzing_percentage: Option<f64>,
+        evaluating_percentage: Option<f64>,
+        creating_percentage: Option<f64>,
     ) -> AppResult<table_of_specifications::Model> {
         let tos = table_of_specifications::Entity::find_by_id(id)
             .one(&self.db)
@@ -128,6 +146,24 @@ impl TosRepository {
         }
         if let Some(h) = hard_percentage {
             active.hard_percentage = Set(h);
+        }
+        if let Some(r) = remembering_percentage {
+            active.remembering_percentage = Set(r);
+        }
+        if let Some(u) = understanding_percentage {
+            active.understanding_percentage = Set(u);
+        }
+        if let Some(ap) = applying_percentage {
+            active.applying_percentage = Set(ap);
+        }
+        if let Some(an) = analyzing_percentage {
+            active.analyzing_percentage = Set(an);
+        }
+        if let Some(e) = evaluating_percentage {
+            active.evaluating_percentage = Set(e);
+        }
+        if let Some(c) = creating_percentage {
+            active.creating_percentage = Set(c);
         }
         active.updated_at = Set(Utc::now().naive_utc());
 

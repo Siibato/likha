@@ -126,6 +126,7 @@ class _TosViewPageState extends ConsumerState<TosViewPage> {
                                   TosSummaryRow(
                                     competencies: competencies,
                                     totalItems: tos.totalItems,
+                                    timeUnit: tos.timeUnit,
                                   ),
                                 ],
                                 const SizedBox(height: 24),

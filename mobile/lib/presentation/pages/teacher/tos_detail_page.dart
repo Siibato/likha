@@ -12,6 +12,7 @@ import 'package:likha/presentation/pages/teacher/widgets/tos_grid_table.dart';
 import 'package:likha/presentation/pages/teacher/widgets/tos_print_preview.dart';
 import 'package:likha/presentation/pages/teacher/widgets/tos_settings_card.dart';
 import 'package:likha/presentation/pages/teacher/widgets/tos_summary_row.dart';
+import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 
 class TosDetailPage extends ConsumerStatefulWidget {
@@ -42,6 +43,8 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
     _competencyController.dispose();
     _daysTaughtController.dispose();
     _cellOverrideController.dispose();
+    _editCompetencyController.dispose();
+    _editDaysTaughtController.dispose();
     super.dispose();
   }
 
@@ -61,6 +64,8 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
   final _competencyController = TextEditingController();
   final _daysTaughtController = TextEditingController();
   final _cellOverrideController = TextEditingController();
+  final _editCompetencyController = TextEditingController();
+  final _editDaysTaughtController = TextEditingController();
 
   void _handleAddCompetency(String timeUnit) {
     _competencyController.clear();
@@ -106,6 +111,60 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
                     'competency_text': text.trim(),
                     'days_taught': int.tryParse(_daysTaughtController.text.trim()) ?? 1,
                     'order_index': ref.read(tosProvider).competencies.length,
+                  },
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleEditCompetency(TosCompetency competency, String timeUnit) {
+    _editCompetencyController.text = competency.competencyText;
+    _editDaysTaughtController.text = '${competency.daysTaught}';
+    final unitLabel = timeUnit == 'hours' ? 'Hours' : 'Days';
+    showDialog(
+      context: context,
+      builder: (ctx) => StyledDialog(
+        title: 'Edit Competency',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            StyledTextField(
+              controller: _editCompetencyController,
+              label: 'Competency description',
+              icon: Icons.edit_rounded,
+            ),
+            const SizedBox(height: 12),
+            StyledTextField(
+              controller: _editDaysTaughtController,
+              label: '$unitLabel taught',
+              icon: Icons.schedule_outlined,
+              keyboardType: TextInputType.number,
+              hintText: '1',
+            ),
+          ],
+        ),
+        actions: [
+          StyledDialogAction(
+            label: 'Cancel',
+            onPressed: () => Navigator.pop(ctx),
+          ),
+          StyledDialogAction(
+            label: 'Save',
+            isPrimary: true,
+            onPressed: () {
+              Navigator.pop(ctx);
+              final text = _editCompetencyController.text.trim();
+              final days = int.tryParse(_editDaysTaughtController.text.trim());
+              if (text.isNotEmpty) {
+                ref.read(tosProvider.notifier).updateCompetency(
+                  competency.id,
+                  {
+                    'competency_text': text,
+                    if (days != null) 'days_taught': days,
                   },
                 );
               }
@@ -280,6 +339,7 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
                                   TosSummaryRow(
                                     competencies: competencies,
                                     totalItems: tos.totalItems,
+                                    timeUnit: tos.timeUnit,
                                   ),
                                 ],
                                 const SizedBox(height: 24),
@@ -301,6 +361,7 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
                                     competency: c,
                                     totalDays: totalDays,
                                     timeUnit: tos.timeUnit,
+                                    onEdit: () => _handleEditCompetency(c, tos.timeUnit),
                                     onDelete: () {
                                       AppDialogs.showDestructive(
                                         context: context,

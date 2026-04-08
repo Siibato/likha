@@ -38,6 +38,30 @@ impl super::SyncPushService {
                     .payload
                     .get("hard_percentage")
                     .and_then(|v| v.as_f64());
+                let remembering_percentage = op
+                    .payload
+                    .get("remembering_percentage")
+                    .and_then(|v| v.as_f64());
+                let understanding_percentage = op
+                    .payload
+                    .get("understanding_percentage")
+                    .and_then(|v| v.as_f64());
+                let applying_percentage = op
+                    .payload
+                    .get("applying_percentage")
+                    .and_then(|v| v.as_f64());
+                let analyzing_percentage = op
+                    .payload
+                    .get("analyzing_percentage")
+                    .and_then(|v| v.as_f64());
+                let evaluating_percentage = op
+                    .payload
+                    .get("evaluating_percentage")
+                    .and_then(|v| v.as_f64());
+                let creating_percentage = op
+                    .payload
+                    .get("creating_percentage")
+                    .and_then(|v| v.as_f64());
 
                 let request = CreateTosRequest {
                     title,
@@ -48,6 +72,12 @@ impl super::SyncPushService {
                     easy_percentage,
                     medium_percentage,
                     hard_percentage,
+                    remembering_percentage,
+                    understanding_percentage,
+                    applying_percentage,
+                    analyzing_percentage,
+                    evaluating_percentage,
+                    creating_percentage,
                 };
 
                 match self
@@ -93,6 +123,30 @@ impl super::SyncPushService {
                     .payload
                     .get("hard_percentage")
                     .and_then(|v| v.as_f64());
+                let remembering_percentage = op
+                    .payload
+                    .get("remembering_percentage")
+                    .and_then(|v| v.as_f64());
+                let understanding_percentage = op
+                    .payload
+                    .get("understanding_percentage")
+                    .and_then(|v| v.as_f64());
+                let applying_percentage = op
+                    .payload
+                    .get("applying_percentage")
+                    .and_then(|v| v.as_f64());
+                let analyzing_percentage = op
+                    .payload
+                    .get("analyzing_percentage")
+                    .and_then(|v| v.as_f64());
+                let evaluating_percentage = op
+                    .payload
+                    .get("evaluating_percentage")
+                    .and_then(|v| v.as_f64());
+                let creating_percentage = op
+                    .payload
+                    .get("creating_percentage")
+                    .and_then(|v| v.as_f64());
 
                 let request = UpdateTosRequest {
                     title,
@@ -102,6 +156,12 @@ impl super::SyncPushService {
                     easy_percentage,
                     medium_percentage,
                     hard_percentage,
+                    remembering_percentage,
+                    understanding_percentage,
+                    applying_percentage,
+                    analyzing_percentage,
+                    evaluating_percentage,
+                    creating_percentage,
                 };
 
                 match self.tos_service.update_tos(tos_id, user_id, request).await {

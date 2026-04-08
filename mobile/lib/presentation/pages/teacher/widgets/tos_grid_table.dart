@@ -95,6 +95,7 @@ class TosGridTable extends StatelessWidget {
               final cells = _buildCognitiveCells(
                 context: context,
                 competency: c,
+                targetItems: targetItems,
                 easyItems: easyItems,
                 mediumItems: mediumItems,
                 hardItems: hardItems,
@@ -167,6 +168,7 @@ class TosGridTable extends StatelessWidget {
   List<Widget> _buildCognitiveCells({
     required BuildContext context,
     required TosCompetency competency,
+    required int targetItems,
     required int easyItems,
     required int mediumItems,
     required int hardItems,
@@ -207,13 +209,42 @@ class TosGridTable extends StatelessWidget {
     }
 
     // Blooms mode: 6 columns (R, U, Ap, An, E, C)
-    // easy bucket → R + U; medium bucket → Ap + An; hard bucket → E + C
-    final r = (easyItems / 2).round();
-    final u = easyItems - r;
-    final ap = (mediumItems / 2).round();
-    final an = mediumItems - ap;
-    final e = (hardItems / 2).round();
-    final c = hardItems - e;
+    // Use 6 individual bloom percentages from the TOS; when there is a
+    // per-competency bucket override split proportionally by bloom ratios.
+    final int r, u, ap, an, e, c;
+
+    if (competency.easyCount != null) {
+      // Override for easy bucket → split R/U proportionally
+      final totalRU = tos.rememberingPercentage + tos.understandingPercentage;
+      final rRatio = totalRU > 0 ? tos.rememberingPercentage / totalRU : 0.5;
+      r = (easyItems * rRatio).round();
+      u = easyItems - r;
+    } else {
+      r = (targetItems * tos.rememberingPercentage / 100).round();
+      u = (targetItems * tos.understandingPercentage / 100).round();
+    }
+
+    if (competency.mediumCount != null) {
+      // Override for medium bucket → split Ap/An proportionally
+      final totalApAn = tos.applyingPercentage + tos.analyzingPercentage;
+      final apRatio = totalApAn > 0 ? tos.applyingPercentage / totalApAn : 0.5;
+      ap = (mediumItems * apRatio).round();
+      an = mediumItems - ap;
+    } else {
+      ap = (targetItems * tos.applyingPercentage / 100).round();
+      an = (targetItems * tos.analyzingPercentage / 100).round();
+    }
+
+    if (competency.hardCount != null) {
+      // Override for hard bucket → split E/C proportionally
+      final totalEC = tos.evaluatingPercentage + tos.creatingPercentage;
+      final eRatio = totalEC > 0 ? tos.evaluatingPercentage / totalEC : 0.5;
+      e = (hardItems * eRatio).round();
+      c = hardItems - e;
+    } else {
+      e = (targetItems * tos.evaluatingPercentage / 100).round();
+      c = (targetItems * tos.creatingPercentage / 100).round();
+    }
 
     Widget bloomCell(String val, bool isOverride, String levelKey, int? override) {
       return _tappableCell(

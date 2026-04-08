@@ -32,6 +32,8 @@ class TosDetailDesktop extends ConsumerStatefulWidget {
 class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
   final _competencyController = TextEditingController();
   final _daysTaughtController = TextEditingController();
+  final _editCompetencyController = TextEditingController();
+  final _editDaysTaughtController = TextEditingController();
 
   @override
   void initState() {
@@ -45,6 +47,8 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
   void dispose() {
     _competencyController.dispose();
     _daysTaughtController.dispose();
+    _editCompetencyController.dispose();
+    _editDaysTaughtController.dispose();
     super.dispose();
   }
 
@@ -341,6 +345,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
                               TosSummaryRow(
                                 competencies: competencies,
                                 totalItems: tos.totalItems,
+                                timeUnit: tos.timeUnit,
                               ),
                             ],
                           ],
@@ -409,57 +414,114 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
     );
   }
 
-  Widget _buildCompetencyTile(TosCompetency competency, String timeUnit) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  competency.competencyText,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.foregroundPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${competency.daysTaught} ${timeUnit == 'hours' ? (competency.daysTaught == 1 ? 'hour' : 'hours') : (competency.daysTaught == 1 ? 'day' : 'days')} taught',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.foregroundSecondary,
-                  ),
-                ),
-              ],
+  void _handleEditCompetency(TosCompetency competency, String timeUnit) {
+    _editCompetencyController.text = competency.competencyText;
+    _editDaysTaughtController.text = '${competency.daysTaught}';
+    final unitLabel = timeUnit == 'hours' ? 'Hours' : 'Days';
+    showDialog(
+      context: context,
+      builder: (ctx) => StyledDialog(
+        title: 'Edit Competency',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            StyledTextField(
+              controller: _editCompetencyController,
+              label: 'Competency description',
+              icon: Icons.edit_rounded,
             ),
+            const SizedBox(height: 12),
+            StyledTextField(
+              controller: _editDaysTaughtController,
+              label: '$unitLabel taught',
+              icon: Icons.schedule_outlined,
+              keyboardType: TextInputType.number,
+              hintText: '1',
+            ),
+          ],
+        ),
+        actions: [
+          StyledDialogAction(
+            label: 'Cancel',
+            onPressed: () => Navigator.pop(ctx),
           ),
-          IconButton(
+          StyledDialogAction(
+            label: 'Save',
+            isPrimary: true,
             onPressed: () {
-              AppDialogs.showDestructive(
-                context: context,
-                title: 'Delete Competency',
-                body: 'Remove this competency?',
-                confirmLabel: 'Delete',
-                onConfirm: () => ref
-                    .read(tosProvider.notifier)
-                    .deleteCompetency(competency.id),
-              );
+              Navigator.pop(ctx);
+              final text = _editCompetencyController.text.trim();
+              final days = int.tryParse(_editDaysTaughtController.text.trim());
+              if (text.isNotEmpty) {
+                ref.read(tosProvider.notifier).updateCompetency(
+                  competency.id,
+                  {
+                    'competency_text': text,
+                    if (days != null) 'days_taught': days,
+                  },
+                );
+              }
             },
-            icon: const Icon(Icons.close_rounded, size: 18),
-            color: AppColors.foregroundSecondary,
-            tooltip: 'Delete',
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCompetencyTile(TosCompetency competency, String timeUnit) {
+    return GestureDetector(
+      onTap: () => _handleEditCompetency(competency, timeUnit),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.borderLight),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    competency.competencyText,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.foregroundPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${competency.daysTaught} ${timeUnit == 'hours' ? (competency.daysTaught == 1 ? 'hour' : 'hours') : (competency.daysTaught == 1 ? 'day' : 'days')} taught',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.foregroundSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              onPressed: () {
+                AppDialogs.showDestructive(
+                  context: context,
+                  title: 'Delete Competency',
+                  body: 'Remove this competency?',
+                  confirmLabel: 'Delete',
+                  onConfirm: () => ref
+                      .read(tosProvider.notifier)
+                      .deleteCompetency(competency.id),
+                );
+              },
+              icon: const Icon(Icons.close_rounded, size: 18),
+              color: AppColors.foregroundSecondary,
+              tooltip: 'Delete',
+            ),
+          ],
+        ),
       ),
     );
   }

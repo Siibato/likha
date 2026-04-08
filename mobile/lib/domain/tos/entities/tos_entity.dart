@@ -11,6 +11,12 @@ class TableOfSpecifications extends Equatable {
   final double easyPercentage;
   final double mediumPercentage;
   final double hardPercentage;
+  final double rememberingPercentage;
+  final double understandingPercentage;
+  final double applyingPercentage;
+  final double analyzingPercentage;
+  final double evaluatingPercentage;
+  final double creatingPercentage;
   final String createdAt;
   final String updatedAt;
 
@@ -25,6 +31,12 @@ class TableOfSpecifications extends Equatable {
     this.easyPercentage = 50.0,
     this.mediumPercentage = 30.0,
     this.hardPercentage = 20.0,
+    this.rememberingPercentage = 16.67,
+    this.understandingPercentage = 16.67,
+    this.applyingPercentage = 16.67,
+    this.analyzingPercentage = 16.67,
+    this.evaluatingPercentage = 16.67,
+    this.creatingPercentage = 16.67,
     required this.createdAt,
     required this.updatedAt,
   });

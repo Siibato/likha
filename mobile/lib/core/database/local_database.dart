@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 6,
+      version: 7,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onDowngrade: _downgradeDatabase,
@@ -515,6 +515,12 @@ class LocalDatabase {
           easy_percentage REAL NOT NULL DEFAULT 50.0,
           medium_percentage REAL NOT NULL DEFAULT 30.0,
           hard_percentage REAL NOT NULL DEFAULT 20.0,
+          remembering_percentage REAL NOT NULL DEFAULT 16.67,
+          understanding_percentage REAL NOT NULL DEFAULT 16.67,
+          applying_percentage REAL NOT NULL DEFAULT 16.67,
+          analyzing_percentage REAL NOT NULL DEFAULT 16.67,
+          evaluating_percentage REAL NOT NULL DEFAULT 16.67,
+          creating_percentage REAL NOT NULL DEFAULT 16.67,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
@@ -805,6 +811,15 @@ class LocalDatabase {
       await db.execute('ALTER TABLE tos_competencies ADD COLUMN medium_count INTEGER');
       await db.execute('ALTER TABLE tos_competencies ADD COLUMN hard_count INTEGER');
       await db.execute('ALTER TABLE assessments ADD COLUMN linked_tos_id TEXT');
+    }
+
+    if (oldVersion < 7) {
+      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN remembering_percentage REAL NOT NULL DEFAULT 16.67');
+      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN understanding_percentage REAL NOT NULL DEFAULT 16.67');
+      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN applying_percentage REAL NOT NULL DEFAULT 16.67');
+      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN analyzing_percentage REAL NOT NULL DEFAULT 16.67');
+      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN evaluating_percentage REAL NOT NULL DEFAULT 16.67');
+      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN creating_percentage REAL NOT NULL DEFAULT 16.67');
     }
   }
 

@@ -310,6 +310,12 @@ abstract final class TosCols {
   static const String easyPercentage = 'easy_percentage';
   static const String mediumPercentage = 'medium_percentage';
   static const String hardPercentage = 'hard_percentage';
+  static const String rememberingPercentage = 'remembering_percentage';
+  static const String understandingPercentage = 'understanding_percentage';
+  static const String applyingPercentage = 'applying_percentage';
+  static const String analyzingPercentage = 'analyzing_percentage';
+  static const String evaluatingPercentage = 'evaluating_percentage';
+  static const String creatingPercentage = 'creating_percentage';
 }
 
 abstract final class TosCompetenciesCols {

@@ -12,6 +12,12 @@ pub struct CreateTosRequest {
     pub easy_percentage: Option<f64>,
     pub medium_percentage: Option<f64>,
     pub hard_percentage: Option<f64>,
+    pub remembering_percentage: Option<f64>,
+    pub understanding_percentage: Option<f64>,
+    pub applying_percentage: Option<f64>,
+    pub analyzing_percentage: Option<f64>,
+    pub evaluating_percentage: Option<f64>,
+    pub creating_percentage: Option<f64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -23,6 +29,12 @@ pub struct UpdateTosRequest {
     pub easy_percentage: Option<f64>,
     pub medium_percentage: Option<f64>,
     pub hard_percentage: Option<f64>,
+    pub remembering_percentage: Option<f64>,
+    pub understanding_percentage: Option<f64>,
+    pub applying_percentage: Option<f64>,
+    pub analyzing_percentage: Option<f64>,
+    pub evaluating_percentage: Option<f64>,
+    pub creating_percentage: Option<f64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -74,6 +86,12 @@ pub struct TosResponse {
     pub easy_percentage: f64,
     pub medium_percentage: f64,
     pub hard_percentage: f64,
+    pub remembering_percentage: f64,
+    pub understanding_percentage: f64,
+    pub applying_percentage: f64,
+    pub analyzing_percentage: f64,
+    pub evaluating_percentage: f64,
+    pub creating_percentage: f64,
     pub competencies: Vec<CompetencyResponse>,
     pub created_at: String,
     pub updated_at: String,
