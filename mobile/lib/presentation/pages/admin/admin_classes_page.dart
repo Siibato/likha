@@ -125,6 +125,7 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
                                 return ClassCard(
                                   title: cls.title,
                                   subtitle: cls.isArchived ? '$teacherLabel · Archived' : teacherLabel,
+                                  isAdvisory: cls.isAdvisory,
                                   onTap: () => Navigator.push(
                                     context,
                                     MaterialPageRoute(
