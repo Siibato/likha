@@ -1,7 +1,9 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/core/utils/file_opener.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
@@ -55,8 +57,30 @@ class _MaterialDetailDesktopState
     }
   }
 
-  Future<void> _downloadFile(MaterialFile file) async {
-    await ref.read(learningMaterialProvider.notifier).downloadFile(file.id);
+  Future<void> _handleFile(MaterialFile file) async {
+    if (kIsWeb) {
+      final bytes = await ref
+          .read(learningMaterialProvider.notifier)
+          .downloadFile(file.id);
+      if (bytes != null && mounted) {
+        await openFileInBrowser(bytes, file.fileName);
+      }
+    } else if (file.isCached) {
+      await openLocalFile(file.localPath!);
+    } else {
+      await ref
+          .read(learningMaterialProvider.notifier)
+          .downloadFile(file.id);
+      if (!mounted) return;
+      final files =
+          ref.read(learningMaterialProvider).currentMaterial?.files ?? [];
+      for (final f in files) {
+        if (f.id == file.id && f.localPath != null) {
+          await openLocalFile(f.localPath!);
+          break;
+        }
+      }
+    }
   }
 
   void _deleteFile(MaterialFile file) {
@@ -218,49 +242,60 @@ class _MaterialDetailDesktopState
                       style: TextStyle(color: AppColors.foregroundTertiary),
                     ),
                   )
-                : SingleChildScrollView(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Left column: content display
-                        Expanded(
-                          flex: 2,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Description
-                              if (material.description != null &&
-                                  material.description!.isNotEmpty) ...[
-                                _buildContentSection(
-                                  'Description',
-                                  material.description!,
-                                ),
-                                const SizedBox(height: 24),
-                              ],
-
-                              // Content text
-                              if (material.contentText != null &&
-                                  material.contentText!.isNotEmpty) ...[
-                                _buildContentTextSection(
-                                    material.contentText!),
-                                const SizedBox(height: 24),
-                              ],
-
-                              // Info chips
-                              _buildInfoChips(material),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 24),
-                        // Right column: files panel
-                        Expanded(
-                          flex: 1,
-                          child: _buildFilesPanel(material, state.isLoading),
-                        ),
-                      ],
-                    ),
-                  ),
+                : _buildBody(material, state.isLoading),
       ),
+    );
+  }
+
+  Widget _buildBody(dynamic material, bool isLoading) {
+    final hasDescription = material.description != null &&
+        (material.description as String).isNotEmpty;
+    final hasContentText = material.contentText != null &&
+        (material.contentText as String).isNotEmpty;
+    final hasTextContent = hasDescription || hasContentText;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Metadata chips — always at top
+        _buildInfoChips(material),
+        const SizedBox(height: 20),
+
+        if (hasTextContent)
+          // Two-column layout: text content left, attachments right
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (hasDescription) ...[
+                      _buildContentSection(
+                          'Description', material.description as String),
+                      const SizedBox(height: 16),
+                    ],
+                    if (hasContentText)
+                      _buildContentTextSection(material.contentText as String),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 24),
+              SizedBox(
+                width: 350,
+                child: _buildFilesPanel(material, isLoading),
+              ),
+            ],
+          )
+        else
+          // No text content — show attachments panel wider, centered
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: _buildFilesPanel(material, isLoading),
+            ),
+          ),
+      ],
     );
   }
 
@@ -456,15 +491,21 @@ class _MaterialDetailDesktopState
                     ),
                     IconButton(
                       icon: Icon(
-                        file.isCached
-                            ? Icons.folder_open_rounded
-                            : Icons.download_rounded,
+                        kIsWeb
+                            ? Icons.open_in_browser_rounded
+                            : file.isCached
+                                ? Icons.folder_open_rounded
+                                : Icons.download_rounded,
                         size: 18,
                         color: AppColors.foregroundPrimary,
                       ),
                       onPressed:
-                          isLoading ? null : () => _downloadFile(file),
-                      tooltip: file.isCached ? 'Open' : 'Download',
+                          isLoading ? null : () => _handleFile(file),
+                      tooltip: kIsWeb
+                          ? 'Open in browser'
+                          : file.isCached
+                              ? 'Open'
+                              : 'Download',
                       splashRadius: 18,
                     ),
                     IconButton(

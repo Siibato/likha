@@ -423,17 +423,21 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     state = state.copyWith(isLoading: true, clearError: true);
     final result = await _downloadFile(fileId);
     state = state.copyWith(isLoading: false);
+
     List<int>? fileBytes;
+    bool success = false;
     result.fold(
       (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
       (bytes) {
         fileBytes = bytes;
-        // Reload submission detail to reflect updated localPath from DB (mirrors learningMaterialProvider.downloadFile)
-        if (state.currentSubmission != null) {
-          loadSubmissionDetail(state.currentSubmission!.id);
-        }
+        success = true;
       },
     );
+
+    if (success && state.currentSubmission != null) {
+      // Await reload so localPath is updated before caller reads state
+      await loadSubmissionDetail(state.currentSubmission!.id);
+    }
     return fileBytes;
   }
 
