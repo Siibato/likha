@@ -33,9 +33,22 @@ class TosGridTable extends StatelessWidget {
     final totalDays =
         competencies.fold<int>(0, (sum, c) => sum + c.daysTaught);
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Container(
+    // Fixed widths: Days(56) + %(56) + cognitive cols(48 each) + Total(56)
+    const double fixedColWidth = 56 + 72 + 56; // Days + % + Total
+    const double cogColWidth = 48;
+    final double totalFixed =
+        fixedColWidth + _cognitiveHeaders.length * cogColWidth;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double competencyWidth =
+            (constraints.maxWidth - totalFixed).clamp(120.0, double.infinity);
+
+        return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minWidth: constraints.maxWidth),
+          child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -54,9 +67,9 @@ class TosGridTable extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  _headerCell('Competency', 200),
+                  _headerCell('Competency', competencyWidth),
                   _headerCell(_timeUnitLabel, 56),
-                  _headerCell('%', 56),
+                  _headerCell('%', 72),
                   ..._cognitiveHeaders.map((h) => _headerCell(h, 48)),
                   _headerCell('Total', 56),
                 ],
@@ -105,12 +118,12 @@ class TosGridTable extends StatelessWidget {
                       c.competencyCode != null
                           ? '${c.competencyCode} - ${c.competencyText}'
                           : c.competencyText,
-                      200,
+                      competencyWidth,
                     ),
                     _dataCell('${c.daysTaught}', 56,
                         align: TextAlign.center),
                     _dataCell(
-                        '${weight.toStringAsFixed(1)}%', 56,
+                        '${weight.toStringAsFixed(1)}%', 72,
                         align: TextAlign.center),
                     ...cells,
                     _dataCell('$targetItems', 56,
@@ -130,10 +143,10 @@ class TosGridTable extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  _dataCell('TOTAL', 200, bold: true),
+                  _dataCell('TOTAL', competencyWidth, bold: true),
                   _dataCell('$totalDays', 56,
                       align: TextAlign.center, bold: true),
-                  _dataCell('100%', 56,
+                  _dataCell('100%', 72,
                       align: TextAlign.center, bold: true),
                   ..._cognitiveHeaders.map(
                       (_) => _dataCell('-', 48, align: TextAlign.center)),
@@ -144,7 +157,10 @@ class TosGridTable extends StatelessWidget {
             ),
           ],
         ),
-      ),
+          ),
+        ),
+      );
+      },
     );
   }
 

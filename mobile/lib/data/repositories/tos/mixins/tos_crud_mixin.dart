@@ -15,6 +15,17 @@ mixin TosCrudMixin on TosRepositoryBase {
     required Map<String, dynamic> data,
   }) async {
     try {
+      if (serverReachabilityService.isServerReachable) {
+        // Online: call server directly so the TOS exists on the server immediately
+        final serverTos = await remoteDataSource.createTos(
+          classId: classId,
+          data: data,
+        );
+        await localDataSource.saveTos(serverTos);
+        return Right(serverTos);
+      }
+
+      // Offline: optimistic local create + sync queue
       final now = DateTime.now().toIso8601String();
       final id = const Uuid().v4();
 
@@ -33,10 +44,8 @@ mixin TosCrudMixin on TosRepositoryBase {
         updatedAt: now,
       );
 
-      // Save locally (optimistic)
       await localDataSource.saveTos(model);
 
-      // Enqueue for sync
       await syncQueue.enqueue(SyncQueueEntry(
         id: const Uuid().v4(),
         entityType: SyncEntityType.tableOfSpecifications,

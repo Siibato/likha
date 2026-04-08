@@ -56,8 +56,6 @@ mixin TosQueryMixin on TosRepositoryBase {
       }
       final competencies = await localDataSource.getCompetenciesByTos(tosId);
       return Right((tos, competencies));
-    } on ServerFailure catch (e) {
-      return Left(e);
     } catch (e) {
       // Try cache fallback
       try {

@@ -183,6 +183,7 @@ async fn main() {
         material_service.clone(),
         auth_service.clone(),
         grade_computation_service.clone(),
+        tos_service.clone(),
         processed_ops_repo,
     ));
 

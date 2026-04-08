@@ -28,6 +28,7 @@ impl TosService {
         class_id: Uuid,
         teacher_id: Uuid,
         request: CreateTosRequest,
+        client_id: Option<Uuid>,
     ) -> AppResult<TosResponse> {
         // Verify teacher owns class
         if !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
@@ -68,7 +69,7 @@ impl TosService {
         let medium_pct = request.medium_percentage.unwrap_or(30.0);
         let hard_pct = request.hard_percentage.unwrap_or(20.0);
 
-        let id = Uuid::new_v4();
+        let id = client_id.unwrap_or_else(Uuid::new_v4);
         let tos = self
             .tos_repo
             .create_tos(
@@ -257,6 +258,16 @@ impl TosService {
         teacher_id: Uuid,
         request: CreateCompetencyRequest,
     ) -> AppResult<CompetencyResponse> {
+        self.add_competency_with_id(tos_id, teacher_id, request, Uuid::new_v4()).await
+    }
+
+    pub async fn add_competency_with_id(
+        &self,
+        tos_id: Uuid,
+        teacher_id: Uuid,
+        request: CreateCompetencyRequest,
+        competency_id: Uuid,
+    ) -> AppResult<CompetencyResponse> {
         let tos = self
             .tos_repo
             .find_tos_by_id(tos_id)
@@ -273,7 +284,7 @@ impl TosService {
         let comp = self
             .tos_repo
             .create_competency(
-                Uuid::new_v4(),
+                competency_id,
                 tos_id,
                 request.competency_code.as_deref(),
                 &request.competency_text,
