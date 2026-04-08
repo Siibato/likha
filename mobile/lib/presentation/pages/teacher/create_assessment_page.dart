@@ -305,6 +305,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
               quarter: _quarter,
               component: _component,
               isDepartmentalExam: _isDepartmentalExam ? true : null,
+              linkedTosId: _linkedTosId,
             ),
           );
 

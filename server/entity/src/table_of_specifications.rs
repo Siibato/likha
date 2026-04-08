@@ -1,7 +1,7 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "table_of_specifications")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
@@ -11,6 +11,10 @@ pub struct Model {
     pub title: String,
     pub classification_mode: String,
     pub total_items: i32,
+    pub time_unit: String,
+    pub easy_percentage: f64,
+    pub medium_percentage: f64,
+    pub hard_percentage: f64,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
     pub deleted_at: Option<chrono::NaiveDateTime>,

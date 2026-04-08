@@ -299,8 +299,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
                             else ...[
                               TosGridTable(
                                 competencies: competencies,
-                                classificationMode: tos.classificationMode,
-                                totalItems: tos.totalItems,
+                                tos: tos,
                               ),
                               const SizedBox(height: 12),
                               TosSummaryRow(

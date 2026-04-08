@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 5,
+      version: 6,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onDowngrade: _downgradeDatabase,
@@ -151,6 +151,7 @@ class LocalDatabase {
           total_points INTEGER NOT NULL DEFAULT 0,
           question_count INTEGER NOT NULL DEFAULT 0,
           submission_count INTEGER NOT NULL DEFAULT 0,
+          linked_tos_id TEXT,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
@@ -510,6 +511,10 @@ class LocalDatabase {
           title TEXT NOT NULL,
           classification_mode TEXT NOT NULL,
           total_items INTEGER NOT NULL,
+          time_unit TEXT NOT NULL DEFAULT 'days',
+          easy_percentage REAL NOT NULL DEFAULT 50.0,
+          medium_percentage REAL NOT NULL DEFAULT 30.0,
+          hard_percentage REAL NOT NULL DEFAULT 20.0,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
@@ -528,6 +533,9 @@ class LocalDatabase {
           competency_text TEXT NOT NULL,
           days_taught INTEGER NOT NULL,
           order_index INTEGER NOT NULL DEFAULT 0,
+          easy_count INTEGER,
+          medium_count INTEGER,
+          hard_count INTEGER,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
@@ -785,6 +793,18 @@ class LocalDatabase {
           cached_at TEXT NOT NULL
         )
       ''');
+    }
+
+    // Handle upgrade: v5 → v6 adds TOS time unit, difficulty percentages, competency counts, assessment linked_tos_id
+    if (oldVersion < 6) {
+      await db.execute("ALTER TABLE table_of_specifications ADD COLUMN time_unit TEXT NOT NULL DEFAULT 'days'");
+      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN easy_percentage REAL NOT NULL DEFAULT 50.0');
+      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN medium_percentage REAL NOT NULL DEFAULT 30.0');
+      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN hard_percentage REAL NOT NULL DEFAULT 20.0');
+      await db.execute('ALTER TABLE tos_competencies ADD COLUMN easy_count INTEGER');
+      await db.execute('ALTER TABLE tos_competencies ADD COLUMN medium_count INTEGER');
+      await db.execute('ALTER TABLE tos_competencies ADD COLUMN hard_count INTEGER');
+      await db.execute('ALTER TABLE assessments ADD COLUMN linked_tos_id TEXT');
     }
   }
 

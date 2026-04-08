@@ -58,6 +58,16 @@ impl TosService {
             )));
         }
 
+        let time_unit = request.time_unit.as_deref().unwrap_or("days");
+        if time_unit != "days" && time_unit != "hours" {
+            return Err(AppError::BadRequest(
+                "time_unit must be 'days' or 'hours'".to_string(),
+            ));
+        }
+        let easy_pct = request.easy_percentage.unwrap_or(50.0);
+        let medium_pct = request.medium_percentage.unwrap_or(30.0);
+        let hard_pct = request.hard_percentage.unwrap_or(20.0);
+
         let id = Uuid::new_v4();
         let tos = self
             .tos_repo
@@ -68,6 +78,10 @@ impl TosService {
                 &request.title,
                 &request.classification_mode,
                 request.total_items,
+                time_unit,
+                easy_pct,
+                medium_pct,
+                hard_pct,
             )
             .await?;
 
@@ -78,6 +92,10 @@ impl TosService {
             title: tos.title,
             classification_mode: tos.classification_mode,
             total_items: tos.total_items,
+            time_unit: tos.time_unit,
+            easy_percentage: tos.easy_percentage,
+            medium_percentage: tos.medium_percentage,
+            hard_percentage: tos.hard_percentage,
             competencies: vec![],
             created_at: tos.created_at.to_string(),
             updated_at: tos.updated_at.to_string(),
@@ -100,6 +118,10 @@ impl TosService {
             title: tos.title,
             classification_mode: tos.classification_mode,
             total_items: tos.total_items,
+            time_unit: tos.time_unit,
+            easy_percentage: tos.easy_percentage,
+            medium_percentage: tos.medium_percentage,
+            hard_percentage: tos.hard_percentage,
             competencies: competencies
                 .into_iter()
                 .map(|c| CompetencyResponse {
@@ -108,6 +130,9 @@ impl TosService {
                     competency_text: c.competency_text,
                     days_taught: c.days_taught,
                     order_index: c.order_index,
+                    easy_count: c.easy_count,
+                    medium_count: c.medium_count,
+                    hard_count: c.hard_count,
                 })
                 .collect(),
             created_at: tos.created_at.to_string(),
@@ -136,6 +161,10 @@ impl TosService {
                 title: tos.title,
                 classification_mode: tos.classification_mode,
                 total_items: tos.total_items,
+                time_unit: tos.time_unit,
+                easy_percentage: tos.easy_percentage,
+                medium_percentage: tos.medium_percentage,
+                hard_percentage: tos.hard_percentage,
                 competencies: competencies
                     .into_iter()
                     .map(|c| CompetencyResponse {
@@ -144,6 +173,9 @@ impl TosService {
                         competency_text: c.competency_text,
                         days_taught: c.days_taught,
                         order_index: c.order_index,
+                        easy_count: c.easy_count,
+                        medium_count: c.medium_count,
+                        hard_count: c.hard_count,
                     })
                     .collect(),
                 created_at: tos.created_at.to_string(),
@@ -179,12 +211,24 @@ impl TosService {
             }
         }
 
+        if let Some(ref unit) = request.time_unit {
+            if unit != "days" && unit != "hours" {
+                return Err(AppError::BadRequest(
+                    "time_unit must be 'days' or 'hours'".to_string(),
+                ));
+            }
+        }
+
         self.tos_repo
             .update_tos(
                 tos_id,
                 request.title.as_deref(),
                 request.classification_mode.as_deref(),
                 request.total_items,
+                request.time_unit.as_deref(),
+                request.easy_percentage,
+                request.medium_percentage,
+                request.hard_percentage,
             )
             .await?;
 
@@ -235,6 +279,9 @@ impl TosService {
                 &request.competency_text,
                 request.days_taught,
                 order_index,
+                request.easy_count,
+                request.medium_count,
+                request.hard_count,
             )
             .await?;
 
@@ -244,6 +291,9 @@ impl TosService {
             competency_text: comp.competency_text,
             days_taught: comp.days_taught,
             order_index: comp.order_index,
+            easy_count: comp.easy_count,
+            medium_count: comp.medium_count,
+            hard_count: comp.hard_count,
         })
     }
 
@@ -277,6 +327,9 @@ impl TosService {
                 request.competency_text.as_deref(),
                 request.days_taught,
                 request.order_index,
+                request.easy_count,
+                request.medium_count,
+                request.hard_count,
             )
             .await?;
 
@@ -286,6 +339,9 @@ impl TosService {
             competency_text: updated.competency_text,
             days_taught: updated.days_taught,
             order_index: updated.order_index,
+            easy_count: updated.easy_count,
+            medium_count: updated.medium_count,
+            hard_count: updated.hard_count,
         })
     }
 
@@ -342,6 +398,9 @@ impl TosService {
                     c.competency_text,
                     c.days_taught,
                     c.order_index.unwrap_or(base_order + i as i32),
+                    c.easy_count,
+                    c.medium_count,
+                    c.hard_count,
                 )
             })
             .collect();
@@ -356,6 +415,9 @@ impl TosService {
                 competency_text: c.competency_text,
                 days_taught: c.days_taught,
                 order_index: c.order_index,
+                easy_count: c.easy_count,
+                medium_count: c.medium_count,
+                hard_count: c.hard_count,
             })
             .collect())
     }

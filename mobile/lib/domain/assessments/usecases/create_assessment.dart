@@ -21,6 +21,7 @@ class CreateAssessment {
       quarter: params.quarter,
       component: params.component,
       isDepartmentalExam: params.isDepartmentalExam,
+      linkedTosId: params.linkedTosId,
     );
   }
 }
@@ -38,6 +39,7 @@ class CreateAssessmentParams {
   final int? quarter;
   final String? component;
   final bool? isDepartmentalExam;
+  final String? linkedTosId;
 
   CreateAssessmentParams({
     required this.classId,
@@ -52,5 +54,6 @@ class CreateAssessmentParams {
     this.quarter,
     this.component,
     this.isDepartmentalExam,
+    this.linkedTosId,
   });
 }

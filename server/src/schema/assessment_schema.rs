@@ -18,6 +18,7 @@ pub struct CreateAssessmentRequest {
     pub quarter: Option<i32>,
     pub component: Option<String>,
     pub is_departmental_exam: Option<bool>,
+    pub linked_tos_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -31,6 +32,7 @@ pub struct UpdateAssessmentRequest {
     pub quarter: Option<i32>,
     pub component: Option<String>,
     pub is_departmental_exam: Option<bool>,
+    pub linked_tos_id: Option<Option<String>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -133,6 +135,7 @@ pub struct AssessmentResponse {
     pub quarter: Option<i32>,
     pub component: Option<String>,
     pub is_departmental_exam: Option<bool>,
+    pub linked_tos_id: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -159,6 +162,7 @@ pub struct AssessmentDetailResponse {
     pub quarter: Option<i32>,
     pub component: Option<String>,
     pub is_departmental_exam: Option<bool>,
+    pub linked_tos_id: Option<String>,
     pub questions: Vec<QuestionResponse>,
     pub created_at: String,
     pub updated_at: String,

@@ -3,26 +3,35 @@ import 'package:likha/domain/tos/entities/tos_entity.dart';
 
 class TosGridTable extends StatelessWidget {
   final List<TosCompetency> competencies;
-  final String classificationMode;
-  final int totalItems;
+  final TableOfSpecifications tos;
+
+  /// Called when a cognitive cell is tapped.
+  /// [competencyId] — the competency being edited.
+  /// [levelKey] — one of 'easy', 'medium', 'hard'.
+  /// [currentOverride] — the current per-competency override, or null if auto.
+  final void Function(String competencyId, String levelKey, int? currentOverride)? onCellTap;
 
   const TosGridTable({
     super.key,
     required this.competencies,
-    required this.classificationMode,
-    required this.totalItems,
+    required this.tos,
+    this.onCellTap,
   });
 
+  bool get _isBloomsMode => tos.classificationMode == 'blooms';
+
   List<String> get _cognitiveHeaders {
-    if (classificationMode == 'blooms') {
-      return ['R', 'U', 'Ap', 'An', 'E', 'C'];
-    }
+    if (_isBloomsMode) return ['R', 'U', 'Ap', 'An', 'E', 'C'];
     return ['Easy', 'Avg', 'Diff'];
   }
 
+  String get _timeUnitLabel =>
+      tos.timeUnit == 'hours' ? 'Hours' : 'Days';
+
   @override
   Widget build(BuildContext context) {
-    final totalDays = competencies.fold<int>(0, (sum, c) => sum + c.daysTaught);
+    final totalDays =
+        competencies.fold<int>(0, (sum, c) => sum + c.daysTaught);
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -34,7 +43,7 @@ class TosGridTable extends StatelessWidget {
         ),
         child: Column(
           children: [
-            // Header
+            // Header row
             Container(
               decoration: const BoxDecoration(
                 color: Color(0xFFF8F9FA),
@@ -46,7 +55,7 @@ class TosGridTable extends StatelessWidget {
               child: Row(
                 children: [
                   _headerCell('Competency', 200),
-                  _headerCell('Days', 56),
+                  _headerCell(_timeUnitLabel, 56),
                   _headerCell('%', 56),
                   ..._cognitiveHeaders.map((h) => _headerCell(h, 48)),
                   _headerCell('Total', 56),
@@ -56,20 +65,37 @@ class TosGridTable extends StatelessWidget {
             const Divider(height: 1, color: Color(0xFFE0E0E0)),
             // Data rows
             ...competencies.asMap().entries.map((entry) {
+              final idx = entry.key;
               final c = entry.value;
-              final weight = totalDays > 0
-                  ? (c.daysTaught / totalDays * 100)
-                  : 0.0;
-              final targetItems = totalDays > 0
-                  ? (weight * totalItems / 100).round()
-                  : 0;
+              final weight =
+                  totalDays > 0 ? c.daysTaught / totalDays * 100 : 0.0;
+              final targetItems =
+                  totalDays > 0 ? (weight * tos.totalItems / 100).round() : 0;
+
+              final easyItems = c.easyCount ??
+                  (targetItems * tos.easyPercentage / 100).round();
+              final mediumItems = c.mediumCount ??
+                  (targetItems * tos.mediumPercentage / 100).round();
+              final hardItems = c.hardCount ??
+                  (targetItems * tos.hardPercentage / 100).round();
+
+              final cells = _buildCognitiveCells(
+                context: context,
+                competency: c,
+                easyItems: easyItems,
+                mediumItems: mediumItems,
+                hardItems: hardItems,
+                easyIsOverride: c.easyCount != null,
+                mediumIsOverride: c.mediumCount != null,
+                hardIsOverride: c.hardCount != null,
+              );
 
               return Container(
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
                       color: const Color(0xFFEEEEEE),
-                      width: entry.key < competencies.length - 1 ? 1 : 0,
+                      width: idx < competencies.length - 1 ? 1 : 0,
                     ),
                   ),
                 ),
@@ -81,10 +107,14 @@ class TosGridTable extends StatelessWidget {
                           : c.competencyText,
                       200,
                     ),
-                    _dataCell('${c.daysTaught}', 56, align: TextAlign.center),
-                    _dataCell('${weight.toStringAsFixed(1)}%', 56, align: TextAlign.center),
-                    ..._cognitiveHeaders.map((_) => _dataCell('-', 48, align: TextAlign.center)),
-                    _dataCell('$targetItems', 56, align: TextAlign.center, bold: true),
+                    _dataCell('${c.daysTaught}', 56,
+                        align: TextAlign.center),
+                    _dataCell(
+                        '${weight.toStringAsFixed(1)}%', 56,
+                        align: TextAlign.center),
+                    ...cells,
+                    _dataCell('$targetItems', 56,
+                        align: TextAlign.center, bold: true),
                   ],
                 ),
               );
@@ -101,14 +131,119 @@ class TosGridTable extends StatelessWidget {
               child: Row(
                 children: [
                   _dataCell('TOTAL', 200, bold: true),
-                  _dataCell('$totalDays', 56, align: TextAlign.center, bold: true),
-                  _dataCell('100%', 56, align: TextAlign.center, bold: true),
-                  ..._cognitiveHeaders.map((_) => _dataCell('-', 48, align: TextAlign.center)),
-                  _dataCell('$totalItems', 56, align: TextAlign.center, bold: true),
+                  _dataCell('$totalDays', 56,
+                      align: TextAlign.center, bold: true),
+                  _dataCell('100%', 56,
+                      align: TextAlign.center, bold: true),
+                  ..._cognitiveHeaders.map(
+                      (_) => _dataCell('-', 48, align: TextAlign.center)),
+                  _dataCell('${tos.totalItems}', 56,
+                      align: TextAlign.center, bold: true),
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildCognitiveCells({
+    required BuildContext context,
+    required TosCompetency competency,
+    required int easyItems,
+    required int mediumItems,
+    required int hardItems,
+    required bool easyIsOverride,
+    required bool mediumIsOverride,
+    required bool hardIsOverride,
+  }) {
+    if (!_isBloomsMode) {
+      // Difficulty mode: 3 columns → easy, avg(medium), diff(hard)
+      return [
+        _tappableCell(
+          context,
+          value: '$easyItems',
+          isOverride: easyIsOverride,
+          onTap: onCellTap == null
+              ? null
+              : () => onCellTap!(competency.id, 'easy', competency.easyCount),
+        ),
+        _tappableCell(
+          context,
+          value: '$mediumItems',
+          isOverride: mediumIsOverride,
+          onTap: onCellTap == null
+              ? null
+              : () =>
+                  onCellTap!(competency.id, 'medium', competency.mediumCount),
+        ),
+        _tappableCell(
+          context,
+          value: '$hardItems',
+          isOverride: hardIsOverride,
+          onTap: onCellTap == null
+              ? null
+              : () =>
+                  onCellTap!(competency.id, 'hard', competency.hardCount),
+        ),
+      ];
+    }
+
+    // Blooms mode: 6 columns (R, U, Ap, An, E, C)
+    // easy bucket → R + U; medium bucket → Ap + An; hard bucket → E + C
+    final r = (easyItems / 2).round();
+    final u = easyItems - r;
+    final ap = (mediumItems / 2).round();
+    final an = mediumItems - ap;
+    final e = (hardItems / 2).round();
+    final c = hardItems - e;
+
+    Widget bloomCell(String val, bool isOverride, String levelKey, int? override) {
+      return _tappableCell(
+        context,
+        value: val,
+        isOverride: isOverride,
+        onTap: onCellTap == null
+            ? null
+            : () => onCellTap!(competency.id, levelKey, override),
+      );
+    }
+
+    return [
+      bloomCell('$r', easyIsOverride, 'easy', competency.easyCount),
+      bloomCell('$u', easyIsOverride, 'easy', competency.easyCount),
+      bloomCell('$ap', mediumIsOverride, 'medium', competency.mediumCount),
+      bloomCell('$an', mediumIsOverride, 'medium', competency.mediumCount),
+      bloomCell('$e', hardIsOverride, 'hard', competency.hardCount),
+      bloomCell('$c', hardIsOverride, 'hard', competency.hardCount),
+    ];
+  }
+
+  Widget _tappableCell(
+    BuildContext context, {
+    required String value,
+    required bool isOverride,
+    VoidCallback? onTap,
+  }) {
+    return SizedBox(
+      width: 48,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+          color: Colors.transparent,
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: isOverride ? FontWeight.w700 : FontWeight.w400,
+              color: isOverride
+                  ? const Color(0xFF2B6CB0)
+                  : const Color(0xFF2B2B2B),
+            ),
+            textAlign: TextAlign.center,
+          ),
         ),
       ),
     );

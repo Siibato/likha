@@ -34,6 +34,7 @@ class AssessmentModel extends Assessment {
     required super.questionCount,
     required super.submissionCount,
     super.isSubmitted,
+    super.linkedTosId,
     required super.createdAt,
     required super.updatedAt,
     super.cachedAt,
@@ -59,6 +60,7 @@ class AssessmentModel extends Assessment {
           ?? json['question_count'] as int?
           ?? 0,
       submissionCount: json['submission_count'] as int? ?? 0,
+      linkedTosId: json['linked_tos_id'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
       deletedAt: json['deleted_at'] != null
@@ -90,6 +92,7 @@ class AssessmentModel extends Assessment {
       totalPoints: (map['total_points'] as num?)?.toInt() ?? 0,
       questionCount: map['question_count'] as int? ?? 0,
       submissionCount: map['submission_count'] as int? ?? 0,
+      linkedTosId: map['linked_tos_id'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
       deletedAt: map['deleted_at'] != null
@@ -118,6 +121,7 @@ class AssessmentModel extends Assessment {
       'total_points': totalPoints,
       'question_count': questionCount,
       'submission_count': submissionCount,
+      'linked_tos_id': linkedTosId,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'deleted_at': deletedAt?.toIso8601String(),

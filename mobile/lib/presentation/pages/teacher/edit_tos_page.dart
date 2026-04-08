@@ -4,6 +4,8 @@ import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/teacher/widgets/classification_mode_toggle.dart';
+import 'package:likha/presentation/pages/teacher/widgets/difficulty_ratio_section.dart';
+import 'package:likha/presentation/pages/teacher/widgets/time_unit_toggle.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 
 class EditTosPage extends ConsumerStatefulWidget {
@@ -19,8 +21,12 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late final TextEditingController _totalItemsController;
+  late final TextEditingController _easyPctController;
+  late final TextEditingController _mediumPctController;
+  late final TextEditingController _hardPctController;
   late int _selectedQuarter;
   late String _classificationMode;
+  late String _timeUnit;
 
   @override
   void initState() {
@@ -28,14 +34,24 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
     _titleController = TextEditingController(text: widget.tos.title);
     _totalItemsController =
         TextEditingController(text: '${widget.tos.totalItems}');
+    _easyPctController =
+        TextEditingController(text: '${widget.tos.easyPercentage}');
+    _mediumPctController =
+        TextEditingController(text: '${widget.tos.mediumPercentage}');
+    _hardPctController =
+        TextEditingController(text: '${widget.tos.hardPercentage}');
     _selectedQuarter = widget.tos.quarter;
     _classificationMode = widget.tos.classificationMode;
+    _timeUnit = widget.tos.timeUnit;
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _totalItemsController.dispose();
+    _easyPctController.dispose();
+    _mediumPctController.dispose();
+    _hardPctController.dispose();
     super.dispose();
   }
 
@@ -49,6 +65,13 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
         'quarter': _selectedQuarter,
         'classification_mode': _classificationMode,
         'total_items': int.tryParse(_totalItemsController.text.trim()) ?? 50,
+        'time_unit': _timeUnit,
+        'easy_percentage':
+            double.tryParse(_easyPctController.text.trim()) ?? 50.0,
+        'medium_percentage':
+            double.tryParse(_mediumPctController.text.trim()) ?? 30.0,
+        'hard_percentage':
+            double.tryParse(_hardPctController.text.trim()) ?? 20.0,
       },
     );
 
@@ -139,6 +162,17 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
                         value: _classificationMode,
                         onChanged: (v) =>
                             setState(() => _classificationMode = v),
+                      ),
+                      const SizedBox(height: 20),
+                      TimeUnitToggle(
+                        value: _timeUnit,
+                        onChanged: (v) => setState(() => _timeUnit = v),
+                      ),
+                      const SizedBox(height: 20),
+                      DifficultyRatioSection(
+                        easyController: _easyPctController,
+                        mediumController: _mediumPctController,
+                        hardController: _hardPctController,
                       ),
                       const SizedBox(height: 32),
                       SizedBox(

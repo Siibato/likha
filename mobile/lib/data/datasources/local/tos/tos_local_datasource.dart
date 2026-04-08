@@ -10,6 +10,7 @@ abstract class TosLocalDataSource {
   Future<List<TosModel>> getTosByClass(String classId);
   Future<TosModel?> getTosById(String tosId);
   Future<List<CompetencyModel>> getCompetenciesByTos(String tosId);
+  Future<CompetencyModel?> getCompetencyById(String competencyId);
   Future<List<MelcEntryModel>> searchMelcs({
     String? subject,
     String? gradeLevel,

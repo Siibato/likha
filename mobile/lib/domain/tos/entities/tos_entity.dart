@@ -7,6 +7,10 @@ class TableOfSpecifications extends Equatable {
   final String title;
   final String classificationMode;
   final int totalItems;
+  final String timeUnit;
+  final double easyPercentage;
+  final double mediumPercentage;
+  final double hardPercentage;
   final String createdAt;
   final String updatedAt;
 
@@ -17,6 +21,10 @@ class TableOfSpecifications extends Equatable {
     required this.title,
     required this.classificationMode,
     required this.totalItems,
+    this.timeUnit = 'days',
+    this.easyPercentage = 50.0,
+    this.mediumPercentage = 30.0,
+    this.hardPercentage = 20.0,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -32,6 +40,9 @@ class TosCompetency extends Equatable {
   final String competencyText;
   final int daysTaught;
   final int orderIndex;
+  final int? easyCount;
+  final int? mediumCount;
+  final int? hardCount;
   final String createdAt;
   final String updatedAt;
 
@@ -42,6 +53,9 @@ class TosCompetency extends Equatable {
     required this.competencyText,
     required this.daysTaught,
     required this.orderIndex,
+    this.easyCount,
+    this.mediumCount,
+    this.hardCount,
     required this.createdAt,
     required this.updatedAt,
   });

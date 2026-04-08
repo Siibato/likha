@@ -35,6 +35,13 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
     });
   }
 
+  @override
+  void dispose() {
+    _competencyController.dispose();
+    _cellOverrideController.dispose();
+    super.dispose();
+  }
+
   void _handleDelete() {
     AppDialogs.showDestructive(
       context: context,
@@ -49,12 +56,14 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
   }
 
   final _competencyController = TextEditingController();
+  final _cellOverrideController = TextEditingController();
 
-  void _handleAddCompetency() {
+  void _handleAddCompetency(String timeUnit) {
     _competencyController.clear();
     AppDialogs.showInput(
       context: context,
       title: 'Add Competency',
+      subtitle: 'Time taught defaults to 1 $timeUnit. You can edit it after adding.',
       controller: _competencyController,
       labelText: 'Competency description',
       confirmLabel: 'Add',
@@ -70,6 +79,30 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
             },
           );
         }
+      },
+    );
+  }
+
+  void _handleCellTap(
+    String competencyId,
+    String levelKey,
+    int? currentOverride,
+  ) {
+    _cellOverrideController.text = currentOverride?.toString() ?? '';
+    AppDialogs.showInput(
+      context: context,
+      title: 'Set Item Count',
+      controller: _cellOverrideController,
+      labelText: 'Number of items (leave blank to auto)',
+      confirmLabel: 'Save',
+      keyboardType: TextInputType.number,
+      onConfirm: () {
+        final raw = _cellOverrideController.text.trim();
+        final override = raw.isEmpty ? null : int.tryParse(raw);
+        ref.read(tosProvider.notifier).updateCompetency(
+          competencyId,
+          {'${levelKey}_count': override},
+        );
       },
     );
   }
@@ -207,9 +240,8 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
                                 else ...[
                                   TosGridTable(
                                     competencies: competencies,
-                                    classificationMode:
-                                        tos.classificationMode,
-                                    totalItems: tos.totalItems,
+                                    tos: tos,
+                                    onCellTap: _handleCellTap,
                                   ),
                                   const SizedBox(height: 12),
                                   TosSummaryRow(
@@ -235,6 +267,7 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
                                   return TosCompetencyRow(
                                     competency: c,
                                     totalDays: totalDays,
+                                    timeUnit: tos.timeUnit,
                                     onDelete: () {
                                       AppDialogs.showDestructive(
                                         context: context,
@@ -253,7 +286,7 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
                                 _OutlinedButton(
                                   icon: Icons.add,
                                   label: 'Add Competency',
-                                  onTap: _handleAddCompetency,
+                                  onTap: () => _handleAddCompetency(tos.timeUnit),
                                 ),
                                 const SizedBox(height: 8),
                                 _OutlinedButton(

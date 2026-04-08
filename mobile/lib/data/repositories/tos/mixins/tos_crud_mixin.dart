@@ -25,6 +25,10 @@ mixin TosCrudMixin on TosRepositoryBase {
         title: data['title'] as String,
         classificationMode: data['classification_mode'] as String,
         totalItems: (data['total_items'] as num).toInt(),
+        timeUnit: data['time_unit'] as String? ?? 'days',
+        easyPercentage: (data['easy_percentage'] as num?)?.toDouble() ?? 50.0,
+        mediumPercentage: (data['medium_percentage'] as num?)?.toDouble() ?? 30.0,
+        hardPercentage: (data['hard_percentage'] as num?)?.toDouble() ?? 20.0,
         createdAt: now,
         updatedAt: now,
       );

@@ -4,6 +4,7 @@ import 'package:likha/domain/tos/entities/tos_entity.dart';
 class TosCompetencyRow extends StatelessWidget {
   final TosCompetency competency;
   final int totalDays;
+  final String timeUnit;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
@@ -11,6 +12,7 @@ class TosCompetencyRow extends StatelessWidget {
     super.key,
     required this.competency,
     required this.totalDays,
+    this.timeUnit = 'days',
     this.onEdit,
     this.onDelete,
   });
@@ -65,7 +67,7 @@ class TosCompetencyRow extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      '${competency.daysTaught} days',
+                      '${competency.daysTaught} $timeUnit',
                       style: const TextStyle(
                         fontSize: 11,
                         color: Color(0xFF999999),
