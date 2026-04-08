@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -77,6 +78,7 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
   }
 
   void _initDeepLinks() {
+    if (kIsWeb) return; // Deep links handled differently on web
     _deepLinkSub = AppLinks().uriLinkStream.listen((uri) {
       if (!mounted) return;
       if (uri.scheme == 'likha' &&

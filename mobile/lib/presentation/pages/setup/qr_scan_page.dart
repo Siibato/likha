@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:likha/presentation/pages/setup/qr_scanner_widget.dart';
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/providers/school_setup_provider.dart';
@@ -16,12 +16,11 @@ class QrScanPage extends ConsumerStatefulWidget {
 class _QrScanPageState extends ConsumerState<QrScanPage> {
   bool _qrScanned = false;
 
-  void _onDetect(BarcodeCapture capture) {
+  void _onDetect(String rawValue) {
     if (_qrScanned) return;
-    final barcode = capture.barcodes.firstOrNull;
-    if (barcode?.rawValue == null) return;
+    if (rawValue.isEmpty) return;
     _qrScanned = true;
-    ref.read(schoolSetupProvider.notifier).connectViaQr(barcode!.rawValue!);
+    ref.read(schoolSetupProvider.notifier).connectViaQr(rawValue);
   }
 
   void _restartApp() {
@@ -75,10 +74,7 @@ class _QrScanPageState extends ConsumerState<QrScanPage> {
                     ? const Center(child: CircularProgressIndicator())
                     : Padding(
                         padding: const EdgeInsets.all(24),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: MobileScanner(onDetect: _onDetect),
-                        ),
+                        child: QrScannerWidget(onDetect: _onDetect),
                       ),
               ),
               const Padding(
