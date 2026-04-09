@@ -83,6 +83,8 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
             isPublished: isPublished,
             questions: questionModels,
             linkedTosId: linkedTosId,
+            quarter: quarter,
+            component: component,
           );
 
           // Calculate totalPoints from questions
@@ -107,6 +109,8 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
             questionCount: questions.length,
             submissionCount: 0,
             linkedTosId: linkedTosId,
+            quarter: quarter,
+            component: component,
             createdAt: now,
             updatedAt: now,
           ));
@@ -123,6 +127,8 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           showResultsImmediately: showResultsImmediately,
           isPublished: isPublished,
           linkedTosId: linkedTosId,
+          quarter: quarter,
+          component: component,
         );
 
         return Right(Assessment(
@@ -141,6 +147,8 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           questionCount: 0,
           submissionCount: 0,
           linkedTosId: linkedTosId,
+          quarter: quarter,
+          component: component,
           createdAt: now,
           updatedAt: now,
         ));

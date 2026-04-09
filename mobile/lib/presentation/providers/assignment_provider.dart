@@ -22,6 +22,7 @@ import 'package:likha/domain/assignments/usecases/submit_assignment.dart';
 import 'package:likha/domain/assignments/usecases/update_assignment.dart';
 import 'package:likha/domain/assignments/usecases/upload_file.dart';
 import 'package:likha/domain/assignments/usecases/reorder_assignment.dart';
+import 'package:likha/domain/grading/repositories/grading_repository.dart';
 import 'package:likha/injection_container.dart';
 
 class AssignmentState {
@@ -142,6 +143,15 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     );
   }
 
+  String _toGradeComponent(String c) {
+    switch (c) {
+      case 'written_work': return 'ww';
+      case 'performance_task': return 'pt';
+      case 'quarterly_assessment': return 'qa';
+      default: return c;
+    }
+  }
+
   Future<void> createAssignment(CreateAssignmentParams params) async {
     state =
         state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
@@ -156,6 +166,22 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
           currentAssignment: assignment,
           successMessage: 'Assignment created',
         );
+        // Auto-create linked grade item when component + quarter are set
+        if (assignment.component != null && assignment.quarter != null) {
+          sl<GradingRepository>().createGradeItem(
+            classId: params.classId,
+            data: {
+              'title': assignment.title,
+              'component': _toGradeComponent(assignment.component!),
+              'quarter': assignment.quarter!,
+              'total_points': assignment.totalPoints.toDouble(),
+              'is_departmental_exam': false,
+              'source_type': 'assignment',
+              'source_id': assignment.id,
+              'order_index': 0,
+            },
+          );
+        }
       },
     );
   }
@@ -180,11 +206,26 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
-      (assignment) => state = state.copyWith(
-        isLoading: false,
-        currentAssignment: assignment,
-        successMessage: 'Assignment updated',
-      ),
+      (assignment) {
+        state = state.copyWith(
+          isLoading: false,
+          currentAssignment: assignment,
+          successMessage: 'Assignment updated',
+        );
+        // Sync title/total_points to linked grade item if one exists
+        sl<GradingRepository>().findGradeItemBySourceId(params.assignmentId).then((res) {
+          res.fold((_) {}, (item) {
+            if (item != null) {
+              final updates = <String, dynamic>{};
+              if (params.title != null) updates['title'] = params.title;
+              if (params.totalPoints != null) updates['total_points'] = params.totalPoints!.toDouble();
+              if (updates.isNotEmpty) {
+                sl<GradingRepository>().updateGradeItem(id: item.id, data: updates);
+              }
+            }
+          });
+        });
+      },
     );
   }
 
@@ -233,6 +274,14 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
           successMessage: 'Assignment deleted',
           clearAssignment: true,
         );
+        // Delete linked grade item if one exists
+        sl<GradingRepository>().findGradeItemBySourceId(assignmentId).then((res) {
+          res.fold((_) {}, (item) {
+            if (item != null) {
+              sl<GradingRepository>().deleteGradeItem(id: item.id);
+            }
+          });
+        });
       },
     );
   }

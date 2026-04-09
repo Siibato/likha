@@ -17,6 +17,8 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
     bool? showResultsImmediately,
     bool isPublished = true,
     String? linkedTosId,
+    int? quarter,
+    String? component,
   }) async {
     try {
       final db = await localDatabase.database;
@@ -39,6 +41,8 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
             AssessmentsCols.isPublished: isPublished ? 1 : 0,
             AssessmentsCols.orderIndex: 0,
             if (linkedTosId != null) AssessmentsCols.linkedTosId: linkedTosId,
+            if (quarter != null) AssessmentsCols.quarter: quarter,
+            if (component != null) AssessmentsCols.component: component,
             CommonCols.createdAt: now.toIso8601String(),
             CommonCols.updatedAt: now.toIso8601String(),
             CommonCols.cachedAt: now.toIso8601String(),
@@ -62,6 +66,8 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
               if (showResultsImmediately != null) 'show_results_immediately': showResultsImmediately,
               'is_published': isPublished,
               if (linkedTosId != null) 'linked_tos_id': linkedTosId,
+              if (quarter != null) 'quarter': quarter,
+              if (component != null) 'component': component,
             },
             status: SyncStatus.pending,
             retryCount: 0,
@@ -102,6 +108,8 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
     required List<QuestionModel> questions,
     bool isPublished = true,
     String? linkedTosId,
+    int? quarter,
+    String? component,
   }) async {
     try {
       final db = await localDatabase.database;
@@ -125,6 +133,8 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
             AssessmentsCols.isPublished: isPublished ? 1 : 0,
             AssessmentsCols.orderIndex: 0,
             if (linkedTosId != null) AssessmentsCols.linkedTosId: linkedTosId,
+            if (quarter != null) AssessmentsCols.quarter: quarter,
+            if (component != null) AssessmentsCols.component: component,
             CommonCols.createdAt: now.toIso8601String(),
             CommonCols.updatedAt: now.toIso8601String(),
             CommonCols.cachedAt: now.toIso8601String(),
@@ -245,6 +255,8 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
               'close_at': closeAt,
               if (showResultsImmediately != null) 'show_results_immediately': showResultsImmediately,
               'is_published': isPublished,
+              if (quarter != null) 'quarter': quarter,
+              if (component != null) 'component': component,
             },
             status: SyncStatus.pending,
             retryCount: 0,

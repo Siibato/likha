@@ -18,6 +18,9 @@ import 'package:likha/domain/grading/usecases/set_score_override.dart';
 import 'package:likha/domain/grading/usecases/setup_grading.dart';
 import 'package:likha/domain/grading/usecases/update_grading_config.dart';
 import 'package:likha/domain/grading/usecases/update_quarterly_grade.dart';
+import 'package:likha/domain/assessments/usecases/get_assessments.dart';
+import 'package:likha/domain/assignments/usecases/get_assignments.dart';
+import 'package:likha/domain/grading/repositories/grading_repository.dart';
 import 'package:likha/injection_container.dart';
 
 const _unset = Object();
@@ -199,6 +202,72 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
         successMessage: 'Grade item deleted',
       ),
     );
+  }
+
+  String _toGradeComponent(String c) {
+    switch (c) {
+      case 'written_work': return 'ww';
+      case 'performance_task': return 'pt';
+      case 'quarterly_assessment': return 'qa';
+      default: return c;
+    }
+  }
+
+  Future<void> backfillFromActivities(String classId, int quarter) async {
+    final existingSourceIds = state.items
+        .where((i) => i.sourceId != null)
+        .map((i) => i.sourceId!)
+        .toSet();
+
+    final assessmentResult = await sl<GetAssessments>()(classId);
+    assessmentResult.fold((_) {}, (assessments) {
+      for (final a in assessments) {
+        if (a.quarter == quarter && a.component != null && !existingSourceIds.contains(a.id)) {
+          sl<GradingRepository>().createGradeItem(
+            classId: classId,
+            data: {
+              'title': a.title,
+              'component': _toGradeComponent(a.component!),
+              'quarter': quarter,
+              'total_points': a.totalPoints.toDouble(),
+              'is_departmental_exam': false,
+              'source_type': 'assessment',
+              'source_id': a.id,
+              'order_index': 0,
+            },
+          ).then((res) {
+            res.fold((_) {}, (item) {
+              state = state.copyWith(items: [...state.items, item]);
+            });
+          });
+        }
+      }
+    });
+
+    final assignmentResult = await sl<GetAssignments>()(classId);
+    assignmentResult.fold((_) {}, (assignments) {
+      for (final a in assignments) {
+        if (a.quarter == quarter && a.component != null && !existingSourceIds.contains(a.id)) {
+          sl<GradingRepository>().createGradeItem(
+            classId: classId,
+            data: {
+              'title': a.title,
+              'component': _toGradeComponent(a.component!),
+              'quarter': quarter,
+              'total_points': a.totalPoints.toDouble(),
+              'is_departmental_exam': false,
+              'source_type': 'assignment',
+              'source_id': a.id,
+              'order_index': 0,
+            },
+          ).then((res) {
+            res.fold((_) {}, (item) {
+              state = state.copyWith(items: [...state.items, item]);
+            });
+          });
+        }
+      }
+    });
   }
 
   void setQuarter(int quarter) {

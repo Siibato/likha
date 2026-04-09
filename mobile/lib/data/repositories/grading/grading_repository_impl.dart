@@ -300,8 +300,8 @@ class GradingRepositoryImpl implements GradingRepository {
         quarter: (data['quarter'] as num).toInt(),
         totalPoints: (data['total_points'] as num).toDouble(),
         isDepartmentalExam: data['is_departmental_exam'] == true,
-        sourceType: 'manual',
-        sourceId: null,
+        sourceType: (data['source_type'] as String?) ?? 'manual',
+        sourceId: data['source_id'] as String?,
         orderIndex: (data['order_index'] as num?)?.toInt() ?? 0,
         createdAt: now,
         updatedAt: now,
@@ -381,6 +381,16 @@ class GradingRepositoryImpl implements GradingRepository {
       ));
 
       return const Right(null);
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  @override
+  ResultFuture<GradeItem?> findGradeItemBySourceId(String sourceId) async {
+    try {
+      final model = await _localDataSource.getItemBySourceId(sourceId);
+      return Right(model != null ? _itemToEntity(model) : null);
     } catch (e) {
       return Left(CacheFailure(e.toString()));
     }

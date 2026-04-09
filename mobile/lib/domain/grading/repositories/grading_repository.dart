@@ -42,6 +42,8 @@ abstract class GradingRepository {
 
   ResultVoid deleteGradeItem({required String id});
 
+  ResultFuture<GradeItem?> findGradeItemBySourceId(String sourceId);
+
   // Scores
   ResultFuture<List<GradeScore>> getScoresByItem({
     required String gradeItemId,

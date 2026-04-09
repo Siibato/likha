@@ -67,6 +67,8 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
           orderIndex: 0,
           submissionCount: 0,
           gradedCount: 0,
+          quarter: quarter,
+          component: component,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
@@ -88,6 +90,8 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
             orderIndex: 0,
             submissionCount: 0,
             gradedCount: 0,
+            quarter: quarter,
+            component: component,
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
           );

@@ -21,6 +21,7 @@ abstract class GradingLocalDataSource {
   // Grade Item mutations
   Future<void> updateItemFields(String id, Map<String, dynamic> data);
   Future<void> softDeleteItem(String id);
+  Future<GradeItemModel?> getItemBySourceId(String sourceId);
 
   // Scores
   Future<List<GradeScoreModel>> getScoresByItem(String gradeItemId);

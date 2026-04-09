@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 7,
+      version: 8,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onDowngrade: _downgradeDatabase,
@@ -820,6 +820,13 @@ class LocalDatabase {
       await db.execute('ALTER TABLE table_of_specifications ADD COLUMN analyzing_percentage REAL NOT NULL DEFAULT 16.67');
       await db.execute('ALTER TABLE table_of_specifications ADD COLUMN evaluating_percentage REAL NOT NULL DEFAULT 16.67');
       await db.execute('ALTER TABLE table_of_specifications ADD COLUMN creating_percentage REAL NOT NULL DEFAULT 16.67');
+    }
+
+    if (oldVersion < 8) {
+      await db.execute('ALTER TABLE assessments ADD COLUMN quarter INTEGER');
+      await db.execute('ALTER TABLE assessments ADD COLUMN component TEXT');
+      await db.execute('ALTER TABLE assignments ADD COLUMN quarter INTEGER');
+      await db.execute('ALTER TABLE assignments ADD COLUMN component TEXT');
     }
   }
 

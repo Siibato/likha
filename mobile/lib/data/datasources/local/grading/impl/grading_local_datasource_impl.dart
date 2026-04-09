@@ -133,6 +133,19 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
   }
 
   @override
+  Future<GradeItemModel?> getItemBySourceId(String sourceId) async {
+    final db = await localDatabase.database;
+    final results = await db.query(
+      DbTables.gradeItems,
+      where: '${GradeItemsCols.sourceId} = ? AND ${CommonCols.deletedAt} IS NULL',
+      whereArgs: [sourceId],
+      limit: 1,
+    );
+    if (results.isEmpty) return null;
+    return GradeItemModel.fromMap(results.first);
+  }
+
+  @override
   Future<void> softDeleteItem(String id) async {
     final db = await localDatabase.database;
     await db.update(

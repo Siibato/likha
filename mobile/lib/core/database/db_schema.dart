@@ -117,6 +117,8 @@ abstract final class AssessmentsCols {
   static const String questionCount = 'question_count';
   static const String submissionCount = 'submission_count';
   static const String linkedTosId = 'linked_tos_id';
+  static const String quarter = 'quarter';
+  static const String component = 'component';
 }
 
 abstract final class AssessmentQuestionsCols {
@@ -183,6 +185,8 @@ abstract final class AssignmentsCols {
   static const String dueAt = 'due_at';
   static const String isPublished = 'is_published';
   static const String orderIndex = 'order_index';
+  static const String quarter = 'quarter';
+  static const String component = 'component';
   static const String submissionCount = 'submission_count';
   static const String gradedCount = 'graded_count';
   static const String submissionStatus = 'submission_status';

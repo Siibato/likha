@@ -97,7 +97,9 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
   void _loadItemsAndSummary() {
     ref.read(gradeItemsProvider.notifier).setQuarter(_selectedQuarter);
     ref.read(gradeItemsProvider.notifier).setComponent(''); // load all components
-    ref.read(gradeItemsProvider.notifier).loadItems(widget.classId);
+    ref.read(gradeItemsProvider.notifier).loadItems(widget.classId).then((_) {
+      ref.read(gradeItemsProvider.notifier).backfillFromActivities(widget.classId, _selectedQuarter);
+    });
     ref
         .read(quarterlyGradesProvider.notifier)
         .loadSummary(widget.classId, _selectedQuarter);
