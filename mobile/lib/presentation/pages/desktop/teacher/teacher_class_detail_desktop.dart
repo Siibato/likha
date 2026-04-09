@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_navigation_rail.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
@@ -12,7 +13,6 @@ import 'package:likha/presentation/pages/desktop/teacher/class_student_list_desk
 import 'package:likha/presentation/pages/desktop/teacher/create_assessment_desktop.dart';
 import 'package:likha/presentation/pages/desktop/teacher/create_assignment_desktop.dart';
 import 'package:likha/presentation/pages/desktop/teacher/create_material_desktop.dart';
-import 'package:likha/presentation/pages/desktop/teacher/grade_item_scores_desktop.dart';
 import 'package:likha/presentation/pages/desktop/teacher/grade_summary_desktop.dart';
 import 'package:likha/presentation/pages/desktop/teacher/material_detail_desktop.dart';
 import 'package:likha/presentation/pages/desktop/teacher/widgets/assessment_data_table.dart';
@@ -637,95 +637,44 @@ class _GradesTabContent extends ConsumerStatefulWidget {
   ConsumerState<_GradesTabContent> createState() => _GradesTabContentState();
 }
 
-class _GradesTabContentState extends ConsumerState<_GradesTabContent>
-    with TickerProviderStateMixin {
+class _GradesTabContentState extends ConsumerState<_GradesTabContent> {
   int _selectedQuarter = 1;
-  late TabController _tabController;
-
-  static const List<String> _componentLabels = [
-    'Written Works',
-    'Performance Tasks',
-    'Quarterly Assessment',
-  ];
-
-  static const List<String> _componentKeys = ['ww', 'pt', 'qa'];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    _tabController.addListener(_onTabChanged);
-
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await ref
           .read(gradingConfigProvider.notifier)
           .loadConfig(widget.classId);
 
       final configState = ref.read(gradingConfigProvider);
-      if (!configState.isConfigured) {
-        if (mounted) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) =>
-                  ClassGradingSetupDesktop(classId: widget.classId),
-            ),
-          ).then((_) => _loadData());
-        }
-      } else {
+      if (configState.isConfigured) {
         _loadData();
       }
     });
   }
 
-  @override
-  void dispose() {
-    _tabController.removeListener(_onTabChanged);
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  void _onTabChanged() {
-    if (_tabController.indexIsChanging) return;
-    _loadItems();
-  }
-
-  void _loadData() => _loadItems();
-
-  void _loadItems() {
-    final component = _componentKeys[_tabController.index];
+  void _loadData() {
+    // Load ALL components for the selected quarter
     ref.read(gradeItemsProvider.notifier).setQuarter(_selectedQuarter);
-    ref.read(gradeItemsProvider.notifier).setComponent(component);
+    ref.read(gradeItemsProvider.notifier).setComponent('');
     ref.read(gradeItemsProvider.notifier).loadItems(widget.classId);
+    ref
+        .read(quarterlyGradesProvider.notifier)
+        .loadSummary(widget.classId, _selectedQuarter);
   }
 
   void _onQuarterChanged(int quarter) {
     setState(() => _selectedQuarter = quarter);
-    _loadItems();
-  }
-
-  double? _getComponentWeight() {
-    final configs = ref.read(gradingConfigProvider).configs;
-    final config =
-        configs.where((c) => c.quarter == _selectedQuarter).firstOrNull;
-    if (config == null) return null;
-    return switch (_componentKeys[_tabController.index]) {
-      'ww' => config.wwWeight,
-      'pt' => config.ptWeight,
-      'qa' => config.qaWeight,
-      _ => null,
-    };
+    _loadData();
   }
 
   void _showAddItemDialog() {
-    final component = _componentKeys[_tabController.index];
-    final componentLabel = _componentLabels[_tabController.index];
     showDialog(
       context: context,
       builder: (_) => _AddGradeItemDialog(
         classId: widget.classId,
-        component: component,
-        componentLabel: componentLabel,
         quarter: _selectedQuarter,
       ),
     );
@@ -748,19 +697,33 @@ class _GradesTabContentState extends ConsumerState<_GradesTabContent>
     }
   }
 
-  void _computeGrades() {
-    ref
+  void _saveQg(String studentId, int? newQg) {
+    if (newQg == null) return;
+    ref.read(quarterlyGradesProvider.notifier).updateQuarterlyGrade(
+          classId: widget.classId,
+          studentId: studentId,
+          quarter: _selectedQuarter,
+          transmutedGrade: newQg,
+        );
+  }
+
+  void _computeGrades() async {
+    await ref
         .read(quarterlyGradesProvider.notifier)
         .computeGrades(widget.classId, _selectedQuarter);
+    if (!mounted) return;
+    ref
+        .read(quarterlyGradesProvider.notifier)
+        .loadSummary(widget.classId, _selectedQuarter);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Computing grades...'),
+        content: Text('Grades computed'),
         behavior: SnackBarBehavior.floating,
       ),
     );
   }
 
-  void _openGradeSummary() {
+  void _openFinalGrades() {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -780,16 +743,26 @@ class _GradesTabContentState extends ConsumerState<_GradesTabContent>
       ),
     ).then((_) {
       ref.read(gradingConfigProvider.notifier).loadConfig(widget.classId);
-      _loadItems();
+      _loadData();
     });
+  }
+
+  GradeConfig? _configForQuarter(List<dynamic> configs) {
+    for (final c in configs) {
+      if ((c as GradeConfig).quarter == _selectedQuarter) return c;
+    }
+    return configs.isNotEmpty ? configs.first as GradeConfig : null;
   }
 
   @override
   Widget build(BuildContext context) {
     final classState = ref.watch(classProvider);
+    final configState = ref.watch(gradingConfigProvider);
     final itemsState = ref.watch(gradeItemsProvider);
     final scoresState = ref.watch(gradeScoresProvider);
+    final gradesState = ref.watch(quarterlyGradesProvider);
     final students = classState.currentClassDetail?.students ?? [];
+    final config = _configForQuarter(configState.configs);
 
     ref.listen<GradeItemsState>(gradeItemsProvider, (prev, next) {
       if (prev?.isLoading == true &&
@@ -799,11 +772,6 @@ class _GradesTabContentState extends ConsumerState<_GradesTabContent>
         ref.read(gradeScoresProvider.notifier).loadScoresForItems(itemIds);
       }
     });
-
-    final weight = _getComponentWeight();
-    final weightLabel = weight != null
-        ? '${_componentLabels[_tabController.index]} (${weight.toStringAsFixed(0)}%)'
-        : _componentLabels[_tabController.index];
 
     return Padding(
       padding: const EdgeInsets.all(32),
@@ -854,9 +822,24 @@ class _GradesTabContentState extends ConsumerState<_GradesTabContent>
               ),
               const SizedBox(width: 8),
               OutlinedButton.icon(
-                onPressed: _openGradeSummary,
-                icon: const Icon(Icons.summarize_outlined, size: 18),
-                label: const Text('Grade Summary'),
+                onPressed: _openFinalGrades,
+                icon: const Icon(Icons.grade_outlined, size: 18),
+                label: const Text('Final Grades'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.foregroundPrimary,
+                  side: const BorderSide(color: AppColors.borderLight),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 10),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: _computeGrades,
+                icon: const Icon(Icons.calculate_outlined, size: 18),
+                label: const Text('Compute Grades'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.foregroundPrimary,
                   side: const BorderSide(color: AppColors.borderLight),
@@ -885,110 +868,69 @@ class _GradesTabContentState extends ConsumerState<_GradesTabContent>
           ),
           const SizedBox(height: 16),
 
-          // Tab bar
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.backgroundPrimary,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.borderLight),
-            ),
-            child: TabBar(
-              controller: _tabController,
-              labelColor: AppColors.foregroundPrimary,
-              unselectedLabelColor: AppColors.foregroundTertiary,
-              labelStyle: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-              unselectedLabelStyle: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-              indicatorColor: AppColors.foregroundPrimary,
-              indicatorWeight: 2.5,
-              dividerColor: Colors.transparent,
-              tabs: const [
-                Tab(text: 'WW'),
-                Tab(text: 'PT'),
-                Tab(text: 'QA'),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
           // Spreadsheet area
           Expanded(
-            child: itemsState.isLoading || scoresState.isLoading
+            child: configState.isLoading
                 ? const Center(
                     child: CircularProgressIndicator(
                       color: AppColors.foregroundPrimary,
                       strokeWidth: 2.5,
                     ),
                   )
-                : TabBarView(
-                    controller: _tabController,
-                    children: List.generate(3, (tabIndex) {
-                      final componentItems = itemsState.items
-                          .where((i) =>
-                              i.component == _componentKeys[tabIndex])
-                          .toList();
-
-                      return GradeSpreadsheet(
-                        students: students,
-                        items: componentItems,
-                        scoresByItem: scoresState.scoresByItem,
-                        weightLabel: weightLabel,
-                        onHeaderTap: (item) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => GradeItemScoresDesktop(
-                                classId: widget.classId,
-                                gradeItem: item,
+                : !configState.isConfigured
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.grading_outlined,
+                                size: 48,
+                                color: AppColors.foregroundTertiary),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Grading is not set up for this class yet.',
+                              style: TextStyle(
+                                  fontSize: 15,
+                                  color: AppColors.foregroundSecondary),
+                            ),
+                            const SizedBox(height: 16),
+                            FilledButton.icon(
+                              onPressed: _openGradingSetup,
+                              icon: const Icon(Icons.settings_outlined,
+                                  size: 18),
+                              label: const Text('Set Up Grading'),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.foregroundPrimary,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8)),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 20, vertical: 12),
                               ),
                             ),
-                          ).then((_) => _loadItems());
-                        },
-                        onScoreChanged:
-                            (studentId, itemId, existingScore, score) {
-                          _saveInlineScore(
-                              studentId, itemId, existingScore, score);
-                        },
-                      );
-                    }),
+                          ],
+                        ),
+                      )
+                    : (itemsState.isLoading && itemsState.items.isEmpty) ||
+                            scoresState.isLoading
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.foregroundPrimary,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        : GradeSpreadsheet(
+                    students: students,
+                    allItems: itemsState.items,
+                    scoresByItem: scoresState.scoresByItem,
+                    config: config,
+                    summary: gradesState.summary,
+                    onScoreChanged:
+                        (studentId, itemId, existingScore, score) {
+                      _saveInlineScore(
+                          studentId, itemId, existingScore, score);
+                    },
+                    onQgChanged: (studentId, newQg) =>
+                        _saveQg(studentId, newQg),
                   ),
-          ),
-
-          // Bottom action bar
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-              color: AppColors.backgroundPrimary,
-              border: Border(
-                top: BorderSide(color: AppColors.borderLight),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                FilledButton.icon(
-                  onPressed: _computeGrades,
-                  icon: const Icon(Icons.calculate_outlined, size: 18),
-                  label: const Text('Compute Grades'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.foregroundPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),
@@ -998,14 +940,10 @@ class _GradesTabContentState extends ConsumerState<_GradesTabContent>
 
 class _AddGradeItemDialog extends ConsumerStatefulWidget {
   final String classId;
-  final String component;
-  final String componentLabel;
   final int quarter;
 
   const _AddGradeItemDialog({
     required this.classId,
-    required this.component,
-    required this.componentLabel,
     required this.quarter,
   });
 
@@ -1017,12 +955,16 @@ class _AddGradeItemDialog extends ConsumerStatefulWidget {
 class _AddGradeItemDialogState extends ConsumerState<_AddGradeItemDialog> {
   late final TextEditingController _titleController;
   late final TextEditingController _pointsController;
+  String _selectedComponent = 'ww';
+
+  static const _componentKeys = ['ww', 'pt', 'qa'];
+  static const _componentLabels = ['Written Works', 'Performance Tasks', 'Quarterly Assessment'];
 
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController();
-    _pointsController = TextEditingController();
+    _pointsController = TextEditingController(text: '100');
   }
 
   @override
@@ -1041,9 +983,10 @@ class _AddGradeItemDialogState extends ConsumerState<_AddGradeItemDialog> {
       widget.classId,
       {
         'title': title,
-        'component': widget.component,
+        'component': _selectedComponent,
         'quarter': widget.quarter,
         'total_points': points,
+        'source_type': 'manual',
       },
     );
     Navigator.pop(context);
@@ -1053,14 +996,61 @@ class _AddGradeItemDialogState extends ConsumerState<_AddGradeItemDialog> {
   Widget build(BuildContext context) {
     return StyledDialog(
       title: 'Add Grade Item',
-      subtitle: 'Component: ${widget.componentLabel}',
+      subtitle: 'Quarter ${widget.quarter}',
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Component selector
+            Row(
+              children: [
+                for (int i = 0; i < _componentKeys.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 8),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () =>
+                          setState(() => _selectedComponent = _componentKeys[i]),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: _selectedComponent == _componentKeys[i]
+                              ? AppColors.foregroundPrimary
+                              : AppColors.backgroundPrimary,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: _selectedComponent == _componentKeys[i]
+                                ? AppColors.foregroundPrimary
+                                : AppColors.borderLight,
+                          ),
+                        ),
+                        child: Text(
+                          _componentKeys[i].toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: _selectedComponent == _componentKeys[i]
+                                ? AppColors.backgroundPrimary
+                                : AppColors.foregroundSecondary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _componentLabels[_componentKeys.indexOf(_selectedComponent)],
+              style: const TextStyle(
+                  fontSize: 12, color: AppColors.foregroundTertiary),
+            ),
+            const SizedBox(height: 16),
             TextField(
               controller: _titleController,
+              autofocus: true,
               decoration: StyledTextFieldDecoration.styled(
                 labelText: 'Title',
               ),

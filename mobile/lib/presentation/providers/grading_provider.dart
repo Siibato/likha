@@ -87,6 +87,7 @@ class GradingConfigNotifier extends StateNotifier<GradingConfigState> {
       (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (_) => state = state.copyWith(
         isLoading: false,
+        isConfigured: true,
         successMessage: 'Grading configured',
       ),
     );
