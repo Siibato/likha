@@ -143,6 +143,7 @@ import 'package:likha/domain/grading/usecases/update_grading_config.dart';
 import 'package:likha/domain/grading/usecases/get_general_averages.dart';
 import 'package:likha/domain/grading/usecases/get_sf9.dart';
 import 'package:likha/domain/grading/usecases/get_sf10.dart';
+import 'package:likha/domain/grading/usecases/update_quarterly_grade.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/data/datasources/local/tos/impl/tos_local_datasource_impl.dart';
 import 'package:likha/data/datasources/remote/tos_remote_datasource.dart';
@@ -497,6 +498,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ComputeGrades(sl()));
   sl.registerLazySingleton(() => GetGradeSummary(sl()));
   sl.registerLazySingleton(() => GetFinalGrades(sl()));
+  sl.registerLazySingleton(() => UpdateQuarterlyGrade(sl()));
   sl.registerLazySingleton(() => GetMyGrades(sl()));
   sl.registerLazySingleton(() => GetMyGradeDetail(sl()));
 

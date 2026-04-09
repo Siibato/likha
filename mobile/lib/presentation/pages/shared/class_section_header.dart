@@ -4,12 +4,14 @@ class ClassSectionHeader extends StatelessWidget {
   final String title;
   final bool showBackButton;
   final double fontSize;
+  final Widget? trailing;
 
   const ClassSectionHeader({
     super.key,
     required this.title,
     this.showBackButton = false,
     this.fontSize = 28,
+    this.trailing,
   });
 
   @override
@@ -29,7 +31,7 @@ class ClassSectionHeader extends StatelessWidget {
           bottomRight: Radius.circular(24),
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(24, 24, 32, 12),
+      padding: const EdgeInsets.fromLTRB(24, 24, 12, 12),
       child: Row(
         children: [
           if (showBackButton) ...[
@@ -61,6 +63,7 @@ class ClassSectionHeader extends StatelessWidget {
               ),
             ),
           ),
+          if (trailing != null) trailing!,
         ],
       ),
     );

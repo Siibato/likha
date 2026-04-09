@@ -5,6 +5,7 @@ import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart
 import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/info_row.dart';
 import 'package:likha/presentation/pages/teacher/widgets/sf9_grade_table.dart';
+import 'package:likha/presentation/pages/teacher/widgets/sf9_print_service.dart';
 import 'package:likha/presentation/providers/sf9_provider.dart';
 
 class Sf9DetailDesktop extends ConsumerStatefulWidget {
@@ -38,6 +39,8 @@ class _Sf9DetailDesktopState extends ConsumerState<Sf9DetailDesktop> {
   Widget build(BuildContext context) {
     final state = ref.watch(sf9Provider);
 
+    final sf9 = state.currentSf9;
+
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
       body: DesktopPageScaffold(
@@ -47,6 +50,23 @@ class _Sf9DetailDesktopState extends ConsumerState<Sf9DetailDesktop> {
           color: AppColors.foregroundPrimary,
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          if (sf9 != null)
+            OutlinedButton.icon(
+              onPressed: () => Sf9PrintService.printSf9(context, sf9),
+              icon: const Icon(Icons.download_outlined, size: 18),
+              label: const Text('Download SF9'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.foregroundPrimary,
+                side: const BorderSide(color: AppColors.borderLight),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 10),
+              ),
+            ),
+        ],
         body: _buildBody(state),
       ),
     );

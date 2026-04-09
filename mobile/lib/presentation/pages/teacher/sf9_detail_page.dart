@@ -4,6 +4,7 @@ import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/info_row.dart';
 import 'package:likha/presentation/pages/teacher/widgets/sf9_grade_table.dart';
+import 'package:likha/presentation/pages/teacher/widgets/sf9_print_service.dart';
 import 'package:likha/presentation/providers/sf9_provider.dart';
 
 class Sf9DetailPage extends ConsumerStatefulWidget {
@@ -46,6 +47,15 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
             ClassSectionHeader(
               title: 'SF9: ${widget.studentName}',
               showBackButton: true,
+              trailing: sf9 != null
+                  ? IconButton(
+                      icon: const Icon(Icons.download_outlined),
+                      color: const Color(0xFF666666),
+                      tooltip: 'Download SF9',
+                      onPressed: () =>
+                          Sf9PrintService.printSf9(context, sf9),
+                    )
+                  : null,
             ),
             Expanded(
               child: state.isLoading && sf9 == null

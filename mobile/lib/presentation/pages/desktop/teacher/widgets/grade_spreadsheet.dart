@@ -1,16 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
 
-class GradeSpreadsheet extends StatelessWidget {
+class GradeSpreadsheet extends StatefulWidget {
   final List<Participant> students;
   final List<GradeItem> items;
   final Map<String, List<GradeScore>> scoresByItem;
   final String weightLabel;
+
+  /// Inline editing callback. When provided, cells become inline-editable.
+  /// [existingScore] may be null (no score yet) or non-null (may be auto-populated).
+  final void Function(
+    String studentId,
+    String itemId,
+    GradeScore? existingScore,
+    double newScore,
+  )? onScoreChanged;
+
+  /// Fallback tap callback used when [onScoreChanged] is null.
   final void Function(Participant participant, GradeItem item,
-      GradeScore? existingScore) onCellTap;
+      GradeScore? existingScore)? onCellTap;
+
   final void Function(GradeItem item) onHeaderTap;
 
   const GradeSpreadsheet({
@@ -19,8 +32,9 @@ class GradeSpreadsheet extends StatelessWidget {
     required this.items,
     required this.scoresByItem,
     required this.weightLabel,
-    required this.onCellTap,
     required this.onHeaderTap,
+    this.onScoreChanged,
+    this.onCellTap,
   });
 
   static const double _frozenColWidth = 180;
@@ -28,10 +42,90 @@ class GradeSpreadsheet extends StatelessWidget {
   static const double _rowHeight = 44;
   static const double _headerHeight = 56;
 
+  @override
+  State<GradeSpreadsheet> createState() => _GradeSpreadsheetState();
+}
+
+class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
+  String? _editingKey; // "${studentId}_${itemId}"
+  String? _editingStudentId;
+  String? _editingItemId;
+  GradeScore? _editingExistingScore;
+
+  final _editController = TextEditingController();
+  final _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      if (!_focusNode.hasFocus && _editingKey != null) {
+        _commitEdit();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _editController.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  bool get _inlineMode => widget.onScoreChanged != null;
+
+  void _startEdit(
+    String studentId,
+    String itemId,
+    GradeScore? existingScore,
+    String currentValue,
+  ) {
+    if (_editingKey != null) _commitEdit();
+    setState(() {
+      _editingKey = '${studentId}_$itemId';
+      _editingStudentId = studentId;
+      _editingItemId = itemId;
+      _editingExistingScore = existingScore;
+      _editController.text = currentValue == '--' ? '' : currentValue;
+      _editController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _editController.text.length),
+      );
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
+  }
+
+  void _commitEdit() {
+    final raw = _editController.text.trim();
+    final score = double.tryParse(raw);
+    if (score != null && _editingStudentId != null && _editingItemId != null) {
+      widget.onScoreChanged?.call(
+        _editingStudentId!,
+        _editingItemId!,
+        _editingExistingScore,
+        score,
+      );
+    }
+    _clearEditState();
+  }
+
+  void _cancelEdit() => _clearEditState();
+
+  void _clearEditState() {
+    if (!mounted) return;
+    setState(() {
+      _editingKey = null;
+      _editingStudentId = null;
+      _editingItemId = null;
+      _editingExistingScore = null;
+    });
+  }
+
   /// Build a lookup: studentId -> { gradeItemId -> GradeScore }
   Map<String, Map<String, GradeScore>> _buildScoreLookup() {
     final lookup = <String, Map<String, GradeScore>>{};
-    for (final entry in scoresByItem.entries) {
+    for (final entry in widget.scoresByItem.entries) {
       for (final score in entry.value) {
         lookup
             .putIfAbsent(score.studentId, () => <String, GradeScore>{})
@@ -52,7 +146,7 @@ class GradeSpreadsheet extends StatelessWidget {
     Participant participant,
     Map<String, Map<String, GradeScore>> scoreLookup,
   ) {
-    if (items.isEmpty) return null;
+    if (widget.items.isEmpty) return null;
 
     final studentScores = scoreLookup[participant.student.id];
     if (studentScores == null || studentScores.isEmpty) return null;
@@ -60,7 +154,7 @@ class GradeSpreadsheet extends StatelessWidget {
     double totalEarned = 0;
     double totalPossible = 0;
 
-    for (final item in items) {
+    for (final item in widget.items) {
       final score = studentScores[item.id];
       final effective = score?.effectiveScore;
       if (effective != null) {
@@ -85,7 +179,7 @@ class GradeSpreadsheet extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: Text(
-            weightLabel,
+            widget.weightLabel,
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -118,13 +212,13 @@ class GradeSpreadsheet extends StatelessWidget {
   Widget _buildFrozenColumn(
       Map<String, Map<String, GradeScore>> scoreLookup) {
     return SizedBox(
-      width: _frozenColWidth,
+      width: GradeSpreadsheet._frozenColWidth,
       child: Column(
         children: [
           // Header cell
           Container(
-            height: _headerHeight,
-            width: _frozenColWidth,
+            height: GradeSpreadsheet._headerHeight,
+            width: GradeSpreadsheet._frozenColWidth,
             alignment: Alignment.centerLeft,
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: const BoxDecoration(
@@ -146,13 +240,13 @@ class GradeSpreadsheet extends StatelessWidget {
           // Student name rows
           Expanded(
             child: ListView.builder(
-              itemCount: students.length,
-              itemExtent: _rowHeight,
+              itemCount: widget.students.length,
+              itemExtent: GradeSpreadsheet._rowHeight,
               itemBuilder: (context, index) {
-                final student = students[index];
+                final student = widget.students[index];
                 return Container(
-                  width: _frozenColWidth,
-                  height: _rowHeight,
+                  width: GradeSpreadsheet._frozenColWidth,
+                  height: GradeSpreadsheet._rowHeight,
                   alignment: Alignment.centerLeft,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
@@ -185,7 +279,8 @@ class GradeSpreadsheet extends StatelessWidget {
   Widget _buildScrollableColumns(
       Map<String, Map<String, GradeScore>> scoreLookup) {
     final totalWidth =
-        (items.length * _itemColWidth) + _itemColWidth; // +1 for percentage col
+        (widget.items.length * GradeSpreadsheet._itemColWidth) +
+            GradeSpreadsheet._itemColWidth; // +1 for percentage col
 
     return SizedBox(
       width: totalWidth,
@@ -193,15 +288,15 @@ class GradeSpreadsheet extends StatelessWidget {
         children: [
           // Header row
           SizedBox(
-            height: _headerHeight,
+            height: GradeSpreadsheet._headerHeight,
             child: Row(
               children: [
                 // Item headers
-                ...items.map((item) => _buildItemHeader(item)),
+                ...widget.items.map((item) => _buildItemHeader(item)),
                 // Percentage header
                 Container(
-                  width: _itemColWidth,
-                  height: _headerHeight,
+                  width: GradeSpreadsheet._itemColWidth,
+                  height: GradeSpreadsheet._headerHeight,
                   alignment: Alignment.center,
                   decoration: const BoxDecoration(
                     color: AppColors.backgroundTertiary,
@@ -225,21 +320,21 @@ class GradeSpreadsheet extends StatelessWidget {
           // Data rows
           Expanded(
             child: ListView.builder(
-              itemCount: students.length,
-              itemExtent: _rowHeight,
+              itemCount: widget.students.length,
+              itemExtent: GradeSpreadsheet._rowHeight,
               itemBuilder: (context, index) {
-                final participant = students[index];
+                final participant = widget.students[index];
                 final studentScores =
                     scoreLookup[participant.student.id] ?? {};
                 final percentage =
                     _computePercentage(participant, scoreLookup);
 
                 return SizedBox(
-                  height: _rowHeight,
+                  height: GradeSpreadsheet._rowHeight,
                   child: Row(
                     children: [
                       // Score cells
-                      ...items.map((item) {
+                      ...widget.items.map((item) {
                         final score = studentScores[item.id];
                         return _buildScoreCell(
                           participant: participant,
@@ -250,8 +345,8 @@ class GradeSpreadsheet extends StatelessWidget {
                       }),
                       // Percentage cell
                       Container(
-                        width: _itemColWidth,
-                        height: _rowHeight,
+                        width: GradeSpreadsheet._itemColWidth,
+                        height: GradeSpreadsheet._rowHeight,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: index.isEven
@@ -288,10 +383,10 @@ class GradeSpreadsheet extends StatelessWidget {
 
   Widget _buildItemHeader(GradeItem item) {
     return GestureDetector(
-      onTap: () => onHeaderTap(item),
+      onTap: () => widget.onHeaderTap(item),
       child: Container(
-        width: _itemColWidth,
-        height: _headerHeight,
+        width: GradeSpreadsheet._itemColWidth,
+        height: GradeSpreadsheet._headerHeight,
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 4),
         decoration: const BoxDecoration(
@@ -336,32 +431,136 @@ class GradeSpreadsheet extends StatelessWidget {
     required GradeScore? score,
     required int rowIndex,
   }) {
+    final cellKey = '${participant.student.id}_${item.id}';
+    final isEditing = _editingKey == cellKey && _inlineMode;
     final effective = score?.effectiveScore;
-    final displayText =
-        effective != null ? _formatScore(effective) : '--';
+    final isOverride = score?.overrideScore != null;
 
-    return GestureDetector(
-      onTap: () => onCellTap(participant, item, score),
-      child: Container(
-        width: _itemColWidth,
-        height: _rowHeight,
-        alignment: Alignment.center,
+    final bgColor = rowIndex.isEven
+        ? AppColors.backgroundPrimary
+        : AppColors.backgroundTertiary;
+
+    final border = BoxDecoration(
+      color: bgColor,
+      border: const Border(
+        bottom: BorderSide(color: AppColors.borderLight),
+        right: BorderSide(color: AppColors.borderLight),
+      ),
+    );
+
+    if (isEditing) {
+      return Container(
+        width: GradeSpreadsheet._itemColWidth,
+        height: GradeSpreadsheet._rowHeight,
         decoration: BoxDecoration(
-          color: rowIndex.isEven
-              ? AppColors.backgroundPrimary
-              : AppColors.backgroundTertiary,
+          color: bgColor,
           border: const Border(
             bottom: BorderSide(color: AppColors.borderLight),
             right: BorderSide(color: AppColors.borderLight),
           ),
         ),
+        child: _inlineTextField(),
+      );
+    }
+
+    if (_inlineMode) {
+      // Inline-editable cell
+      final displayText =
+          effective != null ? _formatScore(effective) : '--';
+      return GestureDetector(
+        onTap: () => _startEdit(
+          participant.student.id,
+          item.id,
+          score,
+          effective != null ? _formatScore(effective) : '',
+        ),
+        child: Container(
+          width: GradeSpreadsheet._itemColWidth,
+          height: GradeSpreadsheet._rowHeight,
+          alignment: Alignment.center,
+          decoration: border,
+          child: Text(
+            displayText,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: isOverride ? FontWeight.w700 : FontWeight.w400,
+              color: effective != null
+                  ? (isOverride
+                      ? const Color(0xFF1976D2)
+                      : AppColors.foregroundPrimary)
+                  : AppColors.foregroundTertiary,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Fallback: delegate to onCellTap
+    return GestureDetector(
+      onTap: () => widget.onCellTap?.call(participant, item, score),
+      child: Container(
+        width: GradeSpreadsheet._itemColWidth,
+        height: GradeSpreadsheet._rowHeight,
+        alignment: Alignment.center,
+        decoration: border,
         child: Text(
-          displayText,
+          effective != null ? _formatScore(effective) : '--',
           style: TextStyle(
             fontSize: 12,
             color: effective != null
                 ? AppColors.foregroundPrimary
                 : AppColors.foregroundTertiary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _inlineTextField() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+      child: CallbackShortcuts(
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.escape): _cancelEdit,
+        },
+        child: TextField(
+          controller: _editController,
+          focusNode: _focusNode,
+          autofocus: true,
+          textAlign: TextAlign.center,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+          ],
+          style: const TextStyle(fontSize: 12),
+          onSubmitted: (_) => _commitEdit(),
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 4,
+              vertical: 6,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+              borderSide: const BorderSide(
+                color: Color(0xFF1976D2),
+                width: 1.5,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+              borderSide: const BorderSide(
+                color: Color(0xFF1976D2),
+                width: 1.5,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+              borderSide: const BorderSide(
+                color: Color(0xFF1976D2),
+                width: 1.5,
+              ),
+            ),
           ),
         ),
       ),

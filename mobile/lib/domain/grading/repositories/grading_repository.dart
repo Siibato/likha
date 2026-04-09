@@ -70,6 +70,13 @@ abstract class GradingRepository {
     required int quarter,
   });
 
+  ResultVoid updateTransmutedGrade({
+    required String classId,
+    required String studentId,
+    required int quarter,
+    required int transmutedGrade,
+  });
+
   ResultFuture<List<Map<String, dynamic>>> getGradeSummary({
     required String classId,
     required int quarter,

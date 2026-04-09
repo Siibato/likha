@@ -39,4 +39,10 @@ abstract class GradingLocalDataSource {
     String studentId,
   );
   Future<void> saveQuarterlyGrades(List<QuarterlyGradeModel> grades);
+  Future<void> updateTransmutedGrade(
+    String classId,
+    String studentId,
+    int quarter,
+    int transmutedGrade,
+  );
 }

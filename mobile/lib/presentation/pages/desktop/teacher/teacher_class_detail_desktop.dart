@@ -16,6 +16,7 @@ import 'package:likha/presentation/pages/desktop/teacher/widgets/class_overview_
 import 'package:likha/presentation/pages/desktop/teacher/widgets/material_data_table.dart';
 import 'package:likha/presentation/pages/desktop/teacher/widgets/student_data_table.dart';
 import 'package:likha/presentation/pages/desktop/teacher/create_tos_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/class_record_desktop.dart';
 import 'package:likha/presentation/pages/desktop/teacher/sf9_detail_desktop.dart';
 import 'package:likha/presentation/pages/desktop/teacher/tos_detail_desktop.dart';
 import 'package:likha/presentation/pages/teacher/class_grading_setup_page.dart';
@@ -41,17 +42,16 @@ class _TeacherClassDetailDesktopState
   int _selectedIndex = 0;
   final Set<int> _loadedTabs = {0};
 
-  static const _sectionTitles = [
+  static const _baseSectionTitles = [
     'Overview',
     'Students',
     'Assessments',
     'Assignments',
     'Materials',
     'TOS',
-    'SF9',
   ];
 
-  static const _destinations = [
+  static const _baseDestinations = [
     DesktopNavDestination(
       icon: Icons.info_outline_rounded,
       selectedIcon: Icons.info_rounded,
@@ -81,11 +81,6 @@ class _TeacherClassDetailDesktopState
       icon: Icons.table_chart_outlined,
       selectedIcon: Icons.table_chart_rounded,
       label: 'TOS',
-    ),
-    DesktopNavDestination(
-      icon: Icons.grade_outlined,
-      selectedIcon: Icons.grade_rounded,
-      label: 'SF9',
     ),
   ];
 
@@ -123,7 +118,16 @@ class _TeacherClassDetailDesktopState
         ref.read(tosProvider.notifier).loadTosList(widget.classId);
         break;
       case 6:
-        ref.read(sf9Provider.notifier).loadStudents(widget.classId);
+        // index 6 is either Grades (non-advisory) or SF9 (advisory)
+        final classState = ref.read(classProvider);
+        final classEntity = classState.classes.cast<dynamic>().firstWhere(
+              (c) => c?.id == widget.classId,
+              orElse: () => null,
+            );
+        final isAdvisory = classEntity?.isAdvisory == true;
+        if (isAdvisory) {
+          ref.read(sf9Provider.notifier).loadStudents(widget.classId);
+        }
         break;
     }
   }
@@ -137,6 +141,21 @@ class _TeacherClassDetailDesktopState
           (c) => c?.id == widget.classId,
           orElse: () => null,
         );
+    final isAdvisory = classEntity?.isAdvisory == true;
+
+    // Build dynamic destinations list
+    final lastDestination = isAdvisory
+        ? const DesktopNavDestination(
+            icon: Icons.grade_outlined,
+            selectedIcon: Icons.grade_rounded,
+            label: 'SF9',
+          )
+        : const DesktopNavDestination(
+            icon: Icons.grading_outlined,
+            selectedIcon: Icons.grading_rounded,
+            label: 'Grades',
+          );
+    final destinations = [..._baseDestinations, lastDestination];
 
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
@@ -145,7 +164,7 @@ class _TeacherClassDetailDesktopState
           // Left panel
           DesktopNavigationRail(
             selectedIndex: _selectedIndex,
-            destinations: _destinations,
+            destinations: destinations,
             onDestinationSelected: _onSectionChanged,
             header: Padding(
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
@@ -194,7 +213,7 @@ class _TeacherClassDetailDesktopState
                     children: [
                       // Overview
                       DesktopPageScaffold(
-                        title: _sectionTitles[0],
+                        title: _baseSectionTitles[0],
                         body: ClassOverviewPanel(
                           detail: detail,
                           classEntity: classEntity,
@@ -217,7 +236,7 @@ class _TeacherClassDetailDesktopState
 
                       // Students
                       DesktopPageScaffold(
-                        title: _sectionTitles[1],
+                        title: _baseSectionTitles[1],
                         body: StudentDataTable(
                           students: detail.students,
                         ),
@@ -235,8 +254,11 @@ class _TeacherClassDetailDesktopState
                       // TOS
                       _TosSection(classId: widget.classId),
 
-                      // SF9
-                      _Sf9Section(classId: widget.classId),
+                      // Grades (non-advisory) or SF9 (advisory)
+                      if (isAdvisory)
+                        _Sf9Section(classId: widget.classId)
+                      else
+                        _GradesSection(classId: widget.classId),
                     ],
                   ),
           ),
@@ -583,6 +605,17 @@ class _TosSection extends ConsumerWidget {
                   ),
                 ),
     );
+  }
+}
+
+class _GradesSection extends StatelessWidget {
+  final String classId;
+
+  const _GradesSection({required this.classId});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClassRecordDesktop(classId: classId);
   }
 }
 

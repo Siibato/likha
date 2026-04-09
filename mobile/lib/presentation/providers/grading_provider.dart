@@ -17,6 +17,7 @@ import 'package:likha/domain/grading/usecases/save_scores.dart';
 import 'package:likha/domain/grading/usecases/set_score_override.dart';
 import 'package:likha/domain/grading/usecases/setup_grading.dart';
 import 'package:likha/domain/grading/usecases/update_grading_config.dart';
+import 'package:likha/domain/grading/usecases/update_quarterly_grade.dart';
 import 'package:likha/injection_container.dart';
 
 const _unset = Object();
@@ -355,11 +356,13 @@ class QuarterlyGradesNotifier extends StateNotifier<QuarterlyGradesState> {
   final GetQuarterlyGrades _getQuarterlyGrades;
   final ComputeGrades _computeGrades;
   final GetGradeSummary _getGradeSummary;
+  final UpdateQuarterlyGrade _updateQuarterlyGrade;
 
   QuarterlyGradesNotifier(
     this._getQuarterlyGrades,
     this._computeGrades,
     this._getGradeSummary,
+    this._updateQuarterlyGrade,
   ) : super(QuarterlyGradesState());
 
   Future<void> loadGrades(String classId, int quarter) async {
@@ -389,6 +392,36 @@ class QuarterlyGradesNotifier extends StateNotifier<QuarterlyGradesState> {
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (summary) => state = state.copyWith(isLoading: false, summary: summary),
+    );
+  }
+
+  Future<void> updateQuarterlyGrade({
+    required String classId,
+    required String studentId,
+    required int quarter,
+    required int transmutedGrade,
+  }) async {
+    final result = await _updateQuarterlyGrade(
+      classId: classId,
+      studentId: studentId,
+      quarter: quarter,
+      transmutedGrade: transmutedGrade,
+    );
+    result.fold(
+      (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
+      (_) {
+        // Optimistically update the summary in state if loaded
+        final summary = state.summary;
+        if (summary != null) {
+          final updated = summary.map((row) {
+            if (row['student_id'] == studentId) {
+              return {...row, 'quarterly_grade': transmutedGrade.toDouble()};
+            }
+            return row;
+          }).toList();
+          state = state.copyWith(summary: updated);
+        }
+      },
     );
   }
 }
@@ -425,5 +458,6 @@ final quarterlyGradesProvider = StateNotifierProvider<QuarterlyGradesNotifier, Q
     sl<GetQuarterlyGrades>(),
     sl<ComputeGrades>(),
     sl<GetGradeSummary>(),
+    sl<UpdateQuarterlyGrade>(),
   );
 });

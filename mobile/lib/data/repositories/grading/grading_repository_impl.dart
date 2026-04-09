@@ -571,6 +571,26 @@ class GradingRepositoryImpl implements GradingRepository {
   }
 
   @override
+  ResultVoid updateTransmutedGrade({
+    required String classId,
+    required String studentId,
+    required int quarter,
+    required int transmutedGrade,
+  }) async {
+    try {
+      await _localDataSource.updateTransmutedGrade(
+        classId,
+        studentId,
+        quarter,
+        transmutedGrade,
+      );
+      return const Right(null);
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  @override
   ResultFuture<List<Map<String, dynamic>>> getGradeSummary({
     required String classId,
     required int quarter,

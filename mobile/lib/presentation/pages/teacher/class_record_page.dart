@@ -27,6 +27,14 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage>
   late TabController _tabController;
   bool _initialCheckDone = false;
 
+  // Inline editing state
+  String? _editingKey; // "${studentId}_${itemId}"
+  String? _editingStudentId;
+  String? _editingItemId;
+  GradeScore? _editingExistingScore;
+  final _editController = TextEditingController();
+  final _editFocusNode = FocusNode();
+
   static const _componentLabels = [
     'Written Works',
     'Performance Tasks',
@@ -39,6 +47,11 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _editFocusNode.addListener(() {
+      if (!_editFocusNode.hasFocus && _editingKey != null) {
+        _commitInlineEdit();
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
     });
@@ -84,6 +97,61 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage>
     setState(() => _selectedQuarter = quarter);
     ref.read(gradeItemsProvider.notifier).setQuarter(quarter);
     ref.read(gradeItemsProvider.notifier).loadItems(widget.classId);
+  }
+
+  // ── Inline editing ──────────────────────────────────────────────────────────
+
+  void _startInlineEdit(
+    String studentId,
+    String itemId,
+    GradeScore? existingScore,
+  ) {
+    if (_editingKey != null) _commitInlineEdit();
+    final current = existingScore?.effectiveScore;
+    setState(() {
+      _editingKey = '${studentId}_$itemId';
+      _editingStudentId = studentId;
+      _editingItemId = itemId;
+      _editingExistingScore = existingScore;
+      _editController.text =
+          current != null ? _formatScore(current) : '';
+      _editController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _editController.text.length),
+      );
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _editFocusNode.requestFocus();
+    });
+  }
+
+  void _commitInlineEdit() {
+    final raw = _editController.text.trim();
+    final score = double.tryParse(raw);
+    if (score != null &&
+        _editingStudentId != null &&
+        _editingItemId != null) {
+      final existing = _editingExistingScore;
+      if (existing != null && existing.isAutoPopulated) {
+        ref.read(gradeScoresProvider.notifier).setOverride(existing.id, score);
+      } else {
+        ref.read(gradeScoresProvider.notifier).saveScores(_editingItemId!, [
+          {'student_id': _editingStudentId!, 'score': score},
+        ]);
+      }
+    }
+    _clearInlineEdit();
+  }
+
+  void _cancelInlineEdit() => _clearInlineEdit();
+
+  void _clearInlineEdit() {
+    if (!mounted) return;
+    setState(() {
+      _editingKey = null;
+      _editingStudentId = null;
+      _editingItemId = null;
+      _editingExistingScore = null;
+    });
   }
 
   void _showAddGradeItemDialog() {
@@ -379,6 +447,8 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage>
   @override
   void dispose() {
     _tabController.dispose();
+    _editController.dispose();
+    _editFocusNode.dispose();
     super.dispose();
   }
 
@@ -865,11 +935,96 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage>
                                         studentScores[item.id];
                                     final displayScore =
                                         gradeScore?.effectiveScore;
+                                    final cellKey =
+                                        '${participant.student.id}_${item.id}';
+                                    final isEditing =
+                                        _editingKey == cellKey;
+                                    final isOverride =
+                                        gradeScore?.overrideScore != null;
+
+                                    if (isEditing) {
+                                      return SizedBox(
+                                        width: cellWidth,
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 4, vertical: 6),
+                                          child: CallbackShortcuts(
+                                            bindings: {
+                                              const SingleActivator(
+                                                      LogicalKeyboardKey
+                                                          .escape):
+                                                  _cancelInlineEdit,
+                                            },
+                                            child: TextField(
+                                              controller: _editController,
+                                              focusNode: _editFocusNode,
+                                              autofocus: true,
+                                              textAlign: TextAlign.center,
+                                              keyboardType:
+                                                  const TextInputType
+                                                      .numberWithOptions(
+                                                      decimal: true),
+                                              inputFormatters: [
+                                                FilteringTextInputFormatter
+                                                    .allow(
+                                                        RegExp(r'[\d.]')),
+                                              ],
+                                              style: const TextStyle(
+                                                  fontSize: 12),
+                                              onSubmitted: (_) =>
+                                                  _commitInlineEdit(),
+                                              decoration: InputDecoration(
+                                                isDense: true,
+                                                contentPadding:
+                                                    const EdgeInsets
+                                                        .symmetric(
+                                                  horizontal: 4,
+                                                  vertical: 6,
+                                                ),
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          4),
+                                                  borderSide:
+                                                      const BorderSide(
+                                                    color: Color(0xFF1976D2),
+                                                    width: 1.5,
+                                                  ),
+                                                ),
+                                                focusedBorder:
+                                                    OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          4),
+                                                  borderSide:
+                                                      const BorderSide(
+                                                    color: Color(0xFF1976D2),
+                                                    width: 1.5,
+                                                  ),
+                                                ),
+                                                enabledBorder:
+                                                    OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          4),
+                                                  borderSide:
+                                                      const BorderSide(
+                                                    color: Color(0xFF1976D2),
+                                                    width: 1.5,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }
+
                                     return GestureDetector(
-                                      onTap: () => _showScoreEntrySheet(
-                                        participant: participant,
-                                        item: item,
-                                        existingScore: gradeScore,
+                                      onTap: () => _startInlineEdit(
+                                        participant.student.id,
+                                        item.id,
+                                        gradeScore,
                                       ),
                                       child: Container(
                                         width: cellWidth,
@@ -888,12 +1043,17 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage>
                                               : '--',
                                           style: TextStyle(
                                             fontSize: 13,
-                                            fontWeight: displayScore != null
-                                                ? FontWeight.w500
-                                                : FontWeight.w400,
-                                            color: displayScore != null
-                                                ? const Color(0xFF2B2B2B)
-                                                : const Color(0xFFCCCCCC),
+                                            fontWeight: isOverride
+                                                ? FontWeight.w700
+                                                : (displayScore != null
+                                                    ? FontWeight.w500
+                                                    : FontWeight.w400),
+                                            color: isOverride
+                                                ? const Color(0xFF1976D2)
+                                                : (displayScore != null
+                                                    ? const Color(0xFF2B2B2B)
+                                                    : const Color(
+                                                        0xFFCCCCCC)),
                                           ),
                                         ),
                                       ),

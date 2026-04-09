@@ -277,4 +277,26 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
     }
     await batch.commit(noResult: true);
   }
+
+  @override
+  Future<void> updateTransmutedGrade(
+    String classId,
+    String studentId,
+    int quarter,
+    int transmutedGrade,
+  ) async {
+    final db = await localDatabase.database;
+    await db.update(
+      DbTables.quarterlyGrades,
+      {
+        QuarterlyGradesCols.transmutedGrade: transmutedGrade,
+        CommonCols.updatedAt: DateTime.now().toIso8601String(),
+        CommonCols.needsSync: 1,
+      },
+      where: '${QuarterlyGradesCols.classId} = ? AND '
+          '${QuarterlyGradesCols.studentId} = ? AND '
+          '${QuarterlyGradesCols.quarter} = ?',
+      whereArgs: [classId, studentId, quarter],
+    );
+  }
 }

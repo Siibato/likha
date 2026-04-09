@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
-import 'package:likha/domain/classes/entities/class_detail.dart';
-import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/class_grading_setup_desktop.dart';
@@ -126,19 +124,19 @@ class _ClassRecordDesktopState extends ConsumerState<ClassRecordDesktop>
     );
   }
 
-  void _showScoreEntryDialog(
-    Participant participant,
-    GradeItem item,
+  void _saveInlineScore(
+    String studentId,
+    String itemId,
     GradeScore? existingScore,
+    double newScore,
   ) {
-    showDialog(
-      context: context,
-      builder: (_) => _ScoreEntryDialog(
-        participant: participant,
-        item: item,
-        existingScore: existingScore,
-      ),
-    );
+    if (existingScore != null && existingScore.isAutoPopulated) {
+      ref.read(gradeScoresProvider.notifier).setOverride(existingScore.id, newScore);
+    } else {
+      ref.read(gradeScoresProvider.notifier).saveScores(itemId, [
+        {'student_id': studentId, 'score': newScore},
+      ]);
+    }
   }
 
   void _computeGrades() {
@@ -353,9 +351,8 @@ class _ClassRecordDesktopState extends ConsumerState<ClassRecordDesktop>
                               ),
                             ).then((_) => _loadItems());
                           },
-                          onCellTap: (participant, item, existingScore) {
-                            _showScoreEntryDialog(
-                                participant, item, existingScore);
+                          onScoreChanged: (studentId, itemId, existingScore, score) {
+                            _saveInlineScore(studentId, itemId, existingScore, score);
                           },
                         );
                       }),
@@ -498,82 +495,3 @@ class _AddGradeItemDialogState extends ConsumerState<_AddGradeItemDialog> {
   }
 }
 
-/// Dialog to enter a score for a participant's grade item.
-class _ScoreEntryDialog extends ConsumerStatefulWidget {
-  final Participant participant;
-  final GradeItem item;
-  final GradeScore? existingScore;
-
-  const _ScoreEntryDialog({
-    required this.participant,
-    required this.item,
-    this.existingScore,
-  });
-
-  @override
-  ConsumerState<_ScoreEntryDialog> createState() => _ScoreEntryDialogState();
-}
-
-class _ScoreEntryDialogState extends ConsumerState<_ScoreEntryDialog> {
-  late final TextEditingController _scoreController;
-
-  @override
-  void initState() {
-    super.initState();
-    _scoreController = TextEditingController(
-      text: widget.existingScore?.effectiveScore?.toString() ?? '',
-    );
-  }
-
-  @override
-  void dispose() {
-    _scoreController.dispose();
-    super.dispose();
-  }
-
-  void _handleSave() {
-    final score = double.tryParse(_scoreController.text.trim());
-    if (score == null) return;
-
-    ref.read(gradeScoresProvider.notifier).saveScores(
-      widget.item.id,
-      [
-        {
-          'student_id': widget.participant.student.id,
-          'score': score,
-        },
-      ],
-    );
-    Navigator.pop(context);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return StyledDialog(
-      title: widget.participant.student.fullName,
-      subtitle: '${widget.item.title} (/${widget.item.totalPoints})',
-      content: TextField(
-        controller: _scoreController,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
-        ],
-        autofocus: true,
-        decoration: StyledTextFieldDecoration.styled(
-          labelText: 'Score',
-        ),
-      ),
-      actions: [
-        StyledDialogAction(
-          label: 'Cancel',
-          onPressed: () => Navigator.pop(context),
-        ),
-        StyledDialogAction(
-          label: 'Save',
-          isPrimary: true,
-          onPressed: _handleSave,
-        ),
-      ],
-    );
-  }
-}
