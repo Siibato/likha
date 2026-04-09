@@ -156,6 +156,7 @@ class _GradeSummaryDesktopState extends ConsumerState<GradeSummaryDesktop>
       backgroundColor: AppColors.backgroundSecondary,
       body: DesktopPageScaffold(
         title: 'Grade Summary',
+        scrollable: false,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.foregroundDark),
           onPressed: () => Navigator.of(context).pop(),
