@@ -108,12 +108,14 @@ impl super::AssessmentService {
                 None
             };
 
-            let answer_text = if question.question_type == "identification" {
+            let answer_text = if question.question_type == "identification" || question.question_type == "essay" {
                 let texts = self.submission_repo.find_enumeration_answers(a.id).await?;
                 texts.into_iter().next()
             } else {
                 None
             };
+
+            let is_pending_essay_grade = question.question_type == "essay" && a.overridden_at.is_none();
 
             answer_responses.push(SubmissionAnswerResponse {
                 id: a.id,
@@ -127,6 +129,7 @@ impl super::AssessmentService {
                 points_earned: a.points,
                 overridden_by: a.overridden_by,
                 overridden_at: a.overridden_at.map(|dt| dt.to_string()),
+                is_pending_essay_grade,
             });
         }
 
@@ -196,6 +199,73 @@ impl super::AssessmentService {
             points_earned: updated.points,
             overridden_by: updated.overridden_by,
             overridden_at: updated.overridden_at.map(|dt| dt.to_string()),
+            is_pending_essay_grade: false,
+        })
+    }
+
+    pub async fn grade_essay_answer(
+        &self,
+        answer_id: Uuid,
+        request: GradeEssayRequest,
+        teacher_id: Uuid,
+    ) -> AppResult<SubmissionAnswerResponse> {
+        let answer = self.submission_repo.find_answer_by_id(answer_id).await?
+            .ok_or_else(|| AppError::NotFound("Answer not found".to_string()))?;
+
+        let submission = self.submission_repo.find_by_id(answer.submission_id).await?
+            .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?;
+
+        let assessment = self.assessment_repo.find_by_id(submission.assessment_id).await?
+            .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
+
+        let _class = self.class_repo.find_by_id(assessment.class_id).await?
+            .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
+
+        if !self.class_repo.is_teacher_of_class(teacher_id, assessment.class_id).await? {
+            return Err(AppError::Forbidden("Access denied".to_string()));
+        }
+
+        let question = self.assessment_repo.find_question_by_id(answer.question_id).await?
+            .ok_or_else(|| AppError::NotFound("Question not found".to_string()))?;
+
+        if question.question_type != "essay" {
+            return Err(AppError::BadRequest("This endpoint is only for essay questions".to_string()));
+        }
+
+        let max_points = question.points as f64;
+        if request.points < 0.0 || request.points > max_points {
+            return Err(AppError::BadRequest(format!(
+                "Points must be between 0 and {}",
+                question.points
+            )));
+        }
+
+        let is_correct = request.points >= max_points;
+
+        let updated = self.submission_repo
+            .override_answer(answer_id, is_correct, request.points)
+            .await?;
+
+        let final_score = GradingService::recalculate_final_score(submission.id, &self.submission_repo).await?;
+
+        // Auto-populate grade score
+        let _ = auto_populate::auto_populate_score(
+            &self.db, "assessment", submission.assessment_id, submission.user_id, final_score,
+        ).await;
+
+        Ok(SubmissionAnswerResponse {
+            id: updated.id,
+            question_id: updated.question_id,
+            question_text: question.question_text,
+            question_type: question.question_type,
+            question_points: question.points,
+            answer_text: None,
+            selected_choices: None,
+            enumeration_answers: None,
+            points_earned: updated.points,
+            overridden_by: updated.overridden_by,
+            overridden_at: updated.overridden_at.map(|dt| dt.to_string()),
+            is_pending_essay_grade: false,
         })
     }
 

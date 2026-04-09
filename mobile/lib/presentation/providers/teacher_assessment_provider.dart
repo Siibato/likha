@@ -15,6 +15,7 @@ import 'package:likha/domain/assessments/usecases/get_assessments.dart';
 import 'package:likha/domain/assessments/usecases/get_statistics.dart';
 import 'package:likha/domain/assessments/usecases/get_submission_detail.dart';
 import 'package:likha/domain/assessments/usecases/get_submissions.dart';
+import 'package:likha/domain/assessments/usecases/grade_essay.dart';
 import 'package:likha/domain/assessments/usecases/override_answer.dart';
 import 'package:likha/domain/assessments/usecases/publish_assessment.dart';
 import 'package:likha/domain/assessments/usecases/release_results.dart';
@@ -86,6 +87,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
   final GetSubmissions _getSubmissions;
   final GetSubmissionDetail _getSubmissionDetail;
   final OverrideAnswer _overrideAnswer;
+  final GradeEssay _gradeEssay;
   final ReleaseResults _releaseResults;
   final GetStatistics _getStatistics;
   final UpdateAssessment _updateAssessment;
@@ -108,6 +110,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     this._getSubmissions,
     this._getSubmissionDetail,
     this._overrideAnswer,
+    this._gradeEssay,
     this._releaseResults,
     this._getStatistics,
     this._updateAssessment,
@@ -396,6 +399,18 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     );
   }
 
+  Future<void> gradeEssayAnswer(GradeEssayParams params) async {
+    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    final result = await _gradeEssay(params);
+    result.fold(
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
+      (_) => state = state.copyWith(
+        isLoading: false,
+        successMessage: 'Essay graded',
+      ),
+    );
+  }
+
   Future<void> loadStatistics(String assessmentId) async {
     state = state.copyWith(isLoading: true, error: null);
     final result = await _getStatistics(assessmentId);
@@ -428,6 +443,7 @@ final teacherAssessmentProvider = StateNotifierProvider<TeacherAssessmentNotifie
     sl<GetSubmissions>(),
     sl<GetSubmissionDetail>(),
     sl<OverrideAnswer>(),
+    sl<GradeEssay>(),
     sl<ReleaseResults>(),
     sl<GetStatistics>(),
     sl<UpdateAssessment>(),

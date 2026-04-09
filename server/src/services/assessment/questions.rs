@@ -39,7 +39,7 @@ impl super::AssessmentService {
         let mut responses = Vec::new();
 
         for q_request in questions {
-            let valid_types = ["multiple_choice", "identification", "enumeration"];
+            let valid_types = ["multiple_choice", "identification", "enumeration", "essay"];
             if !valid_types.contains(&q_request.question_type.as_str()) {
                 return Err(AppError::BadRequest(format!(
                     "Invalid question type: {}. Must be one of: {:?}",
@@ -227,6 +227,8 @@ impl super::AssessmentService {
                     }
                 }
             }
+            // Essays have no answer key — teacher grades manually
+            "essay" => {}
             _ => {}
         }
         Ok(())

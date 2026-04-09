@@ -81,6 +81,11 @@ abstract class AssessmentRepository {
     required bool isCorrect,
   });
 
+  ResultFuture<SubmissionAnswer> gradeEssayAnswer({
+    required String answerId,
+    required double points,
+  });
+
   ResultFuture<AssessmentStatistics> getStatistics({
     required String assessmentId,
   });

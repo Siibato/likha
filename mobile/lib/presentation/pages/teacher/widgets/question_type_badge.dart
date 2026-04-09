@@ -23,6 +23,10 @@ class QuestionTypeBadge extends StatelessWidget {
         label = 'Enumeration';
         icon = Icons.format_list_numbered_rounded;
         break;
+      case 'essay':
+        label = 'Essay';
+        icon = Icons.edit_note_rounded;
+        break;
       default:
         label = questionType;
         icon = Icons.help_outline_rounded;

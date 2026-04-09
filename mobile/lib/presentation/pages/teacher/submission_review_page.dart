@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
+import 'package:likha/domain/assessments/usecases/grade_essay.dart';
 import 'package:likha/domain/assessments/usecases/override_answer.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
@@ -23,6 +24,15 @@ class SubmissionReviewPage extends ConsumerStatefulWidget {
 
 class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
   String? _formError;
+  final Map<String, TextEditingController> _essayScoreControllers = {};
+
+  @override
+  void dispose() {
+    for (final c in _essayScoreControllers.values) {
+      c.dispose();
+    }
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -42,6 +52,8 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
         return 'Identification';
       case 'enumeration':
         return 'Enumeration';
+      case 'essay':
+        return 'Essay';
       default:
         return type;
     }
@@ -65,6 +77,20 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
       confirmLabel: 'Confirm',
       onConfirm: () => _overrideAnswer(answer.id, isCorrect),
     );
+  }
+
+  Future<void> _gradeEssay(String answerId, double points) async {
+    await ref.read(teacherAssessmentProvider.notifier).gradeEssayAnswer(
+          GradeEssayParams(answerId: answerId, points: points),
+        );
+
+    if (!mounted) return;
+    final state = ref.read(teacherAssessmentProvider);
+    if (state.error == null) {
+      ref
+          .read(teacherAssessmentProvider.notifier)
+          .loadSubmissionDetail(widget.submissionId);
+    }
   }
 
   Future<void> _overrideAnswer(String answerId, bool isCorrect) async {
@@ -243,24 +269,35 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
   }
 
   Widget _buildAnswerCard(SubmissionAnswer answer, int index) {
-    final isAutoCorrect = answer.isAutoCorrect ??
-        (answer.pointsAwarded >= answer.points && answer.points > 0);
-    final isOverrideCorrect = answer.isOverrideCorrect;
-    final effectiveCorrect = isOverrideCorrect ?? isAutoCorrect;
-    final isPartial = answer.pointsAwarded > 0 && answer.pointsAwarded < answer.points;
+    final isEssay = answer.questionType == 'essay';
+    final isPending = answer.isPendingEssayGrade;
 
     Color statusColor;
     IconData statusIcon;
-    if (effectiveCorrect) {
-      statusColor = AppColors.semanticSuccess;
-      statusIcon = Icons.check_circle;
-    } else if (isPartial) {
-      statusColor = AppColors.foregroundSecondary;
-      statusIcon = Icons.remove_circle;
+
+    if (isEssay && isPending) {
+      statusColor = AppColors.deprecatedWarningYellow;
+      statusIcon = Icons.hourglass_empty_rounded;
     } else {
-      statusColor = AppColors.semanticError;
-      statusIcon = Icons.cancel;
+      final isAutoCorrect = answer.isAutoCorrect ??
+          (answer.pointsAwarded >= answer.points && answer.points > 0);
+      final isOverrideCorrect = answer.isOverrideCorrect;
+      final effectiveCorrect = isOverrideCorrect ?? isAutoCorrect;
+      final isPartial = answer.pointsAwarded > 0 && answer.pointsAwarded < answer.points;
+
+      if (effectiveCorrect) {
+        statusColor = AppColors.semanticSuccess;
+        statusIcon = Icons.check_circle;
+      } else if (isPartial) {
+        statusColor = AppColors.foregroundSecondary;
+        statusIcon = Icons.remove_circle;
+      } else {
+        statusColor = AppColors.semanticError;
+        statusIcon = Icons.cancel;
+      }
     }
+
+    final isOverrideCorrect = answer.isOverrideCorrect;
 
     return BaseCard(
       child: Column(
@@ -293,7 +330,9 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
               ),
               const SizedBox(width: 8),
               StatusBadge(
-                label: '${answer.pointsAwarded % 1 == 0 ? answer.pointsAwarded.toInt() : answer.pointsAwarded.toStringAsFixed(1)} / ${answer.points}',
+                label: isPending
+                    ? 'Pending'
+                    : '${answer.pointsAwarded % 1 == 0 ? answer.pointsAwarded.toInt() : answer.pointsAwarded.toStringAsFixed(1)} / ${answer.points}',
                 color: statusColor,
                 variant: BadgeVariant.filled,
               ),
@@ -303,7 +342,7 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
           const Divider(height: 1, color: AppColors.borderLight),
           const SizedBox(height: 12),
           _buildAnswerContent(answer),
-          if (isOverrideCorrect != null) ...[
+          if (!isEssay && isOverrideCorrect != null) ...[
             const SizedBox(height: 8),
             const StatusBadge(
               label: 'Grade overridden',
@@ -312,30 +351,101 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
               variant: BadgeVariant.filled,
             ),
           ],
+          if (!isEssay && isOverrideCorrect == null && !isPending) ...[
+            const SizedBox(height: 8),
+          ],
           const SizedBox(height: 12),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton.icon(
-                  onPressed: () => _confirmOverride(answer, true),
-                  icon: const Icon(Icons.check, size: 18),
-                  label: const Text('Mark Correct'),
-                  style: TextButton.styleFrom(foregroundColor: AppColors.semanticSuccess),
-                ),
-                const SizedBox(width: 8),
-                TextButton.icon(
-                  onPressed: () => _confirmOverride(answer, false),
-                  icon: const Icon(Icons.close, size: 18),
-                  label: const Text('Mark Incorrect'),
-                  style: TextButton.styleFrom(foregroundColor: AppColors.semanticError),
-                ),
-              ],
+          if (isEssay)
+            _buildEssayGradingSection(answer)
+          else
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => _confirmOverride(answer, true),
+                    icon: const Icon(Icons.check, size: 18),
+                    label: const Text('Mark Correct'),
+                    style: TextButton.styleFrom(foregroundColor: AppColors.semanticSuccess),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton.icon(
+                    onPressed: () => _confirmOverride(answer, false),
+                    icon: const Icon(Icons.close, size: 18),
+                    label: const Text('Mark Incorrect'),
+                    style: TextButton.styleFrom(foregroundColor: AppColors.semanticError),
+                  ),
+                ],
+              ),
             ),
-          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildEssayGradingSection(SubmissionAnswer answer) {
+    final controller = _essayScoreControllers.putIfAbsent(
+      answer.id,
+      () => TextEditingController(
+        text: answer.isPendingEssayGrade
+            ? ''
+            : answer.pointsAwarded.toStringAsFixed(
+                answer.pointsAwarded % 1 == 0 ? 0 : 1,
+              ),
+      ),
+    );
+
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText: 'Score (0 – ${answer.points})',
+              labelStyle: const TextStyle(fontSize: 13, color: AppColors.foregroundTertiary),
+              filled: true,
+              fillColor: const Color(0xFFFAFAFA),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: AppColors.borderLight),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: AppColors.borderLight),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: AppColors.foregroundPrimary, width: 1.5),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              isDense: true,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        FilledButton(
+          onPressed: () {
+            final raw = controller.text.trim();
+            final pts = double.tryParse(raw);
+            if (pts == null || pts < 0 || pts > answer.points) {
+              setState(() {
+                _formError = 'Enter a valid score between 0 and ${answer.points}';
+              });
+              return;
+            }
+            setState(() => _formError = null);
+            _gradeEssay(answer.id, pts);
+          },
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.foregroundPrimary,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          child: const Text('Save Grade', style: TextStyle(fontSize: 13)),
+        ),
+      ],
     );
   }
 
@@ -347,6 +457,8 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
         return _buildIdentificationContent(answer);
       case 'enumeration':
         return _buildEnumerationContent(answer);
+      case 'essay':
+        return _buildEssayContent(answer);
       default:
         return const Text('Unknown question type');
     }
@@ -383,6 +495,26 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
                 ),
               ))
           .toList(),
+    );
+  }
+
+  Widget _buildEssayContent(SubmissionAnswer answer) {
+    final text = answer.answerText;
+    if (text == null || text.isEmpty) {
+      return const Text('No response', style: TextStyle(color: AppColors.foregroundTertiary));
+    }
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAFAFA),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(fontSize: 14, color: AppColors.foregroundPrimary, height: 1.5),
+      ),
     );
   }
 

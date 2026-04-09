@@ -105,6 +105,11 @@ pub struct OverrideAnswerRequest {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct GradeEssayRequest {
+    pub points: f64,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct ReorderAssessmentsRequest {
     pub assessment_ids: Vec<Uuid>,
 }
@@ -255,6 +260,7 @@ pub struct SubmissionAnswerResponse {
     pub points_earned: f64,
     pub overridden_by: Option<Uuid>,
     pub overridden_at: Option<String>,
+    pub is_pending_essay_grade: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -331,6 +337,7 @@ pub struct StudentAnswerResultResponse {
     pub selected_choices: Option<Vec<String>>,
     pub enumeration_answers: Option<Vec<StudentEnumAnswerResult>>,
     pub correct_answers: Option<Vec<String>>,
+    pub is_pending_essay_grade: Option<bool>,
 }
 
 #[derive(Debug, Serialize)]

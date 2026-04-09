@@ -161,6 +161,7 @@ class SubmissionAnswerModel extends SubmissionAnswer {
     super.isAutoCorrect,
     super.isOverrideCorrect,
     required super.pointsAwarded,
+    super.isPendingEssayGrade,
   });
 
   factory SubmissionAnswerModel.fromJson(Map<String, dynamic> json) {
@@ -182,6 +183,7 @@ class SubmissionAnswerModel extends SubmissionAnswer {
       isAutoCorrect: null,
       isOverrideCorrect: null,
       pointsAwarded: (json['points_earned'] as num? ?? 0).toDouble(),
+      isPendingEssayGrade: json['is_pending_essay_grade'] as bool? ?? false,
     );
   }
 
@@ -322,6 +324,7 @@ class StudentAnswerResultModel extends StudentAnswerResult {
     super.selectedChoices,
     super.enumerationAnswers,
     super.correctAnswers,
+    super.isPendingEssayGrade,
   });
 
   factory StudentAnswerResultModel.fromJson(Map<String, dynamic> json) {
@@ -343,6 +346,7 @@ class StudentAnswerResultModel extends StudentAnswerResult {
       correctAnswers: (json['correct_answers'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
+      isPendingEssayGrade: json['is_pending_essay_grade'] as bool? ?? false,
     );
   }
 

@@ -469,6 +469,12 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
                   }),
                   onStructuralChange: () => setState(() {}),
                 ),
+              if (_questionType == 'essay')
+                QuestionEditorBody(
+                  questionType: 'essay',
+                  isLoading: state.isLoading,
+                  variant: EditorStyleVariant.form,
+                ),
             ],
           ),
         ),

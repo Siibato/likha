@@ -111,6 +111,26 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
   }
 
   @override
+  ResultFuture<SubmissionAnswer> gradeEssayAnswer({
+    required String answerId,
+    required double points,
+  }) async {
+    try {
+      final result = await remoteDataSource.gradeEssayAnswer(
+        answerId: answerId,
+        points: points,
+      );
+      return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   ResultFuture<AssessmentStatistics> getStatistics({
     required String assessmentId,
   }) async {

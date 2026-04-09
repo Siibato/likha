@@ -37,7 +37,8 @@ impl super::AssessmentService {
                 None => continue,
             };
 
-            let is_correct = Some(a.points > 0.0);
+            let is_pending_essay = question.question_type == "essay" && a.overridden_at.is_none();
+            let is_correct = if is_pending_essay { None } else { Some(a.points > 0.0) };
 
             let selected_choices = if question.question_type == "multiple_choice" {
                 let choice_ids = self.submission_repo.find_answer_choices(a.id).await?;
@@ -83,13 +84,15 @@ impl super::AssessmentService {
                 _ => None,
             };
 
-            // Fetch identification answer text from submission_answer_items
-            let answer_text = if question.question_type == "identification" {
+            // Fetch identification/essay answer text from submission_answer_items
+            let answer_text = if question.question_type == "identification" || question.question_type == "essay" {
                 let texts = self.submission_repo.find_enumeration_answers(a.id).await?;
                 texts.into_iter().next()
             } else {
                 None
             };
+
+            let is_pending_essay_grade = if is_pending_essay { Some(true) } else { None };
 
             answer_results.push(StudentAnswerResultResponse {
                 question_id: question.id,
@@ -102,6 +105,7 @@ impl super::AssessmentService {
                 selected_choices,
                 enumeration_answers,
                 correct_answers,
+                is_pending_essay_grade,
             });
         }
 

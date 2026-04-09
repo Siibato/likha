@@ -69,6 +69,11 @@ abstract class AssessmentRemoteDataSource {
     required bool isCorrect,
   });
 
+  Future<SubmissionAnswerModel> gradeEssayAnswer({
+    required String answerId,
+    required double points,
+  });
+
   Future<AssessmentStatisticsModel> getStatistics({
     required String assessmentId,
   });
@@ -325,6 +330,21 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
       return await _dioClient.putTyped(
         ApiEndpoints.submissionAnswerOverride(answerId),
         data: {'is_correct': isCorrect},
+      );
+    } on DioException catch (e) {
+      throw _dioClient.handleError(e);
+    }
+  }
+
+  @override
+  Future<SubmissionAnswerModel> gradeEssayAnswer({
+    required String answerId,
+    required double points,
+  }) async {
+    try {
+      return await _dioClient.putTyped(
+        ApiEndpoints.submissionAnswerGradeEssay(answerId),
+        data: {'points': points},
       );
     } on DioException catch (e) {
       throw _dioClient.handleError(e);

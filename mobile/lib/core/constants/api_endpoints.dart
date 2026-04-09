@@ -237,6 +237,13 @@ class ApiEndpoints {
         SubmissionAnswerModel.fromJson,
       );
 
+  static ApiEndpoint<SubmissionAnswerModel> submissionAnswerGradeEssay(
+          String answerId) =>
+      ApiEndpoint<SubmissionAnswerModel>.fromModel(
+        '/api/v1/submission-answers/$answerId/grade-essay',
+        SubmissionAnswerModel.fromJson,
+      );
+
   static ApiEndpoint<AssessmentStatisticsModel> assessmentStatistics(
           String assessmentId) =>
       ApiEndpoint<AssessmentStatisticsModel>.fromModel(

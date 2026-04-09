@@ -102,6 +102,7 @@ class QuestionEditorBody extends StatelessWidget {
       'multiple_choice' => _buildMultipleChoiceSection(),
       'identification' => _buildIdentificationSection(),
       'enumeration' => _buildEnumerationSection(),
+      'essay' => _buildEssaySection(),
       _ => const SizedBox.shrink(),
     };
   }
@@ -521,6 +522,50 @@ class QuestionEditorBody extends StatelessWidget {
           label: const Text('Add Item'),
         ),
       ],
+    );
+  }
+
+  // ============ ESSAY SECTION ============
+
+  Widget _buildEssaySection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAFAFA),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE0E0E0)),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.edit_note_rounded, size: 20, color: Color(0xFF999999)),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Essay Question',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: Color(0xFF2B2B2B),
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Students will write a free-form essay response. No answer key required — you will grade this manually after submission.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF666666),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
