@@ -35,6 +35,7 @@ class _EditTosDesktopState extends ConsumerState<EditTosDesktop> {
   late int _selectedQuarter;
   late String _classificationMode;
   late String _timeUnit;
+  String? _pctError;
 
   @override
   void initState() {
@@ -81,7 +82,39 @@ class _EditTosDesktopState extends ConsumerState<EditTosDesktop> {
     super.dispose();
   }
 
+  String? _validatePercentages() {
+    if (_classificationMode == 'blooms') {
+      final total = [
+        _rememberingPctController,
+        _understandingPctController,
+        _applyingPctController,
+        _analyzingPctController,
+        _evaluatingPctController,
+        _creatingPctController,
+      ].fold(0.0, (sum, c) => sum + (double.tryParse(c.text.trim()) ?? 0));
+      if ((total - 100).abs() > 0.5) {
+        return "Bloom's percentages must add up to 100% (currently ${total.toStringAsFixed(1)}%)";
+      }
+    } else {
+      final total = [
+        _easyPctController,
+        _mediumPctController,
+        _hardPctController,
+      ].fold(0.0, (sum, c) => sum + (double.tryParse(c.text.trim()) ?? 0));
+      if ((total - 100).abs() > 0.5) {
+        return 'Difficulty percentages must add up to 100% (currently ${total.toStringAsFixed(1)}%)';
+      }
+    }
+    return null;
+  }
+
   Future<void> _handleSave() async {
+    final pctError = _validatePercentages();
+    if (pctError != null) {
+      setState(() => _pctError = pctError);
+      return;
+    }
+    setState(() => _pctError = null);
     if (!_formKey.currentState!.validate()) return;
 
     await ref.read(tosProvider.notifier).updateTos(
@@ -219,6 +252,14 @@ class _EditTosDesktopState extends ConsumerState<EditTosDesktop> {
                   onChanged: (v) => setState(() => _timeUnit = v),
                 ),
                 const SizedBox(height: 24),
+                if (_pctError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: FormMessage(
+                      message: _pctError,
+                      severity: MessageSeverity.error,
+                    ),
+                  ),
                 if (_classificationMode == 'blooms')
                   BloomsRatioSection(
                     rememberingController: _rememberingPctController,

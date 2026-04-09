@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class DifficultyRatioSection extends StatelessWidget {
+class DifficultyRatioSection extends StatefulWidget {
   final TextEditingController easyController;
   final TextEditingController mediumController;
   final TextEditingController hardController;
@@ -13,7 +13,46 @@ class DifficultyRatioSection extends StatelessWidget {
   });
 
   @override
+  State<DifficultyRatioSection> createState() => _DifficultyRatioSectionState();
+}
+
+class _DifficultyRatioSectionState extends State<DifficultyRatioSection> {
+  double _total = 0;
+
+  List<TextEditingController> get _controllers => [
+        widget.easyController,
+        widget.mediumController,
+        widget.hardController,
+      ];
+
+  @override
+  void initState() {
+    super.initState();
+    _computeTotal();
+    for (final c in _controllers) {
+      c.addListener(_computeTotal);
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final c in _controllers) {
+      c.removeListener(_computeTotal);
+    }
+    super.dispose();
+  }
+
+  void _computeTotal() {
+    final total = _controllers.fold(
+        0.0, (sum, c) => sum + (double.tryParse(c.text.trim()) ?? 0));
+    if (mounted) setState(() => _total = total);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isValid = (_total - 100).abs() <= 0.5;
+    final totalColor = isValid ? const Color(0xFF2E7D32) : const Color(0xFFD32F2F);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -24,13 +63,29 @@ class DifficultyRatioSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Default Difficulty Distribution (%)',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF666666),
-            ),
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Default Difficulty Distribution (%)',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF666666),
+                  ),
+                ),
+              ),
+              Text(
+                isValid
+                    ? 'Total: ${_total.toStringAsFixed(1)}% ✓'
+                    : 'Total: ${_total.toStringAsFixed(1)}% ⚠',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: totalColor,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           const Text(
@@ -42,7 +97,7 @@ class DifficultyRatioSection extends StatelessWidget {
             children: [
               Expanded(
                 child: _PctField(
-                  controller: easyController,
+                  controller: widget.easyController,
                   label: 'Easy',
                   color: const Color(0xFF4CAF50),
                 ),
@@ -50,7 +105,7 @@ class DifficultyRatioSection extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _PctField(
-                  controller: mediumController,
+                  controller: widget.mediumController,
                   label: 'Medium',
                   color: const Color(0xFFFF9800),
                 ),
@@ -58,7 +113,7 @@ class DifficultyRatioSection extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _PctField(
-                  controller: hardController,
+                  controller: widget.hardController,
                   label: 'Hard',
                   color: const Color(0xFFF44336),
                 ),

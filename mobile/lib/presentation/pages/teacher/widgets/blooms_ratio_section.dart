@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class BloomsRatioSection extends StatelessWidget {
+class BloomsRatioSection extends StatefulWidget {
   final TextEditingController rememberingController;
   final TextEditingController understandingController;
   final TextEditingController applyingController;
@@ -19,7 +19,49 @@ class BloomsRatioSection extends StatelessWidget {
   });
 
   @override
+  State<BloomsRatioSection> createState() => _BloomsRatioSectionState();
+}
+
+class _BloomsRatioSectionState extends State<BloomsRatioSection> {
+  double _total = 0;
+
+  List<TextEditingController> get _controllers => [
+        widget.rememberingController,
+        widget.understandingController,
+        widget.applyingController,
+        widget.analyzingController,
+        widget.evaluatingController,
+        widget.creatingController,
+      ];
+
+  @override
+  void initState() {
+    super.initState();
+    _computeTotal();
+    for (final c in _controllers) {
+      c.addListener(_computeTotal);
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final c in _controllers) {
+      c.removeListener(_computeTotal);
+    }
+    super.dispose();
+  }
+
+  void _computeTotal() {
+    final total = _controllers.fold(
+        0.0, (sum, c) => sum + (double.tryParse(c.text.trim()) ?? 0));
+    if (mounted) setState(() => _total = total);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isValid = (_total - 100).abs() <= 0.5;
+    final totalColor = isValid ? const Color(0xFF2E7D32) : const Color(0xFFD32F2F);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -30,13 +72,29 @@ class BloomsRatioSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Bloom's Level Distribution (%)",
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF666666),
-            ),
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  "Bloom's Level Distribution (%)",
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF666666),
+                  ),
+                ),
+              ),
+              Text(
+                isValid
+                    ? 'Total: ${_total.toStringAsFixed(1)}% ✓'
+                    : 'Total: ${_total.toStringAsFixed(1)}% ⚠',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: totalColor,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           const Text(
@@ -48,7 +106,7 @@ class BloomsRatioSection extends StatelessWidget {
             children: [
               Expanded(
                 child: _PctField(
-                  controller: rememberingController,
+                  controller: widget.rememberingController,
                   label: 'R',
                   color: const Color(0xFF1565C0),
                 ),
@@ -56,7 +114,7 @@ class BloomsRatioSection extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: _PctField(
-                  controller: understandingController,
+                  controller: widget.understandingController,
                   label: 'U',
                   color: const Color(0xFF283593),
                 ),
@@ -64,7 +122,7 @@ class BloomsRatioSection extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: _PctField(
-                  controller: applyingController,
+                  controller: widget.applyingController,
                   label: 'Ap',
                   color: const Color(0xFF2E7D32),
                 ),
@@ -76,7 +134,7 @@ class BloomsRatioSection extends StatelessWidget {
             children: [
               Expanded(
                 child: _PctField(
-                  controller: analyzingController,
+                  controller: widget.analyzingController,
                   label: 'An',
                   color: const Color(0xFFF57F17),
                 ),
@@ -84,7 +142,7 @@ class BloomsRatioSection extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: _PctField(
-                  controller: evaluatingController,
+                  controller: widget.evaluatingController,
                   label: 'E',
                   color: const Color(0xFFE65100),
                 ),
@@ -92,7 +150,7 @@ class BloomsRatioSection extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: _PctField(
-                  controller: creatingController,
+                  controller: widget.creatingController,
                   label: 'C',
                   color: const Color(0xFFC62828),
                 ),

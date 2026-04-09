@@ -40,6 +40,20 @@ mixin TosQueryMixin on TosRepositoryBase {
     required String tosId,
   }) async {
     try {
+      // Cache-first: return local data immediately so locally-added competencies
+      // are visible even before they have synced to the server.
+      final localTos = await localDataSource.getTosById(tosId);
+      if (localTos != null) {
+        final localCompetencies =
+            await localDataSource.getCompetenciesByTos(tosId);
+        // Background-refresh from server if online (won't overwrite local edits)
+        if (serverReachabilityService.isServerReachable) {
+          _backgroundFetchTosDetail(tosId);
+        }
+        return Right((localTos, localCompetencies));
+      }
+
+      // No local data — fetch from remote (initial load or first-time open)
       if (serverReachabilityService.isServerReachable) {
         final (tos, competencies) = await remoteDataSource.getTosDetail(
           tosId: tosId,
@@ -49,15 +63,9 @@ mixin TosQueryMixin on TosRepositoryBase {
         return Right((tos, competencies));
       }
 
-      // Offline fallback
-      final tos = await localDataSource.getTosById(tosId);
-      if (tos == null) {
-        return const Left(CacheFailure('TOS not found in cache'));
-      }
-      final competencies = await localDataSource.getCompetenciesByTos(tosId);
-      return Right((tos, competencies));
+      return const Left(CacheFailure('TOS not found in cache'));
     } catch (e) {
-      // Try cache fallback
+      // Cache fallback on any error
       try {
         final tos = await localDataSource.getTosById(tosId);
         if (tos == null) return const Left(CacheFailure('TOS not found'));
@@ -67,6 +75,18 @@ mixin TosQueryMixin on TosRepositoryBase {
       } catch (_) {
         return Left(CacheFailure(e.toString()));
       }
+    }
+  }
+
+  void _backgroundFetchTosDetail(String tosId) async {
+    try {
+      final (tos, competencies) =
+          await remoteDataSource.getTosDetail(tosId: tosId);
+      await localDataSource.cacheTosList([tos]);
+      // Safe cache: never overwrites locally-modified rows (needs_sync = 1)
+      await localDataSource.cacheCompetencies(tosId, competencies);
+    } catch (_) {
+      // Non-fatal: background refresh failure
     }
   }
 

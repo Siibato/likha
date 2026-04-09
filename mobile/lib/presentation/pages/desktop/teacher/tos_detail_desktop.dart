@@ -340,6 +340,18 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
                               TosGridTable(
                                 competencies: competencies,
                                 tos: tos,
+                                onCellChanged: (id, key, val) => ref
+                                    .read(tosProvider.notifier)
+                                    .updateCompetency(
+                                        id, {'${key}_count': val}),
+                                onCompetencyTextChanged: (id, text) => ref
+                                    .read(tosProvider.notifier)
+                                    .updateCompetency(
+                                        id, {'competency_text': text}),
+                                onDaysTaughtChanged: (id, days) => ref
+                                    .read(tosProvider.notifier)
+                                    .updateCompetency(
+                                        id, {'days_taught': days}),
                               ),
                               const SizedBox(height: 12),
                               TosSummaryRow(
@@ -347,6 +359,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
                                 totalItems: tos.totalItems,
                                 timeUnit: tos.timeUnit,
                               ),
+                              _buildMissingPointsBanner(competencies, tos),
                             ],
                           ],
                         ),
@@ -422,6 +435,21 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
       context: context,
       builder: (ctx) => StyledDialog(
         title: 'Edit Competency',
+        leadingAction: StyledDialogAction(
+          label: 'Delete',
+          onPressed: () {
+            Navigator.pop(ctx);
+            AppDialogs.showDestructive(
+              context: context,
+              title: 'Delete Competency',
+              body: 'Remove this competency?',
+              confirmLabel: 'Delete',
+              onConfirm: () => ref
+                  .read(tosProvider.notifier)
+                  .deleteCompetency(competency.id),
+            );
+          },
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -468,7 +496,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
     );
   }
 
-  Widget _buildCompetencyTile(TosCompetency competency, String timeUnit) {
+Widget _buildCompetencyTile(TosCompetency competency, String timeUnit) {
     return GestureDetector(
       onTap: () => _handleEditCompetency(competency, timeUnit),
       child: Container(
@@ -505,20 +533,68 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
               ),
             ),
             IconButton(
-              onPressed: () {
-                AppDialogs.showDestructive(
-                  context: context,
-                  title: 'Delete Competency',
-                  body: 'Remove this competency?',
-                  confirmLabel: 'Delete',
-                  onConfirm: () => ref
-                      .read(tosProvider.notifier)
-                      .deleteCompetency(competency.id),
-                );
-              },
-              icon: const Icon(Icons.close_rounded, size: 18),
+              onPressed: () => _handleEditCompetency(competency, timeUnit),
+              icon: const Icon(Icons.edit_outlined, size: 18),
               color: AppColors.foregroundSecondary,
-              tooltip: 'Delete',
+              tooltip: 'Edit',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMissingPointsBanner(
+      List<TosCompetency> competencies, TableOfSpecifications tos) {
+    final totalDays =
+        competencies.fold<int>(0, (sum, c) => sum + c.daysTaught);
+
+    // Use the SAME formula as the grid: sum of actual cognitive cells per row.
+    // This respects per-competency overrides so banner and grid always agree.
+    final assigned = competencies.fold<int>(0, (sum, c) {
+      if (totalDays == 0) return sum;
+      final targetItems =
+          (c.daysTaught / totalDays * tos.totalItems).round();
+      final easy = c.easyCount ??
+          (targetItems * tos.easyPercentage / 100).round();
+      final medium = c.mediumCount ??
+          (targetItems * tos.mediumPercentage / 100).round();
+      final hard = c.hardCount ??
+          (targetItems * tos.hardPercentage / 100).round();
+      return sum + easy + medium + hard;
+    });
+
+    final diff = tos.totalItems - assigned;
+    if (diff == 0) return const SizedBox.shrink();
+
+    final message = diff > 0
+        ? '$diff item${diff == 1 ? '' : 's'} under target. '
+            'Total assigned: $assigned / ${tos.totalItems}'
+        : '${-diff} item${-diff == 1 ? '' : 's'} over target. '
+            'Total assigned: $assigned / ${tos.totalItems}';
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF3E0),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFFF9800)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.warning_amber_outlined,
+                size: 16, color: Color(0xFFE65100)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF6D4C41),
+                ),
+              ),
             ),
           ],
         ),
