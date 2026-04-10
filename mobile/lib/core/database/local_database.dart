@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 8,
+      version: 9,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onDowngrade: _downgradeDatabase,
@@ -152,6 +152,8 @@ class LocalDatabase {
           question_count INTEGER NOT NULL DEFAULT 0,
           submission_count INTEGER NOT NULL DEFAULT 0,
           linked_tos_id TEXT,
+          quarter INTEGER,
+          component TEXT,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
@@ -289,6 +291,8 @@ class LocalDatabase {
           due_at TEXT NOT NULL,
           is_published INTEGER NOT NULL DEFAULT 0,
           order_index INTEGER NOT NULL DEFAULT 0,
+          quarter INTEGER,
+          component TEXT,
           submission_count INTEGER NOT NULL DEFAULT 0,
           graded_count INTEGER NOT NULL DEFAULT 0,
           submission_status TEXT,
@@ -827,6 +831,16 @@ class LocalDatabase {
       await db.execute('ALTER TABLE assessments ADD COLUMN component TEXT');
       await db.execute('ALTER TABLE assignments ADD COLUMN quarter INTEGER');
       await db.execute('ALTER TABLE assignments ADD COLUMN component TEXT');
+    }
+
+    // Handle upgrade: v8 → v9 ensures quarter/component columns exist on assessments
+    // and assignments. Uses try/catch because fresh installs at v9 already have
+    // these columns from _createTables and ALTER TABLE would fail on duplicates.
+    if (oldVersion < 9) {
+      try { await db.execute('ALTER TABLE assessments ADD COLUMN quarter INTEGER'); } catch (_) {}
+      try { await db.execute('ALTER TABLE assessments ADD COLUMN component TEXT'); } catch (_) {}
+      try { await db.execute('ALTER TABLE assignments ADD COLUMN quarter INTEGER'); } catch (_) {}
+      try { await db.execute('ALTER TABLE assignments ADD COLUMN component TEXT'); } catch (_) {}
     }
   }
 
