@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 9,
+      version: 10,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onDowngrade: _downgradeDatabase,
@@ -230,8 +230,8 @@ class LocalDatabase {
           user_id TEXT NOT NULL,
           started_at TEXT NOT NULL,
           submitted_at TEXT,
-          total_points INTEGER NOT NULL DEFAULT 0,
-          earned_points REAL NOT NULL DEFAULT 0,
+          total_points REAL NOT NULL DEFAULT 0.0,
+          earned_points REAL NOT NULL DEFAULT 0.0,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
@@ -841,6 +841,57 @@ class LocalDatabase {
       try { await db.execute('ALTER TABLE assessments ADD COLUMN component TEXT'); } catch (_) {}
       try { await db.execute('ALTER TABLE assignments ADD COLUMN quarter INTEGER'); } catch (_) {}
       try { await db.execute('ALTER TABLE assignments ADD COLUMN component TEXT'); } catch (_) {}
+    }
+
+    // Handle upgrade: v9 → v10 fixes assessment_submissions.total_points type from
+    // INTEGER to REAL. The server stores fractional earned scores (e.g. 8.5 / 10) and
+    // SQLite INTEGER silently truncates them during sync writes.
+    // Uses table-swap pattern because SQLite does not support ALTER COLUMN.
+    if (oldVersion < 10) {
+      await db.execute('PRAGMA foreign_keys = OFF');
+      await db.execute('''
+        CREATE TABLE assessment_submissions_v10 (
+          id TEXT PRIMARY KEY,
+          assessment_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          started_at TEXT NOT NULL,
+          submitted_at TEXT,
+          total_points REAL NOT NULL DEFAULT 0.0,
+          earned_points REAL NOT NULL DEFAULT 0.0,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          cached_at TEXT,
+          needs_sync INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY(assessment_id) REFERENCES assessments(id) ON DELETE CASCADE,
+          FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+          UNIQUE(assessment_id, user_id)
+        )
+      ''');
+      await db.execute('''
+        INSERT INTO assessment_submissions_v10
+        SELECT id, assessment_id, user_id, started_at, submitted_at,
+               CAST(total_points AS REAL), earned_points,
+               created_at, updated_at, deleted_at, cached_at, needs_sync
+        FROM assessment_submissions
+      ''');
+      await db.execute('DROP TABLE assessment_submissions');
+      await db.execute(
+        'ALTER TABLE assessment_submissions_v10 RENAME TO assessment_submissions',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_assessment_submissions_assessment_id ON assessment_submissions(assessment_id)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_assessment_submissions_user_id ON assessment_submissions(user_id)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_assessment_submissions_updated_at ON assessment_submissions(updated_at)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_assessment_submissions_deleted_at ON assessment_submissions(deleted_at)',
+      );
+      await db.execute('PRAGMA foreign_keys = ON');
     }
   }
 

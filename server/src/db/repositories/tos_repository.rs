@@ -20,7 +20,7 @@ impl TosRepository {
         &self,
         id: Uuid,
         class_id: Uuid,
-        quarter: i32,
+        grading_period_number: i32,
         title: &str,
         classification_mode: &str,
         total_items: i32,
@@ -39,7 +39,7 @@ impl TosRepository {
         let tos = table_of_specifications::ActiveModel {
             id: Set(id),
             class_id: Set(class_id),
-            quarter: Set(quarter),
+            grading_period_number: Set(grading_period_number),
             title: Set(title.to_string()),
             classification_mode: Set(classification_mode.to_string()),
             total_items: Set(total_items),
@@ -81,20 +81,20 @@ impl TosRepository {
         table_of_specifications::Entity::find()
             .filter(table_of_specifications::Column::ClassId.eq(class_id))
             .filter(table_of_specifications::Column::DeletedAt.is_null())
-            .order_by_asc(table_of_specifications::Column::Quarter)
+            .order_by_asc(table_of_specifications::Column::GradingPeriodNumber)
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
     }
 
-    pub async fn find_tos_by_class_and_quarter(
+    pub async fn find_tos_by_class_and_period(
         &self,
         class_id: Uuid,
-        quarter: i32,
+        grading_period_number: i32,
     ) -> AppResult<Option<table_of_specifications::Model>> {
         table_of_specifications::Entity::find()
             .filter(table_of_specifications::Column::ClassId.eq(class_id))
-            .filter(table_of_specifications::Column::Quarter.eq(quarter))
+            .filter(table_of_specifications::Column::GradingPeriodNumber.eq(grading_period_number))
             .filter(table_of_specifications::Column::DeletedAt.is_null())
             .one(&self.db)
             .await
@@ -201,11 +201,17 @@ impl TosRepository {
         tos_id: Uuid,
         competency_code: Option<&str>,
         competency_text: &str,
-        days_taught: i32,
+        time_units_taught: i32,
         order_index: i32,
         easy_count: Option<i32>,
         medium_count: Option<i32>,
         hard_count: Option<i32>,
+        remembering_count: Option<i32>,
+        understanding_count: Option<i32>,
+        applying_count: Option<i32>,
+        analyzing_count: Option<i32>,
+        evaluating_count: Option<i32>,
+        creating_count: Option<i32>,
     ) -> AppResult<tos_competencies::Model> {
         let now = Utc::now().naive_utc();
         let comp = tos_competencies::ActiveModel {
@@ -213,11 +219,17 @@ impl TosRepository {
             tos_id: Set(tos_id),
             competency_code: Set(competency_code.map(|s| s.to_string())),
             competency_text: Set(competency_text.to_string()),
-            days_taught: Set(days_taught),
+            time_units_taught: Set(time_units_taught),
             order_index: Set(order_index),
             easy_count: Set(easy_count),
             medium_count: Set(medium_count),
             hard_count: Set(hard_count),
+            remembering_count: Set(remembering_count),
+            understanding_count: Set(understanding_count),
+            applying_count: Set(applying_count),
+            analyzing_count: Set(analyzing_count),
+            evaluating_count: Set(evaluating_count),
+            creating_count: Set(creating_count),
             created_at: Set(now),
             updated_at: Set(now),
             deleted_at: Set(None),
@@ -259,11 +271,17 @@ impl TosRepository {
         id: Uuid,
         competency_code: Option<Option<&str>>,
         competency_text: Option<&str>,
-        days_taught: Option<i32>,
+        time_units_taught: Option<i32>,
         order_index: Option<i32>,
         easy_count: Option<Option<i32>>,
         medium_count: Option<Option<i32>>,
         hard_count: Option<Option<i32>>,
+        remembering_count: Option<Option<i32>>,
+        understanding_count: Option<Option<i32>>,
+        applying_count: Option<Option<i32>>,
+        analyzing_count: Option<Option<i32>>,
+        evaluating_count: Option<Option<i32>>,
+        creating_count: Option<Option<i32>>,
     ) -> AppResult<tos_competencies::Model> {
         let comp = tos_competencies::Entity::find_by_id(id)
             .one(&self.db)
@@ -279,8 +297,8 @@ impl TosRepository {
         if let Some(text) = competency_text {
             active.competency_text = Set(text.to_string());
         }
-        if let Some(days) = days_taught {
-            active.days_taught = Set(days);
+        if let Some(units) = time_units_taught {
+            active.time_units_taught = Set(units);
         }
         if let Some(idx) = order_index {
             active.order_index = Set(idx);
@@ -293,6 +311,24 @@ impl TosRepository {
         }
         if let Some(h) = hard_count {
             active.hard_count = Set(h);
+        }
+        if let Some(r) = remembering_count {
+            active.remembering_count = Set(r);
+        }
+        if let Some(u) = understanding_count {
+            active.understanding_count = Set(u);
+        }
+        if let Some(ap) = applying_count {
+            active.applying_count = Set(ap);
+        }
+        if let Some(an) = analyzing_count {
+            active.analyzing_count = Set(an);
+        }
+        if let Some(e) = evaluating_count {
+            active.evaluating_count = Set(e);
+        }
+        if let Some(c) = creating_count {
+            active.creating_count = Set(c);
         }
         active.updated_at = Set(Utc::now().naive_utc());
 
@@ -329,22 +365,29 @@ impl TosRepository {
     pub async fn bulk_create_competencies(
         &self,
         tos_id: Uuid,
-        // (code, text, days, order, easy_count, medium_count, hard_count)
-        competencies: Vec<(Option<String>, String, i32, i32, Option<i32>, Option<i32>, Option<i32>)>,
+        // (code, text, time_units, order, easy_count, medium_count, hard_count,
+        //  remembering, understanding, applying, analyzing, evaluating, creating)
+        competencies: Vec<(Option<String>, String, i32, i32, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>)>,
     ) -> AppResult<Vec<tos_competencies::Model>> {
         let mut results = Vec::new();
-        for (code, text, days, order, easy, medium, hard) in competencies {
+        for (code, text, units, order, easy, medium, hard, rem, und, app, ana, eva, cre) in competencies {
             let comp = self
                 .create_competency(
                     Uuid::new_v4(),
                     tos_id,
                     code.as_deref(),
                     &text,
-                    days,
+                    units,
                     order,
                     easy,
                     medium,
                     hard,
+                    rem,
+                    und,
+                    app,
+                    ana,
+                    eva,
+                    cre,
                 )
                 .await?;
             results.push(comp);

@@ -39,7 +39,6 @@ impl super::AssignmentService {
                 student_username: user.map(|u| u.username).unwrap_or_default(),
                 status: s.status,
                 submitted_at: s.submitted_at.map(|dt| dt.to_string()),
-                is_late: s.is_late,
                 score: s.points,
             })
             .collect();
@@ -222,7 +221,6 @@ impl super::AssignmentService {
                     student_name: student_name.clone(),
                     status: sub.status.clone(),
                     submitted_at: sub.submitted_at.map(|dt| dt.to_string()),
-                    is_late: sub.is_late,
                     score: sub.points,
                 });
             }

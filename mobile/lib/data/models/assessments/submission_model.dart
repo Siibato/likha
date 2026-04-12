@@ -48,7 +48,7 @@ class SubmissionSummaryModel extends SubmissionSummary {
       finalScore: (json['final_score'] as num? ?? 0).toDouble(),
       isSubmitted: json['submitted_at'] != null,
       assessmentId: json['assessment_id'] as String? ?? '',
-      totalPoints: (json['total_points'] as num?)?.toInt() ?? 0,
+      totalPoints: (json['total_points'] as num?)?.toDouble() ?? 0.0,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : null,
@@ -76,7 +76,7 @@ class SubmissionSummaryModel extends SubmissionSummary {
       finalScore: (map['earned_points'] as num?)?.toDouble() ?? 0.0,
       isSubmitted: map['submitted_at'] != null,
       assessmentId: map['assessment_id'] as String? ?? '',
-      totalPoints: (map['total_points'] as num?)?.toInt() ?? 0,
+      totalPoints: (map['total_points'] as num?)?.toDouble() ?? 0.0,
       createdAt: map['created_at'] != null
           ? DateTime.parse(map['created_at'] as String)
           : null,
@@ -139,7 +139,7 @@ class SubmissionDetailModel extends SubmissionDetail {
       autoScore: (json['auto_score'] as num? ?? 0).toDouble(),
       finalScore: (json['final_score'] as num? ?? 0).toDouble(),
       isSubmitted: json['submitted_at'] != null,
-      totalPoints: (json['total_points'] as num?)?.toInt() ?? 0,
+      totalPoints: (json['total_points'] as num?)?.toDouble() ?? 0.0,
       answers: (json['answers'] as List<dynamic>)
           .map((e) =>
               SubmissionAnswerModel.fromJson(e as Map<String, dynamic>))
@@ -290,7 +290,7 @@ class StudentResultModel extends StudentResult {
       submissionId: json['submission_id'] as String,
       autoScore: (json['total_earned'] as num? ?? 0).toDouble(),
       finalScore: (json['total_earned'] as num? ?? 0).toDouble(),
-      totalPoints: (json['total_possible'] as num?)?.toInt() ?? 0,
+      totalPoints: (json['total_possible'] as num?)?.toDouble() ?? 0.0,
       submittedAt: json['submitted_at'] != null
           ? _parseUtc(json['submitted_at'] as String)
           : null,

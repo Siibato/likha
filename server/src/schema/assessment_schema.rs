@@ -15,10 +15,10 @@ pub struct CreateAssessmentRequest {
     pub is_published: Option<bool>,
     // NEW: optional questions for atomic creation when publishing
     pub questions: Option<Vec<AddQuestionRequest>>,
-    pub quarter: Option<i32>,
+    pub grading_period_number: Option<i32>,
     pub component: Option<String>,
     pub is_departmental_exam: Option<bool>,
-    pub linked_tos_id: Option<String>,
+    pub tos_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -29,10 +29,10 @@ pub struct UpdateAssessmentRequest {
     pub open_at: Option<String>,
     pub close_at: Option<String>,
     pub show_results_immediately: Option<bool>,
-    pub quarter: Option<i32>,
+    pub grading_period_number: Option<i32>,
     pub component: Option<String>,
     pub is_departmental_exam: Option<bool>,
-    pub linked_tos_id: Option<Option<String>>,
+    pub tos_id: Option<Option<String>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -137,10 +137,10 @@ pub struct AssessmentResponse {
     pub total_points: i32,
     pub question_count: usize,
     pub submission_count: usize,
-    pub quarter: Option<i32>,
+    pub grading_period_number: Option<i32>,
     pub component: Option<String>,
     pub is_departmental_exam: Option<bool>,
-    pub linked_tos_id: Option<String>,
+    pub tos_id: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -164,10 +164,10 @@ pub struct AssessmentDetailResponse {
     pub is_published: bool,
     pub order_index: i32,
     pub total_points: i32,
-    pub quarter: Option<i32>,
+    pub grading_period_number: Option<i32>,
     pub component: Option<String>,
     pub is_departmental_exam: Option<bool>,
-    pub linked_tos_id: Option<String>,
+    pub tos_id: Option<String>,
     pub questions: Vec<QuestionResponse>,
     pub created_at: String,
     pub updated_at: String,

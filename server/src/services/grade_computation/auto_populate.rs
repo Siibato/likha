@@ -31,7 +31,7 @@ pub async fn create_linked_grade_item(
         class_id,
         title.to_string(),
         component.to_string(),
-        quarter,
+        Some(quarter),
         total_points,
         is_departmental_exam,
         source_type.to_string(),

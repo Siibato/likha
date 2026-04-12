@@ -43,10 +43,10 @@ impl super::AssessmentService {
             order_index,
             client_id,
             request.is_published.unwrap_or(false),
-            request.quarter,
+            request.grading_period_number,
             request.component.clone(),
             request.is_departmental_exam,
-            request.linked_tos_id,
+            request.tos_id,
         ).await?;
 
 
@@ -77,10 +77,10 @@ impl super::AssessmentService {
             total_points: assessment.total_points,
             question_count,
             submission_count: 0,
-            quarter: assessment.quarter,
+            grading_period_number: assessment.grading_period_number,
             component: assessment.component.clone(),
             is_departmental_exam: assessment.is_departmental_exam,
-            linked_tos_id: assessment.linked_tos_id.clone(),
+            tos_id: assessment.tos_id.clone(),
             created_at: fmt_utc(assessment.created_at),
             updated_at: fmt_utc(assessment.updated_at),
         })
@@ -124,10 +124,10 @@ impl super::AssessmentService {
                 total_points: a.total_points,
                 question_count,
                 submission_count,
-                quarter: a.quarter,
+                grading_period_number: a.grading_period_number,
                 component: a.component.clone(),
                 is_departmental_exam: a.is_departmental_exam,
-                linked_tos_id: a.linked_tos_id.clone(),
+                tos_id: a.tos_id.clone(),
                 created_at: fmt_utc(a.created_at),
                 updated_at: fmt_utc(a.updated_at),
             });
@@ -178,10 +178,10 @@ impl super::AssessmentService {
             is_published: assessment.is_published,
             order_index: assessment.order_index,
             total_points: assessment.total_points,
-            quarter: assessment.quarter,
+            grading_period_number: assessment.grading_period_number,
             component: assessment.component.clone(),
             is_departmental_exam: assessment.is_departmental_exam,
-            linked_tos_id: assessment.linked_tos_id.clone(),
+            tos_id: assessment.tos_id.clone(),
             questions: question_responses,
             created_at: fmt_utc(assessment.created_at),
             updated_at: fmt_utc(assessment.updated_at),
@@ -258,10 +258,10 @@ impl super::AssessmentService {
             open_at,
             close_at,
             request.show_results_immediately,
-            request.quarter.map(|q| Some(q)),
+            request.grading_period_number.map(|q| Some(q)),
             request.component.clone().map(|c| Some(c)),
             request.is_departmental_exam.map(|d| Some(d)),
-            request.linked_tos_id,
+            request.tos_id,
         ).await?;
 
         let question_count = self.assessment_repo
@@ -285,10 +285,10 @@ impl super::AssessmentService {
             total_points: updated.total_points,
             question_count,
             submission_count,
-            quarter: updated.quarter,
+            grading_period_number: updated.grading_period_number,
             component: updated.component.clone(),
             is_departmental_exam: updated.is_departmental_exam,
-            linked_tos_id: updated.linked_tos_id.clone(),
+            tos_id: updated.tos_id.clone(),
             created_at: fmt_utc(updated.created_at),
             updated_at: fmt_utc(updated.updated_at),
         })
@@ -366,7 +366,7 @@ impl super::AssessmentService {
         let published = self.assessment_repo.publish_assessment(assessment_id).await?;
 
         // Auto-create linked grade item if grading metadata present
-        if let (Some(quarter), Some(ref component)) = (published.quarter, &published.component) {
+        if let (Some(quarter), Some(ref component)) = (published.grading_period_number, &published.component) {
             let _ = auto_populate::create_linked_grade_item(
                 &self.db, "assessment", published.id, published.class_id,
                 &published.title, component, quarter,
@@ -394,10 +394,10 @@ impl super::AssessmentService {
             total_points: published.total_points,
             question_count,
             submission_count,
-            quarter: published.quarter,
+            grading_period_number: published.grading_period_number,
             component: published.component.clone(),
             is_departmental_exam: published.is_departmental_exam,
-            linked_tos_id: published.linked_tos_id.clone(),
+            tos_id: published.tos_id.clone(),
             created_at: fmt_utc(published.created_at),
             updated_at: fmt_utc(published.updated_at),
         })
@@ -447,10 +447,10 @@ impl super::AssessmentService {
             total_points: unpublished.total_points,
             question_count,
             submission_count,
-            quarter: unpublished.quarter,
+            grading_period_number: unpublished.grading_period_number,
             component: unpublished.component.clone(),
             is_departmental_exam: unpublished.is_departmental_exam,
-            linked_tos_id: unpublished.linked_tos_id.clone(),
+            tos_id: unpublished.tos_id.clone(),
             created_at: fmt_utc(unpublished.created_at),
             updated_at: fmt_utc(unpublished.updated_at),
         })
@@ -498,10 +498,10 @@ impl super::AssessmentService {
             total_points: released.total_points,
             question_count,
             submission_count,
-            quarter: released.quarter,
+            grading_period_number: released.grading_period_number,
             component: released.component.clone(),
             is_departmental_exam: released.is_departmental_exam,
-            linked_tos_id: released.linked_tos_id.clone(),
+            tos_id: released.tos_id.clone(),
             created_at: fmt_utc(released.created_at),
             updated_at: fmt_utc(released.updated_at),
         })

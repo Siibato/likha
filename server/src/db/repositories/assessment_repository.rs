@@ -29,10 +29,10 @@ impl AssessmentRepository {
         order_index: i32,
         client_id: Option<Uuid>,
         is_published: bool,
-        quarter: Option<i32>,
+        grading_period_number: Option<i32>,
         component: Option<String>,
         is_departmental_exam: Option<bool>,
-        linked_tos_id: Option<String>,
+        tos_id: Option<String>,
     ) -> AppResult<assessments::Model> {
         let assessment = assessments::ActiveModel {
             id: Set(client_id.unwrap_or_else(Uuid::new_v4)),
@@ -50,10 +50,10 @@ impl AssessmentRepository {
             created_at: Set(Utc::now().naive_utc()),
             updated_at: Set(Utc::now().naive_utc()),
             deleted_at: Set(None),
-            quarter: Set(quarter),
+            grading_period_number: Set(grading_period_number),
             is_departmental_exam: Set(is_departmental_exam),
             component: Set(component),
-            linked_tos_id: Set(linked_tos_id),
+            tos_id: Set(tos_id),
         };
 
         assessment
@@ -99,10 +99,10 @@ impl AssessmentRepository {
         open_at: Option<chrono::NaiveDateTime>,
         close_at: Option<chrono::NaiveDateTime>,
         show_results_immediately: Option<bool>,
-        quarter: Option<Option<i32>>,
+        grading_period_number: Option<Option<i32>>,
         component: Option<Option<String>>,
         is_departmental_exam: Option<Option<bool>>,
-        linked_tos_id: Option<Option<String>>,
+        tos_id: Option<Option<String>>,
     ) -> AppResult<assessments::Model> {
         let mut assessment: assessments::ActiveModel = assessments::Entity::find_by_id(id)
             .one(&self.db)
@@ -129,8 +129,8 @@ impl AssessmentRepository {
         if let Some(show) = show_results_immediately {
             assessment.show_results_immediately = Set(show);
         }
-        if let Some(q) = quarter {
-            assessment.quarter = Set(q);
+        if let Some(q) = grading_period_number {
+            assessment.grading_period_number = Set(q);
         }
         if let Some(c) = component {
             assessment.component = Set(c);
@@ -138,8 +138,8 @@ impl AssessmentRepository {
         if let Some(d) = is_departmental_exam {
             assessment.is_departmental_exam = Set(d);
         }
-        if let Some(tos) = linked_tos_id {
-            assessment.linked_tos_id = Set(tos);
+        if let Some(tos) = tos_id {
+            assessment.tos_id = Set(tos);
         }
         assessment.updated_at = Set(Utc::now().naive_utc());
 
@@ -247,6 +247,7 @@ impl AssessmentRepository {
             deleted_at: Set(None),
             tos_competency_id: Set(None),
             cognitive_level: Set(None),
+            difficulty: Set(None),
         };
 
         question

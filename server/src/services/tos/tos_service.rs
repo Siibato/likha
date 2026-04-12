@@ -42,20 +42,20 @@ impl TosService {
             ));
         }
 
-        // Validate quarter range
-        if !(1..=4).contains(&request.quarter) {
-            return Err(AppError::BadRequest("Quarter must be between 1 and 4".to_string()));
+        // Validate grading period range
+        if !(1..=4).contains(&request.grading_period_number) {
+            return Err(AppError::BadRequest("grading_period_number must be between 1 and 4".to_string()));
         }
 
-        // Check uniqueness (one TOS per class per quarter)
+        // Check uniqueness (one TOS per class per period)
         let existing = self
             .tos_repo
-            .find_tos_by_class_and_quarter(class_id, request.quarter)
+            .find_tos_by_class_and_period(class_id, request.grading_period_number)
             .await?;
         if existing.is_some() {
             return Err(AppError::Conflict(format!(
-                "A TOS already exists for quarter {} in this class",
-                request.quarter
+                "A TOS already exists for period {} in this class",
+                request.grading_period_number
             )));
         }
 
@@ -81,7 +81,7 @@ impl TosService {
             .create_tos(
                 id,
                 class_id,
-                request.quarter,
+                request.grading_period_number,
                 &request.title,
                 &request.classification_mode,
                 request.total_items,
@@ -101,7 +101,7 @@ impl TosService {
         Ok(TosResponse {
             id: tos.id.to_string(),
             class_id: tos.class_id.to_string(),
-            quarter: tos.quarter,
+            grading_period_number: tos.grading_period_number,
             title: tos.title,
             classification_mode: tos.classification_mode,
             total_items: tos.total_items,
@@ -133,7 +133,7 @@ impl TosService {
         Ok(TosResponse {
             id: tos.id.to_string(),
             class_id: tos.class_id.to_string(),
-            quarter: tos.quarter,
+            grading_period_number: tos.grading_period_number,
             title: tos.title,
             classification_mode: tos.classification_mode,
             total_items: tos.total_items,
@@ -153,11 +153,17 @@ impl TosService {
                     id: c.id.to_string(),
                     competency_code: c.competency_code,
                     competency_text: c.competency_text,
-                    days_taught: c.days_taught,
+                    time_units_taught: c.time_units_taught,
                     order_index: c.order_index,
                     easy_count: c.easy_count,
                     medium_count: c.medium_count,
                     hard_count: c.hard_count,
+                    remembering_count: c.remembering_count,
+                    understanding_count: c.understanding_count,
+                    applying_count: c.applying_count,
+                    analyzing_count: c.analyzing_count,
+                    evaluating_count: c.evaluating_count,
+                    creating_count: c.creating_count,
                 })
                 .collect(),
             created_at: tos.created_at.to_string(),
@@ -182,7 +188,7 @@ impl TosService {
             items.push(TosResponse {
                 id: tos.id.to_string(),
                 class_id: tos.class_id.to_string(),
-                quarter: tos.quarter,
+                grading_period_number: tos.grading_period_number,
                 title: tos.title,
                 classification_mode: tos.classification_mode,
                 total_items: tos.total_items,
@@ -202,11 +208,17 @@ impl TosService {
                         id: c.id.to_string(),
                         competency_code: c.competency_code,
                         competency_text: c.competency_text,
-                        days_taught: c.days_taught,
+                        time_units_taught: c.time_units_taught,
                         order_index: c.order_index,
                         easy_count: c.easy_count,
                         medium_count: c.medium_count,
                         hard_count: c.hard_count,
+                        remembering_count: c.remembering_count,
+                        understanding_count: c.understanding_count,
+                        applying_count: c.applying_count,
+                        analyzing_count: c.analyzing_count,
+                        evaluating_count: c.evaluating_count,
+                        creating_count: c.creating_count,
                     })
                     .collect(),
                 created_at: tos.created_at.to_string(),
@@ -324,11 +336,17 @@ impl TosService {
                 tos_id,
                 request.competency_code.as_deref(),
                 &request.competency_text,
-                request.days_taught,
+                request.time_units_taught,
                 order_index,
                 request.easy_count,
                 request.medium_count,
                 request.hard_count,
+                request.remembering_count,
+                request.understanding_count,
+                request.applying_count,
+                request.analyzing_count,
+                request.evaluating_count,
+                request.creating_count,
             )
             .await?;
 
@@ -336,11 +354,17 @@ impl TosService {
             id: comp.id.to_string(),
             competency_code: comp.competency_code,
             competency_text: comp.competency_text,
-            days_taught: comp.days_taught,
+            time_units_taught: comp.time_units_taught,
             order_index: comp.order_index,
             easy_count: comp.easy_count,
             medium_count: comp.medium_count,
             hard_count: comp.hard_count,
+            remembering_count: comp.remembering_count,
+            understanding_count: comp.understanding_count,
+            applying_count: comp.applying_count,
+            analyzing_count: comp.analyzing_count,
+            evaluating_count: comp.evaluating_count,
+            creating_count: comp.creating_count,
         })
     }
 
@@ -372,11 +396,17 @@ impl TosService {
                 competency_id,
                 None, // competency_code updates not supported via this simple path
                 request.competency_text.as_deref(),
-                request.days_taught,
+                request.time_units_taught,
                 request.order_index,
                 request.easy_count,
                 request.medium_count,
                 request.hard_count,
+                request.remembering_count,
+                request.understanding_count,
+                request.applying_count,
+                request.analyzing_count,
+                request.evaluating_count,
+                request.creating_count,
             )
             .await?;
 
@@ -384,11 +414,17 @@ impl TosService {
             id: updated.id.to_string(),
             competency_code: updated.competency_code,
             competency_text: updated.competency_text,
-            days_taught: updated.days_taught,
+            time_units_taught: updated.time_units_taught,
             order_index: updated.order_index,
             easy_count: updated.easy_count,
             medium_count: updated.medium_count,
             hard_count: updated.hard_count,
+            remembering_count: updated.remembering_count,
+            understanding_count: updated.understanding_count,
+            applying_count: updated.applying_count,
+            analyzing_count: updated.analyzing_count,
+            evaluating_count: updated.evaluating_count,
+            creating_count: updated.creating_count,
         })
     }
 
@@ -443,11 +479,17 @@ impl TosService {
                 (
                     c.competency_code,
                     c.competency_text,
-                    c.days_taught,
+                    c.time_units_taught,
                     c.order_index.unwrap_or(base_order + i as i32),
                     c.easy_count,
                     c.medium_count,
                     c.hard_count,
+                    c.remembering_count,
+                    c.understanding_count,
+                    c.applying_count,
+                    c.analyzing_count,
+                    c.evaluating_count,
+                    c.creating_count,
                 )
             })
             .collect();
@@ -460,11 +502,17 @@ impl TosService {
                 id: c.id.to_string(),
                 competency_code: c.competency_code,
                 competency_text: c.competency_text,
-                days_taught: c.days_taught,
+                time_units_taught: c.time_units_taught,
                 order_index: c.order_index,
                 easy_count: c.easy_count,
                 medium_count: c.medium_count,
                 hard_count: c.hard_count,
+                remembering_count: c.remembering_count,
+                understanding_count: c.understanding_count,
+                applying_count: c.applying_count,
+                analyzing_count: c.analyzing_count,
+                evaluating_count: c.evaluating_count,
+                creating_count: c.creating_count,
             })
             .collect())
     }

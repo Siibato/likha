@@ -35,9 +35,9 @@ impl super::AssignmentService {
         }
 
         if let Some(ref text) = text_content {
-            if !text.is_empty() && assignment.submission_type == "file" {
+            if !text.is_empty() && !assignment.allows_text_submission {
                 return Err(AppError::BadRequest(
-                    "This assignment only accepts file submissions".to_string(),
+                    "This assignment does not accept text submissions".to_string(),
                 ));
             }
             if text.len() > 200000 {
@@ -139,9 +139,9 @@ impl super::AssignmentService {
             }
         }
 
-        if assignment.submission_type == "text" {
+        if !assignment.allows_file_submission {
             return Err(AppError::BadRequest(
-                "This assignment only accepts text submissions".to_string(),
+                "This assignment does not accept file submissions".to_string(),
             ));
         }
 
@@ -327,12 +327,9 @@ impl super::AssignmentService {
                 .await?;
         }
 
-        let now = chrono::Utc::now().naive_utc();
-        let is_late = now > assignment.due_at;
-
         let updated = self
             .assignment_repo
-            .update_submission_status(submission_id, "submitted", Some(is_late))
+            .update_submission_status(submission_id, "submitted")
             .await?;
 
         let _ = self
@@ -340,11 +337,7 @@ impl super::AssignmentService {
             .create_log(
                 student_id,
                 "assignment_submitted",
-                Some(format!(
-                    "Submitted assignment '{}'{}",
-                    assignment.title,
-                    if is_late { " (late)" } else { "" }
-                )),
+                Some(format!("Submitted assignment '{}'", assignment.title)),
             )
             .await;
 

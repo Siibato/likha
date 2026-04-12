@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Deserialize)]
 pub struct CreateTosRequest {
     pub title: String,
-    pub quarter: i32,
+    pub grading_period_number: i32,
     pub classification_mode: String,
     pub total_items: i32,
     pub time_unit: Option<String>,
@@ -41,22 +41,34 @@ pub struct UpdateTosRequest {
 pub struct CreateCompetencyRequest {
     pub competency_code: Option<String>,
     pub competency_text: String,
-    pub days_taught: i32,
+    pub time_units_taught: i32,
     pub order_index: Option<i32>,
     pub easy_count: Option<i32>,
     pub medium_count: Option<i32>,
     pub hard_count: Option<i32>,
+    pub remembering_count: Option<i32>,
+    pub understanding_count: Option<i32>,
+    pub applying_count: Option<i32>,
+    pub analyzing_count: Option<i32>,
+    pub evaluating_count: Option<i32>,
+    pub creating_count: Option<i32>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct UpdateCompetencyRequest {
     pub competency_code: Option<String>,
     pub competency_text: Option<String>,
-    pub days_taught: Option<i32>,
+    pub time_units_taught: Option<i32>,
     pub order_index: Option<i32>,
     pub easy_count: Option<Option<i32>>,
     pub medium_count: Option<Option<i32>>,
     pub hard_count: Option<Option<i32>>,
+    pub remembering_count: Option<Option<i32>>,
+    pub understanding_count: Option<Option<i32>>,
+    pub applying_count: Option<Option<i32>>,
+    pub analyzing_count: Option<Option<i32>>,
+    pub evaluating_count: Option<Option<i32>>,
+    pub creating_count: Option<Option<i32>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -78,7 +90,7 @@ pub struct MelcsSearchQuery {
 pub struct TosResponse {
     pub id: String,
     pub class_id: String,
-    pub quarter: i32,
+    pub grading_period_number: i32,
     pub title: String,
     pub classification_mode: String,
     pub total_items: i32,
@@ -102,11 +114,17 @@ pub struct CompetencyResponse {
     pub id: String,
     pub competency_code: Option<String>,
     pub competency_text: String,
-    pub days_taught: i32,
+    pub time_units_taught: i32,
     pub order_index: i32,
     pub easy_count: Option<i32>,
     pub medium_count: Option<i32>,
     pub hard_count: Option<i32>,
+    pub remembering_count: Option<i32>,
+    pub understanding_count: Option<i32>,
+    pub applying_count: Option<i32>,
+    pub analyzing_count: Option<i32>,
+    pub evaluating_count: Option<i32>,
+    pub creating_count: Option<i32>,
 }
 
 #[derive(Debug, Serialize)]

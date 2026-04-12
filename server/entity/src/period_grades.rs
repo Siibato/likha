@@ -2,19 +2,17 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
-#[sea_orm(table_name = "grade_items")]
+#[sea_orm(table_name = "period_grades")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub class_id: Uuid,
-    pub title: String,
-    pub component: String,
-    pub grading_period_number: Option<i32>,
-    pub total_points: f64,
-    pub is_departmental_exam: bool,
-    pub source_type: String,
-    pub source_id: Option<String>,
-    pub order_index: i32,
+    pub student_id: Uuid,
+    pub grading_period_number: i32,
+    pub initial_grade: Option<f64>,
+    pub transmuted_grade: Option<i32>,
+    pub is_locked: bool,
+    pub computed_at: Option<chrono::NaiveDateTime>,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
     pub deleted_at: Option<chrono::NaiveDateTime>,
@@ -28,8 +26,12 @@ pub enum Relation {
         to = "super::classes::Column::Id"
     )]
     Class,
-    #[sea_orm(has_many = "super::grade_scores::Entity")]
-    Scores,
+    #[sea_orm(
+        belongs_to = "super::users::Entity",
+        from = "Column::StudentId",
+        to = "super::users::Column::Id"
+    )]
+    Student,
 }
 
 impl Related<super::classes::Entity> for Entity {
@@ -38,9 +40,9 @@ impl Related<super::classes::Entity> for Entity {
     }
 }
 
-impl Related<super::grade_scores::Entity> for Entity {
+impl Related<super::users::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Scores.def()
+        Relation::Student.def()
     }
 }
 

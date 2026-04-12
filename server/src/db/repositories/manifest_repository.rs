@@ -6,9 +6,9 @@ use uuid::Uuid;
 use crate::utils::{AppError, AppResult};
 use ::entity::{
     classes, class_participants, assessments, assessment_questions, assessment_submissions,
-    assignments_hw, assignment_submissions, learning_materials, activity_logs, users,
+    assignments, assignment_submissions, learning_materials, activity_logs, users,
     material_files, submission_files,
-    grade_components_config, grade_items, grade_scores, quarterly_grades,
+    grade_record, grade_items, grade_scores, period_grades,
 };
 
 /// Record entry in the manifest (id + updated_at + deleted flag)
@@ -233,8 +233,8 @@ impl ManifestRepository {
         &self,
         class_ids: Vec<Uuid>,
     ) -> AppResult<Vec<ManifestEntry>> {
-        let records = assignments_hw::Entity::find()
-            .filter(assignments_hw::Column::ClassId.is_in(class_ids))
+        let records = assignments::Entity::find()
+            .filter(assignments::Column::ClassId.is_in(class_ids))
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
@@ -254,10 +254,10 @@ impl ManifestRepository {
         &self,
         class_ids: Vec<Uuid>,
     ) -> AppResult<Vec<ManifestEntry>> {
-        let records = assignments_hw::Entity::find()
-            .filter(assignments_hw::Column::ClassId.is_in(class_ids))
-            .filter(assignments_hw::Column::IsPublished.eq(true))
-            .filter(assignments_hw::Column::DeletedAt.is_null())
+        let records = assignments::Entity::find()
+            .filter(assignments::Column::ClassId.is_in(class_ids))
+            .filter(assignments::Column::IsPublished.eq(true))
+            .filter(assignments::Column::DeletedAt.is_null())
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
@@ -373,6 +373,9 @@ impl ManifestRepository {
                 "description": r.description,
                 "is_archived": r.is_archived,
                 "is_advisory": r.is_advisory,
+                "grading_period_type": r.grading_period_type,
+                "grade_level": r.grade_level,
+                "school_year": r.school_year,
                 "teacher_id": teacher_id,
                 "teacher_username": teacher_username,
                 "teacher_full_name": teacher_full_name,
@@ -407,6 +410,10 @@ impl ManifestRepository {
                 "results_released": r.results_released,
                 "order_index": r.order_index,
                 "total_points": r.total_points,
+                "grading_period_number": r.grading_period_number,
+                "is_departmental_exam": r.is_departmental_exam,
+                "component": r.component,
+                "tos_id": r.tos_id,
                 "created_at": r.created_at.to_string(),
                 "updated_at": r.updated_at.to_string(),
                 "deleted_at": r.deleted_at.map(|d| d.to_string()),
@@ -421,8 +428,8 @@ impl ManifestRepository {
         assignment_ids: Vec<Uuid>,
         limit: i64,
     ) -> AppResult<PaginatedRecords> {
-        let query = assignments_hw::Entity::find()
-            .filter(assignments_hw::Column::Id.is_in(assignment_ids));
+        let query = assignments::Entity::find()
+            .filter(assignments::Column::Id.is_in(assignment_ids));
         Self::paginate_query(&self.db, query, limit, |r| {
             json!({
                 "id": r.id.to_string(),
@@ -430,12 +437,16 @@ impl ManifestRepository {
                 "title": r.title,
                 "instructions": r.instructions,
                 "total_points": r.total_points,
-                "submission_type": r.submission_type,
+                "allows_text_submission": r.allows_text_submission,
+                "allows_file_submission": r.allows_file_submission,
+                "no_submission_required": r.no_submission_required,
                 "allowed_file_types": r.allowed_file_types,
                 "max_file_size_mb": r.max_file_size_mb,
                 "due_at": r.due_at.to_string(),
                 "is_published": r.is_published,
                 "order_index": r.order_index,
+                "grading_period_number": r.grading_period_number,
+                "component": r.component,
                 "created_at": r.created_at.to_string(),
                 "updated_at": r.updated_at.to_string(),
                 "deleted_at": r.deleted_at.map(|d| d.to_string()),
@@ -601,6 +612,9 @@ impl ManifestRepository {
                     "description": r.description,
                     "is_archived": r.is_archived,
                     "is_advisory": r.is_advisory,
+                    "grading_period_type": r.grading_period_type,
+                    "grade_level": r.grade_level,
+                    "school_year": r.school_year,
                     "teacher_id": teacher_id,
                     "teacher_username": teacher_username,
                     "teacher_full_name": teacher_full_name,
@@ -660,9 +674,9 @@ impl ManifestRepository {
         assignment_ids: Vec<Uuid>,
         since: NaiveDateTime,
     ) -> AppResult<Vec<Value>> {
-        let records = assignments_hw::Entity::find()
-            .filter(assignments_hw::Column::Id.is_in(assignment_ids))
-            .filter(assignments_hw::Column::UpdatedAt.gt(since))
+        let records = assignments::Entity::find()
+            .filter(assignments::Column::Id.is_in(assignment_ids))
+            .filter(assignments::Column::UpdatedAt.gt(since))
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
@@ -676,12 +690,16 @@ impl ManifestRepository {
                     "title": r.title,
                     "instructions": r.instructions,
                     "total_points": r.total_points,
-                    "submission_type": r.submission_type,
+                    "allows_text_submission": r.allows_text_submission,
+                    "allows_file_submission": r.allows_file_submission,
+                    "no_submission_required": r.no_submission_required,
                     "allowed_file_types": r.allowed_file_types,
                     "max_file_size_mb": r.max_file_size_mb,
                     "due_at": r.due_at.to_string(),
                     "is_published": r.is_published,
                     "order_index": r.order_index,
+                    "grading_period_number": r.grading_period_number,
+                    "component": r.component,
                     "created_at": r.created_at.to_string(),
                     "updated_at": r.updated_at.to_string(),
                     "deleted_at": r.deleted_at.map(|d| d.to_string()),
@@ -918,7 +936,6 @@ impl ManifestRepository {
                 "student_id": r.student_id.to_string(),
                 "status": r.status,
                 "text_content": r.text_content,
-                "is_late": r.is_late,
                 "submitted_at": r.submitted_at.map(|d| d.to_string()),
                 "points": r.points,
                 "feedback": r.feedback,
@@ -972,7 +989,6 @@ impl ManifestRepository {
                 "student_id": r.student_id.to_string(),
                 "status": r.status,
                 "text_content": r.text_content,
-                "is_late": r.is_late,
                 "submitted_at": r.submitted_at.map(|d| d.to_string()),
                 "points": r.points,
                 "feedback": r.feedback,
@@ -1088,11 +1104,11 @@ impl ManifestRepository {
     // SECTION E: Grading Sync Queries
     // ─────────────────────────────────────────────────────────────────────────────
 
-    fn grade_config_to_json(r: grade_components_config::Model) -> Value {
+    fn grade_config_to_json(r: grade_record::Model) -> Value {
         json!({
             "id": r.id.to_string(),
             "class_id": r.class_id.to_string(),
-            "quarter": r.quarter,
+            "grading_period_number": r.grading_period_number,
             "ww_weight": r.ww_weight,
             "pt_weight": r.pt_weight,
             "qa_weight": r.qa_weight,
@@ -1108,7 +1124,7 @@ impl ManifestRepository {
             "class_id": r.class_id.to_string(),
             "title": r.title,
             "component": r.component,
-            "quarter": r.quarter,
+            "grading_period_number": r.grading_period_number,
             "total_points": r.total_points,
             "is_departmental_exam": r.is_departmental_exam,
             "source_type": r.source_type,
@@ -1134,21 +1150,15 @@ impl ManifestRepository {
         })
     }
 
-    fn quarterly_grade_to_json(r: quarterly_grades::Model) -> Value {
+    fn quarterly_grade_to_json(r: period_grades::Model) -> Value {
         json!({
             "id": r.id.to_string(),
             "class_id": r.class_id.to_string(),
             "student_id": r.student_id.to_string(),
-            "quarter": r.quarter,
-            "ww_percentage": r.ww_percentage,
-            "pt_percentage": r.pt_percentage,
-            "qa_percentage": r.qa_percentage,
-            "ww_weighted": r.ww_weighted,
-            "pt_weighted": r.pt_weighted,
-            "qa_weighted": r.qa_weighted,
+            "grading_period_number": r.grading_period_number,
             "initial_grade": r.initial_grade,
             "transmuted_grade": r.transmuted_grade,
-            "is_complete": r.is_complete,
+            "is_locked": r.is_locked,
             "computed_at": r.computed_at.map(|d| d.to_string()),
             "created_at": r.created_at.to_string(),
             "updated_at": r.updated_at.to_string(),
@@ -1160,8 +1170,8 @@ impl ManifestRepository {
 
     pub async fn get_grade_configs_for_classes(&self, class_ids: Vec<Uuid>) -> AppResult<Vec<Value>> {
         if class_ids.is_empty() { return Ok(vec![]); }
-        let records = grade_components_config::Entity::find()
-            .filter(grade_components_config::Column::ClassId.is_in(class_ids))
+        let records = grade_record::Entity::find()
+            .filter(grade_record::Column::ClassId.is_in(class_ids))
             .all(&self.db).await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
         Ok(records.into_iter().map(Self::grade_config_to_json).collect())
@@ -1197,8 +1207,8 @@ impl ManifestRepository {
 
     pub async fn get_all_quarterly_grades(&self, class_ids: Vec<Uuid>) -> AppResult<Vec<Value>> {
         if class_ids.is_empty() { return Ok(vec![]); }
-        let records = quarterly_grades::Entity::find()
-            .filter(quarterly_grades::Column::ClassId.is_in(class_ids))
+        let records = period_grades::Entity::find()
+            .filter(period_grades::Column::ClassId.is_in(class_ids))
             .all(&self.db).await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
         Ok(records.into_iter().map(Self::quarterly_grade_to_json).collect())
@@ -1206,9 +1216,9 @@ impl ManifestRepository {
 
     pub async fn get_student_quarterly_grades(&self, student_id: Uuid, class_ids: Vec<Uuid>) -> AppResult<Vec<Value>> {
         if class_ids.is_empty() { return Ok(vec![]); }
-        let records = quarterly_grades::Entity::find()
-            .filter(quarterly_grades::Column::ClassId.is_in(class_ids))
-            .filter(quarterly_grades::Column::StudentId.eq(student_id))
+        let records = period_grades::Entity::find()
+            .filter(period_grades::Column::ClassId.is_in(class_ids))
+            .filter(period_grades::Column::StudentId.eq(student_id))
             .all(&self.db).await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
         Ok(records.into_iter().map(Self::quarterly_grade_to_json).collect())
@@ -1218,9 +1228,9 @@ impl ManifestRepository {
 
     pub async fn get_grade_configs_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> AppResult<Vec<Value>> {
         if class_ids.is_empty() { return Ok(vec![]); }
-        let records = grade_components_config::Entity::find()
-            .filter(grade_components_config::Column::ClassId.is_in(class_ids))
-            .filter(grade_components_config::Column::UpdatedAt.gt(since))
+        let records = grade_record::Entity::find()
+            .filter(grade_record::Column::ClassId.is_in(class_ids))
+            .filter(grade_record::Column::UpdatedAt.gt(since))
             .all(&self.db).await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
         Ok(records.into_iter().map(Self::grade_config_to_json).collect())
@@ -1259,9 +1269,9 @@ impl ManifestRepository {
 
     pub async fn get_all_quarterly_grades_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> AppResult<Vec<Value>> {
         if class_ids.is_empty() { return Ok(vec![]); }
-        let records = quarterly_grades::Entity::find()
-            .filter(quarterly_grades::Column::ClassId.is_in(class_ids))
-            .filter(quarterly_grades::Column::UpdatedAt.gt(since))
+        let records = period_grades::Entity::find()
+            .filter(period_grades::Column::ClassId.is_in(class_ids))
+            .filter(period_grades::Column::UpdatedAt.gt(since))
             .all(&self.db).await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
         Ok(records.into_iter().map(Self::quarterly_grade_to_json).collect())
@@ -1269,10 +1279,10 @@ impl ManifestRepository {
 
     pub async fn get_student_quarterly_grades_since(&self, student_id: Uuid, class_ids: Vec<Uuid>, since: NaiveDateTime) -> AppResult<Vec<Value>> {
         if class_ids.is_empty() { return Ok(vec![]); }
-        let records = quarterly_grades::Entity::find()
-            .filter(quarterly_grades::Column::ClassId.is_in(class_ids))
-            .filter(quarterly_grades::Column::StudentId.eq(student_id))
-            .filter(quarterly_grades::Column::UpdatedAt.gt(since))
+        let records = period_grades::Entity::find()
+            .filter(period_grades::Column::ClassId.is_in(class_ids))
+            .filter(period_grades::Column::StudentId.eq(student_id))
+            .filter(period_grades::Column::UpdatedAt.gt(since))
             .all(&self.db).await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
         Ok(records.into_iter().map(Self::quarterly_grade_to_json).collect())

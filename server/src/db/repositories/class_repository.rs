@@ -39,9 +39,8 @@ impl ClassRepository {
             updated_at: Set(now),
             deleted_at: Set(None),
             grade_level: Set(None),
-            subject_group: Set(None),
             school_year: Set(None),
-            semester: Set(None),
+            grading_period_type: Set("quarter".to_string()),
             is_advisory: Set(is_advisory),
         };
 
