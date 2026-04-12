@@ -8,6 +8,16 @@ pub struct CreateTosRequest {
     pub quarter: i32,
     pub classification_mode: String,
     pub total_items: i32,
+    pub time_unit: Option<String>,
+    pub easy_percentage: Option<f64>,
+    pub medium_percentage: Option<f64>,
+    pub hard_percentage: Option<f64>,
+    pub remembering_percentage: Option<f64>,
+    pub understanding_percentage: Option<f64>,
+    pub applying_percentage: Option<f64>,
+    pub analyzing_percentage: Option<f64>,
+    pub evaluating_percentage: Option<f64>,
+    pub creating_percentage: Option<f64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -15,6 +25,16 @@ pub struct UpdateTosRequest {
     pub title: Option<String>,
     pub classification_mode: Option<String>,
     pub total_items: Option<i32>,
+    pub time_unit: Option<String>,
+    pub easy_percentage: Option<f64>,
+    pub medium_percentage: Option<f64>,
+    pub hard_percentage: Option<f64>,
+    pub remembering_percentage: Option<f64>,
+    pub understanding_percentage: Option<f64>,
+    pub applying_percentage: Option<f64>,
+    pub analyzing_percentage: Option<f64>,
+    pub evaluating_percentage: Option<f64>,
+    pub creating_percentage: Option<f64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -23,6 +43,9 @@ pub struct CreateCompetencyRequest {
     pub competency_text: String,
     pub days_taught: i32,
     pub order_index: Option<i32>,
+    pub easy_count: Option<i32>,
+    pub medium_count: Option<i32>,
+    pub hard_count: Option<i32>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -31,6 +54,9 @@ pub struct UpdateCompetencyRequest {
     pub competency_text: Option<String>,
     pub days_taught: Option<i32>,
     pub order_index: Option<i32>,
+    pub easy_count: Option<Option<i32>>,
+    pub medium_count: Option<Option<i32>>,
+    pub hard_count: Option<Option<i32>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -56,6 +82,16 @@ pub struct TosResponse {
     pub title: String,
     pub classification_mode: String,
     pub total_items: i32,
+    pub time_unit: String,
+    pub easy_percentage: f64,
+    pub medium_percentage: f64,
+    pub hard_percentage: f64,
+    pub remembering_percentage: f64,
+    pub understanding_percentage: f64,
+    pub applying_percentage: f64,
+    pub analyzing_percentage: f64,
+    pub evaluating_percentage: f64,
+    pub creating_percentage: f64,
     pub competencies: Vec<CompetencyResponse>,
     pub created_at: String,
     pub updated_at: String,
@@ -68,6 +104,9 @@ pub struct CompetencyResponse {
     pub competency_text: String,
     pub days_taught: i32,
     pub order_index: i32,
+    pub easy_count: Option<i32>,
+    pub medium_count: Option<i32>,
+    pub hard_count: Option<i32>,
 }
 
 #[derive(Debug, Serialize)]

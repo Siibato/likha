@@ -43,6 +43,19 @@ mixin TosQueryMixin on TosLocalDataSourceBase {
   }
 
   @override
+  Future<CompetencyModel?> getCompetencyById(String competencyId) async {
+    final db = await localDatabase.database;
+    final results = await db.query(
+      DbTables.tosCompetencies,
+      where: '${CommonCols.id} = ? AND ${CommonCols.deletedAt} IS NULL',
+      whereArgs: [competencyId],
+      limit: 1,
+    );
+    if (results.isEmpty) return null;
+    return CompetencyModel.fromMap(results.first);
+  }
+
+  @override
   Future<List<MelcEntryModel>> searchMelcs({
     String? subject,
     String? gradeLevel,

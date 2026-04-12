@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:likha/core/logging/cache_logger.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
@@ -68,6 +69,7 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
 
   @override
   Future<void> cacheFile(String fileId, String fileName, List<int> bytes) async {
+    if (kIsWeb) return;
     try {
       CacheLogger.instance.log('Caching file $fileId (${bytes.length} bytes)');
       final appDirDoc = await getApplicationDocumentsDirectory();
@@ -124,6 +126,7 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
 
   @override
   Future<List<int>> getCachedFile(String fileId) async {
+    if (kIsWeb) throw CacheException('File caching not supported on web');
     try {
       final db = await localDatabase.database;
       final results = await db.query(
@@ -173,6 +176,7 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
   /// Uses naming convention: {nameWithoutExt}-{shortId}.{ext}
   /// Example: report.pdf with fileId cfa3d566-... → report-cfa3d566.pdf
   Future<String?> getExpectedFilePath(String fileId, String fileName) async {
+    if (kIsWeb) return null;
     try {
       final appDirDoc = await getApplicationDocumentsDirectory();
       final materialFilesDir = Directory('${appDirDoc.path}/material_files');
@@ -192,6 +196,7 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
 
   @override
   Future<bool> isFileCached(String fileId) async {
+    if (kIsWeb) return false;
     try {
       final db = await localDatabase.database;
 

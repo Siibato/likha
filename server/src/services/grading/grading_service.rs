@@ -63,6 +63,8 @@ impl GradingService {
                     )
                     .await?
                 }
+                // Essays are graded manually by the teacher; auto-grade assigns 0
+                "essay" => (false, 0.0),
                 _ => (false, 0.0),
             };
 

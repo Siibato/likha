@@ -82,6 +82,7 @@ class SubmissionAnswer extends Equatable {
   final bool? isAutoCorrect;
   final bool? isOverrideCorrect;
   final double pointsAwarded;
+  final bool isPendingEssayGrade;
 
   const SubmissionAnswer({
     required this.id,
@@ -95,6 +96,7 @@ class SubmissionAnswer extends Equatable {
     this.isAutoCorrect,
     this.isOverrideCorrect,
     required this.pointsAwarded,
+    this.isPendingEssayGrade = false,
   });
 
   @override
@@ -184,6 +186,7 @@ class StudentAnswerResult extends Equatable {
   final List<String>? selectedChoices;
   final List<StudentEnumAnswerResult>? enumerationAnswers;
   final List<String>? correctAnswers;
+  final bool isPendingEssayGrade;
 
   const StudentAnswerResult({
     required this.questionId,
@@ -196,6 +199,7 @@ class StudentAnswerResult extends Equatable {
     this.selectedChoices,
     this.enumerationAnswers,
     this.correctAnswers,
+    this.isPendingEssayGrade = false,
   });
 
   @override

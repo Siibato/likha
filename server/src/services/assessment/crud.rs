@@ -46,6 +46,7 @@ impl super::AssessmentService {
             request.quarter,
             request.component.clone(),
             request.is_departmental_exam,
+            request.linked_tos_id,
         ).await?;
 
 
@@ -79,6 +80,7 @@ impl super::AssessmentService {
             quarter: assessment.quarter,
             component: assessment.component.clone(),
             is_departmental_exam: assessment.is_departmental_exam,
+            linked_tos_id: assessment.linked_tos_id.clone(),
             created_at: fmt_utc(assessment.created_at),
             updated_at: fmt_utc(assessment.updated_at),
         })
@@ -125,6 +127,7 @@ impl super::AssessmentService {
                 quarter: a.quarter,
                 component: a.component.clone(),
                 is_departmental_exam: a.is_departmental_exam,
+                linked_tos_id: a.linked_tos_id.clone(),
                 created_at: fmt_utc(a.created_at),
                 updated_at: fmt_utc(a.updated_at),
             });
@@ -178,6 +181,7 @@ impl super::AssessmentService {
             quarter: assessment.quarter,
             component: assessment.component.clone(),
             is_departmental_exam: assessment.is_departmental_exam,
+            linked_tos_id: assessment.linked_tos_id.clone(),
             questions: question_responses,
             created_at: fmt_utc(assessment.created_at),
             updated_at: fmt_utc(assessment.updated_at),
@@ -257,6 +261,7 @@ impl super::AssessmentService {
             request.quarter.map(|q| Some(q)),
             request.component.clone().map(|c| Some(c)),
             request.is_departmental_exam.map(|d| Some(d)),
+            request.linked_tos_id,
         ).await?;
 
         let question_count = self.assessment_repo
@@ -283,6 +288,7 @@ impl super::AssessmentService {
             quarter: updated.quarter,
             component: updated.component.clone(),
             is_departmental_exam: updated.is_departmental_exam,
+            linked_tos_id: updated.linked_tos_id.clone(),
             created_at: fmt_utc(updated.created_at),
             updated_at: fmt_utc(updated.updated_at),
         })
@@ -391,6 +397,7 @@ impl super::AssessmentService {
             quarter: published.quarter,
             component: published.component.clone(),
             is_departmental_exam: published.is_departmental_exam,
+            linked_tos_id: published.linked_tos_id.clone(),
             created_at: fmt_utc(published.created_at),
             updated_at: fmt_utc(published.updated_at),
         })
@@ -443,6 +450,7 @@ impl super::AssessmentService {
             quarter: unpublished.quarter,
             component: unpublished.component.clone(),
             is_departmental_exam: unpublished.is_departmental_exam,
+            linked_tos_id: unpublished.linked_tos_id.clone(),
             created_at: fmt_utc(unpublished.created_at),
             updated_at: fmt_utc(unpublished.updated_at),
         })
@@ -493,6 +501,7 @@ impl super::AssessmentService {
             quarter: released.quarter,
             component: released.component.clone(),
             is_departmental_exam: released.is_departmental_exam,
+            linked_tos_id: released.linked_tos_id.clone(),
             created_at: fmt_utc(released.created_at),
             updated_at: fmt_utc(released.updated_at),
         })

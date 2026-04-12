@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/presentation/pages/admin/admin_edit_class_page.dart';
 import 'package:likha/presentation/pages/admin/widgets/student_action_card.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/info_row.dart';
@@ -102,6 +103,22 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
             letterSpacing: -0.4,
           ),
         ),
+        actions: [
+          if (classInfo != null)
+            IconButton(
+              icon: const Icon(Icons.edit_rounded),
+              tooltip: 'Edit Class',
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AdminEditClassPage(classEntity: classInfo),
+                ),
+              ).then((_) {
+                ref.read(classProvider.notifier).loadAllClasses();
+                ref.read(classProvider.notifier).loadClassDetail(widget.classId);
+              }),
+            ),
+        ],
       ),
       body: detail == null
           ? const Center(
@@ -144,7 +161,7 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                               value: classInfo.teacherUsername,
                             ),
                           ],
-                          if (classInfo != null && classInfo.isAdvisory) ...[
+                          if (detail.isAdvisory) ...[
                             const SizedBox(height: 12),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

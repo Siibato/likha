@@ -10,8 +10,9 @@ import 'package:likha/presentation/pages/shared/widgets/cards/markdown_display.d
 import 'package:likha/presentation/pages/shared/widgets/primitives/card_icon_slot.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/status_badge.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:flutter/foundation.dart';
+import 'package:likha/core/utils/file_opener.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
-import 'package:open_file/open_file.dart';
 
 class StudentMaterialDetailPage extends ConsumerStatefulWidget {
   final String materialId;
@@ -34,6 +35,21 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
   }
 
   Future<void> _openFile(MaterialFile file) async {
+    if (kIsWeb) {
+      setState(() => _formError = 'Opening file...');
+      final bytes = await ref
+          .read(learningMaterialProvider.notifier)
+          .downloadFile(file.id);
+      if (!mounted) return;
+      if (bytes != null) {
+        await openFileInBrowser(bytes, file.fileName);
+        setState(() => _formError = null);
+      } else {
+        setState(() => _formError = 'Failed to open file');
+      }
+      return;
+    }
+
     if (file.localPath == null || file.localPath!.isEmpty) {
       if (!mounted) return;
       setState(() => _formError = 'File not cached. Downloading...');
@@ -42,7 +58,7 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
     }
 
     try {
-      await OpenFile.open(file.localPath!);
+      await openLocalFile(file.localPath!);
     } catch (e) {
       if (!mounted) return;
       setState(() => _formError = 'Error opening file: $e');
@@ -305,7 +321,7 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
                   letterSpacing: -0.4,
                 ),
               ),
-              if (!allCached)
+              if (!allCached && !kIsWeb)
                 FilledButton(
                   onPressed: _downloadAllFiles,
                   style: FilledButton.styleFrom(
@@ -347,10 +363,16 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
                 ),
               ),
               trailing: IconButton(
-                icon: file.isCached
-                    ? const Icon(Icons.folder_open_rounded)
-                    : const Icon(Icons.download_rounded, color: Color(0xFF2B2B2B)),
-                onPressed: file.isCached ? () => _openFile(file) : () => _saveFile(file),
+                icon: kIsWeb
+                    ? const Icon(Icons.open_in_browser_rounded, color: Color(0xFF2B2B2B))
+                    : file.isCached
+                        ? const Icon(Icons.folder_open_rounded)
+                        : const Icon(Icons.download_rounded, color: Color(0xFF2B2B2B)),
+                onPressed: kIsWeb
+                    ? () => _openFile(file)
+                    : file.isCached
+                        ? () => _openFile(file)
+                        : () => _saveFile(file),
               ),
             );
           }),

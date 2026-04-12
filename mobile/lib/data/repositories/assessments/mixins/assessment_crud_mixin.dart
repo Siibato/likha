@@ -24,6 +24,7 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
     int? quarter,
     String? component,
     bool? isDepartmentalExam,
+    String? linkedTosId,
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
@@ -81,6 +82,9 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
             showResultsImmediately: showResultsImmediately,
             isPublished: isPublished,
             questions: questionModels,
+            linkedTosId: linkedTosId,
+            quarter: quarter,
+            component: component,
           );
 
           // Calculate totalPoints from questions
@@ -104,6 +108,9 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
             totalPoints: totalPoints,
             questionCount: questions.length,
             submissionCount: 0,
+            linkedTosId: linkedTosId,
+            quarter: quarter,
+            component: component,
             createdAt: now,
             updatedAt: now,
           ));
@@ -119,6 +126,9 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           closeAt: closeAt,
           showResultsImmediately: showResultsImmediately,
           isPublished: isPublished,
+          linkedTosId: linkedTosId,
+          quarter: quarter,
+          component: component,
         );
 
         return Right(Assessment(
@@ -136,6 +146,9 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           totalPoints: 0,
           questionCount: 0,
           submissionCount: 0,
+          linkedTosId: linkedTosId,
+          quarter: quarter,
+          component: component,
           createdAt: now,
           updatedAt: now,
         ));
@@ -158,6 +171,7 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           if (quarter != null) 'quarter': quarter,
           if (component != null) 'component': component,
           if (isDepartmentalExam != null) 'is_departmental_exam': isDepartmentalExam,
+          if (linkedTosId != null) 'linked_tos_id': linkedTosId,
         },
       );
 

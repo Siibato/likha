@@ -81,6 +81,10 @@ pub fn routes(assessment_service: Arc<AssessmentService>) -> Router {
             put(assessment_handler::override_answer),
         )
         .route(
+            "/submission-answers/{id}/grade-essay",
+            put(assessment_handler::grade_essay_answer),
+        )
+        .route(
             "/assessments/{id}/statistics",
             get(assessment_handler::get_statistics),
         )

@@ -6,6 +6,8 @@ import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart
 import 'package:likha/presentation/pages/desktop/teacher/edit_tos_desktop.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.dart';
+import 'package:likha/presentation/widgets/styled_dialog.dart';
 import 'package:likha/presentation/pages/teacher/widgets/bulk_paste_sheet.dart';
 import 'package:likha/presentation/pages/teacher/widgets/melcs_search_sheet.dart';
 import 'package:likha/presentation/pages/teacher/widgets/tos_grid_table.dart';
@@ -29,6 +31,9 @@ class TosDetailDesktop extends ConsumerStatefulWidget {
 
 class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
   final _competencyController = TextEditingController();
+  final _daysTaughtController = TextEditingController();
+  final _editCompetencyController = TextEditingController();
+  final _editDaysTaughtController = TextEditingController();
 
   @override
   void initState() {
@@ -41,6 +46,9 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
   @override
   void dispose() {
     _competencyController.dispose();
+    _daysTaughtController.dispose();
+    _editCompetencyController.dispose();
+    _editDaysTaughtController.dispose();
     super.dispose();
   }
 
@@ -72,27 +80,57 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
     );
   }
 
-  void _handleAddCompetency() {
+  void _handleAddCompetency(String timeUnit) {
     _competencyController.clear();
-    AppDialogs.showInput(
+    _daysTaughtController.text = '1';
+    final unitLabel = timeUnit == 'hours' ? 'Hours' : 'Days';
+    showDialog(
       context: context,
-      title: 'Add Competency',
-      controller: _competencyController,
-      labelText: 'Competency description',
-      confirmLabel: 'Add',
-      onConfirm: () {
-        final text = _competencyController.text;
-        if (text.trim().isNotEmpty) {
-          ref.read(tosProvider.notifier).addCompetency(
-            widget.tosId,
-            {
-              'competency_text': text.trim(),
-              'days_taught': 1,
-              'order_index': ref.read(tosProvider).competencies.length,
+      builder: (ctx) => StyledDialog(
+        title: 'Add Competency',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            StyledTextField(
+              controller: _competencyController,
+              label: 'Competency description',
+              icon: Icons.edit_rounded,
+            ),
+            const SizedBox(height: 12),
+            StyledTextField(
+              controller: _daysTaughtController,
+              label: '$unitLabel taught',
+              icon: Icons.schedule_outlined,
+              keyboardType: TextInputType.number,
+              hintText: '1',
+            ),
+          ],
+        ),
+        actions: [
+          StyledDialogAction(
+            label: 'Cancel',
+            onPressed: () => Navigator.pop(ctx),
+          ),
+          StyledDialogAction(
+            label: 'Add',
+            isPrimary: true,
+            onPressed: () {
+              Navigator.pop(ctx);
+              final text = _competencyController.text;
+              if (text.trim().isNotEmpty) {
+                ref.read(tosProvider.notifier).addCompetency(
+                  widget.tosId,
+                  {
+                    'competency_text': text.trim(),
+                    'days_taught': int.tryParse(_daysTaughtController.text.trim()) ?? 1,
+                    'order_index': ref.read(tosProvider).competencies.length,
+                  },
+                );
+              }
             },
-          );
-        }
-      },
+          ),
+        ],
+      ),
     );
   }
 
@@ -169,6 +207,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
                     children: [
                       // Left column: Settings + Competencies
                       Expanded(
+                        flex: 2,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -210,7 +249,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
                               )
                             else
                               ...competencies.map(
-                                  (c) => _buildCompetencyTile(c)),
+                                  (c) => _buildCompetencyTile(c, tos.timeUnit)),
 
                             const SizedBox(height: 16),
 
@@ -220,7 +259,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
                               runSpacing: 8,
                               children: [
                                 OutlinedButton.icon(
-                                  onPressed: _handleAddCompetency,
+                                  onPressed: () => _handleAddCompetency(tos.timeUnit),
                                   icon: const Icon(Icons.add, size: 18),
                                   label: const Text('Add Competency'),
                                   style: OutlinedButton.styleFrom(
@@ -264,6 +303,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
 
                       // Right column: TOS Matrix
                       Expanded(
+                        flex: 3,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -299,14 +339,27 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
                             else ...[
                               TosGridTable(
                                 competencies: competencies,
-                                classificationMode: tos.classificationMode,
-                                totalItems: tos.totalItems,
+                                tos: tos,
+                                onCellChanged: (id, key, val) => ref
+                                    .read(tosProvider.notifier)
+                                    .updateCompetency(
+                                        id, {'${key}_count': val}),
+                                onCompetencyTextChanged: (id, text) => ref
+                                    .read(tosProvider.notifier)
+                                    .updateCompetency(
+                                        id, {'competency_text': text}),
+                                onDaysTaughtChanged: (id, days) => ref
+                                    .read(tosProvider.notifier)
+                                    .updateCompetency(
+                                        id, {'days_taught': days}),
                               ),
                               const SizedBox(height: 12),
                               TosSummaryRow(
                                 competencies: competencies,
                                 totalItems: tos.totalItems,
+                                timeUnit: tos.timeUnit,
                               ),
+                              _buildMissingPointsBanner(competencies, tos),
                             ],
                           ],
                         ),
@@ -342,7 +395,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
           _settingsRow('Mode', modeLabel),
           _settingsRow('Total Items', '${tos.totalItems}'),
           _settingsRow('Competencies', '${competencies.length}'),
-          _settingsRow('Total Days', '$totalDays'),
+          _settingsRow('Total ${tos.timeUnit == 'hours' ? 'Hours' : 'Days'}', '$totalDays'),
         ],
       ),
     );
@@ -374,57 +427,177 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
     );
   }
 
-  Widget _buildCompetencyTile(TosCompetency competency) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  competency.competencyText,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.foregroundPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${competency.daysTaught} day${competency.daysTaught == 1 ? '' : 's'} taught',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.foregroundSecondary,
-                  ),
-                ),
-              ],
+  void _handleEditCompetency(TosCompetency competency, String timeUnit) {
+    _editCompetencyController.text = competency.competencyText;
+    _editDaysTaughtController.text = '${competency.daysTaught}';
+    final unitLabel = timeUnit == 'hours' ? 'Hours' : 'Days';
+    showDialog(
+      context: context,
+      builder: (ctx) => StyledDialog(
+        title: 'Edit Competency',
+        leadingAction: StyledDialogAction(
+          label: 'Delete',
+          onPressed: () {
+            Navigator.pop(ctx);
+            AppDialogs.showDestructive(
+              context: context,
+              title: 'Delete Competency',
+              body: 'Remove this competency?',
+              confirmLabel: 'Delete',
+              onConfirm: () => ref
+                  .read(tosProvider.notifier)
+                  .deleteCompetency(competency.id),
+            );
+          },
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            StyledTextField(
+              controller: _editCompetencyController,
+              label: 'Competency description',
+              icon: Icons.edit_rounded,
             ),
+            const SizedBox(height: 12),
+            StyledTextField(
+              controller: _editDaysTaughtController,
+              label: '$unitLabel taught',
+              icon: Icons.schedule_outlined,
+              keyboardType: TextInputType.number,
+              hintText: '1',
+            ),
+          ],
+        ),
+        actions: [
+          StyledDialogAction(
+            label: 'Cancel',
+            onPressed: () => Navigator.pop(ctx),
           ),
-          IconButton(
+          StyledDialogAction(
+            label: 'Save',
+            isPrimary: true,
             onPressed: () {
-              AppDialogs.showDestructive(
-                context: context,
-                title: 'Delete Competency',
-                body: 'Remove this competency?',
-                confirmLabel: 'Delete',
-                onConfirm: () => ref
-                    .read(tosProvider.notifier)
-                    .deleteCompetency(competency.id),
-              );
+              Navigator.pop(ctx);
+              final text = _editCompetencyController.text.trim();
+              final days = int.tryParse(_editDaysTaughtController.text.trim());
+              if (text.isNotEmpty) {
+                ref.read(tosProvider.notifier).updateCompetency(
+                  competency.id,
+                  {
+                    'competency_text': text,
+                    if (days != null) 'days_taught': days,
+                  },
+                );
+              }
             },
-            icon: const Icon(Icons.close_rounded, size: 18),
-            color: AppColors.foregroundSecondary,
-            tooltip: 'Delete',
           ),
         ],
+      ),
+    );
+  }
+
+Widget _buildCompetencyTile(TosCompetency competency, String timeUnit) {
+    return GestureDetector(
+      onTap: () => _handleEditCompetency(competency, timeUnit),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.borderLight),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    competency.competencyText,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.foregroundPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${competency.daysTaught} ${timeUnit == 'hours' ? (competency.daysTaught == 1 ? 'hour' : 'hours') : (competency.daysTaught == 1 ? 'day' : 'days')} taught',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.foregroundSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              onPressed: () => _handleEditCompetency(competency, timeUnit),
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              color: AppColors.foregroundSecondary,
+              tooltip: 'Edit',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMissingPointsBanner(
+      List<TosCompetency> competencies, TableOfSpecifications tos) {
+    final totalDays =
+        competencies.fold<int>(0, (sum, c) => sum + c.daysTaught);
+
+    // Use the SAME formula as the grid: sum of actual cognitive cells per row.
+    // This respects per-competency overrides so banner and grid always agree.
+    final assigned = competencies.fold<int>(0, (sum, c) {
+      if (totalDays == 0) return sum;
+      final targetItems =
+          (c.daysTaught / totalDays * tos.totalItems).round();
+      final easy = c.easyCount ??
+          (targetItems * tos.easyPercentage / 100).round();
+      final medium = c.mediumCount ??
+          (targetItems * tos.mediumPercentage / 100).round();
+      final hard = c.hardCount ??
+          (targetItems * tos.hardPercentage / 100).round();
+      return sum + easy + medium + hard;
+    });
+
+    final diff = tos.totalItems - assigned;
+    if (diff == 0) return const SizedBox.shrink();
+
+    final message = diff > 0
+        ? '$diff item${diff == 1 ? '' : 's'} under target. '
+            'Total assigned: $assigned / ${tos.totalItems}'
+        : '${-diff} item${-diff == 1 ? '' : 's'} over target. '
+            'Total assigned: $assigned / ${tos.totalItems}';
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF3E0),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFFF9800)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.warning_amber_outlined,
+                size: 16, color: Color(0xFFE65100)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF6D4C41),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

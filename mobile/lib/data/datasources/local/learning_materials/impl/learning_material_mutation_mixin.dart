@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/sync/sync_queue.dart';
@@ -149,6 +150,7 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
     required int fileSize,
     required String localPath,
   }) async {
+    if (kIsWeb) throw CacheException('File staging not supported on web');
     try {
       final db = await localDatabase.database;
       final now = DateTime.now();

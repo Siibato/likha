@@ -116,6 +116,9 @@ abstract final class AssessmentsCols {
   static const String totalPoints = 'total_points';
   static const String questionCount = 'question_count';
   static const String submissionCount = 'submission_count';
+  static const String linkedTosId = 'linked_tos_id';
+  static const String quarter = 'quarter';
+  static const String component = 'component';
 }
 
 abstract final class AssessmentQuestionsCols {
@@ -182,6 +185,8 @@ abstract final class AssignmentsCols {
   static const String dueAt = 'due_at';
   static const String isPublished = 'is_published';
   static const String orderIndex = 'order_index';
+  static const String quarter = 'quarter';
+  static const String component = 'component';
   static const String submissionCount = 'submission_count';
   static const String gradedCount = 'graded_count';
   static const String submissionStatus = 'submission_status';
@@ -305,6 +310,16 @@ abstract final class TosCols {
   static const String title = 'title';
   static const String classificationMode = 'classification_mode';
   static const String totalItems = 'total_items';
+  static const String timeUnit = 'time_unit';
+  static const String easyPercentage = 'easy_percentage';
+  static const String mediumPercentage = 'medium_percentage';
+  static const String hardPercentage = 'hard_percentage';
+  static const String rememberingPercentage = 'remembering_percentage';
+  static const String understandingPercentage = 'understanding_percentage';
+  static const String applyingPercentage = 'applying_percentage';
+  static const String analyzingPercentage = 'analyzing_percentage';
+  static const String evaluatingPercentage = 'evaluating_percentage';
+  static const String creatingPercentage = 'creating_percentage';
 }
 
 abstract final class TosCompetenciesCols {
@@ -313,6 +328,9 @@ abstract final class TosCompetenciesCols {
   static const String competencyText = 'competency_text';
   static const String daysTaught = 'days_taught';
   static const String orderIndex = 'order_index';
+  static const String easyCount = 'easy_count';
+  static const String mediumCount = 'medium_count';
+  static const String hardCount = 'hard_count';
 }
 
 abstract final class MelcsCols {

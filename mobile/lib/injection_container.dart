@@ -36,6 +36,7 @@ import 'package:likha/domain/assessments/usecases/get_student_results.dart';
 import 'package:likha/domain/assessments/usecases/get_student_submission.dart';
 import 'package:likha/domain/assessments/usecases/get_submission_detail.dart';
 import 'package:likha/domain/assessments/usecases/get_submissions.dart';
+import 'package:likha/domain/assessments/usecases/grade_essay.dart';
 import 'package:likha/domain/assessments/usecases/override_answer.dart';
 import 'package:likha/domain/assessments/usecases/publish_assessment.dart';
 import 'package:likha/domain/assessments/usecases/unpublish_assessment.dart';
@@ -143,6 +144,7 @@ import 'package:likha/domain/grading/usecases/update_grading_config.dart';
 import 'package:likha/domain/grading/usecases/get_general_averages.dart';
 import 'package:likha/domain/grading/usecases/get_sf9.dart';
 import 'package:likha/domain/grading/usecases/get_sf10.dart';
+import 'package:likha/domain/grading/usecases/update_quarterly_grade.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/data/datasources/local/tos/impl/tos_local_datasource_impl.dart';
 import 'package:likha/data/datasources/remote/tos_remote_datasource.dart';
@@ -416,6 +418,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetSubmissions(sl()));
   sl.registerLazySingleton(() => GetSubmissionDetail(sl()));
   sl.registerLazySingleton(() => OverrideAnswer(sl()));
+  sl.registerLazySingleton(() => GradeEssay(sl()));
   sl.registerLazySingleton(() => ReleaseResults(sl()));
   sl.registerLazySingleton(() => GetStatistics(sl()));
   sl.registerLazySingleton(() => StartAssessment(sl()));
@@ -497,6 +500,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ComputeGrades(sl()));
   sl.registerLazySingleton(() => GetGradeSummary(sl()));
   sl.registerLazySingleton(() => GetFinalGrades(sl()));
+  sl.registerLazySingleton(() => UpdateQuarterlyGrade(sl()));
   sl.registerLazySingleton(() => GetMyGrades(sl()));
   sl.registerLazySingleton(() => GetMyGradeDetail(sl()));
 

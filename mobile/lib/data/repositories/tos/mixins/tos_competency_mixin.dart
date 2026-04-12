@@ -25,6 +25,9 @@ mixin TosCompetencyMixin on TosRepositoryBase {
         competencyText: data['competency_text'] as String,
         daysTaught: (data['days_taught'] as num).toInt(),
         orderIndex: (data['order_index'] as num?)?.toInt() ?? 0,
+        easyCount: data['easy_count'] as int?,
+        mediumCount: data['medium_count'] as int?,
+        hardCount: data['hard_count'] as int?,
         createdAt: now,
         updatedAt: now,
       );
@@ -74,13 +77,10 @@ mixin TosCompetencyMixin on TosRepositoryBase {
         createdAt: DateTime.now(),
       ));
 
-      // Return from cache (won't have updated fields in the entity since
-      // updateCompetencyFields uses raw update — but the data is persisted)
-      final competencies = await localDataSource.getCompetenciesByTos('');
-      final updated = competencies.where((c) => c.id == competencyId).toList();
-      if (updated.isNotEmpty) return Right(updated.first);
+      // Return updated entity from cache
+      final updated = await localDataSource.getCompetencyById(competencyId);
+      if (updated != null) return Right(updated);
 
-      // Fallback: construct a minimal entity
       return const Left(CacheFailure('Competency not found after update'));
     } catch (e) {
       return Left(CacheFailure(e.toString()));
@@ -128,6 +128,9 @@ mixin TosCompetencyMixin on TosRepositoryBase {
           competencyText: data['competency_text'] as String,
           daysTaught: (data['days_taught'] as num).toInt(),
           orderIndex: (data['order_index'] as num?)?.toInt() ?? i,
+          easyCount: data['easy_count'] as int?,
+          mediumCount: data['medium_count'] as int?,
+          hardCount: data['hard_count'] as int?,
           createdAt: now,
           updatedAt: now,
         ));

@@ -26,8 +26,9 @@ import 'package:likha/presentation/pages/student/widgets/assignment_text_input_c
 import 'package:likha/presentation/pages/student/widgets/assignment_files_card.dart';
 import 'package:likha/presentation/pages/student/widgets/assignment_submit_button.dart';
 import 'package:likha/presentation/pages/student/widgets/assignment_submitted_banner.dart';
+import 'package:flutter/foundation.dart';
+import 'package:likha/core/utils/file_opener.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
-import 'package:open_file/open_file.dart';
 
 class AssignmentDetailPage extends ConsumerStatefulWidget {
   final String assignmentId;
@@ -225,8 +226,22 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     }
   }
 
-  /// Open file with system default app
+  /// Open file — in browser on web, with system default app on native
   Future<void> _openFile(SubmissionFile file) async {
+    if (kIsWeb) {
+      setState(() => _formError = 'Opening file...');
+      final bytes =
+          await ref.read(assignmentProvider.notifier).downloadFile(file.id);
+      if (!mounted) return;
+      if (bytes != null) {
+        await openFileInBrowser(bytes, file.fileName);
+        setState(() => _formError = null);
+      } else {
+        setState(() => _formError = 'Failed to open file');
+      }
+      return;
+    }
+
     if (file.localPath == null || file.localPath!.isEmpty) {
       if (!mounted) return;
       setState(() => _formError = 'File not cached. Downloading...');
@@ -234,7 +249,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       return;
     }
     try {
-      await OpenFile.open(file.localPath!);
+      await openLocalFile(file.localPath!);
     } catch (e) {
       if (!mounted) return;
       setState(() => _formError = 'Error opening file: $e');
@@ -572,12 +587,16 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                   ),
                 ),
                 trailing: IconButton(
-                  icon: file.isCached
-                      ? const Icon(Icons.folder_open_rounded)
-                      : const Icon(Icons.download_rounded, color: Color(0xFF2B2B2B)),
-                  onPressed: () => file.isCached
+                  icon: kIsWeb
+                      ? const Icon(Icons.open_in_browser_rounded, color: Color(0xFF2B2B2B))
+                      : file.isCached
+                          ? const Icon(Icons.folder_open_rounded)
+                          : const Icon(Icons.download_rounded, color: Color(0xFF2B2B2B)),
+                  onPressed: () => kIsWeb
                       ? _openFile(file)
-                      : _saveFile(file),
+                      : file.isCached
+                          ? _openFile(file)
+                          : _saveFile(file),
                 ),
               ),
             ),

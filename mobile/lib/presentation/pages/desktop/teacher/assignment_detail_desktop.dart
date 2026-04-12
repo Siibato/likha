@@ -5,6 +5,7 @@ import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/assignment_submissions_desktop.dart';
+import 'package:likha/presentation/pages/shared/widgets/cards/markdown_display.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 
@@ -364,14 +365,7 @@ class _AssignmentDetailDesktopState
           const Divider(color: AppColors.borderLight),
           const SizedBox(height: 12),
           if (assignment.instructions.isNotEmpty)
-            Text(
-              assignment.instructions,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.foregroundSecondary,
-                height: 1.5,
-              ),
-            )
+            MarkdownDisplay(content: assignment.instructions)
           else
             const Text(
               'No instructions provided',

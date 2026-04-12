@@ -12,12 +12,14 @@ class ClassCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final bool isAdvisory;
 
   const ClassCard({
     super.key,
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.isAdvisory = false,
   });
 
   @override
@@ -42,6 +44,24 @@ class ClassCard extends StatelessWidget {
                   subtitle,
                   style: AppTextStyles.cardSubtitleMd,
                 ),
+                if (isAdvisory) ...[
+                  const SizedBox(height: 4),
+                  const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.star_rounded, size: 12, color: Color(0xFF4CAF50)),
+                      SizedBox(width: 3),
+                      Text(
+                        'Advisory',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF4CAF50),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

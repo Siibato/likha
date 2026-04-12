@@ -30,6 +30,10 @@ class StyledDialog extends StatelessWidget {
   final Widget content;
   final List<StyledDialogAction> actions;
   final Widget? warningBox;
+  /// Optional destructive action rendered on the far left of the footer.
+  /// When set, the right-side [actions] lose their Expanded stretch and become
+  /// content-sized, creating a [Delete]      [Cancel][Save] layout.
+  final StyledDialogAction? leadingAction;
 
   const StyledDialog({
     super.key,
@@ -38,6 +42,7 @@ class StyledDialog extends StatelessWidget {
     required this.content,
     required this.actions,
     this.warningBox,
+    this.leadingAction,
   });
 
   @override
@@ -123,19 +128,32 @@ class StyledDialog extends StatelessWidget {
             // Actions Section
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  for (int i = 0; i < actions.length; i++) ...[
-                    if (i > 0) const SizedBox(width: 8),
-                    Expanded(
-                      child: actions[i].isPrimary
-                          ? _buildPrimaryButton(actions[i])
-                          : _buildSecondaryButton(actions[i]),
+              child: leadingAction != null
+                  ? Row(
+                      children: [
+                        _buildDestructiveLeadingButton(leadingAction!),
+                        const Spacer(),
+                        for (int i = 0; i < actions.length; i++) ...[
+                          if (i > 0) const SizedBox(width: 8),
+                          actions[i].isPrimary
+                              ? _buildPrimaryButton(actions[i])
+                              : _buildSecondaryButton(actions[i]),
+                        ],
+                      ],
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        for (int i = 0; i < actions.length; i++) ...[
+                          if (i > 0) const SizedBox(width: 8),
+                          Expanded(
+                            child: actions[i].isPrimary
+                                ? _buildPrimaryButton(actions[i])
+                                : _buildSecondaryButton(actions[i]),
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
-                ],
-              ),
             ),
           ],
         ),
@@ -152,6 +170,28 @@ class StyledDialog extends StatelessWidget {
         backgroundColor: bgColor,
         foregroundColor: Colors.white,
         elevation: 0,
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+      child: Text(
+        action.label,
+        style: const TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
+          letterSpacing: -0.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDestructiveLeadingButton(StyledDialogAction action) {
+    return OutlinedButton(
+      onPressed: action.onPressed,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: const Color(0xFFEF5350),
+        side: const BorderSide(color: Color(0xFFEF5350), width: 1.5),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),

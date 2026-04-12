@@ -48,8 +48,8 @@ impl GradeComputationService {
                 subject_group.clone().into(),
                 school_year.clone().into(),
                 semester.map(sea_orm::Value::from).unwrap_or(sea_orm::Value::Int(None)),
-                now.to_string().into(),
-                class_id.to_string().into(),
+                now.into(),
+                class_id.into(),
             ],
         );
         self.db

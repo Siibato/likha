@@ -120,6 +120,8 @@ impl super::SyncPushService {
             "grade_config" => self.handle_grade_config_operation(user_id, user_role, op).await,
             "grade_item" => self.handle_grade_item_operation(user_id, user_role, op).await,
             "grade_score" => self.handle_grade_score_operation(user_id, user_role, op).await,
+            "table_of_specifications" => self.handle_tos_operation(user_id, op).await,
+            "tos_competency" => self.handle_tos_competency_operation(user_id, op).await,
             _ => self.error_result(op, &format!("Unknown entity type: {}", op.entity_type)),
         }
     }

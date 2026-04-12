@@ -67,14 +67,14 @@ impl GradeComputationRepository {
             DbBackend::Sqlite,
             sql,
             vec![
-                id.to_string().into(),
-                class_id.to_string().into(),
+                id.into(),
+                class_id.into(),
                 quarter.into(),
                 ww_weight.into(),
                 pt_weight.into(),
                 qa_weight.into(),
-                now.to_string().into(),
-                now.to_string().into(),
+                now.into(),
+                now.into(),
             ],
         );
 

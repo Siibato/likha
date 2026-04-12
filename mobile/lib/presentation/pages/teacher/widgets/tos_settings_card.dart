@@ -21,6 +21,12 @@ class TosSettingsCard extends StatelessWidget {
         ? "Bloom's Taxonomy"
         : 'Difficulty Level';
 
+    final timeUnitLabel = tos.timeUnit == 'hours' ? 'Hours' : 'Days';
+    final difficultySplit =
+        'Easy ${tos.easyPercentage.toStringAsFixed(0)}% / '
+        'Med ${tos.mediumPercentage.toStringAsFixed(0)}% / '
+        'Hard ${tos.hardPercentage.toStringAsFixed(0)}%';
+
     return InfoPanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -33,7 +39,11 @@ class TosSettingsCard extends StatelessWidget {
           const SizedBox(height: 10),
           InfoRow(label: 'Competencies', value: '$competencyCount'),
           const SizedBox(height: 10),
-          InfoRow(label: 'Total Days Taught', value: '$totalDays'),
+          InfoRow(label: 'Total $timeUnitLabel Taught', value: '$totalDays'),
+          const SizedBox(height: 10),
+          InfoRow(label: 'Time Unit', value: timeUnitLabel),
+          const SizedBox(height: 10),
+          InfoRow(label: 'Difficulty Split', value: difficultySplit),
         ],
       ),
     );

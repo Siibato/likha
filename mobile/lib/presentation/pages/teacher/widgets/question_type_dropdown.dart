@@ -76,6 +76,10 @@ class QuestionTypeDropdown extends StatelessWidget {
             value: 'enumeration',
             child: Text('Enumeration'),
           ),
+          DropdownMenuItem(
+            value: 'essay',
+            child: Text('Essay'),
+          ),
         ],
         dropdownColor: Colors.white,
       ),

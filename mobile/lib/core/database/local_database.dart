@@ -26,7 +26,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 5,
+      version: 9,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onDowngrade: _downgradeDatabase,
@@ -151,6 +151,9 @@ class LocalDatabase {
           total_points INTEGER NOT NULL DEFAULT 0,
           question_count INTEGER NOT NULL DEFAULT 0,
           submission_count INTEGER NOT NULL DEFAULT 0,
+          linked_tos_id TEXT,
+          quarter INTEGER,
+          component TEXT,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
@@ -288,6 +291,8 @@ class LocalDatabase {
           due_at TEXT NOT NULL,
           is_published INTEGER NOT NULL DEFAULT 0,
           order_index INTEGER NOT NULL DEFAULT 0,
+          quarter INTEGER,
+          component TEXT,
           submission_count INTEGER NOT NULL DEFAULT 0,
           graded_count INTEGER NOT NULL DEFAULT 0,
           submission_status TEXT,
@@ -510,6 +515,16 @@ class LocalDatabase {
           title TEXT NOT NULL,
           classification_mode TEXT NOT NULL,
           total_items INTEGER NOT NULL,
+          time_unit TEXT NOT NULL DEFAULT 'days',
+          easy_percentage REAL NOT NULL DEFAULT 50.0,
+          medium_percentage REAL NOT NULL DEFAULT 30.0,
+          hard_percentage REAL NOT NULL DEFAULT 20.0,
+          remembering_percentage REAL NOT NULL DEFAULT 16.67,
+          understanding_percentage REAL NOT NULL DEFAULT 16.67,
+          applying_percentage REAL NOT NULL DEFAULT 16.67,
+          analyzing_percentage REAL NOT NULL DEFAULT 16.67,
+          evaluating_percentage REAL NOT NULL DEFAULT 16.67,
+          creating_percentage REAL NOT NULL DEFAULT 16.67,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
@@ -528,6 +543,9 @@ class LocalDatabase {
           competency_text TEXT NOT NULL,
           days_taught INTEGER NOT NULL,
           order_index INTEGER NOT NULL DEFAULT 0,
+          easy_count INTEGER,
+          medium_count INTEGER,
+          hard_count INTEGER,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
@@ -785,6 +803,44 @@ class LocalDatabase {
           cached_at TEXT NOT NULL
         )
       ''');
+    }
+
+    // Handle upgrade: v5 → v6 adds TOS time unit, difficulty percentages, competency counts, assessment linked_tos_id
+    if (oldVersion < 6) {
+      await db.execute("ALTER TABLE table_of_specifications ADD COLUMN time_unit TEXT NOT NULL DEFAULT 'days'");
+      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN easy_percentage REAL NOT NULL DEFAULT 50.0');
+      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN medium_percentage REAL NOT NULL DEFAULT 30.0');
+      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN hard_percentage REAL NOT NULL DEFAULT 20.0');
+      await db.execute('ALTER TABLE tos_competencies ADD COLUMN easy_count INTEGER');
+      await db.execute('ALTER TABLE tos_competencies ADD COLUMN medium_count INTEGER');
+      await db.execute('ALTER TABLE tos_competencies ADD COLUMN hard_count INTEGER');
+      await db.execute('ALTER TABLE assessments ADD COLUMN linked_tos_id TEXT');
+    }
+
+    if (oldVersion < 7) {
+      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN remembering_percentage REAL NOT NULL DEFAULT 16.67');
+      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN understanding_percentage REAL NOT NULL DEFAULT 16.67');
+      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN applying_percentage REAL NOT NULL DEFAULT 16.67');
+      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN analyzing_percentage REAL NOT NULL DEFAULT 16.67');
+      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN evaluating_percentage REAL NOT NULL DEFAULT 16.67');
+      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN creating_percentage REAL NOT NULL DEFAULT 16.67');
+    }
+
+    if (oldVersion < 8) {
+      await db.execute('ALTER TABLE assessments ADD COLUMN quarter INTEGER');
+      await db.execute('ALTER TABLE assessments ADD COLUMN component TEXT');
+      await db.execute('ALTER TABLE assignments ADD COLUMN quarter INTEGER');
+      await db.execute('ALTER TABLE assignments ADD COLUMN component TEXT');
+    }
+
+    // Handle upgrade: v8 → v9 ensures quarter/component columns exist on assessments
+    // and assignments. Uses try/catch because fresh installs at v9 already have
+    // these columns from _createTables and ALTER TABLE would fail on duplicates.
+    if (oldVersion < 9) {
+      try { await db.execute('ALTER TABLE assessments ADD COLUMN quarter INTEGER'); } catch (_) {}
+      try { await db.execute('ALTER TABLE assessments ADD COLUMN component TEXT'); } catch (_) {}
+      try { await db.execute('ALTER TABLE assignments ADD COLUMN quarter INTEGER'); } catch (_) {}
+      try { await db.execute('ALTER TABLE assignments ADD COLUMN component TEXT'); } catch (_) {}
     }
   }
 

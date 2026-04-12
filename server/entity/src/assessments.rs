@@ -23,6 +23,7 @@ pub struct Model {
     pub quarter: Option<i32>,
     pub is_departmental_exam: Option<bool>,
     pub component: Option<String>,
+    pub linked_tos_id: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

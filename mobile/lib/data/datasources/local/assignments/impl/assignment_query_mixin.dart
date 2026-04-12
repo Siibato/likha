@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/assignments/assignment_model.dart';
@@ -325,6 +326,7 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
   /// Example: report.pdf with fileId cfa3d566-... → report-cfa3d566.pdf
   /// Matches cacheFileBytes() naming in assignment_file_mixin.dart lines 186-190.
   Future<String?> _getExpectedSubmissionFilePath(String fileId, String fileName) async {
+    if (kIsWeb) return null;
     try {
       final appDirDoc = await getApplicationDocumentsDirectory();
       final submissionFilesDir = Directory('${appDirDoc.path}/submission_files');

@@ -42,7 +42,7 @@ class TosPrintService {
             ),
             footer: (context) => _buildFooter(context),
             build: (context) => [
-              _buildGrid(competencies, cogHeaders, totalDays, tos.totalItems),
+              _buildGrid(competencies, cogHeaders, totalDays, tos),
               pw.SizedBox(height: 24),
               _buildSignatures(),
             ],
@@ -89,7 +89,7 @@ class TosPrintService {
     List<TosCompetency> competencies,
     List<String> cogHeaders,
     int totalDays,
-    int totalItems,
+    TableOfSpecifications tos,
   ) {
     final headers = [
       'Competency',
@@ -99,25 +99,69 @@ class TosPrintService {
       'Total',
     ];
 
+    final isBloomsMode = tos.classificationMode == 'blooms';
+    int gridActualTotal = 0;
+
     final data = competencies.map((c) {
       final weight = totalDays > 0 ? (c.daysTaught / totalDays * 100) : 0.0;
-      final target = totalDays > 0 ? (weight * totalItems / 100).round() : 0;
+      final targetItems =
+          totalDays > 0 ? (weight * tos.totalItems / 100).round() : 0;
+
+      final easyItems = c.easyCount ??
+          (targetItems * tos.easyPercentage / 100).round();
+      final mediumItems = c.mediumCount ??
+          (targetItems * tos.mediumPercentage / 100).round();
+      final hardItems = c.hardCount ??
+          (targetItems * tos.hardPercentage / 100).round();
+      final rowTotal = easyItems + mediumItems + hardItems;
+      gridActualTotal += rowTotal;
+
+      final List<String> cogCells;
+      if (!isBloomsMode) {
+        cogCells = ['$easyItems', '$mediumItems', '$hardItems'];
+      } else {
+        // Bloom's: split easy→R/U, medium→Ap/An, hard→E/C
+        final totalRU =
+            tos.rememberingPercentage + tos.understandingPercentage;
+        final rRatio =
+            totalRU > 0 ? tos.rememberingPercentage / totalRU : 0.5;
+        final r = (easyItems * rRatio).round();
+        final u = easyItems - r;
+
+        final totalApAn = tos.applyingPercentage + tos.analyzingPercentage;
+        final apRatio =
+            totalApAn > 0 ? tos.applyingPercentage / totalApAn : 0.5;
+        final ap = (mediumItems * apRatio).round();
+        final an = mediumItems - ap;
+
+        final totalEC =
+            tos.evaluatingPercentage + tos.creatingPercentage;
+        final eRatio =
+            totalEC > 0 ? tos.evaluatingPercentage / totalEC : 0.5;
+        final e = (hardItems * eRatio).round();
+        final cr = hardItems - e;
+
+        cogCells = ['$r', '$u', '$ap', '$an', '$e', '$cr'];
+      }
+
       return [
-        c.competencyCode != null ? '${c.competencyCode} - ${c.competencyText}' : c.competencyText,
+        c.competencyCode != null
+            ? '${c.competencyCode} - ${c.competencyText}'
+            : c.competencyText,
         '${c.daysTaught}',
         '${weight.toStringAsFixed(1)}%',
-        ...cogHeaders.map((_) => ''),
-        '$target',
+        ...cogCells,
+        '$rowTotal',
       ];
     }).toList();
 
-    // Totals row
+    // Totals row — show actual sum, same as the on-screen grid
     data.add([
       'TOTAL',
       '$totalDays',
       '100%',
-      ...cogHeaders.map((_) => ''),
-      '$totalItems',
+      ...cogHeaders.map((_) => '-'),
+      '$gridActualTotal',
     ]);
 
     return pw.TableHelper.fromTextArray(

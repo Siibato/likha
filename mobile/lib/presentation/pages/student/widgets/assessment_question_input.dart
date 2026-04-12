@@ -41,6 +41,11 @@ class AssessmentQuestionInput extends StatelessWidget {
           controllers: enumControllers!,
           onChanged: onEnumChanged,
         );
+      case 'essay':
+        return _EssayInput(
+          controller: textController!,
+          onChanged: onTextChanged,
+        );
       default:
         return Text('Unknown question type: ${question.questionType}');
     }
@@ -173,6 +178,56 @@ class _IdentificationInput extends StatelessWidget {
             const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
       onChanged: onChanged,
+    );
+  }
+}
+
+class _EssayInput extends StatelessWidget {
+  final TextEditingController controller;
+  final Function(String) onChanged;
+
+  const _EssayInput({
+    required this.controller,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Write your essay response below',
+          style: TextStyle(fontSize: 12, color: Color(0xFF999999)),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          minLines: 5,
+          maxLines: null,
+          keyboardType: TextInputType.multiline,
+          decoration: InputDecoration(
+            hintText: 'Write your essay here...',
+            hintStyle: const TextStyle(color: Color(0xFFCCCCCC)),
+            filled: true,
+            fillColor: const Color(0xFFFAFAFA),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFFFBD59), width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          ),
+          onChanged: onChanged,
+        ),
+      ],
     );
   }
 }

@@ -17,6 +17,8 @@ class Assignment extends Equatable {
   final String? submissionStatus; // Student's own submission status
   final String? submissionId; // Student's own submission ID
   final int? score; // Student's own score
+  final int? quarter;
+  final String? component;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? cachedAt;
@@ -39,6 +41,8 @@ class Assignment extends Equatable {
     this.submissionStatus,
     this.submissionId,
     this.score,
+    this.quarter,
+    this.component,
     required this.createdAt,
     required this.updatedAt,
     this.cachedAt,
@@ -63,6 +67,8 @@ class Assignment extends Equatable {
         submissionStatus,
         submissionId,
         score,
+        quarter,
+        component,
         createdAt,
         updatedAt,
         cachedAt,

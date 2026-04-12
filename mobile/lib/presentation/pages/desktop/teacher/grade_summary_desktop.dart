@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/utils/transmutation_util.dart';
@@ -31,12 +32,22 @@ class _GradeSummaryDesktopState extends ConsumerState<GradeSummaryDesktop>
   bool _finalGradesLoading = false;
   String? _finalGradesError;
 
+  // QG inline editing
+  String? _editingStudentId;
+  final _qgEditController = TextEditingController();
+  final _qgFocusNode = FocusNode();
+
   @override
   void initState() {
     super.initState();
     _selectedQuarter = widget.initialQuarter;
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(_onTabChanged);
+    _qgFocusNode.addListener(() {
+      if (!_qgFocusNode.hasFocus && _editingStudentId != null) {
+        _commitQgEdit();
+      }
+    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadQuarterlyData();
@@ -47,7 +58,42 @@ class _GradeSummaryDesktopState extends ConsumerState<GradeSummaryDesktop>
   void dispose() {
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
+    _qgEditController.dispose();
+    _qgFocusNode.dispose();
     super.dispose();
+  }
+
+  void _startQgEdit(String studentId, int? currentGrade) {
+    if (_editingStudentId != null) _commitQgEdit();
+    setState(() {
+      _editingStudentId = studentId;
+      _qgEditController.text =
+          currentGrade != null ? currentGrade.toString() : '';
+      _qgEditController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _qgEditController.text.length),
+      );
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _qgFocusNode.requestFocus();
+    });
+  }
+
+  void _commitQgEdit() {
+    final raw = _qgEditController.text.trim();
+    final grade = int.tryParse(raw);
+    if (grade != null && _editingStudentId != null) {
+      ref.read(quarterlyGradesProvider.notifier).updateQuarterlyGrade(
+        classId: widget.classId,
+        studentId: _editingStudentId!,
+        quarter: _selectedQuarter,
+        transmutedGrade: grade,
+      );
+    }
+    if (mounted) setState(() => _editingStudentId = null);
+  }
+
+  void _cancelQgEdit() {
+    if (mounted) setState(() => _editingStudentId = null);
   }
 
   void _onTabChanged() {
@@ -110,6 +156,7 @@ class _GradeSummaryDesktopState extends ConsumerState<GradeSummaryDesktop>
       backgroundColor: AppColors.backgroundSecondary,
       body: DesktopPageScaffold(
         title: 'Grade Summary',
+        scrollable: false,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.foregroundDark),
           onPressed: () => Navigator.of(context).pop(),
@@ -273,7 +320,9 @@ class _GradeSummaryDesktopState extends ConsumerState<GradeSummaryDesktop>
               rows: List.generate(summary.length, (index) {
                 final row = summary[index];
                 final qg = (row['quarterly_grade'] as num?)?.toInt();
+                final studentId = row['student_id']?.toString() ?? '';
                 final isEven = index % 2 == 0;
+                final isEditingQg = _editingStudentId == studentId;
 
                 return DataRow(
                   color: WidgetStateProperty.all(
@@ -299,16 +348,77 @@ class _GradeSummaryDesktopState extends ConsumerState<GradeSummaryDesktop>
                       _formatScore(row['qa_weighted_score']),
                       textAlign: TextAlign.right,
                     )),
-                    DataCell(Text(
-                      qg?.toString() ?? '-',
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: qg != null && qg >= 75
-                            ? AppColors.foregroundDark
-                            : AppColors.semanticError,
-                      ),
-                    )),
+                    DataCell(
+                      isEditingQg
+                          ? SizedBox(
+                              width: 56,
+                              child: CallbackShortcuts(
+                                bindings: {
+                                  const SingleActivator(
+                                          LogicalKeyboardKey.escape):
+                                      _cancelQgEdit,
+                                },
+                                child: TextField(
+                                  controller: _qgEditController,
+                                  focusNode: _qgFocusNode,
+                                  autofocus: true,
+                                  textAlign: TextAlign.right,
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                  ],
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  onSubmitted: (_) => _commitQgEdit(),
+                                  decoration: InputDecoration(
+                                    isDense: true,
+                                    contentPadding:
+                                        const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 6,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(4),
+                                      borderSide: const BorderSide(
+                                        color: Color(0xFF1976D2),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(4),
+                                      borderSide: const BorderSide(
+                                        color: Color(0xFF1976D2),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(4),
+                                      borderSide: const BorderSide(
+                                        color: Color(0xFF1976D2),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            )
+                          : GestureDetector(
+                              onTap: () =>
+                                  _startQgEdit(studentId, qg),
+                              child: Text(
+                                qg?.toString() ?? '-',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: qg != null && qg >= 75
+                                      ? AppColors.foregroundDark
+                                      : AppColors.semanticError,
+                                ),
+                              ),
+                            ),
+                    ),
                     DataCell(_buildDescriptorBadge(qg)),
                   ],
                 );

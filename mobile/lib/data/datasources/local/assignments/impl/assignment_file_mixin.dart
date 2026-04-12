@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/sync/sync_queue.dart';
@@ -15,6 +16,7 @@ mixin AssignmentFileMixin on AssignmentLocalDataSourceBase {
     required int fileSize,
     required String localPath,
   }) async {
+    if (kIsWeb) throw CacheException('File staging not supported on web');
     try {
       final db = await localDatabase.database;
       final now = DateTime.now();
@@ -70,6 +72,7 @@ mixin AssignmentFileMixin on AssignmentLocalDataSourceBase {
 
   @override
   Future<bool> isFileCached(String fileId) async {
+    if (kIsWeb) return false;
     try {
       final db = await localDatabase.database;
 
@@ -118,6 +121,7 @@ mixin AssignmentFileMixin on AssignmentLocalDataSourceBase {
 
   @override
   Future<List<int>> getCachedFileBytes(String fileId) async {
+    if (kIsWeb) throw CacheException('File caching not supported on web');
     try {
       final db = await localDatabase.database;
       final results = await db.query(
@@ -163,6 +167,7 @@ mixin AssignmentFileMixin on AssignmentLocalDataSourceBase {
 
   @override
   Future<void> cacheFileBytes(String fileId, String fileName, List<int> bytes) async {
+    if (kIsWeb) return;
     try {
       final appDirDoc = await getApplicationDocumentsDirectory();
       final submissionFilesDir = Directory('${appDirDoc.path}/submission_files');
@@ -212,6 +217,7 @@ mixin AssignmentFileMixin on AssignmentLocalDataSourceBase {
   /// Uses naming convention: {nameWithoutExt}-{shortId}.{ext}
   /// Example: report.pdf with fileId cfa3d566-... → report-cfa3d566.pdf
   Future<String?> getExpectedFilePath(String fileId, String fileName) async {
+    if (kIsWeb) return null;
     try {
       final appDirDoc = await getApplicationDocumentsDirectory();
       final submissionFilesDir = Directory('${appDirDoc.path}/submission_files');

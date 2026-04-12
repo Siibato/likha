@@ -15,6 +15,7 @@ import 'package:likha/domain/assessments/usecases/get_assessments.dart';
 import 'package:likha/domain/assessments/usecases/get_statistics.dart';
 import 'package:likha/domain/assessments/usecases/get_submission_detail.dart';
 import 'package:likha/domain/assessments/usecases/get_submissions.dart';
+import 'package:likha/domain/assessments/usecases/grade_essay.dart';
 import 'package:likha/domain/assessments/usecases/override_answer.dart';
 import 'package:likha/domain/assessments/usecases/publish_assessment.dart';
 import 'package:likha/domain/assessments/usecases/release_results.dart';
@@ -23,6 +24,7 @@ import 'package:likha/domain/assessments/usecases/reorder_questions.dart';
 import 'package:likha/domain/assessments/usecases/unpublish_assessment.dart';
 import 'package:likha/domain/assessments/usecases/update_assessment.dart';
 import 'package:likha/domain/assessments/usecases/update_question.dart';
+import 'package:likha/domain/grading/repositories/grading_repository.dart';
 import 'package:likha/injection_container.dart';
 
 const _unset = Object();
@@ -86,6 +88,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
   final GetSubmissions _getSubmissions;
   final GetSubmissionDetail _getSubmissionDetail;
   final OverrideAnswer _overrideAnswer;
+  final GradeEssay _gradeEssay;
   final ReleaseResults _releaseResults;
   final GetStatistics _getStatistics;
   final UpdateAssessment _updateAssessment;
@@ -108,6 +111,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     this._getSubmissions,
     this._getSubmissionDetail,
     this._overrideAnswer,
+    this._gradeEssay,
     this._releaseResults,
     this._getStatistics,
     this._updateAssessment,
@@ -133,6 +137,15 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     );
   }
 
+  String _toGradeComponent(String c) {
+    switch (c) {
+      case 'written_work': return 'ww';
+      case 'performance_task': return 'pt';
+      case 'quarterly_assessment': return 'qa';
+      default: return c;
+    }
+  }
+
   Future<Assessment?> createAssessment(CreateAssessmentParams params) async {
     final completer = Completer<Assessment?>();
     state = state.copyWith(isLoading: true, error: null, successMessage: null);
@@ -149,6 +162,22 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
           currentAssessment: assessment,
           successMessage: 'Assessment created',
         );
+        // Auto-create linked grade item when component + quarter are set
+        if (assessment.component != null && assessment.quarter != null) {
+          sl<GradingRepository>().createGradeItem(
+            classId: params.classId,
+            data: {
+              'title': assessment.title,
+              'component': _toGradeComponent(assessment.component!),
+              'quarter': assessment.quarter!,
+              'total_points': assessment.totalPoints.toDouble(),
+              'is_departmental_exam': params.isDepartmentalExam ?? false,
+              'source_type': 'assessment',
+              'source_id': assessment.id,
+              'order_index': 0,
+            },
+          );
+        }
         completer.complete(assessment);
       },
     );
@@ -195,6 +224,8 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
                     totalPoints: a.totalPoints,
                     questionCount: a.questionCount,
                     submissionCount: a.submissionCount,
+                    quarter: a.quarter,
+                    component: a.component,
                     createdAt: a.createdAt,
                     updatedAt: DateTime.now(),
                     needsSync: true,
@@ -238,6 +269,8 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
                     totalPoints: a.totalPoints,
                     questionCount: a.questionCount,
                     submissionCount: a.submissionCount,
+                    quarter: a.quarter,
+                    component: a.component,
                     createdAt: a.createdAt,
                     updatedAt: DateTime.now(),
                     needsSync: true,
@@ -269,6 +302,14 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
           successMessage: 'Assessment deleted',
           currentAssessment: null,
         );
+        // Delete linked grade item if one exists
+        sl<GradingRepository>().findGradeItemBySourceId(assessmentId).then((res) {
+          res.fold((_) {}, (item) {
+            if (item != null) {
+              sl<GradingRepository>().deleteGradeItem(id: item.id);
+            }
+          });
+        });
       },
     );
   }
@@ -317,11 +358,25 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     final result = await _updateAssessment(params);
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
-      (assessment) => state = state.copyWith(
-        isLoading: false,
-        currentAssessment: assessment,
-        successMessage: 'Assessment updated',
-      ),
+      (assessment) {
+        state = state.copyWith(
+          isLoading: false,
+          currentAssessment: assessment,
+          successMessage: 'Assessment updated',
+        );
+        // Sync title/total_points to linked grade item if one exists
+        sl<GradingRepository>().findGradeItemBySourceId(params.assessmentId).then((res) {
+          res.fold((_) {}, (item) {
+            if (item != null) {
+              final updates = <String, dynamic>{};
+              if (params.title != null) updates['title'] = params.title;
+              if (updates.isNotEmpty) {
+                sl<GradingRepository>().updateGradeItem(id: item.id, data: updates);
+              }
+            }
+          });
+        });
+      },
     );
   }
 
@@ -396,6 +451,18 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     );
   }
 
+  Future<void> gradeEssayAnswer(GradeEssayParams params) async {
+    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    final result = await _gradeEssay(params);
+    result.fold(
+      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
+      (_) => state = state.copyWith(
+        isLoading: false,
+        successMessage: 'Essay graded',
+      ),
+    );
+  }
+
   Future<void> loadStatistics(String assessmentId) async {
     state = state.copyWith(isLoading: true, error: null);
     final result = await _getStatistics(assessmentId);
@@ -428,6 +495,7 @@ final teacherAssessmentProvider = StateNotifierProvider<TeacherAssessmentNotifie
     sl<GetSubmissions>(),
     sl<GetSubmissionDetail>(),
     sl<OverrideAnswer>(),
+    sl<GradeEssay>(),
     sl<ReleaseResults>(),
     sl<GetStatistics>(),
     sl<UpdateAssessment>(),

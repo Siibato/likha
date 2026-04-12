@@ -6,6 +6,7 @@ use crate::services::assignment::AssignmentService;
 use crate::services::learning_material::LearningMaterialService;
 use crate::services::auth::AuthService;
 use crate::services::grade_computation::GradeComputationService;
+use crate::services::tos::TosService;
 
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct SyncQueueEntry {
@@ -41,6 +42,7 @@ pub struct SyncPushService {
     pub material_service: Arc<LearningMaterialService>,
     pub auth_service: Arc<AuthService>,
     pub grade_computation_service: Arc<GradeComputationService>,
+    pub tos_service: Arc<TosService>,
     pub processed_ops_repo: Arc<crate::db::repositories::processed_operations_repository::ProcessedOperationsRepository>,
 }
 
@@ -53,6 +55,7 @@ impl SyncPushService {
         material_service: Arc<LearningMaterialService>,
         auth_service: Arc<AuthService>,
         grade_computation_service: Arc<GradeComputationService>,
+        tos_service: Arc<TosService>,
         processed_ops_repo: Arc<crate::db::repositories::processed_operations_repository::ProcessedOperationsRepository>,
     ) -> Self {
         Self {
@@ -63,6 +66,7 @@ impl SyncPushService {
             material_service,
             auth_service,
             grade_computation_service,
+            tos_service,
             processed_ops_repo,
         }
     }
