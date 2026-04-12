@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
+import 'package:likha/core/logging/provider_logger.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
@@ -37,7 +38,7 @@ class GradingConfigState {
   GradingConfigState({
     this.configs = const [],
     this.isConfigured = false,
-    this.isLoading = false,
+    this.isLoading = true,
     this.error,
     this.successMessage,
   });
@@ -71,26 +72,52 @@ class GradingConfigNotifier extends StateNotifier<GradingConfigState> {
   ) : super(GradingConfigState());
 
   Future<void> loadConfig(String classId) async {
+    ProviderLogger.instance.debug('loadConfig called for classId: $classId');
     state = state.copyWith(isLoading: true, error: null);
+    ProviderLogger.instance.debug('Loading grading config...');
     final result = await _getGradingConfig(classId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
-      (configs) => state = state.copyWith(
-        isLoading: false,
-        configs: configs,
-        isConfigured: configs.isNotEmpty,
-      ),
+      (failure) {
+        ProviderLogger.instance.debug('loadConfig failed: ${AppErrorMapper.fromFailure(failure)}');
+        state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure));
+      },
+      (configs) {
+        ProviderLogger.instance.debug('loadConfig success - configs count: ${configs.length}');
+        ProviderLogger.instance.debug('configs data: $configs');
+        ProviderLogger.instance.debug('isConfigured will be set to: ${configs.isNotEmpty}');
+        state = state.copyWith(
+          isLoading: false,
+          configs: configs,
+          isConfigured: configs.isNotEmpty,
+        );
+        ProviderLogger.instance.debug('State updated - isConfigured: ${state.isConfigured}, configs count: ${state.configs.length}');
+      },
     );
   }
 
   Future<void> setupGrading(SetupGradingParams params) async {
     state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _setupGrading(params);
+    String? errorMsg;
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
+      (failure) => errorMsg = AppErrorMapper.fromFailure(failure),
+      (_) {},
+    );
+    if (errorMsg != null) {
+      state = state.copyWith(isLoading: false, error: errorMsg);
+      return;
+    }
+    final configResult = await _getGradingConfig(params.classId);
+    configResult.fold(
       (_) => state = state.copyWith(
         isLoading: false,
+        isConfigured: true, // write succeeded even if re-read failed
+        successMessage: 'Grading configured',
+      ),
+      (configs) => state = state.copyWith(
+        isLoading: false,
         isConfigured: true,
+        configs: configs,
         successMessage: 'Grading configured',
       ),
     );
@@ -113,6 +140,12 @@ class GradingConfigNotifier extends StateNotifier<GradingConfigState> {
 
   void clearMessages() {
     state = state.copyWith(error: null, successMessage: null);
+  }
+
+  /// Reset to clean loading state. Call before the first build of a new class
+  /// so stale "not configured" state from a previous class never renders.
+  void reset() {
+    state = GradingConfigState();
   }
 }
 
@@ -351,12 +384,24 @@ class GradeScoresNotifier extends StateNotifier<GradeScoresState> {
   ) async {
     state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _saveScores(gradeItemId: gradeItemId, scores: scores);
+    String? errorMsg;
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
-      (_) => state = state.copyWith(
-        isLoading: false,
-        successMessage: 'Scores saved',
-      ),
+      (failure) => errorMsg = AppErrorMapper.fromFailure(failure),
+      (_) {},
+    );
+    if (errorMsg != null) {
+      state = state.copyWith(isLoading: false, error: errorMsg);
+      return;
+    }
+    // Reload fresh scores for just this item so the grid cell reflects the
+    // saved value immediately (without a full reload).
+    final fresh = await _getScoresByItem(gradeItemId);
+    final updated = Map<String, List<GradeScore>>.from(state.scoresByItem);
+    fresh.fold((_) {}, (newScores) => updated[gradeItemId] = newScores);
+    state = state.copyWith(
+      isLoading: false,
+      scoresByItem: updated,
+      successMessage: 'Scores saved',
     );
   }
 
@@ -366,13 +411,33 @@ class GradeScoresNotifier extends StateNotifier<GradeScoresState> {
       scoreId: scoreId,
       overrideScore: overrideScore,
     );
+    String? errorMsg;
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
-      (_) => state = state.copyWith(
-        isLoading: false,
-        successMessage: 'Score override applied',
-      ),
+      (failure) => errorMsg = AppErrorMapper.fromFailure(failure),
+      (_) {},
     );
+    if (errorMsg != null) {
+      state = state.copyWith(isLoading: false, error: errorMsg);
+      return;
+    }
+    // Find which item this score belongs to and reload its scores so the
+    // override is visible in the grid immediately.
+    final itemId = state.scoresByItem.entries
+        .where((e) => e.value.any((s) => s.id == scoreId))
+        .map((e) => e.key)
+        .firstOrNull;
+    if (itemId != null) {
+      final fresh = await _getScoresByItem(itemId);
+      final updated = Map<String, List<GradeScore>>.from(state.scoresByItem);
+      fresh.fold((_) {}, (newScores) => updated[itemId] = newScores);
+      state = state.copyWith(
+        isLoading: false,
+        scoresByItem: updated,
+        successMessage: 'Score override applied',
+      );
+    } else {
+      state = state.copyWith(isLoading: false, successMessage: 'Score override applied');
+    }
   }
 
   Future<void> clearOverride(String scoreId) async {

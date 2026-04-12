@@ -12,15 +12,23 @@ mixin TosQueryMixin on TosRepositoryBase {
     required String classId,
   }) async {
     try {
-      // Cache-first: return local data
       final cached = await localDataSource.getTosByClass(classId);
 
-      // Background refresh if online
-      if (serverReachabilityService.isServerReachable) {
-        _backgroundFetchTosList(classId);
+      if (cached.isNotEmpty) {
+        // Has local data — return it immediately and background-refresh.
+        if (serverReachabilityService.isServerReachable) {
+          _backgroundFetchTosList(classId);
+        }
+        return Right(cached);
       }
 
-      return Right(cached);
+      if (serverReachabilityService.isServerReachable) {
+        final models = await remoteDataSource.getTosByClass(classId: classId);
+        await localDataSource.cacheTosList(models);
+        return Right(models);
+      }
+
+      return const Right([]);
     } catch (e) {
       return Left(CacheFailure(e.toString()));
     }

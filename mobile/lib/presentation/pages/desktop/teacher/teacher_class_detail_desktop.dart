@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/core/logging/provider_logger.dart';
+import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_navigation_rail.dart';
@@ -24,7 +26,6 @@ import 'package:likha/presentation/pages/desktop/teacher/widgets/student_data_ta
 import 'package:likha/presentation/pages/desktop/teacher/create_tos_desktop.dart';
 import 'package:likha/presentation/pages/desktop/teacher/sf9_detail_desktop.dart';
 import 'package:likha/presentation/pages/desktop/teacher/tos_detail_desktop.dart';
-import 'package:likha/presentation/pages/teacher/class_grading_setup_page.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
@@ -228,13 +229,6 @@ class _TeacherClassDetailDesktopState
                             context,
                             MaterialPageRoute(
                               builder: (_) => ClassStudentListDesktop(
-                                  classId: widget.classId),
-                            ),
-                          ),
-                          onGradingSetup: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ClassGradingSetupPage(
                                   classId: widget.classId),
                             ),
                           ),
@@ -643,14 +637,23 @@ class _GradesTabContentState extends ConsumerState<_GradesTabContent> {
   @override
   void initState() {
     super.initState();
+    ProviderLogger.instance.debug('_GradesTabContentState.initState() called for classId: ${widget.classId}');
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      ProviderLogger.instance.debug('Resetting grading config provider');
+      ref.read(gradingConfigProvider.notifier).reset();
+      ProviderLogger.instance.debug('Starting loadConfig for classId: ${widget.classId}');
       await ref
           .read(gradingConfigProvider.notifier)
           .loadConfig(widget.classId);
 
       final configState = ref.read(gradingConfigProvider);
-      if (configState.isConfigured) {
+      ProviderLogger.instance.debug('After loadConfig - isConfigured: ${configState.isConfigured}, configs count: ${configState.configs.length}');
+      ProviderLogger.instance.debug('mounted: $mounted');
+      if (mounted && configState.isConfigured) {
+        ProviderLogger.instance.debug('Calling _loadData() because grading is configured');
         _loadData();
+      } else {
+        ProviderLogger.instance.debug('NOT calling _loadData() - mounted: $mounted, isConfigured: ${configState.isConfigured}');
       }
     });
   }
@@ -742,8 +745,10 @@ class _GradesTabContentState extends ConsumerState<_GradesTabContent> {
         builder: (_) => ClassGradingSetupDesktop(classId: widget.classId),
       ),
     ).then((_) {
-      ref.read(gradingConfigProvider.notifier).loadConfig(widget.classId);
-      _loadData();
+      // gradingConfigProvider state is already updated by setupGrading() —
+      // calling loadConfig() here would race-overwrite isConfigured back to
+      // false if the web DB hasn't flushed yet. Just reload grade data.
+      if (mounted) _loadData();
     });
   }
 
@@ -754,8 +759,122 @@ class _GradesTabContentState extends ConsumerState<_GradesTabContent> {
     return configs.isNotEmpty ? configs.first as GradeConfig : null;
   }
 
+  Widget _buildSpreadsheetContent(
+    GradingConfigState configState,
+    QuarterlyGradesState gradesState,
+    GradeItemsState itemsState,
+    GradeScoresState scoresState,
+    List<Participant> students,
+    GradeConfig? config,
+  ) {
+    if (configState.isLoading) {
+      ProviderLogger.instance.debug('Showing loading spinner because isLoading is true');
+      return const Center(
+        child: CircularProgressIndicator(
+          color: AppColors.foregroundPrimary,
+          strokeWidth: 2.5,
+        ),
+      );
+    } else if (!configState.isConfigured) {
+      ProviderLogger.instance.debug('Showing "not configured" message because isConfigured is false');
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.grading_outlined,
+                size: 48,
+                color: AppColors.foregroundTertiary),
+            const SizedBox(height: 16),
+            const Text(
+              'Grading is not set up for this class yet.',
+              style: TextStyle(
+                  fontSize: 15,
+                  color: AppColors.foregroundSecondary),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: _openGradingSetup,
+              icon: const Icon(Icons.settings_outlined,
+                  size: 18),
+              label: const Text('Set Up Grading'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.foregroundPrimary,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20, vertical: 12),
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      ProviderLogger.instance.debug('Showing grade spreadsheet because grading is configured');
+      return Column(
+        children: [
+          if (gradesState.error != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 10),
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF3CD),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                    color: const Color(0xFFFFE082), width: 1),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.sync_outlined,
+                      size: 16, color: Color(0xFF856404)),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Grading config is syncing to the server. '
+                      'Quarterly grades will appear once sync completes.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF856404),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          Expanded(
+            child: (itemsState.isLoading &&
+                        itemsState.items.isEmpty) ||
+                    scoresState.isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.foregroundPrimary,
+                      strokeWidth: 2.5,
+                    ),
+                  )
+                : GradeSpreadsheet(
+                    students: students,
+                    allItems: itemsState.items,
+                    scoresByItem: scoresState.scoresByItem,
+                    config: config,
+                    summary: gradesState.summary,
+                    onScoreChanged: (studentId, itemId,
+                        existingScore, score) {
+                      _saveInlineScore(studentId, itemId,
+                          existingScore, score);
+                    },
+                    onQgChanged: (studentId, newQg) =>
+                        _saveQg(studentId, newQg),
+                  ),
+          ),
+        ],
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    ProviderLogger.instance.debug('_GradesTabContentState.build() called');
     final classState = ref.watch(classProvider);
     final configState = ref.watch(gradingConfigProvider);
     final itemsState = ref.watch(gradeItemsProvider);
@@ -763,6 +882,14 @@ class _GradesTabContentState extends ConsumerState<_GradesTabContent> {
     final gradesState = ref.watch(quarterlyGradesProvider);
     final students = classState.currentClassDetail?.students ?? [];
     final config = _configForQuarter(configState.configs);
+    
+    ProviderLogger.instance.debug('Build method state:');
+    ProviderLogger.instance.debug('- configState.isLoading: ${configState.isLoading}');
+    ProviderLogger.instance.debug('- configState.isConfigured: ${configState.isConfigured}');
+    ProviderLogger.instance.debug('- configState.configs.length: ${configState.configs.length}');
+    ProviderLogger.instance.debug('- configState.error: ${configState.error}');
+    ProviderLogger.instance.debug('- selected quarter: $_selectedQuarter');
+    ProviderLogger.instance.debug('- config for quarter: $config');
 
     ref.listen<GradeItemsState>(gradeItemsProvider, (prev, next) {
       if (prev?.isLoading == true &&
@@ -870,67 +997,7 @@ class _GradesTabContentState extends ConsumerState<_GradesTabContent> {
 
           // Spreadsheet area
           Expanded(
-            child: configState.isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.foregroundPrimary,
-                      strokeWidth: 2.5,
-                    ),
-                  )
-                : !configState.isConfigured
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.grading_outlined,
-                                size: 48,
-                                color: AppColors.foregroundTertiary),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'Grading is not set up for this class yet.',
-                              style: TextStyle(
-                                  fontSize: 15,
-                                  color: AppColors.foregroundSecondary),
-                            ),
-                            const SizedBox(height: 16),
-                            FilledButton.icon(
-                              onPressed: _openGradingSetup,
-                              icon: const Icon(Icons.settings_outlined,
-                                  size: 18),
-                              label: const Text('Set Up Grading'),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: AppColors.foregroundPrimary,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8)),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 20, vertical: 12),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : (itemsState.isLoading && itemsState.items.isEmpty) ||
-                            scoresState.isLoading
-                        ? const Center(
-                            child: CircularProgressIndicator(
-                              color: AppColors.foregroundPrimary,
-                              strokeWidth: 2.5,
-                            ),
-                          )
-                        : GradeSpreadsheet(
-                    students: students,
-                    allItems: itemsState.items,
-                    scoresByItem: scoresState.scoresByItem,
-                    config: config,
-                    summary: gradesState.summary,
-                    onScoreChanged:
-                        (studentId, itemId, existingScore, score) {
-                      _saveInlineScore(
-                          studentId, itemId, existingScore, score);
-                    },
-                    onQgChanged: (studentId, newQg) =>
-                        _saveQg(studentId, newQg),
-                  ),
+            child: _buildSpreadsheetContent(configState, gradesState, itemsState, scoresState, students, config),
           ),
         ],
       ),

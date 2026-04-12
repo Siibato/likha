@@ -1,4 +1,5 @@
 import 'package:likha/core/database/db_schema.dart';
+import 'package:likha/core/logging/provider_logger.dart';
 
 class GradeConfigModel {
   final String id;
@@ -22,16 +23,25 @@ class GradeConfigModel {
   });
 
   factory GradeConfigModel.fromJson(Map<String, dynamic> json) {
-    return GradeConfigModel(
-      id: json['id'] as String,
-      classId: json['class_id'] as String,
-      quarter: (json['quarter'] as num).toInt(),
-      wwWeight: (json['ww_weight'] as num).toDouble(),
-      ptWeight: (json['pt_weight'] as num).toDouble(),
-      qaWeight: (json['qa_weight'] as num).toDouble(),
-      createdAt: json['created_at'] as String,
-      updatedAt: (json['updated_at'] ?? json['created_at']) as String,
-    );
+    ProviderLogger.instance.debug('GradeConfigModel.fromJson() called with: $json');
+    try {
+      final now = DateTime.now().toIso8601String();
+      final model = GradeConfigModel(
+        id: json['id'] as String,
+        classId: json['class_id'] as String,
+        quarter: (json['quarter'] as num).toInt(),
+        wwWeight: (json['ww_weight'] as num).toDouble(),
+        ptWeight: (json['pt_weight'] as num).toDouble(),
+        qaWeight: (json['qa_weight'] as num).toDouble(),
+        createdAt: json['created_at'] as String? ?? now,
+        updatedAt: json['updated_at'] as String? ?? now,
+      );
+      ProviderLogger.instance.debug('GradeConfigModel created successfully: ${model.id}');
+      return model;
+    } catch (e) {
+      ProviderLogger.instance.debug('GradeConfigModel.fromJson() failed: $e');
+      rethrow;
+    }
   }
 
   factory GradeConfigModel.fromMap(Map<String, dynamic> map) {
