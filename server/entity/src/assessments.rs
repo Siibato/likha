@@ -21,7 +21,6 @@ pub struct Model {
     pub updated_at: chrono::NaiveDateTime,
     pub deleted_at: Option<chrono::NaiveDateTime>,
     pub grading_period_number: Option<i32>,
-    pub is_departmental_exam: Option<bool>,
     pub component: Option<String>,
     pub tos_id: Option<String>,
 }

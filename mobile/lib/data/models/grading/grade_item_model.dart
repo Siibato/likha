@@ -7,7 +7,6 @@ class GradeItemModel {
   final String component;
   final int gradingPeriodNumber;
   final double totalPoints;
-  final bool isDepartmentalExam;
   final String sourceType;
   final String? sourceId;
   final int orderIndex;
@@ -21,7 +20,6 @@ class GradeItemModel {
     required this.component,
     required this.gradingPeriodNumber,
     required this.totalPoints,
-    required this.isDepartmentalExam,
     required this.sourceType,
     this.sourceId,
     required this.orderIndex,
@@ -37,7 +35,6 @@ class GradeItemModel {
       component: json['component'] as String,
       gradingPeriodNumber: (json['grading_period_number'] as num?)?.toInt() ?? (json['quarter'] as num).toInt(),
       totalPoints: (json['total_points'] as num).toDouble(),
-      isDepartmentalExam: json['is_departmental_exam'] == true,
       sourceType: (json['source_type'] as String?) ?? 'manual',
       sourceId: json['source_id'] as String?,
       orderIndex: (json['order_index'] as num?)?.toInt() ?? 0,
@@ -54,7 +51,6 @@ class GradeItemModel {
       component: map[GradeItemsCols.component] as String,
       gradingPeriodNumber: map[GradeItemsCols.gradingPeriodNumber] as int,
       totalPoints: (map[GradeItemsCols.totalPoints] as num).toDouble(),
-      isDepartmentalExam: map[GradeItemsCols.isDepartmentalExam] == 1,
       sourceType: map[GradeItemsCols.sourceType] as String,
       sourceId: map[GradeItemsCols.sourceId] as String?,
       orderIndex: (map[GradeItemsCols.orderIndex] as num?)?.toInt() ?? 0,
@@ -70,7 +66,6 @@ class GradeItemModel {
     'component': component,
     'grading_period_number': gradingPeriodNumber,
     'total_points': totalPoints,
-    'is_departmental_exam': isDepartmentalExam,
     'source_type': sourceType,
     'source_id': sourceId,
     'order_index': orderIndex,
@@ -85,7 +80,6 @@ class GradeItemModel {
     GradeItemsCols.component: component,
     GradeItemsCols.gradingPeriodNumber: gradingPeriodNumber,
     GradeItemsCols.totalPoints: totalPoints,
-    GradeItemsCols.isDepartmentalExam: isDepartmentalExam ? 1 : 0,
     GradeItemsCols.sourceType: sourceType,
     GradeItemsCols.sourceId: sourceId,
     GradeItemsCols.orderIndex: orderIndex,

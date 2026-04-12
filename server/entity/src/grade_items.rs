@@ -11,7 +11,6 @@ pub struct Model {
     pub component: String,
     pub grading_period_number: Option<i32>,
     pub total_points: f64,
-    pub is_departmental_exam: bool,
     pub source_type: String,
     pub source_id: Option<String>,
     pub order_index: i32,

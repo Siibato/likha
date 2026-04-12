@@ -4,14 +4,12 @@ import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/constants/file_types.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assignments/usecases/create_assignment.dart';
 import 'package:likha/presentation/pages/teacher/widgets/shared_due_date_time_picker.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assignment_instructions_field.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assignment_points_field.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assignment_title_field.dart';
-import 'package:likha/presentation/pages/teacher/widgets/submission_type_dropdown.dart';
 import 'package:likha/presentation/pages/teacher/widgets/file_type_picker_sheet.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
@@ -33,7 +31,8 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
   final _totalPointsController = TextEditingController(text: '100');
   final _maxFileSizeController = TextEditingController(text: '10');
   Set<String> _selectedFileTypes = {};
-  String _submissionType = 'text_or_file';
+  bool _allowsTextSubmission = true;
+  bool _allowsFileSubmission = false;
   DateTime _dueAt = DateTime.now().add(const Duration(days: 7));
   bool _isPublished = true;
   int? _quarter;
@@ -123,7 +122,7 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
     String? allowedFileTypes;
     int? maxFileSizeMb;
 
-    if (_submissionType != 'text') {
+    if (_allowsFileSubmission) {
       if (_selectedFileTypes.isNotEmpty) {
         allowedFileTypes = _selectedFileTypes.join(',');
       }
@@ -139,14 +138,15 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
             title: _titleController.text.trim(),
             instructions: jsonEncode(_instructionsController.document.toJson()),
             totalPoints: totalPoints,
-            submissionType: _submissionType,
+            allowsTextSubmission: _allowsTextSubmission,
+            allowsFileSubmission: _allowsFileSubmission,
             allowedFileTypes: allowedFileTypes,
             maxFileSizeMb: maxFileSizeMb,
             dueAt: _formatDateTimeForApi(_dueAt),
             isPublished: _isPublished,
-            quarter: _quarter,
+            gradingPeriodNumber: _quarter,
             component: _component,
-            noSubmissionRequired: _noSubmissionRequired ? true : null,
+            noSubmissionRequired: _noSubmissionRequired,
           ),
         );
 
@@ -209,16 +209,41 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
                 enabled: !assignState.isLoading,
               ),
               const SizedBox(height: 16),
-              _SubmissionTypeDropdown(
-                value: _submissionType,
-                enabled: !assignState.isLoading,
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => _submissionType = value);
-                  }
-                },
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Submission Options',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF999999),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  CheckboxListTile(
+                    title: const Text('Allow text submission'),
+                    value: _allowsTextSubmission,
+                    enabled: !assignState.isLoading,
+                    onChanged: (value) {
+                      setState(() => _allowsTextSubmission = value ?? false);
+                    },
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  CheckboxListTile(
+                    title: const Text('Allow file submission'),
+                    value: _allowsFileSubmission,
+                    enabled: !assignState.isLoading,
+                    onChanged: (value) {
+                      setState(() => _allowsFileSubmission = value ?? false);
+                    },
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ],
               ),
-              if (_submissionType != 'text') ...[
+              if (_allowsFileSubmission) ...[
                 const SizedBox(height: 16),
                 _AllowedFileTypesSelector(
                   selectedTypes: _selectedFileTypes,
@@ -445,26 +470,6 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
   }
 }
 
-class _SubmissionTypeDropdown extends StatelessWidget {
-  final String value;
-  final bool enabled;
-  final ValueChanged<String?> onChanged;
-
-  const _SubmissionTypeDropdown({
-    required this.value,
-    required this.enabled,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SubmissionTypeDropdown(
-      value: value,
-      enabled: enabled,
-      onChanged: onChanged,
-    );
-  }
-}
 
 class _AllowedFileTypesSelector extends StatelessWidget {
   final Set<String> selectedTypes;

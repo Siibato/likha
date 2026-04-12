@@ -76,7 +76,6 @@ abstract final class LoginAttemptsCols {
 abstract final class ActivityLogsCols {
   static const String userId = 'user_id';
   static const String action = 'action';
-  static const String performedBy = 'performed_by';
   static const String details = 'details';
 }
 
@@ -89,9 +88,7 @@ abstract final class ClassesCols {
   static const String teacherFullName = 'teacher_full_name';
   static const String studentCount = 'student_count';
   static const String gradeLevel = 'grade_level';
-  static const String subjectGroup = 'subject_group';
   static const String schoolYear = 'school_year';
-  static const String semester = 'semester';
   static const String gradingPeriodType = 'grading_period_type';
   static const String isAdvisory = 'is_advisory';
 }
@@ -266,7 +263,6 @@ abstract final class GradeItemsCols {
   static const String component = 'component';
   static const String gradingPeriodNumber = 'grading_period_number';
   static const String totalPoints = 'total_points';
-  static const String isDepartmentalExam = 'is_departmental_exam';
   static const String sourceType = 'source_type';
   static const String sourceId = 'source_id';
   static const String orderIndex = 'order_index';

@@ -8,8 +8,8 @@ class GetGradeSummary {
 
   ResultFuture<List<Map<String, dynamic>>> call({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
   }) {
-    return _repository.getGradeSummary(classId: classId, quarter: quarter);
+    return _repository.getGradeSummary(classId: classId, gradingPeriodNumber: gradingPeriodNumber);
   }
 }

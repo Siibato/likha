@@ -19,7 +19,6 @@ pub struct Model {
     pub updated_at: chrono::NaiveDateTime,
     pub deleted_at: Option<chrono::NaiveDateTime>,
     pub grading_period_number: Option<i32>,
-    pub no_submission_required: bool,
     pub component: Option<String>,
     pub allows_text_submission: bool,
     pub allows_file_submission: bool,

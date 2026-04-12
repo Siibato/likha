@@ -7,7 +7,6 @@ class GradeItem extends Equatable {
   final String component;
   final int gradingPeriodNumber;
   final double totalPoints;
-  final bool isDepartmentalExam;
   final String sourceType;
   final String? sourceId;
   final int orderIndex;
@@ -19,7 +18,6 @@ class GradeItem extends Equatable {
     required this.component,
     required this.gradingPeriodNumber,
     required this.totalPoints,
-    required this.isDepartmentalExam,
     required this.sourceType,
     this.sourceId,
     required this.orderIndex,
@@ -33,7 +31,6 @@ class GradeItem extends Equatable {
         component,
         gradingPeriodNumber,
         totalPoints,
-        isDepartmentalExam,
         sourceType,
         sourceId,
         orderIndex,

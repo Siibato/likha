@@ -13,7 +13,8 @@ class UpdateAssignment {
       title: params.title,
       instructions: params.instructions,
       totalPoints: params.totalPoints,
-      submissionType: params.submissionType,
+      allowsTextSubmission: params.allowsTextSubmission,
+      allowsFileSubmission: params.allowsFileSubmission,
       allowedFileTypes: params.allowedFileTypes,
       maxFileSizeMb: params.maxFileSizeMb,
       dueAt: params.dueAt,
@@ -26,7 +27,8 @@ class UpdateAssignmentParams {
   final String? title;
   final String? instructions;
   final int? totalPoints;
-  final String? submissionType;
+  final bool? allowsTextSubmission;
+  final bool? allowsFileSubmission;
   final String? allowedFileTypes;
   final int? maxFileSizeMb;
   final String? dueAt;
@@ -36,7 +38,8 @@ class UpdateAssignmentParams {
     this.title,
     this.instructions,
     this.totalPoints,
-    this.submissionType,
+    this.allowsTextSubmission,
+    this.allowsFileSubmission,
     this.allowedFileTypes,
     this.maxFileSizeMb,
     this.dueAt,

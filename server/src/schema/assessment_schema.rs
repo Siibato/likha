@@ -17,7 +17,6 @@ pub struct CreateAssessmentRequest {
     pub questions: Option<Vec<AddQuestionRequest>>,
     pub grading_period_number: Option<i32>,
     pub component: Option<String>,
-    pub is_departmental_exam: Option<bool>,
     pub tos_id: Option<String>,
 }
 
@@ -31,7 +30,6 @@ pub struct UpdateAssessmentRequest {
     pub show_results_immediately: Option<bool>,
     pub grading_period_number: Option<i32>,
     pub component: Option<String>,
-    pub is_departmental_exam: Option<bool>,
     pub tos_id: Option<Option<String>>,
 }
 
@@ -139,7 +137,6 @@ pub struct AssessmentResponse {
     pub submission_count: usize,
     pub grading_period_number: Option<i32>,
     pub component: Option<String>,
-    pub is_departmental_exam: Option<bool>,
     pub tos_id: Option<String>,
     pub created_at: String,
     pub updated_at: String,
@@ -166,7 +163,6 @@ pub struct AssessmentDetailResponse {
     pub total_points: i32,
     pub grading_period_number: Option<i32>,
     pub component: Option<String>,
-    pub is_departmental_exam: Option<bool>,
     pub tos_id: Option<String>,
     pub questions: Vec<QuestionResponse>,
     pub created_at: String,

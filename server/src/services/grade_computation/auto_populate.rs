@@ -14,7 +14,6 @@ pub async fn create_linked_grade_item(
     component: &str,
     quarter: i32,
     total_points: f64,
-    is_departmental_exam: bool,
 ) -> AppResult<()> {
     let repo = GradeComputationRepository::new(db.clone());
 
@@ -33,7 +32,6 @@ pub async fn create_linked_grade_item(
         component.to_string(),
         Some(quarter),
         total_points,
-        is_departmental_exam,
         source_type.to_string(),
         Some(source_id.to_string()),
         order_index,

@@ -130,10 +130,11 @@ class _CreateAssignmentDesktopState
       title: _titleController.text.trim(),
       instructions: jsonEncode(_instructionsController.document.toJson()),
       totalPoints: int.parse(_totalPointsController.text.trim()),
-      submissionType: _submissionType,
+      allowsTextSubmission: _submissionType == 'text' || _submissionType == 'both',
+      allowsFileSubmission: _submissionType == 'file' || _submissionType == 'both',
       dueAt: _formatDateTimeForApi(_dueAt),
       isPublished: _isPublished,
-      quarter: _quarter,
+      gradingPeriodNumber: _quarter,
       component: _component,
     );
 

@@ -171,7 +171,6 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
               'component': _toGradeComponent(assessment.component!),
               'grading_period_number': assessment.gradingPeriodNumber!,
               'total_points': assessment.totalPoints.toDouble(),
-              'is_departmental_exam': params.isDepartmentalExam ?? false,
               'source_type': 'assessment',
               'source_id': assessment.id,
               'order_index': 0,

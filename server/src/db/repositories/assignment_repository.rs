@@ -32,7 +32,6 @@ impl AssignmentRepository {
         is_published: bool,
         grading_period_number: Option<i32>,
         component: Option<String>,
-        no_submission_required: bool,
     ) -> AppResult<assignments::Model> {
         let assignment = assignments::ActiveModel {
             id: Set(client_id.unwrap_or_else(Uuid::new_v4)),
@@ -46,7 +45,6 @@ impl AssignmentRepository {
             max_file_size_mb: Set(max_file_size_mb),
             due_at: Set(due_at),
             is_published: Set(is_published),
-            no_submission_required: Set(no_submission_required),
             order_index: Set(order_index),
             created_at: Set(Utc::now().naive_utc()),
             updated_at: Set(Utc::now().naive_utc()),
@@ -102,7 +100,6 @@ impl AssignmentRepository {
         due_at: Option<chrono::NaiveDateTime>,
         grading_period_number: Option<Option<i32>>,
         component: Option<Option<String>>,
-        no_submission_required: Option<bool>,
     ) -> AppResult<assignments::Model> {
         let mut assignment: assignments::ActiveModel = assignments::Entity::find_by_id(id)
             .one(&self.db)
@@ -140,9 +137,6 @@ impl AssignmentRepository {
         }
         if let Some(c) = component {
             assignment.component = Set(c);
-        }
-        if let Some(n) = no_submission_required {
-            assignment.no_submission_required = Set(n);
         }
         assignment.updated_at = Set(Utc::now().naive_utc());
 

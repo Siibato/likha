@@ -95,7 +95,7 @@ class _StudentClassGradeDetailPageState
 
     final result = await sl<GetMyGradeDetail>()(
       classId: widget.classId,
-      quarter: _selectedQuarter,
+      gradingPeriodNumber: _selectedQuarter,
     );
 
     result.fold(

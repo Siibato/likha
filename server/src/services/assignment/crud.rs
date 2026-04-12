@@ -54,7 +54,6 @@ impl super::AssignmentService {
                 request.is_published.unwrap_or(false),
                 request.grading_period_number,
                 request.component.clone(),
-                request.no_submission_required,
             )
             .await?;
 
@@ -75,7 +74,6 @@ impl super::AssignmentService {
             total_points: assignment.total_points,
             allows_text_submission: assignment.allows_text_submission,
             allows_file_submission: assignment.allows_file_submission,
-            no_submission_required: assignment.no_submission_required,
             allowed_file_types: assignment.allowed_file_types,
             max_file_size_mb: assignment.max_file_size_mb,
             due_at: assignment.due_at.to_string(),
@@ -147,21 +145,20 @@ impl super::AssignmentService {
                 total_points: a.total_points,
                 allows_text_submission: a.allows_text_submission,
                 allows_file_submission: a.allows_file_submission,
-                no_submission_required: a.no_submission_required,
-                allowed_file_types: a.allowed_file_types,
-                max_file_size_mb: a.max_file_size_mb,
-                due_at: a.due_at.to_string(),
-                is_published: a.is_published,
-                order_index: a.order_index,
-                submission_count,
-                graded_count,
-                grading_period_number: a.grading_period_number,
-                component: a.component.clone(),
-                submission_status,
-                submission_id,
-                score,
-                created_at: a.created_at.to_string(),
-                updated_at: a.updated_at.to_string(),
+            allowed_file_types: a.allowed_file_types,
+            max_file_size_mb: a.max_file_size_mb,
+            due_at: a.due_at.to_string(),
+            is_published: a.is_published,
+            order_index: a.order_index,
+            submission_count,
+            graded_count,
+            grading_period_number: a.grading_period_number,
+            component: a.component.clone(),
+            submission_status,
+            submission_id,
+            score,
+            created_at: a.created_at.to_string(),
+            updated_at: a.updated_at.to_string(),
             });
         }
 
@@ -247,7 +244,6 @@ impl super::AssignmentService {
             total_points: assignment.total_points,
             allows_text_submission: assignment.allows_text_submission,
             allows_file_submission: assignment.allows_file_submission,
-            no_submission_required: assignment.no_submission_required,
             allowed_file_types: assignment.allowed_file_types,
             max_file_size_mb: assignment.max_file_size_mb,
             due_at: assignment.due_at.to_string(),
@@ -328,7 +324,6 @@ impl super::AssignmentService {
                 due_at,
                 request.grading_period_number.map(|q| Some(q)),
                 request.component.clone().map(|c| Some(c)),
-                request.no_submission_required,
             )
             .await?;
 
@@ -349,7 +344,6 @@ impl super::AssignmentService {
             total_points: updated.total_points,
             allows_text_submission: updated.allows_text_submission,
             allows_file_submission: updated.allows_file_submission,
-            no_submission_required: updated.no_submission_required,
             allowed_file_types: updated.allowed_file_types,
             max_file_size_mb: updated.max_file_size_mb,
             due_at: updated.due_at.to_string(),
@@ -442,7 +436,6 @@ impl super::AssignmentService {
                 &self.db, "assignment", published.id, published.class_id,
                 &published.title, component, grading_period_number,
                 published.total_points as f64,
-                false,
             ).await;
         }
 
@@ -463,7 +456,6 @@ impl super::AssignmentService {
             total_points: published.total_points,
             allows_text_submission: published.allows_text_submission,
             allows_file_submission: published.allows_file_submission,
-            no_submission_required: published.no_submission_required,
             allowed_file_types: published.allowed_file_types,
             max_file_size_mb: published.max_file_size_mb,
             due_at: published.due_at.to_string(),
@@ -528,7 +520,6 @@ impl super::AssignmentService {
             total_points: unpublished.total_points,
             allows_text_submission: unpublished.allows_text_submission,
             allows_file_submission: unpublished.allows_file_submission,
-            no_submission_required: unpublished.no_submission_required,
             allowed_file_types: unpublished.allowed_file_types,
             max_file_size_mb: unpublished.max_file_size_mb,
             due_at: unpublished.due_at.to_string(),

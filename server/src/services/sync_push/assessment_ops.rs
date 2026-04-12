@@ -32,7 +32,6 @@ impl super::SyncPushService {
                     questions: None,
                     grading_period_number: op.payload.get("grading_period_number").and_then(|v| v.as_i64()).map(|v| v as i32),
                     component: op.payload.get("component").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                    is_departmental_exam: op.payload.get("is_departmental_exam").and_then(|v| v.as_bool()),
                     tos_id: op.payload.get("tos_id").and_then(|v| v.as_str()).map(|s| s.to_string()),
                 };
 
@@ -52,7 +51,6 @@ impl super::SyncPushService {
                     show_results_immediately: None,
                     grading_period_number: op.payload.get("grading_period_number").and_then(|v| v.as_i64()).map(|v| v as i32),
                     component: op.payload.get("component").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                    is_departmental_exam: op.payload.get("is_departmental_exam").and_then(|v| v.as_bool()),
                     tos_id: op.payload.get("tos_id").map(|v| v.as_str().map(|s| s.to_string())),
                 };
                 match self.assessment_service.update_assessment(assessment_id, request, user_id).await {

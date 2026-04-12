@@ -96,7 +96,6 @@ impl GradeComputationService {
                 request.component,
                 request.grading_period_number,
                 request.total_points,
-                request.is_departmental_exam.unwrap_or(false),
                 "manual".to_string(),
                 None,
                 order_index,

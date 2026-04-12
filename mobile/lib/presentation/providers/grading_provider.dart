@@ -523,7 +523,7 @@ class PeriodGradesNotifier extends StateNotifier<PeriodGradesState> {
 
   Future<void> loadSummary(String classId, int quarter) async {
     state = state.copyWith(isLoading: true, error: null);
-    final result = await _getGradeSummary(classId: classId, quarter: quarter);
+    final result = await _getGradeSummary(classId: classId, gradingPeriodNumber: quarter);
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (summary) => state = state.copyWith(isLoading: false, summary: summary),

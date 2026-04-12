@@ -27,7 +27,6 @@ pub struct CreateGradeItemRequest {
     pub component: String,
     pub grading_period_number: Option<i32>,
     pub total_points: f64,
-    pub is_departmental_exam: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -79,7 +78,6 @@ pub struct GradeItemResponse {
     pub component: String,
     pub grading_period_number: Option<i32>,
     pub total_points: f64,
-    pub is_departmental_exam: bool,
     pub source_type: String,
     pub source_id: Option<String>,
     pub order_index: i32,
@@ -244,7 +242,6 @@ impl From<::entity::grade_items::Model> for GradeItemResponse {
             component: m.component,
             grading_period_number: m.grading_period_number,
             total_points: m.total_points,
-            is_departmental_exam: m.is_departmental_exam,
             source_type: m.source_type,
             source_id: m.source_id,
             order_index: m.order_index,

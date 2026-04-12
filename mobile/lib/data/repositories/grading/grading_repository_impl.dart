@@ -52,7 +52,6 @@ class GradingRepositoryImpl implements GradingRepository {
         component: m.component,
         gradingPeriodNumber: m.gradingPeriodNumber,
         totalPoints: m.totalPoints,
-        isDepartmentalExam: m.isDepartmentalExam,
         sourceType: m.sourceType,
         sourceId: m.sourceId,
         orderIndex: m.orderIndex,
@@ -318,7 +317,6 @@ class GradingRepositoryImpl implements GradingRepository {
         component: data['component'] as String,
         gradingPeriodNumber: (data['grading_period_number'] as num?)?.toInt() ?? (data['quarter'] as num?)?.toInt() ?? 1,
         totalPoints: (data['total_points'] as num).toDouble(),
-        isDepartmentalExam: data['is_departmental_exam'] == true,
         sourceType: (data['source_type'] as String?) ?? 'manual',
         sourceId: data['source_id'] as String?,
         orderIndex: (data['order_index'] as num?)?.toInt() ?? 0,
@@ -620,12 +618,12 @@ class GradingRepositoryImpl implements GradingRepository {
   @override
   ResultFuture<List<Map<String, dynamic>>> getGradeSummary({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
   }) async {
     try {
       final summary = await _remoteDataSource.getGradeSummary(
         classId: classId,
-        quarter: quarter,
+        gradingPeriodNumber: gradingPeriodNumber,
       );
       return Right(summary);
     } on ServerFailure catch (e) {
@@ -680,12 +678,12 @@ class GradingRepositoryImpl implements GradingRepository {
   @override
   ResultFuture<Map<String, dynamic>> getMyGradeDetail({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
   }) async {
     try {
       final detail = await _remoteDataSource.getMyGradeDetail(
         classId: classId,
-        quarter: quarter,
+        gradingPeriodNumber: gradingPeriodNumber,
       );
       return Right(detail);
     } on ServerFailure catch (e) {

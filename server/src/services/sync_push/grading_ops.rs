@@ -73,7 +73,6 @@ impl super::SyncPushService {
                     component,
                     grading_period_number: Some(quarter),
                     total_points,
-                    is_departmental_exam,
                 };
 
                 match self.grade_computation_service.create_grade_item(class_id, request).await {

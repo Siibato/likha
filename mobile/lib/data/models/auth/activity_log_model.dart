@@ -8,7 +8,6 @@ class ActivityLogModel extends ActivityLog {
     required super.id,
     required super.userId,
     required super.action,
-    super.performedBy,
     super.details,
     required super.createdAt,
     this.cachedAt,
@@ -20,7 +19,6 @@ class ActivityLogModel extends ActivityLog {
       id: json['id'] as String,
       userId: json['user_id'] as String,
       action: json['action'] as String,
-      performedBy: json['performed_by'] as String?,
       details: json['details'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
     );
@@ -31,7 +29,6 @@ class ActivityLogModel extends ActivityLog {
       id: map['id'] as String,
       userId: map['user_id'] as String,
       action: map['action'] as String,
-      performedBy: map['performed_by'] as String?,
       details: map['details'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
       cachedAt: map['cached_at'] != null

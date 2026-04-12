@@ -61,7 +61,7 @@ abstract class GradingRemoteDataSource {
   });
   Future<List<Map<String, dynamic>>> getGradeSummary({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
   });
   Future<List<Map<String, dynamic>>> getFinalGrades({required String classId});
 
@@ -69,7 +69,7 @@ abstract class GradingRemoteDataSource {
   Future<List<PeriodGradeModel>> getMyGrades({required String classId});
   Future<Map<String, dynamic>> getMyGradeDetail({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
   });
 
   // Presets
@@ -323,12 +323,12 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
   @override
   Future<List<Map<String, dynamic>>> getGradeSummary({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
   }) async {
     try {
       final response = await _dioClient.dio.get(
         ApiEndpoints.classGradesSummary(classId).path,
-        queryParameters: {'quarter': quarter},
+        queryParameters: {'grading_period_number': gradingPeriodNumber},
       );
       final data = response.data['data'] ?? response.data;
       final summary = data['summary'] as List<dynamic>? ?? [];
@@ -378,11 +378,11 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
   @override
   Future<Map<String, dynamic>> getMyGradeDetail({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
   }) async {
     try {
       final response = await _dioClient.dio.get(
-        ApiEndpoints.myGradeDetail(classId, quarter).path,
+        ApiEndpoints.myGradeDetail(classId, gradingPeriodNumber).path,
       );
       return (response.data['data'] ?? response.data) as Map<String, dynamic>;
     } on DioException catch (e) {

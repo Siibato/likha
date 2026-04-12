@@ -31,7 +31,6 @@ impl AssessmentRepository {
         is_published: bool,
         grading_period_number: Option<i32>,
         component: Option<String>,
-        is_departmental_exam: Option<bool>,
         tos_id: Option<String>,
     ) -> AppResult<assessments::Model> {
         let assessment = assessments::ActiveModel {
@@ -51,7 +50,6 @@ impl AssessmentRepository {
             updated_at: Set(Utc::now().naive_utc()),
             deleted_at: Set(None),
             grading_period_number: Set(grading_period_number),
-            is_departmental_exam: Set(is_departmental_exam),
             component: Set(component),
             tos_id: Set(tos_id),
         };
@@ -101,7 +99,6 @@ impl AssessmentRepository {
         show_results_immediately: Option<bool>,
         grading_period_number: Option<Option<i32>>,
         component: Option<Option<String>>,
-        is_departmental_exam: Option<Option<bool>>,
         tos_id: Option<Option<String>>,
     ) -> AppResult<assessments::Model> {
         let mut assessment: assessments::ActiveModel = assessments::Entity::find_by_id(id)
@@ -134,9 +131,6 @@ impl AssessmentRepository {
         }
         if let Some(c) = component {
             assessment.component = Set(c);
-        }
-        if let Some(d) = is_departmental_exam {
-            assessment.is_departmental_exam = Set(d);
         }
         if let Some(tos) = tos_id {
             assessment.tos_id = Set(tos);

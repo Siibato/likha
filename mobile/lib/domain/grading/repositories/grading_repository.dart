@@ -81,7 +81,7 @@ abstract class GradingRepository {
 
   ResultFuture<List<Map<String, dynamic>>> getGradeSummary({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
   });
 
   ResultFuture<List<Map<String, dynamic>>> getFinalGrades({
@@ -93,7 +93,7 @@ abstract class GradingRepository {
 
   ResultFuture<Map<String, dynamic>> getMyGradeDetail({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
   });
 
   // General Average

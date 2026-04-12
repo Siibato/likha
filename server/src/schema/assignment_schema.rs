@@ -19,8 +19,6 @@ pub struct CreateAssignmentRequest {
     pub is_published: Option<bool>,
     pub grading_period_number: Option<i32>,
     pub component: Option<String>,
-    #[serde(default)]
-    pub no_submission_required: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -35,7 +33,6 @@ pub struct UpdateAssignmentRequest {
     pub due_at: Option<String>,
     pub grading_period_number: Option<i32>,
     pub component: Option<String>,
-    pub no_submission_required: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -65,7 +62,6 @@ pub struct AssignmentResponse {
     pub total_points: i32,
     pub allows_text_submission: bool,
     pub allows_file_submission: bool,
-    pub no_submission_required: bool,
     pub allowed_file_types: Option<String>,
     pub max_file_size_mb: Option<i32>,
     pub due_at: String,

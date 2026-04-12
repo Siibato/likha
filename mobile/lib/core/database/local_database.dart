@@ -447,7 +447,6 @@ class LocalDatabase {
           component TEXT NOT NULL,
           grading_period_number INTEGER NOT NULL,
           total_points REAL NOT NULL,
-          is_departmental_exam INTEGER NOT NULL DEFAULT 0,
           source_type TEXT NOT NULL DEFAULT 'manual',
           source_id TEXT,
           order_index INTEGER NOT NULL DEFAULT 0,
@@ -1094,7 +1093,6 @@ class LocalDatabase {
           component TEXT NOT NULL,
           grading_period_number INTEGER NOT NULL,
           total_points REAL NOT NULL,
-          is_departmental_exam INTEGER NOT NULL DEFAULT 0,
           source_type TEXT NOT NULL DEFAULT 'manual',
           source_id TEXT,
           order_index INTEGER NOT NULL DEFAULT 0,
@@ -1108,8 +1106,7 @@ class LocalDatabase {
       ''');
       await db.execute('''
         INSERT INTO grade_items_v11
-        SELECT id, class_id, title, component, quarter, total_points, is_departmental_exam,
-               source_type, source_id, order_index, created_at, updated_at, deleted_at,
+        SELECT id, class_id, title, component, quarter, total_points, source_type, source_id, order_index, created_at, updated_at, deleted_at,
                cached_at, needs_sync
         FROM grade_items
       ''');

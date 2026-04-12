@@ -45,7 +45,6 @@ impl super::AssessmentService {
             request.is_published.unwrap_or(false),
             request.grading_period_number,
             request.component.clone(),
-            request.is_departmental_exam,
             request.tos_id,
         ).await?;
 
@@ -79,7 +78,6 @@ impl super::AssessmentService {
             submission_count: 0,
             grading_period_number: assessment.grading_period_number,
             component: assessment.component.clone(),
-            is_departmental_exam: assessment.is_departmental_exam,
             tos_id: assessment.tos_id.clone(),
             created_at: fmt_utc(assessment.created_at),
             updated_at: fmt_utc(assessment.updated_at),
@@ -126,10 +124,9 @@ impl super::AssessmentService {
                 submission_count,
                 grading_period_number: a.grading_period_number,
                 component: a.component.clone(),
-                is_departmental_exam: a.is_departmental_exam,
-                tos_id: a.tos_id.clone(),
-                created_at: fmt_utc(a.created_at),
-                updated_at: fmt_utc(a.updated_at),
+            tos_id: a.tos_id.clone(),
+            created_at: fmt_utc(a.created_at),
+            updated_at: fmt_utc(a.updated_at),
             });
         }
 
@@ -180,7 +177,6 @@ impl super::AssessmentService {
             total_points: assessment.total_points,
             grading_period_number: assessment.grading_period_number,
             component: assessment.component.clone(),
-            is_departmental_exam: assessment.is_departmental_exam,
             tos_id: assessment.tos_id.clone(),
             questions: question_responses,
             created_at: fmt_utc(assessment.created_at),
@@ -260,7 +256,6 @@ impl super::AssessmentService {
             request.show_results_immediately,
             request.grading_period_number.map(|q| Some(q)),
             request.component.clone().map(|c| Some(c)),
-            request.is_departmental_exam.map(|d| Some(d)),
             request.tos_id,
         ).await?;
 
@@ -287,7 +282,6 @@ impl super::AssessmentService {
             submission_count,
             grading_period_number: updated.grading_period_number,
             component: updated.component.clone(),
-            is_departmental_exam: updated.is_departmental_exam,
             tos_id: updated.tos_id.clone(),
             created_at: fmt_utc(updated.created_at),
             updated_at: fmt_utc(updated.updated_at),
@@ -371,7 +365,6 @@ impl super::AssessmentService {
                 &self.db, "assessment", published.id, published.class_id,
                 &published.title, component, quarter,
                 published.total_points as f64,
-                published.is_departmental_exam.unwrap_or(false),
             ).await;
         }
 
@@ -396,7 +389,6 @@ impl super::AssessmentService {
             submission_count,
             grading_period_number: published.grading_period_number,
             component: published.component.clone(),
-            is_departmental_exam: published.is_departmental_exam,
             tos_id: published.tos_id.clone(),
             created_at: fmt_utc(published.created_at),
             updated_at: fmt_utc(published.updated_at),
@@ -449,7 +441,6 @@ impl super::AssessmentService {
             submission_count,
             grading_period_number: unpublished.grading_period_number,
             component: unpublished.component.clone(),
-            is_departmental_exam: unpublished.is_departmental_exam,
             tos_id: unpublished.tos_id.clone(),
             created_at: fmt_utc(unpublished.created_at),
             updated_at: fmt_utc(unpublished.updated_at),
@@ -500,7 +491,6 @@ impl super::AssessmentService {
             submission_count,
             grading_period_number: released.grading_period_number,
             component: released.component.clone(),
-            is_departmental_exam: released.is_departmental_exam,
             tos_id: released.tos_id.clone(),
             created_at: fmt_utc(released.created_at),
             updated_at: fmt_utc(released.updated_at),

@@ -15,19 +15,13 @@ impl super::SyncPushService {
                     Ok(id) => Some(id),
                     Err(e) => return self.error_result(op, &format!("Client ID is required for assignment creation: {}", e)),
                 };
-                // Derive allows_* flags from payload (new fields or legacy submission_type)
+                // Get allows_* flags from payload
                 let allows_text = op.payload.get("allows_text_submission")
                     .and_then(|v| v.as_bool())
-                    .unwrap_or_else(|| {
-                        let st = op.payload.get("submission_type").and_then(|v| v.as_str()).unwrap_or("text");
-                        st == "text" || st == "both"
-                    });
+                    .unwrap_or(true); // Default to true for text submission
                 let allows_file = op.payload.get("allows_file_submission")
                     .and_then(|v| v.as_bool())
-                    .unwrap_or_else(|| {
-                        let st = op.payload.get("submission_type").and_then(|v| v.as_str()).unwrap_or("text");
-                        st == "file" || st == "both"
-                    });
+                    .unwrap_or(false); // Default to false for file submission
                 let request = CreateAssignmentRequest {
                     title,
                     instructions,
@@ -41,7 +35,6 @@ impl super::SyncPushService {
                     is_published: op.payload.get("is_published").and_then(|v| v.as_bool()),
                     grading_period_number: op.payload.get("grading_period_number").and_then(|v| v.as_i64()).map(|v| v as i32),
                     component: op.payload.get("component").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                    no_submission_required: op.payload.get("no_submission_required").and_then(|v| v.as_bool()).unwrap_or(false),
                 };
                 match self.assignment_service.create_assignment(class_id, request, user_id, client_id).await {
                     Ok(r) => self.success_result(op, Some(r.id.to_string()), Some(r.updated_at)),
@@ -61,7 +54,6 @@ impl super::SyncPushService {
                     due_at: op.payload.get("due_at").and_then(|v| v.as_str()).map(|s| s.to_string()),
                     grading_period_number: op.payload.get("grading_period_number").and_then(|v| v.as_i64()).map(|v| v as i32),
                     component: op.payload.get("component").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                    no_submission_required: op.payload.get("no_submission_required").and_then(|v| v.as_bool()),
                 };
                 match self.assignment_service.update_assignment(assignment_id, request, user_id).await {
                     Ok(r) => self.success_result(op, None, Some(r.updated_at)),
