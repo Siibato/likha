@@ -458,7 +458,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                         // Submission timestamp
                         if (submission != null && submission.submittedAt != null) ...[
                           const SizedBox(height: 16),
-                          _buildSubmissionInfo(submission.submittedAt!, false), // isLate field removed
+                          _buildSubmissionInfo(submission.submittedAt!),
                         ],
 
                         const SizedBox(height: 40),
@@ -604,10 +604,11 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     );
   }
 
-  Widget _buildSubmissionInfo(DateTime submittedAt, bool isLate) {
+  
+  Widget _buildSubmissionInfo(DateTime submittedAt) {
     return Center(
       child: Text(
-        'Submitted: ${_formatDateTime(submittedAt)}${isLate ? ' (Late)' : ''}',
+        'Submitted: ${_formatDateTime(submittedAt)}',
         style: const TextStyle(
           color: Color(0xFF999999),
           fontSize: 13,

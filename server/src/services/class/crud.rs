@@ -37,8 +37,11 @@ impl super::ClassService {
 
         let class = self
             .class_repo
-            .create_class(title, request.description, actual_teacher_id, client_id, request.is_advisory.unwrap_or(false))
+            .create_class(title, request.description, client_id, request.is_advisory.unwrap_or(false))
             .await?;
+
+        // Enroll teacher as participant
+        self.class_repo.add_participant(class.id, actual_teacher_id).await?;
 
 
         Ok(ClassResponse {

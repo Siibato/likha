@@ -14,15 +14,15 @@ pub struct Model {
     pub max_file_size_mb: Option<i32>,
     pub due_at: chrono::NaiveDateTime,
     pub is_published: bool,
-    pub no_submission_required: bool,
     pub order_index: i32,
-    pub grading_period_number: Option<i32>,
-    pub component: Option<String>,
-    pub allows_text_submission: bool,
-    pub allows_file_submission: bool,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
     pub deleted_at: Option<chrono::NaiveDateTime>,
+    pub grading_period_number: Option<i32>,
+    pub no_submission_required: bool,
+    pub component: Option<String>,
+    pub allows_text_submission: bool,
+    pub allows_file_submission: bool,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -754,7 +754,7 @@ class _GradesTabContentState extends ConsumerState<_GradesTabContent> {
 
   GradeConfig? _configForQuarter(List<dynamic> configs) {
     for (final c in configs) {
-      if ((c as GradeConfig).quarter == _selectedQuarter) return c;
+      if ((c as GradeConfig).gradingPeriodNumber == _selectedQuarter) return c;
     }
     return configs.isNotEmpty ? configs.first as GradeConfig : null;
   }

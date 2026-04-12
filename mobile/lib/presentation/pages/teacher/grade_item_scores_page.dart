@@ -264,7 +264,7 @@ class _GradeItemScoresPageState extends ConsumerState<GradeItemScoresPage> {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Q${item.quarter}',
+                                  'Q${item.gradingPeriodNumber}',
                                   style: const TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,

@@ -39,7 +39,7 @@ class GradingRepositoryImpl implements GradingRepository {
   GradeConfig _configToEntity(GradeConfigModel m) => GradeConfig(
         id: m.id,
         classId: m.classId,
-        quarter: m.gradingPeriodNumber,
+        gradingPeriodNumber: m.gradingPeriodNumber,
         wwWeight: m.wwWeight,
         ptWeight: m.ptWeight,
         qaWeight: m.qaWeight,
@@ -50,7 +50,7 @@ class GradingRepositoryImpl implements GradingRepository {
         classId: m.classId,
         title: m.title,
         component: m.component,
-        quarter: m.gradingPeriodNumber,
+        gradingPeriodNumber: m.gradingPeriodNumber,
         totalPoints: m.totalPoints,
         isDepartmentalExam: m.isDepartmentalExam,
         sourceType: m.sourceType,

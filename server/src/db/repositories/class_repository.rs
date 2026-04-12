@@ -19,14 +19,9 @@ impl ClassRepository {
         &self,
         title: String,
         description: Option<String>,
-        teacher_id: Uuid,
         client_id: Option<Uuid>,
         is_advisory: bool,
     ) -> AppResult<classes::Model> {
-        // Start a transaction for atomic class + teacher participant creation
-        let txn = self.db.begin().await
-            .map_err(|e| AppError::InternalServerError(format!("Transaction error: {}", e)))?;
-
         // Insert the class
         let class_id = client_id.unwrap_or_else(Uuid::new_v4);
         let now = Utc::now().naive_utc();
@@ -45,28 +40,9 @@ impl ClassRepository {
         };
 
         let created_class = class
-            .insert(&txn)
+            .insert(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Failed to create class: {}", e)))?;
-
-        // Insert the teacher as a participant
-        let participant = class_participants::ActiveModel {
-            id: Set(Uuid::new_v4()),
-            class_id: Set(class_id),
-            user_id: Set(teacher_id),
-            joined_at: Set(now),
-            updated_at: Set(now),
-            removed_at: Set(None),
-        };
-
-        participant
-            .insert(&txn)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to add teacher participant: {}", e)))?;
-
-        // Commit the transaction
-        txn.commit().await
-            .map_err(|e| AppError::InternalServerError(format!("Transaction commit error: {}", e)))?;
 
         Ok(created_class)
     }
