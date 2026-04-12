@@ -82,7 +82,7 @@ class _TosListPageState extends ConsumerState<TosListPage> {
                                         ),
                                         child: Center(
                                           child: Text(
-                                            'Q${tos.quarter}',
+                                            'Q${tos.gradingPeriodNumber}',
                                             style: const TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w700,

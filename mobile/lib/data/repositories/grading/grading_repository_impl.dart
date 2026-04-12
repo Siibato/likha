@@ -9,11 +9,11 @@ import 'package:likha/data/datasources/remote/grading_remote_datasource.dart';
 import 'package:likha/data/models/grading/grade_config_model.dart';
 import 'package:likha/data/models/grading/grade_item_model.dart';
 import 'package:likha/data/models/grading/grade_score_model.dart';
-import 'package:likha/data/models/grading/quarterly_grade_model.dart';
+import 'package:likha/data/models/grading/period_grade_model.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
-import 'package:likha/domain/grading/entities/quarterly_grade.dart';
+import 'package:likha/domain/grading/entities/period_grade.dart';
 import 'package:likha/domain/grading/entities/general_average.dart';
 import 'package:likha/domain/grading/entities/sf9.dart';
 import 'package:likha/domain/grading/repositories/grading_repository.dart';
@@ -39,7 +39,7 @@ class GradingRepositoryImpl implements GradingRepository {
   GradeConfig _configToEntity(GradeConfigModel m) => GradeConfig(
         id: m.id,
         classId: m.classId,
-        quarter: m.quarter,
+        quarter: m.gradingPeriodNumber,
         wwWeight: m.wwWeight,
         ptWeight: m.ptWeight,
         qaWeight: m.qaWeight,
@@ -50,7 +50,7 @@ class GradingRepositoryImpl implements GradingRepository {
         classId: m.classId,
         title: m.title,
         component: m.component,
-        quarter: m.quarter,
+        quarter: m.gradingPeriodNumber,
         totalPoints: m.totalPoints,
         isDepartmentalExam: m.isDepartmentalExam,
         sourceType: m.sourceType,
@@ -67,20 +67,14 @@ class GradingRepositoryImpl implements GradingRepository {
         overrideScore: m.overrideScore,
       );
 
-  QuarterlyGrade _quarterlyToEntity(QuarterlyGradeModel m) => QuarterlyGrade(
+  PeriodGrade _periodToEntity(PeriodGradeModel m) => PeriodGrade(
         id: m.id,
         classId: m.classId,
         studentId: m.studentId,
-        quarter: m.quarter,
-        wwPercentage: m.wwPercentage,
-        ptPercentage: m.ptPercentage,
-        qaPercentage: m.qaPercentage,
-        wwWeighted: m.wwWeighted,
-        ptWeighted: m.ptWeighted,
-        qaWeighted: m.qaWeighted,
+        gradingPeriodNumber: m.gradingPeriodNumber,
         initialGrade: m.initialGrade,
         transmutedGrade: m.transmutedGrade,
-        isComplete: m.isComplete,
+        isLocked: m.isLocked,
         computedAt: m.computedAt,
       );
 
@@ -162,7 +156,7 @@ class GradingRepositoryImpl implements GradingRepository {
             GradeConfigModel(
               id: const Uuid().v4(),
               classId: classId,
-              quarter: q,
+              gradingPeriodNumber: q,
               wwWeight: weights.ww,
               ptWeight: weights.pt,
               qaWeight: weights.qa,
@@ -233,7 +227,7 @@ class GradingRepositoryImpl implements GradingRepository {
       final models = configs.map((c) => GradeConfigModel(
         id: c['id'] as String? ?? const Uuid().v4(),
         classId: classId,
-        quarter: (c['quarter'] as num).toInt(),
+        gradingPeriodNumber: (c['grading_period_number'] as num?)?.toInt() ?? (c['quarter'] as num).toInt(),
         wwWeight: (c['ww_weight'] as num).toDouble(),
         ptWeight: (c['pt_weight'] as num).toDouble(),
         qaWeight: (c['qa_weight'] as num).toDouble(),
@@ -273,14 +267,14 @@ class GradingRepositoryImpl implements GradingRepository {
   @override
   ResultFuture<List<GradeItem>> getGradeItems({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
     String? component,
   }) async {
     try {
       if (_serverReachabilityService.isServerReachable) {
         final models = await _remoteDataSource.getGradeItems(
           classId: classId,
-          quarter: quarter,
+          gradingPeriodNumber: gradingPeriodNumber,
           component: component,
         );
         await _localDataSource.saveItems(models);
@@ -288,19 +282,17 @@ class GradingRepositoryImpl implements GradingRepository {
       }
       final cached = await _localDataSource.getItemsByClassQuarter(
         classId,
-        quarter,
+        gradingPeriodNumber,
         component: component,
       );
       return Right(cached.map(_itemToEntity).toList());
     } on ServerFailure catch (e) {
       return Left(e);
-    } on Failure catch (e) {
-      return Left(e);
     } catch (e) {
       try {
         final cached = await _localDataSource.getItemsByClassQuarter(
           classId,
-          quarter,
+          gradingPeriodNumber,
           component: component,
         );
         return Right(cached.map(_itemToEntity).toList());
@@ -324,7 +316,7 @@ class GradingRepositoryImpl implements GradingRepository {
         classId: classId,
         title: data['title'] as String,
         component: data['component'] as String,
-        quarter: (data['quarter'] as num).toInt(),
+        gradingPeriodNumber: (data['grading_period_number'] as num?)?.toInt() ?? (data['quarter'] as num?)?.toInt() ?? 1,
         totalPoints: (data['total_points'] as num).toDouble(),
         isDepartmentalExam: data['is_departmental_exam'] == true,
         sourceType: (data['source_type'] as String?) ?? 'manual',
@@ -552,35 +544,35 @@ class GradingRepositoryImpl implements GradingRepository {
   // ===== Computed Grades =====
 
   @override
-  ResultFuture<List<QuarterlyGrade>> getQuarterlyGrades({
+  ResultFuture<List<PeriodGrade>> getPeriodGrades({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
   }) async {
     try {
       if (_serverReachabilityService.isServerReachable) {
-        final models = await _remoteDataSource.getQuarterlyGrades(
+        final models = await _remoteDataSource.getPeriodGrades(
           classId: classId,
-          quarter: quarter,
+          gradingPeriodNumber: gradingPeriodNumber,
         );
-        await _localDataSource.saveQuarterlyGrades(models);
-        return Right(models.map(_quarterlyToEntity).toList());
+        await _localDataSource.savePeriodGrades(models);
+        return Right(models.map(_periodToEntity).toList());
       }
-      final cached = await _localDataSource.getQuarterlyGradesByClass(
+      final cached = await _localDataSource.getPeriodGradesByClass(
         classId,
-        quarter,
+        gradingPeriodNumber,
       );
-      return Right(cached.map(_quarterlyToEntity).toList());
+      return Right(cached.map(_periodToEntity).toList());
     } on ServerFailure catch (e) {
       return Left(e);
     } on Failure catch (e) {
       return Left(e);
     } catch (e) {
       try {
-        final cached = await _localDataSource.getQuarterlyGradesByClass(
+        final cached = await _localDataSource.getPeriodGradesByClass(
           classId,
-          quarter,
+          gradingPeriodNumber,
         );
-        return Right(cached.map(_quarterlyToEntity).toList());
+        return Right(cached.map(_periodToEntity).toList());
       } catch (_) {
         return Left(CacheFailure(e.toString()));
       }
@@ -590,20 +582,18 @@ class GradingRepositoryImpl implements GradingRepository {
   @override
   ResultVoid computeGrades({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
   }) async {
     try {
       await _remoteDataSource.computeGrades(
         classId: classId,
-        quarter: quarter,
+        gradingPeriodNumber: gradingPeriodNumber,
       );
       return const Right(null);
     } on ServerFailure catch (e) {
       return Left(e);
-    } on Failure catch (e) {
-      return Left(e);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(CacheFailure(e.toString()));
     }
   }
 
@@ -611,14 +601,14 @@ class GradingRepositoryImpl implements GradingRepository {
   ResultVoid updateTransmutedGrade({
     required String classId,
     required String studentId,
-    required int quarter,
+    required int gradingPeriodNumber,
     required int transmutedGrade,
   }) async {
     try {
       await _localDataSource.updateTransmutedGrade(
         classId,
         studentId,
-        quarter,
+        gradingPeriodNumber,
         transmutedGrade,
       );
       return const Right(null);
@@ -668,14 +658,14 @@ class GradingRepositoryImpl implements GradingRepository {
   // ===== Student =====
 
   @override
-  ResultFuture<List<QuarterlyGrade>> getMyGrades({
+  ResultFuture<List<PeriodGrade>> getMyGrades({
     required String classId,
   }) async {
     try {
       if (_serverReachabilityService.isServerReachable) {
         final models = await _remoteDataSource.getMyGrades(classId: classId);
-        await _localDataSource.saveQuarterlyGrades(models);
-        return Right(models.map(_quarterlyToEntity).toList());
+        await _localDataSource.savePeriodGrades(models);
+        return Right(models.map(_periodToEntity).toList());
       }
       return const Right([]);
     } on ServerFailure catch (e) {

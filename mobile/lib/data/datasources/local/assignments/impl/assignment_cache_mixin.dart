@@ -58,7 +58,7 @@ mixin AssignmentCacheMixin on AssignmentLocalDataSourceBase {
             AssignmentSubmissionsCols.studentId: submission.studentId,
             AssignmentSubmissionsCols.status: submission.status,
             AssignmentSubmissionsCols.submittedAt: submission.submittedAt?.toIso8601String(),
-            AssignmentSubmissionsCols.isLate: submission.isLate ? 1 : 0,
+            // AssignmentSubmissionsCols.isLate field removed - no longer needed
             AssignmentSubmissionsCols.points: submission.score,
             CommonCols.createdAt: now.toIso8601String(),
             CommonCols.updatedAt: now.toIso8601String(),
@@ -92,7 +92,7 @@ mixin AssignmentCacheMixin on AssignmentLocalDataSourceBase {
             AssignmentSubmissionsCols.status: submission.status,
             AssignmentSubmissionsCols.textContent: submission.textContent,
             AssignmentSubmissionsCols.submittedAt: submission.submittedAt?.toIso8601String(),
-            AssignmentSubmissionsCols.isLate: submission.isLate ? 1 : 0,
+            // AssignmentSubmissionsCols.isLate field removed - no longer needed
             AssignmentSubmissionsCols.points: submission.score,
             AssignmentSubmissionsCols.feedback: submission.feedback,
             AssignmentSubmissionsCols.gradedAt: submission.gradedAt?.toIso8601String(),

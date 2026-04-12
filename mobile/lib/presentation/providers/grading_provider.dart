@@ -4,7 +4,7 @@ import 'package:likha/core/logging/provider_logger.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
-import 'package:likha/domain/grading/entities/quarterly_grade.dart';
+import 'package:likha/domain/grading/entities/period_grade.dart';
 import 'package:likha/domain/grading/usecases/clear_score_override.dart';
 import 'package:likha/domain/grading/usecases/compute_grades.dart';
 import 'package:likha/domain/grading/usecases/create_grade_item.dart';
@@ -12,13 +12,13 @@ import 'package:likha/domain/grading/usecases/delete_grade_item.dart';
 import 'package:likha/domain/grading/usecases/get_grade_items.dart';
 import 'package:likha/domain/grading/usecases/get_grade_summary.dart';
 import 'package:likha/domain/grading/usecases/get_grading_config.dart';
-import 'package:likha/domain/grading/usecases/get_quarterly_grades.dart';
+import 'package:likha/domain/grading/usecases/get_period_grades.dart';
 import 'package:likha/domain/grading/usecases/get_scores_by_item.dart';
 import 'package:likha/domain/grading/usecases/save_scores.dart';
 import 'package:likha/domain/grading/usecases/set_score_override.dart';
 import 'package:likha/domain/grading/usecases/setup_grading.dart';
 import 'package:likha/domain/grading/usecases/update_grading_config.dart';
-import 'package:likha/domain/grading/usecases/update_quarterly_grade.dart';
+import 'package:likha/domain/grading/usecases/update_period_grade.dart';
 import 'package:likha/domain/assessments/usecases/get_assessments.dart';
 import 'package:likha/domain/assignments/usecases/get_assignments.dart';
 import 'package:likha/domain/grading/repositories/grading_repository.dart';
@@ -255,7 +255,7 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
     final assessmentResult = await sl<GetAssessments>()(classId);
     assessmentResult.fold((_) {}, (assessments) {
       for (final a in assessments) {
-        if (a.quarter == quarter && a.component != null && !existingSourceIds.contains(a.id)) {
+        if (a.gradingPeriodNumber == quarter && a.component != null && !existingSourceIds.contains(a.id)) {
           sl<GradingRepository>().createGradeItem(
             classId: classId,
             data: {
@@ -280,7 +280,7 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
     final assignmentResult = await sl<GetAssignments>()(classId);
     assignmentResult.fold((_) {}, (assignments) {
       for (final a in assignments) {
-        if (a.quarter == quarter && a.component != null && !existingSourceIds.contains(a.id)) {
+        if (a.gradingPeriodNumber == quarter && a.component != null && !existingSourceIds.contains(a.id)) {
           sl<GradingRepository>().createGradeItem(
             classId: classId,
             data: {
@@ -459,26 +459,26 @@ class GradeScoresNotifier extends StateNotifier<GradeScoresState> {
 
 // ===== Quarterly Grades =====
 
-class QuarterlyGradesState {
-  final List<QuarterlyGrade> grades;
+class PeriodGradesState {
+  final List<PeriodGrade> grades;
   final List<Map<String, dynamic>>? summary;
   final bool isLoading;
   final String? error;
 
-  QuarterlyGradesState({
+  PeriodGradesState({
     this.grades = const [],
     this.summary,
     this.isLoading = false,
     this.error,
   });
 
-  QuarterlyGradesState copyWith({
-    List<QuarterlyGrade>? grades,
+  PeriodGradesState copyWith({
+    List<PeriodGrade>? grades,
     Object? summary = _unset,
     bool? isLoading,
     Object? error = _unset,
   }) {
-    return QuarterlyGradesState(
+    return PeriodGradesState(
       grades: grades ?? this.grades,
       summary: identical(summary, _unset) ? this.summary : summary as List<Map<String, dynamic>>?,
       isLoading: isLoading ?? this.isLoading,
@@ -487,24 +487,24 @@ class QuarterlyGradesState {
   }
 }
 
-class QuarterlyGradesNotifier extends StateNotifier<QuarterlyGradesState> {
-  final GetQuarterlyGrades _getQuarterlyGrades;
+class PeriodGradesNotifier extends StateNotifier<PeriodGradesState> {
+  final GetPeriodGrades _getPeriodGrades;
   final ComputeGrades _computeGrades;
   final GetGradeSummary _getGradeSummary;
-  final UpdateQuarterlyGrade _updateQuarterlyGrade;
+  final UpdatePeriodGrade _updatePeriodGrade;
 
-  QuarterlyGradesNotifier(
-    this._getQuarterlyGrades,
+  PeriodGradesNotifier(
+    this._getPeriodGrades,
     this._computeGrades,
     this._getGradeSummary,
-    this._updateQuarterlyGrade,
-  ) : super(QuarterlyGradesState());
+    this._updatePeriodGrade,
+  ) : super(PeriodGradesState());
 
   Future<void> loadGrades(String classId, int quarter) async {
     state = state.copyWith(isLoading: true, error: null);
-    final result = await _getQuarterlyGrades(
+    final result = await _getPeriodGrades(
       classId: classId,
-      quarter: quarter,
+      gradingPeriodNumber: quarter,
     );
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
@@ -514,7 +514,7 @@ class QuarterlyGradesNotifier extends StateNotifier<QuarterlyGradesState> {
 
   Future<void> computeGrades(String classId, int quarter) async {
     state = state.copyWith(isLoading: true, error: null);
-    final result = await _computeGrades(classId: classId, quarter: quarter);
+    final result = await _computeGrades(classId: classId, gradingPeriodNumber: quarter);
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (_) => state = state.copyWith(isLoading: false),
@@ -530,16 +530,16 @@ class QuarterlyGradesNotifier extends StateNotifier<QuarterlyGradesState> {
     );
   }
 
-  Future<void> updateQuarterlyGrade({
+  Future<void> updatePeriodGrade({
     required String classId,
     required String studentId,
     required int quarter,
     required int transmutedGrade,
   }) async {
-    final result = await _updateQuarterlyGrade(
+    final result = await _updatePeriodGrade(
       classId: classId,
       studentId: studentId,
-      quarter: quarter,
+      gradingPeriodNumber: quarter,
       transmutedGrade: transmutedGrade,
     );
     result.fold(
@@ -588,11 +588,11 @@ final gradeScoresProvider = StateNotifierProvider<GradeScoresNotifier, GradeScor
   );
 });
 
-final quarterlyGradesProvider = StateNotifierProvider<QuarterlyGradesNotifier, QuarterlyGradesState>((ref) {
-  return QuarterlyGradesNotifier(
-    sl<GetQuarterlyGrades>(),
+final quarterlyGradesProvider = StateNotifierProvider<PeriodGradesNotifier, PeriodGradesState>((ref) {
+  return PeriodGradesNotifier(
+    sl<GetPeriodGrades>(),
     sl<ComputeGrades>(),
     sl<GetGradeSummary>(),
-    sl<UpdateQuarterlyGrade>(),
+    sl<UpdatePeriodGrade>(),
   );
 });

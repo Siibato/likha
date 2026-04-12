@@ -1,5 +1,5 @@
 import 'package:likha/core/utils/typedef.dart';
-import 'package:likha/domain/grading/entities/quarterly_grade.dart';
+import 'package:likha/domain/grading/entities/period_grade.dart';
 import 'package:likha/domain/grading/repositories/grading_repository.dart';
 
 class GetMyGrades {
@@ -7,7 +7,7 @@ class GetMyGrades {
 
   GetMyGrades(this._repository);
 
-  ResultFuture<List<QuarterlyGrade>> call(String classId) {
+  ResultFuture<List<PeriodGrade>> call(String classId) {
     return _repository.getMyGrades(classId: classId);
   }
 }

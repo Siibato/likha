@@ -1,20 +1,20 @@
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
-import 'package:likha/domain/grading/entities/quarterly_grade.dart';
+import 'package:likha/domain/grading/entities/period_grade.dart';
 import 'package:likha/core/utils/transmutation_util.dart';
 
 /// Client-side grade computation for offline preview.
 /// Mirrors the server algorithm in server/src/services/grade_computation/compute.rs
 class GradeComputationUtil {
-  /// Compute a preview quarterly grade from local data.
-  static QuarterlyGrade computePreview({
+  /// Compute a preview period grade from local data.
+  static PeriodGrade computePreview({
     required GradeConfig config,
     required List<GradeItem> items,
     required Map<String, List<GradeScore>> scoresByItem,
     required String classId,
     required String studentId,
-    required int quarter,
+    required int gradingPeriodNumber,
   }) {
     // 1. Group items by component
     final wwItems =
@@ -46,29 +46,23 @@ class GradeComputationUtil {
         qaResult.isComplete &&
         (wwItems.isNotEmpty || ptItems.isNotEmpty || qaItems.isNotEmpty);
 
-    return QuarterlyGrade(
+    return PeriodGrade(
       id: '', // preview, no real ID
       classId: classId,
       studentId: studentId,
-      quarter: quarter,
-      wwPercentage: wwResult.percentage,
-      ptPercentage: ptResult.percentage,
-      qaPercentage: qaResult.percentage,
-      wwWeighted: wwWeighted,
-      ptWeighted: ptWeighted,
-      qaWeighted: qaWeighted,
+      gradingPeriodNumber: gradingPeriodNumber,
       initialGrade: initialGrade,
       transmutedGrade: transmutedGrade,
-      isComplete: isComplete,
+      isLocked: isComplete,
       computedAt: DateTime.now().toIso8601String(),
       isPreview: true,
     );
   }
 
-  /// Compute final grade as average of completed quarterly transmuted grades.
-  static double? computeFinalGrade(List<QuarterlyGrade> quarterlyGrades) {
-    final complete = quarterlyGrades
-        .where((g) => g.isComplete && g.transmutedGrade != null)
+  /// Compute final grade as average of completed period transmuted grades.
+  static double? computeFinalGrade(List<PeriodGrade> periodGrades) {
+    final complete = periodGrades
+        .where((g) => g.isLocked && g.transmutedGrade != null)
         .toList();
     if (complete.isEmpty) return null;
     final sum = complete.fold<double>(0, (s, g) => s + g.transmutedGrade!);

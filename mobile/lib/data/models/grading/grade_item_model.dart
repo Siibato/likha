@@ -5,7 +5,7 @@ class GradeItemModel {
   final String classId;
   final String title;
   final String component;
-  final int quarter;
+  final int gradingPeriodNumber;
   final double totalPoints;
   final bool isDepartmentalExam;
   final String sourceType;
@@ -19,7 +19,7 @@ class GradeItemModel {
     required this.classId,
     required this.title,
     required this.component,
-    required this.quarter,
+    required this.gradingPeriodNumber,
     required this.totalPoints,
     required this.isDepartmentalExam,
     required this.sourceType,
@@ -35,7 +35,7 @@ class GradeItemModel {
       classId: json['class_id'] as String,
       title: json['title'] as String,
       component: json['component'] as String,
-      quarter: (json['quarter'] as num).toInt(),
+      gradingPeriodNumber: (json['grading_period_number'] as num?)?.toInt() ?? (json['quarter'] as num).toInt(),
       totalPoints: (json['total_points'] as num).toDouble(),
       isDepartmentalExam: json['is_departmental_exam'] == true,
       sourceType: (json['source_type'] as String?) ?? 'manual',
@@ -52,7 +52,7 @@ class GradeItemModel {
       classId: map[GradeItemsCols.classId] as String,
       title: map[GradeItemsCols.title] as String,
       component: map[GradeItemsCols.component] as String,
-      quarter: map[GradeItemsCols.quarter] as int,
+      gradingPeriodNumber: map[GradeItemsCols.gradingPeriodNumber] as int,
       totalPoints: (map[GradeItemsCols.totalPoints] as num).toDouble(),
       isDepartmentalExam: map[GradeItemsCols.isDepartmentalExam] == 1,
       sourceType: map[GradeItemsCols.sourceType] as String,
@@ -68,7 +68,7 @@ class GradeItemModel {
     'class_id': classId,
     'title': title,
     'component': component,
-    'quarter': quarter,
+    'grading_period_number': gradingPeriodNumber,
     'total_points': totalPoints,
     'is_departmental_exam': isDepartmentalExam,
     'source_type': sourceType,
@@ -83,7 +83,7 @@ class GradeItemModel {
     GradeItemsCols.classId: classId,
     GradeItemsCols.title: title,
     GradeItemsCols.component: component,
-    GradeItemsCols.quarter: quarter,
+    GradeItemsCols.gradingPeriodNumber: gradingPeriodNumber,
     GradeItemsCols.totalPoints: totalPoints,
     GradeItemsCols.isDepartmentalExam: isDepartmentalExam ? 1 : 0,
     GradeItemsCols.sourceType: sourceType,

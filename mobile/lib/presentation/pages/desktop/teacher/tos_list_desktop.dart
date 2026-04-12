@@ -109,7 +109,7 @@ class _TosListDesktopState extends ConsumerState<TosListDesktop> {
                                   color: AppColors.foregroundPrimary,
                                 ),
                               )),
-                              DataCell(Text('Q${tos.quarter}')),
+                              DataCell(Text('Q${tos.gradingPeriodNumber}')),
                               DataCell(Text(modeLabel)),
                               DataCell(Text('${tos.totalItems}')),
                               DataCell(Text(

@@ -106,7 +106,7 @@ class Sf9PrintService {
   ) {
     const headerStyle = pw.TextStyle(fontSize: 10);
     const cellStyle = pw.TextStyle(fontSize: 10);
-    const boldStyle = pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold);
+    final boldStyle = pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold);
 
     String gradeText(int? grade) => grade?.toString() ?? '--';
 

@@ -82,7 +82,7 @@ class _GradeSummaryDesktopState extends ConsumerState<GradeSummaryDesktop>
     final raw = _qgEditController.text.trim();
     final grade = int.tryParse(raw);
     if (grade != null && _editingStudentId != null) {
-      ref.read(quarterlyGradesProvider.notifier).updateQuarterlyGrade(
+      ref.read(quarterlyGradesProvider.notifier).updatePeriodGrade(
         classId: widget.classId,
         studentId: _editingStudentId!,
         quarter: _selectedQuarter,

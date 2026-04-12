@@ -86,20 +86,7 @@ class _AssignmentSubmissionsDesktopState
                     cellBuilder: (value) =>
                         _buildStatusBadge(value as String? ?? 'pending'),
                   ),
-                  SubmissionColumn(
-                    key: 'isLate',
-                    label: 'Late',
-                    cellBuilder: (value) => value == true
-                        ? _buildLateBadge()
-                        : const Text(
-                            '--',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppColors.foregroundTertiary,
-                            ),
-                          ),
-                  ),
-                  const SubmissionColumn(
+                                    const SubmissionColumn(
                     key: 'score',
                     label: 'Score',
                     numeric: true,
@@ -115,7 +102,7 @@ class _AssignmentSubmissionsDesktopState
                           'studentName': s.studentName,
                           'studentUsername': s.studentUsername,
                           'status': s.status,
-                          'isLate': s.isLate,
+                          // isLate field removed - no longer needed
                           'score': s.score != null
                               ? '${s.score}/${widget.totalPoints}'
                               : '--',
@@ -173,24 +160,6 @@ class _AssignmentSubmissionsDesktopState
           fontSize: 12,
           fontWeight: FontWeight.w600,
           color: badgeColor,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLateBadge() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.semanticError.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: const Text(
-        'Late',
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: AppColors.semanticError,
         ),
       ),
     );

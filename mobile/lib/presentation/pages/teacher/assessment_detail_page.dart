@@ -491,14 +491,14 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                                   ? () => _confirmReleaseResults(assessment)
                                   : null,
                         ),
-                        if (assessment.linkedTosId != null) ...[
+                        if (assessment.tosId != null) ...[
                           const SizedBox(height: 16),
                           _ViewTosChip(
                             onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) => TosViewPage(
-                                  tosId: assessment.linkedTosId!,
+                                  tosId: assessment.tosId!,
                                 ),
                               ),
                             ),

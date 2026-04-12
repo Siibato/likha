@@ -32,7 +32,7 @@ mixin TosCrudMixin on TosRepositoryBase {
       final model = TosModel(
         id: id,
         classId: classId,
-        quarter: (data['quarter'] as num).toInt(),
+        gradingPeriodNumber: (data['grading_period_number'] as num?)?.toInt() ?? (data['quarter'] as num).toInt(),
         title: data['title'] as String,
         classificationMode: data['classification_mode'] as String,
         totalItems: (data['total_items'] as num).toInt(),

@@ -2,7 +2,7 @@ import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
-import 'package:likha/domain/grading/entities/quarterly_grade.dart';
+import 'package:likha/domain/grading/entities/period_grade.dart';
 import 'package:likha/domain/grading/entities/general_average.dart';
 import 'package:likha/domain/grading/entities/sf9.dart';
 
@@ -26,7 +26,7 @@ abstract class GradingRepository {
   // Grade Items
   ResultFuture<List<GradeItem>> getGradeItems({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
     String? component,
   });
 
@@ -62,20 +62,20 @@ abstract class GradingRepository {
   ResultVoid clearScoreOverride({required String scoreId});
 
   // Computed Grades
-  ResultFuture<List<QuarterlyGrade>> getQuarterlyGrades({
+  ResultFuture<List<PeriodGrade>> getPeriodGrades({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
   });
 
   ResultVoid computeGrades({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
   });
 
   ResultVoid updateTransmutedGrade({
     required String classId,
     required String studentId,
-    required int quarter,
+    required int gradingPeriodNumber,
     required int transmutedGrade,
   });
 
@@ -89,7 +89,7 @@ abstract class GradingRepository {
   });
 
   // Student
-  ResultFuture<List<QuarterlyGrade>> getMyGrades({required String classId});
+  ResultFuture<List<PeriodGrade>> getMyGrades({required String classId});
 
   ResultFuture<Map<String, dynamic>> getMyGradeDetail({
     required String classId,

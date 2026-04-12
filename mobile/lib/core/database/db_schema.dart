@@ -28,10 +28,10 @@ abstract final class DbTables {
   static const String syncQueue = 'sync_queue';
   static const String syncMetadata = 'sync_metadata';
   static const String studentResultsCache = 'student_results_cache';
-  static const String gradeComponentsConfig = 'grade_components_config';
+  static const String gradeRecord = 'grade_record';
   static const String gradeItems = 'grade_items';
   static const String gradeScores = 'grade_scores';
-  static const String quarterlyGrades = 'quarterly_grades';
+  static const String periodGrades = 'period_grades';
   static const String tableOfSpecifications = 'table_of_specifications';
   static const String tosCompetencies = 'tos_competencies';
   static const String melcs = 'melcs';
@@ -92,6 +92,7 @@ abstract final class ClassesCols {
   static const String subjectGroup = 'subject_group';
   static const String schoolYear = 'school_year';
   static const String semester = 'semester';
+  static const String gradingPeriodType = 'grading_period_type';
   static const String isAdvisory = 'is_advisory';
 }
 
@@ -116,8 +117,8 @@ abstract final class AssessmentsCols {
   static const String totalPoints = 'total_points';
   static const String questionCount = 'question_count';
   static const String submissionCount = 'submission_count';
-  static const String linkedTosId = 'linked_tos_id';
-  static const String quarter = 'quarter';
+  static const String tosId = 'tos_id';
+  static const String gradingPeriodNumber = 'grading_period_number';
   static const String component = 'component';
 }
 
@@ -130,6 +131,7 @@ abstract final class AssessmentQuestionsCols {
   static const String isMultiSelect = 'is_multi_select';
   static const String tosCompetencyId = 'tos_competency_id';
   static const String cognitiveLevel = 'cognitive_level';
+  static const String difficulty = 'difficulty';
 }
 
 abstract final class AnswerKeysCols {
@@ -179,13 +181,14 @@ abstract final class AssignmentsCols {
   static const String title = 'title';
   static const String instructions = 'instructions';
   static const String totalPoints = 'total_points';
-  static const String submissionType = 'submission_type';
+  static const String allowsTextSubmission = 'allows_text_submission';
+  static const String allowsFileSubmission = 'allows_file_submission';
   static const String allowedFileTypes = 'allowed_file_types';
   static const String maxFileSizeMb = 'max_file_size_mb';
   static const String dueAt = 'due_at';
   static const String isPublished = 'is_published';
   static const String orderIndex = 'order_index';
-  static const String quarter = 'quarter';
+  static const String gradingPeriodNumber = 'grading_period_number';
   static const String component = 'component';
   static const String submissionCount = 'submission_count';
   static const String gradedCount = 'graded_count';
@@ -200,7 +203,6 @@ abstract final class AssignmentSubmissionsCols {
   static const String status = 'status';
   static const String textContent = 'text_content';
   static const String submittedAt = 'submitted_at';
-  static const String isLate = 'is_late';
   static const String points = 'points';
   static const String feedback = 'feedback';
   static const String gradedAt = 'graded_at';
@@ -250,9 +252,9 @@ abstract final class SyncMetadataCols {
   static const String value = 'value';
 }
 
-abstract final class GradeComponentsConfigCols {
+abstract final class GradeRecordCols {
   static const String classId = 'class_id';
-  static const String quarter = 'quarter';
+  static const String gradingPeriodNumber = 'grading_period_number';
   static const String wwWeight = 'ww_weight';
   static const String ptWeight = 'pt_weight';
   static const String qaWeight = 'qa_weight';
@@ -262,7 +264,7 @@ abstract final class GradeItemsCols {
   static const String classId = 'class_id';
   static const String title = 'title';
   static const String component = 'component';
-  static const String quarter = 'quarter';
+  static const String gradingPeriodNumber = 'grading_period_number';
   static const String totalPoints = 'total_points';
   static const String isDepartmentalExam = 'is_departmental_exam';
   static const String sourceType = 'source_type';
@@ -278,19 +280,13 @@ abstract final class GradeScoresCols {
   static const String overrideScore = 'override_score';
 }
 
-abstract final class QuarterlyGradesCols {
+abstract final class PeriodGradesCols {
   static const String classId = 'class_id';
   static const String studentId = 'student_id';
-  static const String quarter = 'quarter';
-  static const String wwPercentage = 'ww_percentage';
-  static const String ptPercentage = 'pt_percentage';
-  static const String qaPercentage = 'qa_percentage';
-  static const String wwWeighted = 'ww_weighted';
-  static const String ptWeighted = 'pt_weighted';
-  static const String qaWeighted = 'qa_weighted';
+  static const String gradingPeriodNumber = 'grading_period_number';
   static const String initialGrade = 'initial_grade';
   static const String transmutedGrade = 'transmuted_grade';
-  static const String isComplete = 'is_complete';
+  static const String isLocked = 'is_locked';
   static const String computedAt = 'computed_at';
 }
 
@@ -306,7 +302,7 @@ abstract final class AssessmentStatisticsCacheCols {
 
 abstract final class TosCols {
   static const String classId = 'class_id';
-  static const String quarter = 'quarter';
+  static const String gradingPeriodNumber = 'grading_period_number';
   static const String title = 'title';
   static const String classificationMode = 'classification_mode';
   static const String totalItems = 'total_items';
@@ -326,17 +322,23 @@ abstract final class TosCompetenciesCols {
   static const String tosId = 'tos_id';
   static const String competencyCode = 'competency_code';
   static const String competencyText = 'competency_text';
-  static const String daysTaught = 'days_taught';
+  static const String timeUnitsTaught = 'time_units_taught';
   static const String orderIndex = 'order_index';
   static const String easyCount = 'easy_count';
   static const String mediumCount = 'medium_count';
   static const String hardCount = 'hard_count';
+  static const String rememberingCount = 'remembering_count';
+  static const String understandingCount = 'understanding_count';
+  static const String applyingCount = 'applying_count';
+  static const String analyzingCount = 'analyzing_count';
+  static const String evaluatingCount = 'evaluating_count';
+  static const String creatingCount = 'creating_count';
 }
 
 abstract final class MelcsCols {
   static const String subject = 'subject';
   static const String gradeLevel = 'grade_level';
-  static const String quarter = 'quarter';
+  static const String gradingPeriodNumber = 'grading_period_number';
   static const String competencyCode = 'competency_code';
   static const String competencyText = 'competency_text';
   static const String domain = 'domain';

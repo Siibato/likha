@@ -223,7 +223,7 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _buildStatusBadge(submission.status, submission.isLate),
+                    _buildStatusBadge(submission.status),
                     const SizedBox(height: 16),
                     if (submission.textContent != null &&
                         submission.textContent!.isNotEmpty) ...[
@@ -377,7 +377,7 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
     );
   }
 
-  Widget _buildStatusBadge(String status, bool isLate) {
+  Widget _buildStatusBadge(String status) {
     Color statusColor;
     switch (status) {
       case 'submitted':
@@ -401,14 +401,6 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
           color: statusColor,
           variant: BadgeVariant.outlined,
         ),
-        if (isLate) ...[
-          const SizedBox(width: 8),
-          const StatusBadge(
-            label: 'Late',
-            color: AppColors.semanticError,
-            variant: BadgeVariant.outlined,
-          ),
-        ],
       ],
     );
   }

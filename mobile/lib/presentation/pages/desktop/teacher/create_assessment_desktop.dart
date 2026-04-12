@@ -934,7 +934,7 @@ class _CreateAssessmentDesktopState
                   ...tosState.tosList.map(
                     (tos) => DropdownMenuItem(
                       value: tos.id,
-                      child: Text('${tos.title} (Q${tos.quarter})'),
+                      child: Text('${tos.title} (Q${tos.gradingPeriodNumber})'),
                     ),
                   ),
                 ],

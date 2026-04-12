@@ -20,7 +20,7 @@ class TosCompetencyRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final weight = totalDays > 0
-        ? (competency.daysTaught / totalDays * 100).toStringAsFixed(1)
+        ? ((competency.timeUnitsTaught) / totalDays * 100).toStringAsFixed(1)
         : '0.0';
 
     return GestureDetector(
@@ -69,7 +69,7 @@ class TosCompetencyRow extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        '${competency.daysTaught} $timeUnit taught',
+                        '${competency.timeUnitsTaught} $timeUnit taught',
                         style: const TextStyle(
                           fontSize: 11,
                           color: Color(0xFF999999),

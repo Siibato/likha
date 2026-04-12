@@ -14,7 +14,7 @@ abstract class TosLocalDataSource {
   Future<List<MelcEntryModel>> searchMelcs({
     String? subject,
     String? gradeLevel,
-    int? quarter,
+    int? gradingPeriodNumber,
     String? query,
   });
 

@@ -4,7 +4,7 @@ import 'package:likha/core/logging/provider_logger.dart';
 class GradeConfigModel {
   final String id;
   final String classId;
-  final int quarter;
+  final int gradingPeriodNumber;
   final double wwWeight;
   final double ptWeight;
   final double qaWeight;
@@ -14,7 +14,7 @@ class GradeConfigModel {
   const GradeConfigModel({
     required this.id,
     required this.classId,
-    required this.quarter,
+    required this.gradingPeriodNumber,
     required this.wwWeight,
     required this.ptWeight,
     required this.qaWeight,
@@ -29,7 +29,7 @@ class GradeConfigModel {
       final model = GradeConfigModel(
         id: json['id'] as String,
         classId: json['class_id'] as String,
-        quarter: (json['quarter'] as num).toInt(),
+        gradingPeriodNumber: (json['grading_period_number'] as num?)?.toInt() ?? (json['quarter'] as num).toInt(),
         wwWeight: (json['ww_weight'] as num).toDouble(),
         ptWeight: (json['pt_weight'] as num).toDouble(),
         qaWeight: (json['qa_weight'] as num).toDouble(),
@@ -47,11 +47,11 @@ class GradeConfigModel {
   factory GradeConfigModel.fromMap(Map<String, dynamic> map) {
     return GradeConfigModel(
       id: map[CommonCols.id] as String,
-      classId: map[GradeComponentsConfigCols.classId] as String,
-      quarter: map[GradeComponentsConfigCols.quarter] as int,
-      wwWeight: (map[GradeComponentsConfigCols.wwWeight] as num).toDouble(),
-      ptWeight: (map[GradeComponentsConfigCols.ptWeight] as num).toDouble(),
-      qaWeight: (map[GradeComponentsConfigCols.qaWeight] as num).toDouble(),
+      classId: map[GradeRecordCols.classId] as String,
+      gradingPeriodNumber: map[GradeRecordCols.gradingPeriodNumber] as int,
+      wwWeight: (map[GradeRecordCols.wwWeight] as num).toDouble(),
+      ptWeight: (map[GradeRecordCols.ptWeight] as num).toDouble(),
+      qaWeight: (map[GradeRecordCols.qaWeight] as num).toDouble(),
       createdAt: map[CommonCols.createdAt] as String,
       updatedAt: map[CommonCols.updatedAt] as String,
     );
@@ -60,7 +60,7 @@ class GradeConfigModel {
   Map<String, dynamic> toJson() => {
     'id': id,
     'class_id': classId,
-    'quarter': quarter,
+    'grading_period_number': gradingPeriodNumber,
     'ww_weight': wwWeight,
     'pt_weight': ptWeight,
     'qa_weight': qaWeight,
@@ -70,11 +70,11 @@ class GradeConfigModel {
 
   Map<String, dynamic> toMap() => {
     CommonCols.id: id,
-    GradeComponentsConfigCols.classId: classId,
-    GradeComponentsConfigCols.quarter: quarter,
-    GradeComponentsConfigCols.wwWeight: wwWeight,
-    GradeComponentsConfigCols.ptWeight: ptWeight,
-    GradeComponentsConfigCols.qaWeight: qaWeight,
+    GradeRecordCols.classId: classId,
+    GradeRecordCols.gradingPeriodNumber: gradingPeriodNumber,
+    GradeRecordCols.wwWeight: wwWeight,
+    GradeRecordCols.ptWeight: ptWeight,
+    GradeRecordCols.qaWeight: qaWeight,
     CommonCols.createdAt: createdAt,
     CommonCols.updatedAt: updatedAt,
     CommonCols.cachedAt: DateTime.now().toIso8601String(),

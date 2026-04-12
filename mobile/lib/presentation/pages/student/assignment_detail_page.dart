@@ -34,7 +34,8 @@ class AssignmentDetailPage extends ConsumerStatefulWidget {
   final String assignmentId;
   final String assignmentTitle;
   final String instructions;
-  final String submissionType;
+  final bool allowsTextSubmission;
+  final bool allowsFileSubmission;
   final int totalPoints;
   final String? allowedFileTypes;
   final int? maxFileSizeMb;
@@ -48,7 +49,8 @@ class AssignmentDetailPage extends ConsumerStatefulWidget {
     required this.assignmentId,
     required this.assignmentTitle,
     required this.instructions,
-    required this.submissionType,
+    required this.allowsTextSubmission,
+    required this.allowsFileSubmission,
     required this.totalPoints,
     this.allowedFileTypes,
     this.maxFileSizeMb,
@@ -91,13 +93,9 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     super.dispose();
   }
 
-  bool get _canSubmitText =>
-      widget.submissionType == 'text' ||
-      widget.submissionType == 'text_or_file';
+  bool get _canSubmitText => widget.allowsTextSubmission;
 
-  bool get _canSubmitFile =>
-      widget.submissionType == 'file' ||
-      widget.submissionType == 'text_or_file';
+  bool get _canSubmitFile => widget.allowsFileSubmission;
 
   String? _getTextContent() {
     if (!_canSubmitText) return null;
@@ -460,7 +458,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                         // Submission timestamp
                         if (submission != null && submission.submittedAt != null) ...[
                           const SizedBox(height: 16),
-                          _buildSubmissionInfo(submission.submittedAt!, submission.isLate),
+                          _buildSubmissionInfo(submission.submittedAt!, false), // isLate field removed
                         ],
 
                         const SizedBox(height: 40),

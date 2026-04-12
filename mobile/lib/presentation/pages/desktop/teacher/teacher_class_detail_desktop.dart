@@ -577,7 +577,7 @@ class _TosSection extends ConsumerWidget {
                               ),
                             )),
                             DataCell(Text(
-                              'Q${tos.quarter}',
+                              'Q${tos.gradingPeriodNumber}',
                               style: const TextStyle(
                                 fontSize: 14,
                                 color: AppColors.foregroundSecondary,
@@ -702,7 +702,7 @@ class _GradesTabContentState extends ConsumerState<_GradesTabContent> {
 
   void _saveQg(String studentId, int? newQg) {
     if (newQg == null) return;
-    ref.read(quarterlyGradesProvider.notifier).updateQuarterlyGrade(
+    ref.read(quarterlyGradesProvider.notifier).updatePeriodGrade(
           classId: widget.classId,
           studentId: studentId,
           quarter: _selectedQuarter,
@@ -761,7 +761,7 @@ class _GradesTabContentState extends ConsumerState<_GradesTabContent> {
 
   Widget _buildSpreadsheetContent(
     GradingConfigState configState,
-    QuarterlyGradesState gradesState,
+    PeriodGradesState gradesState,
     GradeItemsState itemsState,
     GradeScoresState scoresState,
     List<Participant> students,

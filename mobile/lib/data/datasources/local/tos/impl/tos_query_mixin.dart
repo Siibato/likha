@@ -11,7 +11,7 @@ mixin TosQueryMixin on TosLocalDataSourceBase {
       DbTables.tableOfSpecifications,
       where: '${TosCols.classId} = ? AND ${CommonCols.deletedAt} IS NULL',
       whereArgs: [classId],
-      orderBy: '${TosCols.quarter} ASC',
+      orderBy: '${TosCols.gradingPeriodNumber} ASC',
     );
     return results.map((row) => TosModel.fromMap(row)).toList();
   }
@@ -59,7 +59,7 @@ mixin TosQueryMixin on TosLocalDataSourceBase {
   Future<List<MelcEntryModel>> searchMelcs({
     String? subject,
     String? gradeLevel,
-    int? quarter,
+    int? gradingPeriodNumber,
     String? query,
   }) async {
     final db = await localDatabase.database;
@@ -75,9 +75,9 @@ mixin TosQueryMixin on TosLocalDataSourceBase {
       conditions.add('${MelcsCols.gradeLevel} = ?');
       args.add(gradeLevel);
     }
-    if (quarter != null) {
-      conditions.add('(${MelcsCols.quarter} = ? OR ${MelcsCols.quarter} IS NULL)');
-      args.add(quarter);
+    if (gradingPeriodNumber != null) {
+      conditions.add('(${MelcsCols.gradingPeriodNumber} = ? OR ${MelcsCols.gradingPeriodNumber} IS NULL)');
+      args.add(gradingPeriodNumber);
     }
     if (query != null && query.isNotEmpty) {
       conditions.add(

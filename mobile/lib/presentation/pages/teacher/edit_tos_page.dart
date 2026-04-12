@@ -59,7 +59,7 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
         TextEditingController(text: '${widget.tos.evaluatingPercentage}');
     _creatingPctController =
         TextEditingController(text: '${widget.tos.creatingPercentage}');
-    _selectedQuarter = widget.tos.quarter;
+    _selectedQuarter = widget.tos.gradingPeriodNumber;
     _classificationMode = widget.tos.classificationMode;
     _timeUnit = widget.tos.timeUnit;
   }
@@ -162,7 +162,7 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
                           border: Border.all(color: const Color(0xFFE0E0E0)),
                         ),
                         child: DropdownButtonFormField<int>(
-                          value: _selectedQuarter,
+                          initialValue: _selectedQuarter,
                           decoration: const InputDecoration(
                             labelText: 'Quarter',
                             prefixIcon: Icon(Icons.calendar_month_outlined,
