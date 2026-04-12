@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/utils/transmutation_util.dart';
 import 'package:likha/domain/grading/usecases/get_final_grades.dart';
@@ -30,12 +31,22 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
   bool _finalGradesLoading = false;
   String? _finalGradesError;
 
+  // QG inline editing
+  String? _editingStudentId;
+  final _qgEditController = TextEditingController();
+  final _qgFocusNode = FocusNode();
+
   @override
   void initState() {
     super.initState();
     _selectedQuarter = widget.initialQuarter;
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(_onTabChanged);
+    _qgFocusNode.addListener(() {
+      if (!_qgFocusNode.hasFocus && _editingStudentId != null) {
+        _commitQgEdit();
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadQuarterlySummary();
       ref.read(gradingConfigProvider.notifier).loadConfig(widget.classId);
@@ -82,10 +93,45 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
     _loadQuarterlySummary();
   }
 
+  void _startQgEdit(String studentId, int? currentGrade) {
+    if (_editingStudentId != null) _commitQgEdit();
+    setState(() {
+      _editingStudentId = studentId;
+      _qgEditController.text =
+          currentGrade != null ? currentGrade.toString() : '';
+      _qgEditController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _qgEditController.text.length),
+      );
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _qgFocusNode.requestFocus();
+    });
+  }
+
+  void _commitQgEdit() {
+    final raw = _qgEditController.text.trim();
+    final grade = int.tryParse(raw);
+    if (grade != null && _editingStudentId != null) {
+      ref.read(quarterlyGradesProvider.notifier).updateQuarterlyGrade(
+        classId: widget.classId,
+        studentId: _editingStudentId!,
+        quarter: _selectedQuarter,
+        transmutedGrade: grade,
+      );
+    }
+    if (mounted) setState(() => _editingStudentId = null);
+  }
+
+  void _cancelQgEdit() {
+    if (mounted) setState(() => _editingStudentId = null);
+  }
+
   @override
   void dispose() {
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
+    _qgEditController.dispose();
+    _qgFocusNode.dispose();
     super.dispose();
   }
 
@@ -311,6 +357,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
               ...summary.asMap().entries.map((entry) {
                 final index = entry.key;
                 final row = entry.value;
+                final studentId = row['student_id'] as String? ?? '';
                 final studentName =
                     row['student_name'] as String? ?? 'Unknown';
                 final wwScore = _numOrNull(row['ww_weighted_score']);
@@ -321,6 +368,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                     qg != null ? TransmutationUtil.getDescriptor(qg) : null;
                 final descriptorColor =
                     qg != null ? TransmutationUtil.getDescriptorColor(qg) : null;
+                final isEditingQg = _editingStudentId == studentId;
 
                 return Container(
                   decoration: BoxDecoration(
@@ -356,18 +404,80 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                         cellWidth,
                         cellHeight,
                       ),
-                      _dataCell(
-                        qg?.toString() ?? '--',
-                        cellWidth,
-                        cellHeight,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: qg != null
-                              ? const Color(0xFF2B2B2B)
-                              : const Color(0xFFCCCCCC),
+                      // QG — inline-editable
+                      if (isEditingQg)
+                        SizedBox(
+                          width: cellWidth,
+                          height: cellHeight,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4, vertical: 6),
+                            child: CallbackShortcuts(
+                              bindings: {
+                                const SingleActivator(
+                                        LogicalKeyboardKey.escape):
+                                    _cancelQgEdit,
+                              },
+                              child: TextField(
+                                controller: _qgEditController,
+                                focusNode: _qgFocusNode,
+                                autofocus: true,
+                                textAlign: TextAlign.center,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
+                                style: const TextStyle(fontSize: 13),
+                                onSubmitted: (_) => _commitQgEdit(),
+                                decoration: InputDecoration(
+                                  isDense: true,
+                                  contentPadding:
+                                      const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 6,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF1976D2),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF1976D2),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF1976D2),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        GestureDetector(
+                          onTap: () => _startQgEdit(studentId, qg),
+                          child: _dataCell(
+                            qg?.toString() ?? '--',
+                            cellWidth,
+                            cellHeight,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: qg != null
+                                  ? const Color(0xFF2B2B2B)
+                                  : const Color(0xFFCCCCCC),
+                            ),
+                          ),
                         ),
-                      ),
                       SizedBox(
                         width: 130,
                         height: cellHeight,

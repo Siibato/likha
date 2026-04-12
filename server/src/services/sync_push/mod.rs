@@ -32,5 +32,6 @@ pub mod assignment_ops;
 pub mod learning_material_ops;
 pub mod submission_ops;
 pub mod grading_ops;
+pub mod tos_ops;
 
 pub use sync_push_service::{SyncPushService, OperationResult};

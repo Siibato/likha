@@ -23,6 +23,8 @@ class AnswerResultCard extends StatelessWidget {
         return 'Identification';
       case 'enumeration':
         return 'Enumeration';
+      case 'essay':
+        return 'Essay';
       default:
         return type;
     }
@@ -30,12 +32,16 @@ class AnswerResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isPending = answer.isPendingEssayGrade;
     final isAutoCorrect = answer.isCorrect == true;
     final isPartial = answer.pointsAwarded > 0 && answer.pointsAwarded < answer.points;
 
     Color statusColor;
     IconData statusIcon;
-    if (isAutoCorrect) {
+    if (isPending) {
+      statusColor = const Color(0xFFFFBD59);
+      statusIcon = Icons.hourglass_empty_rounded;
+    } else if (isAutoCorrect) {
       statusColor = AppColors.semanticSuccess;
       statusIcon = Icons.check_circle;
     } else if (isPartial) {
@@ -60,7 +66,7 @@ class AnswerResultCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Q${questionNumber}. ${answer.questionText}',
+                      'Q$questionNumber. ${answer.questionText}',
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
@@ -77,7 +83,9 @@ class AnswerResultCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               StatusBadge(
-                label: '${answer.pointsAwarded % 1 == 0 ? answer.pointsAwarded.toInt() : answer.pointsAwarded.toStringAsFixed(1)} / ${answer.points}',
+                label: isPending
+                    ? 'Pending'
+                    : '${answer.pointsAwarded % 1 == 0 ? answer.pointsAwarded.toInt() : answer.pointsAwarded.toStringAsFixed(1)} / ${answer.points}',
                 color: statusColor,
                 variant: BadgeVariant.filled,
               ),
@@ -87,6 +95,15 @@ class AnswerResultCard extends StatelessWidget {
           const Divider(height: 1, color: AppColors.borderLight),
           const SizedBox(height: 12),
           _buildAnswerDetail(),
+          if (isPending) ...[
+            const SizedBox(height: 8),
+            const StatusBadge(
+              label: 'Awaiting teacher grading',
+              color: Color(0xFFFFBD59),
+              icon: Icons.schedule,
+              variant: BadgeVariant.filled,
+            ),
+          ],
         ],
       ),
     );
@@ -100,6 +117,8 @@ class AnswerResultCard extends StatelessWidget {
         return _IdentificationAnswerDetail(answer: answer);
       case 'enumeration':
         return _EnumerationAnswerDetail(answer: answer);
+      case 'essay':
+        return _EssayAnswerDetail(answer: answer);
       default:
         return const Text('Unknown question type');
     }
@@ -237,6 +256,33 @@ class _IdentificationAnswerDetail extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _EssayAnswerDetail extends StatelessWidget {
+  final StudentAnswerResult answer;
+
+  const _EssayAnswerDetail({required this.answer});
+
+  @override
+  Widget build(BuildContext context) {
+    final text = answer.answerText;
+    if (text == null || text.isEmpty) {
+      return const Text('No response', style: TextStyle(color: AppColors.foregroundTertiary));
+    }
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAFAFA),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(fontSize: 14, color: AppColors.foregroundPrimary, height: 1.5),
+      ),
     );
   }
 }

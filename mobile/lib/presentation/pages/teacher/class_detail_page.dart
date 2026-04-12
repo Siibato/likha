@@ -113,7 +113,7 @@ class _ClassDetailPageState extends ConsumerState<ClassDetailPage> {
                           const SizedBox(height: 16),
                           NavigationCard(
                             icon: Icons.grading_outlined,
-                            title: 'Class Record',
+                            title: 'Grades',
                             subtitle: 'Manage grades and scores',
                             onTap: () => Navigator.push(
                               context,

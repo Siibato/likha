@@ -32,6 +32,7 @@ impl AssessmentRepository {
         quarter: Option<i32>,
         component: Option<String>,
         is_departmental_exam: Option<bool>,
+        linked_tos_id: Option<String>,
     ) -> AppResult<assessments::Model> {
         let assessment = assessments::ActiveModel {
             id: Set(client_id.unwrap_or_else(Uuid::new_v4)),
@@ -52,6 +53,7 @@ impl AssessmentRepository {
             quarter: Set(quarter),
             is_departmental_exam: Set(is_departmental_exam),
             component: Set(component),
+            linked_tos_id: Set(linked_tos_id),
         };
 
         assessment
@@ -100,6 +102,7 @@ impl AssessmentRepository {
         quarter: Option<Option<i32>>,
         component: Option<Option<String>>,
         is_departmental_exam: Option<Option<bool>>,
+        linked_tos_id: Option<Option<String>>,
     ) -> AppResult<assessments::Model> {
         let mut assessment: assessments::ActiveModel = assessments::Entity::find_by_id(id)
             .one(&self.db)
@@ -134,6 +137,9 @@ impl AssessmentRepository {
         }
         if let Some(d) = is_departmental_exam {
             assessment.is_departmental_exam = Set(d);
+        }
+        if let Some(tos) = linked_tos_id {
+            assessment.linked_tos_id = Set(tos);
         }
         assessment.updated_at = Set(Utc::now().naive_utc());
 

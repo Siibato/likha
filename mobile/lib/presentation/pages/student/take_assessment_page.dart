@@ -135,7 +135,7 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
     for (final question in _questions) {
       if (question.questionType == 'multiple_choice') {
         _selectedChoices[question.id] = {};
-      } else if (question.questionType == 'identification') {
+      } else if (question.questionType == 'identification' || question.questionType == 'essay') {
         final controller = TextEditingController();
         _textControllers[question.id] = controller;
         _textAnswers[question.id] = '';
@@ -190,6 +190,7 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
           answer['selected_choice_ids'] = selected.toList();
           break;
         case 'identification':
+        case 'essay':
           answer['answer_text'] = _textAnswers[question.id] ?? '';
           break;
         case 'enumeration':

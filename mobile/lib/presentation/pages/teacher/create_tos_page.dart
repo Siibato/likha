@@ -4,6 +4,9 @@ import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/teacher/tos_detail_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/classification_mode_toggle.dart';
+import 'package:likha/presentation/pages/teacher/widgets/blooms_ratio_section.dart';
+import 'package:likha/presentation/pages/teacher/widgets/difficulty_ratio_section.dart';
+import 'package:likha/presentation/pages/teacher/widgets/time_unit_toggle.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 
 class CreateTosPage extends ConsumerStatefulWidget {
@@ -19,13 +22,32 @@ class _CreateTosPageState extends ConsumerState<CreateTosPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _totalItemsController = TextEditingController(text: '50');
+  final _easyPctController = TextEditingController(text: '50');
+  final _mediumPctController = TextEditingController(text: '30');
+  final _hardPctController = TextEditingController(text: '20');
+  final _rememberingPctController = TextEditingController(text: '16.67');
+  final _understandingPctController = TextEditingController(text: '16.67');
+  final _applyingPctController = TextEditingController(text: '16.67');
+  final _analyzingPctController = TextEditingController(text: '16.67');
+  final _evaluatingPctController = TextEditingController(text: '16.67');
+  final _creatingPctController = TextEditingController(text: '16.67');
   int? _selectedQuarter;
   String _classificationMode = 'blooms';
+  String _timeUnit = 'days';
 
   @override
   void dispose() {
     _titleController.dispose();
     _totalItemsController.dispose();
+    _easyPctController.dispose();
+    _mediumPctController.dispose();
+    _hardPctController.dispose();
+    _rememberingPctController.dispose();
+    _understandingPctController.dispose();
+    _applyingPctController.dispose();
+    _analyzingPctController.dispose();
+    _evaluatingPctController.dispose();
+    _creatingPctController.dispose();
     super.dispose();
   }
 
@@ -40,6 +62,16 @@ class _CreateTosPageState extends ConsumerState<CreateTosPage> {
         'quarter': _selectedQuarter!,
         'classification_mode': _classificationMode,
         'total_items': int.tryParse(_totalItemsController.text.trim()) ?? 50,
+        'time_unit': _timeUnit,
+        'easy_percentage': double.tryParse(_easyPctController.text.trim()) ?? 50.0,
+        'medium_percentage': double.tryParse(_mediumPctController.text.trim()) ?? 30.0,
+        'hard_percentage': double.tryParse(_hardPctController.text.trim()) ?? 20.0,
+        'remembering_percentage': double.tryParse(_rememberingPctController.text.trim()) ?? 16.67,
+        'understanding_percentage': double.tryParse(_understandingPctController.text.trim()) ?? 16.67,
+        'applying_percentage': double.tryParse(_applyingPctController.text.trim()) ?? 16.67,
+        'analyzing_percentage': double.tryParse(_analyzingPctController.text.trim()) ?? 16.67,
+        'evaluating_percentage': double.tryParse(_evaluatingPctController.text.trim()) ?? 16.67,
+        'creating_percentage': double.tryParse(_creatingPctController.text.trim()) ?? 16.67,
       },
     );
 
@@ -135,6 +167,27 @@ class _CreateTosPageState extends ConsumerState<CreateTosPage> {
                         value: _classificationMode,
                         onChanged: (v) => setState(() => _classificationMode = v),
                       ),
+                      const SizedBox(height: 20),
+                      TimeUnitToggle(
+                        value: _timeUnit,
+                        onChanged: (v) => setState(() => _timeUnit = v),
+                      ),
+                      const SizedBox(height: 20),
+                      if (_classificationMode == 'blooms')
+                        BloomsRatioSection(
+                          rememberingController: _rememberingPctController,
+                          understandingController: _understandingPctController,
+                          applyingController: _applyingPctController,
+                          analyzingController: _analyzingPctController,
+                          evaluatingController: _evaluatingPctController,
+                          creatingController: _creatingPctController,
+                        )
+                      else
+                        DifficultyRatioSection(
+                          easyController: _easyPctController,
+                          mediumController: _mediumPctController,
+                          hardController: _hardPctController,
+                        ),
                       const SizedBox(height: 32),
                       SizedBox(
                         height: 48,

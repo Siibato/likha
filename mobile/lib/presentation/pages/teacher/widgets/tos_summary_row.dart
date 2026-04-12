@@ -4,11 +4,13 @@ import 'package:likha/domain/tos/entities/tos_entity.dart';
 class TosSummaryRow extends StatelessWidget {
   final List<TosCompetency> competencies;
   final int totalItems;
+  final String timeUnit;
 
   const TosSummaryRow({
     super.key,
     required this.competencies,
     required this.totalItems,
+    this.timeUnit = 'hours',
   });
 
   @override
@@ -34,7 +36,7 @@ class TosSummaryRow extends StatelessWidget {
           ),
           const Spacer(),
           Text(
-            '$totalDays days',
+            '$totalDays $timeUnit',
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,

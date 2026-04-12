@@ -255,6 +255,22 @@ pub async fn override_answer(
     }
 }
 
+pub async fn grade_essay_answer(
+    State(service): State<Arc<AssessmentService>>,
+    auth_user: AuthUser,
+    Path(answer_id): Path<Uuid>,
+    Json(request): Json<GradeEssayRequest>,
+) -> impl IntoResponse {
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
+    }
+
+    match service.grade_essay_answer(answer_id, request, auth_user.user_id).await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
 pub async fn get_statistics(
     State(service): State<Arc<AssessmentService>>,
     auth_user: AuthUser,

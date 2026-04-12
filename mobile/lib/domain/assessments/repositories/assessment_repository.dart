@@ -19,6 +19,7 @@ abstract class AssessmentRepository {
     int? quarter,
     String? component,
     bool? isDepartmentalExam,
+    String? linkedTosId,
   });
 
   ResultFuture<List<Assessment>> getAssessments({required String classId, bool publishedOnly = false, bool skipBackgroundRefresh = false});
@@ -78,6 +79,11 @@ abstract class AssessmentRepository {
   ResultFuture<SubmissionAnswer> overrideAnswer({
     required String answerId,
     required bool isCorrect,
+  });
+
+  ResultFuture<SubmissionAnswer> gradeEssayAnswer({
+    required String answerId,
+    required double points,
   });
 
   ResultFuture<AssessmentStatistics> getStatistics({

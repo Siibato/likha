@@ -103,26 +103,44 @@ class GradingRepositoryImpl implements GradingRepository {
     required String classId,
   }) async {
     try {
+      // Fetch from server when online so the UI always reflects server state.
       if (_serverReachabilityService.isServerReachable) {
-        final models = await _remoteDataSource.getGradingConfig(
-          classId: classId,
-        );
-        await _localDataSource.saveConfigs(models);
-        return Right(models.map(_configToEntity).toList());
+        try {
+          final models = await _remoteDataSource.getGradingConfig(classId: classId);
+          if (models.isNotEmpty) {
+            try { await _localDataSource.saveConfigs(models); } catch (_) {}
+            return Right(models.map(_configToEntity).toList());
+          }
+          // Server returned empty — config may be pending sync; fall through to cache.
+        } catch (_) {
+          // Server fetch failed — fall through to cache.
+        }
       }
+
       final cached = await _localDataSource.getConfigByClass(classId);
-      return Right(cached.map(_configToEntity).toList());
-    } on ServerFailure catch (e) {
-      return Left(e);
-    } on Failure catch (e) {
-      return Left(e);
-    } catch (e) {
-      try {
-        final cached = await _localDataSource.getConfigByClass(classId);
+      if (cached.isNotEmpty) {
         return Right(cached.map(_configToEntity).toList());
-      } catch (_) {
-        return Left(CacheFailure(e.toString()));
       }
+
+      // Cache empty AND server wasn't tried (isServerReachable was false).
+      // This happens during cold open: the health-check ping hasn't resolved yet
+      // so isServerReachable is still false even though the server is online.
+      // Make one fallback attempt so we don't permanently show "not configured".
+      if (!_serverReachabilityService.isServerReachable) {
+        try {
+          final models = await _remoteDataSource.getGradingConfig(classId: classId);
+          if (models.isNotEmpty) {
+            try { await _localDataSource.saveConfigs(models); } catch (_) {}
+            return Right(models.map(_configToEntity).toList());
+          }
+        } catch (_) {
+          // Genuinely offline — return empty list.
+        }
+      }
+
+      return const Right([]);
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
     }
   }
 
@@ -135,44 +153,31 @@ class GradingRepositoryImpl implements GradingRepository {
     int? semester,
   }) async {
     try {
-      // Save locally first (optimistic)
+      // Save locally first (optimistic) — mirror server behaviour: Q1-Q4
       final weights = _weightPresets[subjectGroup];
       if (weights != null) {
         final now = DateTime.now().toIso8601String();
-        final configs = <GradeConfigModel>[];
-        // Create config for quarter 1 (default)
-        configs.add(GradeConfigModel(
-          id: const Uuid().v4(),
-          classId: classId,
-          quarter: 1,
-          wwWeight: weights.ww,
-          ptWeight: weights.pt,
-          qaWeight: weights.qa,
-          createdAt: now,
-          updatedAt: now,
-        ));
+        final configs = [
+          for (int q = 1; q <= 4; q++)
+            GradeConfigModel(
+              id: const Uuid().v4(),
+              classId: classId,
+              quarter: q,
+              wwWeight: weights.ww,
+              ptWeight: weights.pt,
+              qaWeight: weights.qa,
+              createdAt: now,
+              updatedAt: now,
+            ),
+        ];
         await _localDataSource.saveConfigs(configs);
       }
 
-      // Enqueue for sync
-      await _syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
-        entityType: SyncEntityType.gradeConfig,
-        operation: SyncOperation.setup,
-        payload: {
-          'class_id': classId,
-          'grade_level': gradeLevel,
-          'subject_group': subjectGroup,
-          'school_year': schoolYear,
-          if (semester != null) 'semester': semester,
-        },
-        status: SyncStatus.pending,
-        retryCount: 0,
-        maxRetries: 3,
-        createdAt: DateTime.now(),
-      ));
-
-      // If online, also call remote (for immediate server-side processing)
+      // If online, attempt direct remote call first.
+      // Only fall back to sync queue when the direct call fails so we avoid
+      // sending a duplicate "setup" operation that would hit the server's
+      // UNIQUE(class_id, quarter) constraint and be permanently marked failed.
+      bool remoteSucceeded = false;
       if (_serverReachabilityService.isServerReachable) {
         try {
           await _remoteDataSource.setupGrading(
@@ -184,9 +189,31 @@ class GradingRepositoryImpl implements GradingRepository {
               if (semester != null) 'semester': semester,
             },
           );
+          remoteSucceeded = true;
+          // Next getGradingConfig call will fetch server-assigned IDs
+          // automatically (server-first pattern).
         } catch (_) {
-          // Remote call failed — sync queue will handle it
+          // Direct call failed — sync queue will handle it below
         }
+      }
+
+      if (!remoteSucceeded) {
+        await _syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.gradeConfig,
+          operation: SyncOperation.setup,
+          payload: {
+            'class_id': classId,
+            'grade_level': gradeLevel,
+            'subject_group': subjectGroup,
+            'school_year': schoolYear,
+            if (semester != null) 'semester': semester,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 3,
+          createdAt: DateTime.now(),
+        ));
       }
 
       return const Right(null);
@@ -300,8 +327,8 @@ class GradingRepositoryImpl implements GradingRepository {
         quarter: (data['quarter'] as num).toInt(),
         totalPoints: (data['total_points'] as num).toDouble(),
         isDepartmentalExam: data['is_departmental_exam'] == true,
-        sourceType: 'manual',
-        sourceId: null,
+        sourceType: (data['source_type'] as String?) ?? 'manual',
+        sourceId: data['source_id'] as String?,
         orderIndex: (data['order_index'] as num?)?.toInt() ?? 0,
         createdAt: now,
         updatedAt: now,
@@ -381,6 +408,16 @@ class GradingRepositoryImpl implements GradingRepository {
       ));
 
       return const Right(null);
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  @override
+  ResultFuture<GradeItem?> findGradeItemBySourceId(String sourceId) async {
+    try {
+      final model = await _localDataSource.getItemBySourceId(sourceId);
+      return Right(model != null ? _itemToEntity(model) : null);
     } catch (e) {
       return Left(CacheFailure(e.toString()));
     }
@@ -571,6 +608,26 @@ class GradingRepositoryImpl implements GradingRepository {
   }
 
   @override
+  ResultVoid updateTransmutedGrade({
+    required String classId,
+    required String studentId,
+    required int quarter,
+    required int transmutedGrade,
+  }) async {
+    try {
+      await _localDataSource.updateTransmutedGrade(
+        classId,
+        studentId,
+        quarter,
+        transmutedGrade,
+      );
+      return const Right(null);
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  @override
   ResultFuture<List<Map<String, dynamic>>> getGradeSummary({
     required String classId,
     required int quarter,
@@ -582,11 +639,13 @@ class GradingRepositoryImpl implements GradingRepository {
       );
       return Right(summary);
     } on ServerFailure catch (e) {
+      // Propagate server errors (e.g. 400 "Grading config not set up") so the
+      // UI can show a "syncing to server" banner instead of blank grades.
       return Left(e);
-    } on Failure catch (e) {
-      return Left(e);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
+    } on Failure {
+      return const Right([]);
+    } catch (_) {
+      return const Right([]);
     }
   }
 

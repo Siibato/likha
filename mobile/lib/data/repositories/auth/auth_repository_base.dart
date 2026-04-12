@@ -36,17 +36,18 @@ abstract class AuthRepositoryBase extends AuthRepository {
   });
 
   /// Clear all user-specific cached data when switching users or logging out.
-  /// Called when a different user logs in or when logging out to prevent data leakage.
-  Future<void> clearAllUserData() async {
+
+  Future<void> clearAllUserData({bool clearSyncQueue = false}) async {
     try {
-      await Future.wait([
+      final futures = <Future>[
         classLocalDataSource.clearAllCache(),
         assignmentLocalDataSource.clearAllCache(),
         assessmentLocalDataSource.clearAllCache(),
         learningMaterialLocalDataSource.clearAllCache(),
         localDataSource.clearAllCache(),
-        syncQueue.clear(),
-      ]);
+      ];
+      if (clearSyncQueue) futures.add(syncQueue.clear());
+      await Future.wait(futures);
 
       // Clear sync metadata (last_sync_at and data_expiry_at) to prevent user B from inheriting
       // user A's delta sync cursor. Preserve device_id as it should persist across user sessions.

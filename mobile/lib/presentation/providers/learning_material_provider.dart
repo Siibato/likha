@@ -299,19 +299,26 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     );
   }
 
-  Future<void> downloadFile(String fileId) async {
+  Future<List<int>?> downloadFile(String fileId) async {
     state = state.copyWith(isLoading: true, clearError: true);
     final result = await _downloadFile(fileId);
     state = state.copyWith(isLoading: false);
+
+    List<int>? bytes;
+    bool success = false;
     result.fold(
       (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
-      (_) {
-        // Reload detail to reflect updated localPath from DB
-        if (state.currentMaterial != null) {
-          loadMaterialDetail(state.currentMaterial!.id);
-        }
+      (data) {
+        bytes = data;
+        success = true;
       },
     );
+
+    if (success && state.currentMaterial != null) {
+      // Await reload so localPath is updated before caller reads state
+      await loadMaterialDetail(state.currentMaterial!.id);
+    }
+    return bytes;
   }
 
   void clearMessages() {

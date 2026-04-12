@@ -58,6 +58,8 @@ class Formatters {
         return 'Identification';
       case 'enumeration':
         return 'Enumeration';
+      case 'essay':
+        return 'Essay';
       default:
         return type;
     }

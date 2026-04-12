@@ -16,6 +16,9 @@ class Assessment extends Equatable {
   final int questionCount;
   final int submissionCount;
   final bool? isSubmitted; // null if no submission, true if submitted, false if started but not submitted
+  final String? linkedTosId;
+  final int? quarter;
+  final String? component;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? cachedAt;
@@ -37,6 +40,9 @@ class Assessment extends Equatable {
     required this.questionCount,
     required this.submissionCount,
     this.isSubmitted,
+    this.linkedTosId,
+    this.quarter,
+    this.component,
     required this.createdAt,
     required this.updatedAt,
     this.cachedAt,
@@ -60,6 +66,9 @@ class Assessment extends Equatable {
         questionCount,
         submissionCount,
         isSubmitted,
+        linkedTosId,
+        quarter,
+        component,
         createdAt,
         updatedAt,
         cachedAt,

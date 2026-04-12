@@ -26,6 +26,8 @@ mod m20260316_000002_float_submission_score;
 mod m20260322_000001_grading_system;
 mod m20260322_000002_advisory_and_tos;
 mod m20260329_000001_create_school_settings;
+mod m20260408_000001_tos_enhancements;
+mod m20260408_000002_tos_blooms_percentages;
 
 pub struct Migrator;
 
@@ -59,6 +61,8 @@ impl MigratorTrait for Migrator {
             Box::new(m20260322_000001_grading_system::Migration),
             Box::new(m20260322_000002_advisory_and_tos::Migration),
             Box::new(m20260329_000001_create_school_settings::Migration),
+            Box::new(m20260408_000001_tos_enhancements::Migration),
+            Box::new(m20260408_000002_tos_blooms_percentages::Migration),
         ]
     }
 }

@@ -38,7 +38,7 @@ pub async fn create_tos(
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
-    match service.create_tos(class_id, auth_user.user_id, request).await {
+    match service.create_tos(class_id, auth_user.user_id, request, None).await {
         Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
         Err(e) => e.into_response(),
     }

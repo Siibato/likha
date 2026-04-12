@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/logging/cache_logger.dart';
 import 'package:likha/core/errors/exceptions.dart';
@@ -155,6 +156,7 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
   /// Helper to compute expected file path using the short-ID naming convention
   /// Format: {nameWithoutExt}-{shortId}.{ext}
   Future<String?> _getExpectedFilePathForQuery(String fileId, String fileName) async {
+    if (kIsWeb) return null;
     try {
       final appDirDoc = await getApplicationDocumentsDirectory();
       final materialFilesDir = Directory('${appDirDoc.path}/material_files');

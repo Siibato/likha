@@ -25,29 +25,41 @@ class SyncUpsertHelpers {
           _log.warn('Class ${record['id']} has missing teacher_id', record);
         }
 
-        await db.insert(
+        final classData = {
+          CommonCols.id: record['id'],
+          ClassesCols.title: record['title'],
+          ClassesCols.description: record['description'],
+          ClassesCols.teacherId: teacherId,
+          ClassesCols.teacherUsername: record['teacher_username'] ?? '',
+          ClassesCols.teacherFullName: record['teacher_full_name'] ?? '',
+          ClassesCols.isArchived: (record['is_archived'] == true) ? 1 : 0,
+          ClassesCols.isAdvisory: (record['is_advisory'] == true) ? 1 : 0,
+          ClassesCols.studentCount: record['student_count'] ?? 0,
+          ClassesCols.gradeLevel: record['grade_level'],
+          ClassesCols.subjectGroup: record['subject_group'],
+          ClassesCols.schoolYear: record['school_year'],
+          ClassesCols.semester: record['semester'] != null ? (record['semester'] as num).toInt() : null,
+          CommonCols.createdAt: record['created_at'],
+          CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+          CommonCols.cachedAt: DateTime.now().toIso8601String(),
+          CommonCols.needsSync: 0,
+        };
+        final existing = await db.query(
           DbTables.classes,
-          {
-            CommonCols.id: record['id'],
-            ClassesCols.title: record['title'],
-            ClassesCols.description: record['description'],
-            ClassesCols.teacherId: teacherId,
-            ClassesCols.teacherUsername: record['teacher_username'] ?? '',
-            ClassesCols.teacherFullName: record['teacher_full_name'] ?? '',
-            ClassesCols.isArchived: (record['is_archived'] == true) ? 1 : 0,
-            ClassesCols.isAdvisory: (record['is_advisory'] == true) ? 1 : 0,
-            ClassesCols.studentCount: record['student_count'] ?? 0,
-            ClassesCols.gradeLevel: record['grade_level'],
-            ClassesCols.subjectGroup: record['subject_group'],
-            ClassesCols.schoolYear: record['school_year'],
-            ClassesCols.semester: record['semester'] != null ? (record['semester'] as num).toInt() : null,
-            CommonCols.createdAt: record['created_at'],
-            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
-            CommonCols.cachedAt: DateTime.now().toIso8601String(),
-            CommonCols.needsSync: 0,
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
+          where: '${CommonCols.id} = ?',
+          whereArgs: [record['id']],
+          limit: 1,
         );
+        if (existing.isEmpty) {
+          await db.insert(DbTables.classes, classData);
+        } else {
+          await db.update(
+            DbTables.classes,
+            classData,
+            where: '${CommonCols.id} = ?',
+            whereArgs: [record['id']],
+          );
+        }
         successCount++;
       } catch (e) {
         failedCount++;
@@ -221,6 +233,9 @@ class SyncUpsertHelpers {
         AssessmentsCols.totalPoints: data['total_points'] ?? 0,
         AssessmentsCols.questionCount: data['question_count'] ?? 0,
         AssessmentsCols.submissionCount: data['submission_count'] ?? 0,
+        AssessmentsCols.linkedTosId: data['linked_tos_id'],
+        AssessmentsCols.quarter: data['quarter'],
+        AssessmentsCols.component: data['component'],
         CommonCols.createdAt: data['created_at'] ?? DateTime.now().toIso8601String(),
         CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
         CommonCols.deletedAt: data['deleted_at'],
@@ -388,6 +403,8 @@ class SyncUpsertHelpers {
         AssignmentsCols.submissionCount: data['submission_count'] ?? 0,
         AssignmentsCols.gradedCount: data['graded_count'] ?? 0,
         AssignmentsCols.orderIndex: data['order_index'] ?? 0,
+        AssignmentsCols.quarter: data['quarter'],
+        AssignmentsCols.component: data['component'],
         CommonCols.createdAt: data['created_at'] ?? DateTime.now().toIso8601String(),
         CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
         CommonCols.deletedAt: data['deleted_at'],
@@ -799,6 +816,10 @@ class SyncUpsertHelpers {
             TosCols.title: record['title'],
             TosCols.classificationMode: record['classification_mode'],
             TosCols.totalItems: (record['total_items'] as num).toInt(),
+            TosCols.timeUnit: record['time_unit'] ?? 'days',
+            TosCols.easyPercentage: (record['easy_percentage'] as num?)?.toDouble() ?? 50.0,
+            TosCols.mediumPercentage: (record['medium_percentage'] as num?)?.toDouble() ?? 30.0,
+            TosCols.hardPercentage: (record['hard_percentage'] as num?)?.toDouble() ?? 20.0,
             CommonCols.createdAt: record['created_at'],
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
             CommonCols.deletedAt: record['deleted_at'],
@@ -841,6 +862,9 @@ class SyncUpsertHelpers {
             TosCompetenciesCols.competencyText: record['competency_text'],
             TosCompetenciesCols.daysTaught: (record['days_taught'] as num).toInt(),
             TosCompetenciesCols.orderIndex: (record['order_index'] as num?)?.toInt() ?? 0,
+            TosCompetenciesCols.easyCount: (record['easy_count'] as num?)?.toInt(),
+            TosCompetenciesCols.mediumCount: (record['medium_count'] as num?)?.toInt(),
+            TosCompetenciesCols.hardCount: (record['hard_count'] as num?)?.toInt(),
             CommonCols.createdAt: record['created_at'],
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
             CommonCols.deletedAt: record['deleted_at'],

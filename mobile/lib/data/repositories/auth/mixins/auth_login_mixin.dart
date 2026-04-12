@@ -60,10 +60,10 @@ mixin AuthLoginMixin on AuthRepositoryBase {
         deviceId: deviceId,
       );
 
-      // Detect user change and clear cache if a different user is logging in
+      // Detect user change and clear cache if a different user is logging in.
       final previousUserId = await storageService.getUserId();
       if (previousUserId != null && previousUserId != result.user.id) {
-        await clearAllUserData();
+        await clearAllUserData(clearSyncQueue: true);
       }
 
       unawaited(localDataSource.cacheCurrentUser(result.user));

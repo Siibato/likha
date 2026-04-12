@@ -28,19 +28,30 @@ mixin TosCacheMixin on TosLocalDataSourceBase {
     String tosId,
     List<CompetencyModel> competencies,
   ) async {
+    if (competencies.isEmpty) return;
     final db = await localDatabase.database;
-    final batch = db.batch();
+    final now = DateTime.now().toIso8601String();
     for (final comp in competencies) {
-      batch.insert(
+      final row = {
+        ...comp.toMap(),
+        CommonCols.needsSync: 0,
+        CommonCols.cachedAt: now,
+      };
+      // Insert new rows that don't exist locally yet.
+      await db.insert(
         DbTables.tosCompetencies,
-        {
-          ...comp.toMap(),
-          CommonCols.needsSync: 0,
-          CommonCols.cachedAt: DateTime.now().toIso8601String(),
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
+        row,
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
+      // Update existing rows ONLY if they have no pending local edits.
+      // Rows with needs_sync = 1 have unsent changes — don't overwrite them
+      // with potentially stale server data.
+      await db.update(
+        DbTables.tosCompetencies,
+        row,
+        where: '${CommonCols.id} = ? AND ${CommonCols.needsSync} = 0',
+        whereArgs: [comp.id],
       );
     }
-    await batch.commit(noResult: true);
   }
 }

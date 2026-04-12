@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/core/utils/file_opener.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assignments/entities/submission_file.dart';
 import 'package:likha/domain/assignments/usecases/grade_submission.dart';
@@ -102,8 +104,28 @@ class _GradeSubmissionDesktopState
         );
   }
 
-  Future<void> _downloadFile(SubmissionFile file) async {
-    await ref.read(assignmentProvider.notifier).downloadFile(file.id);
+  Future<void> _handleFile(SubmissionFile file) async {
+    if (kIsWeb) {
+      final bytes = await ref
+          .read(assignmentProvider.notifier)
+          .downloadFile(file.id);
+      if (bytes != null && mounted) {
+        await openFileInBrowser(bytes, file.fileName);
+      }
+    } else if (file.localPath != null && file.localPath!.isNotEmpty) {
+      await openLocalFile(file.localPath!);
+    } else {
+      await ref.read(assignmentProvider.notifier).downloadFile(file.id);
+      if (!mounted) return;
+      final files =
+          ref.read(assignmentProvider).currentSubmission?.files ?? [];
+      for (final f in files) {
+        if (f.id == file.id && f.localPath != null && f.localPath!.isNotEmpty) {
+          await openLocalFile(f.localPath!);
+          break;
+        }
+      }
+    }
   }
 
   @override
@@ -357,10 +379,21 @@ class _GradeSubmissionDesktopState
                   ),
                 ),
                 trailing: IconButton(
-                  icon: const Icon(Icons.download_rounded, size: 20),
+                  icon: Icon(
+                    kIsWeb
+                        ? Icons.open_in_browser_rounded
+                        : (file.localPath != null && file.localPath!.isNotEmpty)
+                            ? Icons.folder_open_rounded
+                            : Icons.download_rounded,
+                    size: 20,
+                  ),
                   color: AppColors.foregroundSecondary,
-                  onPressed: () => _downloadFile(file),
-                  tooltip: 'Download',
+                  onPressed: () => _handleFile(file),
+                  tooltip: kIsWeb
+                      ? 'Open in browser'
+                      : (file.localPath != null && file.localPath!.isNotEmpty)
+                          ? 'Open'
+                          : 'Download',
                 ),
               )),
         ],

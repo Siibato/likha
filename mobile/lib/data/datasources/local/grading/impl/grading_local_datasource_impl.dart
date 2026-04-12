@@ -133,6 +133,19 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
   }
 
   @override
+  Future<GradeItemModel?> getItemBySourceId(String sourceId) async {
+    final db = await localDatabase.database;
+    final results = await db.query(
+      DbTables.gradeItems,
+      where: '${GradeItemsCols.sourceId} = ? AND ${CommonCols.deletedAt} IS NULL',
+      whereArgs: [sourceId],
+      limit: 1,
+    );
+    if (results.isEmpty) return null;
+    return GradeItemModel.fromMap(results.first);
+  }
+
+  @override
   Future<void> softDeleteItem(String id) async {
     final db = await localDatabase.database;
     await db.update(
@@ -276,5 +289,27 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
       );
     }
     await batch.commit(noResult: true);
+  }
+
+  @override
+  Future<void> updateTransmutedGrade(
+    String classId,
+    String studentId,
+    int quarter,
+    int transmutedGrade,
+  ) async {
+    final db = await localDatabase.database;
+    await db.update(
+      DbTables.quarterlyGrades,
+      {
+        QuarterlyGradesCols.transmutedGrade: transmutedGrade,
+        CommonCols.updatedAt: DateTime.now().toIso8601String(),
+        CommonCols.needsSync: 1,
+      },
+      where: '${QuarterlyGradesCols.classId} = ? AND '
+          '${QuarterlyGradesCols.studentId} = ? AND '
+          '${QuarterlyGradesCols.quarter} = ?',
+      whereArgs: [classId, studentId, quarter],
+    );
   }
 }

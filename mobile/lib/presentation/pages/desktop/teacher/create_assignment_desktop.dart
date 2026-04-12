@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +9,7 @@ import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assignments/usecases/create_assignment.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/pages/shared/widgets/forms/rich_text_field.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 
 class CreateAssignmentDesktop extends ConsumerStatefulWidget {
@@ -22,15 +26,20 @@ class _CreateAssignmentDesktopState
     extends ConsumerState<CreateAssignmentDesktop> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
-  final _instructionsController = TextEditingController();
+  late final FleatherController _instructionsController;
   final _totalPointsController = TextEditingController(text: '100');
   String _submissionType = 'text_or_file';
-  DateTime? _dueDate;
-  TimeOfDay? _dueTime;
+  DateTime _dueAt = DateTime.now().add(const Duration(days: 7));
   int? _quarter;
   String? _component;
   bool _isPublished = true;
   String? _formError;
+
+  @override
+  void initState() {
+    super.initState();
+    _instructionsController = FleatherController();
+  }
 
   @override
   void dispose() {
@@ -40,56 +49,89 @@ class _CreateAssignmentDesktopState
     super.dispose();
   }
 
-  String _formatDateTime(DateTime date, TimeOfDay time) {
-    final dt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-    return dt.toUtc().toIso8601String();
+  String _displayDateTime(DateTime dt) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    final hour = dt.hour > 12
+        ? dt.hour - 12
+        : dt.hour == 0
+            ? 12
+            : dt.hour;
+    final minute = dt.minute.toString().padLeft(2, '0');
+    final period = dt.hour >= 12 ? 'PM' : 'AM';
+    return '${months[dt.month - 1]} ${dt.day.toString().padLeft(2, '0')}, ${dt.year}  $hour:$minute $period';
   }
 
-  String _displayDateTime(DateTime date, TimeOfDay time) {
-    final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
-    final minute = time.minute.toString().padLeft(2, '0');
-    final period = time.period == DayPeriod.am ? 'AM' : 'PM';
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} $hour:$minute $period';
+  String _formatDateTimeForApi(DateTime dt) {
+    final utc = dt.toUtc();
+    return '${utc.year.toString().padLeft(4, '0')}-'
+        '${utc.month.toString().padLeft(2, '0')}-'
+        '${utc.day.toString().padLeft(2, '0')}T'
+        '${utc.hour.toString().padLeft(2, '0')}:'
+        '${utc.minute.toString().padLeft(2, '0')}:'
+        '${utc.second.toString().padLeft(2, '0')}';
   }
 
   Future<void> _pickDueDate() async {
     final date = await showDatePicker(
       context: context,
-      initialDate: _dueDate ?? DateTime.now().add(const Duration(days: 7)),
+      initialDate: _dueAt,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(
+            primary: Color(0xFF2B2B2B),
+            onPrimary: Colors.white,
+            surface: Colors.white,
+            onSurface: Color(0xFF2B2B2B),
+          ),
+        ),
+        child: child!,
+      ),
     );
     if (date == null || !mounted) return;
 
     final time = await showTimePicker(
       context: context,
-      initialTime: _dueTime ?? const TimeOfDay(hour: 23, minute: 59),
+      initialTime: TimeOfDay.fromDateTime(_dueAt),
+      initialEntryMode: TimePickerEntryMode.input,
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(
+            primary: Color(0xFF2B2B2B),
+            onPrimary: Colors.white,
+            surface: Colors.white,
+            onSurface: Color(0xFF2B2B2B),
+            secondary: Color(0xFF2B2B2B),
+            tertiary: Color(0xFF2B2B2B),
+            onTertiary: Colors.white,
+          ),
+        ),
+        child: child!,
+      ),
     );
     if (time == null || !mounted) return;
 
     setState(() {
-      _dueDate = date;
-      _dueTime = time;
+      _dueAt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
     });
   }
 
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_dueDate == null || _dueTime == null) {
-      setState(() => _formError = 'Due date is required');
-      return;
-    }
-
     setState(() => _formError = null);
 
     final params = CreateAssignmentParams(
       classId: widget.classId,
       title: _titleController.text.trim(),
-      instructions: _instructionsController.text.trim(),
+      instructions: jsonEncode(_instructionsController.document.toJson()),
       totalPoints: int.parse(_totalPointsController.text.trim()),
       submissionType: _submissionType,
-      dueAt: _formatDateTime(_dueDate!, _dueTime!),
+      dueAt: _formatDateTimeForApi(_dueAt),
       isPublished: _isPublished,
       quarter: _quarter,
       component: _component,
@@ -169,11 +211,12 @@ class _CreateAssignmentDesktopState
                     const SizedBox(height: 16),
 
                     // Instructions
-                    TextFormField(
+                    RichTextField(
                       controller: _instructionsController,
-                      decoration: _inputDecoration('Instructions'),
-                      maxLines: 5,
-                      minLines: 3,
+                      label: 'Instructions',
+                      icon: Icons.description_outlined,
+                      enabled: true,
+                      minHeight: 120,
                     ),
                     const SizedBox(height: 16),
 
@@ -208,27 +251,10 @@ class _CreateAssignmentDesktopState
                     const SizedBox(height: 16),
 
                     // Due Date
-                    GestureDetector(
-                      onTap: _pickDueDate,
-                      child: AbsorbPointer(
-                        child: TextFormField(
-                          decoration: _inputDecoration('Due Date').copyWith(
-                            hintText: _dueDate != null && _dueTime != null
-                                ? _displayDateTime(_dueDate!, _dueTime!)
-                                : 'Tap to select due date',
-                            hintStyle: TextStyle(
-                              color: _dueDate != null
-                                  ? AppColors.foregroundDark
-                                  : AppColors.foregroundTertiary,
-                            ),
-                            suffixIcon: const Icon(
-                              Icons.calendar_today_rounded,
-                              size: 18,
-                              color: AppColors.foregroundTertiary,
-                            ),
-                          ),
-                        ),
-                      ),
+                    _buildDateTimeField(
+                      label: 'Due Date',
+                      dateTime: _dueAt,
+                      onPick: _pickDueDate,
                     ),
                     const SizedBox(height: 16),
 
@@ -325,6 +351,33 @@ class _CreateAssignmentDesktopState
                 ),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateTimeField({
+    required String label,
+    required DateTime dateTime,
+    required VoidCallback onPick,
+  }) {
+    return InkWell(
+      onTap: onPick,
+      borderRadius: BorderRadius.circular(12),
+      child: InputDecorator(
+        decoration: _inputDecoration(label).copyWith(
+          suffixIcon: const Icon(
+            Icons.arrow_drop_down_rounded,
+            color: Color(0xFF666666),
+          ),
+        ),
+        child: Text(
+          _displayDateTime(dateTime),
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: AppColors.foregroundDark,
           ),
         ),
       ),
