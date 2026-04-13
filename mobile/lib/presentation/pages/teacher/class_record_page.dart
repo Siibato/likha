@@ -7,7 +7,8 @@ import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/styled_button.dart';
+import 'package:likha/presentation/pages/teacher/widgets/add_grade_item_dialog.dart';
+import 'package:likha/presentation/pages/teacher/widgets/quarter_selector.dart';
 import 'package:likha/presentation/pages/teacher/class_grading_setup_page.dart';
 import 'package:likha/presentation/pages/teacher/grade_summary_page.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
@@ -38,8 +39,6 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
   String? _editingQgStudentId;
   final _qgCtrl = TextEditingController();
   final _qgFocus = FocusNode();
-
-  static const List<String> _componentKeys = ['ww', 'pt', 'qa'];
 
   // Cell dimensions
   static const double _nameColW = 130.0;
@@ -212,155 +211,11 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
   // ── Add item ─────────────────────────────────────────────────────────────
 
   void _showAddGradeItemDialog() {
-    final titleCtrl = TextEditingController();
-    final pointsCtrl = TextEditingController(text: '100');
-    String selectedComponent = 'ww';
-
-    showModalBottomSheet(
+    showAddGradeItemDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheet) => Padding(
-          padding: EdgeInsets.fromLTRB(
-              24, 24, 24, 24 + MediaQuery.of(ctx).viewInsets.bottom),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE0E0E0),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Add Grade Item  •  Q$_selectedQuarter',
-                style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF2B2B2B)),
-              ),
-              const SizedBox(height: 16),
-              // Component selector
-              Row(
-                children: [
-                  for (int i = 0; i < _componentKeys.length; i++) ...[
-                    if (i > 0) const SizedBox(width: 8),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () =>
-                            setSheet(() => selectedComponent = _componentKeys[i]),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: selectedComponent == _componentKeys[i]
-                                ? const Color(0xFF2B2B2B)
-                                : Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: selectedComponent == _componentKeys[i]
-                                  ? const Color(0xFF2B2B2B)
-                                  : const Color(0xFFE0E0E0),
-                            ),
-                          ),
-                          child: Text(
-                            _componentKeys[i].toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: selectedComponent == _componentKeys[i]
-                                  ? Colors.white
-                                  : const Color(0xFF666666),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: titleCtrl,
-                autofocus: true,
-                decoration: InputDecoration(
-                  labelText: 'Title',
-                  hintText: 'e.g. Quiz 1, Essay, Lab Activity',
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(13)),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(13),
-                    borderSide:
-                        const BorderSide(color: Color(0xFF2B2B2B), width: 1.5),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: pointsCtrl,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: InputDecoration(
-                  labelText: 'Total Points',
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(13)),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(13),
-                    borderSide:
-                        const BorderSide(color: Color(0xFF2B2B2B), width: 1.5),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: StyledButton(
-                      text: 'Cancel',
-                      isLoading: false,
-                      variant: StyledButtonVariant.outlined,
-                      onPressed: () => Navigator.pop(ctx),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: StyledButton(
-                      text: 'Add',
-                      isLoading: false,
-                      onPressed: () {
-                        final title = titleCtrl.text.trim();
-                        final points =
-                            int.tryParse(pointsCtrl.text) ?? 100;
-                        if (title.isEmpty) return;
-                        ref
-                            .read(gradeItemsProvider.notifier)
-                            .createItem(widget.classId, {
-                          'title': title,
-                          'component': selectedComponent,
-                          'quarter': _selectedQuarter,
-                          'total_points': points,
-                          'source_type': 'manual',
-                        });
-                        Navigator.pop(ctx);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+      classId: widget.classId,
+      selectedQuarter: _selectedQuarter,
+      ref: ref,
     );
   }
 
@@ -468,83 +323,37 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
                 title: 'Class Record', showBackButton: true),
 
             // Quarter chips + actions
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 4, 6),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: List.generate(4, (i) {
-                          final q = i + 1;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: ChoiceChip(
-                              label: Text('Q$q'),
-                              selected: _selectedQuarter == q,
-                              selectedColor: const Color(0xFF2B2B2B),
-                              backgroundColor: Colors.white,
-                              labelStyle: TextStyle(
-                                color: _selectedQuarter == q
-                                    ? Colors.white
-                                    : const Color(0xFF666666),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                side: BorderSide(
-                                  color: _selectedQuarter == q
-                                      ? const Color(0xFF2B2B2B)
-                                      : const Color(0xFFE0E0E0),
-                                ),
-                              ),
-                              onSelected: (_) => _onQuarterChanged(q),
-                            ),
-                          );
-                        }),
-                      ),
-                    ),
+            QuarterSelector(
+              selectedQuarter: _selectedQuarter,
+              onQuarterChanged: _onQuarterChanged,
+              onComputeGrades: () async {
+                final messenger = ScaffoldMessenger.of(context);
+                await ref
+                    .read(quarterlyGradesProvider.notifier)
+                    .computeGrades(widget.classId, _selectedQuarter);
+                if (!mounted) return;
+                ref
+                    .read(quarterlyGradesProvider.notifier)
+                    .loadSummary(widget.classId, _selectedQuarter);
+                messenger.showSnackBar(
+                    const SnackBar(content: Text('Grades computed')));
+              },
+              onFinalGrades: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => GradeSummaryPage(
+                    classId: widget.classId,
+                    initialQuarter: _selectedQuarter,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.calculate_outlined, size: 20),
-                    color: const Color(0xFF666666),
-                    tooltip: 'Compute Grades',
-                    onPressed: () async {
-                      final messenger = ScaffoldMessenger.of(context);
-                      await ref
-                          .read(quarterlyGradesProvider.notifier)
-                          .computeGrades(widget.classId, _selectedQuarter);
-                      if (!mounted) return;
-                      ref
-                          .read(quarterlyGradesProvider.notifier)
-                          .loadSummary(widget.classId, _selectedQuarter);
-                      messenger.showSnackBar(
-                          const SnackBar(content: Text('Grades computed')));
-                    },
+                ),
+              ),
+              onGradingSettings: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ClassGradingSetupPage(
+                    classId: widget.classId,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.grade_outlined, size: 20),
-                    color: const Color(0xFF666666),
-                    tooltip: 'Final Grades',
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => GradeSummaryPage(
-                          classId: widget.classId,
-                          initialQuarter: _selectedQuarter,
-                        ),
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.settings_outlined, size: 20),
-                    color: const Color(0xFF666666),
-                    tooltip: 'Grading Settings',
-                    onPressed: _navigateToSetup,
-                  ),
-                ],
+                ),
               ),
             ),
 

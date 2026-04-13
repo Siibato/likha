@@ -248,7 +248,7 @@ Future<void> init() async {
 
   // Local Data sources
   sl.registerLazySingleton<AuthLocalDataSource>(
-    () => AuthLocalDataSourceImpl(sl<LocalDatabase>()),
+    () => AuthLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
   );
   sl.registerLazySingleton<ClassLocalDataSource>(
     () => ClassLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),

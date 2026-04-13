@@ -1,4 +1,5 @@
 import 'package:sqflite/sqflite.dart';
+import 'package:likha/core/database/migrations.dart';
 
 class LocalDatabase {
   static final LocalDatabase _instance = LocalDatabase._internal();
@@ -32,6 +33,8 @@ class LocalDatabase {
       onDowngrade: _downgradeDatabase,
       onOpen: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
+        // Run any pending migrations
+        await MigrationRunner.runMigrations(db, MigrationRunner.allMigrations);
       },
     );
   }

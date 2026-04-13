@@ -65,7 +65,7 @@ impl super::SyncPushService {
                 let total_points = op.payload.get("total_points")
                     .and_then(|v| v.as_f64())
                     .unwrap_or(100.0);
-                let is_departmental_exam = op.payload.get("is_departmental_exam")
+                let _is_departmental_exam = op.payload.get("is_departmental_exam")
                     .and_then(|v| v.as_bool());
 
                 let request = CreateGradeItemRequest {

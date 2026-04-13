@@ -1,7 +1,6 @@
 use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
 use crate::schema::assessment_schema::*;
-use crate::services::grading::GradingService;
 
 impl super::AssessmentService {
     pub async fn start_assessment(
@@ -174,7 +173,7 @@ impl super::AssessmentService {
         println!("💾 [SERVICE] save_answers() SUCCESS - saved {} answers", request.answers.len());
 
         // Auto-grade immediately after saving answers
-        GradingService::grade_submission(submission_id, &self.assessment_repo, &self.submission_repo).await?;
+        self.grading_service.grade_submission(submission_id).await?;
 
         Ok(())
     }
@@ -202,12 +201,8 @@ impl super::AssessmentService {
             return Err(AppError::BadRequest("Assessment already submitted".to_string()));
         }
 
-        println!("📤 [SERVICE] submit_assessment() - grading submission...");
-        let (auto_score, final_score) = GradingService::grade_submission(
-            submission_id,
-            &self.assessment_repo,
-            &self.submission_repo,
-        ).await?;
+        println!("? [SERVICE] submit_assessment() - grading submission...");
+        let (auto_score, final_score) = self.grading_service.grade_submission(submission_id).await?;
         println!("📤 [SERVICE] submit_assessment() - grading complete: auto_score={}, final_score={}", auto_score, final_score);
 
         println!("📤 [SERVICE] submit_assessment() - marking as submitted...");

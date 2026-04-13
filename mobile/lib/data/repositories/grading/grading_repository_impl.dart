@@ -55,6 +55,8 @@ class GradingRepositoryImpl implements GradingRepository {
         sourceType: m.sourceType,
         sourceId: m.sourceId,
         orderIndex: m.orderIndex,
+        createdAt: m.createdAt,
+        updatedAt: m.updatedAt,
       );
 
   GradeScore _scoreToEntity(GradeScoreModel m) => GradeScore(
@@ -307,7 +309,7 @@ class GradingRepositoryImpl implements GradingRepository {
     required Map<String, dynamic> data,
   }) async {
     try {
-      final now = DateTime.now().toIso8601String();
+      final now = DateTime.now();
       final id = const Uuid().v4();
 
       final model = GradeItemModel(

@@ -391,7 +391,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                           if (submission != null && submission.score != null)
                             ScoreDisplayCard(
                               score: submission.score!,
-                              totalPoints: widget.totalPoints ?? 0,
+                              totalPoints: widget.totalPoints,
                               useBaseCardStyle: true,
                               gradedAt: submission.gradedAt,
                               formatDateTime: (dt) => formatDateTimeDisplay(dt),
@@ -399,7 +399,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                           else if (widget.score != null)
                             ScoreDisplayCard(
                               score: widget.score!,
-                              totalPoints: widget.totalPoints ?? 0,
+                              totalPoints: widget.totalPoints,
                               useBaseCardStyle: true,
                             ),
                         ],

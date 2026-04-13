@@ -26,7 +26,7 @@ mixin TosCrudMixin on TosRepositoryBase {
       }
 
       // Offline: optimistic local create + sync queue
-      final now = DateTime.now().toIso8601String();
+      final now = DateTime.now();
       final id = const Uuid().v4();
 
       final model = TosModel(

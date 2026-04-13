@@ -1,8 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:likha/core/constants/api_endpoints.dart';
+import 'package:likha/core/network/api_response.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/models/sync/conflict_model.dart';
 import 'package:likha/data/models/sync/push_response_model.dart';
+import 'package:likha/data/models/sync/full_sync_response_model.dart';
+import 'package:likha/data/models/sync/delta_sync_response_model.dart';
 
 /// Remote datasource for offline sync operations
 abstract class SyncRemoteDataSource {
@@ -23,14 +26,14 @@ abstract class SyncRemoteDataSource {
   ///
   /// [classIds] - List of class IDs to sync (empty = base request only)
   /// [receiveTimeout] - Custom timeout for receiving the response
-  Future<Map<String, dynamic>> fullSync({
+  Future<FullSyncResponseModel> fullSync({
     required String deviceId,
     List<String> classIds = const [],
     Duration? receiveTimeout,
   });
 
   /// Fetch delta sync data on app restart
-  Future<Map<String, dynamic>> deltaSync({
+  Future<DeltaSyncResponseModel> deltaSync({
     required String deviceId,
     required String lastSyncAt,
     String? dataExpiryAt,
@@ -65,27 +68,12 @@ class SyncRemoteDataSourceImpl implements SyncRemoteDataSource {
     required List<Map<String, dynamic>> operations,
   }) async {
     try {
-      final data = {
-        'operations': operations,
-      };
-
-      final response = await _dio.postUri(
-        Uri.parse(ApiEndpoints.syncPush.path),
-        data: data,
+      return await dioClient.postTyped(
+        ApiEndpoints.syncPush,
+        data: {'operations': operations},
       );
-
-      if (response.statusCode != 200) {
-        throw Exception('Failed to push operations');
-      }
-
-      // Extract the 'data' wrapper from the API response
-      final responseData = response.data as Map<String, dynamic>;
-      final innerData = responseData['data'] as Map<String, dynamic>? ?? {};
-      return PushResponseModel.fromJson(innerData);
     } on DioException catch (e) {
-      throw Exception('Network error pushing operations: ${e.message}');
-    } catch (e) {
-      throw Exception('Error pushing operations: $e');
+      throw dioClient.handleError(e);
     }
   }
 
@@ -94,20 +82,12 @@ class SyncRemoteDataSourceImpl implements SyncRemoteDataSource {
     required ConflictResolutionRequest request,
   }) async {
     try {
-      final response = await _dio.postUri(
-        Uri.parse(ApiEndpoints.syncResolveConflict.path),
+      return await dioClient.postTyped(
+        ApiEndpoints.syncResolveConflict,
         data: request.toJson(),
       );
-
-      if (response.statusCode != 200) {
-        throw Exception('Failed to resolve conflict');
-      }
-
-      return ConflictResolutionResponse.fromJson(response.data);
     } on DioException catch (e) {
-      throw Exception('Network error resolving conflict: ${e.message}');
-    } catch (e) {
-      throw Exception('Error resolving conflict: $e');
+      throw dioClient.handleError(e);
     }
   }
 
@@ -125,16 +105,14 @@ class SyncRemoteDataSourceImpl implements SyncRemoteDataSource {
         ApiEndpoints.assignmentSubmissionUpload(submissionId).path,
         data: formData,
       );
-      // Fix 3: Parse and return server response for file ID reconciliation
+      // Parse and return server response for file ID reconciliation
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = response.data as Map<String, dynamic>?;
         return data?['data'] as Map<String, dynamic>?;
       }
       return null;
     } on DioException catch (e) {
-      throw Exception('Network error uploading submission file: ${e.message}');
-    } catch (e) {
-      throw Exception('Error uploading submission file: $e');
+      throw dioClient.handleError(e);
     }
   }
 
@@ -153,14 +131,12 @@ class SyncRemoteDataSourceImpl implements SyncRemoteDataSource {
         data: formData,
       );
     } on DioException catch (e) {
-      throw Exception('Network error uploading material file: ${e.message}');
-    } catch (e) {
-      throw Exception('Error uploading material file: $e');
+      throw dioClient.handleError(e);
     }
   }
 
   @override
-  Future<Map<String, dynamic>> fullSync({
+  Future<FullSyncResponseModel> fullSync({
     required String deviceId,
     List<String> classIds = const [],
     Duration? receiveTimeout,
@@ -171,55 +147,42 @@ class SyncRemoteDataSourceImpl implements SyncRemoteDataSource {
         if (classIds.isNotEmpty) 'class_ids': classIds,
       };
 
-      final options = receiveTimeout != null
-          ? Options(receiveTimeout: receiveTimeout)
-          : null;
-
-      final response = await _dio.postUri(
-        Uri.parse(ApiEndpoints.syncFull.path),
-        data: data,
-        options: options,
-      );
-
-      if (response.statusCode != 200) {
-        throw Exception('Failed to fetch full sync');
+      if (receiveTimeout != null) {
+        final response = await _dio.post(
+          ApiEndpoints.syncFull.path,
+          data: data,
+          options: Options(receiveTimeout: receiveTimeout),
+        );
+        final apiResponse = ApiResponse.fromJson(response.data, (json) => FullSyncResponseModel.fromJson(json as Map<String, dynamic>));
+        return apiResponse.unwrap();
+      } else {
+        return await dioClient.postTyped(
+          ApiEndpoints.syncFull,
+          data: data,
+        );
       }
-
-      return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      throw Exception('Network error fetching full sync: ${e.message}');
-    } catch (e) {
-      throw Exception('Error fetching full sync: $e');
+      throw dioClient.handleError(e);
     }
   }
 
   @override
-  Future<Map<String, dynamic>> deltaSync({
+  Future<DeltaSyncResponseModel> deltaSync({
     required String deviceId,
     required String lastSyncAt,
     String? dataExpiryAt,
   }) async {
     try {
-      final data = {
-        'device_id': deviceId,
-        'last_sync_at': lastSyncAt,
-        if (dataExpiryAt != null) 'data_expiry_at': dataExpiryAt,
-      };
-
-      final response = await _dio.postUri(
-        Uri.parse(ApiEndpoints.syncDeltas.path),
-        data: data,
+      return await dioClient.postTyped(
+        ApiEndpoints.syncDeltas,
+        data: {
+          'device_id': deviceId,
+          'last_sync_at': lastSyncAt,
+          if (dataExpiryAt != null) 'data_expiry_at': dataExpiryAt,
+        },
       );
-
-      if (response.statusCode != 200) {
-        throw Exception('Failed to fetch deltas');
-      }
-
-      return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      throw Exception('Network error fetching deltas: ${e.message}');
-    } catch (e) {
-      throw Exception('Error fetching deltas: $e');
+      throw dioClient.handleError(e);
     }
   }
 }

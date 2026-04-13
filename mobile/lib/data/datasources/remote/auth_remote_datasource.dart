@@ -107,17 +107,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     String? deviceId,
   }) async {
     try {
-      final response = await _dioClient.dio.post(
-        ApiEndpoints.login.path,
+      final authResponse = await _dioClient.postTyped(
+        ApiEndpoints.login,
         data: {
           'username': username,
           'password': password,
           if (deviceId != null) 'device_id': deviceId,
         },
       );
-
-      final responseData = response.data['data'] ?? response.data;
-      final authResponse = ApiEndpoints.login.fromJson(responseData);
 
       await _storageService.saveAuthData(
         accessToken: authResponse.accessToken,

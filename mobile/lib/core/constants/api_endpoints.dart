@@ -15,6 +15,12 @@ import 'package:likha/data/models/classes/class_model.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/data/models/learning_materials/material_detail_model.dart';
 import 'package:likha/data/models/learning_materials/material_file_model.dart';
+import 'package:likha/data/models/tos/tos_model.dart';
+import 'package:likha/data/models/tos/melcs_model.dart';
+import 'package:likha/data/models/sync/push_response_model.dart';
+import 'package:likha/data/models/sync/conflict_model.dart';
+import 'package:likha/data/models/sync/full_sync_response_model.dart';
+import 'package:likha/data/models/sync/delta_sync_response_model.dart';
 
 class ApiEndpoints {
   ApiEndpoints._();
@@ -466,25 +472,25 @@ class ApiEndpoints {
   );
 
   // ===== Sync Endpoints (Full/Delta Optimized) =====
-  static final syncPush = ApiEndpoint<Map<String, dynamic>>(
+  static final syncPush = ApiEndpoint.fromModel(
     '/api/v1/sync/push',
-    (json) => json as Map<String, dynamic>,
+    PushResponseModel.fromJson,
   );
 
-  static final syncResolveConflict = ApiEndpoint<Map<String, dynamic>>(
+  static final syncResolveConflict = ApiEndpoint.fromModel(
     '/api/v1/sync/conflicts/resolve',
-    (json) => json as Map<String, dynamic>,
+    ConflictResolutionResponse.fromJson,
   );
 
   // ===== Full/Delta Sync Endpoints (Optimized) =====
-  static final syncFull = ApiEndpoint<Map<String, dynamic>>(
+  static final syncFull = ApiEndpoint.fromModel(
     '/api/v1/sync/full',
-    (json) => json as Map<String, dynamic>,
+    FullSyncResponseModel.fromJson,
   );
 
-  static final syncDeltas = ApiEndpoint<Map<String, dynamic>>(
+  static final syncDeltas = ApiEndpoint.fromModel(
     '/api/v1/sync/deltas',
-    (json) => json as Map<String, dynamic>,
+    DeltaSyncResponseModel.fromJson,
   );
 
   // ===== Grading Endpoints =====
@@ -538,18 +544,45 @@ class ApiEndpoints {
       ApiEndpoint('/api/v1/classes/$classId/sf10/$studentId', (json) => json);
 
   // ===== TOS CRUD =====
-  static ApiEndpoint<Map<String, dynamic>> tosList(String classId) =>
-      ApiEndpoint('/api/v1/classes/$classId/tos', (json) => json);
+  static ApiEndpoint<List<TosModel>> tosList(String classId) =>
+      ApiEndpoint(
+        '/api/v1/classes/$classId/tos',
+        (json) {
+          final items = json['items'] as List<dynamic>? ?? json as List<dynamic>? ?? [];
+          return items
+              .map((e) => TosModel.fromJson(e as Map<String, dynamic>))
+              .toList();
+        },
+      );
+
   static ApiEndpoint<Map<String, dynamic>> tosDetail(String id) =>
       ApiEndpoint('/api/v1/tos/$id', (json) => json);
-  static ApiEndpoint<Map<String, dynamic>> tosCompetencies(String tosId) =>
-      ApiEndpoint('/api/v1/tos/$tosId/competencies', (json) => json);
-  static ApiEndpoint<Map<String, dynamic>> tosCompetencyDetail(String id) =>
-      ApiEndpoint('/api/v1/tos/competencies/$id', (json) => json);
-  static ApiEndpoint<Map<String, dynamic>> tosBulkCompetencies(String tosId) =>
-      ApiEndpoint('/api/v1/tos/$tosId/competencies/bulk', (json) => json);
+
+  static ApiEndpoint<List<CompetencyModel>> tosCompetencies(String tosId) =>
+      ApiEndpoint(
+        '/api/v1/tos/$tosId/competencies',
+        (json) => (json as List<dynamic>)
+            .map((e) => CompetencyModel.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
+
+  static ApiEndpoint<CompetencyModel> tosCompetencyDetail(String id) =>
+      ApiEndpoint.fromModel('/api/v1/tos/competencies/$id', CompetencyModel.fromJson);
+
+  static ApiEndpoint<List<CompetencyModel>> tosBulkCompetencies(String tosId) =>
+      ApiEndpoint(
+        '/api/v1/tos/$tosId/competencies/bulk',
+        (json) => (json as List<dynamic>)
+            .map((e) => CompetencyModel.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
 
   // ===== MELCS =====
-  static ApiEndpoint<Map<String, dynamic>> melcsSearch() =>
-      ApiEndpoint('/api/v1/melcs', (json) => json);
+  static ApiEndpoint<List<MelcEntryModel>> melcsSearch() =>
+      ApiEndpoint(
+        '/api/v1/melcs',
+        (json) => (json as List<dynamic>)
+            .map((e) => MelcEntryModel.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
 }

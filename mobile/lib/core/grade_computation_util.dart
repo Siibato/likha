@@ -54,7 +54,7 @@ class GradeComputationUtil {
       initialGrade: initialGrade,
       transmutedGrade: transmutedGrade,
       isLocked: isComplete,
-      computedAt: DateTime.now().toIso8601String(),
+      computedAt: DateTime.now(),
       isPreview: true,
     );
   }

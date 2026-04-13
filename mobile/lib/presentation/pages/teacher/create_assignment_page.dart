@@ -212,7 +212,7 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Submission Options',
                     style: TextStyle(
                       fontSize: 14,
@@ -266,7 +266,7 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<int?>(
-                value: _quarter,
+                initialValue: _quarter,
                 decoration: InputDecoration(
                   labelText: 'Quarter (for grading)',
                   labelStyle: const TextStyle(
@@ -311,7 +311,7 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String?>(
-                value: _component,
+                initialValue: _component,
                 decoration: InputDecoration(
                   labelText: 'Grade Component',
                   labelStyle: const TextStyle(

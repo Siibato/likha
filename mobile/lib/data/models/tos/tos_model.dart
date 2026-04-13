@@ -41,8 +41,8 @@ class TosModel extends TableOfSpecifications {
       analyzingPercentage: (json['analyzing_percentage'] as num?)?.toDouble() ?? 16.67,
       evaluatingPercentage: (json['evaluating_percentage'] as num?)?.toDouble() ?? 16.67,
       creatingPercentage: (json['creating_percentage'] as num?)?.toDouble() ?? 16.67,
-      createdAt: json['created_at'] as String,
-      updatedAt: json['updated_at'] as String,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
     );
   }
 
@@ -64,8 +64,8 @@ class TosModel extends TableOfSpecifications {
       analyzingPercentage: (map[TosCols.analyzingPercentage] as num?)?.toDouble() ?? 16.67,
       evaluatingPercentage: (map[TosCols.evaluatingPercentage] as num?)?.toDouble() ?? 16.67,
       creatingPercentage: (map[TosCols.creatingPercentage] as num?)?.toDouble() ?? 16.67,
-      createdAt: map[CommonCols.createdAt] as String,
-      updatedAt: map[CommonCols.updatedAt] as String,
+      createdAt: DateTime.parse(map[CommonCols.createdAt] as String),
+      updatedAt: DateTime.parse(map[CommonCols.updatedAt] as String),
     );
   }
 
@@ -86,8 +86,8 @@ class TosModel extends TableOfSpecifications {
     TosCols.analyzingPercentage: analyzingPercentage,
     TosCols.evaluatingPercentage: evaluatingPercentage,
     TosCols.creatingPercentage: creatingPercentage,
-    CommonCols.createdAt: createdAt,
-    CommonCols.updatedAt: updatedAt,
+    CommonCols.createdAt: createdAt.toIso8601String(),
+    CommonCols.updatedAt: updatedAt.toIso8601String(),
     CommonCols.cachedAt: DateTime.now().toIso8601String(),
     CommonCols.needsSync: 0,
   };
@@ -109,8 +109,8 @@ class TosModel extends TableOfSpecifications {
     'analyzing_percentage': analyzingPercentage,
     'evaluating_percentage': evaluatingPercentage,
     'creating_percentage': creatingPercentage,
-    'created_at': createdAt,
-    'updated_at': updatedAt,
+    'created_at': createdAt.toIso8601String(),
+    'updated_at': updatedAt.toIso8601String(),
   };
 }
 
@@ -152,8 +152,8 @@ class CompetencyModel extends TosCompetency {
       analyzingCount: json['analyzing_count'] as int?,
       evaluatingCount: json['evaluating_count'] as int?,
       creatingCount: json['creating_count'] as int?,
-      createdAt: json['created_at'] as String? ?? '',
-      updatedAt: json['updated_at'] as String? ?? '',
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : DateTime.now(),
+      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at'] as String) : DateTime.now(),
     );
   }
 
@@ -174,8 +174,8 @@ class CompetencyModel extends TosCompetency {
       analyzingCount: map[TosCompetenciesCols.analyzingCount] as int?,
       evaluatingCount: map[TosCompetenciesCols.evaluatingCount] as int?,
       creatingCount: map[TosCompetenciesCols.creatingCount] as int?,
-      createdAt: map[CommonCols.createdAt] as String,
-      updatedAt: map[CommonCols.updatedAt] as String,
+      createdAt: DateTime.parse(map[CommonCols.createdAt] as String),
+      updatedAt: DateTime.parse(map[CommonCols.updatedAt] as String),
     );
   }
 
@@ -195,8 +195,8 @@ class CompetencyModel extends TosCompetency {
     TosCompetenciesCols.analyzingCount: analyzingCount,
     TosCompetenciesCols.evaluatingCount: evaluatingCount,
     TosCompetenciesCols.creatingCount: creatingCount,
-    CommonCols.createdAt: createdAt,
-    CommonCols.updatedAt: updatedAt,
+    CommonCols.createdAt: createdAt.toIso8601String(),
+    CommonCols.updatedAt: updatedAt.toIso8601String(),
     CommonCols.cachedAt: DateTime.now().toIso8601String(),
     CommonCols.needsSync: 0,
   };
@@ -217,5 +217,7 @@ class CompetencyModel extends TosCompetency {
     'analyzing_count': analyzingCount,
     'evaluating_count': evaluatingCount,
     'creating_count': creatingCount,
+    'created_at': createdAt.toIso8601String(),
+    'updated_at': updatedAt.toIso8601String(),
   };
 }

@@ -376,7 +376,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
         ? "Bloom's Taxonomy"
         : 'Difficulty Level';
     final totalDays =
-        competencies.fold<int>(0, (sum, c) => sum + (c.timeUnitsTaught as int));
+        competencies.fold<int>(0, (sum, c) => sum + c.timeUnitsTaught);
 
     return InfoPanel(
       child: Column(
@@ -429,7 +429,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
 
   void _handleEditCompetency(TosCompetency competency, String timeUnit) {
     _editCompetencyController.text = competency.competencyText;
-    _editDaysTaughtController.text = '${competency.timeUnitsTaught as int}';
+    _editDaysTaughtController.text = '${competency.timeUnitsTaught}';
     final unitLabel = timeUnit == 'hours' ? 'Hours' : 'Days';
     showDialog(
       context: context,
@@ -523,7 +523,7 @@ Widget _buildCompetencyTile(TosCompetency competency, String timeUnit) {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${competency.timeUnitsTaught as int} ${timeUnit == 'hours' ? ((competency.timeUnitsTaught as int) == 1 ? 'hour' : 'hours') : ((competency.timeUnitsTaught as int) == 1 ? 'day' : 'days')} taught',
+                    '${competency.timeUnitsTaught} ${timeUnit == 'hours' ? (competency.timeUnitsTaught == 1 ? 'hour' : 'hours') : (competency.timeUnitsTaught == 1 ? 'day' : 'days')} taught',
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.foregroundSecondary,
@@ -547,14 +547,14 @@ Widget _buildCompetencyTile(TosCompetency competency, String timeUnit) {
   Widget _buildMissingPointsBanner(
       List<TosCompetency> competencies, TableOfSpecifications tos) {
     final totalDays =
-        competencies.fold<int>(0, (sum, c) => sum + (c.timeUnitsTaught as int));
+        competencies.fold<int>(0, (sum, c) => sum + c.timeUnitsTaught);
 
     // Use the SAME formula as the grid: sum of actual cognitive cells per row.
     // This respects per-competency overrides so banner and grid always agree.
     final assigned = competencies.fold<int>(0, (sum, c) {
       if (totalDays == 0) return sum;
       final targetItems =
-          ((c.timeUnitsTaught as int) / totalDays * tos.totalItems).round();
+          (c.timeUnitsTaught / totalDays * tos.totalItems).round();
       final easy = c.easyCount ??
           (targetItems * tos.easyPercentage / 100).round();
       final medium = c.mediumCount ??

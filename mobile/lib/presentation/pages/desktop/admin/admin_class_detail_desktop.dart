@@ -4,10 +4,8 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/presentation/pages/desktop/admin/admin_edit_class_desktop.dart';
 import 'package:likha/presentation/pages/desktop/admin/admin_manage_enrollment_desktop.dart';
+import 'package:likha/presentation/pages/desktop/admin/widgets/class_info_panel.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
-import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
-import 'package:likha/presentation/pages/shared/widgets/primitives/info_row.dart';
-import 'package:likha/presentation/pages/shared/widgets/tokens/app_text_styles.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
 class AdminClassDetailDesktop extends ConsumerStatefulWidget {
@@ -75,95 +73,23 @@ class _AdminClassDetailDesktopState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Class Info Panel
-                  InfoPanel(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(detail.title, style: AppTextStyles.cardTitleLg),
-                        if (detail.description != null) ...[
-                          const SizedBox(height: 8),
-                          Text(detail.description!,
-                              style: AppTextStyles.cardSubtitleMd),
-                        ],
-                        const SizedBox(height: 16),
-                        InfoRow(label: 'Teacher', value: teacherName),
-                        if (classInfo != null &&
-                            classInfo.teacherUsername.isNotEmpty) ...[
-                          const SizedBox(height: 12),
-                          InfoRow(
-                            label: 'Username',
-                            value: classInfo.teacherUsername,
-                          ),
-                        ],
-                        if (isAdvisory) ...[
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF4CAF50)
-                                  .withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: const Color(0xFF4CAF50)
-                                    .withValues(alpha: 0.3),
-                              ),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.star_rounded,
-                                    size: 16, color: Color(0xFF4CAF50)),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Advisory Class',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF4CAF50),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-
-                  // Edit button
-                  if (classInfo != null) ...[
-                    const SizedBox(height: 16),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: OutlinedButton.icon(
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => AdminEditClassDesktop(
-                              classEntity: classInfo,
-                            ),
-                          ),
-                        ).then((_) {
-                          ref.read(classProvider.notifier).loadAllClasses();
-                          ref
-                              .read(classProvider.notifier)
-                              .loadClassDetail(widget.classId);
-                        }),
-                        icon: const Icon(Icons.edit_rounded, size: 16),
-                        label: const Text('Edit Class'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.foregroundPrimary,
-                          side: const BorderSide(color: AppColors.borderLight),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 10),
+                  ClassInfoPanel.withClassInfo(
+                    detail: detail,
+                    classInfo: classInfo!,
+                    onEdit: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AdminEditClassDesktop(
+                          classEntity: classInfo!,
                         ),
                       ),
-                    ),
-                  ],
+                    ).then((_) {
+                      ref.read(classProvider.notifier).loadAllClasses();
+                      ref
+                          .read(classProvider.notifier)
+                          .loadClassDetail(widget.classId);
+                    }),
+                  ),
 
                   const SizedBox(height: 32),
 

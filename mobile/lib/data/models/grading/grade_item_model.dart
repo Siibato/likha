@@ -10,8 +10,8 @@ class GradeItemModel {
   final String sourceType;
   final String? sourceId;
   final int orderIndex;
-  final String createdAt;
-  final String updatedAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   const GradeItemModel({
     required this.id,
@@ -38,8 +38,8 @@ class GradeItemModel {
       sourceType: (json['source_type'] as String?) ?? 'manual',
       sourceId: json['source_id'] as String?,
       orderIndex: (json['order_index'] as num?)?.toInt() ?? 0,
-      createdAt: json['created_at'] as String,
-      updatedAt: (json['updated_at'] ?? json['created_at']) as String,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse((json['updated_at'] ?? json['created_at']) as String),
     );
   }
 
@@ -54,8 +54,8 @@ class GradeItemModel {
       sourceType: map[GradeItemsCols.sourceType] as String,
       sourceId: map[GradeItemsCols.sourceId] as String?,
       orderIndex: (map[GradeItemsCols.orderIndex] as num?)?.toInt() ?? 0,
-      createdAt: map[CommonCols.createdAt] as String,
-      updatedAt: map[CommonCols.updatedAt] as String,
+      createdAt: DateTime.parse(map[CommonCols.createdAt] as String),
+      updatedAt: DateTime.parse(map[CommonCols.updatedAt] as String),
     );
   }
 
@@ -83,8 +83,8 @@ class GradeItemModel {
     GradeItemsCols.sourceType: sourceType,
     GradeItemsCols.sourceId: sourceId,
     GradeItemsCols.orderIndex: orderIndex,
-    CommonCols.createdAt: createdAt,
-    CommonCols.updatedAt: updatedAt,
+    CommonCols.createdAt: createdAt.toIso8601String(),
+    CommonCols.updatedAt: updatedAt.toIso8601String(),
     CommonCols.cachedAt: DateTime.now().toIso8601String(),
     CommonCols.needsSync: 0,
   };
