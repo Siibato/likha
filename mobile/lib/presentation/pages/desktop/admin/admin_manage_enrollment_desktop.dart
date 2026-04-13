@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/admin/widgets/enrollment_section.dart';
-import 'package:likha/presentation/providers/class_provider.dart';
 
 class AdminManageEnrollmentDesktop extends ConsumerStatefulWidget {
   final String classId;

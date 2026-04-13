@@ -77,8 +77,8 @@ class StatusBadge extends StatelessWidget {
       padding: padding ?? const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: isActive 
-            ? (activeBackgroundColor ?? const Color(0xFF28A745).withOpacity(0.12))
-            : (inactiveBackgroundColor ?? AppColors.foregroundTertiary.withOpacity(0.12)),
+            ? (activeBackgroundColor ?? const Color(0xFF28A745).withValues(alpha: 0.12))
+            : (inactiveBackgroundColor ?? AppColors.foregroundTertiary.withValues(alpha: 0.12)),
         borderRadius: BorderRadius.circular(borderRadius ?? 8),
       ),
       child: Text(
@@ -123,8 +123,8 @@ extension StatusBadgeExtensions on StatusBadge {
       inactiveText: 'Pending',
       activeColor: const Color(0xFF28A745),
       inactiveColor: AppColors.foregroundTertiary,
-      activeBackgroundColor: const Color(0xFF28A745).withOpacity(0.12),
-      inactiveBackgroundColor: AppColors.foregroundTertiary.withOpacity(0.12),
+      activeBackgroundColor: const Color(0xFF28A745).withValues(alpha: 0.12),
+      inactiveBackgroundColor: AppColors.foregroundTertiary.withValues(alpha: 0.12),
       padding: padding,
     );
   }
@@ -137,8 +137,8 @@ extension StatusBadgeExtensions on StatusBadge {
       inactiveText: 'Not Submitted',
       activeColor: const Color(0xFF007BFF),
       inactiveColor: AppColors.foregroundTertiary,
-      activeBackgroundColor: const Color(0xFF007BFF).withOpacity(0.12),
-      inactiveBackgroundColor: AppColors.foregroundTertiary.withOpacity(0.12),
+      activeBackgroundColor: const Color(0xFF007BFF).withValues(alpha: 0.12),
+      inactiveBackgroundColor: AppColors.foregroundTertiary.withValues(alpha: 0.12),
       padding: padding,
     );
   }
@@ -151,8 +151,8 @@ extension StatusBadgeExtensions on StatusBadge {
       inactiveText: 'Ungraded',
       activeColor: const Color(0xFF6F42C1),
       inactiveColor: AppColors.foregroundTertiary,
-      activeBackgroundColor: const Color(0xFF6F42C1).withOpacity(0.12),
-      inactiveBackgroundColor: AppColors.foregroundTertiary.withOpacity(0.12),
+      activeBackgroundColor: const Color(0xFF6F42C1).withValues(alpha: 0.12),
+      inactiveBackgroundColor: AppColors.foregroundTertiary.withValues(alpha: 0.12),
       padding: padding,
     );
   }

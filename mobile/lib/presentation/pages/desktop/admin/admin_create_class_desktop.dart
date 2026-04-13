@@ -216,7 +216,7 @@ class _AdminCreateClassDesktopState
                                 color: AppColors.foregroundTertiary,
                               ),
                             ),
-                            activeColor: AppColors.foregroundPrimary,
+                            activeThumbColor: AppColors.foregroundPrimary,
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 4),
                             shape: RoundedRectangleBorder(

@@ -6,8 +6,6 @@ import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/score_display_card.dart';
-import 'package:likha/presentation/pages/shared/widgets/primitives/info_chip.dart';
-import 'package:likha/presentation/utils/formatters.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/presentation/pages/student/assessment_results_page.dart';
 import 'package:likha/presentation/pages/student/take_assessment_page.dart';

@@ -1,7 +1,6 @@
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/auth/activity_log_model.dart';
 import 'package:likha/data/models/auth/user_model.dart';
-import 'package:likha/core/database/db_schema.dart';
 import 'package:sqflite/sqflite.dart';
 import '../auth_local_datasource_base.dart';
 

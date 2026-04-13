@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 
 /// Utility class for consistent date formatting across desktop pages
 class DesktopDateUtils {
