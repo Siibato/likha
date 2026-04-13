@@ -8,6 +8,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::middleware::auth_middleware::AuthUser;
+use crate::schema::auth_schema::MessageResponse;
 use crate::schema::common::success_response;
 use crate::schema::tos_schema::*;
 use crate::services::tos::TosService;
@@ -82,7 +83,9 @@ pub async fn delete_tos(
         return r;
     }
     match service.delete_tos(id, auth_user.user_id).await {
-        Ok(_) => StatusCode::NO_CONTENT.into_response(),
+        Ok(_) => success_response(MessageResponse {
+            message: "Table of Specifications deleted".to_string(),
+        }, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -128,7 +131,9 @@ pub async fn delete_competency(
         return r;
     }
     match service.delete_competency(id, auth_user.user_id).await {
-        Ok(_) => StatusCode::NO_CONTENT.into_response(),
+        Ok(_) => success_response(MessageResponse {
+            message: "Competency deleted".to_string(),
+        }, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }

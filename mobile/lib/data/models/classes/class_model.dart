@@ -13,6 +13,7 @@ class ClassModel extends ClassEntity {
     required super.isArchived,
     super.isAdvisory,
     required super.studentCount,
+    super.gradingPeriodType,
     required super.createdAt,
     required super.updatedAt,
     super.cachedAt,
@@ -31,6 +32,7 @@ class ClassModel extends ClassEntity {
       isArchived: json['is_archived'] as bool,
       isAdvisory: json['is_advisory'] as bool? ?? false,
       studentCount: json['student_count'] as int? ?? 0,
+      gradingPeriodType: json['grading_period_type'] as String? ?? 'quarter',
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
       deletedAt: json['deleted_at'] != null
@@ -50,6 +52,7 @@ class ClassModel extends ClassEntity {
       isArchived: (map['is_archived'] as int?) == 1,
       isAdvisory: (map['is_advisory'] as int?) == 1,
       studentCount: map['student_count'] as int? ?? 0,
+      gradingPeriodType: map['grading_period_type'] as String? ?? 'quarter',
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
       deletedAt: map['deleted_at'] != null
@@ -73,6 +76,7 @@ class ClassModel extends ClassEntity {
       'is_archived': isArchived ? 1 : 0,
       'is_advisory': isAdvisory ? 1 : 0,
       'student_count': studentCount,
+      'grading_period_type': gradingPeriodType,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'deleted_at': deletedAt?.toIso8601String(),

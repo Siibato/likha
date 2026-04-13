@@ -11,7 +11,7 @@ class SearchMelcs {
     return _repository.searchMelcs(
       subject: params.subject,
       gradeLevel: params.gradeLevel,
-      quarter: params.quarter,
+      gradingPeriodNumber: params.quarter,
       query: params.query,
     );
   }

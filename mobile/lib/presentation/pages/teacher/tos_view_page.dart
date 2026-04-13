@@ -84,7 +84,7 @@ class _TosViewPageState extends ConsumerState<TosViewPage> {
                                   tos: tos,
                                   competencyCount: competencies.length,
                                   totalDays: competencies.fold<int>(
-                                      0, (s, c) => s + c.daysTaught),
+                                      0, (s, c) => s + c.timeUnitsTaught),
                                 ),
                                 const SizedBox(height: 20),
                                 const Text(
@@ -142,7 +142,7 @@ class _TosViewPageState extends ConsumerState<TosViewPage> {
                                 const SizedBox(height: 12),
                                 ...competencies.map((c) {
                                   final totalDays = competencies.fold<int>(
-                                      0, (s, comp) => s + comp.daysTaught);
+                                      0, (s, comp) => s + comp.timeUnitsTaught);
                                   return TosCompetencyRow(
                                     competency: c,
                                     totalDays: totalDays,

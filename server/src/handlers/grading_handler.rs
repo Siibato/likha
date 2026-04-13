@@ -8,6 +8,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::middleware::auth_middleware::AuthUser;
+use crate::schema::auth_schema::MessageResponse;
 use crate::schema::common::success_response;
 use crate::schema::grading_schema::*;
 use crate::services::grade_computation::GradeComputationService;
@@ -63,7 +64,7 @@ pub async fn update_grading_config(
         return r;
     }
     match service
-        .update_grading_config(class_id, request.quarter, request.ww_weight, request.pt_weight, request.qa_weight)
+        .update_grading_config(class_id, request.grading_period_number, request.ww_weight, request.pt_weight, request.qa_weight)
         .await
     {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
@@ -82,7 +83,7 @@ pub async fn get_grade_items(
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
-    let quarter = query.quarter.unwrap_or(1);
+    let quarter = query.grading_period_number.unwrap_or(1);
     match service.get_grade_items(class_id, quarter).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
@@ -128,7 +129,9 @@ pub async fn delete_grade_item(
         return r;
     }
     match service.delete_grade_item(id).await {
-        Ok(()) => StatusCode::NO_CONTENT.into_response(),
+        Ok(_) => success_response(MessageResponse {
+            message: "Grade item deleted".to_string(),
+        }, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -206,7 +209,7 @@ pub async fn get_grades(
     Path(class_id): Path<Uuid>,
     Query(query): Query<QuarterQuery>,
 ) -> impl IntoResponse {
-    let quarter = query.quarter.unwrap_or(1);
+    let quarter = query.grading_period_number.unwrap_or(1);
     if auth_user.role == "student" {
         // Student can only see their own grades
         match service
@@ -235,7 +238,7 @@ pub async fn compute_grades(
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
-    let quarter = query.quarter.unwrap_or(1);
+    let quarter = query.grading_period_number.unwrap_or(1);
     match service.compute_class_quarterly(class_id, quarter).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
@@ -284,7 +287,7 @@ pub async fn get_grade_summary(
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
-    let quarter = query.quarter.unwrap_or(1);
+    let quarter = query.grading_period_number.unwrap_or(1);
     match service.get_grade_summary(class_id, quarter).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),

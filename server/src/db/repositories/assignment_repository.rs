@@ -2,7 +2,7 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::{assignment_submissions, assignments_hw, submission_files, users};
+use ::entity::{assignment_submissions, assignments, submission_files, users};
 use crate::utils::{AppError, AppResult};
 
 pub struct AssignmentRepository {
@@ -22,24 +22,25 @@ impl AssignmentRepository {
         title: String,
         instructions: String,
         total_points: i32,
-        submission_type: String,
+        allows_text_submission: bool,
+        allows_file_submission: bool,
         allowed_file_types: Option<String>,
         max_file_size_mb: Option<i32>,
         due_at: chrono::NaiveDateTime,
         order_index: i32,
         client_id: Option<Uuid>,
         is_published: bool,
-        quarter: Option<i32>,
+        grading_period_number: Option<i32>,
         component: Option<String>,
-        no_submission_required: Option<bool>,
-    ) -> AppResult<assignments_hw::Model> {
-        let assignment = assignments_hw::ActiveModel {
+    ) -> AppResult<assignments::Model> {
+        let assignment = assignments::ActiveModel {
             id: Set(client_id.unwrap_or_else(Uuid::new_v4)),
             class_id: Set(class_id),
             title: Set(title),
             instructions: Set(instructions),
             total_points: Set(total_points),
-            submission_type: Set(submission_type),
+            allows_text_submission: Set(allows_text_submission),
+            allows_file_submission: Set(allows_file_submission),
             allowed_file_types: Set(allowed_file_types),
             max_file_size_mb: Set(max_file_size_mb),
             due_at: Set(due_at),
@@ -48,8 +49,7 @@ impl AssignmentRepository {
             created_at: Set(Utc::now().naive_utc()),
             updated_at: Set(Utc::now().naive_utc()),
             deleted_at: Set(None),
-            quarter: Set(quarter),
-            no_submission_required: Set(no_submission_required),
+            grading_period_number: Set(grading_period_number),
             component: Set(component),
         };
 
@@ -59,29 +59,29 @@ impl AssignmentRepository {
             .map_err(|e| AppError::InternalServerError(format!("Failed to create assignment: {}", e)))
     }
 
-    pub async fn find_by_id(&self, id: Uuid) -> AppResult<Option<assignments_hw::Model>> {
-        assignments_hw::Entity::find_by_id(id)
+    pub async fn find_by_id(&self, id: Uuid) -> AppResult<Option<assignments::Model>> {
+        assignments::Entity::find_by_id(id)
             .one(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
     }
 
-    pub async fn find_by_class_id(&self, class_id: Uuid) -> AppResult<Vec<assignments_hw::Model>> {
-        assignments_hw::Entity::find()
-            .filter(assignments_hw::Column::ClassId.eq(class_id))
-            .filter(assignments_hw::Column::DeletedAt.is_null())
-            .order_by_asc(assignments_hw::Column::OrderIndex)
+    pub async fn find_by_class_id(&self, class_id: Uuid) -> AppResult<Vec<assignments::Model>> {
+        assignments::Entity::find()
+            .filter(assignments::Column::ClassId.eq(class_id))
+            .filter(assignments::Column::DeletedAt.is_null())
+            .order_by_asc(assignments::Column::OrderIndex)
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
     }
 
-    pub async fn find_published_by_class_id(&self, class_id: Uuid) -> AppResult<Vec<assignments_hw::Model>> {
-        assignments_hw::Entity::find()
-            .filter(assignments_hw::Column::ClassId.eq(class_id))
-            .filter(assignments_hw::Column::IsPublished.eq(true))
-            .filter(assignments_hw::Column::DeletedAt.is_null())
-            .order_by_asc(assignments_hw::Column::OrderIndex)
+    pub async fn find_published_by_class_id(&self, class_id: Uuid) -> AppResult<Vec<assignments::Model>> {
+        assignments::Entity::find()
+            .filter(assignments::Column::ClassId.eq(class_id))
+            .filter(assignments::Column::IsPublished.eq(true))
+            .filter(assignments::Column::DeletedAt.is_null())
+            .order_by_asc(assignments::Column::OrderIndex)
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
@@ -93,15 +93,15 @@ impl AssignmentRepository {
         title: Option<String>,
         instructions: Option<String>,
         total_points: Option<i32>,
-        submission_type: Option<String>,
+        allows_text_submission: Option<bool>,
+        allows_file_submission: Option<bool>,
         allowed_file_types: Option<Option<String>>,
         max_file_size_mb: Option<Option<i32>>,
         due_at: Option<chrono::NaiveDateTime>,
-        quarter: Option<Option<i32>>,
+        grading_period_number: Option<Option<i32>>,
         component: Option<Option<String>>,
-        no_submission_required: Option<Option<bool>>,
-    ) -> AppResult<assignments_hw::Model> {
-        let mut assignment: assignments_hw::ActiveModel = assignments_hw::Entity::find_by_id(id)
+    ) -> AppResult<assignments::Model> {
+        let mut assignment: assignments::ActiveModel = assignments::Entity::find_by_id(id)
             .one(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
@@ -117,8 +117,11 @@ impl AssignmentRepository {
         if let Some(total_points) = total_points {
             assignment.total_points = Set(total_points);
         }
-        if let Some(submission_type) = submission_type {
-            assignment.submission_type = Set(submission_type);
+        if let Some(text) = allows_text_submission {
+            assignment.allows_text_submission = Set(text);
+        }
+        if let Some(file) = allows_file_submission {
+            assignment.allows_file_submission = Set(file);
         }
         if let Some(allowed) = allowed_file_types {
             assignment.allowed_file_types = Set(allowed);
@@ -129,14 +132,11 @@ impl AssignmentRepository {
         if let Some(due) = due_at {
             assignment.due_at = Set(due);
         }
-        if let Some(q) = quarter {
-            assignment.quarter = Set(q);
+        if let Some(q) = grading_period_number {
+            assignment.grading_period_number = Set(q);
         }
         if let Some(c) = component {
             assignment.component = Set(c);
-        }
-        if let Some(n) = no_submission_required {
-            assignment.no_submission_required = Set(n);
         }
         assignment.updated_at = Set(Utc::now().naive_utc());
 
@@ -146,8 +146,8 @@ impl AssignmentRepository {
             .map_err(|e| AppError::InternalServerError(format!("Failed to update assignment: {}", e)))
     }
 
-    pub async fn publish_assignment(&self, id: Uuid) -> AppResult<assignments_hw::Model> {
-        let mut assignment: assignments_hw::ActiveModel = assignments_hw::Entity::find_by_id(id)
+    pub async fn publish_assignment(&self, id: Uuid) -> AppResult<assignments::Model> {
+        let mut assignment: assignments::ActiveModel = assignments::Entity::find_by_id(id)
             .one(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
@@ -163,8 +163,8 @@ impl AssignmentRepository {
             .map_err(|e| AppError::InternalServerError(format!("Failed to publish assignment: {}", e)))
     }
 
-    pub async fn unpublish_assignment(&self, id: Uuid) -> AppResult<assignments_hw::Model> {
-        let mut assignment: assignments_hw::ActiveModel = assignments_hw::Entity::find_by_id(id)
+    pub async fn unpublish_assignment(&self, id: Uuid) -> AppResult<assignments::Model> {
+        let mut assignment: assignments::ActiveModel = assignments::Entity::find_by_id(id)
             .one(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
@@ -195,7 +195,6 @@ impl AssignmentRepository {
             status: Set("draft".to_string()),
             text_content: Set(None),
             submitted_at: Set(None),
-            is_late: Set(false),
             points: Set(None),
             graded_by: Set(None),
             feedback: Set(None),
@@ -270,7 +269,6 @@ impl AssignmentRepository {
         &self,
         id: Uuid,
         status: &str,
-        is_late: Option<bool>,
     ) -> AppResult<assignment_submissions::Model> {
         let mut submission: assignment_submissions::ActiveModel =
             assignment_submissions::Entity::find_by_id(id)
@@ -283,9 +281,6 @@ impl AssignmentRepository {
         submission.status = Set(status.to_string());
         if status == "submitted" {
             submission.submitted_at = Set(Some(Utc::now().naive_utc()));
-        }
-        if let Some(late) = is_late {
-            submission.is_late = Set(late);
         }
         submission.updated_at = Set(Utc::now().naive_utc());
 
@@ -458,22 +453,22 @@ impl AssignmentRepository {
         Ok(user.full_name)
     }
 
-    pub async fn find_all(&self) -> AppResult<Vec<assignments_hw::Model>> {
-        assignments_hw::Entity::find()
+    pub async fn find_all(&self) -> AppResult<Vec<assignments::Model>> {
+        assignments::Entity::find()
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
     }
 
     pub async fn soft_delete(&self, id: Uuid) -> AppResult<()> {
-        let assignment = assignments_hw::ActiveModel {
+        let assignment = assignments::ActiveModel {
             id: Set(id),
             deleted_at: Set(Some(Utc::now().naive_utc())),
             updated_at: Set(Utc::now().naive_utc()),
             ..Default::default()
         };
 
-        assignments_hw::Entity::update(assignment)
+        assignments::Entity::update(assignment)
             .exec(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Failed to delete assignment: {}", e)))?;
@@ -482,11 +477,11 @@ impl AssignmentRepository {
     }
 
     pub async fn get_max_order_index(&self, class_id: Uuid) -> AppResult<i32> {
-        let result = assignments_hw::Entity::find()
+        let result = assignments::Entity::find()
             .select_only()
-            .column_as(assignments_hw::Column::OrderIndex.max(), "max_order")
-            .filter(assignments_hw::Column::ClassId.eq(class_id))
-            .filter(assignments_hw::Column::DeletedAt.is_null())
+            .column_as(assignments::Column::OrderIndex.max(), "max_order")
+            .filter(assignments::Column::ClassId.eq(class_id))
+            .filter(assignments::Column::DeletedAt.is_null())
             .into_tuple::<Option<i32>>()
             .one(&self.db)
             .await
@@ -497,14 +492,14 @@ impl AssignmentRepository {
 
     pub async fn reorder_assignments(&self, _class_id: Uuid, assignment_ids: Vec<Uuid>) -> AppResult<()> {
         for (index, id) in assignment_ids.iter().enumerate() {
-            let assignment = assignments_hw::ActiveModel {
+            let assignment = assignments::ActiveModel {
                 id: Set(*id),
                 order_index: Set(index as i32),
                 updated_at: Set(Utc::now().naive_utc()),
                 ..Default::default()
             };
 
-            assignments_hw::Entity::update(assignment)
+            assignments::Entity::update(assignment)
                 .exec(&self.db)
                 .await
                 .map_err(|e| AppError::InternalServerError(format!("Failed to reorder assignment: {}", e)))?;

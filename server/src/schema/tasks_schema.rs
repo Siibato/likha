@@ -11,7 +11,8 @@ pub struct TaskItemResponse {
     pub is_published: bool,
     // Assignment-specific
     pub due_at: Option<String>,
-    pub submission_type: Option<String>,
+    pub allows_text_submission: Option<bool>,
+    pub allows_file_submission: Option<bool>,
     pub submission_status: Option<String>,
     pub submission_id: Option<Uuid>,
     pub score: Option<i32>,

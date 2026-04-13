@@ -4,6 +4,7 @@ import 'package:likha/domain/classes/entities/class_entity.dart';
 import 'package:likha/presentation/pages/admin/widgets/search_bar.dart';
 import 'package:likha/presentation/pages/teacher/class_detail_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/empty_class_state.dart';
+import 'package:likha/presentation/pages/teacher/widgets/empty_search_result_state.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/class_card.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
@@ -79,19 +80,7 @@ class _TeacherClassesPageState extends ConsumerState<TeacherClassesPage> {
                             final filteredClasses = _getFilteredAndSortedClasses(classState.classes);
                             if (filteredClasses.isEmpty) {
                               return SliverFillRemaining(
-                                child: Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Icon(Icons.search_off_rounded, size: 64, color: Color(0xFFCCCCCC)),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        'No classes match "$_searchQuery"',
-                                        style: const TextStyle(fontSize: 16, color: Color(0xFF999999)),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                                child: EmptySearchResultState(searchQuery: _searchQuery),
                               );
                             }
                             return SliverPadding(

@@ -10,6 +10,7 @@ class Question extends Equatable {
   final bool isMultiSelect;
   final String? tosCompetencyId;
   final String? cognitiveLevel;
+  final String? difficulty;
   final List<Choice>? choices;
   final List<CorrectAnswer>? correctAnswers;
   final List<EnumerationItem>? enumerationItems;
@@ -28,6 +29,7 @@ class Question extends Equatable {
     required this.isMultiSelect,
     this.tosCompetencyId,
     this.cognitiveLevel,
+    this.difficulty,
     this.choices,
     this.correctAnswers,
     this.enumerationItems,
@@ -38,7 +40,7 @@ class Question extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, assessmentId, questionType, questionText, points, orderIndex, createdAt, updatedAt, needsSync, cachedAt];
+  List<Object?> get props => [id, assessmentId, questionType, questionText, points, orderIndex, difficulty, createdAt, updatedAt, needsSync, cachedAt];
 }
 
 class Choice extends Equatable {

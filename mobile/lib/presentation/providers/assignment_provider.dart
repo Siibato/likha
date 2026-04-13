@@ -166,14 +166,14 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
           currentAssignment: assignment,
           successMessage: 'Assignment created',
         );
-        // Auto-create linked grade item when component + quarter are set
-        if (assignment.component != null && assignment.quarter != null) {
+        // Auto-create linked grade item when component + gradingPeriodNumber are set
+        if (assignment.component != null && assignment.gradingPeriodNumber != null) {
           sl<GradingRepository>().createGradeItem(
             classId: params.classId,
             data: {
               'title': assignment.title,
               'component': _toGradeComponent(assignment.component!),
-              'quarter': assignment.quarter!,
+              'grading_period_number': assignment.gradingPeriodNumber!,
               'total_points': assignment.totalPoints.toDouble(),
               'is_departmental_exam': false,
               'source_type': 'assignment',

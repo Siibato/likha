@@ -159,13 +159,10 @@ async fn main() {
     let material_service = Arc::new(LearningMaterialService::new(db.clone(), config.file_storage_path.clone()));
 
     // Initialize new offline-first sync services
-    let entitlement_repo = crate::db::repositories::entitlement_repository::EntitlementRepository::new(db.clone());
+    let _entitlement_repo = crate::db::repositories::entitlement_repository::EntitlementRepository::new(db.clone());
     let manifest_repo = ManifestRepository::new(db.clone());
 
-    let entitlement_service = Arc::new(EntitlementService::new(
-        entitlement_repo,
-        manifest_repo.clone(),
-    ));
+    let entitlement_service = Arc::new(EntitlementService::new(db.clone()));
 
     let processed_ops_repo = Arc::new(ProcessedOperationsRepository::new(db.clone()));
     let grade_computation_service = Arc::new(GradeComputationService::new(db.clone()));

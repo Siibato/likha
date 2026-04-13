@@ -119,24 +119,7 @@ impl Validator {
         Ok(())
     }
 
-    /// Validate submission type enum (text | file | text_or_file).
-    pub fn validate_submission_type(submission_type: &str) -> AppResult<()> {
-        match submission_type {
-            "text" | "file" | "text_or_file" => Ok(()),
-            _ => Err(AppError::BadRequest(
-                "Invalid submission type. Must be 'text', 'file', or 'text_or_file'".to_string(),
-            )),
-        }
-    }
-
-    /// Validate optional submission type field for updates.
-    pub fn validate_optional_submission_type(submission_type: Option<String>) -> AppResult<()> {
-        if let Some(st) = submission_type {
-            Validator::validate_submission_type(&st)?;
-        }
-        Ok(())
-    }
-
+    
     /// Validate max file size in MB (range 1-50).
     pub fn validate_max_file_size(size_mb: i32) -> AppResult<()> {
         if size_mb < 1 || size_mb > 50 {

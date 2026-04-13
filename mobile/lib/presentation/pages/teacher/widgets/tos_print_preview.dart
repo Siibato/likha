@@ -17,7 +17,7 @@ class TosPrintService {
     final division = prefs.getString('school_division') ?? '';
     final schoolYear = prefs.getString('school_year') ?? '';
 
-    final totalDays = competencies.fold<int>(0, (s, c) => s + c.daysTaught);
+    final totalDays = competencies.fold<int>(0, (s, c) => s + c.timeUnitsTaught);
 
     final cogHeaders = tos.classificationMode == 'blooms'
         ? ['R', 'U', 'Ap', 'An', 'E', 'C']
@@ -37,7 +37,7 @@ class TosPrintService {
               division: division,
               schoolYear: schoolYear,
               title: tos.title,
-              quarter: tos.quarter,
+              gradingPeriodNumber: tos.gradingPeriodNumber,
               mode: tos.classificationMode,
             ),
             footer: (context) => _buildFooter(context),
@@ -60,7 +60,7 @@ class TosPrintService {
     required String division,
     required String schoolYear,
     required String title,
-    required int quarter,
+    required int gradingPeriodNumber,
     required String mode,
   }) {
     final modeLabel = mode == 'blooms' ? "Bloom's Taxonomy" : 'Difficulty Level';
@@ -76,7 +76,7 @@ class TosPrintService {
         pw.SizedBox(height: 8),
         pw.Text('TABLE OF SPECIFICATIONS', style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold)),
         pw.SizedBox(height: 4),
-        pw.Text('$title | Quarter $quarter | $modeLabel', style: const pw.TextStyle(fontSize: 9)),
+        pw.Text('$title | Quarter $gradingPeriodNumber | $modeLabel', style: const pw.TextStyle(fontSize: 9)),
         if (schoolYear.isNotEmpty) pw.Text('School Year: $schoolYear', style: const pw.TextStyle(fontSize: 8)),
         pw.SizedBox(height: 8),
         pw.Divider(thickness: 0.5),
@@ -103,7 +103,7 @@ class TosPrintService {
     int gridActualTotal = 0;
 
     final data = competencies.map((c) {
-      final weight = totalDays > 0 ? (c.daysTaught / totalDays * 100) : 0.0;
+      final weight = totalDays > 0 ? (c.timeUnitsTaught / totalDays * 100) : 0.0;
       final targetItems =
           totalDays > 0 ? (weight * tos.totalItems / 100).round() : 0;
 
@@ -148,7 +148,7 @@ class TosPrintService {
         c.competencyCode != null
             ? '${c.competencyCode} - ${c.competencyText}'
             : c.competencyText,
-        '${c.daysTaught}',
+        '${c.timeUnitsTaught}',
         '${weight.toStringAsFixed(1)}%',
         ...cogCells,
         '$rowTotal',

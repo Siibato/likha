@@ -17,6 +17,7 @@ pub struct Model {
     pub deleted_at: Option<chrono::NaiveDateTime>,
     pub tos_competency_id: Option<String>,
     pub cognitive_level: Option<String>,
+    pub difficulty: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

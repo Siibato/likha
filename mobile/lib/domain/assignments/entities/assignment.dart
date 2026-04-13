@@ -6,7 +6,8 @@ class Assignment extends Equatable {
   final String title;
   final String instructions;
   final int totalPoints;
-  final String submissionType;
+  final bool allowsTextSubmission;
+  final bool allowsFileSubmission;
   final String? allowedFileTypes;
   final int? maxFileSizeMb;
   final DateTime dueAt;
@@ -17,7 +18,7 @@ class Assignment extends Equatable {
   final String? submissionStatus; // Student's own submission status
   final String? submissionId; // Student's own submission ID
   final int? score; // Student's own score
-  final int? quarter;
+  final int? gradingPeriodNumber;
   final String? component;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -30,7 +31,8 @@ class Assignment extends Equatable {
     required this.title,
     required this.instructions,
     required this.totalPoints,
-    required this.submissionType,
+    required this.allowsTextSubmission,
+    required this.allowsFileSubmission,
     this.allowedFileTypes,
     this.maxFileSizeMb,
     required this.dueAt,
@@ -41,7 +43,7 @@ class Assignment extends Equatable {
     this.submissionStatus,
     this.submissionId,
     this.score,
-    this.quarter,
+    this.gradingPeriodNumber,
     this.component,
     required this.createdAt,
     required this.updatedAt,
@@ -56,7 +58,8 @@ class Assignment extends Equatable {
         title,
         instructions,
         totalPoints,
-        submissionType,
+        allowsTextSubmission,
+        allowsFileSubmission,
         allowedFileTypes,
         maxFileSizeMb,
         dueAt,
@@ -67,7 +70,7 @@ class Assignment extends Equatable {
         submissionStatus,
         submissionId,
         score,
-        quarter,
+        gradingPeriodNumber,
         component,
         createdAt,
         updatedAt,

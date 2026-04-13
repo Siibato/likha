@@ -228,7 +228,11 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                         const SizedBox(height: 16),
                         AssignmentInfoCard(
                           totalPoints: assignment.totalPoints,
-                          submissionType: assignment.submissionType,
+                          submissionType: assignment.allowsTextSubmission && assignment.allowsFileSubmission 
+                              ? 'text_or_file' 
+                              : assignment.allowsTextSubmission 
+                                  ? 'text' 
+                                  : 'file',
                           allowedFileTypes: assignment.allowedFileTypes,
                           maxFileSizeMb: assignment.maxFileSizeMb,
                           dueAt: assignment.dueAt,

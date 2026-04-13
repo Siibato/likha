@@ -16,7 +16,6 @@ class AssignmentSubmissionModel extends AssignmentSubmission {
     required super.status,
     super.textContent,
     super.submittedAt,
-    required super.isLate,
     super.score,
     super.feedback,
     super.gradedAt,
@@ -40,7 +39,6 @@ class AssignmentSubmissionModel extends AssignmentSubmission {
       submittedAt: json['submitted_at'] != null
           ? _parseUtc(json['submitted_at'] as String)
           : null,
-      isLate: json['is_late'] as bool? ?? false,
       score: json['score'] as int?,
       feedback: json['feedback'] as String?,
       gradedAt: json['graded_at'] != null
@@ -71,7 +69,6 @@ class AssignmentSubmissionModel extends AssignmentSubmission {
       submittedAt: map['submitted_at'] != null
           ? DateTime.parse(map['submitted_at'] as String)
           : null,
-      isLate: (map['is_late'] as int?) == 1,
       score: map['points'] as int?,
       feedback: map['feedback'] as String?,
       gradedAt: map['graded_at'] != null
@@ -99,7 +96,6 @@ class AssignmentSubmissionModel extends AssignmentSubmission {
       'status': status,
       'text_content': textContent,
       'submitted_at': submittedAt?.toIso8601String(),
-      'is_late': isLate ? 1 : 0,
       'points': score,
       'feedback': feedback,
       'graded_at': gradedAt?.toIso8601String(),
@@ -121,7 +117,6 @@ class SubmissionListItemModel extends SubmissionListItem {
     required super.studentUsername,
     required super.status,
     super.submittedAt,
-    required super.isLate,
     super.score,
   });
 
@@ -135,7 +130,6 @@ class SubmissionListItemModel extends SubmissionListItem {
       submittedAt: json['submitted_at'] != null
           ? _parseUtc(json['submitted_at'] as String)
           : null,
-      isLate: json['is_late'] as bool? ?? false,
       score: json['score'] as int?,
     );
   }
@@ -146,7 +140,8 @@ class StudentAssignmentListItemModel extends StudentAssignmentListItem {
     required super.id,
     required super.title,
     required super.totalPoints,
-    required super.submissionType,
+    required super.allowsTextSubmission,
+    required super.allowsFileSubmission,
     required super.dueAt,
     required super.isPublished,
     super.submissionStatus,
@@ -158,7 +153,8 @@ class StudentAssignmentListItemModel extends StudentAssignmentListItem {
       id: json['id'] as String,
       title: json['title'] as String,
       totalPoints: json['total_points'] as int,
-      submissionType: json['submission_type'] as String,
+      allowsTextSubmission: json['allows_text_submission'] as bool? ?? true,
+      allowsFileSubmission: json['allows_file_submission'] as bool? ?? false,
       dueAt: _parseUtc(json['due_at'] as String),
       isPublished: json['is_published'] as bool? ?? false,
       submissionStatus: json['submission_status'] as String?,

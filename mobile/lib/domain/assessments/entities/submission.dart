@@ -10,7 +10,7 @@ class SubmissionSummary extends Equatable {
   final DateTime? submittedAt;
   final double autoScore;
   final double finalScore;
-  final int totalPoints;
+  final double totalPoints;
   final bool isSubmitted;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -49,7 +49,7 @@ class SubmissionDetail extends Equatable {
   final double autoScore;
   final double finalScore;
   final bool isSubmitted;
-  final int totalPoints;
+  final double totalPoints;
   final List<SubmissionAnswer> answers;
 
   const SubmissionDetail({
@@ -158,7 +158,7 @@ class StudentResult extends Equatable {
   final String submissionId;
   final double autoScore;
   final double finalScore;
-  final int totalPoints;
+  final double totalPoints;
   final DateTime? submittedAt;
   final List<StudentAnswerResult> answers;
 

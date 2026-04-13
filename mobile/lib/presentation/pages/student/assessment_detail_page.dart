@@ -6,8 +6,6 @@ import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/score_display_card.dart';
-import 'package:likha/presentation/pages/shared/widgets/primitives/info_chip.dart';
-import 'package:likha/presentation/utils/formatters.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/presentation/pages/student/assessment_results_page.dart';
 import 'package:likha/presentation/pages/student/take_assessment_page.dart';
@@ -26,7 +24,6 @@ class AssessmentDetailPage extends ConsumerStatefulWidget {
 }
 
 class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
-  bool _isLoadingScore = false;
   bool? _submissionIsSubmitted; // Track whether submission is actually submitted
   String? _formError;
 
@@ -121,7 +118,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
           PageLogger.instance.log('_loadSubmissionStatus() - setState: _submissionIsSubmitted=$_submissionIsSubmitted');
         });
       }
-    } catch (e, st) {
+    } catch (e) {
       PageLogger.instance.error('_loadSubmissionStatus() EXCEPTION', e);
     }
   }
@@ -130,7 +127,6 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
     final user = ref.read(authProvider).user;
     if (user == null) return;
     PageLogger.instance.log('_loadScore() START - assessmentId: ${widget.assessment.id}, studentId: ${user.id}');
-    setState(() => _isLoadingScore = true);
 
     await ref.read(studentAssessmentProvider.notifier).loadScorePreview(
       widget.assessment.id,
@@ -139,7 +135,6 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
 
     final state = ref.read(studentAssessmentProvider);
     PageLogger.instance.log('_loadScore() END - studentResult: ${state.studentResult}, error: ${state.error}');
-    if (mounted) setState(() => _isLoadingScore = false);
   }
 
   void _navigateToTakeAssessment() {
@@ -227,7 +222,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
                   if (status == DetailStatus.resultsAvailable) ...[
                     ScoreDisplayCard(
                       score: state.studentResult?.finalScore ?? 0,
-                      totalPoints: widget.assessment.totalPoints ?? 0,
+                      totalPoints: widget.assessment.totalPoints,
                       isLoading: state.isLoading,
                       useBaseCardStyle: false,
                     ),

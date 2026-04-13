@@ -31,7 +31,7 @@ class TosDetailDesktop extends ConsumerStatefulWidget {
 
 class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
   final _competencyController = TextEditingController();
-  final _daysTaughtController = TextEditingController();
+  final _timeUnitsTaughtController = TextEditingController();
   final _editCompetencyController = TextEditingController();
   final _editDaysTaughtController = TextEditingController();
 
@@ -46,7 +46,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
   @override
   void dispose() {
     _competencyController.dispose();
-    _daysTaughtController.dispose();
+    _timeUnitsTaughtController.dispose();
     _editCompetencyController.dispose();
     _editDaysTaughtController.dispose();
     super.dispose();
@@ -82,7 +82,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
 
   void _handleAddCompetency(String timeUnit) {
     _competencyController.clear();
-    _daysTaughtController.text = '1';
+    _timeUnitsTaughtController.text = '1';
     final unitLabel = timeUnit == 'hours' ? 'Hours' : 'Days';
     showDialog(
       context: context,
@@ -98,7 +98,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
             ),
             const SizedBox(height: 12),
             StyledTextField(
-              controller: _daysTaughtController,
+              controller: _timeUnitsTaughtController,
               label: '$unitLabel taught',
               icon: Icons.schedule_outlined,
               keyboardType: TextInputType.number,
@@ -122,7 +122,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
                   widget.tosId,
                   {
                     'competency_text': text.trim(),
-                    'days_taught': int.tryParse(_daysTaughtController.text.trim()) ?? 1,
+                    'days_taught': int.tryParse(_timeUnitsTaughtController.text.trim()) ?? 1,
                     'order_index': ref.read(tosProvider).competencies.length,
                   },
                 );
@@ -376,7 +376,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
         ? "Bloom's Taxonomy"
         : 'Difficulty Level';
     final totalDays =
-        competencies.fold<int>(0, (sum, c) => sum + c.daysTaught);
+        competencies.fold<int>(0, (sum, c) => sum + c.timeUnitsTaught);
 
     return InfoPanel(
       child: Column(
@@ -391,7 +391,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
             ),
           ),
           const SizedBox(height: 12),
-          _settingsRow('Quarter', 'Q${tos.quarter}'),
+          _settingsRow('Quarter', 'Q${tos.gradingPeriodNumber}'),
           _settingsRow('Mode', modeLabel),
           _settingsRow('Total Items', '${tos.totalItems}'),
           _settingsRow('Competencies', '${competencies.length}'),
@@ -429,7 +429,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
 
   void _handleEditCompetency(TosCompetency competency, String timeUnit) {
     _editCompetencyController.text = competency.competencyText;
-    _editDaysTaughtController.text = '${competency.daysTaught}';
+    _editDaysTaughtController.text = '${competency.timeUnitsTaught}';
     final unitLabel = timeUnit == 'hours' ? 'Hours' : 'Days';
     showDialog(
       context: context,
@@ -523,7 +523,7 @@ Widget _buildCompetencyTile(TosCompetency competency, String timeUnit) {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${competency.daysTaught} ${timeUnit == 'hours' ? (competency.daysTaught == 1 ? 'hour' : 'hours') : (competency.daysTaught == 1 ? 'day' : 'days')} taught',
+                    '${competency.timeUnitsTaught} ${timeUnit == 'hours' ? (competency.timeUnitsTaught == 1 ? 'hour' : 'hours') : (competency.timeUnitsTaught == 1 ? 'day' : 'days')} taught',
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.foregroundSecondary,
@@ -547,14 +547,14 @@ Widget _buildCompetencyTile(TosCompetency competency, String timeUnit) {
   Widget _buildMissingPointsBanner(
       List<TosCompetency> competencies, TableOfSpecifications tos) {
     final totalDays =
-        competencies.fold<int>(0, (sum, c) => sum + c.daysTaught);
+        competencies.fold<int>(0, (sum, c) => sum + c.timeUnitsTaught);
 
     // Use the SAME formula as the grid: sum of actual cognitive cells per row.
     // This respects per-competency overrides so banner and grid always agree.
     final assigned = competencies.fold<int>(0, (sum, c) {
       if (totalDays == 0) return sum;
       final targetItems =
-          (c.daysTaught / totalDays * tos.totalItems).round();
+          (c.timeUnitsTaught / totalDays * tos.totalItems).round();
       final easy = c.easyCount ??
           (targetItems * tos.easyPercentage / 100).round();
       final medium = c.mediumCount ??

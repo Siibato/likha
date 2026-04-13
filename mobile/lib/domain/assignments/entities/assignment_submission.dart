@@ -9,7 +9,6 @@ class AssignmentSubmission extends Equatable {
   final String status;
   final String? textContent;
   final DateTime? submittedAt;
-  final bool isLate;
   final int? score;
   final String? feedback;
   final DateTime? gradedAt;
@@ -28,7 +27,6 @@ class AssignmentSubmission extends Equatable {
     required this.status,
     this.textContent,
     this.submittedAt,
-    required this.isLate,
     this.score,
     this.feedback,
     this.gradedAt,
@@ -49,7 +47,6 @@ class AssignmentSubmission extends Equatable {
         status,
         textContent,
         submittedAt,
-        isLate,
         score,
         feedback,
         gradedAt,
@@ -69,7 +66,6 @@ class SubmissionListItem extends Equatable {
   final String studentUsername;
   final String status;
   final DateTime? submittedAt;
-  final bool isLate;
   final int? score;
 
   const SubmissionListItem({
@@ -79,20 +75,20 @@ class SubmissionListItem extends Equatable {
     required this.studentUsername,
     required this.status,
     this.submittedAt,
-    required this.isLate,
     this.score,
   });
 
   @override
   List<Object?> get props =>
-      [id, studentId, studentName, studentUsername, status, submittedAt, isLate, score];
+      [id, studentId, studentName, studentUsername, status, submittedAt, score];
 }
 
 class StudentAssignmentListItem extends Equatable {
   final String id;
   final String title;
   final int totalPoints;
-  final String submissionType;
+  final bool allowsTextSubmission;
+  final bool allowsFileSubmission;
   final DateTime dueAt;
   final bool isPublished;
   final String? submissionStatus;
@@ -102,7 +98,8 @@ class StudentAssignmentListItem extends Equatable {
     required this.id,
     required this.title,
     required this.totalPoints,
-    required this.submissionType,
+    required this.allowsTextSubmission,
+    required this.allowsFileSubmission,
     required this.dueAt,
     required this.isPublished,
     this.submissionStatus,
@@ -114,7 +111,8 @@ class StudentAssignmentListItem extends Equatable {
         id,
         title,
         totalPoints,
-        submissionType,
+        allowsTextSubmission,
+        allowsFileSubmission,
         dueAt,
         isPublished,
         submissionStatus,

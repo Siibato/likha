@@ -13,6 +13,7 @@ class QuestionModel extends Question {
     required super.isMultiSelect,
     super.tosCompetencyId,
     super.cognitiveLevel,
+    super.difficulty,
     super.choices,
     super.correctAnswers,
     super.enumerationItems,
@@ -34,6 +35,7 @@ class QuestionModel extends Question {
       isMultiSelect: _parseBool(json['is_multi_select']) ?? false,
       tosCompetencyId: json['tos_competency_id'] as String?,
       cognitiveLevel: json['cognitive_level'] as String?,
+      difficulty: json['difficulty'] as String?,
       choices: (json['choices'] as List<dynamic>?)
           ?.map((e) => ChoiceModel.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -67,6 +69,7 @@ class QuestionModel extends Question {
       isMultiSelect: (map['is_multi_select'] as int?) == 1,
       tosCompetencyId: map['tos_competency_id'] as String?,
       cognitiveLevel: map['cognitive_level'] as String?,
+      difficulty: map['difficulty'] as String?,
       createdAt: map['created_at'] != null
           ? DateTime.parse(map['created_at'] as String)
           : null,
@@ -94,6 +97,7 @@ class QuestionModel extends Question {
       'is_multi_select': isMultiSelect ? 1 : 0,
       'tos_competency_id': tosCompetencyId,
       'cognitive_level': cognitiveLevel,
+      'difficulty': difficulty,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
       'deleted_at': deletedAt?.toIso8601String(),

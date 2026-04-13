@@ -129,7 +129,7 @@ class _CreateTosPageState extends ConsumerState<CreateTosPage> {
                           border: Border.all(color: const Color(0xFFE0E0E0)),
                         ),
                         child: DropdownButtonFormField<int>(
-                          value: _selectedQuarter,
+                          initialValue: _selectedQuarter,
                           decoration: const InputDecoration(
                             labelText: 'Quarter',
                             prefixIcon: Icon(Icons.calendar_month_outlined,

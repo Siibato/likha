@@ -302,10 +302,9 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
               showResultsImmediately: _showResultsImmediately,
               isPublished: _isPublished,
               questions: _isPublished ? questionsData : null,
-              quarter: _quarter,
+              gradingPeriodNumber: _quarter,
               component: _component,
-              isDepartmentalExam: _isDepartmentalExam ? true : null,
-              linkedTosId: _linkedTosId,
+              tosId: _linkedTosId,
             ),
           );
 

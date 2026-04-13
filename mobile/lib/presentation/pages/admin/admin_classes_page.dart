@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
 import 'package:likha/presentation/pages/admin/admin_class_detail_page.dart';
 import 'package:likha/presentation/pages/admin/admin_create_class_page.dart';
+import 'package:likha/presentation/pages/admin/widgets/empty_classes_state.dart';
+import 'package:likha/presentation/pages/admin/widgets/empty_search_classes_state.dart';
 import 'package:likha/presentation/pages/admin/widgets/search_bar.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/class_card.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
@@ -73,19 +75,7 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
               ),
             )
           : classState.classes.isEmpty
-              ? const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.class_outlined, size: 64, color: Color(0xFFCCCCCC)),
-                      SizedBox(height: 16),
-                      Text(
-                        'No classes yet',
-                        style: TextStyle(fontSize: 16, color: Color(0xFF999999)),
-                      ),
-                    ],
-                  ),
-                )
+              ? const EmptyClassesState()
               : Column(
                   children: [
                     AdminSearchBar(
@@ -97,19 +87,7 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
                         builder: (context) {
                           final filteredClasses = _getFilteredAndSortedClasses(classState.classes);
                           if (filteredClasses.isEmpty) {
-                            return Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(Icons.search_off_rounded, size: 64, color: Color(0xFFCCCCCC)),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'No classes match "$_searchQuery"',
-                                    style: const TextStyle(fontSize: 16, color: Color(0xFF999999)),
-                                  ),
-                                ],
-                              ),
-                            );
+                            return EmptySearchClassesState(searchQuery: _searchQuery);
                           }
                           return RefreshIndicator(
                             onRefresh: () => ref.read(classProvider.notifier).loadAllClasses(),

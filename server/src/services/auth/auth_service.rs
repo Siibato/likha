@@ -9,6 +9,7 @@ pub struct AuthService {
     pub activity_log_repo: ActivityLogRepository,
     pub login_attempt_repo: LoginAttemptRepository,
     pub jwt_service: JwtService,
+    pub db: DatabaseConnection,
 }
 
 impl AuthService {
@@ -17,11 +18,13 @@ impl AuthService {
         jwt_secret: String,
         jwt_expiration: i64,
     ) -> Self {
+        let db_clone = db.clone();
         Self {
             user_repo: UserRepository::new(db.clone()),
             activity_log_repo: ActivityLogRepository::new(db.clone()),
             login_attempt_repo: LoginAttemptRepository::new(db.clone()),
             jwt_service: JwtService::new(jwt_secret, jwt_expiration),
+            db: db_clone,
         }
     }
 }

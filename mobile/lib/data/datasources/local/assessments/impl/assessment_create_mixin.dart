@@ -16,39 +16,35 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
     required String closeAt,
     bool? showResultsImmediately,
     bool isPublished = true,
-    String? linkedTosId,
-    int? quarter,
+    String? tosId,
+    int? gradingPeriodNumber,
     String? component,
   }) async {
     try {
       final db = await localDatabase.database;
-      final assessmentId = const Uuid().v4();
       final now = DateTime.now();
-
+      final assessmentId = const Uuid().v4();
       await db.transaction((txn) async {
-        await txn.insert(
-          DbTables.assessments,
-          {
-            CommonCols.id: assessmentId,
-            AssessmentsCols.classId: classId,
-            AssessmentsCols.title: title,
-            if (description != null) AssessmentsCols.description: description,
-            AssessmentsCols.timeLimitMinutes: timeLimitMinutes,
-            AssessmentsCols.openAt: openAt,
-            AssessmentsCols.closeAt: closeAt,
-            AssessmentsCols.showResultsImmediately: (showResultsImmediately ?? false) ? 1 : 0,
-            AssessmentsCols.resultsReleased: 0,
-            AssessmentsCols.isPublished: isPublished ? 1 : 0,
-            AssessmentsCols.orderIndex: 0,
-            if (linkedTosId != null) AssessmentsCols.linkedTosId: linkedTosId,
-            if (quarter != null) AssessmentsCols.quarter: quarter,
-            if (component != null) AssessmentsCols.component: component,
-            CommonCols.createdAt: now.toIso8601String(),
-            CommonCols.updatedAt: now.toIso8601String(),
-            CommonCols.cachedAt: now.toIso8601String(),
-            CommonCols.needsSync: 1,
-          },
-        );
+        await txn.insert(DbTables.assessments, {
+          CommonCols.id: assessmentId,
+          AssessmentsCols.classId: classId,
+          AssessmentsCols.title: title,
+          AssessmentsCols.description: description,
+          AssessmentsCols.timeLimitMinutes: timeLimitMinutes,
+          AssessmentsCols.openAt: openAt,
+          AssessmentsCols.closeAt: closeAt,
+          AssessmentsCols.showResultsImmediately: showResultsImmediately == true ? 1 : 0,
+          AssessmentsCols.resultsReleased: 0,
+          AssessmentsCols.isPublished: isPublished ? 1 : 0,
+          AssessmentsCols.orderIndex: 0,
+          if (tosId != null) AssessmentsCols.tosId: tosId,
+          if (gradingPeriodNumber != null) AssessmentsCols.gradingPeriodNumber: gradingPeriodNumber,
+          if (component != null) AssessmentsCols.component: component,
+          CommonCols.createdAt: now.toIso8601String(),
+          CommonCols.updatedAt: now.toIso8601String(),
+          CommonCols.cachedAt: now.toIso8601String(),
+          CommonCols.needsSync: 1,
+        });
 
         await syncQueue.enqueue(
           SyncQueueEntry(
@@ -65,8 +61,8 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
               'close_at': closeAt,
               if (showResultsImmediately != null) 'show_results_immediately': showResultsImmediately,
               'is_published': isPublished,
-              if (linkedTosId != null) 'linked_tos_id': linkedTosId,
-              if (quarter != null) 'quarter': quarter,
+              if (tosId != null) 'tos_id': tosId,
+              if (gradingPeriodNumber != null) 'grading_period_number': gradingPeriodNumber,
               if (component != null) 'component': component,
             },
             status: SyncStatus.pending,
@@ -78,7 +74,6 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
         );
       });
 
-      // Verify assessment was actually inserted
       final verifyResult = await db.query(
         'assessments',
         where: '${CommonCols.id} = ?',
@@ -132,8 +127,8 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
             AssessmentsCols.resultsReleased: 0,
             AssessmentsCols.isPublished: isPublished ? 1 : 0,
             AssessmentsCols.orderIndex: 0,
-            if (linkedTosId != null) AssessmentsCols.linkedTosId: linkedTosId,
-            if (quarter != null) AssessmentsCols.quarter: quarter,
+            if (linkedTosId != null) AssessmentsCols.tosId: linkedTosId,
+            if (quarter != null) AssessmentsCols.gradingPeriodNumber: quarter,
             if (component != null) AssessmentsCols.component: component,
             CommonCols.createdAt: now.toIso8601String(),
             CommonCols.updatedAt: now.toIso8601String(),
@@ -215,11 +210,11 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
               await txn.insert(
                 DbTables.answerKeys,
                 {
-                  'id': answerKeyId,
-                  'question_id': question.id,
+                  CommonCols.id: answerKeyId,
+                  AnswerKeysCols.questionId: question.id,
                   AnswerKeysCols.itemType: DbValues.itemTypeEnumerationItem,
-                  'cached_at': now.toIso8601String(),
-                  'needs_sync': 0,
+                  CommonCols.cachedAt: now.toIso8601String(),
+                  CommonCols.needsSync: 0,
                 },
               );
 
@@ -227,11 +222,11 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
                 await txn.insert(
                   DbTables.answerKeyAcceptableAnswers,
                   {
-                    'id': acceptableAnswer.id,
-                    'answer_key_id': answerKeyId,
-                    'answer_text': acceptableAnswer.answerText,
-                    'cached_at': now.toIso8601String(),
-                    'needs_sync': 0,
+                    CommonCols.id: acceptableAnswer.id,
+                    AnswerKeyAcceptableAnswersCols.answerKeyId: answerKeyId,
+                    AnswerKeyAcceptableAnswersCols.answerText: acceptableAnswer.answerText,
+                    CommonCols.cachedAt: now.toIso8601String(),
+                    CommonCols.needsSync: 0,
                   },
                 );
               }

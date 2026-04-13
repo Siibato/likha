@@ -1,37 +1,25 @@
 import 'package:equatable/equatable.dart';
 import 'package:likha/core/utils/transmutation_util.dart';
 
-class QuarterlyGrade extends Equatable {
+class PeriodGrade extends Equatable {
   final String id;
   final String classId;
   final String studentId;
-  final int quarter;
-  final double? wwPercentage;
-  final double? ptPercentage;
-  final double? qaPercentage;
-  final double? wwWeighted;
-  final double? ptWeighted;
-  final double? qaWeighted;
+  final int gradingPeriodNumber;
   final double? initialGrade;
   final int? transmutedGrade;
-  final bool isComplete;
-  final String? computedAt;
+  final bool isLocked;
+  final DateTime? computedAt;
   final bool isPreview;
 
-  const QuarterlyGrade({
+  const PeriodGrade({
     required this.id,
     required this.classId,
     required this.studentId,
-    required this.quarter,
-    this.wwPercentage,
-    this.ptPercentage,
-    this.qaPercentage,
-    this.wwWeighted,
-    this.ptWeighted,
-    this.qaWeighted,
+    required this.gradingPeriodNumber,
     this.initialGrade,
     this.transmutedGrade,
-    required this.isComplete,
+    required this.isLocked,
     this.computedAt,
     this.isPreview = false,
   });
@@ -44,16 +32,10 @@ class QuarterlyGrade extends Equatable {
         id,
         classId,
         studentId,
-        quarter,
-        wwPercentage,
-        ptPercentage,
-        qaPercentage,
-        wwWeighted,
-        ptWeighted,
-        qaWeighted,
+        gradingPeriodNumber,
         initialGrade,
         transmutedGrade,
-        isComplete,
+        isLocked,
         computedAt,
         isPreview,
       ];

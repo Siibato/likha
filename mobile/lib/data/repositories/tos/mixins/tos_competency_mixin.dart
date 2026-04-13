@@ -15,7 +15,7 @@ mixin TosCompetencyMixin on TosRepositoryBase {
     required Map<String, dynamic> data,
   }) async {
     try {
-      final now = DateTime.now().toIso8601String();
+      final now = DateTime.now();
       final id = const Uuid().v4();
 
       final model = CompetencyModel(
@@ -23,7 +23,7 @@ mixin TosCompetencyMixin on TosRepositoryBase {
         tosId: tosId,
         competencyCode: data['competency_code'] as String?,
         competencyText: data['competency_text'] as String,
-        daysTaught: (data['days_taught'] as num).toInt(),
+        timeUnitsTaught: (data['time_units_taught'] as num?)?.toInt() ?? (data['days_taught'] as num).toInt(),
         orderIndex: (data['order_index'] as num?)?.toInt() ?? 0,
         easyCount: data['easy_count'] as int?,
         mediumCount: data['medium_count'] as int?,
@@ -115,7 +115,7 @@ mixin TosCompetencyMixin on TosRepositoryBase {
     required List<Map<String, dynamic>> competencies,
   }) async {
     try {
-      final now = DateTime.now().toIso8601String();
+      final now = DateTime.now();
       final models = <CompetencyModel>[];
 
       for (var i = 0; i < competencies.length; i++) {
@@ -126,7 +126,7 @@ mixin TosCompetencyMixin on TosRepositoryBase {
           tosId: tosId,
           competencyCode: data['competency_code'] as String?,
           competencyText: data['competency_text'] as String,
-          daysTaught: (data['days_taught'] as num).toInt(),
+          timeUnitsTaught: (data['time_units_taught'] as num?)?.toInt() ?? (data['days_taught'] as num).toInt(),
           orderIndex: (data['order_index'] as num?)?.toInt() ?? i,
           easyCount: data['easy_count'] as int?,
           mediumCount: data['medium_count'] as int?,

@@ -5,24 +5,26 @@ class GradeItem extends Equatable {
   final String classId;
   final String title;
   final String component;
-  final int quarter;
+  final int gradingPeriodNumber;
   final double totalPoints;
-  final bool isDepartmentalExam;
   final String sourceType;
   final String? sourceId;
   final int orderIndex;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   const GradeItem({
     required this.id,
     required this.classId,
     required this.title,
     required this.component,
-    required this.quarter,
+    required this.gradingPeriodNumber,
     required this.totalPoints,
-    required this.isDepartmentalExam,
     required this.sourceType,
     this.sourceId,
     required this.orderIndex,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   @override
@@ -31,11 +33,12 @@ class GradeItem extends Equatable {
         classId,
         title,
         component,
-        quarter,
+        gradingPeriodNumber,
         totalPoints,
-        isDepartmentalExam,
         sourceType,
         sourceId,
         orderIndex,
+        createdAt,
+        updatedAt,
       ];
 }

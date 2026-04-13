@@ -1,7 +1,6 @@
 use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
 use crate::schema::assessment_schema::*;
-use crate::services::grading::GradingService;
 use crate::services::grade_computation::auto_populate;
 
 impl super::AssessmentService {
@@ -180,7 +179,7 @@ impl super::AssessmentService {
             .override_answer(answer_id, request.is_correct, points)
             .await?;
 
-        let final_score = GradingService::recalculate_final_score(submission.id, &self.submission_repo).await?;
+        let final_score = self.grading_service.recalculate_final_score(submission.id).await?;
 
         // Auto-populate grade score
         let _ = auto_populate::auto_populate_score(
@@ -246,7 +245,7 @@ impl super::AssessmentService {
             .override_answer(answer_id, is_correct, request.points)
             .await?;
 
-        let final_score = GradingService::recalculate_final_score(submission.id, &self.submission_repo).await?;
+        let final_score = self.grading_service.recalculate_final_score(submission.id).await?;
 
         // Auto-populate grade score
         let _ = auto_populate::auto_populate_score(

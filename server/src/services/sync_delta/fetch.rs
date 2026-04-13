@@ -216,7 +216,7 @@ impl super::SyncDeltaService {
                 grade_configs: grade_configs_deltas,
                 grade_items: grade_items_deltas,
                 grade_scores: grade_scores_deltas,
-                quarterly_grades: quarterly_grades_deltas,
+                period_grades: quarterly_grades_deltas,
                 table_of_specifications: EntityDeltas { updated: vec![], deleted: vec![] },
                 tos_competencies: EntityDeltas { updated: vec![], deleted: vec![] },
             },

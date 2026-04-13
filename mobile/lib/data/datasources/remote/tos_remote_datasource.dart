@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import 'package:likha/core/constants/api_endpoint.dart';
 import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/models/tos/tos_model.dart';
@@ -26,23 +27,16 @@ class TosRemoteDataSourceImpl implements TosRemoteDataSource {
   @override
   Future<List<TosModel>> getTosByClass({required String classId}) async {
     try {
-      final response = await _dioClient.dio.get(
-        ApiEndpoints.tosList(classId).path,
+      return await _dioClient.getTyped(
+        ApiEndpoints.tosList(classId),
       );
-      final data = response.data['data'] ?? response.data;
-      final items = data['items'] as List<dynamic>? ?? data as List<dynamic>? ?? [];
-      return items
-          .map((e) => TosModel.fromJson(e as Map<String, dynamic>))
-          .toList();
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
   }
 
   @override
-  Future<(TosModel, List<CompetencyModel>)> getTosDetail({
-    required String tosId,
-  }) async {
+  Future<(TosModel, List<CompetencyModel>)> getTosDetail({required String tosId}) async {
     try {
       final response = await _dioClient.dio.get(
         ApiEndpoints.tosDetail(tosId).path,
@@ -95,8 +89,11 @@ class TosRemoteDataSourceImpl implements TosRemoteDataSource {
   @override
   Future<void> deleteTos({required String tosId}) async {
     try {
-      await _dioClient.dio.delete(
-        ApiEndpoints.tosDetail(tosId).path,
+      await _dioClient.deleteTyped(
+        ApiEndpoint<void>(
+          ApiEndpoints.tosDetail(tosId).path,
+          (_) {},
+        ),
       );
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
@@ -126,12 +123,10 @@ class TosRemoteDataSourceImpl implements TosRemoteDataSource {
     required Map<String, dynamic> data,
   }) async {
     try {
-      final response = await _dioClient.dio.put(
-        ApiEndpoints.tosCompetencyDetail(competencyId).path,
+      return await _dioClient.putTyped(
+        ApiEndpoints.tosCompetencyDetail(competencyId),
         data: data,
       );
-      final responseData = response.data['data'] ?? response.data;
-      return CompetencyModel.fromJson(responseData as Map<String, dynamic>);
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }
@@ -140,8 +135,11 @@ class TosRemoteDataSourceImpl implements TosRemoteDataSource {
   @override
   Future<void> deleteCompetency({required String competencyId}) async {
     try {
-      await _dioClient.dio.delete(
-        ApiEndpoints.tosCompetencyDetail(competencyId).path,
+      await _dioClient.deleteTyped(
+        ApiEndpoint<void>(
+          ApiEndpoints.tosCompetencyDetail(competencyId).path,
+          (_) {},
+        ),
       );
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
@@ -154,15 +152,10 @@ class TosRemoteDataSourceImpl implements TosRemoteDataSource {
     required List<Map<String, dynamic>> competencies,
   }) async {
     try {
-      final response = await _dioClient.dio.post(
-        ApiEndpoints.tosBulkCompetencies(tosId).path,
+      return await _dioClient.postTyped(
+        ApiEndpoints.tosBulkCompetencies(tosId),
         data: {'competencies': competencies},
       );
-      final data = response.data['data'] ?? response.data;
-      final items = data['competencies'] as List<dynamic>? ?? data as List<dynamic>? ?? [];
-      return items
-          .map((e) => CompetencyModel.fromJson(e as Map<String, dynamic>))
-          .toList();
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
     }

@@ -28,7 +28,7 @@ impl super::SyncPushService {
             }
             "update" => {
                 let class_id = extract_field!(self, op, parse_uuid_field, "class_id");
-                let quarter = extract_field!(self, op, parse_i32_field, "quarter");
+                let quarter = extract_field!(self, op, parse_i32_field, "grading_period_number");
                 let ww_weight = op.payload.get("ww_weight")
                     .and_then(|v| v.as_f64())
                     .unwrap_or(0.0);
@@ -61,19 +61,18 @@ impl super::SyncPushService {
                 let class_id = extract_field!(self, op, parse_uuid_field, "class_id");
                 let title = extract_field!(self, op, parse_str_field, "title");
                 let component = extract_field!(self, op, parse_str_field, "component");
-                let quarter = extract_field!(self, op, parse_i32_field, "quarter");
+                let quarter = extract_field!(self, op, parse_i32_field, "grading_period_number");
                 let total_points = op.payload.get("total_points")
                     .and_then(|v| v.as_f64())
                     .unwrap_or(100.0);
-                let is_departmental_exam = op.payload.get("is_departmental_exam")
+                let _is_departmental_exam = op.payload.get("is_departmental_exam")
                     .and_then(|v| v.as_bool());
 
                 let request = CreateGradeItemRequest {
                     title,
                     component,
-                    quarter,
+                    grading_period_number: Some(quarter),
                     total_points,
-                    is_departmental_exam,
                 };
 
                 match self.grade_computation_service.create_grade_item(class_id, request).await {
@@ -185,7 +184,7 @@ impl super::SyncPushService {
     async fn recompute_after_score_change(&self, grade_item_id: Uuid) {
         if let Ok(Some(item)) = self.grade_computation_service.repo.find_item(grade_item_id).await {
             if let Err(e) = self.grade_computation_service
-                .compute_class_quarterly(item.class_id, item.quarter)
+                .compute_class_quarterly(item.class_id, item.grading_period_number.unwrap_or(1))
                 .await
             {
                 tracing::warn!(

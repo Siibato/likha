@@ -31,7 +31,7 @@ class TosSettingsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          InfoRow(label: 'Quarter', value: 'Quarter ${tos.quarter}'),
+          InfoRow(label: 'Quarter', value: 'Quarter ${tos.gradingPeriodNumber}'),
           const SizedBox(height: 10),
           InfoRow(label: 'Classification', value: modeLabel),
           const SizedBox(height: 10),

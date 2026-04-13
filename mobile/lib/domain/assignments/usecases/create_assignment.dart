@@ -13,12 +13,13 @@ class CreateAssignment {
       title: params.title,
       instructions: params.instructions,
       totalPoints: params.totalPoints,
-      submissionType: params.submissionType,
+      allowsTextSubmission: params.allowsTextSubmission,
+      allowsFileSubmission: params.allowsFileSubmission,
       allowedFileTypes: params.allowedFileTypes,
       maxFileSizeMb: params.maxFileSizeMb,
       dueAt: params.dueAt,
       isPublished: params.isPublished,
-      quarter: params.quarter,
+      gradingPeriodNumber: params.gradingPeriodNumber,
       component: params.component,
       noSubmissionRequired: params.noSubmissionRequired,
     );
@@ -30,12 +31,13 @@ class CreateAssignmentParams {
   final String title;
   final String instructions;
   final int totalPoints;
-  final String submissionType;
+  final bool allowsTextSubmission;
+  final bool allowsFileSubmission;
   final String? allowedFileTypes;
   final int? maxFileSizeMb;
   final String dueAt;
   final bool isPublished;
-  final int? quarter;
+  final int? gradingPeriodNumber;
   final String? component;
   final bool? noSubmissionRequired;
 
@@ -44,12 +46,13 @@ class CreateAssignmentParams {
     required this.title,
     required this.instructions,
     required this.totalPoints,
-    required this.submissionType,
+    required this.allowsTextSubmission,
+    required this.allowsFileSubmission,
     this.allowedFileTypes,
     this.maxFileSizeMb,
     required this.dueAt,
     this.isPublished = true,
-    this.quarter,
+    this.gradingPeriodNumber,
     this.component,
     this.noSubmissionRequired,
   });

@@ -28,12 +28,35 @@ pub async fn create_assignment(
         return r;
     }
 
+    tracing::info!(
+        "Creating assignment - class_id: {}, teacher_id: {}, title: {}",
+        class_id,
+        auth_user.user_id,
+        request.title
+    );
+
     match service
         .create_assignment(class_id, request, auth_user.user_id, None)
         .await
     {
-        Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
-        Err(e) => e.into_response(),
+        Ok(response) => {
+            tracing::info!(
+                "Assignment created successfully - assignment_id: {}, class_id: {}, teacher_id: {}",
+                response.id,
+                class_id,
+                auth_user.user_id
+            );
+            success_response(response, StatusCode::CREATED).into_response()
+        },
+        Err(e) => {
+            tracing::error!(
+                "Assignment creation failed - class_id: {}, teacher_id: {}, error: {:?}",
+                class_id,
+                auth_user.user_id,
+                e
+            );
+            e.into_response()
+        },
     }
 }
 
@@ -312,7 +335,7 @@ pub async fn download_file(
     State(service): State<Arc<AssignmentService>>,
     auth_user: AuthUser,
     Path(id): Path<Uuid>,
-) -> Response {
+) -> impl IntoResponse {
     match service
         .download_file(id, auth_user.user_id, &auth_user.role)
         .await

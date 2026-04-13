@@ -375,13 +375,13 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
         final assessmentId = cached?.assessmentId ?? '';
 
         // Fetch assessment to get totalPoints (not from finalScore)
-        int totalPoints = 0;
+        double totalPoints = 0.0;
         try {
           final (assessment, _) =
               await localDataSource.getCachedAssessmentDetail(assessmentId);
-          totalPoints = assessment.totalPoints;
+          totalPoints = assessment.totalPoints.toDouble();
         } catch (_) {
-          totalPoints = 0;
+          totalPoints = 0.0;
         }
 
         await localDataSource.submitAssessmentLocally(

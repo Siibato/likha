@@ -42,7 +42,6 @@ class StudentAssignmentSubmissionItemModel {
       studentUsername: '', // Not available in this context
       status: status,
       submittedAt: submittedAt,
-      isLate: isLate,
       score: score,
     );
   }

@@ -268,7 +268,7 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
                     border: Border.all(color: const Color(0xFFE0E0E0)),
                   ),
                   child: DropdownButtonFormField<String?>(
-                    value: _selectedCompetencyId,
+                    initialValue: _selectedCompetencyId,
                     isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: 'Competency (optional)',
@@ -303,7 +303,7 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
                     border: Border.all(color: const Color(0xFFE0E0E0)),
                   ),
                   child: DropdownButtonFormField<String?>(
-                    value: _selectedCognitiveLevel,
+                    initialValue: _selectedCognitiveLevel,
                     decoration: const InputDecoration(
                       labelText: 'Cognitive Level (optional)',
                       prefixIcon: Icon(Icons.psychology_outlined, color: Color(0xFF999999), size: 20),

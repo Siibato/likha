@@ -86,10 +86,7 @@ class _TosListDesktopState extends ConsumerState<TosListDesktop> {
                           final modeLabel = tos.classificationMode == 'blooms'
                               ? "Bloom's Taxonomy"
                               : 'Difficulty';
-                          final created = DateTime.tryParse(tos.createdAt);
-                          final createdLabel = created != null
-                              ? Formatters.formatDateTimeFull(created)
-                              : tos.createdAt;
+                          final createdLabel = Formatters.formatDateTimeFull(tos.createdAt);
 
                           return DataRow(
                             onSelectChanged: (_) => Navigator.push(
@@ -109,7 +106,7 @@ class _TosListDesktopState extends ConsumerState<TosListDesktop> {
                                   color: AppColors.foregroundPrimary,
                                 ),
                               )),
-                              DataCell(Text('Q${tos.quarter}')),
+                              DataCell(Text('Q${tos.gradingPeriodNumber}')),
                               DataCell(Text(modeLabel)),
                               DataCell(Text('${tos.totalItems}')),
                               DataCell(Text(

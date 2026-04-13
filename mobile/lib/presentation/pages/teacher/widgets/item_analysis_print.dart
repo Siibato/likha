@@ -62,12 +62,12 @@ class ItemAnalysisPrintService {
         if (region.isNotEmpty)
           pw.Text(
             'Republic of the Philippines',
-            style: pw.TextStyle(fontSize: 9),
+            style: const pw.TextStyle(fontSize: 9),
           ),
         if (region.isNotEmpty)
           pw.Text(
             'Department of Education',
-            style: pw.TextStyle(fontSize: 9),
+            style: const pw.TextStyle(fontSize: 9),
           ),
         if (region.isNotEmpty)
           pw.Text(region, style: pw.TextStyle(fontSize: 9)),
@@ -92,12 +92,12 @@ class ItemAnalysisPrintService {
         pw.SizedBox(height: 4),
         pw.Text(
           title,
-          style: pw.TextStyle(fontSize: 11),
+          style: const pw.TextStyle(fontSize: 11),
         ),
         if (schoolYear.isNotEmpty)
           pw.Text(
             'School Year: $schoolYear',
-            style: pw.TextStyle(fontSize: 9),
+            style: const pw.TextStyle(fontSize: 9),
           ),
         pw.SizedBox(height: 16),
         pw.Divider(thickness: 0.5),
