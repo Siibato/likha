@@ -26,9 +26,32 @@ pub async fn create_assessment(
         return r;
     }
 
+    tracing::info!(
+        "Creating assessment - class_id: {}, teacher_id: {}, title: {}",
+        class_id,
+        auth_user.user_id,
+        request.title
+    );
+
     match service.create_assessment(class_id, request, auth_user.user_id, None).await {
-        Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
-        Err(e) => e.into_response(),
+        Ok(response) => {
+            tracing::info!(
+                "Assessment created successfully - assessment_id: {}, class_id: {}, teacher_id: {}",
+                response.id,
+                class_id,
+                auth_user.user_id
+            );
+            success_response(response, StatusCode::CREATED).into_response()
+        },
+        Err(e) => {
+            tracing::error!(
+                "Assessment creation failed - class_id: {}, teacher_id: {}, error: {:?}",
+                class_id,
+                auth_user.user_id,
+                e
+            );
+            e.into_response()
+        },
     }
 }
 
@@ -330,16 +353,29 @@ pub async fn submit_assessment(
         return r;
     }
 
-    println!("📤 [HANDLER] submit_assessment() START - submission_id: {}, student_id: {}", submission_id, auth_user.user_id);
+    tracing::info!(
+        "Assessment submission started - submission_id: {}, student_id: {}",
+        submission_id,
+        auth_user.user_id
+    );
 
     match service.submit_assessment(submission_id, auth_user.user_id).await {
         Ok(response) => {
-            println!("📤 [HANDLER] submit_assessment() SUCCESS - returning response: submitted_at={:?}, total_points={}",
-                response.submitted_at, response.total_points);
+            tracing::info!(
+                "Assessment submitted successfully - submission_id: {}, student_id: {}, total_points: {}",
+                submission_id,
+                auth_user.user_id,
+                response.total_points
+            );
             success_response(response, StatusCode::OK).into_response()
         },
         Err(e) => {
-            println!("📤 [HANDLER] submit_assessment() ERROR - {:?}", e);
+            tracing::error!(
+                "Assessment submission failed - submission_id: {}, student_id: {}, error: {:?}",
+                submission_id,
+                auth_user.user_id,
+                e
+            );
             e.into_response()
         },
     }

@@ -8,6 +8,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::middleware::auth_middleware::AuthUser;
+use crate::schema::auth_schema::MessageResponse;
 use crate::schema::common::success_response;
 use crate::schema::grading_schema::*;
 use crate::services::grade_computation::GradeComputationService;
@@ -128,7 +129,9 @@ pub async fn delete_grade_item(
         return r;
     }
     match service.delete_grade_item(id).await {
-        Ok(()) => StatusCode::NO_CONTENT.into_response(),
+        Ok(_) => success_response(MessageResponse {
+            message: "Grade item deleted".to_string(),
+        }, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
