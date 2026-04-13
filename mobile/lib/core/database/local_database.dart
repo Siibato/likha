@@ -85,7 +85,6 @@ class LocalDatabase {
           id TEXT PRIMARY KEY,
           user_id TEXT NOT NULL,
           action TEXT NOT NULL,
-          performed_by TEXT,
           details TEXT,
           created_at TEXT NOT NULL,
           cached_at TEXT,
@@ -106,9 +105,7 @@ class LocalDatabase {
           teacher_full_name TEXT NOT NULL DEFAULT '',
           student_count INTEGER NOT NULL DEFAULT 0,
           grade_level TEXT,
-          subject_group TEXT,
           school_year TEXT,
-          semester INTEGER,
           grading_period_type TEXT NOT NULL DEFAULT 'quarter',
           is_advisory INTEGER NOT NULL DEFAULT 0,
           created_at TEXT NOT NULL,
@@ -609,7 +606,7 @@ class LocalDatabase {
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_sync_metadata_key ON sync_metadata(key)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_activity_logs_user_id ON activity_logs(user_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created_at)');
-      await txn.execute('CREATE INDEX IF NOT EXISTS idx_grade_components_config_class_id ON grade_components_config(class_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_grade_record_class_id ON grade_record(class_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_grade_items_class_id ON grade_items(class_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_grade_items_updated_at ON grade_items(updated_at)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_grade_items_deleted_at ON grade_items(deleted_at)');
@@ -617,10 +614,10 @@ class LocalDatabase {
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_grade_scores_student_id ON grade_scores(student_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_grade_scores_updated_at ON grade_scores(updated_at)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_grade_scores_deleted_at ON grade_scores(deleted_at)');
-      await txn.execute('CREATE INDEX IF NOT EXISTS idx_quarterly_grades_class_id ON quarterly_grades(class_id)');
-      await txn.execute('CREATE INDEX IF NOT EXISTS idx_quarterly_grades_student_id ON quarterly_grades(student_id)');
-      await txn.execute('CREATE INDEX IF NOT EXISTS idx_quarterly_grades_updated_at ON quarterly_grades(updated_at)');
-      await txn.execute('CREATE INDEX IF NOT EXISTS idx_quarterly_grades_deleted_at ON quarterly_grades(deleted_at)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_period_grades_class_id ON period_grades(class_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_period_grades_student_id ON period_grades(student_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_period_grades_updated_at ON period_grades(updated_at)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_period_grades_deleted_at ON period_grades(deleted_at)');
     });
   }
 
@@ -728,7 +725,7 @@ class LocalDatabase {
         )
       ''');
 
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_components_config_class_id ON grade_components_config(class_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_record_class_id ON grade_record(class_id)');
       await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_items_class_id ON grade_items(class_id)');
       await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_items_updated_at ON grade_items(updated_at)');
       await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_items_deleted_at ON grade_items(deleted_at)');
@@ -736,10 +733,10 @@ class LocalDatabase {
       await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_scores_student_id ON grade_scores(student_id)');
       await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_scores_updated_at ON grade_scores(updated_at)');
       await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_scores_deleted_at ON grade_scores(deleted_at)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_quarterly_grades_class_id ON quarterly_grades(class_id)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_quarterly_grades_student_id ON quarterly_grades(student_id)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_quarterly_grades_updated_at ON quarterly_grades(updated_at)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_quarterly_grades_deleted_at ON quarterly_grades(deleted_at)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_period_grades_class_id ON period_grades(class_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_period_grades_student_id ON period_grades(student_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_period_grades_updated_at ON period_grades(updated_at)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_period_grades_deleted_at ON period_grades(deleted_at)');
     }
 
     // Handle upgrade: v3 → v4 adds TOS, competencies, MELCs, and new columns

@@ -29,7 +29,7 @@ class GradeConfigModel {
       final model = GradeConfigModel(
         id: json['id'] as String,
         classId: json['class_id'] as String,
-        gradingPeriodNumber: (json['grading_period_number'] as num?)?.toInt() ?? (json['quarter'] as num).toInt(),
+        gradingPeriodNumber: json['grading_period_number'] as int,
         wwWeight: (json['ww_weight'] as num).toDouble(),
         ptWeight: (json['pt_weight'] as num).toDouble(),
         qaWeight: (json['qa_weight'] as num).toDouble(),

@@ -10,7 +10,7 @@ class GetGradeItems {
   ResultFuture<List<GradeItem>> call(GetGradeItemsParams params) {
     return _repository.getGradeItems(
       classId: params.classId,
-      gradingPeriodNumber: params.quarter,
+      gradingPeriodNumber: params.gradingPeriodNumber,
       component: params.component,
     );
   }
@@ -18,12 +18,12 @@ class GetGradeItems {
 
 class GetGradeItemsParams {
   final String classId;
-  final int quarter;
+  final int gradingPeriodNumber;
   final String? component;
 
   GetGradeItemsParams({
     required this.classId,
-    required this.quarter,
+    required this.gradingPeriodNumber,
     this.component,
   });
 }

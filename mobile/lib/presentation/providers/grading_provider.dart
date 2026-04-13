@@ -202,7 +202,7 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
     state = state.copyWith(isLoading: true, error: null);
     final result = await _getGradeItems(GetGradeItemsParams(
       classId: classId,
-      quarter: state.currentQuarter,
+      gradingPeriodNumber: state.currentQuarter,
       component: state.currentComponent.isEmpty ? null : state.currentComponent,
     ));
     result.fold(
@@ -246,7 +246,7 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
     }
   }
 
-  Future<void> backfillFromActivities(String classId, int quarter) async {
+  Future<void> backfillFromActivities(String classId, int gradingPeriodNumber) async {
     final existingSourceIds = state.items
         .where((i) => i.sourceId != null)
         .map((i) => i.sourceId!)
@@ -255,13 +255,13 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
     final assessmentResult = await sl<GetAssessments>()(classId);
     assessmentResult.fold((_) {}, (assessments) {
       for (final a in assessments) {
-        if (a.gradingPeriodNumber == quarter && a.component != null && !existingSourceIds.contains(a.id)) {
+        if (a.gradingPeriodNumber == gradingPeriodNumber && a.component != null && !existingSourceIds.contains(a.id)) {
           sl<GradingRepository>().createGradeItem(
             classId: classId,
             data: {
               'title': a.title,
               'component': _toGradeComponent(a.component!),
-              'quarter': quarter,
+              'grading_period_number': gradingPeriodNumber,
               'total_points': a.totalPoints.toDouble(),
               'is_departmental_exam': false,
               'source_type': 'assessment',
@@ -280,13 +280,13 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
     final assignmentResult = await sl<GetAssignments>()(classId);
     assignmentResult.fold((_) {}, (assignments) {
       for (final a in assignments) {
-        if (a.gradingPeriodNumber == quarter && a.component != null && !existingSourceIds.contains(a.id)) {
+        if (a.gradingPeriodNumber == gradingPeriodNumber && a.component != null && !existingSourceIds.contains(a.id)) {
           sl<GradingRepository>().createGradeItem(
             classId: classId,
             data: {
               'title': a.title,
               'component': _toGradeComponent(a.component!),
-              'quarter': quarter,
+              'grading_period_number': gradingPeriodNumber,
               'total_points': a.totalPoints.toDouble(),
               'is_departmental_exam': false,
               'source_type': 'assignment',
@@ -550,7 +550,7 @@ class PeriodGradesNotifier extends StateNotifier<PeriodGradesState> {
         if (summary != null) {
           final updated = summary.map((row) {
             if (row['student_id'] == studentId) {
-              return {...row, 'quarterly_grade': transmutedGrade.toDouble()};
+              return {...row, 'transmuted_grade': transmutedGrade.toDouble()};
             }
             return row;
           }).toList();
