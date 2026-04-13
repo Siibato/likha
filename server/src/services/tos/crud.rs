@@ -6,7 +6,7 @@ use crate::schema::tos_schema::*;
 use crate::utils::{AppError, AppResult};
 
 pub async fn create_tos(
-    db: &DatabaseConnection,
+    _db: &DatabaseConnection,
     tos_repo: &TosRepository,
     class_repo: &ClassRepository,
     class_id: Uuid,
