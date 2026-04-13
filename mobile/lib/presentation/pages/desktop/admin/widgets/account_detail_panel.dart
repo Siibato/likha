@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/auth/entities/user.dart';
+import 'account_status_badge.dart';
+import '../utils/date_utils.dart';
 
 class AccountDetailPanel extends StatelessWidget {
   final User user;
@@ -22,36 +24,8 @@ class AccountDetailPanel extends StatelessWidget {
     required this.onResetPassword,
   });
 
-  Color _statusColor(String status) {
-    switch (status) {
-      case 'activated':
-        return const Color(0xFF28A745);
-      case 'pending_activation':
-        return const Color(0xFFFFC107);
-      case 'locked':
-        return const Color(0xFFDC3545);
-      default:
-        return AppColors.foregroundTertiary;
-    }
-  }
-
-  String _statusLabel(String status) {
-    switch (status) {
-      case 'activated':
-        return 'Active';
-      case 'pending_activation':
-        return 'Pending';
-      case 'locked':
-        return 'Locked';
-      default:
-        return status;
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    return date.toString().split('.')[0];
-  }
-
+  
+  
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -105,32 +79,16 @@ class AccountDetailPanel extends StatelessWidget {
                       child: Text('Status', style: _labelStyle),
                     ),
                     const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: _statusColor(user.accountStatus)
-                            .withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        _statusLabel(user.accountStatus),
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: _statusColor(user.accountStatus),
-                        ),
-                      ),
-                    ),
+                    AccountStatusBadge(status: user.accountStatus),
                   ],
                 ),
                 const Divider(height: 24, color: AppColors.borderLight),
-                _InfoRow(label: 'Created', value: _formatDate(user.createdAt)),
+                _InfoRow(label: 'Created', value: DesktopDateUtils.formatDate(user.createdAt)),
                 if (user.activatedAt != null) ...[
                   const Divider(height: 24, color: AppColors.borderLight),
                   _InfoRow(
                     label: 'Activated',
-                    value: _formatDate(user.activatedAt!),
+                    value: DesktopDateUtils.formatDate(user.activatedAt!),
                   ),
                 ],
               ],
