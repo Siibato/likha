@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/class_grading_setup_desktop.dart';
-import 'package:likha/presentation/pages/desktop/teacher/widgets/grade_spreadsheet.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
 
 /// Grades section widget for TeacherClassDetailDesktop
@@ -41,7 +40,6 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
   Widget build(BuildContext context) {
     final configState = ref.watch(gradingConfigProvider);
     final itemsState = ref.watch(gradeItemsProvider);
-    final scoresState = ref.watch(gradeScoresProvider);
 
     return DesktopPageScaffold(
       title: 'Grades',

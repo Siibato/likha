@@ -19,7 +19,7 @@ class TosMatrixView extends StatelessWidget {
       : const ['Easy', 'Avg', 'Diff'];
 
   int get _totalDays =>
-      competencies.fold<int>(0, (sum, c) => sum + (c.timeUnitsTaught as int));
+      competencies.fold<int>(0, (sum, c) => sum + c.timeUnitsTaught);
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +69,7 @@ class TosMatrixView extends StatelessWidget {
     int totalDays,
   ) {
     final weight =
-        totalDays > 0 ? (competency.timeUnitsTaught as int) / totalDays * 100 : 0.0;
+        totalDays > 0 ? competency.timeUnitsTaught / totalDays * 100 : 0.0;
     final targetItems = (weight * totalItems / 100).round();
     final competencyLabel = competency.competencyCode != null
         ? '${competency.competencyCode} - ${competency.competencyText}'
@@ -80,7 +80,7 @@ class TosMatrixView extends StatelessWidget {
       child: Row(
         children: [
           _dataCell(competencyLabel, width: 240),
-          _dataCell('${competency.timeUnitsTaught as int}', width: 64),
+          _dataCell('${competency.timeUnitsTaught}', width: 64),
           _dataCell('${weight.toStringAsFixed(1)}%', width: 64),
           ...cognitiveHeaders.map((_) => _dataCell('-', width: 56)),
           _dataCell('$targetItems', width: 64),

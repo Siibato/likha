@@ -103,7 +103,7 @@ class TosPrintService {
     int gridActualTotal = 0;
 
     final data = competencies.map((c) {
-      final weight = totalDays > 0 ? ((c.timeUnitsTaught as int) / totalDays * 100) : 0.0;
+      final weight = totalDays > 0 ? (c.timeUnitsTaught / totalDays * 100) : 0.0;
       final targetItems =
           totalDays > 0 ? (weight * tos.totalItems / 100).round() : 0;
 
@@ -148,7 +148,7 @@ class TosPrintService {
         c.competencyCode != null
             ? '${c.competencyCode} - ${c.competencyText}'
             : c.competencyText,
-        '${c.timeUnitsTaught as int}',
+        '${c.timeUnitsTaught}',
         '${weight.toStringAsFixed(1)}%',
         ...cogCells,
         '$rowTotal',

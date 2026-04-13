@@ -5,6 +5,8 @@ import 'package:likha/core/utils/transmutation_util.dart';
 import 'package:likha/domain/grading/usecases/get_final_grades.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
+import 'package:likha/presentation/pages/teacher/widgets/grade_stats_footer.dart';
+import 'package:likha/presentation/pages/teacher/widgets/grade_table_cells.dart';
 import 'package:likha/presentation/providers/general_average_provider.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
 
@@ -296,7 +298,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
         Expanded(
           child: _buildQuarterlyTable(summary, wwWeight, ptWeight, qaWeight),
         ),
-        _buildStatsFooter(summary),
+        GradeStatsFooter(summary: summary),
       ],
     );
   }
@@ -343,8 +345,8 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                 ),
                 child: Row(
                   children: [
-                    _headerCell('Student', nameWidth, align: Alignment.centerLeft),
-                    ...columns.map((col) => _headerCell(
+                    GradeTableCells.headerCell('Student', nameWidth, align: Alignment.centerLeft),
+                    ...columns.map((col) => GradeTableCells.headerCell(
                           col,
                           col == 'Descriptor' ? 130.0 : cellWidth,
                         )),
@@ -378,7 +380,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                   ),
                   child: Row(
                     children: [
-                      _dataCell(
+                      GradeTableCells.dataCell(
                         studentName,
                         nameWidth,
                         cellHeight,
@@ -389,17 +391,17 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                           color: Color(0xFF2B2B2B),
                         ),
                       ),
-                      _dataCell(
+                      GradeTableCells.dataCell(
                         _fmtScore(wwScore),
                         cellWidth,
                         cellHeight,
                       ),
-                      _dataCell(
+                      GradeTableCells.dataCell(
                         _fmtScore(ptScore),
                         cellWidth,
                         cellHeight,
                       ),
-                      _dataCell(
+                      GradeTableCells.dataCell(
                         _fmtScore(qaScore),
                         cellWidth,
                         cellHeight,
@@ -465,7 +467,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                       else
                         GestureDetector(
                           onTap: () => _startQgEdit(studentId, qg),
-                          child: _dataCell(
+                          child: GradeTableCells.dataCell(
                             qg?.toString() ?? '--',
                             cellWidth,
                             cellHeight,
@@ -519,68 +521,6 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildStatsFooter(List<Map<String, dynamic>> summary) {
-    final grades = summary
-        .map((r) => _numOrNull(r['quarterly_grade']))
-        .whereType<double>()
-        .toList();
-
-    if (grades.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final transmuted = grades.map((g) => g.round()).toList();
-    final avg = transmuted.reduce((a, b) => a + b) / transmuted.length;
-    final highest = transmuted.reduce((a, b) => a > b ? a : b);
-    final lowest = transmuted.reduce((a, b) => a < b ? a : b);
-    final passing = transmuted.where((g) => g >= 75).length;
-    final passRate =
-        ((passing / transmuted.length) * 100).toStringAsFixed(0);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Color(0xFFE0E0E0), width: 1),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _statItem('Average', avg.toStringAsFixed(1)),
-          _statItem('Highest', highest.toString()),
-          _statItem('Lowest', lowest.toString()),
-          _statItem('Pass Rate', '$passRate%'),
-        ],
-      ),
-    );
-  }
-
-  Widget _statItem(String label, String value) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            color: Color(0xFF999999),
-          ),
-        ),
-      ],
     );
   }
 
@@ -683,14 +623,14 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                 ),
                 child: Row(
                   children: [
-                    _headerCell('Student', nameWidth, align: Alignment.centerLeft),
-                    _headerCell('Q1', cellWidth),
-                    _headerCell('Q2', cellWidth),
-                    _headerCell('Q3', cellWidth),
-                    _headerCell('Q4', cellWidth),
-                    _headerCell('Final', fgWidth),
-                    _headerCell('GA', gaWidth),
-                    _headerCell('Descriptor', descriptorWidth),
+                    GradeTableCells.headerCell('Student', nameWidth, align: Alignment.centerLeft),
+                    GradeTableCells.headerCell('Q1', cellWidth),
+                    GradeTableCells.headerCell('Q2', cellWidth),
+                    GradeTableCells.headerCell('Q3', cellWidth),
+                    GradeTableCells.headerCell('Q4', cellWidth),
+                    GradeTableCells.headerCell('Final', fgWidth),
+                    GradeTableCells.headerCell('GA', gaWidth),
+                    GradeTableCells.headerCell('Descriptor', descriptorWidth),
                   ],
                 ),
               ),
@@ -729,7 +669,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                   ),
                   child: Row(
                     children: [
-                      _dataCell(
+                      GradeTableCells.dataCell(
                         studentName,
                         nameWidth,
                         cellHeight,
@@ -740,11 +680,11 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                           color: Color(0xFF2B2B2B),
                         ),
                       ),
-                      _dataCell(q1?.toString() ?? '--', cellWidth, cellHeight),
-                      _dataCell(q2?.toString() ?? '--', cellWidth, cellHeight),
-                      _dataCell(q3?.toString() ?? '--', cellWidth, cellHeight),
-                      _dataCell(q4?.toString() ?? '--', cellWidth, cellHeight),
-                      _dataCell(
+                      GradeTableCells.dataCell(q1?.toString() ?? '--', cellWidth, cellHeight),
+                      GradeTableCells.dataCell(q2?.toString() ?? '--', cellWidth, cellHeight),
+                      GradeTableCells.dataCell(q3?.toString() ?? '--', cellWidth, cellHeight),
+                      GradeTableCells.dataCell(q4?.toString() ?? '--', cellWidth, cellHeight),
+                      GradeTableCells.dataCell(
                         finalGrade?.toString() ?? '--',
                         fgWidth,
                         cellHeight,
@@ -765,7 +705,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                           orElse: () => null,
                         );
                         final ga = gaMatch?.generalAverage;
-                        return _dataCell(
+                        return GradeTableCells.dataCell(
                           ga?.toString() ?? '--',
                           gaWidth,
                           cellHeight,
@@ -818,62 +758,6 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // Shared table helpers
-  // ---------------------------------------------------------------------------
-
-  Widget _headerCell(
-    String text,
-    double width, {
-    Alignment align = Alignment.center,
-  }) {
-    return Container(
-      width: width,
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      alignment: align,
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: Color(0xFF999999),
-          letterSpacing: 0.3,
-        ),
-        overflow: TextOverflow.ellipsis,
-        maxLines: 1,
-      ),
-    );
-  }
-
-  Widget _dataCell(
-    String text,
-    double width,
-    double height, {
-    Alignment align = Alignment.center,
-    TextStyle? style,
-  }) {
-    return Container(
-      width: width,
-      height: height,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      alignment: align,
-      child: Text(
-        text,
-        style: style ??
-            TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: text == '--'
-                  ? const Color(0xFFCCCCCC)
-                  : const Color(0xFF2B2B2B),
-            ),
-        overflow: TextOverflow.ellipsis,
-        maxLines: 1,
       ),
     );
   }

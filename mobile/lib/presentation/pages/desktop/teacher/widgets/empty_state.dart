@@ -266,7 +266,7 @@ extension EmptyStateExtensions on EmptyState {
         createButtonText = 'Create $entityName';
     }
 
-    if (onCreate != null && createButtonText != null) {
+    if (onCreate != null) {
       return withCreateButton(
         icon: icon,
         title: title,

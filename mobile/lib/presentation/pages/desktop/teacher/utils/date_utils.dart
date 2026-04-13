@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 /// Utility class for consistent date formatting across desktop pages
 class DesktopDateUtils {
   /// Formats date and time in a readable format (e.g., "Jan 15, 2024  3:30 PM")

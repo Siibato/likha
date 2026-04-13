@@ -13,6 +13,7 @@ import 'package:likha/presentation/pages/teacher/widgets/assessment_status_card.
 import 'package:likha/presentation/pages/teacher/widgets/questions_section.dart';
 import 'package:likha/presentation/pages/teacher/widgets/question_reorder_list.dart';
 import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
+import 'package:likha/presentation/pages/teacher/widgets/view_tos_chip.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/teacher/tos_view_page.dart';
@@ -493,7 +494,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                         ),
                         if (assessment.tosId != null) ...[
                           const SizedBox(height: 16),
-                          _ViewTosChip(
+                          ViewTosChip(
                             onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -670,44 +671,6 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                     ),
                   ),
                 ),
-    );
-  }
-}
-
-class _ViewTosChip extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _ViewTosChip({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: const Color(0xFFE8F0FE),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFFBBD0FB)),
-        ),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.table_chart_outlined, size: 16, color: Color(0xFF2B6CB0)),
-            SizedBox(width: 6),
-            Text(
-              'View Linked TOS',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF2B6CB0),
-              ),
-            ),
-            SizedBox(width: 4),
-            Icon(Icons.open_in_new_rounded, size: 14, color: Color(0xFF2B6CB0)),
-          ],
-        ),
-      ),
     );
   }
 }
