@@ -150,7 +150,7 @@ impl super::SyncFullService {
                 grade_configs: vec![],
                 grade_items: vec![],
                 grade_scores: vec![],
-                quarterly_grades: vec![],
+                period_grades: vec![],
                 table_of_specifications: vec![],
                 tos_competencies: vec![],
             });
@@ -190,7 +190,7 @@ impl super::SyncFullService {
                 grade_configs: vec![],
                 grade_items: vec![],
                 grade_scores: vec![],
-                quarterly_grades: vec![],
+                period_grades: vec![],
                 table_of_specifications: vec![],
                 tos_competencies: vec![],
             });
@@ -526,7 +526,7 @@ impl super::SyncFullService {
             grade_configs,
             grade_items: grade_items_data,
             grade_scores: grade_scores_data,
-            quarterly_grades: quarterly_grades_data,
+            period_grades: quarterly_grades_data,
             table_of_specifications: vec![], // TOS data fetched when available
             tos_competencies: vec![],
         })

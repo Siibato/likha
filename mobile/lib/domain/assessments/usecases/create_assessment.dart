@@ -18,10 +18,9 @@ class CreateAssessment {
       showResultsImmediately: params.showResultsImmediately,
       isPublished: params.isPublished,
       questions: params.questions,
-      quarter: params.quarter,
+      gradingPeriodNumber: params.gradingPeriodNumber,
       component: params.component,
-      isDepartmentalExam: params.isDepartmentalExam,
-      linkedTosId: params.linkedTosId,
+      tosId: params.tosId,
     );
   }
 }
@@ -36,10 +35,9 @@ class CreateAssessmentParams {
   final bool? showResultsImmediately;
   final bool isPublished;
   final List<Map<String, dynamic>>? questions;
-  final int? quarter;
+  final int? gradingPeriodNumber;
   final String? component;
-  final bool? isDepartmentalExam;
-  final String? linkedTosId;
+  final String? tosId;
 
   CreateAssessmentParams({
     required this.classId,
@@ -51,9 +49,8 @@ class CreateAssessmentParams {
     this.showResultsImmediately,
     this.isPublished = true,
     this.questions,
-    this.quarter,
+    this.gradingPeriodNumber,
     this.component,
-    this.isDepartmentalExam,
-    this.linkedTosId,
+    this.tosId,
   });
 }

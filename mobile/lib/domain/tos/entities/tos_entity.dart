@@ -3,7 +3,7 @@ import 'package:equatable/equatable.dart';
 class TableOfSpecifications extends Equatable {
   final String id;
   final String classId;
-  final int quarter;
+  final int gradingPeriodNumber;
   final String title;
   final String classificationMode;
   final int totalItems;
@@ -23,7 +23,7 @@ class TableOfSpecifications extends Equatable {
   const TableOfSpecifications({
     required this.id,
     required this.classId,
-    required this.quarter,
+    required this.gradingPeriodNumber,
     required this.title,
     required this.classificationMode,
     required this.totalItems,
@@ -42,7 +42,7 @@ class TableOfSpecifications extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, classId, quarter];
+  List<Object?> get props => [id, classId, gradingPeriodNumber];
 }
 
 class TosCompetency extends Equatable {
@@ -50,11 +50,17 @@ class TosCompetency extends Equatable {
   final String tosId;
   final String? competencyCode;
   final String competencyText;
-  final int daysTaught;
+  final int timeUnitsTaught;
   final int orderIndex;
   final int? easyCount;
   final int? mediumCount;
   final int? hardCount;
+  final int? rememberingCount;
+  final int? understandingCount;
+  final int? applyingCount;
+  final int? analyzingCount;
+  final int? evaluatingCount;
+  final int? creatingCount;
   final String createdAt;
   final String updatedAt;
 
@@ -63,11 +69,17 @@ class TosCompetency extends Equatable {
     required this.tosId,
     this.competencyCode,
     required this.competencyText,
-    required this.daysTaught,
+    required this.timeUnitsTaught,
     required this.orderIndex,
     this.easyCount,
     this.mediumCount,
     this.hardCount,
+    this.rememberingCount,
+    this.understandingCount,
+    this.applyingCount,
+    this.analyzingCount,
+    this.evaluatingCount,
+    this.creatingCount,
     required this.createdAt,
     required this.updatedAt,
   });

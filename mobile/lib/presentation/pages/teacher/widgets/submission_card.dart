@@ -6,7 +6,6 @@ class SubmissionCard extends StatelessWidget {
   final String studentName;
   final String studentUsername;
   final String status;
-  final bool isLate;
   final int? score;
   final int totalPoints;
   final DateTime? submittedAt;
@@ -17,7 +16,6 @@ class SubmissionCard extends StatelessWidget {
     required this.studentName,
     required this.studentUsername,
     required this.status,
-    required this.isLate,
     this.score,
     required this.totalPoints,
     this.submittedAt,
@@ -140,27 +138,6 @@ class SubmissionCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if (isLate) ...[
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.semanticError.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text(
-                    'Late',
-                    style: TextStyle(
-                      color: AppColors.semanticError,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
               if (score != null) ...[
                 const SizedBox(height: 6),
                 Text(

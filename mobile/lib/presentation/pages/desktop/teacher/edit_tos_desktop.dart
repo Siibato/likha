@@ -61,7 +61,7 @@ class _EditTosDesktopState extends ConsumerState<EditTosDesktop> {
         TextEditingController(text: '${widget.tos.evaluatingPercentage}');
     _creatingPctController =
         TextEditingController(text: '${widget.tos.creatingPercentage}');
-    _selectedQuarter = widget.tos.quarter;
+    _selectedQuarter = widget.tos.gradingPeriodNumber;
     _classificationMode = widget.tos.classificationMode;
     _timeUnit = widget.tos.timeUnit;
   }

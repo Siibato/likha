@@ -67,8 +67,8 @@ abstract class AssessmentLocalDataSource {
     required String closeAt,
     bool? showResultsImmediately,
     bool isPublished = true,
-    String? linkedTosId,
-    int? quarter,
+    String? tosId,
+    int? gradingPeriodNumber,
     String? component,
   });
   Future<String> createAssessmentWithQuestionsLocally({

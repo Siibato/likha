@@ -196,7 +196,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
           studentId: '',
           studentName: '',
           status: 'graded',
-          isLate: false,
+          // isLate field removed - no longer needed
           score: score,
           feedback: feedback,
           files: const [],
@@ -246,7 +246,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
           studentId: '',
           studentName: '',
           status: 'returned',
-          isLate: false,
+          // isLate field removed - no longer needed
           files: const [],
           textContent: null,
           score: null,
@@ -298,7 +298,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
           textContent: textContent,
           score: null,
           feedback: null,
-          isLate: false,
+          // isLate field removed - no longer needed
           files: const [],
           submittedAt: null,
           gradedAt: null,
@@ -427,7 +427,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
           studentId: '',
           studentName: '',
           status: 'submitted',
-          isLate: false,
+          // isLate field removed - no longer needed
           files: const [],
           textContent: null,
           score: null,
@@ -455,7 +455,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
             studentUsername: '', // Not available from detail response
             status: result.status,
             submittedAt: result.submittedAt,
-            isLate: result.isLate,
+            // isLate field removed - no longer needed
             score: result.score,
           )],
         );

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/transmutation_util.dart';
-import 'package:likha/domain/grading/entities/quarterly_grade.dart';
+import 'package:likha/domain/grading/entities/period_grade.dart';
 import 'package:likha/domain/grading/usecases/get_my_grades.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
@@ -11,18 +11,18 @@ import 'package:likha/presentation/providers/class_provider.dart';
 class ClassGradeData {
   final String classId;
   final String className;
-  final List<QuarterlyGrade> quarterlyGrades;
-  final int? latestGrade; // transmuted grade from most recent quarter
+  final List<PeriodGrade> periodGrades;
+  final int? latestGrade; // transmuted grade from most recent period
   final String latestDescriptor;
-  final int? latestQuarter; // which quarter the latest grade is from
+  final int? latestPeriod; // which period the latest grade is from
 
   ClassGradeData({
     required this.classId,
     required this.className,
-    required this.quarterlyGrades,
+    required this.periodGrades,
     this.latestGrade,
     this.latestDescriptor = '--',
-    this.latestQuarter,
+    this.latestPeriod,
   });
 }
 
@@ -112,13 +112,13 @@ class StudentClassGradesNotifier
             (failure) {
               // Skip failed classes, continue with others
             },
-            (quarterlyGrades) {
-              // Find the most recent quarter with a transmuted grade
-              QuarterlyGrade? latest;
-              for (final qg in quarterlyGrades) {
-                if (qg.transmutedGrade != null) {
-                  if (latest == null || qg.quarter > latest.quarter) {
-                    latest = qg;
+            (periodGrades) {
+              // Find the most recent period with a transmuted grade
+              PeriodGrade? latest;
+              for (final pg in periodGrades) {
+                if (pg.transmutedGrade != null) {
+                  if (latest == null || pg.gradingPeriodNumber > latest.gradingPeriodNumber) {
+                    latest = pg;
                   }
                 }
               }
@@ -126,13 +126,13 @@ class StudentClassGradesNotifier
               allGrades.add(ClassGradeData(
                 classId: cls.id,
                 className: cls.title,
-                quarterlyGrades: quarterlyGrades,
+                periodGrades: periodGrades,
                 latestGrade: latest?.transmutedGrade,
                 latestDescriptor: latest != null
                     ? TransmutationUtil.getDescriptor(
                         latest.transmutedGrade ?? 0)
                     : '--',
-                latestQuarter: latest?.quarter,
+                latestPeriod: latest?.gradingPeriodNumber,
               ));
             },
           );
@@ -150,12 +150,12 @@ class StudentClassGradesNotifier
 
       final classAverages = <double>[];
       for (final cg in allGrades) {
-        final withGrades = cg.quarterlyGrades
-            .where((qg) => qg.transmutedGrade != null)
+        final withGrades = cg.periodGrades
+            .where((pg) => pg.transmutedGrade != null)
             .toList();
         if (withGrades.isNotEmpty) {
           final sum = withGrades.fold<int>(
-              0, (acc, qg) => acc + qg.transmutedGrade!);
+              0, (acc, pg) => acc + pg.transmutedGrade!);
           classAverages.add(sum / withGrades.length);
         }
       }

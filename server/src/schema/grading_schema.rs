@@ -15,7 +15,7 @@ pub struct SetupGradingConfigRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct UpdateGradingConfigRequest {
-    pub quarter: i32,
+    pub grading_period_number: i32,
     pub ww_weight: f64,
     pub pt_weight: f64,
     pub qa_weight: f64,
@@ -25,9 +25,8 @@ pub struct UpdateGradingConfigRequest {
 pub struct CreateGradeItemRequest {
     pub title: String,
     pub component: String,
-    pub quarter: i32,
+    pub grading_period_number: Option<i32>,
     pub total_points: f64,
-    pub is_departmental_exam: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -56,7 +55,7 @@ pub struct OverrideScoreRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct QuarterQuery {
-    pub quarter: Option<i32>,
+    pub grading_period_number: Option<i32>,
 }
 
 // ===== RESPONSE SCHEMAS =====
@@ -65,7 +64,7 @@ pub struct QuarterQuery {
 pub struct GradingConfigResponse {
     pub id: String,
     pub class_id: String,
-    pub quarter: i32,
+    pub grading_period_number: Option<i32>,
     pub ww_weight: f64,
     pub pt_weight: f64,
     pub qa_weight: f64,
@@ -77,9 +76,8 @@ pub struct GradeItemResponse {
     pub class_id: String,
     pub title: String,
     pub component: String,
-    pub quarter: i32,
+    pub grading_period_number: Option<i32>,
     pub total_points: f64,
-    pub is_departmental_exam: bool,
     pub source_type: String,
     pub source_id: Option<String>,
     pub order_index: i32,
@@ -97,27 +95,24 @@ pub struct GradeScoreResponse {
 }
 
 #[derive(Debug, Serialize)]
-pub struct QuarterlyGradeResponse {
+pub struct PeriodGradeResponse {
     pub id: String,
     pub class_id: String,
     pub student_id: String,
-    pub quarter: i32,
-    pub ww_percentage: Option<f64>,
-    pub pt_percentage: Option<f64>,
-    pub qa_percentage: Option<f64>,
-    pub ww_weighted: Option<f64>,
-    pub pt_weighted: Option<f64>,
-    pub qa_weighted: Option<f64>,
+    pub grading_period_number: i32,
     pub initial_grade: Option<f64>,
     pub transmuted_grade: Option<i32>,
     pub descriptor: Option<String>,
-    pub is_complete: bool,
+    pub is_locked: bool,
 }
+
+/// Backward-compat alias
+pub type QuarterlyGradeResponse = PeriodGradeResponse;
 
 #[derive(Debug, Serialize)]
 pub struct FinalGradeResponse {
     pub student_id: String,
-    pub quarterly_grades: Vec<QuarterlyGradeResponse>,
+    pub period_grades: Vec<PeriodGradeResponse>,
     pub final_grade: Option<f64>,
 }
 
@@ -125,19 +120,16 @@ pub struct FinalGradeResponse {
 pub struct GradeSummaryRow {
     pub student_id: String,
     pub student_name: String,
-    pub ww_weighted: Option<f64>,
-    pub pt_weighted: Option<f64>,
-    pub qa_weighted: Option<f64>,
     pub initial_grade: Option<f64>,
     pub transmuted_grade: Option<i32>,
     pub descriptor: Option<String>,
-    pub is_complete: bool,
+    pub is_locked: bool,
 }
 
 #[derive(Debug, Serialize)]
 pub struct GradeSummaryResponse {
     pub class_id: String,
-    pub quarter: i32,
+    pub grading_period_number: i32,
     pub ww_weight: f64,
     pub pt_weight: f64,
     pub qa_weight: f64,
@@ -162,9 +154,8 @@ pub struct DepEdPresetsResponse {
 pub struct ClassGradingSetupResponse {
     pub class_id: String,
     pub grade_level: String,
-    pub subject_group: String,
     pub school_year: String,
-    pub semester: Option<i32>,
+    pub grading_period_type: String,
     pub configs: Vec<GradingConfigResponse>,
 }
 
@@ -229,12 +220,12 @@ pub struct Sf9QuarterlyAverages {
 
 // ===== FROM CONVERSIONS =====
 
-impl From<::entity::grade_components_config::Model> for GradingConfigResponse {
-    fn from(m: ::entity::grade_components_config::Model) -> Self {
+impl From<::entity::grade_record::Model> for GradingConfigResponse {
+    fn from(m: ::entity::grade_record::Model) -> Self {
         Self {
             id: m.id.to_string(),
             class_id: m.class_id.to_string(),
-            quarter: m.quarter,
+            grading_period_number: m.grading_period_number,
             ww_weight: m.ww_weight,
             pt_weight: m.pt_weight,
             qa_weight: m.qa_weight,
@@ -249,9 +240,8 @@ impl From<::entity::grade_items::Model> for GradeItemResponse {
             class_id: m.class_id.to_string(),
             title: m.title,
             component: m.component,
-            quarter: m.quarter,
+            grading_period_number: m.grading_period_number,
             total_points: m.total_points,
-            is_departmental_exam: m.is_departmental_exam,
             source_type: m.source_type,
             source_id: m.source_id,
             order_index: m.order_index,
@@ -274,24 +264,18 @@ impl From<::entity::grade_scores::Model> for GradeScoreResponse {
     }
 }
 
-impl From<::entity::quarterly_grades::Model> for QuarterlyGradeResponse {
-    fn from(m: ::entity::quarterly_grades::Model) -> Self {
+impl From<::entity::period_grades::Model> for PeriodGradeResponse {
+    fn from(m: ::entity::period_grades::Model) -> Self {
         let descriptor = m.transmuted_grade.map(|t| get_descriptor(t).to_string());
         Self {
             id: m.id.to_string(),
             class_id: m.class_id.to_string(),
             student_id: m.student_id.to_string(),
-            quarter: m.quarter,
-            ww_percentage: m.ww_percentage,
-            pt_percentage: m.pt_percentage,
-            qa_percentage: m.qa_percentage,
-            ww_weighted: m.ww_weighted,
-            pt_weighted: m.pt_weighted,
-            qa_weighted: m.qa_weighted,
+            grading_period_number: m.grading_period_number,
             initial_grade: m.initial_grade,
             transmuted_grade: m.transmuted_grade,
             descriptor,
-            is_complete: m.is_complete,
+            is_locked: m.is_locked,
         }
     }
 }

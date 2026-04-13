@@ -9,6 +9,7 @@ class SyncUpsertHelpers {
 
   SyncUpsertHelpers(this._log);
 
+  
   Future<void> upsertClasses(
     Database db,
     List<dynamic> records,
@@ -36,9 +37,8 @@ class SyncUpsertHelpers {
           ClassesCols.isAdvisory: (record['is_advisory'] == true) ? 1 : 0,
           ClassesCols.studentCount: record['student_count'] ?? 0,
           ClassesCols.gradeLevel: record['grade_level'],
-          ClassesCols.subjectGroup: record['subject_group'],
           ClassesCols.schoolYear: record['school_year'],
-          ClassesCols.semester: record['semester'] != null ? (record['semester'] as num).toInt() : null,
+          ClassesCols.gradingPeriodType: record['grading_period_type'] ?? 'quarter',
           CommonCols.createdAt: record['created_at'],
           CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
           CommonCols.cachedAt: DateTime.now().toIso8601String(),
@@ -233,8 +233,8 @@ class SyncUpsertHelpers {
         AssessmentsCols.totalPoints: data['total_points'] ?? 0,
         AssessmentsCols.questionCount: data['question_count'] ?? 0,
         AssessmentsCols.submissionCount: data['submission_count'] ?? 0,
-        AssessmentsCols.linkedTosId: data['linked_tos_id'],
-        AssessmentsCols.quarter: data['quarter'],
+        AssessmentsCols.tosId: data['tos_id'],
+        AssessmentsCols.gradingPeriodNumber: data['grading_period_number'],
         AssessmentsCols.component: data['component'],
         CommonCols.createdAt: data['created_at'] ?? DateTime.now().toIso8601String(),
         CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
@@ -392,7 +392,8 @@ class SyncUpsertHelpers {
         AssignmentsCols.title: data['title'],
         AssignmentsCols.instructions: data['instructions'],
         AssignmentsCols.totalPoints: data['total_points'] ?? 0,
-        AssignmentsCols.submissionType: data['submission_type'] ?? 'text_only',
+        AssignmentsCols.allowsTextSubmission: (data['allows_text_submission'] == true) ? 1 : 0,
+        AssignmentsCols.allowsFileSubmission: (data['allows_file_submission'] == true) ? 1 : 0,
         AssignmentsCols.allowedFileTypes: data['allowed_file_types'],
         AssignmentsCols.maxFileSizeMb: data['max_file_size_mb'],
         AssignmentsCols.dueAt: data['due_at'] ?? '',
@@ -403,7 +404,7 @@ class SyncUpsertHelpers {
         AssignmentsCols.submissionCount: data['submission_count'] ?? 0,
         AssignmentsCols.gradedCount: data['graded_count'] ?? 0,
         AssignmentsCols.orderIndex: data['order_index'] ?? 0,
-        AssignmentsCols.quarter: data['quarter'],
+        AssignmentsCols.gradingPeriodNumber: data['grading_period_number'],
         AssignmentsCols.component: data['component'],
         CommonCols.createdAt: data['created_at'] ?? DateTime.now().toIso8601String(),
         CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
@@ -501,7 +502,6 @@ class SyncUpsertHelpers {
           AssignmentSubmissionsCols.status: data['status'] ?? 'pending',
           AssignmentSubmissionsCols.textContent: data['text_content'],
           AssignmentSubmissionsCols.submittedAt: data['submitted_at'],
-          AssignmentSubmissionsCols.isLate: (data['is_late'] == true) ? 1 : 0,
           AssignmentSubmissionsCols.points: data['score'],
           AssignmentSubmissionsCols.feedback: data['feedback'],
           AssignmentSubmissionsCols.gradedAt: data['graded_at'],
@@ -581,14 +581,14 @@ class SyncUpsertHelpers {
         if (record is! Map<String, dynamic>) continue;
 
         await db.insert(
-          DbTables.gradeComponentsConfig,
+          DbTables.gradeRecord,
           {
             CommonCols.id: record['id'],
-            GradeComponentsConfigCols.classId: record['class_id'],
-            GradeComponentsConfigCols.quarter: (record['quarter'] as num).toInt(),
-            GradeComponentsConfigCols.wwWeight: (record['ww_weight'] as num).toDouble(),
-            GradeComponentsConfigCols.ptWeight: (record['pt_weight'] as num).toDouble(),
-            GradeComponentsConfigCols.qaWeight: (record['qa_weight'] as num).toDouble(),
+            GradeRecordCols.classId: record['class_id'],
+            GradeRecordCols.gradingPeriodNumber: (record['grading_period_number'] as num?)?.toInt(),
+            GradeRecordCols.wwWeight: (record['ww_weight'] as num).toDouble(),
+            GradeRecordCols.ptWeight: (record['pt_weight'] as num).toDouble(),
+            GradeRecordCols.qaWeight: (record['qa_weight'] as num).toDouble(),
             CommonCols.createdAt: record['created_at'],
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
             CommonCols.deletedAt: record['deleted_at'],
@@ -604,7 +604,7 @@ class SyncUpsertHelpers {
       }
     }
 
-    _log.upsertSummary('grade_components_config', successCount);
+    _log.upsertSummary('grade_record', successCount);
     if (failedCount > 0) {
       _log.warn('Failed to upsert grade configs', failedCount);
     }
@@ -629,9 +629,8 @@ class SyncUpsertHelpers {
             GradeItemsCols.classId: record['class_id'],
             GradeItemsCols.title: record['title'],
             GradeItemsCols.component: record['component'],
-            GradeItemsCols.quarter: (record['quarter'] as num).toInt(),
+            GradeItemsCols.gradingPeriodNumber: (record['grading_period_number'] as num?)?.toInt(),
             GradeItemsCols.totalPoints: (record['total_points'] as num).toDouble(),
-            GradeItemsCols.isDepartmentalExam: (record['is_departmental_exam'] == true) ? 1 : 0,
             GradeItemsCols.sourceType: record['source_type'] ?? 'manual',
             GradeItemsCols.sourceId: record['source_id'],
             GradeItemsCols.orderIndex: (record['order_index'] as num?)?.toInt() ?? 0,
@@ -758,22 +757,16 @@ class SyncUpsertHelpers {
         if (record is! Map<String, dynamic>) continue;
 
         await db.insert(
-          DbTables.quarterlyGrades,
+          DbTables.periodGrades,
           {
             CommonCols.id: record['id'],
-            QuarterlyGradesCols.classId: record['class_id'],
-            QuarterlyGradesCols.studentId: record['student_id'],
-            QuarterlyGradesCols.quarter: (record['quarter'] as num).toInt(),
-            QuarterlyGradesCols.wwPercentage: record['ww_percentage'] != null ? (record['ww_percentage'] as num).toDouble() : null,
-            QuarterlyGradesCols.ptPercentage: record['pt_percentage'] != null ? (record['pt_percentage'] as num).toDouble() : null,
-            QuarterlyGradesCols.qaPercentage: record['qa_percentage'] != null ? (record['qa_percentage'] as num).toDouble() : null,
-            QuarterlyGradesCols.wwWeighted: record['ww_weighted'] != null ? (record['ww_weighted'] as num).toDouble() : null,
-            QuarterlyGradesCols.ptWeighted: record['pt_weighted'] != null ? (record['pt_weighted'] as num).toDouble() : null,
-            QuarterlyGradesCols.qaWeighted: record['qa_weighted'] != null ? (record['qa_weighted'] as num).toDouble() : null,
-            QuarterlyGradesCols.initialGrade: record['initial_grade'] != null ? (record['initial_grade'] as num).toDouble() : null,
-            QuarterlyGradesCols.transmutedGrade: record['transmuted_grade'] != null ? (record['transmuted_grade'] as num).toInt() : null,
-            QuarterlyGradesCols.isComplete: (record['is_complete'] == true) ? 1 : 0,
-            QuarterlyGradesCols.computedAt: record['computed_at'],
+            PeriodGradesCols.classId: record['class_id'],
+            PeriodGradesCols.studentId: record['student_id'],
+            PeriodGradesCols.gradingPeriodNumber: (record['grading_period_number'] as num?)?.toInt(),
+            PeriodGradesCols.initialGrade: record['initial_grade'] != null ? (record['initial_grade'] as num).toDouble() : null,
+            PeriodGradesCols.transmutedGrade: record['transmuted_grade'] != null ? (record['transmuted_grade'] as num).toInt() : null,
+            PeriodGradesCols.isLocked: (record['is_locked'] == true) ? 1 : 0,
+            PeriodGradesCols.computedAt: record['computed_at'],
             CommonCols.createdAt: record['created_at'],
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
             CommonCols.deletedAt: record['deleted_at'],
@@ -785,13 +778,13 @@ class SyncUpsertHelpers {
         successCount++;
       } catch (e) {
         failedCount++;
-        _log.error('Failed to upsert quarterly grade', e);
+        _log.error('Failed to upsert period grade', e);
       }
     }
 
-    _log.upsertSummary('quarterly_grades', successCount);
+    _log.upsertSummary('period_grades', successCount);
     if (failedCount > 0) {
-      _log.warn('Failed to upsert quarterly grades', failedCount);
+      _log.warn('Failed to upsert period grades', failedCount);
     }
   }
 
@@ -812,7 +805,7 @@ class SyncUpsertHelpers {
           {
             CommonCols.id: record['id'],
             TosCols.classId: record['class_id'],
-            TosCols.quarter: (record['quarter'] as num).toInt(),
+            TosCols.gradingPeriodNumber: (record['grading_period_number'] as num?)?.toInt(),
             TosCols.title: record['title'],
             TosCols.classificationMode: record['classification_mode'],
             TosCols.totalItems: (record['total_items'] as num).toInt(),
@@ -860,11 +853,17 @@ class SyncUpsertHelpers {
             TosCompetenciesCols.tosId: record['tos_id'],
             TosCompetenciesCols.competencyCode: record['competency_code'],
             TosCompetenciesCols.competencyText: record['competency_text'],
-            TosCompetenciesCols.daysTaught: (record['days_taught'] as num).toInt(),
+            TosCompetenciesCols.timeUnitsTaught: (record['time_units_taught'] as num?)?.toInt(),
             TosCompetenciesCols.orderIndex: (record['order_index'] as num?)?.toInt() ?? 0,
             TosCompetenciesCols.easyCount: (record['easy_count'] as num?)?.toInt(),
             TosCompetenciesCols.mediumCount: (record['medium_count'] as num?)?.toInt(),
             TosCompetenciesCols.hardCount: (record['hard_count'] as num?)?.toInt(),
+            TosCompetenciesCols.rememberingCount: (record['remembering_count'] as num?)?.toInt(),
+            TosCompetenciesCols.understandingCount: (record['understanding_count'] as num?)?.toInt(),
+            TosCompetenciesCols.applyingCount: (record['applying_count'] as num?)?.toInt(),
+            TosCompetenciesCols.analyzingCount: (record['analyzing_count'] as num?)?.toInt(),
+            TosCompetenciesCols.evaluatingCount: (record['evaluating_count'] as num?)?.toInt(),
+            TosCompetenciesCols.creatingCount: (record['creating_count'] as num?)?.toInt(),
             CommonCols.createdAt: record['created_at'],
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
             CommonCols.deletedAt: record['deleted_at'],
@@ -1181,7 +1180,7 @@ class SyncUpsertHelpers {
       deletedCounts['grade_configs'] = deleted.length;
       for (final id in deleted) {
         await db.update(
-          DbTables.gradeComponentsConfig,
+          DbTables.gradeRecord,
           {CommonCols.deletedAt: DateTime.now().toIso8601String()},
           where: '${CommonCols.id} = ?',
           whereArgs: [id as String],
@@ -1227,18 +1226,18 @@ class SyncUpsertHelpers {
       }
     }
 
-    // Handle quarterly grades delta
-    final quarterlyGradesDeltas = deltas['quarterly_grades'] as Map<String, dynamic>?;
-    if (quarterlyGradesDeltas != null) {
-      final updated = quarterlyGradesDeltas['updated'] as List<dynamic>? ?? [];
-      updatedCounts['quarterly_grades'] = updated.length;
+    // Handle period grades delta
+    final periodGradesDeltas = deltas['period_grades'] as Map<String, dynamic>?;
+    if (periodGradesDeltas != null) {
+      final updated = periodGradesDeltas['updated'] as List<dynamic>? ?? [];
+      updatedCounts['period_grades'] = updated.length;
       await upsertQuarterlyGrades(db, updated);
 
-      final deleted = quarterlyGradesDeltas['deleted'] as List<dynamic>? ?? [];
-      deletedCounts['quarterly_grades'] = deleted.length;
+      final deleted = periodGradesDeltas['deleted'] as List<dynamic>? ?? [];
+      deletedCounts['period_grades'] = deleted.length;
       for (final id in deleted) {
         await db.update(
-          DbTables.quarterlyGrades,
+          DbTables.periodGrades,
           {CommonCols.deletedAt: DateTime.now().toIso8601String()},
           where: '${CommonCols.id} = ?',
           whereArgs: [id as String],

@@ -2,22 +2,16 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
-#[sea_orm(table_name = "quarterly_grades")]
+#[sea_orm(table_name = "period_grades")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub class_id: Uuid,
     pub student_id: Uuid,
-    pub quarter: i32,
-    pub ww_percentage: Option<f64>,
-    pub pt_percentage: Option<f64>,
-    pub qa_percentage: Option<f64>,
-    pub ww_weighted: Option<f64>,
-    pub pt_weighted: Option<f64>,
-    pub qa_weighted: Option<f64>,
+    pub grading_period_number: i32,
     pub initial_grade: Option<f64>,
     pub transmuted_grade: Option<i32>,
-    pub is_complete: bool,
+    pub is_locked: bool,
     pub computed_at: Option<chrono::NaiveDateTime>,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,

@@ -8,7 +8,7 @@ class StudentAssessmentSubmissionItemModel {
   final String studentUsername;
   final DateTime startedAt;
   final DateTime? submittedAt;
-  final int totalPoints;
+  final double totalPoints;
 
   const StudentAssessmentSubmissionItemModel({
     required this.assessmentId,
@@ -30,7 +30,7 @@ class StudentAssessmentSubmissionItemModel {
       studentUsername: map['student_username'] as String,
       startedAt: DateTime.parse(map['started_at'] as String),
       submittedAt: map['submitted_at'] != null ? DateTime.parse(map['submitted_at'] as String) : null,
-      totalPoints: (map['total_points'] as num?)?.toInt() ?? 0,
+      totalPoints: (map['total_points'] as num?)?.toDouble() ?? 0.0,
     );
   }
 

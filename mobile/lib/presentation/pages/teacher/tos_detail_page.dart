@@ -41,7 +41,7 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
   @override
   void dispose() {
     _competencyController.dispose();
-    _daysTaughtController.dispose();
+    _timeUnitsTaughtController.dispose();
     _cellOverrideController.dispose();
     _editCompetencyController.dispose();
     _editDaysTaughtController.dispose();
@@ -62,14 +62,14 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
   }
 
   final _competencyController = TextEditingController();
-  final _daysTaughtController = TextEditingController();
+  final _timeUnitsTaughtController = TextEditingController();
   final _cellOverrideController = TextEditingController();
   final _editCompetencyController = TextEditingController();
   final _editDaysTaughtController = TextEditingController();
 
   void _handleAddCompetency(String timeUnit) {
     _competencyController.clear();
-    _daysTaughtController.text = '1';
+    _timeUnitsTaughtController.text = '1';
     final unitLabel = timeUnit == 'hours' ? 'Hours' : 'Days';
     showDialog(
       context: context,
@@ -85,7 +85,7 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
             ),
             const SizedBox(height: 12),
             StyledTextField(
-              controller: _daysTaughtController,
+              controller: _timeUnitsTaughtController,
               label: '$unitLabel taught',
               icon: Icons.schedule_outlined,
               keyboardType: TextInputType.number,
@@ -109,7 +109,7 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
                   widget.tosId,
                   {
                     'competency_text': text.trim(),
-                    'days_taught': int.tryParse(_daysTaughtController.text.trim()) ?? 1,
+                    'days_taught': int.tryParse(_timeUnitsTaughtController.text.trim()) ?? 1,
                     'order_index': ref.read(tosProvider).competencies.length,
                   },
                 );
@@ -123,7 +123,7 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
 
   void _handleEditCompetency(TosCompetency competency, String timeUnit) {
     _editCompetencyController.text = competency.competencyText;
-    _editDaysTaughtController.text = '${competency.daysTaught}';
+    _editDaysTaughtController.text = '${competency.timeUnitsTaught}';
     final unitLabel = timeUnit == 'hours' ? 'Hours' : 'Days';
     showDialog(
       context: context,
@@ -295,7 +295,7 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
                                   tos: tos,
                                   competencyCount: competencies.length,
                                   totalDays: competencies.fold<int>(
-                                      0, (s, c) => s + c.daysTaught),
+                                      0, (s, c) => s + c.timeUnitsTaught),
                                 ),
                                 const SizedBox(height: 20),
                                 // Grid table
@@ -356,7 +356,7 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
                                 const SizedBox(height: 12),
                                 ...competencies.map((c) {
                                   final totalDays = competencies.fold<int>(
-                                      0, (s, comp) => s + comp.daysTaught);
+                                      0, (s, comp) => s + comp.timeUnitsTaught);
                                   return TosCompetencyRow(
                                     competency: c,
                                     totalDays: totalDays,

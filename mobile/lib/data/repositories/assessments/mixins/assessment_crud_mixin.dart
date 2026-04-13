@@ -21,10 +21,9 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
     bool? showResultsImmediately,
     bool isPublished = false,
     List<Map<String, dynamic>>? questions,
-    int? quarter,
+    int? gradingPeriodNumber,
     String? component,
-    bool? isDepartmentalExam,
-    String? linkedTosId,
+    String? tosId,
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
@@ -82,8 +81,8 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
             showResultsImmediately: showResultsImmediately,
             isPublished: isPublished,
             questions: questionModels,
-            linkedTosId: linkedTosId,
-            quarter: quarter,
+            linkedTosId: tosId,
+            quarter: gradingPeriodNumber,
             component: component,
           );
 
@@ -108,8 +107,8 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
             totalPoints: totalPoints,
             questionCount: questions.length,
             submissionCount: 0,
-            linkedTosId: linkedTosId,
-            quarter: quarter,
+            tosId: tosId,
+            gradingPeriodNumber: gradingPeriodNumber,
             component: component,
             createdAt: now,
             updatedAt: now,
@@ -126,8 +125,8 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           closeAt: closeAt,
           showResultsImmediately: showResultsImmediately,
           isPublished: isPublished,
-          linkedTosId: linkedTosId,
-          quarter: quarter,
+          tosId: tosId,
+          gradingPeriodNumber: gradingPeriodNumber,
           component: component,
         );
 
@@ -146,8 +145,8 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           totalPoints: 0,
           questionCount: 0,
           submissionCount: 0,
-          linkedTosId: linkedTosId,
-          quarter: quarter,
+          tosId: tosId,
+          gradingPeriodNumber: gradingPeriodNumber,
           component: component,
           createdAt: now,
           updatedAt: now,
@@ -168,10 +167,9 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           // NEW: include questions atomically when publishing
           if (isPublished && questions != null && questions.isNotEmpty)
             'questions': questions,
-          if (quarter != null) 'quarter': quarter,
+          if (gradingPeriodNumber != null) 'grading_period_number': gradingPeriodNumber,
           if (component != null) 'component': component,
-          if (isDepartmentalExam != null) 'is_departmental_exam': isDepartmentalExam,
-          if (linkedTosId != null) 'linked_tos_id': linkedTosId,
+          if (tosId != null) 'tos_id': tosId,
         },
       );
 

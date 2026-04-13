@@ -7,7 +7,7 @@ import 'package:likha/data/datasources/local/grading/grading_local_datasource.da
 import 'package:likha/data/models/grading/grade_config_model.dart';
 import 'package:likha/data/models/grading/grade_item_model.dart';
 import 'package:likha/data/models/grading/grade_score_model.dart';
-import 'package:likha/data/models/grading/quarterly_grade_model.dart';
+import 'package:likha/data/models/grading/period_grade_model.dart';
 
 class GradingLocalDataSourceImpl implements GradingLocalDataSource {
   final LocalDatabase localDatabase;
@@ -21,10 +21,10 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
   Future<List<GradeConfigModel>> getConfigByClass(String classId) async {
     final db = await localDatabase.database;
     final results = await db.query(
-      DbTables.gradeComponentsConfig,
-      where: '${GradeComponentsConfigCols.classId} = ?',
+      DbTables.gradeRecord,
+      where: '${GradeRecordCols.classId} = ?',
       whereArgs: [classId],
-      orderBy: '${GradeComponentsConfigCols.quarter} ASC',
+      orderBy: '${GradeRecordCols.gradingPeriodNumber} ASC',
     );
     return results.map((row) => GradeConfigModel.fromMap(row)).toList();
   }
@@ -35,7 +35,7 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
     final batch = db.batch();
     for (final config in configs) {
       batch.insert(
-        DbTables.gradeComponentsConfig,
+        DbTables.gradeRecord,
         config.toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -48,13 +48,13 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
   @override
   Future<List<GradeItemModel>> getItemsByClassQuarter(
     String classId,
-    int quarter, {
+    int gradingPeriodNumber, {
     String? component,
   }) async {
     final db = await localDatabase.database;
     var where =
-        '${GradeItemsCols.classId} = ? AND ${GradeItemsCols.quarter} = ?';
-    final whereArgs = <dynamic>[classId, quarter];
+        '${GradeItemsCols.classId} = ? AND ${GradeItemsCols.gradingPeriodNumber} = ?';
+    final whereArgs = <dynamic>[classId, gradingPeriodNumber];
 
     if (component != null) {
       where += ' AND ${GradeItemsCols.component} = ?';
@@ -244,46 +244,46 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
     );
   }
 
-  // ===== Quarterly Grades =====
+  // ===== Period Grades =====
 
   @override
-  Future<List<QuarterlyGradeModel>> getQuarterlyGradesByClass(
+  Future<List<PeriodGradeModel>> getPeriodGradesByClass(
     String classId,
-    int quarter,
+    int gradingPeriodNumber,
   ) async {
     final db = await localDatabase.database;
     final results = await db.query(
-      DbTables.quarterlyGrades,
+      DbTables.periodGrades,
       where:
-          '${QuarterlyGradesCols.classId} = ? AND ${QuarterlyGradesCols.quarter} = ?',
-      whereArgs: [classId, quarter],
+          '${PeriodGradesCols.classId} = ? AND ${PeriodGradesCols.gradingPeriodNumber} = ?',
+      whereArgs: [classId, gradingPeriodNumber],
     );
-    return results.map((row) => QuarterlyGradeModel.fromMap(row)).toList();
+    return results.map((row) => PeriodGradeModel.fromMap(row)).toList();
   }
 
   @override
-  Future<List<QuarterlyGradeModel>> getStudentAllQuarters(
+  Future<List<PeriodGradeModel>> getStudentAllPeriods(
     String classId,
     String studentId,
   ) async {
     final db = await localDatabase.database;
     final results = await db.query(
-      DbTables.quarterlyGrades,
+      DbTables.periodGrades,
       where:
-          '${QuarterlyGradesCols.classId} = ? AND ${QuarterlyGradesCols.studentId} = ?',
+          '${PeriodGradesCols.classId} = ? AND ${PeriodGradesCols.studentId} = ?',
       whereArgs: [classId, studentId],
-      orderBy: '${QuarterlyGradesCols.quarter} ASC',
+      orderBy: '${PeriodGradesCols.gradingPeriodNumber} ASC',
     );
-    return results.map((row) => QuarterlyGradeModel.fromMap(row)).toList();
+    return results.map((row) => PeriodGradeModel.fromMap(row)).toList();
   }
 
   @override
-  Future<void> saveQuarterlyGrades(List<QuarterlyGradeModel> grades) async {
+  Future<void> savePeriodGrades(List<PeriodGradeModel> grades) async {
     final db = await localDatabase.database;
     final batch = db.batch();
     for (final grade in grades) {
       batch.insert(
-        DbTables.quarterlyGrades,
+        DbTables.periodGrades,
         grade.toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -295,21 +295,21 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
   Future<void> updateTransmutedGrade(
     String classId,
     String studentId,
-    int quarter,
+    int gradingPeriodNumber,
     int transmutedGrade,
   ) async {
     final db = await localDatabase.database;
     await db.update(
-      DbTables.quarterlyGrades,
+      DbTables.periodGrades,
       {
-        QuarterlyGradesCols.transmutedGrade: transmutedGrade,
+        PeriodGradesCols.transmutedGrade: transmutedGrade,
         CommonCols.updatedAt: DateTime.now().toIso8601String(),
         CommonCols.needsSync: 1,
       },
-      where: '${QuarterlyGradesCols.classId} = ? AND '
-          '${QuarterlyGradesCols.studentId} = ? AND '
-          '${QuarterlyGradesCols.quarter} = ?',
-      whereArgs: [classId, studentId, quarter],
+      where: '${PeriodGradesCols.classId} = ? AND '
+          '${PeriodGradesCols.studentId} = ? AND '
+          '${PeriodGradesCols.gradingPeriodNumber} = ?',
+      whereArgs: [classId, studentId, gradingPeriodNumber],
     );
   }
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/utils/transmutation_util.dart';
-import 'package:likha/domain/grading/entities/quarterly_grade.dart';
+import 'package:likha/domain/grading/entities/period_grade.dart';
 import 'package:likha/domain/grading/usecases/get_my_grade_detail.dart';
 import 'package:likha/domain/grading/usecases/get_my_grades.dart';
 import 'package:likha/injection_container.dart';
@@ -29,8 +29,8 @@ class _StudentClassGradeDetailPageState
   bool _isLoading = false;
   String? _error;
 
-  List<QuarterlyGrade> _quarterlyGrades = [];
-  QuarterlyGrade? _currentQuarterGrade;
+  List<PeriodGrade> _quarterlyGrades = [];
+  PeriodGrade? _currentQuarterGrade;
   List<_GradeItemDetail> _items = [];
   _GradingConfig? _config;
 
@@ -38,11 +38,11 @@ class _StudentClassGradeDetailPageState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadQuarterlyGrades();
+      _loadPeriodGrades();
     });
   }
 
-  Future<void> _loadQuarterlyGrades() async {
+  Future<void> _loadPeriodGrades() async {
     setState(() {
       _isLoading = true;
       _error = null;
@@ -61,13 +61,13 @@ class _StudentClassGradeDetailPageState
       (grades) {
         if (mounted) {
           _quarterlyGrades = grades;
-          // Default to the most recent quarter with data, or Q1
+          // Default to the most recent gradingPeriodNumber with data, or Q1
           if (grades.isNotEmpty) {
             final withGrades =
                 grades.where((g) => g.transmutedGrade != null).toList();
             if (withGrades.isNotEmpty) {
-              withGrades.sort((a, b) => b.quarter.compareTo(a.quarter));
-              _selectedQuarter = withGrades.first.quarter;
+              withGrades.sort((a, b) => b.gradingPeriodNumber.compareTo(a.gradingPeriodNumber));
+              _selectedQuarter = withGrades.first.gradingPeriodNumber;
             }
           }
           _loadQuarterDetail();
@@ -87,7 +87,7 @@ class _StudentClassGradeDetailPageState
 
     // Find the quarterly grade for the selected quarter
     final qg = _quarterlyGrades
-        .where((g) => g.quarter == _selectedQuarter)
+        .where((g) => g.gradingPeriodNumber == _selectedQuarter)
         .toList();
     if (qg.isNotEmpty) {
       _currentQuarterGrade = qg.first;
@@ -95,7 +95,7 @@ class _StudentClassGradeDetailPageState
 
     final result = await sl<GetMyGradeDetail>()(
       classId: widget.classId,
-      quarter: _selectedQuarter,
+      gradingPeriodNumber: _selectedQuarter,
     );
 
     result.fold(
@@ -122,22 +122,17 @@ class _StudentClassGradeDetailPageState
     // Parse quarterly_grade if present (overrides the one from getMyGrades)
     final qgMap = data['quarterly_grade'] as Map<String, dynamic>?;
     if (qgMap != null) {
-      _currentQuarterGrade = QuarterlyGrade(
+      _currentQuarterGrade = PeriodGrade(
         id: qgMap['id']?.toString() ?? '',
         classId: qgMap['class_id']?.toString() ?? widget.classId,
         studentId: qgMap['student_id']?.toString() ?? '',
-        quarter: (qgMap['quarter'] as num?)?.toInt() ?? _selectedQuarter,
-        wwPercentage: (qgMap['ww_percentage'] as num?)?.toDouble(),
-        ptPercentage: (qgMap['pt_percentage'] as num?)?.toDouble(),
-        qaPercentage: (qgMap['qa_percentage'] as num?)?.toDouble(),
-        wwWeighted: (qgMap['ww_weighted'] as num?)?.toDouble(),
-        ptWeighted: (qgMap['pt_weighted'] as num?)?.toDouble(),
-        qaWeighted: (qgMap['qa_weighted'] as num?)?.toDouble(),
+        gradingPeriodNumber: (qgMap['quarter'] as num?)?.toInt() ?? _selectedQuarter,
         initialGrade: (qgMap['initial_grade'] as num?)?.toDouble(),
         transmutedGrade: (qgMap['transmuted_grade'] as num?)?.toInt(),
-        isComplete: qgMap['is_complete'] == true ||
-            qgMap['is_complete'] == 1,
+        isLocked: qgMap['is_locked'] == true ||
+            qgMap['is_locked'] == 1,
         computedAt: qgMap['computed_at']?.toString(),
+        isPreview: false,
       );
     }
 
@@ -181,7 +176,7 @@ class _StudentClassGradeDetailPageState
             Expanded(
               child: RefreshIndicator(
                 onRefresh: () async {
-                  await _loadQuarterlyGrades();
+                  await _loadPeriodGrades();
                 },
                 color: const Color(0xFF2B2B2B),
                 child: _isLoading
@@ -225,7 +220,7 @@ class _StudentClassGradeDetailPageState
             ),
             const SizedBox(height: 16),
             TextButton(
-              onPressed: _loadQuarterlyGrades,
+              onPressed: _loadPeriodGrades,
               child: const Text(
                 'Retry',
                 style: TextStyle(
@@ -265,24 +260,24 @@ class _StudentClassGradeDetailPageState
             'Written Works',
             'written_work',
             _config?.wwWeight ?? 30,
-            qg?.wwPercentage,
-            qg?.wwWeighted,
+            null, // percentage not available in new schema
+            null, // weighted not available in new schema
           ),
           const SizedBox(height: 14),
           _buildComponentSection(
             'Performance Tasks',
             'performance_task',
             _config?.ptWeight ?? 50,
-            qg?.ptPercentage,
-            qg?.ptWeighted,
+            null, // percentage not available in new schema
+            null, // weighted not available in new schema
           ),
           const SizedBox(height: 14),
           _buildComponentSection(
             'Quarterly Assessment',
             'quarterly_assessment',
             _config?.qaWeight ?? 20,
-            qg?.qaPercentage,
-            qg?.qaWeighted,
+            null, // percentage not available in new schema
+            null, // weighted not available in new schema
           ),
           const SizedBox(height: 20),
 
@@ -300,7 +295,7 @@ class _StudentClassGradeDetailPageState
     );
   }
 
-  Widget _buildOverallGradeBanner(QuarterlyGrade? qg) {
+  Widget _buildOverallGradeBanner(PeriodGrade? qg) {
     final hasGrade = qg?.transmutedGrade != null;
     final gradeDisplay = hasGrade ? '${qg!.transmutedGrade}' : '--';
     final descriptor = hasGrade
@@ -335,18 +330,18 @@ class _StudentClassGradeDetailPageState
     return Wrap(
       spacing: 8,
       children: List.generate(4, (index) {
-        final quarter = index + 1;
-        final isSelected = _selectedQuarter == quarter;
+        final gradingPeriodNumber = index + 1;
+        final isSelected = _selectedQuarter == gradingPeriodNumber;
         final hasData = _quarterlyGrades
-            .any((g) => g.quarter == quarter && g.transmutedGrade != null);
+            .any((g) => g.gradingPeriodNumber == gradingPeriodNumber && g.transmutedGrade != null);
 
         return ChoiceChip(
-          label: Text('Q$quarter'),
+          label: Text('Q$gradingPeriodNumber'),
           selected: isSelected,
           onSelected: (selected) {
-            if (selected && quarter != _selectedQuarter) {
+            if (selected && gradingPeriodNumber != _selectedQuarter) {
               setState(() {
-                _selectedQuarter = quarter;
+                _selectedQuarter = gradingPeriodNumber;
               });
               _loadQuarterDetail();
             }
@@ -506,7 +501,7 @@ class _StudentClassGradeDetailPageState
     );
   }
 
-  Widget _buildSummarySection(QuarterlyGrade qg) {
+  Widget _buildSummarySection(PeriodGrade qg) {
     final transmuted = qg.transmutedGrade ?? 0;
     final descriptor = TransmutationUtil.getDescriptor(transmuted);
     final descriptorColor = TransmutationUtil.getDescriptorColor(transmuted);

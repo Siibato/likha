@@ -3,7 +3,7 @@ use sea_orm::*;
 use uuid::Uuid;
 
 use ::entity::{
-    grade_components_config, grade_items, grade_scores, quarterly_grades, class_participants,
+    grade_record, grade_items, grade_scores, period_grades, class_participants,
 };
 use crate::utils::{AppError, AppResult};
 
@@ -16,16 +16,16 @@ impl GradeComputationRepository {
         Self { db }
     }
 
-    // ===== GRADE COMPONENTS CONFIG =====
+    // ===== GRADE RECORD (formerly grade_components_config) =====
 
     pub async fn get_config(
         &self,
         class_id: Uuid,
-        quarter: i32,
-    ) -> AppResult<Option<grade_components_config::Model>> {
-        grade_components_config::Entity::find()
-            .filter(grade_components_config::Column::ClassId.eq(class_id))
-            .filter(grade_components_config::Column::Quarter.eq(quarter))
+        grading_period_number: i32,
+    ) -> AppResult<Option<grade_record::Model>> {
+        grade_record::Entity::find()
+            .filter(grade_record::Column::ClassId.eq(class_id))
+            .filter(grade_record::Column::GradingPeriodNumber.eq(grading_period_number))
             .one(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
@@ -34,9 +34,9 @@ impl GradeComputationRepository {
     pub async fn get_all_configs(
         &self,
         class_id: Uuid,
-    ) -> AppResult<Vec<grade_components_config::Model>> {
-        grade_components_config::Entity::find()
-            .filter(grade_components_config::Column::ClassId.eq(class_id))
+    ) -> AppResult<Vec<grade_record::Model>> {
+        grade_record::Entity::find()
+            .filter(grade_record::Column::ClassId.eq(class_id))
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
@@ -45,18 +45,18 @@ impl GradeComputationRepository {
     pub async fn upsert_config(
         &self,
         class_id: Uuid,
-        quarter: i32,
+        grading_period_number: i32,
         ww_weight: f64,
         pt_weight: f64,
         qa_weight: f64,
-    ) -> AppResult<grade_components_config::Model> {
+    ) -> AppResult<grade_record::Model> {
         let now = Utc::now().naive_utc();
         let id = Uuid::new_v4();
 
         let sql = r#"
-            INSERT INTO grade_components_config (id, class_id, quarter, ww_weight, pt_weight, qa_weight, created_at, updated_at)
+            INSERT INTO grade_record (id, class_id, grading_period_number, ww_weight, pt_weight, qa_weight, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(class_id, quarter) DO UPDATE SET
+            ON CONFLICT(class_id, grading_period_number) DO UPDATE SET
                 ww_weight = excluded.ww_weight,
                 pt_weight = excluded.pt_weight,
                 qa_weight = excluded.qa_weight,
@@ -69,7 +69,7 @@ impl GradeComputationRepository {
             vec![
                 id.into(),
                 class_id.into(),
-                quarter.into(),
+                grading_period_number.into(),
                 ww_weight.into(),
                 pt_weight.into(),
                 qa_weight.into(),
@@ -83,7 +83,7 @@ impl GradeComputationRepository {
             .await
             .map_err(|e| AppError::InternalServerError(format!("Failed to upsert config: {}", e)))?;
 
-        self.get_config(class_id, quarter)
+        self.get_config(class_id, grading_period_number)
             .await?
             .ok_or_else(|| AppError::InternalServerError("Config not found after upsert".to_string()))
     }
@@ -92,7 +92,7 @@ impl GradeComputationRepository {
         &self,
         class_id: Uuid,
         subject_group: &str,
-    ) -> AppResult<Vec<grade_components_config::Model>> {
+    ) -> AppResult<Vec<grade_record::Model>> {
         let preset = crate::services::grade_computation::deped_weights::get_preset(subject_group)
             .ok_or_else(|| {
                 AppError::BadRequest(format!(
@@ -102,9 +102,9 @@ impl GradeComputationRepository {
             })?;
 
         let mut configs = Vec::new();
-        for quarter in 1..=4 {
+        for period in 1..=4 {
             let config = self
-                .upsert_config(class_id, quarter, preset.ww, preset.pt, preset.qa)
+                .upsert_config(class_id, period, preset.ww, preset.pt, preset.qa)
                 .await?;
             configs.push(config);
         }
@@ -117,11 +117,11 @@ impl GradeComputationRepository {
     pub async fn get_items(
         &self,
         class_id: Uuid,
-        quarter: i32,
+        grading_period_number: i32,
     ) -> AppResult<Vec<grade_items::Model>> {
         grade_items::Entity::find()
             .filter(grade_items::Column::ClassId.eq(class_id))
-            .filter(grade_items::Column::Quarter.eq(quarter))
+            .filter(grade_items::Column::GradingPeriodNumber.eq(grading_period_number))
             .filter(grade_items::Column::DeletedAt.is_null())
             .order_by_asc(grade_items::Column::OrderIndex)
             .all(&self.db)
@@ -132,12 +132,12 @@ impl GradeComputationRepository {
     pub async fn get_items_by_component(
         &self,
         class_id: Uuid,
-        quarter: i32,
+        grading_period_number: i32,
         component: &str,
     ) -> AppResult<Vec<grade_items::Model>> {
         grade_items::Entity::find()
             .filter(grade_items::Column::ClassId.eq(class_id))
-            .filter(grade_items::Column::Quarter.eq(quarter))
+            .filter(grade_items::Column::GradingPeriodNumber.eq(grading_period_number))
             .filter(grade_items::Column::Component.eq(component))
             .filter(grade_items::Column::DeletedAt.is_null())
             .order_by_asc(grade_items::Column::OrderIndex)
@@ -172,9 +172,8 @@ impl GradeComputationRepository {
         class_id: Uuid,
         title: String,
         component: String,
-        quarter: i32,
+        grading_period_number: Option<i32>,
         total_points: f64,
-        is_departmental_exam: bool,
         source_type: String,
         source_id: Option<String>,
         order_index: i32,
@@ -184,9 +183,8 @@ impl GradeComputationRepository {
             class_id: Set(class_id),
             title: Set(title),
             component: Set(component),
-            quarter: Set(quarter),
+            grading_period_number: Set(grading_period_number),
             total_points: Set(total_points),
-            is_departmental_exam: Set(is_departmental_exam),
             source_type: Set(source_type),
             source_id: Set(source_id),
             order_index: Set(order_index),
@@ -266,11 +264,11 @@ impl GradeComputationRepository {
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
     }
 
-    pub async fn get_scores_by_student_class_quarter(
+    pub async fn get_scores_by_student_class_period(
         &self,
         student_id: Uuid,
         class_id: Uuid,
-        quarter: i32,
+        grading_period_number: i32,
     ) -> AppResult<Vec<grade_scores::Model>> {
         let sql = r#"
             SELECT gs.id, gs.grade_item_id, gs.student_id, gs.score,
@@ -280,7 +278,7 @@ impl GradeComputationRepository {
             INNER JOIN grade_items gi ON gs.grade_item_id = gi.id
             WHERE gs.student_id = ?
               AND gi.class_id = ?
-              AND gi.quarter = ?
+              AND gi.grading_period_number = ?
               AND gs.deleted_at IS NULL
               AND gi.deleted_at IS NULL
         "#;
@@ -291,7 +289,7 @@ impl GradeComputationRepository {
             vec![
                 student_id.to_string().into(),
                 class_id.to_string().into(),
-                quarter.into(),
+                grading_period_number.into(),
             ],
         );
 
@@ -400,7 +398,6 @@ impl GradeComputationRepository {
             .await
             .map_err(|e| AppError::InternalServerError(format!("Failed to upsert score: {}", e)))?;
 
-        // Query back the upserted row
         grade_scores::Entity::find()
             .filter(grade_scores::Column::GradeItemId.eq(grade_item_id))
             .filter(grade_scores::Column::StudentId.eq(student_id))
@@ -460,18 +457,18 @@ impl GradeComputationRepository {
             .map_err(|e| AppError::InternalServerError(format!("Failed to clear override: {}", e)))
     }
 
-    // ===== QUARTERLY GRADES =====
+    // ===== PERIOD GRADES (formerly quarterly_grades) =====
 
-    pub async fn get_quarterly_grade(
+    pub async fn get_period_grade(
         &self,
         class_id: Uuid,
         student_id: Uuid,
-        quarter: i32,
-    ) -> AppResult<Option<quarterly_grades::Model>> {
-        quarterly_grades::Entity::find()
-            .filter(quarterly_grades::Column::ClassId.eq(class_id))
-            .filter(quarterly_grades::Column::StudentId.eq(student_id))
-            .filter(quarterly_grades::Column::Quarter.eq(quarter))
+        grading_period_number: i32,
+    ) -> AppResult<Option<period_grades::Model>> {
+        period_grades::Entity::find()
+            .filter(period_grades::Column::ClassId.eq(class_id))
+            .filter(period_grades::Column::StudentId.eq(student_id))
+            .filter(period_grades::Column::GradingPeriodNumber.eq(grading_period_number))
             .one(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
@@ -480,11 +477,11 @@ impl GradeComputationRepository {
     pub async fn get_all_for_class(
         &self,
         class_id: Uuid,
-        quarter: i32,
-    ) -> AppResult<Vec<quarterly_grades::Model>> {
-        quarterly_grades::Entity::find()
-            .filter(quarterly_grades::Column::ClassId.eq(class_id))
-            .filter(quarterly_grades::Column::Quarter.eq(quarter))
+        grading_period_number: i32,
+    ) -> AppResult<Vec<period_grades::Model>> {
+        period_grades::Entity::find()
+            .filter(period_grades::Column::ClassId.eq(class_id))
+            .filter(period_grades::Column::GradingPeriodNumber.eq(grading_period_number))
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
@@ -494,50 +491,36 @@ impl GradeComputationRepository {
         &self,
         class_id: Uuid,
         student_id: Uuid,
-    ) -> AppResult<Vec<quarterly_grades::Model>> {
-        quarterly_grades::Entity::find()
-            .filter(quarterly_grades::Column::ClassId.eq(class_id))
-            .filter(quarterly_grades::Column::StudentId.eq(student_id))
+    ) -> AppResult<Vec<period_grades::Model>> {
+        period_grades::Entity::find()
+            .filter(period_grades::Column::ClassId.eq(class_id))
+            .filter(period_grades::Column::StudentId.eq(student_id))
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
     }
 
-    pub async fn upsert_quarterly_grade(
+    pub async fn upsert_period_grade(
         &self,
         class_id: Uuid,
         student_id: Uuid,
-        quarter: i32,
-        ww_pct: f64,
-        pt_pct: f64,
-        qa_pct: f64,
-        ww_w: f64,
-        pt_w: f64,
-        qa_w: f64,
-        initial: f64,
-        transmuted: i32,
-        is_complete: bool,
-    ) -> AppResult<quarterly_grades::Model> {
+        grading_period_number: i32,
+        initial_grade: f64,
+        transmuted_grade: i32,
+        is_locked: bool,
+    ) -> AppResult<period_grades::Model> {
         let now = Utc::now().naive_utc();
         let id = Uuid::new_v4();
 
         let sql = r#"
-            INSERT INTO quarterly_grades (id, class_id, student_id, quarter,
-                ww_percentage, pt_percentage, qa_percentage,
-                ww_weighted, pt_weighted, qa_weighted,
-                initial_grade, transmuted_grade, is_complete, computed_at,
+            INSERT INTO period_grades (id, class_id, student_id, grading_period_number,
+                initial_grade, transmuted_grade, is_locked, computed_at,
                 created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(class_id, student_id, quarter) DO UPDATE SET
-                ww_percentage = excluded.ww_percentage,
-                pt_percentage = excluded.pt_percentage,
-                qa_percentage = excluded.qa_percentage,
-                ww_weighted = excluded.ww_weighted,
-                pt_weighted = excluded.pt_weighted,
-                qa_weighted = excluded.qa_weighted,
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(class_id, student_id, grading_period_number) DO UPDATE SET
                 initial_grade = excluded.initial_grade,
                 transmuted_grade = excluded.transmuted_grade,
-                is_complete = excluded.is_complete,
+                is_locked = excluded.is_locked,
                 computed_at = excluded.computed_at,
                 updated_at = excluded.updated_at
         "#;
@@ -549,16 +532,10 @@ impl GradeComputationRepository {
                 id.to_string().into(),
                 class_id.to_string().into(),
                 student_id.to_string().into(),
-                quarter.into(),
-                ww_pct.into(),
-                pt_pct.into(),
-                qa_pct.into(),
-                ww_w.into(),
-                pt_w.into(),
-                qa_w.into(),
-                initial.into(),
-                transmuted.into(),
-                is_complete.into(),
+                grading_period_number.into(),
+                initial_grade.into(),
+                transmuted_grade.into(),
+                is_locked.into(),
                 now.to_string().into(),
                 now.to_string().into(),
                 now.to_string().into(),
@@ -569,14 +546,14 @@ impl GradeComputationRepository {
             .execute(stmt)
             .await
             .map_err(|e| {
-                AppError::InternalServerError(format!("Failed to upsert quarterly grade: {}", e))
+                AppError::InternalServerError(format!("Failed to upsert period grade: {}", e))
             })?;
 
-        self.get_quarterly_grade(class_id, student_id, quarter)
+        self.get_period_grade(class_id, student_id, grading_period_number)
             .await?
             .ok_or_else(|| {
                 AppError::InternalServerError(
-                    "Quarterly grade not found after upsert".to_string(),
+                    "Period grade not found after upsert".to_string(),
                 )
             })
     }
@@ -597,7 +574,7 @@ impl GradeComputationRepository {
     // ===== CROSS-CLASS QUERIES (GSA / SF9) =====
 
     /// Get all classes a student is enrolled in, optionally filtered by school_year.
-    /// Returns (class_id, title, subject_group, school_year).
+    /// Returns (class_id, title, school_year).
     pub async fn get_student_enrolled_classes(
         &self,
         student_id: Uuid,
@@ -605,7 +582,7 @@ impl GradeComputationRepository {
     ) -> AppResult<Vec<StudentEnrolledClass>> {
         let mut sql = String::from(
             r#"
-            SELECT c.id, c.title, c.subject_group, c.school_year
+            SELECT c.id, c.title, c.school_year
             FROM classes c
             JOIN class_participants cp ON cp.class_id = c.id
             WHERE cp.user_id = $1
@@ -640,7 +617,6 @@ impl GradeComputationRepository {
             results.push(StudentEnrolledClass {
                 class_id: Uuid::parse_str(&id_str).unwrap_or_default(),
                 title: row.try_get("", "title").unwrap_or_default(),
-                subject_group: row.try_get("", "subject_group").ok(),
                 school_year: row.try_get("", "school_year").ok(),
             });
         }
@@ -648,17 +624,17 @@ impl GradeComputationRepository {
         Ok(results)
     }
 
-    /// Get all quarterly grades for a student in a specific class.
-    pub async fn get_quarterly_grades_for_student_class(
+    /// Get all period grades for a student in a specific class.
+    pub async fn get_period_grades_for_student_class(
         &self,
         student_id: Uuid,
         class_id: Uuid,
-    ) -> AppResult<Vec<quarterly_grades::Model>> {
-        quarterly_grades::Entity::find()
-            .filter(quarterly_grades::Column::StudentId.eq(student_id))
-            .filter(quarterly_grades::Column::ClassId.eq(class_id))
-            .filter(quarterly_grades::Column::DeletedAt.is_null())
-            .order_by_asc(quarterly_grades::Column::Quarter)
+    ) -> AppResult<Vec<period_grades::Model>> {
+        period_grades::Entity::find()
+            .filter(period_grades::Column::StudentId.eq(student_id))
+            .filter(period_grades::Column::ClassId.eq(class_id))
+            .filter(period_grades::Column::DeletedAt.is_null())
+            .order_by_asc(period_grades::Column::GradingPeriodNumber)
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
@@ -669,6 +645,5 @@ impl GradeComputationRepository {
 pub struct StudentEnrolledClass {
     pub class_id: Uuid,
     pub title: String,
-    pub subject_group: Option<String>,
     pub school_year: Option<String>,
 }

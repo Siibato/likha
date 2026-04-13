@@ -190,7 +190,7 @@ class AssessmentDetailsSection extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<int?>(
-            value: selectedQuarter,
+            initialValue: selectedQuarter,
             decoration: InputDecoration(
               labelText: 'Quarter (for grading)',
               labelStyle: const TextStyle(
@@ -233,7 +233,7 @@ class AssessmentDetailsSection extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String?>(
-            value: selectedComponent,
+            initialValue: selectedComponent,
             decoration: InputDecoration(
               labelText: 'Grade Component',
               labelStyle: const TextStyle(
@@ -316,7 +316,7 @@ class AssessmentDetailsSection extends StatelessWidget {
           if (tosList.isNotEmpty) ...[
             const SizedBox(height: 16),
             DropdownButtonFormField<String?>(
-              value: selectedTosId,
+              initialValue: selectedTosId,
               decoration: InputDecoration(
                 labelText: 'Link to TOS (optional)',
                 labelStyle: const TextStyle(
@@ -355,7 +355,7 @@ class AssessmentDetailsSection extends StatelessWidget {
                 const DropdownMenuItem(value: null, child: Text('None')),
                 ...tosList.map((tos) => DropdownMenuItem(
                       value: tos.id,
-                      child: Text('${tos.title} (Q${tos.quarter})'),
+                      child: Text('${tos.title} (Grading Period ${tos.gradingPeriodNumber})'),
                     )),
               ],
               onChanged: isLoading ? null : onTosChanged,

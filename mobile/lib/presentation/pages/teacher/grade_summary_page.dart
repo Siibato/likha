@@ -112,7 +112,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
     final raw = _qgEditController.text.trim();
     final grade = int.tryParse(raw);
     if (grade != null && _editingStudentId != null) {
-      ref.read(quarterlyGradesProvider.notifier).updateQuarterlyGrade(
+      ref.read(quarterlyGradesProvider.notifier).updatePeriodGrade(
         classId: widget.classId,
         studentId: _editingStudentId!,
         quarter: _selectedQuarter,
@@ -239,7 +239,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
   // ---------------------------------------------------------------------------
 
   Widget _buildQuarterlyTab(
-    QuarterlyGradesState gradesState,
+    PeriodGradesState gradesState,
     GradingConfigState configState,
   ) {
     if (gradesState.isLoading) {

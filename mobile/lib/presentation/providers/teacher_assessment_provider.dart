@@ -162,16 +162,15 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
           currentAssessment: assessment,
           successMessage: 'Assessment created',
         );
-        // Auto-create linked grade item when component + quarter are set
-        if (assessment.component != null && assessment.quarter != null) {
+        // Auto-create linked grade item when component + gradingPeriodNumber are set
+        if (assessment.component != null && assessment.gradingPeriodNumber != null) {
           sl<GradingRepository>().createGradeItem(
             classId: params.classId,
             data: {
               'title': assessment.title,
               'component': _toGradeComponent(assessment.component!),
-              'quarter': assessment.quarter!,
+              'grading_period_number': assessment.gradingPeriodNumber!,
               'total_points': assessment.totalPoints.toDouble(),
-              'is_departmental_exam': params.isDepartmentalExam ?? false,
               'source_type': 'assessment',
               'source_id': assessment.id,
               'order_index': 0,
@@ -224,7 +223,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
                     totalPoints: a.totalPoints,
                     questionCount: a.questionCount,
                     submissionCount: a.submissionCount,
-                    quarter: a.quarter,
+                    gradingPeriodNumber: a.gradingPeriodNumber,
                     component: a.component,
                     createdAt: a.createdAt,
                     updatedAt: DateTime.now(),
@@ -269,7 +268,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
                     totalPoints: a.totalPoints,
                     questionCount: a.questionCount,
                     submissionCount: a.submissionCount,
-                    quarter: a.quarter,
+                    gradingPeriodNumber: a.gradingPeriodNumber,
                     component: a.component,
                     createdAt: a.createdAt,
                     updatedAt: DateTime.now(),

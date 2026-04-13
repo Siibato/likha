@@ -122,7 +122,6 @@ class _AssignmentSubmissionsPageState
                         studentName: submission.studentName,
                         studentUsername: submission.studentUsername,
                         status: submission.status,
-                        isLate: submission.isLate,
                         score: submission.score,
                         totalPoints: widget.totalPoints,
                         submittedAt: submission.submittedAt,

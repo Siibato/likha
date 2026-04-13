@@ -6,7 +6,7 @@ class ComputeGrades {
 
   ComputeGrades(this._repository);
 
-  ResultVoid call({required String classId, required int quarter}) {
-    return _repository.computeGrades(classId: classId, quarter: quarter);
+  ResultVoid call({required String classId, required int gradingPeriodNumber}) {
+    return _repository.computeGrades(classId: classId, gradingPeriodNumber: gradingPeriodNumber);
   }
 }

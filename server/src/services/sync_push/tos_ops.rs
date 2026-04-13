@@ -17,7 +17,7 @@ impl super::SyncPushService {
                 let client_id = self.parse_uuid_field(&op.payload, "id").ok();
                 let class_id = extract_field!(self, op, parse_uuid_field, "class_id");
                 let title = extract_field!(self, op, parse_str_field, "title");
-                let quarter = extract_field!(self, op, parse_i32_field, "quarter");
+                let quarter = extract_field!(self, op, parse_i32_field, "grading_period_number");
                 let classification_mode =
                     extract_field!(self, op, parse_str_field, "classification_mode");
                 let total_items = extract_field!(self, op, parse_i32_field, "total_items");
@@ -65,7 +65,7 @@ impl super::SyncPushService {
 
                 let request = CreateTosRequest {
                     title,
-                    quarter,
+                    grading_period_number: quarter,
                     classification_mode,
                     total_items,
                     time_unit,
@@ -191,7 +191,7 @@ impl super::SyncPushService {
                 let tos_id = extract_field!(self, op, parse_uuid_field, "tos_id");
                 let competency_text =
                     extract_field!(self, op, parse_str_field, "competency_text");
-                let days_taught = extract_field!(self, op, parse_i32_field, "days_taught");
+                let time_units_taught = extract_field!(self, op, parse_i32_field, "time_units_taught");
                 let competency_code = op
                     .payload
                     .get("competency_code")
@@ -221,11 +221,17 @@ impl super::SyncPushService {
                 let request = CreateCompetencyRequest {
                     competency_code,
                     competency_text,
-                    days_taught,
+                    time_units_taught,
                     order_index,
                     easy_count,
                     medium_count,
                     hard_count,
+                    remembering_count: op.payload.get("remembering_count").and_then(|v| v.as_i64()).map(|v| v as i32),
+                    understanding_count: op.payload.get("understanding_count").and_then(|v| v.as_i64()).map(|v| v as i32),
+                    applying_count: op.payload.get("applying_count").and_then(|v| v.as_i64()).map(|v| v as i32),
+                    analyzing_count: op.payload.get("analyzing_count").and_then(|v| v.as_i64()).map(|v| v as i32),
+                    evaluating_count: op.payload.get("evaluating_count").and_then(|v| v.as_i64()).map(|v| v as i32),
+                    creating_count: op.payload.get("creating_count").and_then(|v| v.as_i64()).map(|v| v as i32),
                 };
 
                 // Use client_id as the competency ID if provided
@@ -249,9 +255,9 @@ impl super::SyncPushService {
                     .get("competency_text")
                     .and_then(|v| v.as_str())
                     .map(|s| s.to_string());
-                let days_taught = op
+                let time_units_taught = op
                     .payload
-                    .get("days_taught")
+                    .get("time_units_taught")
                     .and_then(|v| v.as_i64())
                     .map(|v| v as i32);
                 let order_index = op
@@ -272,11 +278,17 @@ impl super::SyncPushService {
                 let request = UpdateCompetencyRequest {
                     competency_code: None,
                     competency_text,
-                    days_taught,
+                    time_units_taught,
                     order_index,
                     easy_count,
                     medium_count,
                     hard_count,
+                    remembering_count: op.payload.get("remembering_count").map(|v| if v.is_null() { None } else { v.as_i64().map(|n| n as i32) }),
+                    understanding_count: op.payload.get("understanding_count").map(|v| if v.is_null() { None } else { v.as_i64().map(|n| n as i32) }),
+                    applying_count: op.payload.get("applying_count").map(|v| if v.is_null() { None } else { v.as_i64().map(|n| n as i32) }),
+                    analyzing_count: op.payload.get("analyzing_count").map(|v| if v.is_null() { None } else { v.as_i64().map(|n| n as i32) }),
+                    evaluating_count: op.payload.get("evaluating_count").map(|v| if v.is_null() { None } else { v.as_i64().map(|n| n as i32) }),
+                    creating_count: op.payload.get("creating_count").map(|v| if v.is_null() { None } else { v.as_i64().map(|n| n as i32) }),
                 };
 
                 match self

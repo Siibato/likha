@@ -33,7 +33,7 @@ pub struct DeltaPayload {
     pub grade_configs: EntityDeltas,
     pub grade_items: EntityDeltas,
     pub grade_scores: EntityDeltas,
-    pub quarterly_grades: EntityDeltas,
+    pub period_grades: EntityDeltas,
     pub table_of_specifications: EntityDeltas,
     pub tos_competencies: EntityDeltas,
 }

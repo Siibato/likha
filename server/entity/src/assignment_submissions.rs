@@ -11,7 +11,6 @@ pub struct Model {
     pub status: String,
     pub text_content: Option<String>,
     pub submitted_at: Option<chrono::NaiveDateTime>,
-    pub is_late: bool,
     pub points: Option<i32>,
     pub graded_by: Option<Uuid>,
     pub feedback: Option<String>,
@@ -24,9 +23,9 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::assignments_hw::Entity",
+        belongs_to = "super::assignments::Entity",
         from = "Column::AssignmentId",
-        to = "super::assignments_hw::Column::Id"
+        to = "super::assignments::Column::Id"
     )]
     Assignment,
     #[sea_orm(
@@ -45,7 +44,7 @@ pub enum Relation {
     Files,
 }
 
-impl Related<super::assignments_hw::Entity> for Entity {
+impl Related<super::assignments::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Assignment.def()
     }

@@ -15,7 +15,7 @@ class TosSummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final totalDays = competencies.fold<int>(0, (sum, c) => sum + c.daysTaught);
+    final totalDays = competencies.fold<int>(0, (sum, c) => sum + c.timeUnitsTaught);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

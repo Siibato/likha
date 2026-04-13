@@ -311,7 +311,7 @@ class InboundSyncHandler {
         await _upsertHelpers.upsertGradeConfigs(db, batchData['grade_configs'] ?? []);
         await _upsertHelpers.upsertGradeItems(db, batchData['grade_items'] ?? []);
         await _upsertHelpers.upsertGradeScores(db, batchData['grade_scores'] ?? []);
-        await _upsertHelpers.upsertQuarterlyGrades(db, batchData['quarterly_grades'] ?? []);
+        await _upsertHelpers.upsertQuarterlyGrades(db, batchData['period_grades'] ?? []);
 
         // TOS data
         await _upsertHelpers.upsertTableOfSpecifications(db, batchData['table_of_specifications'] ?? []);

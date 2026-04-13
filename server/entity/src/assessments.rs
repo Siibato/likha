@@ -20,10 +20,9 @@ pub struct Model {
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
     pub deleted_at: Option<chrono::NaiveDateTime>,
-    pub quarter: Option<i32>,
-    pub is_departmental_exam: Option<bool>,
+    pub grading_period_number: Option<i32>,
     pub component: Option<String>,
-    pub linked_tos_id: Option<String>,
+    pub tos_id: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

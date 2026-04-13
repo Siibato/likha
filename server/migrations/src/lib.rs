@@ -28,6 +28,7 @@ mod m20260322_000002_advisory_and_tos;
 mod m20260329_000001_create_school_settings;
 mod m20260408_000001_tos_enhancements;
 mod m20260408_000002_tos_blooms_percentages;
+mod m20260412_000001_erd_alignment;
 
 pub struct Migrator;
 
@@ -63,6 +64,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260329_000001_create_school_settings::Migration),
             Box::new(m20260408_000001_tos_enhancements::Migration),
             Box::new(m20260408_000002_tos_blooms_percentages::Migration),
+            Box::new(m20260412_000001_erd_alignment::Migration),
         ]
     }
 }

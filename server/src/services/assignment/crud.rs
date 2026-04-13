@@ -28,7 +28,6 @@ impl super::AssignmentService {
         let title = Validator::validate_title(&request.title)?;
         let instructions = Validator::validate_instructions(&request.instructions)?;
         Validator::validate_points(request.total_points)?;
-        Validator::validate_submission_type(&request.submission_type)?;
         if let Some(max_size) = request.max_file_size_mb {
             Validator::validate_max_file_size(max_size)?;
         }
@@ -45,16 +44,16 @@ impl super::AssignmentService {
                 title,
                 instructions,
                 request.total_points,
-                request.submission_type,
+                request.allows_text_submission,
+                request.allows_file_submission,
                 request.allowed_file_types,
                 request.max_file_size_mb,
                 due_at,
                 order_index,
                 client_id,
                 request.is_published.unwrap_or(false),
-                request.quarter,
+                request.grading_period_number,
                 request.component.clone(),
-                request.no_submission_required,
             )
             .await?;
 
@@ -73,7 +72,8 @@ impl super::AssignmentService {
             title: assignment.title,
             instructions: assignment.instructions,
             total_points: assignment.total_points,
-            submission_type: assignment.submission_type,
+            allows_text_submission: assignment.allows_text_submission,
+            allows_file_submission: assignment.allows_file_submission,
             allowed_file_types: assignment.allowed_file_types,
             max_file_size_mb: assignment.max_file_size_mb,
             due_at: assignment.due_at.to_string(),
@@ -81,9 +81,8 @@ impl super::AssignmentService {
             order_index: assignment.order_index,
             submission_count: 0,
             graded_count: 0,
-            quarter: assignment.quarter,
+            grading_period_number: assignment.grading_period_number,
             component: assignment.component.clone(),
-            no_submission_required: assignment.no_submission_required,
             submission_status: None,
             submission_id: None,
             score: None,
@@ -144,22 +143,22 @@ impl super::AssignmentService {
                 title: a.title,
                 instructions: a.instructions,
                 total_points: a.total_points,
-                submission_type: a.submission_type,
-                allowed_file_types: a.allowed_file_types,
-                max_file_size_mb: a.max_file_size_mb,
-                due_at: a.due_at.to_string(),
-                is_published: a.is_published,
-                order_index: a.order_index,
-                submission_count,
-                graded_count,
-                quarter: a.quarter,
-                component: a.component.clone(),
-                no_submission_required: a.no_submission_required,
-                submission_status,
-                submission_id,
-                score,
-                created_at: a.created_at.to_string(),
-                updated_at: a.updated_at.to_string(),
+                allows_text_submission: a.allows_text_submission,
+                allows_file_submission: a.allows_file_submission,
+            allowed_file_types: a.allowed_file_types,
+            max_file_size_mb: a.max_file_size_mb,
+            due_at: a.due_at.to_string(),
+            is_published: a.is_published,
+            order_index: a.order_index,
+            submission_count,
+            graded_count,
+            grading_period_number: a.grading_period_number,
+            component: a.component.clone(),
+            submission_status,
+            submission_id,
+            score,
+            created_at: a.created_at.to_string(),
+            updated_at: a.updated_at.to_string(),
             });
         }
 
@@ -189,7 +188,8 @@ impl super::AssignmentService {
                 id: a.id,
                 title: a.title,
                 total_points: a.total_points,
-                submission_type: a.submission_type,
+                allows_text_submission: a.allows_text_submission,
+                allows_file_submission: a.allows_file_submission,
                 due_at: a.due_at.to_string(),
                 is_published: a.is_published,
                 submission_status: submission.as_ref().map(|s| s.status.clone()),
@@ -242,7 +242,8 @@ impl super::AssignmentService {
             title: assignment.title,
             instructions: assignment.instructions,
             total_points: assignment.total_points,
-            submission_type: assignment.submission_type,
+            allows_text_submission: assignment.allows_text_submission,
+            allows_file_submission: assignment.allows_file_submission,
             allowed_file_types: assignment.allowed_file_types,
             max_file_size_mb: assignment.max_file_size_mb,
             due_at: assignment.due_at.to_string(),
@@ -250,9 +251,8 @@ impl super::AssignmentService {
             order_index: assignment.order_index,
             submission_count,
             graded_count,
-            quarter: assignment.quarter,
+            grading_period_number: assignment.grading_period_number,
             component: assignment.component.clone(),
-            no_submission_required: assignment.no_submission_required,
             submission_status: None,
             submission_id: None,
             score: None,
@@ -292,8 +292,6 @@ impl super::AssignmentService {
         let title = Validator::validate_optional_title(request.title)?;
         let instructions = Validator::validate_optional_instructions(request.instructions)?;
         Validator::validate_optional_points(request.total_points)?;
-        Validator::validate_optional_submission_type(request.submission_type.clone())?;
-
         Validator::validate_optional_max_file_size(request.max_file_size_mb)?;
 
         let due_at = match &request.due_at {
@@ -319,13 +317,13 @@ impl super::AssignmentService {
                 title,
                 instructions,
                 request.total_points,
-                request.submission_type,
+                request.allows_text_submission,
+                request.allows_file_submission,
                 allowed_file_types,
                 max_file_size_mb,
                 due_at,
-                request.quarter.map(|q| Some(q)),
+                request.grading_period_number.map(|q| Some(q)),
                 request.component.clone().map(|c| Some(c)),
-                request.no_submission_required.map(|n| Some(n)),
             )
             .await?;
 
@@ -344,7 +342,8 @@ impl super::AssignmentService {
             title: updated.title,
             instructions: updated.instructions,
             total_points: updated.total_points,
-            submission_type: updated.submission_type,
+            allows_text_submission: updated.allows_text_submission,
+            allows_file_submission: updated.allows_file_submission,
             allowed_file_types: updated.allowed_file_types,
             max_file_size_mb: updated.max_file_size_mb,
             due_at: updated.due_at.to_string(),
@@ -352,9 +351,8 @@ impl super::AssignmentService {
             order_index: updated.order_index,
             submission_count,
             graded_count,
-            quarter: updated.quarter,
+            grading_period_number: updated.grading_period_number,
             component: updated.component.clone(),
-            no_submission_required: updated.no_submission_required,
             submission_status: None,
             submission_id: None,
             score: None,
@@ -433,12 +431,11 @@ impl super::AssignmentService {
             .await?;
 
         // Auto-create linked grade item if grading metadata present
-        if let (Some(quarter), Some(ref component)) = (published.quarter, &published.component) {
+        if let (Some(grading_period_number), Some(ref component)) = (published.grading_period_number, &published.component) {
             let _ = auto_populate::create_linked_grade_item(
                 &self.db, "assignment", published.id, published.class_id,
-                &published.title, component, quarter,
+                &published.title, component, grading_period_number,
                 published.total_points as f64,
-                false,
             ).await;
         }
 
@@ -457,7 +454,8 @@ impl super::AssignmentService {
             title: published.title,
             instructions: published.instructions,
             total_points: published.total_points,
-            submission_type: published.submission_type,
+            allows_text_submission: published.allows_text_submission,
+            allows_file_submission: published.allows_file_submission,
             allowed_file_types: published.allowed_file_types,
             max_file_size_mb: published.max_file_size_mb,
             due_at: published.due_at.to_string(),
@@ -465,9 +463,8 @@ impl super::AssignmentService {
             order_index: published.order_index,
             submission_count: 0,
             graded_count: 0,
-            quarter: published.quarter,
+            grading_period_number: published.grading_period_number,
             component: published.component.clone(),
-            no_submission_required: published.no_submission_required,
             submission_status: None,
             submission_id: None,
             score: None,
@@ -521,7 +518,8 @@ impl super::AssignmentService {
             title: unpublished.title,
             instructions: unpublished.instructions,
             total_points: unpublished.total_points,
-            submission_type: unpublished.submission_type,
+            allows_text_submission: unpublished.allows_text_submission,
+            allows_file_submission: unpublished.allows_file_submission,
             allowed_file_types: unpublished.allowed_file_types,
             max_file_size_mb: unpublished.max_file_size_mb,
             due_at: unpublished.due_at.to_string(),
@@ -529,9 +527,8 @@ impl super::AssignmentService {
             order_index: unpublished.order_index,
             submission_count: 0,
             graded_count: 0,
-            quarter: unpublished.quarter,
+            grading_period_number: unpublished.grading_period_number,
             component: unpublished.component.clone(),
-            no_submission_required: unpublished.no_submission_required,
             submission_status: None,
             submission_id: None,
             score: None,

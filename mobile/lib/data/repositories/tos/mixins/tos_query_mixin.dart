@@ -102,31 +102,28 @@ mixin TosQueryMixin on TosRepositoryBase {
   ResultFuture<List<MelcEntryModel>> searchMelcs({
     String? subject,
     String? gradeLevel,
-    int? quarter,
+    int? gradingPeriodNumber,
     String? query,
   }) async {
     try {
-      // Local-first
-      final local = await localDataSource.searchMelcs(
-        subject: subject,
-        gradeLevel: gradeLevel,
-        quarter: quarter,
-        query: query,
-      );
-
-      if (local.isNotEmpty) return Right(local);
-
-      // Remote fallback if local is empty and online
+      // Try remote first
       if (serverReachabilityService.isServerReachable) {
         final remote = await remoteDataSource.searchMelcs(
           subject: subject,
           gradeLevel: gradeLevel,
-          quarter: quarter,
+          quarter: gradingPeriodNumber,
           query: query,
         );
         return Right(remote);
       }
 
+      // Fallback to local
+      final local = await localDataSource.searchMelcs(
+        subject: subject,
+        gradeLevel: gradeLevel,
+        gradingPeriodNumber: gradingPeriodNumber,
+        query: query,
+      );
       return Right(local);
     } on ServerFailure catch (e) {
       return Left(e);

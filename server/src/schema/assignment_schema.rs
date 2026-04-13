@@ -8,15 +8,17 @@ pub struct CreateAssignmentRequest {
     pub title: String,
     pub instructions: String,
     pub total_points: i32,
-    pub submission_type: String,
+    #[serde(default)]
+    pub allows_text_submission: bool,
+    #[serde(default)]
+    pub allows_file_submission: bool,
     pub allowed_file_types: Option<String>,
     pub max_file_size_mb: Option<i32>,
     pub due_at: String,
     #[serde(default)]
     pub is_published: Option<bool>,
-    pub quarter: Option<i32>,
+    pub grading_period_number: Option<i32>,
     pub component: Option<String>,
-    pub no_submission_required: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -24,13 +26,13 @@ pub struct UpdateAssignmentRequest {
     pub title: Option<String>,
     pub instructions: Option<String>,
     pub total_points: Option<i32>,
-    pub submission_type: Option<String>,
+    pub allows_text_submission: Option<bool>,
+    pub allows_file_submission: Option<bool>,
     pub allowed_file_types: Option<String>,
     pub max_file_size_mb: Option<i32>,
     pub due_at: Option<String>,
-    pub quarter: Option<i32>,
+    pub grading_period_number: Option<i32>,
     pub component: Option<String>,
-    pub no_submission_required: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -58,7 +60,8 @@ pub struct AssignmentResponse {
     pub title: String,
     pub instructions: String,
     pub total_points: i32,
-    pub submission_type: String,
+    pub allows_text_submission: bool,
+    pub allows_file_submission: bool,
     pub allowed_file_types: Option<String>,
     pub max_file_size_mb: Option<i32>,
     pub due_at: String,
@@ -66,9 +69,8 @@ pub struct AssignmentResponse {
     pub order_index: i32,
     pub submission_count: usize,
     pub graded_count: usize,
-    pub quarter: Option<i32>,
+    pub grading_period_number: Option<i32>,
     pub component: Option<String>,
-    pub no_submission_required: Option<bool>,
     pub submission_status: Option<String>,
     pub submission_id: Option<Uuid>,
     pub score: Option<i32>,
@@ -86,7 +88,8 @@ pub struct StudentAssignmentListItem {
     pub id: Uuid,
     pub title: String,
     pub total_points: i32,
-    pub submission_type: String,
+    pub allows_text_submission: bool,
+    pub allows_file_submission: bool,
     pub due_at: String,
     pub is_published: bool,
     pub submission_status: Option<String>,
@@ -108,7 +111,6 @@ pub struct AssignmentSubmissionResponse {
     pub status: String,
     pub text_content: Option<String>,
     pub submitted_at: Option<String>,
-    pub is_late: bool,
     pub score: Option<i32>,
     pub feedback: Option<String>,
     pub graded_at: Option<String>,
@@ -130,7 +132,6 @@ pub struct SubmissionListItem {
     pub student_username: String,
     pub status: String,
     pub submitted_at: Option<String>,
-    pub is_late: bool,
     pub score: Option<i32>,
 }
 
@@ -148,12 +149,11 @@ pub struct FileMetadataResponse {
 #[derive(Debug, Serialize)]
 pub struct StudentAssignmentSubmissionItem {
     pub assignment_id: Uuid,
-    pub id: Uuid,                       // submission id
+    pub id: Uuid,
     pub student_id: Uuid,
     pub student_name: String,
-    pub status: String,                 // "draft" | "submitted" | "graded" | "returned"
+    pub status: String,
     pub submitted_at: Option<String>,
-    pub is_late: bool,
     pub score: Option<i32>,
 }
 

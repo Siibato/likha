@@ -195,7 +195,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
   void _commitQg() {
     final grade = int.tryParse(_qgCtrl.text.trim());
     if (grade != null && _editingQgStudentId != null) {
-      ref.read(quarterlyGradesProvider.notifier).updateQuarterlyGrade(
+      ref.read(quarterlyGradesProvider.notifier).updatePeriodGrade(
             classId: widget.classId,
             studentId: _editingQgStudentId!,
             quarter: _selectedQuarter,
@@ -373,7 +373,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
 
   GradeConfig? _configForQuarter(List<dynamic> configs) {
     for (final c in configs) {
-      if ((c as GradeConfig).quarter == _selectedQuarter) return c;
+      if ((c as GradeConfig).gradingPeriodNumber == _selectedQuarter) return c;
     }
     return configs.isNotEmpty ? configs.first as GradeConfig : null;
   }

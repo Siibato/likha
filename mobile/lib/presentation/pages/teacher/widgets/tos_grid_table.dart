@@ -145,7 +145,7 @@ class _TosGridTableState extends State<TosGridTable> {
   @override
   Widget build(BuildContext context) {
     final totalDays = widget.competencies
-        .fold<int>(0, (sum, c) => sum + c.daysTaught);
+        .fold<int>(0, (sum, c) => sum + c.timeUnitsTaught);
 
     const double fixedColWidth = 56 + 72 + 56; // Days + % + Total
     const double cogColWidth = 48;
@@ -197,7 +197,7 @@ class _TosGridTableState extends State<TosGridTable> {
                     for (int idx = 0; idx < widget.competencies.length; idx++) {
                       final c = widget.competencies[idx];
                       final weight = totalDays > 0
-                          ? c.daysTaught / totalDays * 100
+                          ? (c.timeUnitsTaught) / totalDays * 100
                           : 0.0;
                       final targetItems = totalDays > 0
                           ? (weight * widget.tos.totalItems / 100).round()
@@ -320,14 +320,14 @@ class _TosGridTableState extends State<TosGridTable> {
         cursor: SystemMouseCursors.text,
         child: GestureDetector(
           onTap: () =>
-              _startEdit(c.id, 'days', '${c.daysTaught}'),
-          child: _textCell('${c.daysTaught}', width,
+              _startEdit(c.id, 'days', '${c.timeUnitsTaught}'),
+          child: _textCell('${c.timeUnitsTaught}', width,
               align: TextAlign.center),
         ),
       );
     }
 
-    return _staticCell('${c.daysTaught}', width, align: TextAlign.center);
+    return _staticCell('${c.timeUnitsTaught}', width, align: TextAlign.center);
   }
 
   List<Widget> _buildCognitiveCells(TosCompetency c, int targetItems) {

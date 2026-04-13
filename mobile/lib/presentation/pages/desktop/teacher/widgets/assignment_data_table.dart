@@ -58,16 +58,15 @@ class _AssignmentDataTableState extends State<AssignmentDataTable> {
         '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 
-  String _formatSubmissionType(String type) {
-    switch (type) {
-      case 'text_or_file':
-        return 'Text / File';
-      case 'text':
-        return 'Text Only';
-      case 'file':
-        return 'File Only';
-      default:
-        return type;
+  String _formatSubmissionType(bool allowsText, bool allowsFile) {
+    if (allowsText && allowsFile) {
+      return 'Text / File';
+    } else if (allowsText) {
+      return 'Text Only';
+    } else if (allowsFile) {
+      return 'File Only';
+    } else {
+      return 'Unknown';
     }
   }
 
@@ -169,7 +168,7 @@ class _AssignmentDataTableState extends State<AssignmentDataTable> {
                       ),
                     )),
                     DataCell(Text(
-                      _formatSubmissionType(assignment.submissionType),
+                      _formatSubmissionType(assignment.allowsTextSubmission, assignment.allowsFileSubmission),
                       style: const TextStyle(
                         fontSize: 13,
                         color: AppColors.foregroundSecondary,

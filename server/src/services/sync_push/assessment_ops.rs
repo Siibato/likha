@@ -30,10 +30,9 @@ impl super::SyncPushService {
                     show_results_immediately: None,
                     is_published: op.payload.get("is_published").and_then(|v| v.as_bool()),
                     questions: None,
-                    quarter: op.payload.get("quarter").and_then(|v| v.as_i64()).map(|v| v as i32),
+                    grading_period_number: op.payload.get("grading_period_number").and_then(|v| v.as_i64()).map(|v| v as i32),
                     component: op.payload.get("component").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                    is_departmental_exam: op.payload.get("is_departmental_exam").and_then(|v| v.as_bool()),
-                    linked_tos_id: op.payload.get("linked_tos_id").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                    tos_id: op.payload.get("tos_id").and_then(|v| v.as_str()).map(|s| s.to_string()),
                 };
 
                 match self.assessment_service.create_assessment(class_id, request, user_id, client_id).await {
@@ -50,10 +49,9 @@ impl super::SyncPushService {
                     open_at: op.payload.get("open_at").and_then(|v| v.as_str()).map(|s| s.to_string()),
                     close_at: op.payload.get("close_at").and_then(|v| v.as_str()).map(|s| s.to_string()),
                     show_results_immediately: None,
-                    quarter: op.payload.get("quarter").and_then(|v| v.as_i64()).map(|v| v as i32),
+                    grading_period_number: op.payload.get("grading_period_number").and_then(|v| v.as_i64()).map(|v| v as i32),
                     component: op.payload.get("component").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                    is_departmental_exam: op.payload.get("is_departmental_exam").and_then(|v| v.as_bool()),
-                    linked_tos_id: op.payload.get("linked_tos_id").map(|v| v.as_str().map(|s| s.to_string())),
+                    tos_id: op.payload.get("tos_id").map(|v| v.as_str().map(|s| s.to_string())),
                 };
                 match self.assessment_service.update_assessment(assessment_id, request, user_id).await {
                     Ok(r) => self.success_result(op, None, Some(r.updated_at)),

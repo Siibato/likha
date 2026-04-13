@@ -187,7 +187,7 @@ class _GradeSubmissionDesktopState
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               _buildStatusBadges(
-                                  submission.status, submission.isLate),
+                                  submission.status),
                               const SizedBox(height: 24),
                               if (submission.textContent != null &&
                                   submission.textContent!.isNotEmpty) ...[
@@ -234,7 +234,7 @@ class _GradeSubmissionDesktopState
     );
   }
 
-  Widget _buildStatusBadges(String status, bool isLate) {
+  Widget _buildStatusBadges(String status) {
     Color statusColor;
     switch (status) {
       case 'submitted':
@@ -267,24 +267,6 @@ class _GradeSubmissionDesktopState
             ),
           ),
         ),
-        if (isLate) ...[
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.semanticError.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Text(
-              'Late',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.semanticError,
-              ),
-            ),
-          ),
-        ],
       ],
     );
   }

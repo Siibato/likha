@@ -33,7 +33,7 @@ pub struct FullSyncResponse {
     pub grade_configs: Vec<serde_json::Value>,
     pub grade_items: Vec<serde_json::Value>,
     pub grade_scores: Vec<serde_json::Value>,
-    pub quarterly_grades: Vec<serde_json::Value>,
+    pub period_grades: Vec<serde_json::Value>,
     pub table_of_specifications: Vec<serde_json::Value>,
     pub tos_competencies: Vec<serde_json::Value>,
 }

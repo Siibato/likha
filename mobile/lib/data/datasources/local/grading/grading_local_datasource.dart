@@ -1,7 +1,7 @@
 import 'package:likha/data/models/grading/grade_config_model.dart';
 import 'package:likha/data/models/grading/grade_item_model.dart';
 import 'package:likha/data/models/grading/grade_score_model.dart';
-import 'package:likha/data/models/grading/quarterly_grade_model.dart';
+import 'package:likha/data/models/grading/period_grade_model.dart';
 
 abstract class GradingLocalDataSource {
   // Config
@@ -23,27 +23,27 @@ abstract class GradingLocalDataSource {
   Future<void> softDeleteItem(String id);
   Future<GradeItemModel?> getItemBySourceId(String sourceId);
 
-  // Scores
+  // Grade Scores
   Future<List<GradeScoreModel>> getScoresByItem(String gradeItemId);
   Future<void> saveScores(List<GradeScoreModel> scores);
   Future<void> upsertScoresByItem(
       String gradeItemId, List<GradeScoreModel> scores);
   Future<void> updateScoreOverride(String scoreId, double? overrideScore);
 
-  // Quarterly Grades
-  Future<List<QuarterlyGradeModel>> getQuarterlyGradesByClass(
+  // Period Grades
+  Future<List<PeriodGradeModel>> getPeriodGradesByClass(
     String classId,
-    int quarter,
+    int gradingPeriodNumber,
   );
-  Future<List<QuarterlyGradeModel>> getStudentAllQuarters(
+  Future<List<PeriodGradeModel>> getStudentAllPeriods(
     String classId,
     String studentId,
   );
-  Future<void> saveQuarterlyGrades(List<QuarterlyGradeModel> grades);
+  Future<void> savePeriodGrades(List<PeriodGradeModel> grades);
   Future<void> updateTransmutedGrade(
     String classId,
     String studentId,
-    int quarter,
+    int gradingPeriodNumber,
     int transmutedGrade,
   );
 }

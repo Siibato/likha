@@ -6,7 +6,7 @@ import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/models/grading/grade_config_model.dart';
 import 'package:likha/data/models/grading/grade_item_model.dart';
 import 'package:likha/data/models/grading/grade_score_model.dart';
-import 'package:likha/data/models/grading/quarterly_grade_model.dart';
+import 'package:likha/data/models/grading/period_grade_model.dart';
 import 'package:likha/data/models/grading/general_average_model.dart';
 import 'package:likha/data/models/grading/sf9_model.dart';
 
@@ -25,7 +25,7 @@ abstract class GradingRemoteDataSource {
   // Grade Items
   Future<List<GradeItemModel>> getGradeItems({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
     String? component,
   });
   Future<GradeItemModel> createGradeItem({
@@ -51,25 +51,25 @@ abstract class GradingRemoteDataSource {
   Future<void> clearScoreOverride({required String scoreId});
 
   // Computed Grades
-  Future<List<QuarterlyGradeModel>> getQuarterlyGrades({
+  Future<List<PeriodGradeModel>> getPeriodGrades({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
   });
   Future<void> computeGrades({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
   });
   Future<List<Map<String, dynamic>>> getGradeSummary({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
   });
   Future<List<Map<String, dynamic>>> getFinalGrades({required String classId});
 
   // Student
-  Future<List<QuarterlyGradeModel>> getMyGrades({required String classId});
+  Future<List<PeriodGradeModel>> getMyGrades({required String classId});
   Future<Map<String, dynamic>> getMyGradeDetail({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
   });
 
   // Presets
@@ -157,11 +157,11 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
   @override
   Future<List<GradeItemModel>> getGradeItems({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
     String? component,
   }) async {
     try {
-      final queryParams = <String, dynamic>{'quarter': quarter};
+      final queryParams = <String, dynamic>{'grading_period_number': gradingPeriodNumber};
       if (component != null) queryParams['component'] = component;
 
       final response = await _dioClient.dio.get(
@@ -285,20 +285,20 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
   // ===== Computed Grades =====
 
   @override
-  Future<List<QuarterlyGradeModel>> getQuarterlyGrades({
+  Future<List<PeriodGradeModel>> getPeriodGrades({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
   }) async {
     try {
       final response = await _dioClient.dio.get(
         ApiEndpoints.classGrades(classId).path,
-        queryParameters: {'quarter': quarter},
+        queryParameters: {'grading_period_number': gradingPeriodNumber},
       );
       final data = response.data['data'] ?? response.data;
       final grades = data['grades'] as List<dynamic>? ?? [];
       return grades
           .map(
-              (e) => QuarterlyGradeModel.fromJson(e as Map<String, dynamic>))
+              (e) => PeriodGradeModel.fromJson(e as Map<String, dynamic>))
           .toList();
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
@@ -308,12 +308,12 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
   @override
   Future<void> computeGrades({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
   }) async {
     try {
       await _dioClient.dio.post(
         ApiEndpoints.classGradesCompute(classId).path,
-        queryParameters: {'quarter': quarter},
+        queryParameters: {'grading_period_number': gradingPeriodNumber},
       );
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
@@ -323,12 +323,12 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
   @override
   Future<List<Map<String, dynamic>>> getGradeSummary({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
   }) async {
     try {
       final response = await _dioClient.dio.get(
         ApiEndpoints.classGradesSummary(classId).path,
-        queryParameters: {'quarter': quarter},
+        queryParameters: {'grading_period_number': gradingPeriodNumber},
       );
       final data = response.data['data'] ?? response.data;
       final summary = data['summary'] as List<dynamic>? ?? [];
@@ -357,7 +357,7 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
   // ===== Student =====
 
   @override
-  Future<List<QuarterlyGradeModel>> getMyGrades({
+  Future<List<PeriodGradeModel>> getMyGrades({
     required String classId,
   }) async {
     try {
@@ -368,7 +368,7 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
       final grades = data['grades'] as List<dynamic>? ?? [];
       return grades
           .map(
-              (e) => QuarterlyGradeModel.fromJson(e as Map<String, dynamic>))
+              (e) => PeriodGradeModel.fromJson(e as Map<String, dynamic>))
           .toList();
     } on DioException catch (e) {
       throw _dioClient.handleError(e);
@@ -378,11 +378,11 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
   @override
   Future<Map<String, dynamic>> getMyGradeDetail({
     required String classId,
-    required int quarter,
+    required int gradingPeriodNumber,
   }) async {
     try {
       final response = await _dioClient.dio.get(
-        ApiEndpoints.myGradeDetail(classId, quarter).path,
+        ApiEndpoints.myGradeDetail(classId, gradingPeriodNumber).path,
       );
       return (response.data['data'] ?? response.data) as Map<String, dynamic>;
     } on DioException catch (e) {

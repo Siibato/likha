@@ -10,6 +10,7 @@ class ClassEntity extends Equatable {
   final bool isArchived;
   final bool isAdvisory;
   final int studentCount;
+  final String? gradingPeriodType;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? cachedAt;
@@ -25,6 +26,7 @@ class ClassEntity extends Equatable {
     required this.isArchived,
     this.isAdvisory = false,
     required this.studentCount,
+    this.gradingPeriodType,
     required this.createdAt,
     required this.updatedAt,
     this.cachedAt,
@@ -42,6 +44,7 @@ class ClassEntity extends Equatable {
     isArchived,
     isAdvisory,
     studentCount,
+    gradingPeriodType,
     createdAt,
     updatedAt,
     cachedAt,
