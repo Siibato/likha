@@ -1,7 +1,9 @@
 import 'package:likha/core/errors/exceptions.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/auth/activity_log_model.dart';
 import 'package:likha/data/models/auth/user_model.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:uuid/uuid.dart';
 import '../auth_local_datasource_base.dart';
 
 mixin AuthCacheMixin on AuthLocalDataSourceBase {
@@ -39,10 +41,23 @@ mixin AuthCacheMixin on AuthLocalDataSourceBase {
   Future<void> cacheCreatedAccount(UserModel account) async {
     try {
       final db = await localDatabase.database;
+      final now = DateTime.now();
       final map = account.toMap();
-      map['cached_at'] = DateTime.now().toIso8601String();
+      map['cached_at'] = now.toIso8601String();
       map['needs_sync'] = 1;
-      await db.insert('users', map, conflictAlgorithm: ConflictAlgorithm.replace);
+      await db.transaction((txn) async {
+        await txn.insert('users', map, conflictAlgorithm: ConflictAlgorithm.replace);
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.user,
+          operation: SyncOperation.create,
+          payload: map,
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 3,
+          createdAt: now,
+        ), txn: txn);
+      });
     } catch (e) {
       throw CacheException('Failed to cache created account: $e');
     }

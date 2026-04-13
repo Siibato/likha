@@ -1,4 +1,5 @@
 import 'package:sqflite/sqflite.dart';
+import 'package:uuid/uuid.dart';
 
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
@@ -107,9 +108,10 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
   @override
   Future<void> updateItemFields(String id, Map<String, dynamic> data) async {
     final db = await localDatabase.database;
+    final now = DateTime.now();
     final updates = <String, dynamic>{
-      CommonCols.updatedAt: DateTime.now().toIso8601String(),
-      CommonCols.cachedAt: DateTime.now().toIso8601String(),
+      CommonCols.updatedAt: now.toIso8601String(),
+      CommonCols.cachedAt: now.toIso8601String(),
       CommonCols.needsSync: 1,
     };
     if (data.containsKey('title')) {
@@ -124,12 +126,24 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
     if (data.containsKey('order_index')) {
       updates[GradeItemsCols.orderIndex] = data['order_index'];
     }
-    await db.update(
-      DbTables.gradeItems,
-      updates,
-      where: '${CommonCols.id} = ?',
-      whereArgs: [id],
-    );
+    await db.transaction((txn) async {
+      await txn.update(
+        DbTables.gradeItems,
+        updates,
+        where: '${CommonCols.id} = ?',
+        whereArgs: [id],
+      );
+      await syncQueue.enqueue(SyncQueueEntry(
+        id: const Uuid().v4(),
+        entityType: SyncEntityType.gradeItem,
+        operation: SyncOperation.update,
+        payload: {'id': id, ...data},
+        status: SyncStatus.pending,
+        retryCount: 0,
+        maxRetries: 3,
+        createdAt: now,
+      ), txn: txn);
+    });
   }
 
   @override
@@ -148,15 +162,29 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
   @override
   Future<void> softDeleteItem(String id) async {
     final db = await localDatabase.database;
-    await db.update(
-      DbTables.gradeItems,
-      {
-        CommonCols.deletedAt: DateTime.now().toIso8601String(),
-        CommonCols.needsSync: 1,
-      },
-      where: '${CommonCols.id} = ?',
-      whereArgs: [id],
-    );
+    final now = DateTime.now();
+    await db.transaction((txn) async {
+      await txn.update(
+        DbTables.gradeItems,
+        {
+          CommonCols.deletedAt: now.toIso8601String(),
+          CommonCols.needsSync: 1,
+          CommonCols.cachedAt: now.toIso8601String(),
+        },
+        where: '${CommonCols.id} = ?',
+        whereArgs: [id],
+      );
+      await syncQueue.enqueue(SyncQueueEntry(
+        id: const Uuid().v4(),
+        entityType: SyncEntityType.gradeItem,
+        operation: SyncOperation.delete,
+        payload: {'id': id},
+        status: SyncStatus.pending,
+        retryCount: 0,
+        maxRetries: 3,
+        createdAt: now,
+      ), txn: txn);
+    });
   }
 
   // ===== Scores =====
@@ -192,56 +220,87 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
     List<GradeScoreModel> scores,
   ) async {
     final db = await localDatabase.database;
-    for (final score in scores) {
-      // Check for existing score by grade_item_id + student_id
-      final existing = await db.query(
-        DbTables.gradeScores,
-        where:
-            '${GradeScoresCols.gradeItemId} = ? AND ${GradeScoresCols.studentId} = ?',
-        whereArgs: [gradeItemId, score.studentId],
-      );
+    final now = DateTime.now();
+    await db.transaction((txn) async {
+      for (final score in scores) {
+        // Check for existing score by grade_item_id + student_id
+        final existing = await txn.query(
+          DbTables.gradeScores,
+          where:
+              '${GradeScoresCols.gradeItemId} = ? AND ${GradeScoresCols.studentId} = ?',
+          whereArgs: [gradeItemId, score.studentId],
+        );
 
-      if (existing.isNotEmpty) {
-        // Update existing score
-        await db.update(
-          DbTables.gradeScores,
-          {
-            GradeScoresCols.score: score.score,
-            CommonCols.updatedAt: score.updatedAt,
-            CommonCols.cachedAt: DateTime.now().toIso8601String(),
-            CommonCols.needsSync: 1,
-          },
-          where: '${CommonCols.id} = ?',
-          whereArgs: [existing.first[CommonCols.id]],
-        );
-      } else {
-        // Insert new score with needsSync = 1
-        final map = score.toMap();
-        map[CommonCols.needsSync] = 1;
-        await db.insert(
-          DbTables.gradeScores,
-          map,
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
+        if (existing.isNotEmpty) {
+          // Update existing score
+          await txn.update(
+            DbTables.gradeScores,
+            {
+              GradeScoresCols.score: score.score,
+              CommonCols.updatedAt: score.updatedAt,
+              CommonCols.cachedAt: now.toIso8601String(),
+              CommonCols.needsSync: 1,
+            },
+            where: '${CommonCols.id} = ?',
+            whereArgs: [existing.first[CommonCols.id]],
+          );
+        } else {
+          // Insert new score with needsSync = 1
+          final map = score.toMap();
+          map[CommonCols.needsSync] = 1;
+          map[CommonCols.cachedAt] = now.toIso8601String();
+          await txn.insert(
+            DbTables.gradeScores,
+            map,
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
       }
-    }
+      // Enqueue a single bulk operation with all scores
+      await syncQueue.enqueue(SyncQueueEntry(
+        id: const Uuid().v4(),
+        entityType: SyncEntityType.gradeScore,
+        operation: SyncOperation.saveScores,
+        payload: {
+          'grade_item_id': gradeItemId,
+          'scores': scores.map((s) => s.toMap()).toList(),
+        },
+        status: SyncStatus.pending,
+        retryCount: 0,
+        maxRetries: 3,
+        createdAt: now,
+      ), txn: txn);
+    });
   }
 
   @override
   Future<void> updateScoreOverride(
       String scoreId, double? overrideScore) async {
     final db = await localDatabase.database;
-    await db.update(
-      DbTables.gradeScores,
-      {
-        GradeScoresCols.overrideScore: overrideScore,
-        CommonCols.updatedAt: DateTime.now().toIso8601String(),
-        CommonCols.cachedAt: DateTime.now().toIso8601String(),
-        CommonCols.needsSync: 1,
-      },
-      where: '${CommonCols.id} = ?',
-      whereArgs: [scoreId],
-    );
+    final now = DateTime.now();
+    await db.transaction((txn) async {
+      await txn.update(
+        DbTables.gradeScores,
+        {
+          GradeScoresCols.overrideScore: overrideScore,
+          CommonCols.updatedAt: now.toIso8601String(),
+          CommonCols.cachedAt: now.toIso8601String(),
+          CommonCols.needsSync: 1,
+        },
+        where: '${CommonCols.id} = ?',
+        whereArgs: [scoreId],
+      );
+      await syncQueue.enqueue(SyncQueueEntry(
+        id: const Uuid().v4(),
+        entityType: SyncEntityType.gradeScore,
+        operation: SyncOperation.setOverride,
+        payload: {'id': scoreId, 'override_score': overrideScore},
+        status: SyncStatus.pending,
+        retryCount: 0,
+        maxRetries: 3,
+        createdAt: now,
+      ), txn: txn);
+    });
   }
 
   // ===== Period Grades =====
@@ -299,17 +358,36 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
     int transmutedGrade,
   ) async {
     final db = await localDatabase.database;
-    await db.update(
-      DbTables.periodGrades,
-      {
-        PeriodGradesCols.transmutedGrade: transmutedGrade,
-        CommonCols.updatedAt: DateTime.now().toIso8601String(),
-        CommonCols.needsSync: 1,
-      },
-      where: '${PeriodGradesCols.classId} = ? AND '
-          '${PeriodGradesCols.studentId} = ? AND '
-          '${PeriodGradesCols.gradingPeriodNumber} = ?',
-      whereArgs: [classId, studentId, gradingPeriodNumber],
-    );
+    final now = DateTime.now();
+    await db.transaction((txn) async {
+      await txn.update(
+        DbTables.periodGrades,
+        {
+          PeriodGradesCols.transmutedGrade: transmutedGrade,
+          CommonCols.updatedAt: now.toIso8601String(),
+          CommonCols.needsSync: 1,
+          CommonCols.cachedAt: now.toIso8601String(),
+        },
+        where: '${PeriodGradesCols.classId} = ? AND '
+            '${PeriodGradesCols.studentId} = ? AND '
+            '${PeriodGradesCols.gradingPeriodNumber} = ?',
+        whereArgs: [classId, studentId, gradingPeriodNumber],
+      );
+      await syncQueue.enqueue(SyncQueueEntry(
+        id: const Uuid().v4(),
+        entityType: SyncEntityType.gradeScore,
+        operation: SyncOperation.update,
+        payload: {
+          'class_id': classId,
+          'student_id': studentId,
+          'grading_period_number': gradingPeriodNumber,
+          'transmuted_grade': transmutedGrade,
+        },
+        status: SyncStatus.pending,
+        retryCount: 0,
+        maxRetries: 3,
+        createdAt: now,
+      ), txn: txn);
+    });
   }
 }
