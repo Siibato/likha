@@ -131,7 +131,7 @@ class _StudentClassGradeDetailPageState
         transmutedGrade: (qgMap['transmuted_grade'] as num?)?.toInt(),
         isLocked: qgMap['is_locked'] == true ||
             qgMap['is_locked'] == 1,
-        computedAt: qgMap['computed_at']?.toString(),
+        computedAt: qgMap['computed_at'] != null ? DateTime.parse(qgMap['computed_at'] as String) : null,
         isPreview: false,
       );
     }

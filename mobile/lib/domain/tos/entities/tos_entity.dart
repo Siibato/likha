@@ -17,8 +17,8 @@ class TableOfSpecifications extends Equatable {
   final double analyzingPercentage;
   final double evaluatingPercentage;
   final double creatingPercentage;
-  final String createdAt;
-  final String updatedAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   const TableOfSpecifications({
     required this.id,
@@ -42,7 +42,7 @@ class TableOfSpecifications extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, classId, gradingPeriodNumber];
+  List<Object?> get props => [id, classId, gradingPeriodNumber, createdAt, updatedAt];
 }
 
 class TosCompetency extends Equatable {
@@ -61,8 +61,8 @@ class TosCompetency extends Equatable {
   final int? analyzingCount;
   final int? evaluatingCount;
   final int? creatingCount;
-  final String createdAt;
-  final String updatedAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   const TosCompetency({
     required this.id,
@@ -85,5 +85,5 @@ class TosCompetency extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, tosId];
+  List<Object?> get props => [id, tosId, createdAt, updatedAt];
 }

@@ -86,10 +86,7 @@ class _TosListDesktopState extends ConsumerState<TosListDesktop> {
                           final modeLabel = tos.classificationMode == 'blooms'
                               ? "Bloom's Taxonomy"
                               : 'Difficulty';
-                          final created = DateTime.tryParse(tos.createdAt);
-                          final createdLabel = created != null
-                              ? Formatters.formatDateTimeFull(created)
-                              : tos.createdAt;
+                          final createdLabel = Formatters.formatDateTimeFull(tos.createdAt);
 
                           return DataRow(
                             onSelectChanged: (_) => Navigator.push(

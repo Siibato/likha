@@ -9,9 +9,9 @@ class PeriodGradeModel {
   final double? initialGrade;
   final int? transmutedGrade;
   final bool isLocked;
-  final String? computedAt;
-  final String createdAt;
-  final String updatedAt;
+  final DateTime? computedAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   const PeriodGradeModel({
     required this.id,
@@ -37,9 +37,9 @@ class PeriodGradeModel {
       initialGrade: json['initial_grade'] != null ? (json['initial_grade'] as num).toDouble() : null,
       transmutedGrade: json['transmuted_grade'] != null ? (json['transmuted_grade'] as num).toInt() : null,
       isLocked: json['is_locked'] == true,
-      computedAt: json['computed_at'] as String?,
-      createdAt: json['created_at'] as String,
-      updatedAt: (json['updated_at'] ?? json['created_at']) as String,
+      computedAt: json['computed_at'] != null ? DateTime.parse(json['computed_at'] as String) : null,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse((json['updated_at'] ?? json['created_at']) as String),
     );
   }
 
@@ -52,9 +52,9 @@ class PeriodGradeModel {
       initialGrade: map[PeriodGradesCols.initialGrade] != null ? (map[PeriodGradesCols.initialGrade] as num).toDouble() : null,
       transmutedGrade: map[PeriodGradesCols.transmutedGrade] != null ? (map[PeriodGradesCols.transmutedGrade] as num).toInt() : null,
       isLocked: map[PeriodGradesCols.isLocked] == 1,
-      computedAt: map[PeriodGradesCols.computedAt] as String?,
-      createdAt: map[CommonCols.createdAt] as String,
-      updatedAt: map[CommonCols.updatedAt] as String,
+      computedAt: map[PeriodGradesCols.computedAt] != null ? DateTime.parse(map[PeriodGradesCols.computedAt] as String) : null,
+      createdAt: DateTime.parse(map[CommonCols.createdAt] as String),
+      updatedAt: DateTime.parse(map[CommonCols.updatedAt] as String),
     );
   }
 
@@ -66,9 +66,9 @@ class PeriodGradeModel {
     'initial_grade': initialGrade,
     'transmuted_grade': transmutedGrade,
     'is_locked': isLocked,
-    'computed_at': computedAt,
-    'created_at': createdAt,
-    'updated_at': updatedAt,
+    'computed_at': computedAt?.toIso8601String(),
+    'created_at': createdAt.toIso8601String(),
+    'updated_at': updatedAt.toIso8601String(),
   };
 
   Map<String, dynamic> toMap() => {
@@ -79,9 +79,9 @@ class PeriodGradeModel {
     PeriodGradesCols.initialGrade: initialGrade,
     PeriodGradesCols.transmutedGrade: transmutedGrade,
     PeriodGradesCols.isLocked: isLocked ? 1 : 0,
-    PeriodGradesCols.computedAt: computedAt,
-    CommonCols.createdAt: createdAt,
-    CommonCols.updatedAt: updatedAt,
+    PeriodGradesCols.computedAt: computedAt?.toIso8601String(),
+    CommonCols.createdAt: createdAt.toIso8601String(),
+    CommonCols.updatedAt: updatedAt.toIso8601String(),
     CommonCols.cachedAt: DateTime.now().toIso8601String(),
     CommonCols.needsSync: 0,
   };

@@ -9,7 +9,7 @@ class PeriodGrade extends Equatable {
   final double? initialGrade;
   final int? transmutedGrade;
   final bool isLocked;
-  final String? computedAt;
+  final DateTime? computedAt;
   final bool isPreview;
 
   const PeriodGrade({

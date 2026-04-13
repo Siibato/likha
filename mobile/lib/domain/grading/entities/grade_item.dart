@@ -10,6 +10,8 @@ class GradeItem extends Equatable {
   final String sourceType;
   final String? sourceId;
   final int orderIndex;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   const GradeItem({
     required this.id,
@@ -21,6 +23,8 @@ class GradeItem extends Equatable {
     required this.sourceType,
     this.sourceId,
     required this.orderIndex,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   @override
@@ -34,5 +38,7 @@ class GradeItem extends Equatable {
         sourceType,
         sourceId,
         orderIndex,
+        createdAt,
+        updatedAt,
       ];
 }
