@@ -27,7 +27,7 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 11,
+      version: 12,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onDowngrade: _downgradeDatabase,
@@ -575,6 +575,18 @@ class LocalDatabase {
           assessment_id TEXT PRIMARY KEY,
           statistics_json TEXT NOT NULL,
           cached_at TEXT NOT NULL
+        )
+      ''');
+
+      // Validation metadata table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS validation_metadata (
+          entity_type TEXT PRIMARY KEY,
+          last_modified TEXT NOT NULL,
+          record_count INTEGER NOT NULL,
+          etag TEXT,
+          validated_at TEXT NOT NULL,
+          database_id TEXT
         )
       ''');
 

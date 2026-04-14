@@ -74,14 +74,21 @@ class MigrationRunner {
   
   /// Define all migrations for the application
   static List<Migration> get allMigrations => [
-    // Future migrations will be added here
-    // Example:
-    // Migration(
-    //   version: 12,
-    //   description: 'Add index on grade_items for performance',
-    //   up: (db) async {
-    //     await db.execute('CREATE INDEX idx_grade_items_class ON grade_items(class_id)');
-    //   },
-    // ),
+    Migration(
+      version: 12,
+      description: 'Add validation_metadata table',
+      up: (db) async {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS validation_metadata (
+            entity_type TEXT PRIMARY KEY,
+            last_modified TEXT NOT NULL,
+            record_count INTEGER NOT NULL,
+            etag TEXT,
+            validated_at TEXT NOT NULL,
+            database_id TEXT
+          )
+        ''');
+      },
+    ),
   ];
 }
