@@ -11,11 +11,13 @@ class UploadFile {
     required String materialId,
     required String filePath,
     required String fileName,
+    void Function(int sent, int total)? onSendProgress,
   }) {
     return _repository.uploadFile(
       materialId: materialId,
       filePath: filePath,
       fileName: fileName,
+      onSendProgress: onSendProgress,
     );
   }
 }

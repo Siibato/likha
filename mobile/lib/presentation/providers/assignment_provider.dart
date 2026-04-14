@@ -33,6 +33,8 @@ class AssignmentState {
   final bool isLoading;
   final String? error;
   final String? successMessage;
+  final double uploadProgress; // 0.0 to 1.0
+  final String? currentUploadFileName;
 
   AssignmentState({
     this.assignments = const [],
@@ -42,6 +44,8 @@ class AssignmentState {
     this.isLoading = false,
     this.error,
     this.successMessage,
+    this.uploadProgress = 0.0,
+    this.currentUploadFileName,
   });
 
   AssignmentState copyWith({
@@ -52,10 +56,13 @@ class AssignmentState {
     bool? isLoading,
     String? error,
     String? successMessage,
+    double? uploadProgress,
+    String? currentUploadFileName,
     bool clearError = false,
     bool clearSuccess = false,
     bool clearAssignment = false,
     bool clearSubmission = false,
+    bool clearUploadProgress = false,
   }) {
     return AssignmentState(
       assignments: assignments ?? this.assignments,
@@ -70,6 +77,8 @@ class AssignmentState {
       error: clearError ? null : (error ?? this.error),
       successMessage:
           clearSuccess ? null : (successMessage ?? this.successMessage),
+      uploadProgress: clearUploadProgress ? 0.0 : (uploadProgress ?? this.uploadProgress),
+      currentUploadFileName: clearUploadProgress ? null : (currentUploadFileName ?? this.currentUploadFileName),
     );
   }
 }
@@ -426,15 +435,37 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   }
 
   Future<void> uploadFile(UploadFileParams params) async {
-    state =
-        state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
-    final result = await _uploadFile(params);
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      clearSuccess: true,
+      clearUploadProgress: true,
+      currentUploadFileName: params.fileName,
+    );
+
+    final result = await _uploadFile(
+      UploadFileParams(
+        submissionId: params.submissionId,
+        filePath: params.filePath,
+        fileName: params.fileName,
+        onSendProgress: (sent, total) {
+          if (total > 0) {
+            state = state.copyWith(uploadProgress: sent / total);
+          }
+        },
+      ),
+    );
+
     result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
+      (failure) => state = state.copyWith(
+        isLoading: false,
+        error: AppErrorMapper.fromFailure(failure),
+        clearUploadProgress: true,
+      ),
       (_) => state = state.copyWith(
         isLoading: false,
         successMessage: 'File uploaded',
+        clearUploadProgress: true,
       ),
     );
   }

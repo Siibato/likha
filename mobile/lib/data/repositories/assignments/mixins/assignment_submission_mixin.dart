@@ -330,6 +330,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
     required String submissionId,
     required String filePath,
     required String fileName,
+    void Function(int sent, int total)? onSendProgress,
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
@@ -361,6 +362,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
         submissionId: submissionId,
         filePath: filePath,
         fileName: fileName,
+        onSendProgress: onSendProgress,
       );
       // Fix 1: Cache uploaded file locally for immediate visibility
       unawaited(localDataSource.cacheSubmissionFile(submissionId, result));

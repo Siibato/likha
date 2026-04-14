@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
+import 'package:likha/core/utils/upload_timeout_util.dart';
 import 'package:likha/data/datasources/remote/models/student_assignment_submission_item_model.dart';
 import 'package:likha/data/models/assignments/assignment_model.dart';
 import 'package:likha/data/models/assignments/assignment_submission_model.dart';
@@ -59,6 +60,7 @@ abstract class AssignmentRemoteDataSource {
     required String submissionId,
     required String filePath,
     required String fileName,
+    void Function(int sent, int total)? onSendProgress,
   });
 
   Future<void> deleteFile({required String fileId});
@@ -262,14 +264,24 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
     required String submissionId,
     required String filePath,
     required String fileName,
+    void Function(int sent, int total)? onSendProgress,
   }) async {
     try {
       final formData = FormData.fromMap({
         'file': await MultipartFile.fromFile(filePath, filename: fileName),
       });
+
+      // Calculate dynamic timeout based on file size
+      final timeoutSeconds = UploadTimeoutUtil.calculateTimeout(filePath);
+
       final response = await _dioClient.dio.post(
         ApiEndpoints.assignmentSubmissionUpload(submissionId).path,
         data: formData,
+        onSendProgress: onSendProgress,
+        options: Options(
+          sendTimeout: Duration(seconds: timeoutSeconds),
+          receiveTimeout: const Duration(seconds: 60),
+        ),
       );
       final responseData = response.data['data'] ?? response.data;
       return SubmissionFileModel.fromJson(responseData);

@@ -40,6 +40,7 @@ abstract class LearningMaterialRepository {
     required String materialId,
     required String filePath,
     required String fileName,
+    void Function(int sent, int total)? onSendProgress,
   });
 
   ResultVoid deleteFile({required String fileId});
