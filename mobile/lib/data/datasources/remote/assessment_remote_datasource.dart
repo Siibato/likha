@@ -67,6 +67,7 @@ abstract class AssessmentRemoteDataSource {
   Future<SubmissionAnswerModel> overrideAnswer({
     required String answerId,
     required bool isCorrect,
+    double? points,
   });
 
   Future<SubmissionAnswerModel> gradeEssayAnswer({
@@ -325,11 +326,16 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
   Future<SubmissionAnswerModel> overrideAnswer({
     required String answerId,
     required bool isCorrect,
+    double? points,
   }) async {
     try {
+      final data = <String, dynamic>{'is_correct': isCorrect};
+      if (points != null) {
+        data['points'] = points;
+      }
       return await _dioClient.putTyped(
         ApiEndpoints.submissionAnswerOverride(answerId),
-        data: {'is_correct': isCorrect},
+        data: data,
       );
     } on DioException catch (e) {
       throw _dioClient.handleError(e);

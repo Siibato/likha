@@ -78,6 +78,7 @@ abstract class AssessmentRepository {
   ResultFuture<SubmissionAnswer> overrideAnswer({
     required String answerId,
     required bool isCorrect,
+    double? points,
   });
 
   ResultFuture<SubmissionAnswer> gradeEssayAnswer({

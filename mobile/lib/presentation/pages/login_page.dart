@@ -53,7 +53,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final state = ref.read(authProvider);
 
     if (state.error != null) {
-      setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
+      final errorLower = state.error!.toLowerCase();
+      if (errorLower.contains('connection') ||
+          errorLower.contains('socket') ||
+          errorLower.contains('connection refused') ||
+          errorLower.contains('unreachable')) {
+        setState(() => _formError = 'Please make sure you are connected to the school\'s Likha Wi-Fi');
+      } else {
+        setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
+      }
     }
   }
 

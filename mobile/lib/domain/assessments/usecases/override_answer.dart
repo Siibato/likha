@@ -11,6 +11,7 @@ class OverrideAnswer {
     return _repository.overrideAnswer(
       answerId: params.answerId,
       isCorrect: params.isCorrect,
+      points: params.points,
     );
   }
 }
@@ -18,6 +19,11 @@ class OverrideAnswer {
 class OverrideAnswerParams {
   final String answerId;
   final bool isCorrect;
+  final double? points;
 
-  OverrideAnswerParams({required this.answerId, required this.isCorrect});
+  OverrideAnswerParams({
+    required this.answerId,
+    required this.isCorrect,
+    this.points,
+  });
 }

@@ -80,12 +80,14 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
   ResultFuture<SubmissionAnswer> overrideAnswer({
     required String answerId,
     required bool isCorrect,
+    double? points,
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
         await localDataSource.overrideAnswerLocally(
           answerId: answerId,
           isCorrect: isCorrect,
+          points: points,
         );
         return Right(SubmissionAnswer(
           id: answerId,
@@ -94,12 +96,12 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
           questionType: '',
           points: 0,
           isOverrideCorrect: isCorrect,
-          pointsAwarded: 0,
+          pointsAwarded: points ?? (isCorrect ? 0 : 0),
         ));
       }
 
       final result = await remoteDataSource.overrideAnswer(
-          answerId: answerId, isCorrect: isCorrect);
+          answerId: answerId, isCorrect: isCorrect, points: points);
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
