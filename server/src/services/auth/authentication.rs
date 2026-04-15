@@ -16,7 +16,7 @@ impl super::AuthService {
             .user_repo
             .find_by_username(&request.username)
             .await?
-            .ok_or_else(|| AppError::NotFound("Username not found".to_string()))?;
+            .ok_or_else(|| AppError::NotFound("Username does not exist".to_string()))?;
 
         Ok(CheckUsernameResponse {
             username: user.username,
@@ -39,7 +39,7 @@ impl super::AuthService {
             .user_repo
             .find_by_username(&request.username)
             .await?
-            .ok_or_else(|| AppError::NotFound("Username not found".to_string()))?;
+            .ok_or_else(|| AppError::NotFound("Username does not exist".to_string()))?;
 
         if user.account_status != "pending_activation" {
             return Err(AppError::BadRequest(
@@ -76,7 +76,7 @@ impl super::AuthService {
     }
 
     pub async fn login(&self, request: LoginRequest, ip: &str) -> AppResult<AuthResponse> {
-        let (is_locked, remaining_seconds) = self
+        let (is_locked, remaining_seconds, _lockout_level) = self
             .login_attempt_repo
             .check_lockout(&request.username, ip)
             .await?;
@@ -108,16 +108,16 @@ impl super::AuthService {
 
         let is_valid = PasswordService::verify_password(&request.password, password_hash)?;
         if !is_valid {
-            let (attempt_count, locked_until) = self
+            let (attempts_remaining, locked_until, _lockout_level) = self
                 .login_attempt_repo
                 .record_failed_attempt(&request.username, ip)
                 .await?;
 
-            if locked_until.is_some() {
-                return Err(AppError::TooManyRequests(300));
+            if let Some(lock_time) = locked_until {
+                let remaining_seconds = (lock_time - Utc::now().naive_utc()).num_seconds();
+                return Err(AppError::TooManyRequests(remaining_seconds));
             }
 
-            let attempts_remaining = 5 - attempt_count;
             return Err(AppError::InvalidCredentials(
                 "Invalid password".to_string(),
                 attempts_remaining,

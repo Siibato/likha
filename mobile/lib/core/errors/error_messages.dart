@@ -26,7 +26,7 @@ class AppErrorMapper {
 
     final lower = rawError.toLowerCase();
 
-    // Connectivity errors are expected in an offline-first app — suppress entirely
+    // Connectivity errors are expected in an offline-first app â suppress entirely
     if (lower.contains('internet') ||
         lower.contains('unreachable') ||
         lower.contains('network') ||
@@ -53,6 +53,23 @@ class AppErrorMapper {
     final isTechnical = technicalTerms.any((term) => lower.contains(term));
     if (rawError.length < 80 && !isTechnical) {
       return rawError;
+    }
+
+    // Authentication-specific error handling
+    if (lower.contains('username does not exist')) {
+      return 'Username does not exist';
+    }
+    
+    if (lower.contains('invalid password')) {
+      return 'Password is incorrect';
+    }
+    
+    if (lower.contains('account locked')) {
+      return 'Account is locked. Contact an administrator.';
+    }
+    
+    if (lower.contains('activation required')) {
+      return 'Account requires activation';
     }
 
     if (lower.contains('unauthorized') || lower.contains('401')) {

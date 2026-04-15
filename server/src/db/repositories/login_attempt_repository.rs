@@ -38,74 +38,125 @@ impl LoginAttemptRepository {
         Ok(())
     }
 
-    /// Record a failed attempt - kept for backward compatibility with auth service
-    /// This is a simplified version that just logs the attempt
+    /// Record a failed attempt with progressive lockout
     pub async fn record_failed_attempt(
         &self,
-        _username: &str,
+        username: &str,
         ip: &str,
-    ) -> AppResult<(i32, Option<chrono::NaiveDateTime>)> {
-        // Create a deterministic device_id from IP for tracking
-        let device_id = format!("ip-{}", ip);
-        self.record_attempt(None, false, Some(device_id)).await?;
+    ) -> AppResult<(i32, Option<chrono::NaiveDateTime>, Option<i32>)> {
+        // Create a deterministic device_id from username+IP for better tracking
+        let device_id = format!("{}-{}", username, ip);
+        self.record_attempt(None, false, Some(device_id.clone())).await?;
 
-        // Count recent failed attempts from this IP in the last 5 minutes
-        let five_min_ago = Utc::now().naive_utc() - Duration::minutes(5);
+        // Count recent failed attempts from this username+IP combination in the last 30 minutes
+        let thirty_min_ago = Utc::now().naive_utc() - Duration::minutes(30);
         let recent_attempts = login_attempts::Entity::find()
-            .filter(login_attempts::Column::DeviceId.eq(format!("ip-{}", ip)))
+            .filter(login_attempts::Column::DeviceId.eq(&device_id))
             .filter(login_attempts::Column::Success.eq(false))
-            .filter(login_attempts::Column::AttemptedAt.gt(five_min_ago))
+            .filter(login_attempts::Column::AttemptedAt.gt(thirty_min_ago))
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
         let attempt_count = recent_attempts.len() as i32;
+        let max_attempts_per_cycle = 5;
 
-        // If 5+ failed attempts in 5 minutes, return locked status
-        if attempt_count >= 5 {
-            let locked_until = Utc::now().naive_utc() + Duration::minutes(5);
-            Ok((5, Some(locked_until)))
+        // Calculate which lockout level we're at based on total failed attempts
+        let total_failed_attempts = attempt_count;
+        let lockout_level = (total_failed_attempts / max_attempts_per_cycle).min(5);
+
+        // Progressive lockout durations (5min, 15min, 30min, 1hr, 2hr)
+        let lockout_duration = match lockout_level {
+            0 => None,                                    // No lockout
+            1 => Some(Duration::minutes(5)),             // 5 minutes
+            2 => Some(Duration::minutes(15)),            // 15 minutes  
+            3 => Some(Duration::minutes(30)),            // 30 minutes
+            4 => Some(Duration::minutes(60)),            // 1 hour
+            5 => Some(Duration::minutes(120)),           // 2 hours
+            _ => Some(Duration::minutes(120)),           // Max 2 hours
+        };
+
+        let attempts_in_current_cycle = (total_failed_attempts % max_attempts_per_cycle) + 1;
+
+        if attempts_in_current_cycle > max_attempts_per_cycle {
+            // We've hit the threshold for this cycle, apply lockout
+            if let Some(duration) = lockout_duration {
+                let locked_until = Utc::now().naive_utc() + duration;
+                Ok((0, Some(locked_until), Some(lockout_level)))
+            } else {
+                Ok((0, None, Some(lockout_level)))
+            }
         } else {
-            Ok((attempt_count + 1, None))
+            // Still have attempts remaining in current cycle
+            let attempts_remaining = max_attempts_per_cycle - attempts_in_current_cycle + 1;
+            Ok((attempts_remaining, None, Some(lockout_level)))
         }
     }
 
-    /// Check if user is locked out - kept for backward compatibility
+    /// Check if user is locked out with progressive lockout
     pub async fn check_lockout(
         &self,
-        _username: &str,
+        username: &str,
         ip: &str,
-    ) -> AppResult<(bool, i64)> {
-        let device_id = format!("ip-{}", ip);
-        let five_min_ago = Utc::now().naive_utc() - Duration::minutes(5);
+    ) -> AppResult<(bool, i64, Option<i32>)> {
+        let device_id = format!("{}-{}", username, ip);
+        let thirty_min_ago = Utc::now().naive_utc() - Duration::minutes(30);
 
         let recent_failures = login_attempts::Entity::find()
-            .filter(login_attempts::Column::DeviceId.eq(device_id))
+            .filter(login_attempts::Column::DeviceId.eq(&device_id))
             .filter(login_attempts::Column::Success.eq(false))
-            .filter(login_attempts::Column::AttemptedAt.gt(five_min_ago))
+            .filter(login_attempts::Column::AttemptedAt.gt(thirty_min_ago))
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-        if recent_failures.len() >= 5 {
-            // Locked for 5 minutes from last attempt
+        let attempt_count = recent_failures.len() as i32;
+        let max_attempts_per_cycle = 5;
+        
+        // Calculate lockout level
+        let lockout_level = (attempt_count / max_attempts_per_cycle).min(5);
+        
+        // Check if we're in a lockout period
+        if attempt_count >= max_attempts_per_cycle {
             if let Some(last_attempt) = recent_failures.last() {
-                let locked_until = last_attempt.attempted_at + Duration::minutes(5);
+                let attempts_in_cycle = attempt_count % max_attempts_per_cycle;
+                
+                // Progressive lockout durations
+                let lockout_duration = match lockout_level {
+                    0 => Duration::minutes(0),
+                    1 => Duration::minutes(5),      // 5 minutes
+                    2 => Duration::minutes(15),     // 15 minutes  
+                    3 => Duration::minutes(30),     // 30 minutes
+                    4 => Duration::minutes(60),     // 1 hour
+                    5 => Duration::minutes(120),    // 2 hours
+                    _ => Duration::minutes(120),    // Max 2 hours
+                };
+                
+                let locked_until = last_attempt.attempted_at + lockout_duration;
                 let now = Utc::now().naive_utc();
-                if locked_until > now {
+                
+                if locked_until > now && attempts_in_cycle == 0 {
                     let remaining = (locked_until - now).num_seconds();
-                    return Ok((true, remaining));
+                    return Ok((true, remaining, Some(lockout_level)));
                 }
             }
         }
 
-        Ok((false, 0))
+        Ok((false, 0, Some(lockout_level)))
     }
 
-    /// Clear attempts - kept for backward compatibility
-    pub async fn clear_attempts(&self, _username: &str, _ip: &str) -> AppResult<()> {
-        // In new schema, we don't delete attempts (they're audit records)
-        // This is a no-op to maintain API compatibility
+    /// Clear failed attempts for a specific username/IP combination on successful login
+    pub async fn clear_attempts(&self, username: &str, ip: &str) -> AppResult<()> {
+        let device_id = format!("{}-{}", username, ip);
+        
+        // Delete only failed attempts for this device_id (keep successful attempts for audit)
+        login_attempts::Entity::delete_many()
+            .filter(login_attempts::Column::DeviceId.eq(&device_id))
+            .filter(login_attempts::Column::Success.eq(false))
+            .exec(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Failed to clear attempts: {}", e)))?;
+        
         Ok(())
     }
 
