@@ -199,15 +199,33 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
   ) : super(GradeItemsState());
 
   Future<void> loadItems(String classId) async {
+    print('*** GRADE PROVIDER: loadItems() - starting for classId: $classId, quarter: ${state.currentQuarter}, component: ${state.currentComponent}');
+    ProviderLogger.instance.log('loadItems() - starting for classId: $classId, quarter: ${state.currentQuarter}, component: ${state.currentComponent}');
     state = state.copyWith(isLoading: true, error: null);
+    print('*** GRADE PROVIDER: state set to loading');
     final result = await _getGradeItems(GetGradeItemsParams(
       classId: classId,
       gradingPeriodNumber: state.currentQuarter,
       component: state.currentComponent.isEmpty ? null : state.currentComponent,
     ));
+    print('*** GRADE PROVIDER: _getGradeItems completed');
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
-      (items) => state = state.copyWith(isLoading: false, items: items),
+      (failure) {
+        print('*** GRADE PROVIDER: loadItems failed: ${AppErrorMapper.fromFailure(failure)}');
+        ProviderLogger.instance.error('loadItems() - failed: ${AppErrorMapper.fromFailure(failure)}');
+        state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure));
+      },
+      (items) {
+        print('*** GRADE PROVIDER: loadItems success: loaded ${items.length} items');
+        ProviderLogger.instance.log('loadItems() - success: loaded ${items.length} items');
+        for (final item in items) {
+          print('*** GRADE PROVIDER: item: ${item.title} (${item.component}) - source: ${item.sourceType}, sourceId: ${item.sourceId}');
+          ProviderLogger.instance.log('loadItems() - item: ${item.title} (${item.component}) - source: ${item.sourceType}, sourceId: ${item.sourceId}');
+        }
+        state = state.copyWith(isLoading: false, items: items);
+        print('*** GRADE PROVIDER: state updated with ${state.items.length} items');
+        ProviderLogger.instance.log('loadItems() - state updated with ${state.items.length} items');
+      },
     );
   }
 
@@ -247,60 +265,166 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
   }
 
   Future<void> backfillFromActivities(String classId, int gradingPeriodNumber) async {
+    print('*** DEBUG: backfillFromActivities called with classId: $classId, quarter: $gradingPeriodNumber');
+    print('*** GRADE PROVIDER: backfillFromActivities() - starting for classId: $classId, quarter: $gradingPeriodNumber');
+    ProviderLogger.instance.log('backfillFromActivities() - starting for classId: $classId, quarter: $gradingPeriodNumber');
+    print('*** GRADE PROVIDER: current state has ${state.items.length} items');
+    ProviderLogger.instance.log('backfillFromActivities() - current state has ${state.items.length} items');
+    
+    print('*** DEBUG: existing grade items count: ${state.items.length}');
+    for (final item in state.items) {
+      print('*** DEBUG: existing grade item: ${item.title} (${item.component}) - source: ${item.sourceType}, sourceId: ${item.sourceId}');
+    }
+    
     final existingSourceIds = state.items
         .where((i) => i.sourceId != null)
         .map((i) => i.sourceId!)
         .toSet();
+    
+    print('*** GRADE PROVIDER: existing source IDs: $existingSourceIds');
+    ProviderLogger.instance.log('backfillFromActivities() - existing source IDs: $existingSourceIds');
 
+    final List<GradeItem> newItems = [];
+
+    // Process assessments
+    print('*** GRADE PROVIDER: fetching assessments for backfill');
+    ProviderLogger.instance.log('backfillFromActivities() - fetching assessments');
+    
+    // Wait a moment for background assessment fetch to complete
+    await Future.delayed(Duration(milliseconds: 500));
+    
     final assessmentResult = await sl<GetAssessments>()(classId);
-    assessmentResult.fold((_) {}, (assessments) {
-      for (final a in assessments) {
-        if (a.gradingPeriodNumber == gradingPeriodNumber && a.component != null && !existingSourceIds.contains(a.id)) {
-          sl<GradingRepository>().createGradeItem(
-            classId: classId,
-            data: {
-              'title': a.title,
-              'component': _toGradeComponent(a.component!),
-              'grading_period_number': gradingPeriodNumber,
-              'total_points': a.totalPoints.toDouble(),
-              'is_departmental_exam': false,
-              'source_type': 'assessment',
-              'source_id': a.id,
-              'order_index': 0,
-            },
-          ).then((res) {
-            res.fold((_) {}, (item) {
-              state = state.copyWith(items: [...state.items, item]);
-            });
-          });
+    await assessmentResult.fold(
+      (failure) {
+        print('*** GRADE PROVIDER: Failed to get assessments for backfill: $failure');
+        ProviderLogger.instance.error('Failed to get assessments for backfill', failure);
+      },
+      (assessments) async {
+        print('*** DEBUG: got ${assessments.length} assessments for backfill');
+        print('*** GRADE PROVIDER: got ${assessments.length} assessments for backfill');
+        ProviderLogger.instance.log('backfillFromActivities() - got ${assessments.length} assessments');
+        for (final a in assessments) {
+          print('*** DEBUG: assessment details - title: ${a.title}, component: ${a.component}, quarter: ${a.gradingPeriodNumber}, id: ${a.id}');
+          print('*** DEBUG: checking conditions - targetQuarter: $gradingPeriodNumber, assessmentQuarter: ${a.gradingPeriodNumber}');
+          print('*** DEBUG: checking conditions - componentNotNull: ${a.component != null}, existingSourceIdsContains: ${existingSourceIds.contains(a.id)}');
+          print('*** GRADE PROVIDER: checking assessment: ${a.title} (${a.component}) - quarter: ${a.gradingPeriodNumber}, id: ${a.id}');
+          ProviderLogger.instance.log('backfillFromActivities() - checking assessment: ${a.title} (${a.component}) - quarter: ${a.gradingPeriodNumber}, id: ${a.id}');
+          if (a.gradingPeriodNumber == gradingPeriodNumber && a.component != null && !existingSourceIds.contains(a.id)) {
+            print('*** GRADE PROVIDER: assessment qualifies for backfill, creating grade item');
+            ProviderLogger.instance.log('backfillFromActivities() - assessment qualifies for backfill, creating grade item');
+            try {
+              final result = await sl<GradingRepository>().createGradeItem(
+                classId: classId,
+                data: {
+                  'title': a.title,
+                  'component': _toGradeComponent(a.component!),
+                  'grading_period_number': gradingPeriodNumber,
+                  'total_points': a.totalPoints.toDouble(),
+                  'is_departmental_exam': false,
+                  'source_type': 'assessment',
+                  'source_id': a.id,
+                  'order_index': 0,
+                },
+              );
+              result.fold(
+                (failure) {
+                  print('*** GRADE PROVIDER: Failed to create grade item from assessment: ${a.title} - $failure');
+                  ProviderLogger.instance.error('Failed to create grade item from assessment: ${a.title}', failure);
+                },
+                (item) {
+                  print('*** GRADE PROVIDER: Created grade item from assessment: ${a.title} with ID: ${item.id}');
+                  newItems.add(item);
+                  ProviderLogger.instance.log('Created grade item from assessment: ${a.title} with ID: ${item.id}');
+                },
+              );
+            } catch (e) {
+              print('*** GRADE PROVIDER: Exception creating grade item from assessment: ${a.title} - $e');
+              ProviderLogger.instance.error('Exception creating grade item from assessment: ${a.title}', e);
+            }
+          } else {
+            String reason = "";
+            if (a.gradingPeriodNumber != gradingPeriodNumber) {
+              reason = "wrong quarter (${a.gradingPeriodNumber} != $gradingPeriodNumber)";
+            } else if (a.component == null) {
+              reason = "component is null";
+            } else if (existingSourceIds.contains(a.id)) {
+              reason = "source ID already exists";
+            }
+            print('*** DEBUG: assessment ${a.title} does not qualify: $reason');
+            print('*** GRADE PROVIDER: assessment ${a.title} does not qualify: $reason');
+            ProviderLogger.instance.log('backfillFromActivities() - assessment ${a.title} does not qualify: $reason');
+          }
         }
-      }
-    });
+      },
+    );
 
+    // Process assignments
+    ProviderLogger.instance.log('backfillFromActivities() - fetching assignments');
     final assignmentResult = await sl<GetAssignments>()(classId);
-    assignmentResult.fold((_) {}, (assignments) {
-      for (final a in assignments) {
-        if (a.gradingPeriodNumber == gradingPeriodNumber && a.component != null && !existingSourceIds.contains(a.id)) {
-          sl<GradingRepository>().createGradeItem(
-            classId: classId,
-            data: {
-              'title': a.title,
-              'component': _toGradeComponent(a.component!),
-              'grading_period_number': gradingPeriodNumber,
-              'total_points': a.totalPoints.toDouble(),
-              'is_departmental_exam': false,
-              'source_type': 'assignment',
-              'source_id': a.id,
-              'order_index': 0,
-            },
-          ).then((res) {
-            res.fold((_) {}, (item) {
-              state = state.copyWith(items: [...state.items, item]);
-            });
-          });
+    await assignmentResult.fold(
+      (failure) {
+        ProviderLogger.instance.error('Failed to get assignments for backfill', failure);
+      },
+      (assignments) async {
+        ProviderLogger.instance.log('backfillFromActivities() - got ${assignments.length} assignments');
+        for (final a in assignments) {
+          ProviderLogger.instance.log('backfillFromActivities() - checking assignment: ${a.title} (${a.component}) - quarter: ${a.gradingPeriodNumber}, id: ${a.id}');
+          if (a.gradingPeriodNumber == gradingPeriodNumber && a.component != null && !existingSourceIds.contains(a.id)) {
+            ProviderLogger.instance.log('backfillFromActivities() - assignment qualifies for backfill, creating grade item');
+            try {
+              final result = await sl<GradingRepository>().createGradeItem(
+                classId: classId,
+                data: {
+                  'title': a.title,
+                  'component': _toGradeComponent(a.component!),
+                  'grading_period_number': gradingPeriodNumber,
+                  'total_points': a.totalPoints.toDouble(),
+                  'is_departmental_exam': false,
+                  'source_type': 'assignment',
+                  'source_id': a.id,
+                  'order_index': 0,
+                },
+              );
+              result.fold(
+                (failure) {
+                  ProviderLogger.instance.error('Failed to create grade item from assignment: ${a.title}', failure);
+                },
+                (item) {
+                  newItems.add(item);
+                  ProviderLogger.instance.log('Created grade item from assignment: ${a.title} with ID: ${item.id}');
+                },
+              );
+            } catch (e) {
+              ProviderLogger.instance.error('Exception creating grade item from assignment: ${a.title}', e);
+            }
+          } else {
+            String reason = "";
+            if (a.gradingPeriodNumber != gradingPeriodNumber) {
+              reason = "wrong quarter (${a.gradingPeriodNumber} != $gradingPeriodNumber)";
+            } else if (a.component == null) {
+              reason = "component is null";
+            } else if (existingSourceIds.contains(a.id)) {
+              reason = "source ID already exists";
+            }
+            ProviderLogger.instance.log('backfillFromActivities() - assignment ${a.title} does not qualify: $reason');
+          }
         }
-      }
-    });
+      },
+    );
+
+    // Update state with new items if any were created
+    print('*** GRADE PROVIDER: backfill processing complete, new items count: ${newItems.length}');
+    ProviderLogger.instance.log('backfillFromActivities() - processing complete, new items count: ${newItems.length}');
+    if (newItems.isNotEmpty) {
+      print('*** GRADE PROVIDER: updating state with ${newItems.length} new items');
+      ProviderLogger.instance.log('backfillFromActivities() - updating state with ${newItems.length} new items');
+      state = state.copyWith(items: [...state.items, ...newItems]);
+      print('*** GRADE PROVIDER: Backfill completed: added ${newItems.length} grade items, total items now: ${state.items.length}');
+      ProviderLogger.instance.log('Backfill completed: added ${newItems.length} grade items, total items now: ${state.items.length}');
+    } else {
+      print('*** GRADE PROVIDER: Backfill completed: no new items to add, total items remain: ${state.items.length}');
+      ProviderLogger.instance.log('Backfill completed: no new items to add, total items remain: ${state.items.length}');
+    }
   }
 
   void setQuarter(int quarter) {

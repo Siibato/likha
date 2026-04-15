@@ -33,7 +33,8 @@ class GradeItemModel {
       classId: json['class_id'] as String,
       title: json['title'] as String,
       component: json['component'] as String,
-      gradingPeriodNumber: (json['grading_period_number'] as num?)?.toInt() ?? (json['quarter'] as num).toInt(),
+      gradingPeriodNumber: (json['grading_period_number'] as num?)?.toInt() ?? 
+                          (json['quarter'] as num?)?.toInt() ?? 1,
       totalPoints: (json['total_points'] as num).toDouble(),
       sourceType: (json['source_type'] as String?) ?? 'manual',
       sourceId: json['source_id'] as String?,

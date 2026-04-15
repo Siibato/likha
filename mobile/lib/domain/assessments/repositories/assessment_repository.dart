@@ -33,6 +33,8 @@ abstract class AssessmentRepository {
     String? openAt,
     String? closeAt,
     bool? showResultsImmediately,
+    int? gradingPeriodNumber,
+    String? component,
   });
 
   ResultVoid deleteAssessment({required String assessmentId});

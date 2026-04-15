@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/presentation/pages/teacher/class_student_list.dart';
 import 'package:likha/presentation/pages/teacher/teacher_assessment_list_page.dart';
 import 'package:likha/presentation/pages/teacher/teacher_assignment_list_page.dart';
@@ -115,12 +116,16 @@ class _ClassDetailPageState extends ConsumerState<ClassDetailPage> {
                             icon: Icons.grading_outlined,
                             title: 'Grades',
                             subtitle: 'Manage grades and scores',
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ClassRecordPage(classId: widget.classId),
-                              ),
-                            ),
+                            onTap: () {
+                              print('*** CLASS DETAIL PAGE: User clicked Grades card, navigating to ClassRecordPage for class: ${widget.classId}');
+                              PageLogger.instance.log('User clicked Grades card, navigating to ClassRecordPage for class: ${widget.classId}');
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ClassRecordPage(classId: widget.classId),
+                                ),
+                              );
+                            },
                           ),
                           const SizedBox(height: 16),
                           NavigationCard(

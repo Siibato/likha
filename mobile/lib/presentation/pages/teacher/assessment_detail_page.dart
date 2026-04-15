@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
+import 'package:likha/domain/assessments/usecases/update_assessment.dart';
 import 'package:likha/presentation/pages/teacher/assessment_submissions_page.dart';
 import 'package:likha/presentation/pages/teacher/assessment_statistics_page.dart';
 import 'package:likha/presentation/pages/teacher/edit_assessment_page.dart';
@@ -36,6 +37,11 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
   late AnimationController _questionAnimController;
   final Map<String, int> _questionAnimatingIndices = {};
   String? _formError;
+  
+  // Grading settings state
+  int? _editingGradingPeriod;
+  String? _editingComponent;
+  bool _isEditingGrading = false;
 
   @override
   void initState() {
@@ -67,16 +73,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
     );
   }
 
-  void _confirmUnpublish(Assessment assessment) {
-    AppDialogs.showDestructive(
-      context: context,
-      title: 'Move to Draft',
-      body: 'Move "${assessment.title}" back to draft? Students will no longer be able to access it.',
-      confirmLabel: 'Move to Draft',
-      onConfirm: () => ref.read(teacherAssessmentProvider.notifier).unpublishAssessment(widget.assessmentId),
-    );
-  }
-
+  
   void _confirmDelete(Assessment assessment) {
     final hasWarning = assessment.isPublished || assessment.submissionCount > 0;
     final warningBox = hasWarning
@@ -235,6 +232,60 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
     _questionAnimController.forward(from: 0);
   }
 
+  void _startEditingGrading(Assessment assessment) {
+    setState(() {
+      _editingGradingPeriod = assessment.gradingPeriodNumber;
+      _editingComponent = assessment.component;
+      _isEditingGrading = true;
+    });
+  }
+
+  void _cancelEditingGrading() {
+    setState(() {
+      _editingGradingPeriod = null;
+      _editingComponent = null;
+      _isEditingGrading = false;
+    });
+  }
+
+  void _saveGradingSettings() async {
+    final assessment = ref.read(teacherAssessmentProvider).currentAssessment;
+    if (assessment == null) return;
+
+    setState(() => _isEditingGrading = false);
+
+    try {
+      await ref.read(teacherAssessmentProvider.notifier).updateAssessment(
+        UpdateAssessmentParams(
+          assessmentId: widget.assessmentId,
+          gradingPeriodNumber: _editingGradingPeriod,
+          component: _editingComponent,
+        ),
+      );
+      
+      setState(() {
+        _editingGradingPeriod = null;
+        _editingComponent = null;
+      });
+    } catch (e) {
+      setState(() => _isEditingGrading = true);
+      setState(() => _formError = 'Failed to update grading settings');
+    }
+  }
+
+  String _getComponentDisplayName(String component) {
+    switch (component) {
+      case 'written_work':
+        return 'Written Work';
+      case 'performance_task':
+        return 'Performance Task';
+      case 'quarterly_assessment':
+        return 'Quarterly Assessment';
+      default:
+        return component;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final assessmentState = ref.watch(teacherAssessmentProvider);
@@ -277,147 +328,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
             letterSpacing: -0.4,
           ),
         ),
-        actions: [
-          if (assessment != null) ...[
-            PopupMenuButton<String>(
-              onSelected: (value) {
-                switch (value) {
-                  case 'edit':
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => EditAssessmentPage(
-                          assessment: assessment,
-                        ),
-                      ),
-                    ).then((result) {
-                      if (result == true) {
-                        ref
-                            .read(teacherAssessmentProvider.notifier)
-                            .loadAssessmentDetail(widget.assessmentId);
-                      }
-                    });
-                    break;
-                  case 'submissions':
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AssessmentSubmissionsPage(
-                          assessmentId: widget.assessmentId,
-                        ),
-                      ),
-                    );
-                    break;
-                  case 'statistics':
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AssessmentStatisticsPage(
-                          assessmentId: widget.assessmentId,
-                        ),
-                      ),
-                    );
-                    break;
-                  case 'publish':
-                    _confirmPublish(assessment);
-                    break;
-                  case 'release':
-                    _confirmReleaseResults(assessment);
-                    break;
-                  case 'unpublish':
-                    _confirmUnpublish(assessment);
-                    break;
-                  case 'delete':
-                    _confirmDelete(assessment);
-                    break;
-                }
-              },
-              itemBuilder: (context) => [
-                if (!assessment.isPublished)
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit_outlined, size: 20),
-                        SizedBox(width: 12),
-                        Text('Edit Details'),
-                      ],
-                    ),
-                  ),
-                const PopupMenuItem(
-                  value: 'submissions',
-                  child: Row(
-                    children: [
-                      Icon(Icons.assignment_turned_in_rounded, size: 20),
-                      SizedBox(width: 12),
-                      Text('Submissions'),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'statistics',
-                  child: Row(
-                    children: [
-                      Icon(Icons.bar_chart_rounded, size: 20),
-                      SizedBox(width: 12),
-                      Text('Statistics'),
-                    ],
-                  ),
-                ),
-                if (!assessment.isPublished)
-                  const PopupMenuItem(
-                    value: 'publish',
-                    child: Row(
-                      children: [
-                        Icon(Icons.publish_rounded, size: 20),
-                        SizedBox(width: 12),
-                        Text('Publish'),
-                      ],
-                    ),
-                  ),
-                if (assessment.isPublished && !assessment.resultsReleased)
-                  const PopupMenuItem(
-                    value: 'release',
-                    child: Row(
-                      children: [
-                        Icon(Icons.visibility_rounded, size: 20),
-                        SizedBox(width: 12),
-                        Text('Release Results'),
-                      ],
-                    ),
-                  ),
-                if (assessment.isPublished && !assessment.resultsReleased)
-                  const PopupMenuItem(
-                    value: 'unpublish',
-                    child: Row(
-                      children: [
-                        Icon(Icons.unpublished_rounded, size: 20),
-                        SizedBox(width: 12),
-                        Text('Move to Draft'),
-                      ],
-                    ),
-                  ),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.delete_rounded,
-                        color: Color(0xFFEF5350),
-                        size: 20,
-                      ),
-                      SizedBox(width: 12),
-                      Text(
-                        'Delete',
-                        style: TextStyle(color: Color(0xFFEF5350)),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
+        actions: [],
       ),
       body: assessmentState.isLoading && assessment == null
           ? const Center(
@@ -590,6 +501,162 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                           ),
                           const SizedBox(height: 16),
                         ],
+                        // Grading Settings Card
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFE0E0E0)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Grading Settings',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF2B2B2B),
+                                    ),
+                                  ),
+                                  if (!_isEditingGrading)
+                                    TextButton.icon(
+                                      onPressed: () => _startEditingGrading(assessment),
+                                      icon: const Icon(Icons.edit_outlined, size: 16),
+                                      label: const Text('Edit'),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: const Color(0xFF2B2B2B),
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              if (!_isEditingGrading) ...[
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.grain_rounded,
+                                      size: 16,
+                                      color: assessment.gradingPeriodNumber != null 
+                                          ? const Color(0xFF2B2B2B) 
+                                          : const Color(0xFF999999),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      assessment.gradingPeriodNumber != null 
+                                          ? 'Quarter ${assessment.gradingPeriodNumber}'
+                                          : 'No quarter assigned',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: assessment.gradingPeriodNumber != null 
+                                            ? const Color(0xFF2B2B2B) 
+                                            : const Color(0xFF999999),
+                                      ),
+                                    ),
+                                    if (assessment.component != null) ...[
+                                      const SizedBox(width: 16),
+                                      Icon(
+                                        Icons.category_rounded,
+                                        size: 16,
+                                        color: const Color(0xFF2B2B2B),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _getComponentDisplayName(assessment.component!),
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Color(0xFF2B2B2B),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ] else ...[
+                                // Quarter dropdown
+                                DropdownButtonFormField<int?>(
+                                  value: _editingGradingPeriod,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Quarter (for grading)',
+                                    labelStyle: TextStyle(
+                                      fontSize: 14,
+                                      color: Color(0xFF999999),
+                                    ),
+                                    border: OutlineInputBorder(),
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(value: null, child: Text('None')),
+                                    DropdownMenuItem(value: 1, child: Text('Quarter 1')),
+                                    DropdownMenuItem(value: 2, child: Text('Quarter 2')),
+                                    DropdownMenuItem(value: 3, child: Text('Quarter 3')),
+                                    DropdownMenuItem(value: 4, child: Text('Quarter 4')),
+                                  ],
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _editingGradingPeriod = value;
+                                    });
+                                  },
+                                ),
+                                const SizedBox(height: 12),
+                                // Component dropdown
+                                DropdownButtonFormField<String?>(
+                                  value: _editingComponent,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Grade Component',
+                                    labelStyle: TextStyle(
+                                      fontSize: 14,
+                                      color: Color(0xFF999999),
+                                    ),
+                                    border: OutlineInputBorder(),
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(value: null, child: Text('None')),
+                                    DropdownMenuItem(value: 'written_work', child: Text('Written Work')),
+                                    DropdownMenuItem(value: 'performance_task', child: Text('Performance Task')),
+                                    DropdownMenuItem(value: 'quarterly_assessment', child: Text('Quarterly Assessment')),
+                                  ],
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _editingComponent = value;
+                                    });
+                                  },
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    TextButton(
+                                      onPressed: _cancelEditingGrading,
+                                      child: const Text('Cancel'),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: ElevatedButton(
+                                        onPressed: _saveGradingSettings,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFF2B2B2B),
+                                          foregroundColor: Colors.white,
+                                          elevation: 0,
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                        ),
+                                        child: const Text('Save Settings'),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
                         if (_isQuestionReorderMode)
                           QuestionReorderList(
                             reorderBuffer: _questionReorderBuffer,

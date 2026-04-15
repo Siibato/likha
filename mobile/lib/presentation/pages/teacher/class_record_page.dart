@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/core/utils/transmutation_util.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
@@ -94,14 +95,38 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
   }
 
   void _loadItemsAndSummary() {
+    print('*** CLASS RECORD PAGE: Loading items and summary for class: ${widget.classId}, quarter: $_selectedQuarter');
+    PageLogger.instance.log('Loading items and summary for class: ${widget.classId}, quarter: $_selectedQuarter');
+    
     ref.read(gradeItemsProvider.notifier).setQuarter(_selectedQuarter);
     ref.read(gradeItemsProvider.notifier).setComponent(''); // load all components
+    
+    print('*** CLASS RECORD PAGE: Loading grade items for class: ${widget.classId}');
+    PageLogger.instance.log('Loading grade items for class: ${widget.classId}');
     ref.read(gradeItemsProvider.notifier).loadItems(widget.classId).then((_) {
-      ref.read(gradeItemsProvider.notifier).backfillFromActivities(widget.classId, _selectedQuarter);
+      print('*** CLASS RECORD PAGE: Grade items loaded, starting backfill from activities for quarter: $_selectedQuarter');
+      PageLogger.instance.log('Grade items loaded, starting backfill from activities for quarter: $_selectedQuarter');
+      ref.read(gradeItemsProvider.notifier).backfillFromActivities(widget.classId, _selectedQuarter).then((_) {
+        print('*** CLASS RECORD PAGE: Backfill from activities completed for quarter: $_selectedQuarter');
+        PageLogger.instance.log('Backfill from activities completed for quarter: $_selectedQuarter');
+      }).catchError((e) {
+        print('*** CLASS RECORD PAGE: Error in backfill from activities for quarter: $_selectedQuarter: $e');
+        PageLogger.instance.error('Error in backfill from activities for quarter: $_selectedQuarter', e);
+      });
+    }).catchError((e) {
+      print('*** CLASS RECORD PAGE: Error loading grade items for class: ${widget.classId}: $e');
+      PageLogger.instance.error('Error loading grade items for class: ${widget.classId}', e);
     });
+    
+    print('*** CLASS RECORD PAGE: Loading quarterly grades summary for class: ${widget.classId}, quarter: $_selectedQuarter');
+    PageLogger.instance.log('Loading quarterly grades summary for class: ${widget.classId}, quarter: $_selectedQuarter');
     ref
         .read(quarterlyGradesProvider.notifier)
-        .loadSummary(widget.classId, _selectedQuarter);
+        .loadSummary(widget.classId, _selectedQuarter)
+        .catchError((e) {
+          print('*** CLASS RECORD PAGE: Error loading quarterly grades summary: $e');
+          PageLogger.instance.error('Error loading quarterly grades summary', e);
+        });
   }
 
   void _navigateToSetup() async {
@@ -118,10 +143,19 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
   }
 
   void _onQuarterChanged(int quarter) {
+    PageLogger.instance.log('Quarter changed from $_selectedQuarter to $quarter');
     setState(() => _selectedQuarter = quarter);
+    
     ref.read(gradeItemsProvider.notifier).setQuarter(quarter);
     ref.read(gradeItemsProvider.notifier).setComponent('');
-    ref.read(gradeItemsProvider.notifier).loadItems(widget.classId);
+    
+    PageLogger.instance.log('Loading grade items for new quarter: $quarter');
+    ref.read(gradeItemsProvider.notifier).loadItems(widget.classId).then((_) {
+      PageLogger.instance.log('Starting backfill for quarter: $quarter');
+      ref.read(gradeItemsProvider.notifier).backfillFromActivities(widget.classId, quarter);
+    });
+    
+    PageLogger.instance.log('Loading quarterly grades summary for new quarter: $quarter');
     ref
         .read(quarterlyGradesProvider.notifier)
         .loadSummary(widget.classId, quarter);
@@ -272,9 +306,27 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
     final config = _configForQuarter(configState.configs);
 
     ref.listen<GradeItemsState>(gradeItemsProvider, (prev, next) {
-      if (prev?.isLoading == true && !next.isLoading && next.items.isNotEmpty) {
-        final ids = next.items.map((i) => i.id).toList();
-        ref.read(gradeScoresProvider.notifier).loadScoresForItems(ids);
+      print('*** CLASS RECORD PAGE: Grade items state changed - loading: ${next.isLoading}, items count: ${next.items.length}');
+      PageLogger.instance.log('Grade items state changed - loading: ${next.isLoading}, items count: ${next.items.length}');
+      
+      if (prev?.isLoading == true && !next.isLoading) {
+        print('*** CLASS RECORD PAGE: Grade items loaded - total items: ${next.items.length}');
+        PageLogger.instance.log('Grade items loaded - total items: ${next.items.length}');
+        
+        for (final item in next.items) {
+          print('*** CLASS RECORD PAGE: Grade item: ${item.title} (${item.component}) - source: ${item.sourceType}, sourceId: ${item.sourceId}');
+          PageLogger.instance.log('Grade item: ${item.title} (${item.component}) - source: ${item.sourceType}, sourceId: ${item.sourceId}');
+        }
+        
+        if (next.items.isNotEmpty) {
+          final ids = next.items.map((i) => i.id).toList();
+          print('*** CLASS RECORD PAGE: Loading scores for ${ids.length} grade items');
+          PageLogger.instance.log('Loading scores for ${ids.length} grade items');
+          ref.read(gradeScoresProvider.notifier).loadScoresForItems(ids);
+        } else {
+          print('*** CLASS RECORD PAGE: No grade items found for class: ${widget.classId}, quarter: $_selectedQuarter');
+          PageLogger.instance.warn('No grade items found for class: ${widget.classId}, quarter: $_selectedQuarter');
+        }
       }
     });
 

@@ -272,32 +272,61 @@ class GradingRepositoryImpl implements GradingRepository {
     String? component,
   }) async {
     try {
+      print('*** GRADING REPO: getGradeItems() - classId: $classId, quarter: $gradingPeriodNumber, component: $component');
+      print('*** GRADING REPO: server reachable: ${_serverReachabilityService.isServerReachable}');
+      
       if (_serverReachabilityService.isServerReachable) {
-        final models = await _remoteDataSource.getGradeItems(
-          classId: classId,
-          gradingPeriodNumber: gradingPeriodNumber,
-          component: component,
-        );
-        await _localDataSource.saveItems(models);
-        return Right(models.map(_itemToEntity).toList());
+        print('*** GRADING REPO: fetching from remote datasource');
+        try {
+          final models = await _remoteDataSource.getGradeItems(
+            classId: classId,
+            gradingPeriodNumber: gradingPeriodNumber,
+            component: component,
+          );
+          print('*** GRADING REPO: got ${models.length} models from remote');
+          for (final model in models) {
+            print('*** GRADING REPO: remote model: ${model.title} (${model.component}) - source: ${model.sourceType}, sourceId: ${model.sourceId}');
+          }
+          await _localDataSource.saveItems(models);
+          final entities = models.map(_itemToEntity).toList();
+          print('*** GRADING REPO: converted to ${entities.length} entities, returning');
+          return Right(entities);
+        } catch (e) {
+          print('*** GRADING REPO: Error during remote fetch: $e');
+          print('*** GRADING REPO: Stack trace: ${StackTrace.current}');
+          rethrow;
+        }
       }
+      
+      print('*** GRADING REPO: server not reachable, using cache');
       final cached = await _localDataSource.getItemsByClassQuarter(
         classId,
         gradingPeriodNumber,
         component: component,
       );
-      return Right(cached.map(_itemToEntity).toList());
+      print('*** GRADING REPO: got ${cached.length} items from cache');
+      for (final model in cached) {
+        print('*** GRADING REPO: cached model: ${model.title} (${model.component}) - source: ${model.sourceType}, sourceId: ${model.sourceId}');
+      }
+      final entities = cached.map(_itemToEntity).toList();
+      print('*** GRADING REPO: converted cached to ${entities.length} entities, returning');
+      return Right(entities);
     } on ServerFailure catch (e) {
+      print('*** GRADING REPO: ServerFailure: ${e.message}');
       return Left(e);
     } catch (e) {
+      print('*** GRADING REPO: Exception: $e, trying cache fallback');
       try {
         final cached = await _localDataSource.getItemsByClassQuarter(
           classId,
           gradingPeriodNumber,
           component: component,
         );
-        return Right(cached.map(_itemToEntity).toList());
+        print('*** GRADING REPO: cache fallback got ${cached.length} items');
+        final entities = cached.map(_itemToEntity).toList();
+        return Right(entities);
       } catch (_) {
+        print('*** GRADING REPO: cache fallback failed');
         return Left(CacheFailure(e.toString()));
       }
     }
