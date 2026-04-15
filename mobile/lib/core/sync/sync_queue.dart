@@ -94,18 +94,42 @@ class SyncQueueEntry {
   });
 
   factory SyncQueueEntry.fromMap(Map<String, dynamic> map) {
+    final entityTypeValue = map[SyncQueueCols.entityType] as String?;
+    final operationValue = map[SyncQueueCols.operation] as String?;
+    final statusValue = map[SyncQueueCols.status] as String?;
+
+    CoreLogger.instance.log('fromMap: entityType=$entityTypeValue, operation=$operationValue, status=$statusValue');
+
+    final entityType = SyncEntityType.values.firstWhere(
+      (e) => e.dbValue == entityTypeValue,
+      orElse: () {
+        CoreLogger.instance.error('fromMap: Unknown entityType "$entityTypeValue", defaulting to user');
+        return SyncEntityType.user;
+      },
+    );
+
+    final operation = SyncOperation.values.firstWhere(
+      (e) => e.dbValue == operationValue,
+      orElse: () {
+        CoreLogger.instance.error('fromMap: Unknown operation "$operationValue", defaulting to create');
+        return SyncOperation.create;
+      },
+    );
+
+    final status = SyncStatus.values.firstWhere(
+      (e) => e.dbValue == statusValue,
+      orElse: () {
+        CoreLogger.instance.error('fromMap: Unknown status "$statusValue", defaulting to pending');
+        return SyncStatus.pending;
+      },
+    );
+
     return SyncQueueEntry(
       id: map[CommonCols.id] as String,
-      entityType: SyncEntityType.values.firstWhere(
-        (e) => e.dbValue == map[SyncQueueCols.entityType],
-      ),
-      operation: SyncOperation.values.firstWhere(
-        (e) => e.dbValue == map[SyncQueueCols.operation],
-      ),
+      entityType: entityType,
+      operation: operation,
       payload: _parseJsonString(map[SyncQueueCols.payload] as String),
-      status: SyncStatus.values.firstWhere(
-        (e) => e.dbValue == map[SyncQueueCols.status],
-      ),
+      status: status,
       retryCount: map[SyncQueueCols.retryCount] as int,
       maxRetries: map[SyncQueueCols.maxRetries] as int,
       createdAt: DateTime.parse(map[CommonCols.createdAt] as String),
@@ -250,6 +274,7 @@ class SyncQueueImpl implements SyncQueue {
 
   @override
   Future<List<SyncQueueEntry>> getByEntityAndOperation(SyncEntityType entityType, SyncOperation operation) async {
+    CoreLogger.instance.log('getByEntityAndOperation: entityType=${entityType.dbValue}, operation=${operation.dbValue}');
     final db = await _localDatabase.database;
     final results = await db.query(
       DbTables.syncQueue,
@@ -260,6 +285,7 @@ class SyncQueueImpl implements SyncQueue {
       ],
       orderBy: '${CommonCols.createdAt} ASC',
     );
+    CoreLogger.instance.log('getByEntityAndOperation: Found ${results.length} entries');
     return results.map(SyncQueueEntry.fromMap).toList();
   }
 

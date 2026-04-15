@@ -231,9 +231,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<List<UserModel>> getAllAccounts() async {
+    RepoLogger.instance.log('getAllAccounts: Calling remote API');
     try {
-      return await _dioClient.getTyped(ApiEndpoints.accountsList);
+      final result = await _dioClient.getTyped(ApiEndpoints.accountsList);
+      RepoLogger.instance.log('getAllAccounts: Remote API returned ${result.length} accounts');
+      return result;
     } on DioException catch (e) {
+      RepoLogger.instance.error('getAllAccounts: DioException - ${e.message}', e);
       throw _dioClient.handleError(e);
     }
   }

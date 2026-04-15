@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
+import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/presentation/pages/admin/widgets/styled_text_field.dart';
 import 'package:likha/presentation/pages/admin/widgets/styled_dropdown.dart';
 import 'package:likha/presentation/pages/admin/widgets/styled_button.dart';
@@ -33,22 +34,33 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
     if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) return;
 
+    final username = _usernameController.text.trim();
+    final fullName = _fullNameController.text.trim();
+    PageLogger.instance.log('_handleCreate START: username=$username, fullName=$fullName, role=$_selectedRole');
+
     setState(() => _isSubmitting = true);
     try {
       await ref.read(adminProvider.notifier).createAccount(
-            username: _usernameController.text.trim(),
-            fullName: _fullNameController.text.trim(),
+            username: username,
+            fullName: fullName,
             role: _selectedRole,
           );
 
       if (mounted) {
         final state = ref.read(adminProvider);
+        PageLogger.instance.log('After createAccount: success=${state.successMessage}, error=${state.error}');
         if (state.successMessage != null) {
+          PageLogger.instance.log('Account creation successful, navigating back');
           ref.read(adminProvider.notifier).clearMessages();
-          Navigator.pop(context);
+          Navigator.maybePop(context).then((_) {
+            ref.read(adminProvider.notifier).loadAccounts();
+          });
         } else if (state.error != null) {
+          PageLogger.instance.error('Account creation failed with error: ${state.error}');
           ref.read(adminProvider.notifier).clearMessages();
           setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
+        } else {
+          PageLogger.instance.warn('No success or error message returned');
         }
       }
     } finally {

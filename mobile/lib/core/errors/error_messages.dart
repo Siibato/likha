@@ -15,10 +15,36 @@ class AppErrorMapper {
       case ErrorCategory.serverError:
       case ErrorCategory.cache:
       case ErrorCategory.unknown:
+        // Check if the message is already user-friendly before using generic error
+        if (_isUserFriendlyMessage(failure.message)) {
+          return failure.message;
+        }
         return 'Something went wrong. Try again later.';
       case ErrorCategory.validation:
         return failure.message; // Already user-friendly
     }
+  }
+
+  /// Check if a message is user-friendly (short, no technical jargon)
+  static bool _isUserFriendlyMessage(String? message) {
+    if (message == null) return false;
+    
+    final lower = message.toLowerCase();
+    const technicalTerms = [
+      'exception',
+      'null',
+      'stack',
+      'trace',
+      'sqlite',
+      'constraint',
+      'failed:',
+      'error:',
+      "type '",
+    ];
+    
+    final isTechnical = technicalTerms.any((term) => lower.contains(term));
+    // Short messages without technical terms are considered user-friendly
+    return message.length < 100 && !isTechnical;
   }
 
   static String? toUserMessage(String? rawError) {

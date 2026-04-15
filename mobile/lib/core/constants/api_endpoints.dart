@@ -1,4 +1,5 @@
 import 'package:likha/core/constants/api_endpoint.dart';
+import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/data/models/auth/activity_log_model.dart';
 import 'package:likha/data/models/auth/auth_response_model.dart';
 import 'package:likha/data/models/auth/check_username_result_model.dart';
@@ -61,9 +62,19 @@ class ApiEndpoints {
   // ===== Admin Account Endpoints =====
   static final accountsList = ApiEndpoint<List<UserModel>>(
     '/api/v1/auth/accounts',
-    (json) => (json['accounts'] as List<dynamic>)
-        .map((e) => UserModel.fromJson(e as Map<String, dynamic>))
-        .toList(),
+    (json) {
+      RepoLogger.instance.log('accountsList parsing: json keys = ${json.keys.toList()}');
+      final accounts = json['accounts'];
+      RepoLogger.instance.log('accountsList parsing: accounts field = $accounts');
+      if (accounts is List<dynamic>) {
+        RepoLogger.instance.log('accountsList parsing: Found ${accounts.length} accounts in list');
+        return accounts
+            .map((e) => UserModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+      RepoLogger.instance.error('accountsList parsing: accounts is not a List, it is ${accounts.runtimeType}');
+      throw FormatException('Expected accounts to be a List, got ${accounts.runtimeType}');
+    },
   );
 
   static final ApiEndpoint<UserModel> accountsCreate = ApiEndpoint.fromModel(
