@@ -279,14 +279,17 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
     required String assignmentId,
     String? textContent,
   }) async {
+    RepoLogger.instance.warn('[CREATE_SUBMISSION] START — assignmentId=$assignmentId isServerReachable=${serverReachabilityService.isServerReachable}');
     try {
       if (!serverReachabilityService.isServerReachable) {
+        RepoLogger.instance.warn('[CREATE_SUBMISSION] OFFLINE PATH — creating locally');
         final studentId = await storageService.getUserId() ?? '';
         final localId = await localDataSource.createSubmissionLocally(
           assignmentId: assignmentId,
           studentId: studentId,
           textContent: textContent,
         );
+        RepoLogger.instance.warn('[CREATE_SUBMISSION] OFFLINE SUCCESS — localId=$localId');
         // No direct syncQueue.enqueue — createSubmissionLocally already enqueues atomically
 
         return Right(AssignmentSubmission(
@@ -309,18 +312,52 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
         ));
       }
 
+      RepoLogger.instance.warn('[CREATE_SUBMISSION] ONLINE PATH — calling remote');
       final result = await remoteDataSource.createSubmission(
         assignmentId: assignmentId,
         textContent: textContent,
       );
+      RepoLogger.instance.warn('[CREATE_SUBMISSION] ONLINE SUCCESS — id=${result.id}');
       // Cache submission for offline access (Fix 6)
       unawaited(localDataSource.cacheSubmissionDetail(result));
       return Right(result);
     } on ServerException catch (e) {
+      RepoLogger.instance.error('[CREATE_SUBMISSION] ServerException — ${e.message}');
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
+      RepoLogger.instance.warn('[CREATE_SUBMISSION] NetworkException caught — falling back to offline. msg=${e.message}');
+      // Server went down between health-check intervals — fall back to offline path
+      try {
+        final studentId = await storageService.getUserId() ?? '';
+        final localId = await localDataSource.createSubmissionLocally(
+          assignmentId: assignmentId,
+          studentId: studentId,
+          textContent: textContent,
+        );
+        RepoLogger.instance.warn('[CREATE_SUBMISSION] NetworkException fallback SUCCESS — localId=$localId');
+        return Right(AssignmentSubmission(
+          id: localId,
+          assignmentId: assignmentId,
+          studentId: studentId,
+          studentName: '',
+          status: 'draft',
+          textContent: textContent,
+          score: null,
+          feedback: null,
+          files: const [],
+          submittedAt: null,
+          gradedAt: null,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          needsSync: true,
+          cachedAt: DateTime.now(),
+        ));
+      } catch (cacheErr) {
+        RepoLogger.instance.error('[CREATE_SUBMISSION] NetworkException fallback FAILED — $cacheErr');
+        return Left(CacheFailure(cacheErr.toString()));
+      }
     } catch (e) {
+      RepoLogger.instance.error('[CREATE_SUBMISSION] unexpected error — $e');
       return Left(ServerFailure(e.toString()));
     }
   }
@@ -410,9 +447,12 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
   ResultFuture<AssignmentSubmission> submitAssignment({
     required String submissionId,
   }) async {
+    RepoLogger.instance.warn('[SUBMIT_ASSIGNMENT] START — submissionId=$submissionId isServerReachable=${serverReachabilityService.isServerReachable}');
     try {
       if (!serverReachabilityService.isServerReachable) {
+        RepoLogger.instance.warn('[SUBMIT_ASSIGNMENT] OFFLINE PATH — submitting locally');
         final cached = await localDataSource.getCachedSubmission(submissionId);
+        RepoLogger.instance.warn('[SUBMIT_ASSIGNMENT] cached submission — id=${cached?.id} status=${cached?.status} assignmentId=${cached?.assignmentId}');
         final assignmentId = cached?.assignmentId ?? '';
         await localDataSource.submitAssignmentLocally(
           submissionId: submissionId,
@@ -423,28 +463,32 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
         // Read the freshly-updated cached row for a complete response
         final updated = await localDataSource.getCachedSubmission(submissionId);
         if (updated != null) return Right(updated);
+        
+        // Fallback: create a submitted submission with preserved text content
         return Right(AssignmentSubmission(
           id: submissionId,
-          assignmentId: assignmentId,
-          studentId: '',
-          studentName: '',
+          assignmentId: cached?.assignmentId ?? assignmentId,
+          studentId: cached?.studentId ?? '',
+          studentName: cached?.studentName ?? '',
           status: 'submitted',
           // isLate field removed - no longer needed
-          files: const [],
-          textContent: null,
-          score: null,
-          feedback: null,
+          files: cached?.files ?? const [],
+          textContent: cached?.textContent, // Preserve the text content!
+          score: cached?.score,
+          feedback: cached?.feedback,
           submittedAt: DateTime.now(),
-          gradedAt: null,
-          createdAt: DateTime.now(),
+          gradedAt: cached?.gradedAt,
+          createdAt: cached?.createdAt ?? DateTime.now(),
           updatedAt: DateTime.now(),
           needsSync: true,
           cachedAt: DateTime.now(),
         ));
       }
 
+      RepoLogger.instance.warn('[SUBMIT_ASSIGNMENT] ONLINE PATH — calling remote');
       final result = await remoteDataSource.submitAssignment(
           submissionId: submissionId);
+      RepoLogger.instance.warn('[SUBMIT_ASSIGNMENT] ONLINE SUCCESS — id=${result.id} status=${result.status}');
 
       // Best-effort: cache submission detail for offline viewing
       try {
@@ -467,10 +511,45 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
 
       return Right(result);
     } on ServerException catch (e) {
+      RepoLogger.instance.error('[SUBMIT_ASSIGNMENT] ServerException — ${e.message}');
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
+      RepoLogger.instance.warn('[SUBMIT_ASSIGNMENT] NetworkException caught — falling back to offline. msg=${e.message}');
+      // Server went down between health-check intervals — fall back to offline path
+      try {
+        final cached = await localDataSource.getCachedSubmission(submissionId);
+        RepoLogger.instance.warn('[SUBMIT_ASSIGNMENT] NetworkException fallback — cached=${cached?.id} status=${cached?.status}');
+        final assignmentId = cached?.assignmentId ?? '';
+        await localDataSource.submitAssignmentLocally(
+          submissionId: submissionId,
+          assignmentId: assignmentId,
+        );
+        final updated = await localDataSource.getCachedSubmission(submissionId);
+        RepoLogger.instance.warn('[SUBMIT_ASSIGNMENT] NetworkException fallback SUCCESS — updated=${updated?.id} status=${updated?.status}');
+        if (updated != null) return Right(updated);
+        return Right(AssignmentSubmission(
+          id: submissionId,
+          assignmentId: cached?.assignmentId ?? assignmentId,
+          studentId: cached?.studentId ?? '',
+          studentName: cached?.studentName ?? '',
+          status: 'submitted',
+          files: cached?.files ?? const [],
+          textContent: cached?.textContent,
+          score: cached?.score,
+          feedback: cached?.feedback,
+          submittedAt: DateTime.now(),
+          gradedAt: cached?.gradedAt,
+          createdAt: cached?.createdAt ?? DateTime.now(),
+          updatedAt: DateTime.now(),
+          needsSync: true,
+          cachedAt: DateTime.now(),
+        ));
+      } catch (e) {
+        RepoLogger.instance.error('[SUBMIT_ASSIGNMENT] NetworkException fallback failed — ${e.toString()}');
+        return Left(CacheFailure(e.toString()));
+      }
     } catch (e) {
+      RepoLogger.instance.error('[SUBMIT_ASSIGNMENT] unexpected error — ${e.toString()}');
       return Left(ServerFailure(e.toString()));
     }
   }

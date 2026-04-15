@@ -19,6 +19,7 @@ import 'package:likha/domain/grading/usecases/set_score_override.dart';
 import 'package:likha/domain/grading/usecases/setup_grading.dart';
 import 'package:likha/domain/grading/usecases/update_grading_config.dart';
 import 'package:likha/domain/grading/usecases/update_period_grade.dart';
+import 'package:likha/domain/grading/usecases/generate_scores.dart';
 import 'package:likha/domain/assessments/usecases/get_assessments.dart';
 import 'package:likha/domain/assignments/usecases/get_assignments.dart';
 import 'package:likha/domain/grading/repositories/grading_repository.dart';
@@ -191,11 +192,13 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
   final GetGradeItems _getGradeItems;
   final CreateGradeItem _createGradeItem;
   final DeleteGradeItem _deleteGradeItem;
+  final GenerateScores _generateScores;
 
   GradeItemsNotifier(
     this._getGradeItems,
     this._createGradeItem,
     this._deleteGradeItem,
+    this._generateScores,
   ) : super(GradeItemsState());
 
   Future<void> loadItems(String classId) async {
@@ -437,6 +440,28 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
 
   void clearMessages() {
     state = state.copyWith(error: null, successMessage: null);
+  }
+
+  /// Generate scores for grade items that don't have scores yet
+  Future<void> generateScoresForItems(String classId) async {
+    print('*** GRADE PROVIDER: generateScoresForItems() - starting for classId: $classId, quarter: ${state.currentQuarter}');
+    ProviderLogger.instance.log('generateScoresForItems() - starting for classId: $classId, quarter: ${state.currentQuarter}');
+    
+    final result = await _generateScores.generateScoresForClass(GenerateScoresParams(
+      classId: classId,
+      gradingPeriodNumber: state.currentQuarter,
+    ));
+    
+    result.fold(
+      (failure) {
+        print('*** GRADE PROVIDER: generateScoresForItems failed: ${AppErrorMapper.fromFailure(failure)}');
+        ProviderLogger.instance.error('generateScoresForItems() - failed: ${AppErrorMapper.fromFailure(failure)}');
+      },
+      (_) {
+        print('*** GRADE PROVIDER: generateScoresForItems completed successfully');
+        ProviderLogger.instance.log('generateScoresForItems() - completed successfully');
+      },
+    );
   }
 }
 
@@ -700,6 +725,7 @@ final gradeItemsProvider = StateNotifierProvider<GradeItemsNotifier, GradeItemsS
     sl<GetGradeItems>(),
     sl<CreateGradeItem>(),
     sl<DeleteGradeItem>(),
+    sl<GenerateScores>(),
   );
 });
 

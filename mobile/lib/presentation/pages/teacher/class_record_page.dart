@@ -323,6 +323,11 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
           print('*** CLASS RECORD PAGE: Loading scores for ${ids.length} grade items');
           PageLogger.instance.log('Loading scores for ${ids.length} grade items');
           ref.read(gradeScoresProvider.notifier).loadScoresForItems(ids);
+          
+          // Generate scores for grade items that don't have scores yet
+          print('*** CLASS RECORD PAGE: Generating scores for grade items');
+          PageLogger.instance.log('Generating scores for grade items');
+          ref.read(gradeItemsProvider.notifier).generateScoresForItems(widget.classId);
         } else {
           print('*** CLASS RECORD PAGE: No grade items found for class: ${widget.classId}, quarter: $_selectedQuarter');
           PageLogger.instance.warn('No grade items found for class: ${widget.classId}, quarter: $_selectedQuarter');

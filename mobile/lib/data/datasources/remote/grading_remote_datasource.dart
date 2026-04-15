@@ -169,7 +169,16 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
         queryParameters: queryParams,
       );
       final data = response.data['data'] ?? response.data;
-      final items = data['items'] as List<dynamic>? ?? [];
+      
+      List<dynamic> items;
+      if (data is List) {
+        items = data;
+      } else if (data is Map<String, dynamic>) {
+        items = data['items'] as List<dynamic>? ?? [];
+      } else {
+        items = [];
+      }
+      
       return items
           .map((e) => GradeItemModel.fromJson(e as Map<String, dynamic>))
           .toList();
@@ -232,7 +241,19 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
         ApiEndpoints.gradeItemScores(gradeItemId).path,
       );
       final data = response.data['data'] ?? response.data;
-      final scores = data['scores'] as List<dynamic>? ?? [];
+      
+      // Handle both response structures:
+      // 1. {"data": [...]} where data is directly an array of scores
+      // 2. {"data": {"scores": [...]}} where data contains a scores array
+      List<dynamic> scores;
+      if (data is List) {
+        scores = data;
+      } else if (data is Map<String, dynamic>) {
+        scores = data['scores'] as List<dynamic>? ?? [];
+      } else {
+        scores = [];
+      }
+      
       return scores
           .map((e) => GradeScoreModel.fromJson(e as Map<String, dynamic>))
           .toList();

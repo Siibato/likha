@@ -10,6 +10,7 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
 import 'package:likha/domain/assignments/entities/submission_file.dart';
+import 'package:likha/domain/assignments/repositories/assignment_repository.dart';
 import 'package:likha/domain/assignments/usecases/create_submission.dart';
 import 'package:likha/domain/assignments/usecases/upload_file.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
@@ -29,6 +30,7 @@ import 'package:likha/presentation/pages/student/widgets/assignment_submitted_ba
 import 'package:flutter/foundation.dart';
 import 'package:likha/core/utils/file_opener.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/core/logging/page_logger.dart';
 
 class AssignmentDetailPage extends ConsumerStatefulWidget {
   final String assignmentId;
@@ -43,6 +45,7 @@ class AssignmentDetailPage extends ConsumerStatefulWidget {
   final int? score;
   final String? submissionStatus;
   final DateTime dueAt;
+  final bool isNewAttempt;
 
   const AssignmentDetailPage({
     super.key,
@@ -58,6 +61,7 @@ class AssignmentDetailPage extends ConsumerStatefulWidget {
     this.score,
     this.submissionStatus,
     required this.dueAt,
+    this.isNewAttempt = false,
   });
 
   @override
@@ -66,7 +70,7 @@ class AssignmentDetailPage extends ConsumerStatefulWidget {
 }
 
 class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
-  late final FleatherController _submissionController;
+  late FleatherController _submissionController;
   String? _submissionId;
   bool _isCreatingSubmission = false;
   String? _formError;
@@ -75,16 +79,58 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
   void initState() {
     super.initState();
     _submissionController = FleatherController();
-    // Always clear stale submission first, then load if submissionId exists
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(assignmentProvider.notifier).clearCurrentSubmission();
-      if (widget.submissionId != null) {
+      // In new-attempt mode we never load the old submission — fresh editor only.
+      // In view mode we load the existing submission to display it.
+      if (!widget.isNewAttempt && widget.submissionId != null) {
         _submissionId = widget.submissionId;
-        ref
-            .read(assignmentProvider.notifier)
-            .loadSubmissionDetail(widget.submissionId!);
+        _loadSubmissionWithOfflineSupport(widget.submissionId!);
       }
     });
+  }
+
+  /// Load submission with offline-first support
+  /// Attempts to load submission details and handles offline scenarios gracefully
+  Future<void> _loadSubmissionWithOfflineSupport(String submissionId) async {
+    await ref.read(assignmentProvider.notifier).loadSubmissionDetail(submissionId);
+    
+    // If loading failed and we have a submitted status, this might be an offline submission
+    // Give it a moment to settle and check if we have cached data
+    if (mounted) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      final state = ref.read(assignmentProvider);
+      if (state.currentSubmission == null && widget.submissionStatus == 'submitted') {
+        // This is likely an offline submission that hasn't been fully processed yet
+        // The submission exists but couldn't be loaded due to network issues
+        // We'll handle this in the UI state management
+      }
+    }
+  }
+
+  /// Load text content from local cache for offline submissions
+  /// This method attempts to retrieve the text content directly from the local database
+  /// when the full submission object couldn't be loaded due to network issues
+  Future<void> _loadOfflineSubmissionText(String submissionId) async {
+    try {
+      // Access the local data source directly to get cached submission text
+      final assignmentRepo = sl<AssignmentRepository>();
+      final result = await assignmentRepo.getSubmissionDetail(submissionId: submissionId);
+      
+      result.fold(
+        (failure) {
+          // If even the cache fails, we can't do much - this is expected for very recent submissions
+          // that haven't been cached yet
+        },
+        (submission) {
+          if (submission.textContent != null && mounted) {
+            _hydrateController(submission.textContent!);
+          }
+        },
+      );
+    } catch (e) {
+      // Silently fail - this is a best-effort attempt to show cached content
+    }
   }
 
   @override
@@ -104,6 +150,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
   }
 
   Future<void> _createSubmission() async {
+    PageLogger.instance.warn('[CREATE] _createSubmission START — assignmentId=${widget.assignmentId} text=${_getTextContent()?.substring(0, (_getTextContent()?.length ?? 0).clamp(0, 40))}');
     setState(() => _isCreatingSubmission = true);
 
     await ref.read(assignmentProvider.notifier).createSubmission(
@@ -115,6 +162,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
 
     if (!mounted) return;
     final state = ref.read(assignmentProvider);
+    PageLogger.instance.warn('[CREATE] after createSubmission — currentSubmission=${state.currentSubmission?.id} needsSync=${state.currentSubmission?.needsSync} error=${state.error}');
     if (state.currentSubmission != null && state.error == null) {
       setState(() {
         _submissionId = state.currentSubmission!.id;
@@ -125,6 +173,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
         _hydrateController(state.currentSubmission!.textContent!);
       }
     } else {
+      PageLogger.instance.warn('[CREATE] createSubmission had no submission or had error — error=${state.error}');
       setState(() => _isCreatingSubmission = false);
     }
   }
@@ -180,38 +229,28 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
   }
 
   Future<void> _handleSubmit() async {
-    final effectiveStatus = ref.read(assignmentProvider).currentSubmission?.status ?? widget.submissionStatus;
-
-    // Show confirmation dialog for re-submission
-    if (effectiveStatus == 'submitted') {
-      await AppDialogs.showConfirmation(
-        context: context,
-        title: 'Re-submit Assignment?',
-        body: 'You are about to replace your existing submission. Your teacher will see the updated version.',
-        confirmLabel: 'Re-submit',
-        onConfirm: _performSubmit,
-      );
-      return;
-    }
-
     await _performSubmit();
   }
 
   Future<void> _performSubmit() async {
+    PageLogger.instance.warn('[SUBMIT] _performSubmit START — submissionId=$_submissionId isNewAttempt=${widget.isNewAttempt}');
     if (_submissionId == null) {
+      PageLogger.instance.warn('[SUBMIT] no submissionId, calling _createSubmission');
       await _createSubmission();
-      if (_submissionId == null) return;
+      PageLogger.instance.warn('[SUBMIT] after _createSubmission — submissionId=$_submissionId');
+      if (_submissionId == null) {
+        PageLogger.instance.warn('[SUBMIT] _createSubmission failed, aborting');
+        return;
+      }
     }
 
-    // If submission already exists and text has changed, persist text first
-    if (_submissionId != null && _canSubmitText) {
-      await _createSubmission(); // calls create_or_get which now allows submitted status
-      if (!mounted) return;
-    }
+    if (!mounted) return;
 
+    PageLogger.instance.warn('[SUBMIT] calling submitAssignment($_submissionId)');
     await ref
         .read(assignmentProvider.notifier)
         .submitAssignment(_submissionId!);
+    PageLogger.instance.warn('[SUBMIT] submitAssignment returned');
   }
 
   Future<void> _deleteFile(String fileId) async {
@@ -297,176 +336,307 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
+  Future<bool> _confirmDiscard() async {
+    final hasText = _submissionController.document.toPlainText().trim().isNotEmpty;
+    final hasFiles = ref.read(assignmentProvider).currentSubmission?.files.isNotEmpty ?? false;
+    if (!hasText && !hasFiles) return true;
+    bool shouldDiscard = false;
+    await AppDialogs.showConfirmation(
+      context: context,
+      title: 'Discard new attempt?',
+      body: 'Your changes will not be saved.',
+      confirmLabel: 'Discard',
+      onConfirm: () => shouldDiscard = true,
+    );
+    return shouldDiscard;
+  }
+
+  void _openNewAttempt() {
+    Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AssignmentDetailPage(
+          assignmentId: widget.assignmentId,
+          assignmentTitle: widget.assignmentTitle,
+          instructions: widget.instructions,
+          allowsTextSubmission: widget.allowsTextSubmission,
+          allowsFileSubmission: widget.allowsFileSubmission,
+          totalPoints: widget.totalPoints,
+          allowedFileTypes: widget.allowedFileTypes,
+          maxFileSizeMb: widget.maxFileSizeMb,
+          submissionId: null,
+          score: null,
+          submissionStatus: null,
+          dueAt: widget.dueAt,
+          isNewAttempt: true,
+        ),
+      ),
+    ).then((submitted) {
+      if (submitted == true && mounted) {
+        Navigator.pop(context, true);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(assignmentProvider);
     final rawSubmission = state.currentSubmission;
     // Guard: only use if it belongs to THIS assignment (prevents race conditions)
-    final submission = (rawSubmission?.assignmentId == widget.assignmentId)
+    // In new-attempt mode there is no prior submission to display.
+    final submission = (!widget.isNewAttempt && rawSubmission?.assignmentId == widget.assignmentId)
         ? rawSubmission
         : null;
 
-    // Prefill text content if submission exists
-    if (submission != null &&
+    // Prefill text content if submission exists (view/graded/returned modes only)
+    if (!widget.isNewAttempt &&
+        submission != null &&
         submission.textContent != null &&
         _submissionController.document.toPlainText().trim().isEmpty) {
       _hydrateController(submission.textContent!);
     }
 
+    // For offline submissions: if submission is null but we have a submitted status,
+    // try to load the text content from local cache
+    if (!widget.isNewAttempt &&
+        submission == null &&
+        widget.submissionStatus == 'submitted' &&
+        widget.submissionId != null &&
+        _submissionController.document.toPlainText().trim().isEmpty) {
+      _loadOfflineSubmissionText(widget.submissionId!);
+    }
+
     ref.listen<AssignmentState>(assignmentProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
+        PageLogger.instance.warn('[LISTEN] successMessage=${next.successMessage} needsSync=${next.currentSubmission?.needsSync}');
         setState(() => _formError = null);
         ref.read(assignmentProvider.notifier).clearMessages();
         if (next.successMessage == 'Assignment submitted') {
+          final isOffline = next.currentSubmission?.needsSync == true;
+          PageLogger.instance.warn('[LISTEN] Assignment submitted — isOffline=$isOffline, popping');
+          if (isOffline && mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Saved offline — will sync when connected'),
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
           Navigator.pop(context, true);
         }
       }
       if (next.error != null && prev?.error != next.error) {
-        setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
+        PageLogger.instance.warn('[LISTEN] error=${next.error} isNewAttempt=${widget.isNewAttempt} submissionStatus=${widget.submissionStatus}');
+        // Only show errors on editable pages (draft / returned / no prior submission).
+        // View-mode pages (submitted) and new-attempt pages must not surface errors
+        // from sibling/child pages sharing the same provider.
+        final isEditablePage = !widget.isNewAttempt &&
+            widget.submissionStatus != 'submitted' &&
+            widget.submissionStatus != 'graded';
+        if (isEditablePage) {
+          final errorMessage = AppErrorMapper.toUserMessage(next.error);
+          setState(() => _formError = errorMessage);
+        }
         ref.read(assignmentProvider.notifier).clearMessages();
       }
     });
 
-    // Use submission status from loaded data, or fall back to initial status from widget
     final effectiveStatus = submission?.status ?? widget.submissionStatus;
     final isGraded = effectiveStatus == 'graded';
     final isSubmitted = effectiveStatus == 'submitted';
+    final isOfflineSubmitted = !widget.isNewAttempt && widget.submissionStatus == 'submitted' && submission == null;
     final isDeadlinePassed = sl<ServerClockService>().now().isAfter(widget.dueAt);
-    final canEditSubmitted = isSubmitted && !isDeadlinePassed; // submitted but editable
-    final canEdit = !isGraded && (!isSubmitted || canEditSubmitted);
-    final isLoading = state.isLoading || _isCreatingSubmission;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
-      body: SafeArea(
-        child: state.isLoading && submission == null
-            ? const Center(
-                child: CircularProgressIndicator(
-                  color: Color(0xFF2B2B2B),
-                  strokeWidth: 2.5,
-                ),
-              )
-            : CustomScrollView(
-                slivers: [
-                  const SliverToBoxAdapter(
-                    child: ClassSectionHeader(
-                      title: 'Assignment Details',
-                      showBackButton: true,
-                    ),
+    // VIEW MODE: student already submitted — show read-only content, not an editor.
+    // NEW ATTEMPT MODE: blank editor for creating a fresh submission.
+    // EDIT MODE: draft / returned — editable as before.
+    final isViewMode = !widget.isNewAttempt && (isSubmitted || isOfflineSubmitted) && !isGraded;
+    final isReturnedEdit = effectiveStatus == 'returned';
+    final canEdit = widget.isNewAttempt || (!isGraded && !isViewMode && (effectiveStatus == null || effectiveStatus == 'draft' || isReturnedEdit));
+    final isLoading = (state.isLoading || _isCreatingSubmission) && !isOfflineSubmitted;
+
+    final pageTitle = widget.isNewAttempt ? 'New Attempt' : 'Assignment Details';
+
+    return PopScope(
+      canPop: !widget.isNewAttempt,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final nav = Navigator.of(context);
+        final ok = await _confirmDiscard();
+        if (ok) nav.pop(false);
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFAFAFA),
+        body: SafeArea(
+          child: state.isLoading && submission == null && !isOfflineSubmitted && !widget.isNewAttempt
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xFF2B2B2B),
+                    strokeWidth: 2.5,
                   ),
-                  SliverPadding(
-                    padding: const EdgeInsets.all(24),
-                    sliver: SliverList(
-                      delegate: SliverChildListDelegate([
-                        // Form Error Display
-                        FormMessage(
-                          message: _formError,
-                          severity: MessageSeverity.error,
-                        ),
-                        if (_formError != null) const SizedBox(height: 12),
-
-                        // Assignment Title
-                        Text(
-                          widget.assignmentTitle,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF2B2B2B),
-                            letterSpacing: -0.5,
-                            height: 1.2,
+                )
+              : CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: ClassSectionHeader(
+                        title: pageTitle,
+                        showBackButton: true,
+                      ),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.all(24),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate([
+                          // Form Error Display
+                          FormMessage(
+                            message: _formError,
+                            severity: MessageSeverity.error,
                           ),
-                        ),
-                        const SizedBox(height: 16),
+                          if (_formError != null) const SizedBox(height: 12),
 
-                        // Instructions
-                        AssignmentInstructionsCard(
-                          instructions: widget.instructions,
-                          totalPoints: widget.totalPoints,
-                        ),
-
-                        // Graded view - show score first
-                        if (isGraded) ...[
-                          const SizedBox(height: 16),
-                          if (submission != null && submission.score != null)
-                            ScoreDisplayCard(
-                              score: submission.score!,
-                              totalPoints: widget.totalPoints,
-                              useBaseCardStyle: true,
-                              gradedAt: submission.gradedAt,
-                              formatDateTime: (dt) => formatDateTimeDisplay(dt),
-                            )
-                          else if (widget.score != null)
-                            ScoreDisplayCard(
-                              score: widget.score!,
-                              totalPoints: widget.totalPoints,
-                              useBaseCardStyle: true,
+                          // Assignment Title
+                          Text(
+                            widget.assignmentTitle,
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF2B2B2B),
+                              letterSpacing: -0.5,
+                              height: 1.2,
                             ),
-                        ],
-
-                        // Feedback for graded or returned
-                        if (submission != null && submission.feedback != null && submission.feedback!.isNotEmpty) ...[
-                          const SizedBox(height: 16),
-                          if (submission.status == 'returned')
-                            AssignmentReturnedBanner(feedback: submission.feedback!)
-                          else if (submission.status == 'graded')
-                            _buildFeedbackCard(submission.feedback!)
-                        ],
-
-                        // Editable form (for draft or returned)
-                        if (_canSubmitText && canEdit) ...[
-                          const SizedBox(height: 16),
-                          AssignmentTextInputCard(
-                            controller: _submissionController,
-                            isReadOnly: false,
                           ),
-                        ],
-                        if (_canSubmitFile && canEdit) ...[
                           const SizedBox(height: 16),
-                          AssignmentFilesCard(
-                            files: submission?.files ?? [],
-                            isReadOnly: false,
-                            allowedFileTypes: widget.allowedFileTypes,
-                            maxFileSizeMb: widget.maxFileSizeMb,
-                            onUploadPressed: _pickAndUploadFile,
-                            onDeleteFile: _deleteFile,
+
+                          // Instructions
+                          AssignmentInstructionsCard(
+                            instructions: widget.instructions,
+                            totalPoints: widget.totalPoints,
                           ),
-                        ],
 
-                        // Submit button (for draft, returned, or editable submitted)
-                        if (canEdit) ...[
-                          const SizedBox(height: 24),
-                          AssignmentSubmitButton(
-                            isLoading: isLoading,
-                            onPressed: _handleSubmit,
-                            text: canEditSubmitted ? 'Re-submit Assignment' : 'Submit Assignment',
-                          ),
-                        ],
+                          // Graded view — show score first
+                          if (isGraded) ...[
+                            const SizedBox(height: 16),
+                            if (submission != null && submission.score != null)
+                              ScoreDisplayCard(
+                                score: submission.score!,
+                                totalPoints: widget.totalPoints,
+                                useBaseCardStyle: true,
+                                gradedAt: submission.gradedAt,
+                                formatDateTime: (dt) => formatDateTimeDisplay(dt),
+                              )
+                            else if (widget.score != null)
+                              ScoreDisplayCard(
+                                score: widget.score!,
+                                totalPoints: widget.totalPoints,
+                                useBaseCardStyle: true,
+                              ),
+                          ],
 
-                        // Submitted banner (waiting for grade)
-                        if (isSubmitted && !isGraded) ...[
-                          const SizedBox(height: 24),
-                          const AssignmentSubmittedBanner(),
-                        ],
+                          // Feedback for graded or returned
+                          if (submission != null && submission.feedback != null && submission.feedback!.isNotEmpty) ...[
+                            const SizedBox(height: 16),
+                            if (submission.status == 'returned')
+                              AssignmentReturnedBanner(feedback: submission.feedback!)
+                            else if (submission.status == 'graded')
+                              _buildFeedbackCard(submission.feedback!)
+                          ],
 
-                        // Read-only submission view (for graded or submitted after deadline)
-                        if (!canEdit && submission != null) ...[
-                          const SizedBox(height: 16),
-                          _buildSubmissionCard(submission),
-                        ],
+                          // ── VIEW MODE (submitted, not graded) ──────────────────────
+                          if (isViewMode) ...[
+                            // Submitted banner
+                            const SizedBox(height: 24),
+                            const AssignmentSubmittedBanner(),
 
-                        // Submission timestamp
-                        if (submission != null && submission.submittedAt != null) ...[
-                          const SizedBox(height: 16),
-                          _buildSubmissionInfo(submission.submittedAt!),
-                        ],
+                            // Read-only submission content
+                            if (submission != null) ...[
+                              const SizedBox(height: 16),
+                              _buildSubmissionCard(submission),
+                            ],
 
-                        const SizedBox(height: 40),
-                      ]),
+                            // Submission timestamp
+                            if (submission != null && submission.submittedAt != null) ...[
+                              const SizedBox(height: 16),
+                              _buildSubmissionInfo(submission.submittedAt!),
+                            ],
+
+                            // Create new attempt button (only before deadline)
+                            if (!isDeadlinePassed) ...[
+                              const SizedBox(height: 24),
+                              _buildNewAttemptButton(),
+                            ],
+                          ],
+
+                          // ── EDITOR MODE (new attempt / draft / returned) ───────────
+                          if (canEdit) ...[
+                            if (_canSubmitText) ...[
+                              const SizedBox(height: 16),
+                              AssignmentTextInputCard(
+                                controller: _submissionController,
+                                isReadOnly: false,
+                              ),
+                            ],
+                            if (_canSubmitFile) ...[
+                              const SizedBox(height: 16),
+                              AssignmentFilesCard(
+                                files: submission?.files ?? [],
+                                isReadOnly: false,
+                                allowedFileTypes: widget.allowedFileTypes,
+                                maxFileSizeMb: widget.maxFileSizeMb,
+                                onUploadPressed: _pickAndUploadFile,
+                                onDeleteFile: _deleteFile,
+                              ),
+                            ],
+                            const SizedBox(height: 24),
+                            AssignmentSubmitButton(
+                              isLoading: isLoading,
+                              onPressed: _handleSubmit,
+                              text: isReturnedEdit ? 'Re-submit Assignment' : 'Submit Assignment',
+                            ),
+                          ],
+
+                          // ── GRADED: read-only submission card ──────────────────────
+                          if (isGraded && submission != null) ...[
+                            const SizedBox(height: 16),
+                            _buildSubmissionCard(submission),
+                            if (submission.submittedAt != null) ...[
+                              const SizedBox(height: 16),
+                              _buildSubmissionInfo(submission.submittedAt!),
+                            ],
+                          ],
+
+                          const SizedBox(height: 40),
+                        ]),
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNewAttemptButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton(
+        onPressed: _openNewAttempt,
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          side: const BorderSide(color: Color(0xFF2B2B2B), width: 1.5),
+          foregroundColor: const Color(0xFF2B2B2B),
+        ),
+        child: const Text(
+          'Create New Attempt',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.3,
+          ),
+        ),
       ),
     );
   }

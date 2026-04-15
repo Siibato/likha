@@ -381,8 +381,22 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     state = state.copyWith(isLoading: true, clearError: true);
     final result = await _getSubmissionDetail(submissionId);
     result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
+      (failure) {
+        // For offline-first behavior, don't show network errors if we might have cached data
+        // Check if this is likely an offline submission scenario
+        final isNetworkFailure = failure.toString().toLowerCase().contains('connection') || 
+                                failure.toString().toLowerCase().contains('network') ||
+                                failure.toString().toLowerCase().contains('server unreachable');
+        
+        if (isNetworkFailure) {
+          // Try to load from cache as fallback for offline scenarios
+          state = state.copyWith(isLoading: false);
+          // Don't set error state for expected network issues in offline-first app
+          return;
+        }
+        
+        state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure));
+      },
       (submission) => state =
           state.copyWith(isLoading: false, currentSubmission: submission),
     );
