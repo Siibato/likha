@@ -167,6 +167,32 @@ mixin ClassCrudMixin on ClassRepositoryBase {
                     orElse: () => throw Exception('Class not found'),
                   ));
 
+          // Update local cache with optimistic changes
+          try {
+            final cachedClasses = await localDataSource.getCachedClasses();
+            final updatedCache = cachedClasses.map((c) {
+              if (c.id == classId) {
+                return ClassModel(
+                  id: current.id,
+                  title: title ?? current.title,
+                  description: description ?? current.description,
+                  teacherId: teacherId ?? current.teacherId,
+                  teacherUsername: current.teacherUsername,
+                  teacherFullName: current.teacherFullName,
+                  isArchived: current.isArchived,
+                  isAdvisory: isAdvisory ?? current.isAdvisory,
+                  studentCount: current.studentCount,
+                  createdAt: current.createdAt,
+                  updatedAt: DateTime.now(),
+                );
+              }
+              return c;
+            }).toList();
+            await localDataSource.cacheClasses(updatedCache);
+          } catch (e) {
+            // Cache failure is not critical
+          }
+
           return Right(ClassEntity(
             id: current.id,
             title: title ?? current.title,

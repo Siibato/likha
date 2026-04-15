@@ -62,7 +62,8 @@ enum SyncOperation {
 
 enum SyncStatus {
   pending,
-  failed;
+  failed,
+  succeeded;
 
   /// DB-stored value — matches Dart .name.
   String get dbValue => name;
