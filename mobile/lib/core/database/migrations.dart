@@ -65,10 +65,8 @@ class MigrationRunner {
     pending.sort((a, b) => a.version.compareTo(b.version));
     
     for (final migration in pending) {
-      await db.transaction((txn) async {
-        await migration.up(db);
-        await _recordMigration(db, migration);
-      });
+      await migration.up(db);
+      await _recordMigration(db, migration);
     }
   }
   

@@ -32,10 +32,19 @@ class LocalDatabase {
       onUpgrade: _upgradeDatabase,
       onDowngrade: _downgradeDatabase,
       onOpen: (db) async {
-        await db.execute('PRAGMA foreign_keys = ON');
+        try {
+          await db.execute('PRAGMA foreign_keys = ON');
+          await db.execute('PRAGMA synchronous = NORMAL');
+          await db.execute('PRAGMA cache_size = 10000');
+          await db.execute('PRAGMA temp_store = MEMORY');
+        } catch (e) {
+          print('Warning: Failed to set database PRAGMA settings: $e');
+        }
         // Run any pending migrations
         await MigrationRunner.runMigrations(db, MigrationRunner.allMigrations);
       },
+      // Configure database for better performance
+      singleInstance: true,
     );
   }
 
