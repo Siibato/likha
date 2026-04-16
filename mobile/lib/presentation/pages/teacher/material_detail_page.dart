@@ -32,6 +32,7 @@ class MaterialDetailPage extends ConsumerStatefulWidget {
 
 class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
   String? _formError;
+  String? _downloadingFileId;
 
   @override
   void initState() {
@@ -122,13 +123,12 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
 
   /// Download file via provider (datasource handles caching)
   Future<void> _saveFile(MaterialFile file) async {
-    // Provider's downloadFile() handles the download and calls loadMaterialDetail()
-    // to update file.localPath in the UI state
+    setState(() => _downloadingFileId = file.id);
     await ref.read(learningMaterialProvider.notifier).downloadFile(file.id);
 
     if (!mounted) return;
+    setState(() => _downloadingFileId = null);
 
-    // Check if download succeeded by looking at provider state
     final providerState = ref.read(learningMaterialProvider);
     if (providerState.error != null) {
       setState(() => _formError = 'Failed to download file');
@@ -284,6 +284,12 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                               const SizedBox(height: 16),
                             ],
 
+                            // Upload progress bar
+                            if (state.isLoading && state.currentUploadFileName != null) ...[
+                              _buildUploadProgressCard(state),
+                              const SizedBox(height: 16),
+                            ],
+
                             // Attachments Section
                             if (material.files.isNotEmpty) ...[
                               _buildAttachmentsCard(material, state.isLoading),
@@ -380,6 +386,64 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
     );
   }
 
+  Widget _buildUploadProgressCard(LearningMaterialState state) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE0E0E0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  color: Color(0xFF2B2B2B),
+                  strokeWidth: 2,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Uploading ${state.currentUploadFileName}...',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF2B2B2B),
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Text(
+                '${(state.uploadProgress * 100).toInt()}%',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF2B2B2B),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: state.uploadProgress > 0 ? state.uploadProgress : null,
+              backgroundColor: const Color(0xFFF0F0F0),
+              color: const Color(0xFF2B2B2B),
+              minHeight: 6,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildAttachmentsCard(dynamic material, bool isLoading) {
     return BaseCard(
       margin: const EdgeInsets.only(bottom: 14),
@@ -442,19 +506,29 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  IconButton(
-                    icon: file.isCached
-                        ? const Icon(Icons.folder_open_rounded)
-                        : const Icon(Icons.download_rounded, color: Color(0xFF2B2B2B)),
-                    onPressed: isLoading
-                        ? null
-                        : () => file.isCached
-                            ? _openFile(file)
-                            : _saveFile(file),
-                  ),
+                  if (_downloadingFileId == file.id)
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF2B2B2B),
+                        strokeWidth: 2,
+                      ),
+                    )
+                  else
+                    IconButton(
+                      icon: file.isCached
+                          ? const Icon(Icons.folder_open_rounded)
+                          : const Icon(Icons.download_rounded, color: Color(0xFF2B2B2B)),
+                      onPressed: (isLoading || _downloadingFileId != null)
+                          ? null
+                          : () => file.isCached
+                              ? _openFile(file)
+                              : _saveFile(file),
+                    ),
                   IconButton(
                     icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF5350)),
-                    onPressed: isLoading ? null : () => _deleteFile(file),
+                    onPressed: (isLoading || _downloadingFileId != null) ? null : () => _deleteFile(file),
                   ),
                 ],
               ),

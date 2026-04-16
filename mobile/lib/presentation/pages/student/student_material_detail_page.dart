@@ -25,6 +25,7 @@ class StudentMaterialDetailPage extends ConsumerStatefulWidget {
 
 class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetailPage> {
   String? _formError;
+  String? _downloadingFileId;
 
   @override
   void initState() {
@@ -66,9 +67,11 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
   }
 
   Future<void> _saveFile(MaterialFile file) async {
+    setState(() => _downloadingFileId = file.id);
     await ref.read(learningMaterialProvider.notifier).downloadFile(file.id);
 
     if (!mounted) return;
+    setState(() => _downloadingFileId = null);
 
     final providerState = ref.read(learningMaterialProvider);
     if (providerState.error != null) {
@@ -323,16 +326,25 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
               ),
               if (!allCached && !kIsWeb)
                 FilledButton(
-                  onPressed: _downloadAllFiles,
+                  onPressed: _downloadingFileId != null ? null : _downloadAllFiles,
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFF2B2B2B),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: Text(
-                    uncachedCount == material.files.length ? 'Download All' : 'Download $uncachedCount remaining',
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                  ),
+                  child: _downloadingFileId != null
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          uncachedCount == material.files.length ? 'Download All' : 'Download $uncachedCount remaining',
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        ),
                 ),
             ],
           ),
@@ -362,18 +374,29 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
                   color: Color(0xFF999999),
                 ),
               ),
-              trailing: IconButton(
-                icon: kIsWeb
-                    ? const Icon(Icons.open_in_browser_rounded, color: Color(0xFF2B2B2B))
-                    : file.isCached
-                        ? const Icon(Icons.folder_open_rounded)
-                        : const Icon(Icons.download_rounded, color: Color(0xFF2B2B2B)),
-                onPressed: kIsWeb
-                    ? () => _openFile(file)
-                    : file.isCached
-                        ? () => _openFile(file)
-                        : () => _saveFile(file),
-              ),
+              trailing: _downloadingFileId == file.id
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF2B2B2B),
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : IconButton(
+                      icon: kIsWeb
+                          ? const Icon(Icons.open_in_browser_rounded, color: Color(0xFF2B2B2B))
+                          : file.isCached
+                              ? const Icon(Icons.folder_open_rounded)
+                              : const Icon(Icons.download_rounded, color: Color(0xFF2B2B2B)),
+                      onPressed: _downloadingFileId != null
+                          ? null
+                          : kIsWeb
+                              ? () => _openFile(file)
+                              : file.isCached
+                                  ? () => _openFile(file)
+                                  : () => _saveFile(file),
+                    ),
             );
           }),
         ],

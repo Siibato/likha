@@ -294,6 +294,67 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
               ],
             ),
             const SizedBox(height: 24),
+
+            // Upload progress indicator
+            if (state.isLoading && state.currentUploadFileName != null) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE0E0E0)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF2B2B2B),
+                            strokeWidth: 2,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Uploading ${state.currentUploadFileName}...',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF2B2B2B),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          '${(state.uploadProgress * 100).toInt()}%',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF2B2B2B),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: state.uploadProgress > 0 ? state.uploadProgress : null,
+                        backgroundColor: const Color(0xFFF0F0F0),
+                        color: const Color(0xFF2B2B2B),
+                        minHeight: 6,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+
             ElevatedButton(
               onPressed: state.isLoading ? null : _createMaterial,
               style: ElevatedButton.styleFrom(
