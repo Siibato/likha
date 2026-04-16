@@ -142,7 +142,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
             failure.message.contains('Username does not exist')) {
           errorMessage = 'Username does not exist';
         } else {
-          errorMessage = AppErrorMapper.fromFailure(failure) ?? 'Something went wrong';
+          errorMessage = AppErrorMapper.fromFailureAuth(failure);
         }
         
         state = state.copyWith(
@@ -218,7 +218,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         } else {
           state = state.copyWith(
             isLoading: false,
-            error: AppErrorMapper.fromFailure(failure),
+            error: AppErrorMapper.fromFailureAuth(failure),
           );
         }
       },

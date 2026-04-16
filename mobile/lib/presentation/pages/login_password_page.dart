@@ -54,6 +54,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
     bool isLoading,
     int? lockoutRemainingSeconds,
     int? attemptsRemaining,
+    String? error,
   ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -293,6 +294,26 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                     ),
                     textAlign: TextAlign.center,
                   ),
+                  if (error != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFEDED),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFDC3545), width: 1),
+                      ),
+                      child: Text(
+                        error,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFFDC3545),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 48),
                   _buildPasswordField(isLoading),
                   const SizedBox(height: 24),
@@ -468,6 +489,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
       authState.isLoading,
       authState.lockoutRemainingSeconds,
       authState.attemptsRemaining,
+      authState.error,
     );
 
     return Scaffold(

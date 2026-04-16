@@ -1,6 +1,15 @@
 import 'package:likha/core/errors/failures.dart';
 
 class AppErrorMapper {
+  /// For flows that always require network (auth, school setup).
+  /// Returns the WiFi message instead of suppressing network errors.
+  static String fromFailureAuth(Failure failure) {
+    if (failure.category == ErrorCategory.network) {
+      return 'Please connect to your school\'s Likha Wi-Fi to continue.';
+    }
+    return fromFailure(failure) ?? 'Something went wrong. Try again later.';
+  }
+
   /// Type-safe error mapping from Failure objects using ErrorCategory
   static String? fromFailure(Failure failure) {
     switch (failure.category) {

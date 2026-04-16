@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/services/school_setup_service.dart';
 import 'package:likha/injection_container.dart' as di;
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
@@ -53,15 +52,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final state = ref.read(authProvider);
 
     if (state.error != null) {
-      final errorLower = state.error!.toLowerCase();
-      if (errorLower.contains('connection') ||
-          errorLower.contains('socket') ||
-          errorLower.contains('connection refused') ||
-          errorLower.contains('unreachable')) {
-        setState(() => _formError = 'Please make sure you are connected to the school\'s Likha Wi-Fi');
-      } else {
-        setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
-      }
+      setState(() => _formError = state.error);
     }
   }
 
