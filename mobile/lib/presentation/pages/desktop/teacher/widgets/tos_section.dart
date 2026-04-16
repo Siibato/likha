@@ -62,6 +62,7 @@ class TosSection extends ConsumerWidget {
               ? const EmptyState.tos()
               : BaseDataTable(
                   items: state.tosList,
+                  columnFlexes: const [3, 1, 1, 1],
                   columns: const [
                     DataColumn(
                         label: Text('Title', style: dataTableHeaderStyle)),

@@ -71,22 +71,17 @@ class MigrationRunner {
   }
   
   /// Define all migrations for the application
+  ///
+  /// NOTE: All historical migrations have been consolidated into _createTables
+  /// in local_database.dart. This list is kept for future migrations only.
+  /// The database version was reset to 1 as part of this consolidation.
   static List<Migration> get allMigrations => [
-    Migration(
-      version: 12,
-      description: 'Add validation_metadata table',
-      up: (db) async {
-        await db.execute('''
-          CREATE TABLE IF NOT EXISTS validation_metadata (
-            entity_type TEXT PRIMARY KEY,
-            last_modified TEXT NOT NULL,
-            record_count INTEGER NOT NULL,
-            etag TEXT,
-            validated_at TEXT NOT NULL,
-            database_id TEXT
-          )
-        ''');
-      },
-    ),
+    // Future migrations will be added here as needed
+    // Example:
+    // Migration(
+    //   version: 2,
+    //   description: 'Add new_feature table',
+    //   up: (db) async { ... },
+    // ),
   ];
 }

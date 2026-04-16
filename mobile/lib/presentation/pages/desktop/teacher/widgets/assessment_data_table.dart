@@ -27,6 +27,7 @@ class AssessmentDataTable extends StatelessWidget {
       items: assessments,
       rowsPerPage: rowsPerPage,
       emptyState: const EmptyState.assessments(),
+      columnFlexes: const [3, 1, 1, 1, 1, 1],
       columns: [
         DataColumn(
           label: const Text('Title', style: dataTableHeaderStyle),

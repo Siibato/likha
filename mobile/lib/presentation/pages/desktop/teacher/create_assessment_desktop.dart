@@ -60,6 +60,18 @@ class _CreateAssessmentDesktopState
   List<String> _newAcceptableAnswers = [''];
   List<EnumerationItemDraft> _newEnumerationItems = [EnumerationItemDraft()];
 
+  // Edit-question form state
+  int? _editingQuestionIndex;
+  final _editQuestionFormKey = GlobalKey<FormState>();
+  String _editQuestionType = 'multiple_choice';
+  final _editQuestionTextController = TextEditingController();
+  final _editQuestionPointsController = TextEditingController(text: '1');
+  bool _editQuestionMultiSelect = false;
+  List<ChoiceDraft> _editChoices = [ChoiceDraft(), ChoiceDraft()];
+  List<String> _editAcceptableAnswers = [''];
+  List<EnumerationItemDraft> _editEnumerationItems = [EnumerationItemDraft()];
+  String? _editValidationError;
+
   String get _draftKey => 'assessment_draft_desktop_${widget.classId}';
 
   @override
@@ -79,6 +91,8 @@ class _CreateAssessmentDesktopState
     _timeLimitController.dispose();
     _newQuestionTextController.dispose();
     _newQuestionPointsController.dispose();
+    _editQuestionTextController.dispose();
+    _editQuestionPointsController.dispose();
     super.dispose();
   }
 
@@ -216,6 +230,131 @@ class _CreateAssessmentDesktopState
         },
       ),
     );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Edit question inline form
+  // ---------------------------------------------------------------------------
+
+  void _enterEditMode(int index) {
+    final q = _questions[index];
+    setState(() {
+      _editingQuestionIndex = index;
+      _editQuestionType = q.type;
+      _editQuestionTextController.text = q.questionText;
+      _editQuestionPointsController.text = q.points.toString();
+      _editQuestionMultiSelect = q.isMultiSelect;
+      _editChoices = q.choices
+          .map((c) => ChoiceDraft(text: c.text, isCorrect: c.isCorrect))
+          .toList();
+      _editAcceptableAnswers = List<String>.from(q.acceptableAnswers);
+      _editEnumerationItems = q.enumerationItems
+          .map((e) => EnumerationItemDraft(answers: List<String>.from(e.answers)))
+          .toList();
+      _editValidationError = null;
+    });
+  }
+
+  void _cancelEditMode() {
+    setState(() {
+      _editingQuestionIndex = null;
+      _editValidationError = null;
+    });
+  }
+
+  void _saveEditMode() {
+    if (_editingQuestionIndex == null) return;
+
+    // Validation
+    if (_editQuestionTextController.text.trim().isEmpty) {
+      setState(() => _editValidationError = 'Question text is required');
+      return;
+    }
+
+    final points = int.tryParse(_editQuestionPointsController.text.trim()) ?? 1;
+
+    if (_editQuestionType == 'multiple_choice') {
+      final nonEmpty = _editChoices.where((c) => c.text.trim().isNotEmpty).toList();
+      if (nonEmpty.length < 2) {
+        setState(() => _editValidationError = 'At least 2 choices are required');
+        return;
+      }
+      if (!nonEmpty.any((c) => c.isCorrect)) {
+        setState(() => _editValidationError = 'Mark at least one correct choice');
+        return;
+      }
+    } else if (_editQuestionType == 'identification') {
+      final nonEmpty = _editAcceptableAnswers.where((a) => a.trim().isNotEmpty).toList();
+      if (nonEmpty.isEmpty) {
+        setState(() => _editValidationError = 'At least one acceptable answer is required');
+        return;
+      }
+    } else if (_editQuestionType == 'enumeration') {
+      if (_editEnumerationItems.isEmpty) {
+        setState(() => _editValidationError = 'At least one enumeration item is required');
+        return;
+      }
+      for (int i = 0; i < _editEnumerationItems.length; i++) {
+        final nonEmpty = _editEnumerationItems[i].answers.where((a) => a.trim().isNotEmpty).toList();
+        if (nonEmpty.isEmpty) {
+          setState(() => _editValidationError = 'Item ${i + 1} needs at least one acceptable answer');
+          return;
+        }
+      }
+    }
+
+    // Apply changes
+    final q = _questions[_editingQuestionIndex!];
+    q.type = _editQuestionType;
+    q.questionText = _editQuestionTextController.text.trim();
+    q.points = points;
+    q.isMultiSelect = _editQuestionMultiSelect;
+
+    if (_editQuestionType == 'multiple_choice') {
+      q.choices = _editChoices
+          .where((c) => c.text.trim().isNotEmpty)
+          .map((c) => ChoiceDraft(text: c.text.trim(), isCorrect: c.isCorrect))
+          .toList();
+      q.acceptableAnswers = [''];
+      q.enumerationItems = [];
+    } else if (_editQuestionType == 'identification') {
+      q.choices = [ChoiceDraft(), ChoiceDraft()];
+      q.acceptableAnswers = _editAcceptableAnswers
+          .where((a) => a.trim().isNotEmpty)
+          .map((a) => a.trim())
+          .toList();
+      q.enumerationItems = [];
+    } else if (_editQuestionType == 'enumeration') {
+      q.choices = [ChoiceDraft(), ChoiceDraft()];
+      q.acceptableAnswers = [''];
+      q.enumerationItems = _editEnumerationItems;
+    } else if (_editQuestionType == 'essay') {
+      q.choices = [ChoiceDraft(), ChoiceDraft()];
+      q.acceptableAnswers = [''];
+      q.enumerationItems = [];
+    }
+
+    setState(() {
+      _editingQuestionIndex = null;
+      _editValidationError = null;
+    });
+    _scheduleAutoSave();
+  }
+
+  void _onEditTypeChanged(String? newType) {
+    if (newType == null) return;
+    setState(() {
+      _editQuestionType = newType;
+      if (newType == 'multiple_choice') {
+        _editChoices = [ChoiceDraft(), ChoiceDraft()];
+        _editQuestionMultiSelect = false;
+      } else if (newType == 'identification') {
+        _editAcceptableAnswers = [''];
+      } else if (newType == 'enumeration') {
+        _editEnumerationItems = [EnumerationItemDraft()];
+      }
+      _editValidationError = null;
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -1109,108 +1248,523 @@ class _CreateAssessmentDesktopState
   }
 
   Widget _buildQuestionCard(QuestionDraft q, int index) {
-    final typeLabel = _questionTypeLabel(q.type);
-    final typeColor = _questionTypeColor(q.type);
+    final isEditing = _editingQuestionIndex == index;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
+        color: isEditing ? Colors.white : const Color(0xFFFAFAFA),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE8E8E8)),
+        border: Border.all(
+          color: isEditing ? const Color(0xFF2B2B2B) : const Color(0xFFE8E8E8),
+          width: isEditing ? 1.5 : 1,
+        ),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Question number
-          Container(
-            width: 28,
-            height: 28,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE8E8E8),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              '${index + 1}',
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF2B2B2B),
+      child: isEditing ? _buildQuestionEditForm() : _buildQuestionView(q, index),
+    );
+  }
+
+  Widget _buildQuestionView(QuestionDraft q, int index) {
+    final typeLabel = _questionTypeLabel(q.type);
+    final typeColor = _questionTypeColor(q.type);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Question number
+            Container(
+              width: 28,
+              height: 28,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8E8E8),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '${index + 1}',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF2B2B2B),
+                ),
               ),
             ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: typeColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          typeLabel,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: typeColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${q.points} pt${q.points != 1 ? 's' : ''}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF999999),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    q.questionText.isEmpty ? '(empty question)' : q.questionText,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: q.questionText.isEmpty ? const Color(0xFF999999) : const Color(0xFF2B2B2B),
+                    ),
+                  ),
+                  // Answer preview
+                  if (q.type == 'multiple_choice' && q.choices.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    ...q.choices.take(3).map((choice) => Padding(
+                      padding: const EdgeInsets.only(left: 0, top: 2),
+                      child: Row(
+                        children: [
+                          Icon(
+                            choice.isCorrect ? Icons.check_circle_rounded : Icons.circle_outlined,
+                            size: 12,
+                            color: choice.isCorrect ? const Color(0xFF4CAF50) : const Color(0xFFCCCCCC),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              choice.text.isEmpty ? '(empty)' : choice.text,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: choice.isCorrect ? const Color(0xFF2B2B2B) : const Color(0xFF888888),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )),
+                    if (q.choices.length > 3)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          '+${q.choices.length - 3} more',
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF999999), fontStyle: FontStyle.italic),
+                        ),
+                      ),
+                  ],
+                  if (q.type == 'identification' && q.acceptableAnswers.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Answers: ${q.acceptableAnswers.where((a) => a.isNotEmpty).take(3).join(', ')}${q.acceptableAnswers.where((a) => a.isNotEmpty).length > 3 ? '...' : ''}',
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  if (q.type == 'enumeration' && q.enumerationItems.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    ...q.enumerationItems.take(2).toList().asMap().entries.map((entry) => Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        '${entry.key + 1}. ${entry.value.answers.where((a) => a.isNotEmpty).join(' / ')}',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    )),
+                    if (q.enumerationItems.length > 2)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          '+${q.enumerationItems.length - 2} more items',
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF999999), fontStyle: FontStyle.italic),
+                        ),
+                      ),
+                  ],
+                  if (q.type == 'essay') ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.edit_note_rounded, size: 14, color: const Color(0xFF7B1FA2).withValues(alpha: 0.7)),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'Essay - manually graded',
+                          style: TextStyle(fontSize: 12, color: Color(0xFF666666), fontStyle: FontStyle.italic),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (_isQuestionReorderMode)
+              IconButton(
+                icon: const Icon(Icons.swap_vert_rounded, size: 20),
+                onPressed: () => _showQuestionMoveDialog(index),
+                tooltip: 'Move',
+                color: const Color(0xFF666666),
+              )
+            else ...[
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                onPressed: () => _enterEditMode(index),
+                tooltip: 'Edit',
+                color: const Color(0xFF666666),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close_rounded, size: 20),
+                onPressed: () {
+                  setState(() => _questions.removeAt(index));
+                  _scheduleAutoSave();
+                },
+                tooltip: 'Remove',
+                color: const Color(0xFFE57373),
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuestionEditForm() {
+    return Form(
+      key: _editQuestionFormKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with Save/Cancel
+          Row(
+            children: [
+              const Text(
+                'Edit Question',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF2B2B2B),
+                ),
+              ),
+              const Spacer(),
+              if (_editValidationError != null)
+                Container(
+                  margin: const EdgeInsets.only(right: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFDEDED),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.error_outline, color: Color(0xFFEF5350), size: 14),
+                      const SizedBox(width: 6),
+                      Text(
+                        _editValidationError!,
+                        style: const TextStyle(color: Color(0xFFEF5350), fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              TextButton(
+                onPressed: _cancelEditMode,
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF666666),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                child: const Text('Cancel'),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: _saveEditMode,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2B2B2B),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Text('Save'),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          Expanded(
+          const SizedBox(height: 16),
+
+          // Question type
+          DropdownButtonFormField<String>(
+            value: _editQuestionType,
+            decoration: _inputDecoration('Question Type'),
+            items: const [
+              DropdownMenuItem(value: 'multiple_choice', child: Text('Multiple Choice')),
+              DropdownMenuItem(value: 'identification', child: Text('Identification')),
+              DropdownMenuItem(value: 'enumeration', child: Text('Enumeration')),
+              DropdownMenuItem(value: 'essay', child: Text('Essay')),
+            ],
+            onChanged: _onEditTypeChanged,
+          ),
+          const SizedBox(height: 12),
+
+          // Question text
+          TextFormField(
+            controller: _editQuestionTextController,
+            decoration: _inputDecoration('Question Text'),
+            maxLines: 3,
+            onChanged: (_) {
+              if (_editValidationError != null) {
+                setState(() => _editValidationError = null);
+              }
+            },
+          ),
+          const SizedBox(height: 12),
+
+          // Points
+          TextFormField(
+            controller: _editQuestionPointsController,
+            decoration: _inputDecoration('Points'),
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          ),
+          const SizedBox(height: 12),
+
+          // Type-specific editors
+          if (_editQuestionType == 'multiple_choice') ...[
+            _buildSwitchTile(
+              title: 'Multi-select',
+              subtitle: 'Allow selecting multiple correct answers',
+              value: _editQuestionMultiSelect,
+              onChanged: (v) => setState(() {
+                _editQuestionMultiSelect = v;
+                if (!v) {
+                  // Ensure only one correct choice when switching to single-select
+                  bool found = false;
+                  for (final c in _editChoices) {
+                    if (c.isCorrect) {
+                      if (found) c.isCorrect = false;
+                      found = true;
+                    }
+                  }
+                }
+              }),
+            ),
+            const SizedBox(height: 12),
+            _buildEditChoicesEditor(),
+          ],
+          if (_editQuestionType == 'identification') _buildEditIdentificationEditor(),
+          if (_editQuestionType == 'enumeration') _buildEditEnumerationEditor(),
+          if (_editQuestionType == 'essay')
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'Essay questions are graded manually. No additional fields needed.',
+                style: TextStyle(fontSize: 13, color: Color(0xFF999999)),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEditChoicesEditor() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Choices',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF2B2B2B)),
+        ),
+        const SizedBox(height: 8),
+        ...List.generate(_editChoices.length, (i) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                Checkbox(
+                  value: _editChoices[i].isCorrect,
+                  activeColor: const Color(0xFF2B2B2B),
+                  onChanged: (v) {
+                    setState(() {
+                      if (!_editQuestionMultiSelect && (v ?? false)) {
+                        // Single-select: uncheck all others
+                        for (final c in _editChoices) {
+                          c.isCorrect = false;
+                        }
+                      }
+                      _editChoices[i].isCorrect = v ?? false;
+                    });
+                  },
+                ),
+                Expanded(
+                  child: TextFormField(
+                    initialValue: _editChoices[i].text,
+                    decoration: _inputDecoration('Choice ${i + 1}'),
+                    onChanged: (v) => _editChoices[i].text = v,
+                  ),
+                ),
+                if (_editChoices.length > 2)
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFFE57373)),
+                    onPressed: () => setState(() => _editChoices.removeAt(i)),
+                  ),
+              ],
+            ),
+          );
+        }),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () => setState(() => _editChoices.add(ChoiceDraft())),
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: const Text('Add Choice'),
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFF666666)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEditIdentificationEditor() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Acceptable Answers',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF2B2B2B)),
+        ),
+        const SizedBox(height: 8),
+        ...List.generate(_editAcceptableAnswers.length, (i) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    initialValue: _editAcceptableAnswers[i],
+                    decoration: _inputDecoration('Answer ${i + 1}'),
+                    onChanged: (v) => _editAcceptableAnswers[i] = v,
+                  ),
+                ),
+                if (_editAcceptableAnswers.length > 1)
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFFE57373)),
+                    onPressed: () => setState(() => _editAcceptableAnswers.removeAt(i)),
+                  ),
+              ],
+            ),
+          );
+        }),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () => setState(() => _editAcceptableAnswers.add('')),
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: const Text('Add Answer'),
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFF666666)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEditEnumerationEditor() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Enumeration Items',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF2B2B2B)),
+        ),
+        const SizedBox(height: 8),
+        ...List.generate(_editEnumerationItems.length, (itemIndex) {
+          final item = _editEnumerationItems[itemIndex];
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFAFAFA),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE0E0E0)),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: typeColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        typeLabel,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: typeColor,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
                     Text(
-                      '${q.points} pt${q.points != 1 ? 's' : ''}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF999999),
-                        fontWeight: FontWeight.w500,
-                      ),
+                      'Item ${itemIndex + 1}',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF2B2B2B)),
                     ),
+                    const Spacer(),
+                    if (_editEnumerationItems.length > 1)
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 16, color: Color(0xFFE57373)),
+                        onPressed: () => setState(() => _editEnumerationItems.removeAt(itemIndex)),
+                        constraints: const BoxConstraints(),
+                        padding: EdgeInsets.zero,
+                      ),
                   ],
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  q.questionText.isEmpty
-                      ? '(empty question)'
-                      : q.questionText,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: q.questionText.isEmpty
-                        ? const Color(0xFF999999)
-                        : const Color(0xFF2B2B2B),
-                  ),
+                const SizedBox(height: 8),
+                ...List.generate(item.answers.length, (ansIndex) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            initialValue: item.answers[ansIndex],
+                            decoration: _inputDecoration('Acceptable answer ${ansIndex + 1}'),
+                            onChanged: (v) => item.answers[ansIndex] = v,
+                          ),
+                        ),
+                        if (item.answers.length > 1)
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded, size: 16, color: Color(0xFFE57373)),
+                            onPressed: () => setState(() => item.answers.removeAt(ansIndex)),
+                            constraints: const BoxConstraints(),
+                            padding: const EdgeInsets.only(left: 4),
+                          ),
+                      ],
+                    ),
+                  );
+                }),
+                TextButton.icon(
+                  onPressed: () => setState(() => item.answers.add('')),
+                  icon: const Icon(Icons.add_rounded, size: 16),
+                  label: const Text('Add Answer', style: TextStyle(fontSize: 12)),
+                  style: TextButton.styleFrom(foregroundColor: const Color(0xFF666666), padding: EdgeInsets.zero),
                 ),
               ],
             ),
+          );
+        }),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () => setState(() => _editEnumerationItems.add(EnumerationItemDraft())),
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: const Text('Add Item'),
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFF666666)),
           ),
-          if (_isQuestionReorderMode)
-            IconButton(
-              icon: const Icon(Icons.swap_vert_rounded, size: 20),
-              onPressed: () => _showQuestionMoveDialog(index),
-              tooltip: 'Move',
-              color: const Color(0xFF666666),
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.close_rounded, size: 20),
-              onPressed: () {
-                setState(() => _questions.removeAt(index));
-                _scheduleAutoSave();
-              },
-              tooltip: 'Remove',
-              color: const Color(0xFFE57373),
-            ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

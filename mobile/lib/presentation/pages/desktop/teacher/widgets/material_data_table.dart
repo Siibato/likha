@@ -26,6 +26,7 @@ class MaterialDataTable extends StatelessWidget {
       items: materials,
       rowsPerPage: rowsPerPage,
       emptyState: const EmptyState.materials(),
+      columnFlexes: const [3, 1, 1, 1],
       columns: [
         DataColumn(
           label: const Text('Title', style: dataTableHeaderStyle),

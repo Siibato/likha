@@ -40,6 +40,7 @@ class AssignmentDataTable extends StatelessWidget {
       items: assignments,
       rowsPerPage: rowsPerPage,
       emptyState: const EmptyState.assignments(),
+      columnFlexes: const [3, 1, 1, 1, 1, 1, 1],
       columns: [
         DataColumn(
           label: const Text('Title', style: dataTableHeaderStyle),
