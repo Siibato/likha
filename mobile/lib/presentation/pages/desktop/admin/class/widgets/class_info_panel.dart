@@ -5,9 +5,9 @@ import 'package:likha/domain/classes/entities/class_entity.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/info_row.dart';
 import 'package:likha/presentation/pages/shared/widgets/tokens/app_text_styles.dart';
-import 'status_badge.dart';
-import 'empty_state.dart';
-import '../utils/date_utils.dart';
+import 'package:likha/presentation/pages/desktop/admin/widgets/status_badge.dart';
+import 'package:likha/presentation/pages/desktop/admin/widgets/empty_state.dart';
+import 'package:likha/presentation/pages/desktop/admin/utils/date_utils.dart';
 
 /// A reusable class information panel widget
 /// that displays class details with consistent styling.

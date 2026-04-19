@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
-import 'package:likha/presentation/pages/desktop/admin/account_management_desktop.dart';
-import 'package:likha/presentation/pages/desktop/admin/admin_classes_desktop.dart';
-import 'package:likha/presentation/pages/desktop/admin/admin_dashboard_desktop.dart';
-import 'package:likha/presentation/pages/desktop/admin/admin_school_settings_desktop.dart';
+import 'package:likha/presentation/pages/desktop/admin/account/account_management_desktop.dart';
+import 'package:likha/presentation/pages/desktop/admin/class/classes_desktop.dart';
+import 'package:likha/presentation/pages/desktop/admin/dashboard_desktop.dart';
+import 'package:likha/presentation/pages/desktop/admin/school_settings_desktop.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_navigation_rail.dart';
 import 'package:likha/presentation/utils/logout_helper.dart';
 

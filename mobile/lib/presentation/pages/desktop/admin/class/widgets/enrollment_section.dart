@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
-import 'search_filter_bar.dart';
-import 'empty_state.dart';
-import '../utils/date_utils.dart';
+import 'package:likha/presentation/pages/desktop/admin/widgets/search_filter_bar.dart';
+import 'package:likha/presentation/pages/desktop/admin/widgets/empty_state.dart';
+import 'package:likha/presentation/pages/desktop/admin/utils/date_utils.dart';
 
 /// A reusable enrollment management section widget
 /// that handles student search, display, and enrollment actions.

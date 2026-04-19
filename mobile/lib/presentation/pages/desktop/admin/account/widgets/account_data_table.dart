@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'account_actions_menu.dart';
-import 'base_data_table.dart';
-import 'status_badge.dart';
-import 'empty_state.dart';
-import '../utils/date_utils.dart';
+import 'package:likha/presentation/pages/desktop/admin/widgets/base_data_table.dart';
+import 'package:likha/presentation/pages/desktop/admin/widgets/status_badge.dart';
+import 'package:likha/presentation/pages/desktop/admin/widgets/empty_state.dart';
+import 'package:likha/presentation/pages/desktop/admin/utils/date_utils.dart';
 
 class AccountDataTable extends StatelessWidget {
   final List<User> accounts;

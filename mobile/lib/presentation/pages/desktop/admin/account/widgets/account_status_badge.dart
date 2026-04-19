@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
-import 'status_badge.dart';
+import 'package:likha/presentation/pages/desktop/admin/widgets/status_badge.dart';
 
 /// A specialized status badge widget for account statuses
 /// with predefined colors and labels for common account states.
