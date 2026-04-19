@@ -6,8 +6,8 @@ import 'package:likha/presentation/pages/teacher/widgets/student_assessment_row.
 import 'package:likha/presentation/pages/teacher/widgets/student_assignment_row.dart';
 import 'package:likha/presentation/pages/teacher/submission_review_page.dart';
 import 'package:likha/presentation/pages/teacher/assessment_detail_page.dart';
-import 'package:likha/presentation/pages/teacher/grade_submission_page.dart';
-import 'package:likha/presentation/pages/teacher/assignment_detail_page.dart';
+import 'package:likha/presentation/pages/teacher/grade/grade_submission_page.dart';
+import 'package:likha/presentation/pages/teacher/assignment/assignment_detail_page.dart';
 import 'package:likha/presentation/providers/teacher_student_detail_provider.dart';
 
 enum _ItemType { assessment, assignment }

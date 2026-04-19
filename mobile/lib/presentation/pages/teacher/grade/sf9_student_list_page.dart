@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/chevron_trailing.dart';
-import 'package:likha/presentation/pages/teacher/sf9_detail_page.dart';
+import 'package:likha/presentation/pages/teacher/grade/sf9_detail_page.dart';
 import 'package:likha/presentation/providers/sf9_provider.dart';
 
 class Sf9StudentListPage extends ConsumerStatefulWidget {

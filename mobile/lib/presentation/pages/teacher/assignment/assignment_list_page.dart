@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/teacher/assignment_detail_page.dart';
-import 'package:likha/presentation/pages/teacher/create_assignment_page.dart';
-import 'package:likha/presentation/pages/teacher/widgets/empty_assignment_list_state.dart';
+import 'package:likha/presentation/pages/teacher/assignment/assignment_detail_page.dart';
+import 'package:likha/presentation/pages/teacher/assignment/create_assignment_page.dart';
+import 'package:likha/presentation/pages/teacher/assignment/widgets/empty_assignment_list_state.dart';
 import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
-import 'package:likha/presentation/pages/teacher/widgets/teacher_assignment_card.dart';
+import 'package:likha/presentation/pages/teacher/assignment/widgets/teacher_assignment_card.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
 

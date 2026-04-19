@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
-import 'package:likha/presentation/pages/teacher/material_detail_page.dart';
+import 'package:likha/presentation/pages/teacher/material/material_detail_page.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/rich_text_field.dart';

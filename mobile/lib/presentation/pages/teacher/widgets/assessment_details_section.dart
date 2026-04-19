@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/presentation/pages/teacher/widgets/assessment_field.dart';
-import 'package:likha/presentation/pages/teacher/widgets/shared_due_date_time_picker.dart';
+import 'package:likha/presentation/pages/teacher/assignment/widgets/shared_due_date_time_picker.dart';
 
 class AssessmentDetailsSection extends StatelessWidget {
   final GlobalKey<FormState> formKey;

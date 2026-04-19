@@ -8,10 +8,10 @@ import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/teacher/widgets/add_grade_item_dialog.dart';
-import 'package:likha/presentation/pages/teacher/widgets/quarter_selector.dart';
+import 'package:likha/presentation/pages/teacher/grade/widgets/add_grade_item_dialog.dart';
+import 'package:likha/presentation/pages/teacher/grade/widgets/quarter_selector.dart';
 import 'package:likha/presentation/pages/teacher/class_grading_setup_page.dart';
-import 'package:likha/presentation/pages/teacher/grade_summary_page.dart';
+import 'package:likha/presentation/pages/teacher/grade/grade_summary_page.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
 
