@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
-import 'package:likha/presentation/pages/desktop/teacher/tos_detail_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/tos/tos_detail_desktop.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/teacher/tos/widgets/blooms_ratio_section.dart';
 import 'package:likha/presentation/pages/teacher/tos/widgets/classification_mode_toggle.dart';

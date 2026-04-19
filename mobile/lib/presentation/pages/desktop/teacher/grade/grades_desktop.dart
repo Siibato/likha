@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/navigation_card.dart';
-import 'package:likha/presentation/pages/desktop/teacher/teacher_class_detail_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/class/class_detail_desktop.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
 class TeacherGradesDesktop extends ConsumerStatefulWidget {
