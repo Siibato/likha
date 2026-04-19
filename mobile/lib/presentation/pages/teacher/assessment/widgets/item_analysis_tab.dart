@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
-import 'package:likha/presentation/pages/teacher/widgets/item_analysis_card.dart';
-import 'package:likha/presentation/pages/teacher/widgets/item_analysis_print.dart';
-import 'package:likha/presentation/pages/teacher/widgets/test_summary_card.dart';
+import 'package:likha/presentation/pages/teacher/assessment/widgets/item_analysis_card.dart';
+import 'package:likha/presentation/pages/teacher/assessment/widgets/item_analysis_print.dart';
+import 'package:likha/presentation/pages/teacher/assessment/widgets/test_summary_card.dart';
 
 class ItemAnalysisTab extends StatelessWidget {
   final AssessmentStatistics stats;

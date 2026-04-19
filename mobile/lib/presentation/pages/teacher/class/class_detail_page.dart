@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/logging/page_logger.dart';
-import 'package:likha/presentation/pages/teacher/class_student_list.dart';
-import 'package:likha/presentation/pages/teacher/teacher_assessment_list_page.dart';
+import 'package:likha/presentation/pages/teacher/class/class_student_list_page.dart';
+import 'package:likha/presentation/pages/teacher/assessment/assessment_list_page.dart';
 import 'package:likha/presentation/pages/teacher/assignment/assignment_list_page.dart';
 import 'package:likha/presentation/pages/teacher/material/material_list_page.dart';
-import 'package:likha/presentation/pages/teacher/class_record_page.dart';
+import 'package:likha/presentation/pages/teacher/class/class_record_page.dart';
 import 'package:likha/presentation/pages/teacher/grade/sf9_student_list_page.dart';
-import 'package:likha/presentation/pages/teacher/tos_list_page.dart';
+import 'package:likha/presentation/pages/teacher/tos/tos_list_page.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/navigation_card.dart';
 import 'package:likha/presentation/providers/class_provider.dart';

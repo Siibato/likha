@@ -1,68 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
-import 'package:likha/presentation/pages/teacher/widgets/classification_mode_toggle.dart';
-import 'package:likha/presentation/pages/teacher/widgets/blooms_ratio_section.dart';
-import 'package:likha/presentation/pages/teacher/widgets/difficulty_ratio_section.dart';
-import 'package:likha/presentation/pages/teacher/widgets/time_unit_toggle.dart';
+import 'package:likha/presentation/pages/teacher/tos/tos_detail_page.dart';
+import 'package:likha/presentation/pages/teacher/tos/widgets/classification_mode_toggle.dart';
+import 'package:likha/presentation/pages/teacher/tos/widgets/blooms_ratio_section.dart';
+import 'package:likha/presentation/pages/teacher/tos/widgets/difficulty_ratio_section.dart';
+import 'package:likha/presentation/pages/teacher/assessment/widgets/time_unit_toggle.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 
-class EditTosPage extends ConsumerStatefulWidget {
-  final TableOfSpecifications tos;
+class CreateTosPage extends ConsumerStatefulWidget {
+  final String classId;
 
-  const EditTosPage({super.key, required this.tos});
+  const CreateTosPage({super.key, required this.classId});
 
   @override
-  ConsumerState<EditTosPage> createState() => _EditTosPageState();
+  ConsumerState<CreateTosPage> createState() => _CreateTosPageState();
 }
 
-class _EditTosPageState extends ConsumerState<EditTosPage> {
+class _CreateTosPageState extends ConsumerState<CreateTosPage> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _titleController;
-  late final TextEditingController _totalItemsController;
-  late final TextEditingController _easyPctController;
-  late final TextEditingController _mediumPctController;
-  late final TextEditingController _hardPctController;
-  late final TextEditingController _rememberingPctController;
-  late final TextEditingController _understandingPctController;
-  late final TextEditingController _applyingPctController;
-  late final TextEditingController _analyzingPctController;
-  late final TextEditingController _evaluatingPctController;
-  late final TextEditingController _creatingPctController;
-  late int _selectedQuarter;
-  late String _classificationMode;
-  late String _timeUnit;
-
-  @override
-  void initState() {
-    super.initState();
-    _titleController = TextEditingController(text: widget.tos.title);
-    _totalItemsController =
-        TextEditingController(text: '${widget.tos.totalItems}');
-    _easyPctController =
-        TextEditingController(text: '${widget.tos.easyPercentage}');
-    _mediumPctController =
-        TextEditingController(text: '${widget.tos.mediumPercentage}');
-    _hardPctController =
-        TextEditingController(text: '${widget.tos.hardPercentage}');
-    _rememberingPctController =
-        TextEditingController(text: '${widget.tos.rememberingPercentage}');
-    _understandingPctController =
-        TextEditingController(text: '${widget.tos.understandingPercentage}');
-    _applyingPctController =
-        TextEditingController(text: '${widget.tos.applyingPercentage}');
-    _analyzingPctController =
-        TextEditingController(text: '${widget.tos.analyzingPercentage}');
-    _evaluatingPctController =
-        TextEditingController(text: '${widget.tos.evaluatingPercentage}');
-    _creatingPctController =
-        TextEditingController(text: '${widget.tos.creatingPercentage}');
-    _selectedQuarter = widget.tos.gradingPeriodNumber;
-    _classificationMode = widget.tos.classificationMode;
-    _timeUnit = widget.tos.timeUnit;
-  }
+  final _titleController = TextEditingController();
+  final _totalItemsController = TextEditingController(text: '50');
+  final _easyPctController = TextEditingController(text: '50');
+  final _mediumPctController = TextEditingController(text: '30');
+  final _hardPctController = TextEditingController(text: '20');
+  final _rememberingPctController = TextEditingController(text: '16.67');
+  final _understandingPctController = TextEditingController(text: '16.67');
+  final _applyingPctController = TextEditingController(text: '16.67');
+  final _analyzingPctController = TextEditingController(text: '16.67');
+  final _evaluatingPctController = TextEditingController(text: '16.67');
+  final _creatingPctController = TextEditingController(text: '16.67');
+  int? _selectedQuarter;
+  String _classificationMode = 'blooms';
+  String _timeUnit = 'days';
 
   @override
   void dispose() {
@@ -80,43 +51,37 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
     super.dispose();
   }
 
-  Future<void> _handleSave() async {
+  Future<void> _handleCreate() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_selectedQuarter == null) return;
 
-    await ref.read(tosProvider.notifier).updateTos(
-      widget.tos.id,
+    final tos = await ref.read(tosProvider.notifier).createTos(
+      widget.classId,
       {
         'title': _titleController.text.trim(),
-        'quarter': _selectedQuarter,
+        'quarter': _selectedQuarter!,
         'classification_mode': _classificationMode,
         'total_items': int.tryParse(_totalItemsController.text.trim()) ?? 50,
         'time_unit': _timeUnit,
-        'easy_percentage':
-            double.tryParse(_easyPctController.text.trim()) ?? 50.0,
-        'medium_percentage':
-            double.tryParse(_mediumPctController.text.trim()) ?? 30.0,
-        'hard_percentage':
-            double.tryParse(_hardPctController.text.trim()) ?? 20.0,
-        'remembering_percentage':
-            double.tryParse(_rememberingPctController.text.trim()) ?? 16.67,
-        'understanding_percentage':
-            double.tryParse(_understandingPctController.text.trim()) ?? 16.67,
-        'applying_percentage':
-            double.tryParse(_applyingPctController.text.trim()) ?? 16.67,
-        'analyzing_percentage':
-            double.tryParse(_analyzingPctController.text.trim()) ?? 16.67,
-        'evaluating_percentage':
-            double.tryParse(_evaluatingPctController.text.trim()) ?? 16.67,
-        'creating_percentage':
-            double.tryParse(_creatingPctController.text.trim()) ?? 16.67,
+        'easy_percentage': double.tryParse(_easyPctController.text.trim()) ?? 50.0,
+        'medium_percentage': double.tryParse(_mediumPctController.text.trim()) ?? 30.0,
+        'hard_percentage': double.tryParse(_hardPctController.text.trim()) ?? 20.0,
+        'remembering_percentage': double.tryParse(_rememberingPctController.text.trim()) ?? 16.67,
+        'understanding_percentage': double.tryParse(_understandingPctController.text.trim()) ?? 16.67,
+        'applying_percentage': double.tryParse(_applyingPctController.text.trim()) ?? 16.67,
+        'analyzing_percentage': double.tryParse(_analyzingPctController.text.trim()) ?? 16.67,
+        'evaluating_percentage': double.tryParse(_evaluatingPctController.text.trim()) ?? 16.67,
+        'creating_percentage': double.tryParse(_creatingPctController.text.trim()) ?? 16.67,
       },
     );
 
-    if (mounted) {
-      final state = ref.read(tosProvider);
-      if (state.successMessage != null) {
-        Navigator.pop(context);
-      }
+    if (mounted && tos != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => TosDetailPage(tosId: tos.id, classId: widget.classId),
+        ),
+      );
     }
   }
 
@@ -130,7 +95,7 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
         child: Column(
           children: [
             const ClassSectionHeader(
-              title: 'Edit TOS',
+              title: 'Create TOS',
               showBackButton: true,
             ),
             Expanded(
@@ -150,11 +115,13 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
                       _buildField(
                         controller: _titleController,
                         label: 'TOS Title',
+                        hint: 'e.g., Q1 Periodical Exam',
                         icon: Icons.description_outlined,
                         validator: (v) =>
                             v == null || v.trim().isEmpty ? 'Title is required' : null,
                       ),
                       const SizedBox(height: 16),
+                      // Quarter dropdown
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -170,6 +137,7 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
                             border: InputBorder.none,
                             contentPadding:
                                 EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            labelStyle: TextStyle(fontSize: 14, color: Color(0xFF999999)),
                           ),
                           items: [1, 2, 3, 4]
                               .map((q) => DropdownMenuItem(
@@ -177,15 +145,15 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
                                     child: Text('Quarter $q'),
                                   ))
                               .toList(),
-                          onChanged: (v) {
-                            if (v != null) setState(() => _selectedQuarter = v);
-                          },
+                          onChanged: (v) => setState(() => _selectedQuarter = v),
+                          validator: (v) => v == null ? 'Select a quarter' : null,
                         ),
                       ),
                       const SizedBox(height: 16),
                       _buildField(
                         controller: _totalItemsController,
                         label: 'Total Items',
+                        hint: '50',
                         icon: Icons.tag_outlined,
                         keyboardType: TextInputType.number,
                         validator: (v) {
@@ -197,8 +165,7 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
                       const SizedBox(height: 20),
                       ClassificationModeToggle(
                         value: _classificationMode,
-                        onChanged: (v) =>
-                            setState(() => _classificationMode = v),
+                        onChanged: (v) => setState(() => _classificationMode = v),
                       ),
                       const SizedBox(height: 20),
                       TimeUnitToggle(
@@ -225,7 +192,7 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
                       SizedBox(
                         height: 48,
                         child: ElevatedButton(
-                          onPressed: state.isLoading ? null : _handleSave,
+                          onPressed: state.isLoading ? null : _handleCreate,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF2B2B2B),
                             foregroundColor: Colors.white,
@@ -244,7 +211,7 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
                                   ),
                                 )
                               : const Text(
-                                  'Save Changes',
+                                  'Create TOS',
                                   style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w600,
@@ -266,6 +233,7 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
   Widget _buildField({
     required TextEditingController controller,
     required String label,
+    required String hint,
     required IconData icon,
     String? Function(String?)? validator,
     TextInputType keyboardType = TextInputType.text,
@@ -282,10 +250,13 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
         validator: validator,
         decoration: InputDecoration(
           labelText: label,
+          hintText: hint,
           prefixIcon: Icon(icon, color: const Color(0xFF999999), size: 20),
           border: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          labelStyle: const TextStyle(fontSize: 14, color: Color(0xFF999999)),
+          hintStyle: const TextStyle(fontSize: 14, color: Color(0xFFCCCCCC)),
         ),
         style: const TextStyle(fontSize: 15, color: Color(0xFF2B2B2B)),
       ),

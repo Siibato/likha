@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/chevron_trailing.dart';
-import 'package:likha/presentation/pages/teacher/create_tos_page.dart';
-import 'package:likha/presentation/pages/teacher/tos_detail_page.dart';
+import 'package:likha/presentation/pages/teacher/tos/create_tos_page.dart';
+import 'package:likha/presentation/pages/teacher/tos/tos_detail_page.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 
 class TosListPage extends ConsumerStatefulWidget {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/presentation/pages/teacher/class_detail_page.dart';
+import 'package:likha/presentation/pages/teacher/class/class_detail_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/empty_class_state.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/class_card.dart';
 import 'package:likha/presentation/providers/class_provider.dart';

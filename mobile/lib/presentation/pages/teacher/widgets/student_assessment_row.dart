@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
-import 'package:likha/presentation/pages/teacher/assessment_detail_page.dart';
+import 'package:likha/presentation/pages/teacher/assessment/assessment_detail_page.dart';
 import 'package:likha/presentation/pages/teacher/submission_review_page.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/base_card_sm.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/chevron_trailing.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
-import 'package:likha/presentation/pages/teacher/widgets/question_card.dart';
+import 'package:likha/presentation/pages/teacher/assessment/widgets/question_card.dart';
 
 class QuestionsSection extends StatelessWidget {
   final List<Question> questions;

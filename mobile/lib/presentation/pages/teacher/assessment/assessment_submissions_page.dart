@@ -4,8 +4,8 @@ import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/teacher/submission_review_page.dart';
-import 'package:likha/presentation/pages/teacher/widgets/assessment_submission_card.dart';
-import 'package:likha/presentation/pages/teacher/widgets/empty_assessment_submissions_state.dart';
+import 'package:likha/presentation/pages/teacher/assessment/widgets/assessment_submission_card.dart';
+import 'package:likha/presentation/pages/teacher/assessment/widgets/empty_assessment_submissions_state.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 
 class AssessmentSubmissionsPage extends ConsumerStatefulWidget {

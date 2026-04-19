@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/auth/entities/user.dart';
-import 'package:likha/presentation/pages/teacher/widgets/empty_student_state.dart';
-import 'package:likha/presentation/pages/teacher/teacher_student_detail_page.dart';
+import 'package:likha/presentation/pages/teacher/class/widgets/empty_student_state.dart';
+import 'package:likha/presentation/pages/teacher/student_detail_page.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
 class ClassStudentListPage extends ConsumerStatefulWidget {

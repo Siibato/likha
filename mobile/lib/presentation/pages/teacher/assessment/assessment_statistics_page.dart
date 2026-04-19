@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
 import 'package:likha/presentation/pages/teacher/widgets/class_performance_card.dart';
-import 'package:likha/presentation/pages/teacher/widgets/item_analysis_tab.dart';
-import 'package:likha/presentation/pages/teacher/widgets/question_analysis_card.dart';
-import 'package:likha/presentation/pages/teacher/widgets/score_distribution_card.dart';
-import 'package:likha/presentation/pages/teacher/widgets/statistics_overview_card.dart';
+import 'package:likha/presentation/pages/teacher/assessment/widgets/item_analysis_tab.dart';
+import 'package:likha/presentation/pages/teacher/assessment/widgets/question_analysis_card.dart';
+import 'package:likha/presentation/pages/teacher/assessment/widgets/score_distribution_card.dart';
+import 'package:likha/presentation/pages/teacher/assessment/widgets/statistics_overview_card.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 
 class AssessmentStatisticsPage extends ConsumerStatefulWidget {

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
-import 'package:likha/presentation/pages/teacher/widgets/question_draft.dart';
-import 'package:likha/presentation/pages/teacher/widgets/question_type_dropdown.dart';
-import 'package:likha/presentation/pages/teacher/widgets/question_editor_body.dart';
-export 'package:likha/presentation/pages/teacher/widgets/question_editor_body.dart'
+import 'package:likha/presentation/pages/teacher/assessment/widgets/question_draft.dart';
+import 'package:likha/presentation/pages/teacher/assessment/widgets/question_type_dropdown.dart';
+import 'package:likha/presentation/pages/teacher/assessment/widgets/question_editor_body.dart';
+export 'package:likha/presentation/pages/teacher/assessment/widgets/question_editor_body.dart'
     show ChoiceEntry, EnumerationItemEntry, EditorStyleVariant;
 
 class QuestionCard extends StatelessWidget {

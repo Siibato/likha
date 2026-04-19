@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/teacher/assessment_detail_page.dart';
-import 'package:likha/presentation/pages/teacher/create_assessment_page.dart';
-import 'package:likha/presentation/pages/teacher/widgets/empty_assessment_list_state.dart';
+import 'package:likha/presentation/pages/teacher/assessment/assessment_detail_page.dart';
+import 'package:likha/presentation/pages/teacher/assessment/create_assessment_page.dart';
+import 'package:likha/presentation/pages/teacher/assessment/widgets/empty_assessment_list_state.dart';
 import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
-import 'package:likha/presentation/pages/teacher/widgets/teacher_assessment_card.dart';
+import 'package:likha/presentation/pages/teacher/assessment/widgets/teacher_assessment_card.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
 

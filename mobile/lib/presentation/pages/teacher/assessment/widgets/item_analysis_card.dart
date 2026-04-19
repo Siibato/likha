@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
-import 'package:likha/presentation/pages/teacher/widgets/distractor_table.dart';
+import 'package:likha/presentation/pages/teacher/assessment/widgets/distractor_table.dart';
 
 class ItemAnalysisCard extends StatelessWidget {
   final int index;
