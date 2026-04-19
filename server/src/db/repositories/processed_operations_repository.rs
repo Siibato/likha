@@ -92,7 +92,7 @@ impl ProcessedOperationsRepository {
             [
                 id.into(),
                 operation_id.to_string().into(),
-                user_id.to_string().into(),
+                sea_orm::Value::Uuid(Some(Box::new(user_id))),
                 entity_type.to_string().into(),
                 operation.to_string().into(),
                 response_json.clone().into(),

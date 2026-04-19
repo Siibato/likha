@@ -27,3 +27,8 @@ qrcode = "0.14"
 image = { version = "0.25", default-features = false, features = ["png"] }
 entity = { path = "entity" }
 migration = { path = "migrations" }
+
+[dev-dependencies]
+# tokio-test, pretty_assertions, serial_test intentionally omitted:
+# the project uses a vendor directory and these crates are not vendored yet.
+# #[tokio::test] works via the already-vendored tokio crate (features = ["full"]).

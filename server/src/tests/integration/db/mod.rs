@@ -1,0 +1,12 @@
+pub mod activity_log_repository_test;
+pub mod assessment_repository_test;
+pub mod assignment_repository_test;
+pub mod class_repository_test;
+pub mod entitlement_repository_test;
+pub mod grade_computation_repository_test;
+pub mod learning_material_repository_test;
+pub mod manifest_repository_test;
+pub mod processed_operations_repository_test;
+pub mod submission_repository_test;
+pub mod tos_repository_test;
+pub mod user_repository_test;

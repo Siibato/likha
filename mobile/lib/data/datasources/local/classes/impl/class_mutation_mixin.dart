@@ -27,6 +27,7 @@ mixin ClassMutationMixin on ClassLocalDataSourceBase {
         teacherFullName: teacherFullName,
         isArchived: false,
         studentCount: 0,
+        gradingPeriodType: 'quarter',
         createdAt: now,
         updatedAt: now,
       );

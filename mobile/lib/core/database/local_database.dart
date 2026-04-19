@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 
 /// Local SQLite Database for offline-first functionality
@@ -732,5 +733,14 @@ class LocalDatabase {
       await _db!.close();
       _db = null;
     }
+  }
+
+  @visibleForTesting
+  static Future<void> createSchemaForTesting(Database db) =>
+      _instance._createTables(db, 1);
+
+  @visibleForTesting
+  static void overrideForTesting(Database db) {
+    _instance._db = db;
   }
 }
