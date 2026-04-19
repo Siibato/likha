@@ -91,78 +91,76 @@ class AccountDataTable extends StatelessWidget {
           ),
       ],
       rowBuilder: (context, user, index) {
-        return Row(
-          children: [
-            // Name column with avatar
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: AppColors.backgroundTertiary,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    user.fullName.isNotEmpty
-                        ? user.fullName[0].toUpperCase()
-                        : '?',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.foregroundPrimary,
-                    ),
-                  ),
+        return [
+          // Name column with avatar
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.backgroundTertiary,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(width: 10),
-                Text(
-                  user.fullName,
+                child: Text(
+                  user.fullName.isNotEmpty
+                      ? user.fullName[0].toUpperCase()
+                      : '?',
                   style: const TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.foregroundDark,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.foregroundPrimary,
                   ),
                 ),
-              ],
-            ),
-            // Username column
-            Text(
-              user.username,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.foregroundSecondary,
               ),
-            ),
-            // Role column
-            Text(
-              user.role[0].toUpperCase() + user.role.substring(1),
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.foregroundSecondary,
+              const SizedBox(width: 10),
+              Text(
+                user.fullName,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.foregroundDark,
+                ),
               ),
+            ],
+          ),
+          // Username column
+          Text(
+            user.username,
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.foregroundSecondary,
             ),
-            // Status column
-            _buildAccountStatusBadge(user.accountStatus),
-            // Created date column
-            Text(
-              DesktopDateUtils.formatDateIso(user.createdAt),
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.foregroundTertiary,
-              ),
+          ),
+          // Role column
+          Text(
+            user.role[0].toUpperCase() + user.role.substring(1),
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.foregroundSecondary,
             ),
-            // Actions column
-            if (hasActions)
-              AccountActionsMenu(
-                user: user,
-                onLock: onLock,
-                onResetPassword: onResetPassword,
-                onDelete: onDelete,
-              ),
-          ],
-        );
+          ),
+          // Status column
+          _buildAccountStatusBadge(user.accountStatus),
+          // Created date column
+          Text(
+            DesktopDateUtils.formatDateIso(user.createdAt),
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.foregroundTertiary,
+            ),
+          ),
+          // Actions column
+          if (hasActions)
+            AccountActionsMenu(
+              user: user,
+              onLock: onLock,
+              onResetPassword: onResetPassword,
+              onDelete: onDelete,
+            ),
+        ];
       },
       onTap: onTap,
       rowsPerPage: rowsPerPage,

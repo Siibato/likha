@@ -57,69 +57,73 @@ class ClassDataTable extends StatelessWidget {
             ? cls.teacherFullName
             : cls.teacherUsername;
 
-        return Row(
-          children: [
-            // Class Title
-            Text(
-              cls.title,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.foregroundDark,
-              ),
+        return [
+          // Class Title
+          Text(
+            cls.title,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.foregroundDark,
             ),
-            // Teacher
-            Text(
-              teacherLabel,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.foregroundSecondary,
-              ),
+          ),
+          // Teacher
+          Text(
+            teacherLabel,
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.foregroundSecondary,
             ),
-            // Students
-            Text(
-              '${cls.studentCount}',
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.foregroundSecondary,
-              ),
+          ),
+          // Students
+          Text(
+            '${cls.studentCount}',
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.foregroundSecondary,
             ),
-            // Advisory
-            cls.isAdvisory
-                ? const Icon(Icons.star_rounded,
-                    size: 18, color: Color(0xFF4CAF50))
-                : const SizedBox.shrink(),
-            // Status
-            StatusBadge.custom(
-              isActive: !cls.isArchived,
-              activeText: 'Active',
-              inactiveText: 'Archived',
-              activeColor: const Color(0xFF28A745),
-              inactiveColor: AppColors.foregroundTertiary,
-              activeBackgroundColor: const Color(0xFF28A745).withOpacity(0.12),
-              inactiveBackgroundColor: AppColors.foregroundTertiary.withOpacity(0.12),
-            ),
-            // Created date
-            Text(
-              DesktopDateUtils.formatDateIso(cls.createdAt),
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.foregroundTertiary,
-              ),
-            ),
-            // Delete action
-            if (onDelete != null)
-              IconButton(
-                icon: const Icon(
-                  Icons.delete_outline_rounded,
-                  color: Color(0xFFDC3545),
-                  size: 20,
+          ),
+          // Advisory
+          cls.isAdvisory
+              ? const Icon(Icons.star_rounded,
+                  size: 18, color: Color(0xFF4CAF50))
+              : const Text(
+                  'No',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.foregroundTertiary,
+                  ),
                 ),
-                tooltip: 'Delete class',
-                onPressed: () => onDelete!(cls),
+          // Status
+          StatusBadge.custom(
+            isActive: !cls.isArchived,
+            activeText: 'Active',
+            inactiveText: 'Archived',
+            activeColor: const Color(0xFF28A745),
+            inactiveColor: AppColors.foregroundTertiary,
+            activeBackgroundColor: const Color(0xFF28A745).withOpacity(0.12),
+            inactiveBackgroundColor: AppColors.foregroundTertiary.withOpacity(0.12),
+          ),
+          // Created date
+          Text(
+            DesktopDateUtils.formatDateIso(cls.createdAt),
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.foregroundTertiary,
+            ),
+          ),
+          // Delete action
+          if (onDelete != null)
+            IconButton(
+              icon: const Icon(
+                Icons.delete_outline_rounded,
+                color: Color(0xFFDC3545),
+                size: 20,
               ),
-          ],
-        );
+              tooltip: 'Delete class',
+              onPressed: () => onDelete!(cls),
+            ),
+        ];
       },
       onTap: onTap,
       rowsPerPage: rowsPerPage,

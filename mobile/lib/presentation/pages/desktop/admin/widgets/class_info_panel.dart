@@ -68,42 +68,79 @@ class ClassInfoPanel extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 16),
-              InfoRow(label: 'Teacher', value: teacherName),
-              if (classInfo?.teacherUsername?.isNotEmpty == true) ...[
-                const SizedBox(height: 12),
-                InfoRow(
-                  label: 'Username',
-                  value: classInfo!.teacherUsername!,
-                ),
-              ],
-              if (isAdvisory) ...[
-                const SizedBox(height: 12),
-                _AdvisoryBadge(),
-              ],
-              const SizedBox(height: 12),
-              InfoRow(
-                label: 'Students',
-                value: '${classInfo?.studentCount ?? 0}',
+              // Two-column layout for class info
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Left column
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        InfoRow(label: 'Teacher', value: teacherName),
+                        if (classInfo?.teacherUsername?.isNotEmpty == true) ...[
+                          const SizedBox(height: 12),
+                          InfoRow(
+                            label: 'Username',
+                            value: classInfo!.teacherUsername!,
+                          ),
+                        ],
+                        const SizedBox(height: 12),
+                        InfoRow(
+                          label: 'Advisory',
+                          valueWidget: isAdvisory
+                              ? const UnconstrainedBox(
+                                  alignment: Alignment.centerLeft,
+                                  child: _AdvisoryBadge(),
+                                )
+                              : const Text(
+                                  'No',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: AppColors.foregroundSecondary,
+                                  ),
+                                ),
+                        ),
+                        const SizedBox(height: 12),
+                        InfoRow(
+                          label: 'Students',
+                          value: '${classInfo?.studentCount ?? 0}',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 32),
+                  // Right column
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        InfoRow(
+                          label: 'Status',
+                          valueWidget: UnconstrainedBox(
+                            alignment: Alignment.centerLeft,
+                            child: _ClassStatusBadge(
+                              isArchived: classInfo?.isArchived ?? false,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        InfoRow(
+                          label: 'Created',
+                          value: DesktopDateUtils.formatDate(detail.createdAt),
+                        ),
+                        if (detail.updatedAt != null) ...[
+                          const SizedBox(height: 12),
+                          InfoRow(
+                            label: 'Last Updated',
+                            value: DesktopDateUtils.formatDate(detail.updatedAt!),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              InfoRow(
-                label: 'Status',
-                valueWidget: _ClassStatusBadge(
-                  isArchived: classInfo?.isArchived ?? false,
-                ),
-              ),
-              const SizedBox(height: 12),
-              InfoRow(
-                label: 'Created',
-                value: DesktopDateUtils.formatDate(detail.createdAt),
-              ),
-              if (detail.updatedAt != null) ...[
-                const SizedBox(height: 12),
-                InfoRow(
-                  label: 'Last Updated',
-                  value: DesktopDateUtils.formatDate(detail.updatedAt!),
-                ),
-              ],
             ],
           ),
         ),
