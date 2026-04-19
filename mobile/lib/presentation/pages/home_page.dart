@@ -4,7 +4,7 @@ import 'package:likha/presentation/pages/admin/admin_dashboard_page.dart';
 import 'package:likha/presentation/pages/desktop/admin/admin_desktop_shell.dart';
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
 import 'package:likha/presentation/pages/desktop/teacher/teacher_desktop_shell.dart';
-import 'package:likha/presentation/pages/student/student_shell_page.dart';
+import 'package:likha/presentation/pages/student/shell_page.dart';
 import 'package:likha/presentation/pages/teacher/teacher_shell_page.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 

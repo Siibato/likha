@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/student/student_material_detail_page.dart';
+import 'package:likha/presentation/pages/student/material/material_detail_page.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
 import 'package:likha/presentation/pages/shared/widgets/skeletons/skeleton_pulse.dart';

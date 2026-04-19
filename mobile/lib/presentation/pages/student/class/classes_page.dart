@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/presentation/pages/student/student_class_detail_page.dart';
+import 'package:likha/presentation/pages/student/class/class_detail_page.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/student/widgets/class_list_section.dart';
+import 'package:likha/presentation/pages/student/class/widgets/class_list_section.dart';
 import 'package:likha/presentation/pages/student/widgets/empty_state.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/pages/shared/widgets/skeletons/skeleton_pulse.dart';

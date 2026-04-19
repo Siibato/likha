@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/presentation/pages/student/assessment_list_page.dart';
-import 'package:likha/presentation/pages/student/student_assignment_list_page.dart';
-import 'package:likha/presentation/pages/student/student_material_list_page.dart';
+import 'package:likha/presentation/pages/student/assessment/assessment_list_page.dart';
+import 'package:likha/presentation/pages/student/assignment/assignment_list_page.dart';
+import 'package:likha/presentation/pages/student/material/material_list_page.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/navigation_card.dart';
 

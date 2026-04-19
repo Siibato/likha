@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/student/student_class_grade_detail_page.dart';
-import 'package:likha/presentation/pages/student/widgets/class_grade_card.dart';
-import 'package:likha/presentation/pages/student/widgets/empty_grades_state.dart';
-import 'package:likha/presentation/pages/student/widgets/general_average_banner.dart';
+import 'package:likha/presentation/pages/student/class/class_grade_detail_page.dart';
+import 'package:likha/presentation/pages/student/class/widgets/class_grade_card.dart';
+import 'package:likha/presentation/pages/student/grade/widgets/empty_grades_state.dart';
+import 'package:likha/presentation/pages/student/grade/widgets/general_average_banner.dart';
 import 'package:likha/presentation/providers/student_class_grades_provider.dart';
 
 class StudentGradesPage extends ConsumerStatefulWidget {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/student/student_grades_page.dart';
+import 'package:likha/presentation/pages/student/grade/grades_page.dart';
 import 'package:likha/presentation/utils/logout_helper.dart';
 
 class StudentProfilePage extends ConsumerWidget {

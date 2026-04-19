@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/presentation/pages/student/student_classes_page.dart';
-import 'package:likha/presentation/pages/student/student_tasks_page.dart';
-import 'package:likha/presentation/pages/student/student_profile_page.dart';
+import 'package:likha/presentation/pages/student/class/classes_page.dart';
+import 'package:likha/presentation/pages/student/tasks_page.dart';
+import 'package:likha/presentation/pages/student/profile_page.dart';
 
 class StudentShellPage extends ConsumerStatefulWidget {
   const StudentShellPage({super.key});

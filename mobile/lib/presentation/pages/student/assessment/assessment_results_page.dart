@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/student/widgets/score_summary_card.dart';
-import 'package:likha/presentation/pages/student/widgets/answer_result_card.dart';
+import 'package:likha/presentation/pages/student/assessment/widgets/score_summary_card.dart';
+import 'package:likha/presentation/pages/student/assessment/widgets/answer_result_card.dart';
 import 'package:likha/presentation/providers/student_assessment_provider.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 

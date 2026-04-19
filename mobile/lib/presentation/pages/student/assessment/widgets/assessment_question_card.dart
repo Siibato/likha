@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/presentation/utils/formatters.dart';
-import 'package:likha/presentation/pages/student/widgets/assessment_question_input.dart';
+import 'package:likha/presentation/pages/student/assessment/widgets/assessment_question_input.dart';
 
 class AssessmentQuestionCard extends StatelessWidget {
   final StudentQuestion question;
