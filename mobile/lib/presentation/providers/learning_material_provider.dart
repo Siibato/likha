@@ -23,6 +23,8 @@ class LearningMaterialState {
   final bool isLoading;
   final String? error;
   final String? successMessage;
+  final double uploadProgress; // 0.0 to 1.0
+  final String? currentUploadFileName;
 
   LearningMaterialState({
     this.materials = const [],
@@ -30,6 +32,8 @@ class LearningMaterialState {
     this.isLoading = false,
     this.error,
     this.successMessage,
+    this.uploadProgress = 0.0,
+    this.currentUploadFileName,
   });
 
   LearningMaterialState copyWith({
@@ -38,9 +42,12 @@ class LearningMaterialState {
     bool? isLoading,
     String? error,
     String? successMessage,
+    double? uploadProgress,
+    String? currentUploadFileName,
     bool clearError = false,
     bool clearSuccess = false,
     bool clearCurrent = false,
+    bool clearUploadProgress = false,
   }) {
     return LearningMaterialState(
       materials: materials ?? this.materials,
@@ -48,6 +55,8 @@ class LearningMaterialState {
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
       successMessage: clearSuccess ? null : (successMessage ?? this.successMessage),
+      uploadProgress: clearUploadProgress ? 0.0 : (uploadProgress ?? this.uploadProgress),
+      currentUploadFileName: clearUploadProgress ? null : (currentUploadFileName ?? this.currentUploadFileName),
     );
   }
 }
@@ -263,18 +272,36 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     required String filePath,
     required String fileName,
   }) async {
-    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      clearSuccess: true,
+      clearUploadProgress: true,
+      currentUploadFileName: fileName,
+    );
+
     final result = await _uploadFile(
       materialId: materialId,
       filePath: filePath,
       fileName: fileName,
+      onSendProgress: (sent, total) {
+        if (total > 0) {
+          state = state.copyWith(uploadProgress: sent / total);
+        }
+      },
     );
+
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
+      (failure) => state = state.copyWith(
+        isLoading: false,
+        error: AppErrorMapper.fromFailure(failure),
+        clearUploadProgress: true,
+      ),
       (file) {
         state = state.copyWith(
           isLoading: false,
           successMessage: 'File uploaded successfully',
+          clearUploadProgress: true,
         );
         loadMaterialDetail(materialId);
         if (_currentClassId != null) {

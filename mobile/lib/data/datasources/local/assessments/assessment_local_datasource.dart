@@ -97,6 +97,7 @@ abstract class AssessmentLocalDataSource {
   Future<void> overrideAnswerLocally({
     required String answerId,
     required bool isCorrect,
+    double? points,
   });
   Future<void> markAssessmentPublishedLocally({required String assessmentId});
   Future<void> markAssessmentUnpublishedLocally({required String assessmentId});

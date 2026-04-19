@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
+import 'package:likha/core/utils/upload_timeout_util.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/data/models/learning_materials/material_detail_model.dart';
 import 'package:likha/data/models/learning_materials/material_file_model.dart';
@@ -37,6 +38,7 @@ abstract class LearningMaterialRemoteDataSource {
     required String materialId,
     required String filePath,
     required String fileName,
+    void Function(int sent, int total)? onSendProgress,
   });
 
   Future<void> deleteFile({required String fileId});
@@ -119,6 +121,7 @@ class LearningMaterialRemoteDataSourceImpl implements LearningMaterialRemoteData
     required String materialId,
     required String filePath,
     required String fileName,
+    void Function(int sent, int total)? onSendProgress,
   }) async {
     final formData = FormData.fromMap({
       'file': await MultipartFile.fromFile(
@@ -128,9 +131,17 @@ class LearningMaterialRemoteDataSourceImpl implements LearningMaterialRemoteData
       ),
     });
 
+    // Calculate dynamic timeout based on file size
+    final timeoutSeconds = UploadTimeoutUtil.calculateTimeout(filePath);
+
     final response = await _dioClient.dio.post(
       ApiEndpoints.materialUploadFile(materialId).path,
       data: formData,
+      onSendProgress: onSendProgress,
+      options: Options(
+        sendTimeout: Duration(seconds: timeoutSeconds),
+        receiveTimeout: const Duration(seconds: 60),
+      ),
     );
     return MaterialFileModel.fromJson(response.data['data']);
   }

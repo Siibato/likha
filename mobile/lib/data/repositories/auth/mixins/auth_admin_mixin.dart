@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/models/auth/user_model.dart';
@@ -15,24 +16,38 @@ mixin AuthAdminMixin on AuthRepositoryBase {
     required String fullName,
     required String role,
   }) async {
+    RepoLogger.instance.log('createAccount START: username=$username, fullName=$fullName, role=$role');
     try {
-      if (!serverReachabilityService.isServerReachable) {
+      final isServerReachable = serverReachabilityService.isServerReachable;
+      RepoLogger.instance.log('Server reachable: $isServerReachable');
+      
+      if (!isServerReachable) {
+        RepoLogger.instance.log('Entering offline flow for account creation');
+        RepoLogger.instance.log('Building pending accounts to check for duplicates');
         final pendingAccounts = await _buildPendingAccounts();
+        RepoLogger.instance.log('Pending accounts count: ${pendingAccounts.length}');
         if (pendingAccounts.any((a) => a.username.toLowerCase() == username.toLowerCase())) {
-          return Left(ServerFailure('Account "$username" is already being created. Please wait for sync.'));
+          RepoLogger.instance.warn('Username $username already in pending accounts');
+          return Left(ServerFailure('Account "$username" already exists.'));
         }
 
         try {
+          RepoLogger.instance.log('Checking cached accounts for duplicate username');
           final cachedAccounts = await localDataSource.getCachedAccounts();
+          RepoLogger.instance.log('Cached accounts count: ${cachedAccounts.length}');
           if (cachedAccounts.any((a) => a.username.toLowerCase() == username.toLowerCase())) {
+            RepoLogger.instance.warn('Username $username already exists in cache');
             return Left(ServerFailure('Account "$username" already exists.'));
           }
-        } on CacheException {
+        } on CacheException catch (e) {
+          RepoLogger.instance.warn('CacheException while checking cached accounts', e);
         }
 
         // Generate a UUID for the offline-created user (permanent ID shared with server)
         final localId = const Uuid().v4();
+        RepoLogger.instance.log('Generated local ID: $localId');
 
+        RepoLogger.instance.log('Enqueuing sync queue entry for offline account creation');
         await syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),
           entityType: SyncEntityType.adminUser,
@@ -48,7 +63,9 @@ mixin AuthAdminMixin on AuthRepositoryBase {
           maxRetries: 5,
           createdAt: DateTime.now(),
         ));
+        RepoLogger.instance.log('Sync queue entry enqueued successfully');
 
+        RepoLogger.instance.log('Creating optimistic user model');
         final optimisticUser = UserModel(
           id: localId,
           username: username,
@@ -59,33 +76,44 @@ mixin AuthAdminMixin on AuthRepositoryBase {
           activatedAt: null,
           createdAt: DateTime.now(),
         );
+        RepoLogger.instance.log('Optimistic user created: id=${optimisticUser.id}, username=${optimisticUser.username}');
 
         try {
+          RepoLogger.instance.log('Caching created account locally');
           await localDataSource.cacheCreatedAccount(optimisticUser);
+          RepoLogger.instance.log('Account cached successfully');
         } catch (e) {
+          RepoLogger.instance.warn('Cache failure while caching created account (non-critical)', e);
           // Cache failure is not critical
         }
 
+        RepoLogger.instance.log('createAccount SUCCESS (offline): returning optimistic user');
         return Right(optimisticUser);
       }
 
+      RepoLogger.instance.log('Entering online flow for account creation');
       final result = await remoteDataSource.createAccount(
         username: username,
         fullName: fullName,
         role: role,
       );
+      RepoLogger.instance.log('createAccount SUCCESS (online): account created on server');
       return Right(result);
     } on ServerException catch (e) {
+      RepoLogger.instance.error('ServerException in createAccount', e);
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
+      RepoLogger.instance.error('NetworkException in createAccount', e);
       return Left(NetworkFailure(e.message));
     } catch (e) {
+      RepoLogger.instance.error('Unexpected exception in createAccount', e);
       return Left(ServerFailure(e.toString()));
     }
   }
 
   @override
   ResultFuture<List<User>> getAllAccounts() async {
+    RepoLogger.instance.log('getAllAccounts START');
     try {
       var cachedAccounts = <UserModel>[];
       bool hasCachedData = false;
@@ -93,30 +121,43 @@ mixin AuthAdminMixin on AuthRepositoryBase {
       try {
         cachedAccounts = await localDataSource.getCachedAccounts();
         hasCachedData = true;
+        RepoLogger.instance.log('getAllAccounts: Found ${cachedAccounts.length} cached accounts');
       } on CacheException {
         hasCachedData = false;
+        RepoLogger.instance.log('getAllAccounts: No cached data available');
       }
 
+      RepoLogger.instance.log('getAllAccounts: serverReachable=${serverReachabilityService.isServerReachable}');
       if (serverReachabilityService.isServerReachable) {
+        RepoLogger.instance.log('getAllAccounts: Attempting server fetch');
         try {
           final freshAccounts = await remoteDataSource.getAllAccounts();
+          RepoLogger.instance.log('getAllAccounts: Server fetch returned ${freshAccounts.length} accounts');
           await localDataSource.cacheAccounts(freshAccounts);
+          RepoLogger.instance.log('getAllAccounts: Cached ${freshAccounts.length} accounts locally');
 
           final pendingAccounts = await _buildPendingAccounts();
+          RepoLogger.instance.log('getAllAccounts: Found ${pendingAccounts.length} pending accounts');
           // Final dedup: remove pending accounts that already exist in server accounts
           final serverUsernames = freshAccounts.map((a) => a.username).toSet();
           final deduped = pendingAccounts
               .where((p) => !serverUsernames.contains(p.username))
               .toList();
-          return Right([...freshAccounts, ...deduped]);
+          final result = [...freshAccounts, ...deduped];
+          RepoLogger.instance.log('getAllAccounts: Returning ${result.length} total accounts (server + pending)');
+          return Right(result);
         } catch (e) {
+          RepoLogger.instance.error('getAllAccounts: Server fetch failed - $e');
           if (!hasCachedData) {
             if (e is ServerException) return Left(ServerFailure(e.message));
             if (e is NetworkException) return Left(NetworkFailure(e.message));
             return Left(ServerFailure(e.toString()));
           }
           // Has cache — fall through
+          RepoLogger.instance.log('getAllAccounts: Falling back to cache');
         }
+      } else {
+        RepoLogger.instance.log('getAllAccounts: Server not reachable, skipping server fetch');
       }
 
       final pendingAccounts = await _buildPendingAccounts();
@@ -127,19 +168,26 @@ mixin AuthAdminMixin on AuthRepositoryBase {
         final deduped = pendingAccounts
             .where((p) => !cachedUsernames.contains(p.username))
             .toList();
-        return Right([...cachedAccounts, ...deduped]);
+        final result = [...cachedAccounts, ...deduped];
+        RepoLogger.instance.log('getAllAccounts: Returning ${result.length} accounts from cache + pending');
+        return Right(result);
       }
 
       if (pendingAccounts.isNotEmpty) {
+        RepoLogger.instance.log('getAllAccounts: Returning ${pendingAccounts.length} pending accounts only');
         return Right(pendingAccounts);
       }
 
+      RepoLogger.instance.log('getAllAccounts: No data available - returning error');
       return const Left(NetworkFailure('No internet connection and no cached data'));
     } on ServerException catch (e) {
+      RepoLogger.instance.error('getAllAccounts: ServerException - ${e.message}');
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
+      RepoLogger.instance.error('getAllAccounts: NetworkException - ${e.message}');
       return Left(NetworkFailure(e.message));
     } catch (e) {
+      RepoLogger.instance.error('getAllAccounts: Unexpected error - $e');
       return Left(ServerFailure(e.toString()));
     }
   }

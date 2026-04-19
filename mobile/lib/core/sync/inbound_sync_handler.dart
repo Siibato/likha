@@ -83,22 +83,38 @@ class InboundSyncHandler {
     }
 
     // Upsert base response data (user, classes, enrollments, enrolled_students)
-    // Note: FullSyncResponseModel doesn't include user/enrolled_students directly
-    // These may need to be added to the model or handled differently
     var participantUsers = <Map<String, dynamic>>[];
-    final userData = <String, dynamic>{};
+    final userData = baseResponse.user ?? <String, dynamic>{};
+    final enrolledStudentsData = baseResponse.enrolledStudents ?? <List<Map<String, dynamic>>>[];
 
-    // Track students per class
+    // Track students per class and collect unique user_ids
     final rawParticipants = baseResponse.enrollments;
     final studentsPerClassCount = <String, int>{};
+    final uniqueUserIds = <String>{};
     for (final e in rawParticipants) {
       final cid = e['class_id']?.toString();
+      final uid = (e['user_id'] ?? e['student_id'])?.toString();
       if (cid != null) studentsPerClassCount[cid] = (studentsPerClassCount[cid] ?? 0) + 1;
+      if (uid != null && uid.isNotEmpty) uniqueUserIds.add(uid);
     }
 
     // Cache the logged-in user from sync response (BEFORE enrollment upserts to avoid CASCADE DELETE)
     if (userData.isNotEmpty) {
       await _upsertHelpers.upsertCurrentUser(db, userData);
+      participantUsers.add(userData);
+      uniqueUserIds.remove(userData['id']?.toString()); // Remove already upserted user
+    }
+
+    // Upsert enrolled students from sync response
+    if (enrolledStudentsData.isNotEmpty) {
+      final studentsList = enrolledStudentsData.cast<Map<String, dynamic>>();
+      await _upsertHelpers.upsertEnrolledStudents(db, studentsList);
+      participantUsers.addAll(studentsList);
+      // Remove upserted users from uniqueUserIds set
+      for (final student in studentsList) {
+        final uid = student['id']?.toString();
+        if (uid != null) uniqueUserIds.remove(uid);
+      }
     }
 
     // Upsert all base response data sequentially (proper await ensures committed before verification)

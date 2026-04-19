@@ -195,6 +195,8 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
     String? openAt,
     String? closeAt,
     bool? showResultsImmediately,
+    int? gradingPeriodNumber,
+    String? component,
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
@@ -211,6 +213,8 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
             if (closeAt != null) 'close_at': closeAt,
             if (showResultsImmediately != null)
               'show_results_immediately': showResultsImmediately,
+            if (gradingPeriodNumber != null) 'grading_period_number': gradingPeriodNumber,
+            if (component != null) 'component': component,
           },
           status: SyncStatus.pending,
           retryCount: 0,
@@ -233,6 +237,8 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
           totalPoints: 0,
           questionCount: 0,
           submissionCount: 0,
+          gradingPeriodNumber: gradingPeriodNumber,
+          component: component,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         ));
@@ -246,6 +252,8 @@ mixin AssessmentCrudMixin on AssessmentRepositoryBase {
         if (closeAt != null) 'close_at': closeAt,
         if (showResultsImmediately != null)
           'show_results_immediately': showResultsImmediately,
+        if (gradingPeriodNumber != null) 'grading_period_number': gradingPeriodNumber,
+        if (component != null) 'component': component,
       };
 
       final result = await remoteDataSource.updateAssessment(

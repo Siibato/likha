@@ -100,6 +100,8 @@ pub struct AnswerInput {
 #[derive(Debug, Deserialize)]
 pub struct OverrideAnswerRequest {
     pub is_correct: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub points: Option<f64>,
 }
 
 #[derive(Debug, Deserialize)]

@@ -482,20 +482,47 @@ impl ClassRepository {
             }
         }
 
-        // Add new teacher
-        let new_participant = class_participants::ActiveModel {
-            id: Set(Uuid::new_v4()),
-            class_id: Set(class_id),
-            user_id: Set(new_teacher_id),
-            joined_at: Set(Utc::now().naive_utc()),
-            updated_at: Set(Utc::now().naive_utc()),
-            removed_at: Set(None),
-        };
-
-        new_participant
-            .insert(&txn)
+        // Add new teacher using transaction to avoid deadlock
+        // Check if participant already exists (possibly removed)
+        let existing = class_participants::Entity::find()
+            .filter(class_participants::Column::ClassId.eq(class_id))
+            .filter(class_participants::Column::UserId.eq(new_teacher_id))
+            .one(&txn)
             .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to add new teacher: {}", e)))?;
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        if let Some(existing_participant) = existing {
+            // If removed_at is set, resurrect the participant
+            if existing_participant.removed_at.is_some() {
+                let update = class_participants::ActiveModel {
+                    id: Set(existing_participant.id),
+                    removed_at: Set(None),
+                    updated_at: Set(Utc::now().naive_utc()),
+                    ..Default::default()
+                };
+
+                update
+                    .update(&txn)
+                    .await
+                    .map_err(|e| AppError::InternalServerError(format!("Failed to add new teacher: {}", e)))?;
+            }
+            // If participant is already active, nothing to do
+        } else {
+            // Create new participant record
+            let participant = class_participants::ActiveModel {
+                id: Set(Uuid::new_v4()),
+                class_id: Set(class_id),
+                user_id: Set(new_teacher_id),
+                joined_at: Set(Utc::now().naive_utc()),
+                updated_at: Set(Utc::now().naive_utc()),
+                removed_at: Set(None),
+            };
+
+            participant
+                .insert(&txn)
+                .await
+                .map_err(|e| AppError::InternalServerError(format!("Failed to add new teacher: {}", e)))?;
+        }
 
         txn.commit().await
             .map_err(|e| AppError::InternalServerError(format!("Transaction commit error: {}", e)))?;

@@ -59,7 +59,8 @@ impl super::SyncPushService {
             "override_answer" => {
                 let answer_id = extract_field!(self, op, parse_uuid_field, "answer_id");
                 let is_correct = op.payload.get("is_correct").and_then(|v| v.as_bool()).unwrap_or(false);
-                match self.assessment_service.override_answer(answer_id, OverrideAnswerRequest { is_correct }, user_id).await {
+                let points = op.payload.get("points").and_then(|v| v.as_f64());
+                match self.assessment_service.override_answer(answer_id, OverrideAnswerRequest { is_correct, points }, user_id).await {
                     Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }

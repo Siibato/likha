@@ -65,23 +65,23 @@ class MigrationRunner {
     pending.sort((a, b) => a.version.compareTo(b.version));
     
     for (final migration in pending) {
-      await db.transaction((txn) async {
-        await migration.up(db);
-        await _recordMigration(db, migration);
-      });
+      await migration.up(db);
+      await _recordMigration(db, migration);
     }
   }
   
   /// Define all migrations for the application
+  ///
+  /// NOTE: All historical migrations have been consolidated into _createTables
+  /// in local_database.dart. This list is kept for future migrations only.
+  /// The database version was reset to 1 as part of this consolidation.
   static List<Migration> get allMigrations => [
-    // Future migrations will be added here
+    // Future migrations will be added here as needed
     // Example:
     // Migration(
-    //   version: 12,
-    //   description: 'Add index on grade_items for performance',
-    //   up: (db) async {
-    //     await db.execute('CREATE INDEX idx_grade_items_class ON grade_items(class_id)');
-    //   },
+    //   version: 2,
+    //   description: 'Add new_feature table',
+    //   up: (db) async { ... },
     // ),
   ];
 }

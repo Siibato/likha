@@ -296,6 +296,22 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
           CacheLogger.instance.log('Update completed, rowsAffected=$rowsAffected');
         }
       }
+      // Delete stale rows for this material that are no longer in the fresh list
+      if (files.isEmpty) {
+        await db.delete(
+          'material_files',
+          where: 'material_id = ?',
+          whereArgs: [materialId],
+        );
+      } else {
+        final freshIds = files.map((f) => f.id).toList();
+        final placeholders = freshIds.map((_) => '?').join(', ');
+        await db.rawDelete(
+          'DELETE FROM material_files WHERE material_id = ? AND id NOT IN ($placeholders)',
+          [materialId, ...freshIds],
+        );
+      }
+
       CacheLogger.instance.log('cacheMaterialFiles completed successfully');
     } catch (e) {
       CacheLogger.instance.error('Error in cacheMaterialFiles', e);

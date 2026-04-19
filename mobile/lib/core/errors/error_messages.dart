@@ -1,6 +1,15 @@
 import 'package:likha/core/errors/failures.dart';
 
 class AppErrorMapper {
+  /// For flows that always require network (auth, school setup).
+  /// Returns the WiFi message instead of suppressing network errors.
+  static String fromFailureAuth(Failure failure) {
+    if (failure.category == ErrorCategory.network) {
+      return 'Please connect to your school\'s Likha Wi-Fi to continue.';
+    }
+    return fromFailure(failure) ?? 'Something went wrong. Try again later.';
+  }
+
   /// Type-safe error mapping from Failure objects using ErrorCategory
   static String? fromFailure(Failure failure) {
     switch (failure.category) {
@@ -15,10 +24,36 @@ class AppErrorMapper {
       case ErrorCategory.serverError:
       case ErrorCategory.cache:
       case ErrorCategory.unknown:
+        // Check if the message is already user-friendly before using generic error
+        if (_isUserFriendlyMessage(failure.message)) {
+          return failure.message;
+        }
         return 'Something went wrong. Try again later.';
       case ErrorCategory.validation:
         return failure.message; // Already user-friendly
     }
+  }
+
+  /// Check if a message is user-friendly (short, no technical jargon)
+  static bool _isUserFriendlyMessage(String? message) {
+    if (message == null) return false;
+    
+    final lower = message.toLowerCase();
+    const technicalTerms = [
+      'exception',
+      'null',
+      'stack',
+      'trace',
+      'sqlite',
+      'constraint',
+      'failed:',
+      'error:',
+      "type '",
+    ];
+    
+    final isTechnical = technicalTerms.any((term) => lower.contains(term));
+    // Short messages without technical terms are considered user-friendly
+    return message.length < 100 && !isTechnical;
   }
 
   static String? toUserMessage(String? rawError) {
@@ -26,7 +61,7 @@ class AppErrorMapper {
 
     final lower = rawError.toLowerCase();
 
-    // Connectivity errors are expected in an offline-first app — suppress entirely
+    // Connectivity errors are expected in an offline-first app â suppress entirely
     if (lower.contains('internet') ||
         lower.contains('unreachable') ||
         lower.contains('network') ||
@@ -53,6 +88,23 @@ class AppErrorMapper {
     final isTechnical = technicalTerms.any((term) => lower.contains(term));
     if (rawError.length < 80 && !isTechnical) {
       return rawError;
+    }
+
+    // Authentication-specific error handling
+    if (lower.contains('username does not exist')) {
+      return 'Username does not exist';
+    }
+    
+    if (lower.contains('invalid password')) {
+      return 'Password is incorrect';
+    }
+    
+    if (lower.contains('account locked')) {
+      return 'Account is locked. Contact an administrator.';
+    }
+    
+    if (lower.contains('activation required')) {
+      return 'Account requires activation';
     }
 
     if (lower.contains('unauthorized') || lower.contains('401')) {

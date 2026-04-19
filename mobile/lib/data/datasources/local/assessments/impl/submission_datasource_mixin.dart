@@ -426,6 +426,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
   Future<void> overrideAnswerLocally({
     required String answerId,
     required bool isCorrect,
+    double? points,
   }) async {
     try {
       final db = await localDatabase.database;
@@ -464,11 +465,19 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
           );
         }
 
+        final payload = <String, dynamic>{
+          'answer_id': answerId,
+          'is_correct': isCorrect,
+        };
+        if (points != null) {
+          payload['points'] = points;
+        }
+
         await syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),
           entityType: SyncEntityType.assessmentSubmission,
           operation: SyncOperation.overrideAnswer,
-          payload: {'answer_id': answerId, 'is_correct': isCorrect},
+          payload: payload,
           status: SyncStatus.pending,
           retryCount: 0,
           maxRetries: 3,

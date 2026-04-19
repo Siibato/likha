@@ -12,6 +12,7 @@ class UploadFile {
       submissionId: params.submissionId,
       filePath: params.filePath,
       fileName: params.fileName,
+      onSendProgress: params.onSendProgress,
     );
   }
 }
@@ -20,10 +21,12 @@ class UploadFileParams {
   final String submissionId;
   final String filePath;
   final String fileName;
+  final void Function(int sent, int total)? onSendProgress;
 
   UploadFileParams({
     required this.submissionId,
     required this.filePath,
     required this.fileName,
+    this.onSendProgress,
   });
 }

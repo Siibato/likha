@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
+import 'package:likha/core/logging/provider_logger.dart';
 import 'package:likha/domain/auth/entities/activity_log.dart';
 import 'package:likha/domain/auth/entities/user.dart';
-import 'package:likha/domain/auth/usecases/check_username.dart';
 import 'package:likha/domain/auth/usecases/create_account.dart';
 import 'package:likha/domain/auth/usecases/get_activity_logs.dart';
 import 'package:likha/domain/auth/usecases/get_all_accounts.dart';
@@ -49,7 +49,6 @@ class AdminState {
 
 class AdminNotifier extends StateNotifier<AdminState> {
   final GetAllAccounts _getAllAccounts;
-  final CheckUsername _checkUsername;
   final CreateAccount _createAccount;
   final ResetAccount _resetAccount;
   final LockAccount _lockAccount;
@@ -59,7 +58,6 @@ class AdminNotifier extends StateNotifier<AdminState> {
 
   AdminNotifier(
     this._getAllAccounts,
-    this._checkUsername,
     this._createAccount,
     this._resetAccount,
     this._lockAccount,
@@ -69,19 +67,26 @@ class AdminNotifier extends StateNotifier<AdminState> {
   ) : super(AdminState());
 
   Future<void> loadAccounts() async {
+    ProviderLogger.instance.log('loadAccounts: Starting to load accounts');
     state = state.copyWith(isLoading: true, clearError: true);
 
     final result = await _getAllAccounts();
 
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: AppErrorMapper.fromFailure(failure),
-      ),
-      (accounts) => state = state.copyWith(
-        isLoading: false,
-        accounts: accounts,
-      ),
+      (failure) {
+        ProviderLogger.instance.error('loadAccounts: Failed to load accounts - ${failure.message}');
+        state = state.copyWith(
+          isLoading: false,
+          error: AppErrorMapper.fromFailure(failure),
+        );
+      },
+      (accounts) {
+        ProviderLogger.instance.log('loadAccounts: Successfully loaded ${accounts.length} accounts');
+        state = state.copyWith(
+          isLoading: false,
+          accounts: accounts,
+        );
+      },
     );
   }
 
@@ -90,26 +95,8 @@ class AdminNotifier extends StateNotifier<AdminState> {
     required String fullName,
     required String role,
   }) async {
+    ProviderLogger.instance.log('createAccount START: username=$username, fullName=$fullName, role=$role');
     state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
-
-    final checkResult = await _checkUsername(username);
-
-    final usernameExists = checkResult.fold(
-      (failure) {
-        return state.accounts.any(
-          (account) => account.username.toLowerCase() == username.toLowerCase(),
-        );
-      },
-      (result) => true,
-    );
-
-    if (usernameExists) {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'Username already exists. Please choose a different username.',
-      );
-      return;
-    }
 
     final result = await _createAccount(CreateAccountParams(
       username: username,
@@ -118,11 +105,17 @@ class AdminNotifier extends StateNotifier<AdminState> {
     ));
 
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: AppErrorMapper.fromFailure(failure),
-      ),
+      (failure) {
+        ProviderLogger.instance.error('createAccount FAILURE: ${failure.runtimeType} - ${failure.message}');
+        final userMessage = AppErrorMapper.fromFailure(failure);
+        ProviderLogger.instance.log('User message: $userMessage');
+        state = state.copyWith(
+          isLoading: false,
+          error: userMessage,
+        );
+      },
       (user) {
+        ProviderLogger.instance.log('createAccount SUCCESS: user id=${user.id}, username=${user.username}');
         state = state.copyWith(
           isLoading: false,
           accounts: [user, ...state.accounts],
@@ -275,7 +268,6 @@ class AdminNotifier extends StateNotifier<AdminState> {
 final adminProvider = StateNotifierProvider<AdminNotifier, AdminState>((ref) {
   return AdminNotifier(
     sl<GetAllAccounts>(),
-    sl<CheckUsername>(),
     sl<CreateAccount>(),
     sl<ResetAccount>(),
     sl<LockAccount>(),

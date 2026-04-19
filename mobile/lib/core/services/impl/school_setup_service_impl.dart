@@ -33,15 +33,6 @@ class SchoolSetupServiceImpl implements SchoolSetupService {
       return const Left(ValidationFailure('Please enter a school code'));
     }
 
-    // Check if this is the cloud test code (client-side, no server call)
-    final cloudTestCode = (dotenv.env['CLOUD_TEST_CODE'] ?? '').toUpperCase();
-    if (cloudTestCode.isNotEmpty && normalized == cloudTestCode) {
-      final cloudUrl = dotenv.env['CLOUD_API_URL'] ?? 'https://likha.app';
-      final config = SchoolConfig(serverUrl: cloudUrl, schoolName: 'Likha Cloud');
-      await saveSchoolConfig(config);
-      return Right(config);
-    }
-
     // Verify against the default Pi server
     final piUrl = dotenv.env['API_BASE_URL'] ?? 'http://192.168.1.1:8080';
     try {

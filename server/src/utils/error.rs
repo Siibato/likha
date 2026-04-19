@@ -15,6 +15,10 @@ pub struct ErrorResponse {
     pub attempts_remaining: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub remaining_seconds: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub lockout_level: Option<i32>,
 }
 
 #[derive(Debug)]
@@ -46,27 +50,31 @@ impl fmt::Display for AppError {
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
-        let (status, error_message, message, attempts_remaining, remaining_seconds) = match self {
+        let (status, error_message, message, attempts_remaining, remaining_seconds, error_code, lockout_level) = match self {
             AppError::InternalServerError(msg) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error", msg, None, None)
+                (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error", msg, None, None, Some("INTERNAL_ERROR".to_string()), None)
             }
-            AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, "Bad Request", msg, None, None),
-            AppError::NotFound(msg) => (StatusCode::NOT_FOUND, "Not Found", msg, None, None),
-            AppError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, "Unauthorized", msg, None, None),
-            AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, "Forbidden", msg, None, None),
-            AppError::Conflict(msg) => (StatusCode::CONFLICT, "Conflict", msg, None, None),
+            AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, "Bad Request", msg, None, None, Some("BAD_REQUEST".to_string()), None),
+            AppError::NotFound(msg) => (StatusCode::NOT_FOUND, "Not Found", msg, None, None, Some("USERNAME_NOT_FOUND".to_string()), None),
+            AppError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, "Unauthorized", msg, None, None, Some("UNAUTHORIZED".to_string()), None),
+            AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, "Forbidden", msg, None, None, Some("ACCOUNT_LOCKED".to_string()), None),
+            AppError::Conflict(msg) => (StatusCode::CONFLICT, "Conflict", msg, None, None, Some("ACTIVATION_REQUIRED".to_string()), None),
             AppError::TooManyRequests(secs) => (
                 StatusCode::TOO_MANY_REQUESTS,
                 "Too Many Requests",
                 "Too many failed login attempts. Please try again later.".to_string(),
                 None,
                 Some(secs),
+                Some("ACCOUNT_LOCKED".to_string()),
+                Some(1),
             ),
             AppError::InvalidCredentials(msg, attempts) => (
                 StatusCode::UNAUTHORIZED,
                 "Invalid Credentials",
                 msg,
                 Some(attempts),
+                None,
+                Some("INVALID_PASSWORD".to_string()),
                 None,
             ),
         };
@@ -77,6 +85,8 @@ impl IntoResponse for AppError {
             status_code: status.as_u16(),
             attempts_remaining,
             remaining_seconds,
+            error_code,
+            lockout_level,
         });
 
         (status, body).into_response()

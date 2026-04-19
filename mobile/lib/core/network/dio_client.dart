@@ -167,7 +167,8 @@ class DioClient {
       onError: (error, handler) async {
         // Only attempt refresh for non-auth endpoints
         if (error.response?.statusCode == 401 &&
-            error.requestOptions.path != ApiEndpoints.refresh.path) {
+            error.requestOptions.path != ApiEndpoints.refresh.path &&
+            error.requestOptions.path != ApiEndpoints.login.path) {
           final refreshed = await _tryRefresh();
 
           if (refreshed) {
@@ -268,6 +269,9 @@ class DioClient {
             : 'Something went wrong';
 
         if (statusCode == 401) {
+          if (data is Map && data['attempts_remaining'] != null) {
+            return error;
+          }
           return UnauthorizedException(message);
         }
         return ServerException(message, statusCode: statusCode);

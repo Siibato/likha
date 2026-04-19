@@ -33,6 +33,7 @@ class ServerFailure extends Failure {
     if (statusCode == 403) return ErrorCategory.forbidden;
     if (statusCode == 404) return ErrorCategory.notFound;
     if (statusCode != null && statusCode! >= 500) return ErrorCategory.serverError;
+    if (statusCode == 400) return ErrorCategory.validation;
     return ErrorCategory.unknown;
   }
 

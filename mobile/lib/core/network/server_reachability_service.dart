@@ -70,7 +70,6 @@ class ServerReachabilityServiceImpl implements ServerReachabilityService {
         ),
       );
 
-      final wasReachable = _isServerReachable;
       _isServerReachable = response.statusCode == 200;
 
       if (_isServerReachable) {
@@ -79,17 +78,16 @@ class ServerReachabilityServiceImpl implements ServerReachabilityService {
         _consecutiveFailures++;
       }
 
-      if (wasReachable != _isServerReachable && !_isDisposed) {
+      if (!_isDisposed) {
         _reachabilityStream.add(_isServerReachable);
       }
 
       return _isServerReachable;
     } catch (e) {
-      final wasReachable = _isServerReachable;
       _isServerReachable = false;
       _consecutiveFailures++;
 
-      if (wasReachable && !_isDisposed) {
+      if (!_isDisposed) {
         _reachabilityStream.add(false);
       }
 

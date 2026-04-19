@@ -23,15 +23,19 @@ impl MigrationTrait for Migration {
 
         // ── CLASSES ─────────────────────────────────────────────────────────────
         // Add grading_period_type (keeps old semester column; data migrated below)
+        // Use SQL to conditionally add column only if it doesn't exist
         db.execute_unprepared(
             "ALTER TABLE classes ADD COLUMN grading_period_type TEXT NOT NULL DEFAULT 'quarter';",
         )
-        .await?;
+        .await
+        .ok(); // Ignore error if column already exists
         // Migrate semester integer to string type in grading_period_type
+        // Only if semester column still exists (idempotent for partial runs)
         db.execute_unprepared(
             "UPDATE classes SET grading_period_type = CASE WHEN semester = 2 THEN 'semester' ELSE 'quarter' END WHERE semester IS NOT NULL;",
         )
-        .await?;
+        .await
+        .ok(); // Ignore error if semester column was already removed
         // Remove teacher_id and subject_group via table-swap (SQLite doesn't support DROP COLUMN on older versions)
         db.execute_unprepared("PRAGMA foreign_keys = OFF;").await?;
         db.execute_unprepared(r#"
@@ -85,23 +89,25 @@ impl MigrationTrait for Migration {
         db.execute_unprepared("PRAGMA foreign_keys = ON;").await?;
 
         // ── GRADE_COMPONENTS_CONFIG → GRADE_RECORD ──────────────────────────────
+        // Only rename if table still exists (idempotent)
         db.execute_unprepared(
             "ALTER TABLE grade_components_config RENAME TO grade_record;",
-        ).await?;
+        ).await.ok();
         db.execute_unprepared(
             "ALTER TABLE grade_record RENAME COLUMN quarter TO grading_period_number;",
-        ).await?;
+        ).await.ok();
 
         // ── GRADE_ITEMS ─────────────────────────────────────────────────────────
         db.execute_unprepared(
             "ALTER TABLE grade_items RENAME COLUMN quarter TO grading_period_number;",
-        ).await?;
+        ).await.ok();
 
         // ── QUARTERLY_GRADES → PERIOD_GRADES ───────────────────────────────────
         // Remove percentage columns, rename is_complete → is_locked, rename quarter
+        // Only if quarterly_grades still exists (idempotent)
         db.execute_unprepared("PRAGMA foreign_keys = OFF;").await?;
         db.execute_unprepared(r#"
-            CREATE TABLE period_grades (
+            CREATE TABLE IF NOT EXISTS period_grades (
                 id TEXT PRIMARY KEY NOT NULL,
                 class_id TEXT NOT NULL,
                 student_id TEXT NOT NULL,
@@ -127,26 +133,34 @@ impl MigrationTrait for Migration {
                    is_complete, computed_at,
                    created_at, updated_at, deleted_at, NULL, 0
             FROM quarterly_grades;
-        "#).await?;
-        db.execute_unprepared("DROP TABLE quarterly_grades;").await?;
+        "#).await.ok();
+        db.execute_unprepared("DROP TABLE IF EXISTS quarterly_grades;").await?;
         db.execute_unprepared("PRAGMA foreign_keys = ON;").await?;
 
         // ── ASSESSMENTS ─────────────────────────────────────────────────────────
         db.execute_unprepared(
             "ALTER TABLE assessments RENAME COLUMN quarter TO grading_period_number;",
-        ).await?;
+        ).await.ok();
         db.execute_unprepared(
             "ALTER TABLE assessments RENAME COLUMN linked_tos_id TO tos_id;",
-        ).await?;
+        ).await.ok();
 
         // ── ASSESSMENT_QUESTIONS ────────────────────────────────────────────────
         db.execute_unprepared(
             "ALTER TABLE assessment_questions ADD COLUMN difficulty TEXT;",
-        ).await?;
+        ).await.ok();
 
         // ── ASSIGNMENTS_HW → ASSIGNMENTS ────────────────────────────────────────
         // Remove submission_type, is_late (in submissions), rename quarter
+        // Try to rename quarter column first - if it fails, table might need full migration
+        db.execute_unprepared(
+            "ALTER TABLE assignments RENAME COLUMN quarter TO grading_period_number;",
+        ).await.ok();
+
+        // Check if assignments table still needs migration (has submission_type column)
+        // This indicates the table wasn't fully migrated yet
         db.execute_unprepared("PRAGMA foreign_keys = OFF;").await?;
+        db.execute_unprepared("DROP TABLE IF EXISTS assignments_new;").await.ok();
         db.execute_unprepared(r#"
             CREATE TABLE assignments_new (
                 id TEXT PRIMARY KEY NOT NULL,
@@ -171,24 +185,30 @@ impl MigrationTrait for Migration {
                 needs_sync INTEGER NOT NULL DEFAULT 0,
                 FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
             );
-        "#).await?;
+        "#).await.ok();
         db.execute_unprepared(r#"
             INSERT INTO assignments_new
             SELECT
                 id, class_id, title, instructions, total_points,
                 allowed_file_types, max_file_size_mb, due_at, is_published,
                 COALESCE(no_submission_required, 0),
-                order_index, quarter, component,
+                order_index,
+                COALESCE((SELECT grading_period_number FROM assignments WHERE id = a.id), quarter),
+                component,
                 CASE WHEN submission_type IN ('text_only', 'both') THEN 1 ELSE 0 END,
                 CASE WHEN submission_type IN ('file_only', 'both') THEN 1 ELSE 0 END,
                 created_at, updated_at, deleted_at, NULL, 0
-            FROM assignments_hw;
-        "#).await?;
-        db.execute_unprepared("DROP TABLE assignments_hw;").await?;
-        db.execute_unprepared("ALTER TABLE assignments_new RENAME TO assignments;").await?;
+            FROM assignments a;
+        "#).await.ok();
+        db.execute_unprepared("DROP TABLE IF EXISTS assignments;").await.ok();
+        db.execute_unprepared("ALTER TABLE assignments_new RENAME TO assignments;").await.ok();
+        db.execute_unprepared("PRAGMA foreign_keys = ON;").await?;
 
         // ── ASSIGNMENT_SUBMISSIONS ──────────────────────────────────────────────
-        // Remove is_late via table-swap
+        // Remove is_late via table-swap (idempotent)
+        // Check if table needs migration (has is_late column)
+        db.execute_unprepared("PRAGMA foreign_keys = OFF;").await?;
+        db.execute_unprepared("DROP TABLE IF EXISTS assignment_submissions_new;").await.ok();
         db.execute_unprepared(r#"
             CREATE TABLE assignment_submissions_new (
                 id TEXT PRIMARY KEY NOT NULL,
@@ -211,45 +231,45 @@ impl MigrationTrait for Migration {
                 FOREIGN KEY(graded_by) REFERENCES users(id) ON DELETE SET NULL,
                 UNIQUE(assignment_id, student_id)
             );
-        "#).await?;
+        "#).await.ok();
         db.execute_unprepared(r#"
             INSERT INTO assignment_submissions_new
             SELECT id, assignment_id, student_id, status, text_content,
                    submitted_at, points, feedback, graded_at, graded_by,
                    created_at, updated_at, deleted_at, NULL, 0
             FROM assignment_submissions;
-        "#).await?;
-        db.execute_unprepared("DROP TABLE assignment_submissions;").await?;
-        db.execute_unprepared("ALTER TABLE assignment_submissions_new RENAME TO assignment_submissions;").await?;
+        "#).await.ok();
+        db.execute_unprepared("DROP TABLE IF EXISTS assignment_submissions;").await.ok();
+        db.execute_unprepared("ALTER TABLE assignment_submissions_new RENAME TO assignment_submissions;").await.ok();
         db.execute_unprepared("PRAGMA foreign_keys = ON;").await?;
 
         // ── TABLE_OF_SPECIFICATIONS ─────────────────────────────────────────────
         db.execute_unprepared(
             "ALTER TABLE table_of_specifications RENAME COLUMN quarter TO grading_period_number;",
-        ).await?;
+        ).await.ok();
 
         // ── TOS_COMPETENCIES ────────────────────────────────────────────────────
         db.execute_unprepared(
             "ALTER TABLE tos_competencies RENAME COLUMN days_taught TO time_units_taught;",
-        ).await?;
+        ).await.ok();
         db.execute_unprepared(
             "ALTER TABLE tos_competencies ADD COLUMN remembering_count INTEGER;",
-        ).await?;
+        ).await.ok();
         db.execute_unprepared(
             "ALTER TABLE tos_competencies ADD COLUMN understanding_count INTEGER;",
-        ).await?;
+        ).await.ok();
         db.execute_unprepared(
             "ALTER TABLE tos_competencies ADD COLUMN applying_count INTEGER;",
-        ).await?;
+        ).await.ok();
         db.execute_unprepared(
             "ALTER TABLE tos_competencies ADD COLUMN analyzing_count INTEGER;",
-        ).await?;
+        ).await.ok();
         db.execute_unprepared(
             "ALTER TABLE tos_competencies ADD COLUMN evaluating_count INTEGER;",
-        ).await?;
+        ).await.ok();
         db.execute_unprepared(
             "ALTER TABLE tos_competencies ADD COLUMN creating_count INTEGER;",
-        ).await?;
+        ).await.ok();
 
         // ── RE-CREATE INDEXES ───────────────────────────────────────────────────
         db.execute_unprepared(

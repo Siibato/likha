@@ -1,4 +1,5 @@
 use axum::{
+    extract::DefaultBodyLimit,
     routing::{delete, get, post, put},
     Router,
 };
@@ -74,7 +75,8 @@ pub fn routes(assignment_service: Arc<AssignmentService>) -> Router {
         )
         .route(
             "/assignment-submissions/{id}/upload",
-            post(assignment_handler::upload_file),
+            post(assignment_handler::upload_file)
+                .layer(DefaultBodyLimit::max(50 * 1024 * 1024)),
         )
         .route(
             "/submission-files/{id}",

@@ -1,7 +1,3 @@
-import 'dart:async';
-
-import 'package:flutter/foundation.dart';
-import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/constants/api_constants.dart';
@@ -14,7 +10,6 @@ import 'package:likha/presentation/pages/admin/school_details_setup_page.dart';
 import 'package:likha/presentation/pages/home_page.dart';
 import 'package:likha/presentation/pages/login_page.dart';
 import 'package:likha/presentation/pages/login_password_page.dart';
-import 'package:likha/presentation/pages/school_picker_page.dart';
 import 'package:likha/presentation/pages/setup/school_setup_page.dart';
 import 'package:likha/presentation/pages/sync_loading_page.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
@@ -40,20 +35,16 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
   bool _adminSchoolDetailsChecked = false;
   bool _adminSchoolDetailsExist = false;
 
-  StreamSubscription<Uri>? _deepLinkSub;
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _initSchoolConfig();
-      _initDeepLinks();
     });
   }
 
   @override
   void dispose() {
-    _deepLinkSub?.cancel();
     super.dispose();
   }
 
@@ -75,20 +66,6 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
       };
       ref.read(authProvider.notifier).checkAuthStatus();
     }
-  }
-
-  void _initDeepLinks() {
-    if (kIsWeb) return; // Deep links handled differently on web
-    _deepLinkSub = AppLinks().uriLinkStream.listen((uri) {
-      if (!mounted) return;
-      if (uri.scheme == 'likha' &&
-          uri.host == 'setup' &&
-          uri.queryParameters['server'] == 'cloud') {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const SchoolPickerPage()),
-        );
-      }
-    });
   }
 
   @override

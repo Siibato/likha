@@ -33,6 +33,8 @@ abstract class AssessmentRepository {
     String? openAt,
     String? closeAt,
     bool? showResultsImmediately,
+    int? gradingPeriodNumber,
+    String? component,
   });
 
   ResultVoid deleteAssessment({required String assessmentId});
@@ -78,6 +80,7 @@ abstract class AssessmentRepository {
   ResultFuture<SubmissionAnswer> overrideAnswer({
     required String answerId,
     required bool isCorrect,
+    double? points,
   });
 
   ResultFuture<SubmissionAnswer> gradeEssayAnswer({
