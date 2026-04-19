@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
-import 'package:likha/presentation/pages/desktop/teacher/create_assignment_desktop.dart';
-import 'package:likha/presentation/pages/desktop/teacher/assignment_detail_desktop.dart';
-import 'package:likha/presentation/pages/desktop/teacher/widgets/assignment_data_table.dart';
+import 'package:likha/presentation/pages/desktop/teacher/assignment/create_assignment_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/assignment/assignment_detail_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/assignment/widgets/assignment_data_table.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 
 /// Assignments section widget for TeacherClassDetailDesktop

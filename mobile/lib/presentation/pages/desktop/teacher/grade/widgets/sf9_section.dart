@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
-import 'package:likha/presentation/pages/desktop/teacher/sf9_detail_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/grade/sf9_detail_desktop.dart';
 import 'package:likha/presentation/pages/desktop/teacher/widgets/base_data_table.dart';
 import 'package:likha/presentation/pages/desktop/teacher/widgets/empty_state.dart';
 import 'package:likha/presentation/providers/sf9_provider.dart';

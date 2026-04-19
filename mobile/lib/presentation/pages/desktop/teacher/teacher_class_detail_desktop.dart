@@ -5,11 +5,11 @@ import 'package:likha/presentation/pages/desktop/core/desktop_navigation_rail.da
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/class_student_list_desktop.dart';
 import 'package:likha/presentation/pages/desktop/teacher/widgets/assessments_section.dart';
-import 'package:likha/presentation/pages/desktop/teacher/widgets/assignments_section.dart';
+import 'package:likha/presentation/pages/desktop/teacher/assignment/widgets/assignments_section.dart';
 import 'package:likha/presentation/pages/desktop/teacher/widgets/class_overview_panel.dart';
-import 'package:likha/presentation/pages/desktop/teacher/widgets/grades_section.dart';
-import 'package:likha/presentation/pages/desktop/teacher/widgets/materials_section.dart';
-import 'package:likha/presentation/pages/desktop/teacher/widgets/sf9_section.dart';
+import 'package:likha/presentation/pages/desktop/teacher/grade/widgets/grades_section.dart';
+import 'package:likha/presentation/pages/desktop/teacher/material/widgets/materials_section.dart';
+import 'package:likha/presentation/pages/desktop/teacher/grade/widgets/sf9_section.dart';
 import 'package:likha/presentation/pages/desktop/teacher/widgets/student_data_table.dart';
 import 'package:likha/presentation/pages/desktop/teacher/widgets/tos_section.dart';
 import 'package:likha/presentation/providers/class_provider.dart';

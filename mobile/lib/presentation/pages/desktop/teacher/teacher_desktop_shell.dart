@@ -6,7 +6,7 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_navigation_rail.dart';
 import 'package:likha/presentation/pages/desktop/teacher/teacher_classes_desktop.dart';
 import 'package:likha/presentation/pages/desktop/teacher/teacher_dashboard_desktop.dart';
-import 'package:likha/presentation/pages/desktop/teacher/teacher_grades_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/grade/grades_desktop.dart';
 import 'package:likha/presentation/utils/logout_helper.dart';
 
 class TeacherDesktopShell extends ConsumerStatefulWidget {

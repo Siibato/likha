@@ -4,7 +4,7 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
-import 'package:likha/presentation/pages/desktop/teacher/assignment_submissions_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/assignment/assignment_submissions_desktop.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/markdown_display.dart';
 import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
