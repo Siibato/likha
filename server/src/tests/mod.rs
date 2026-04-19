@@ -1,10 +1,12 @@
 
+#[cfg(test)]
+pub mod common;
 
 #[cfg(test)]
 pub mod unit;
 
 #[cfg(test)]
-pub mod common;
+pub mod integration;
 
 #[cfg(test)]
-pub mod integration;
+pub mod http;
