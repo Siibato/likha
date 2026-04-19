@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/domain/auth/entities/user.dart';
-import 'package:likha/presentation/pages/admin/widgets/info_card.dart';
-import 'package:likha/presentation/pages/admin/widgets/action_buttons.dart';
-import 'package:likha/presentation/pages/admin/widgets/activity_log_list.dart';
-import 'package:likha/presentation/pages/admin/widgets/edit_dialog.dart';
+import 'package:likha/presentation/pages/admin/account/widgets/info_card.dart';
+import 'package:likha/presentation/pages/admin/account/widgets/action_buttons.dart';
+import 'package:likha/presentation/pages/admin/account/widgets/activity_log_list.dart';
+import 'package:likha/presentation/pages/admin/account/widgets/edit_dialog.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 import 'package:likha/presentation/widgets/styled_dialog.dart';

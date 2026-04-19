@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/auth/entities/user.dart';
-import 'package:likha/presentation/pages/admin/widgets/edit_dialog.dart';
+import 'package:likha/presentation/pages/admin/account/widgets/edit_dialog.dart';
 import 'package:likha/presentation/pages/desktop/admin/widgets/account_detail_panel.dart';
 import 'package:likha/presentation/pages/desktop/admin/widgets/activity_log_table.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';

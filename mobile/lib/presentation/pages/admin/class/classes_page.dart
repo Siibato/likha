@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
-import 'package:likha/presentation/pages/admin/admin_class_detail_page.dart';
-import 'package:likha/presentation/pages/admin/admin_create_class_page.dart';
-import 'package:likha/presentation/pages/admin/widgets/empty_classes_state.dart';
-import 'package:likha/presentation/pages/admin/widgets/empty_search_classes_state.dart';
-import 'package:likha/presentation/pages/admin/widgets/search_bar.dart';
+import 'package:likha/presentation/pages/admin/class/class_detail_page.dart';
+import 'package:likha/presentation/pages/admin/class/class_create_page.dart';
+import 'package:likha/presentation/pages/admin/class/widgets/empty_classes_state.dart';
+import 'package:likha/presentation/pages/admin/class/widgets/empty_search_classes_state.dart';
+import 'package:likha/presentation/pages/admin/account/widgets/search_bar.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/class_card.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 

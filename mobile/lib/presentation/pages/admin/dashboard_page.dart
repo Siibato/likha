@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/presentation/pages/admin/account_management_page.dart';
-import 'package:likha/presentation/pages/admin/admin_classes_page.dart';
-import 'package:likha/presentation/pages/admin/admin_school_settings_page.dart';
-import 'package:likha/presentation/pages/admin/create_account_page.dart';
+import 'package:likha/presentation/pages/admin/account/account_management_page.dart';
+import 'package:likha/presentation/pages/admin/class/classes_page.dart';
+import 'package:likha/presentation/pages/admin/school_settings_page.dart';
+import 'package:likha/presentation/pages/admin/account/create_account_page.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/navigation_card.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';

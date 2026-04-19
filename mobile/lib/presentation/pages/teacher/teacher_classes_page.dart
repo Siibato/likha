@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
-import 'package:likha/presentation/pages/admin/widgets/search_bar.dart';
+import 'package:likha/presentation/pages/admin/account/widgets/search_bar.dart';
 import 'package:likha/presentation/pages/teacher/class_detail_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/empty_class_state.dart';
 import 'package:likha/presentation/pages/teacher/widgets/empty_search_result_state.dart';
