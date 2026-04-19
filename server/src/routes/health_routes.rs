@@ -5,4 +5,5 @@ pub fn routes() -> Router {
     Router::new()
         .route("/health", get(health_handler::health_check))
         .route("/health/ready", get(health_handler::readiness_check))
+        .route("/database-id", get(health_handler::get_database_id))
 }

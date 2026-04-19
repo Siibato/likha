@@ -173,7 +173,9 @@ impl super::AssessmentService {
         let question = self.assessment_repo.find_question_by_id(answer.question_id).await?
             .ok_or_else(|| AppError::NotFound("Question not found".to_string()))?;
 
-        let points = if request.is_correct { question.points as f64 } else { 0.0 };
+        let points = request.points.unwrap_or_else(|| {
+            if request.is_correct { question.points as f64 } else { 0.0 }
+        });
 
         let updated = self.submission_repo
             .override_answer(answer_id, request.is_correct, points)

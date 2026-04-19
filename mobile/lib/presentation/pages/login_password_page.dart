@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
 import 'package:likha/presentation/pages/shared/widgets/auth_desktop_layout.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
@@ -13,6 +14,7 @@ class LoginPasswordPage extends ConsumerStatefulWidget {
 
 class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
   final _formKey = GlobalKey<FormState>();
+  final _errorFormKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
@@ -29,9 +31,13 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
   }
 
   Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
+    final authState = ref.read(authProvider);
+    final hasAttempts = authState.attemptsRemaining != null;
+    final formKey = hasAttempts ? _errorFormKey : _formKey;
+    
+    if (!formKey.currentState!.validate()) return;
 
-    final username = ref.read(authProvider).loginUsername;
+    final username = authState.loginUsername;
     if (username == null) return;
 
     await ref.read(authProvider.notifier).login(
@@ -43,10 +49,12 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
   Widget _buildFormBody(
     String username,
     bool isLocked,
+    bool isFirstFailedAttempt,
     bool hasAttempts,
     bool isLoading,
     int? lockoutRemainingSeconds,
     int? attemptsRemaining,
+    String? error,
   ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -109,10 +117,10 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
               ),
             ),
           ]
-          // State B: Retrying with attempts counter
-          else if (hasAttempts) ...[
+          // State B1: First failed attempt (simple error message without counter)
+          else if (isFirstFailedAttempt) ...[
             Form(
-              key: _formKey,
+              key: _errorFormKey,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -144,7 +152,72 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),
-                  // Red banner with error message
+                  // Red banner with error message (no counter)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFEDED),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xFFDC3545),
+                        width: 1,
+                      ),
+                    ),
+                    child: const Text(
+                      'Password is incorrect',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFDC3545),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _buildPasswordField(isLoading),
+                  const SizedBox(height: 16),
+                  _buildLoginButton(isLoading),
+                  const SizedBox(height: 16),
+                  _buildBackButton(isLoading),
+                ],
+              ),
+            ),
+          ]
+          // State B2: Retrying with attempts counter (2nd+ failed attempt)
+          else if (hasAttempts) ...[
+            Form(
+              key: _errorFormKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Image.asset(
+                    'assets/images/likha-logo.png',
+                    width: 120,
+                    height: 120,
+                  ),
+                  const SizedBox(height: 32),
+                  const Text(
+                    'Welcome back',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF202020),
+                      letterSpacing: -0.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Signing in as $username',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF999999),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  // Red banner with error message and counter
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -158,7 +231,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                     child: Column(
                       children: [
                         Text(
-                          'Attempt ${5 - attemptsRemaining!}/5 — Invalid password',
+                          'Password is incorrect',
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -167,7 +240,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '$attemptsRemaining attempt(s) remaining',
+                          '$attemptsRemaining attempt(s) remaining before lockout',
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
@@ -221,6 +294,26 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                     ),
                     textAlign: TextAlign.center,
                   ),
+                  if (error != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFEDED),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFDC3545), width: 1),
+                      ),
+                      child: Text(
+                        error,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFFDC3545),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 48),
                   _buildPasswordField(isLoading),
                   const SizedBox(height: 24),
@@ -251,7 +344,6 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
         child: TextFormField(
           controller: _passwordController,
           obscureText: _obscurePassword,
-          autofocus: true,
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w500,
@@ -385,15 +477,19 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
     final authState = ref.watch(authProvider);
     final username = authState.loginUsername ?? '';
     final isLocked = authState.lockoutRemainingSeconds != null;
-    final hasAttempts = authState.attemptsRemaining != null;
+    final isFirstFailedAttempt = authState.attemptsRemaining == 5;
+    final hasAttempts = authState.attemptsRemaining != null && authState.attemptsRemaining! < 5;
+    PageLogger.instance.log('LoginPasswordPage build - attemptsRemaining: ${authState.attemptsRemaining}, isFirstFailedAttempt: $isFirstFailedAttempt, hasAttempts: $hasAttempts, isLocked: $isLocked');
 
     final formBody = _buildFormBody(
       username,
       isLocked,
+      isFirstFailedAttempt,
       hasAttempts,
       authState.isLoading,
       authState.lockoutRemainingSeconds,
       authState.attemptsRemaining,
+      authState.error,
     );
 
     return Scaffold(

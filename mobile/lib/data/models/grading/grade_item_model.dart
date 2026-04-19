@@ -28,18 +28,21 @@ class GradeItemModel {
   });
 
   factory GradeItemModel.fromJson(Map<String, dynamic> json) {
+    final now = DateTime.now();
     return GradeItemModel(
       id: json['id'] as String,
       classId: json['class_id'] as String,
       title: json['title'] as String,
       component: json['component'] as String,
-      gradingPeriodNumber: (json['grading_period_number'] as num?)?.toInt() ?? (json['quarter'] as num).toInt(),
+      gradingPeriodNumber: (json['grading_period_number'] as num?)?.toInt() ?? 
+                          (json['quarter'] as num?)?.toInt() ?? 1,
       totalPoints: (json['total_points'] as num).toDouble(),
       sourceType: (json['source_type'] as String?) ?? 'manual',
       sourceId: json['source_id'] as String?,
       orderIndex: (json['order_index'] as num?)?.toInt() ?? 0,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse((json['updated_at'] ?? json['created_at']) as String),
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : now,
+      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at'] as String) : 
+                  (json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : now),
     );
   }
 

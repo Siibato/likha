@@ -6,6 +6,7 @@ import 'package:likha/core/theme/app_colors.dart';
 class BaseDataTable<T> extends StatefulWidget {
   final List<T> items;
   final List<DataColumn> columns;
+  final List<int>? columnFlexes;
   final Widget Function(BuildContext context, T item, int index) rowBuilder;
   final int rowsPerPage;
   final bool showPagination;
@@ -22,6 +23,7 @@ class BaseDataTable<T> extends StatefulWidget {
     required this.items,
     required this.columns,
     required this.rowBuilder,
+    this.columnFlexes,
     this.rowsPerPage = 20,
     this.showPagination = true,
     this.showCheckboxColumn = false,
@@ -43,12 +45,7 @@ class _BaseDataTableState<T> extends State<BaseDataTable<T>> {
   int _currentPage = 0;
   bool _isLoading = false;
 
-  List<T> get _sortedItems {
-    final sorted = List<T>.from(widget.items);
-    // Default sorting by first column if no specific sort is provided
-    // Subclasses can override this behavior
-    return sorted;
-  }
+  List<T> get _sortedItems => List<T>.from(widget.items);
 
   int get _totalPages =>
       (widget.items.length / widget.rowsPerPage).ceil().clamp(1, 999);
@@ -85,6 +82,13 @@ class _BaseDataTableState<T> extends State<BaseDataTable<T>> {
     }
   }
 
+  int _flexFor(int index) {
+    if (widget.columnFlexes != null && index < widget.columnFlexes!.length) {
+      return widget.columnFlexes![index];
+    }
+    return 1;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.items.isEmpty && widget.emptyState != null) {
@@ -106,41 +110,81 @@ class _BaseDataTableState<T> extends State<BaseDataTable<T>> {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: DataTable(
-              sortColumnIndex: _sortColumnIndex,
-              sortAscending: _sortAscending,
-              headingRowColor: WidgetStateProperty.all(AppColors.backgroundTertiary),
-              dataRowMaxHeight: widget.dataRowMaxHeight,
-              horizontalMargin: widget.horizontalMargin,
-              columnSpacing: widget.columnSpacing,
-              showCheckboxColumn: widget.showCheckboxColumn,
-              columns: widget.columns.map((column) {
-                if (column.onSort != null) {
-                  return DataColumn(
-                    label: column.label,
-                    numeric: column.numeric,
-                    onSort: _handleSort,
-                  );
-                }
-                return column;
-              }).toList(),
-              rows: _pageItems.asMap().entries.map((entry) {
-                final index = entry.key;
-                final item = entry.value;
-                return DataRow(
-                  key: ValueKey(item),
-                  onSelectChanged: widget.onTap != null 
-                      ? (_) => widget.onTap!(item)
-                      : widget.showCheckboxColumn ? (_) {} : null,
-                  cells: [
-                    DataCell(
-                      Builder(
-                        builder: (context) => widget.rowBuilder(context, item, index),
+            child: Column(
+              children: [
+                // Header row
+                Container(
+                  color: AppColors.backgroundTertiary,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: widget.horizontalMargin,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    children: widget.columns.asMap().entries.map((e) {
+                      final col = e.value;
+                      final isSorted =
+                          e.key == _sortColumnIndex && col.onSort != null;
+                      return Expanded(
+                        flex: _flexFor(e.key),
+                        child: GestureDetector(
+                          onTap: col.onSort != null
+                              ? () => _handleSort(e.key, !_sortAscending)
+                              : null,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              col.label,
+                              if (isSorted) ...[
+                                const SizedBox(width: 4),
+                                Icon(
+                                  _sortAscending
+                                      ? Icons.arrow_upward_rounded
+                                      : Icons.arrow_downward_rounded,
+                                  size: 13,
+                                  color: AppColors.foregroundSecondary,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const Divider(height: 1, thickness: 1, color: AppColors.borderLight),
+                // Data rows
+                ..._pageItems.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final item = entry.value;
+                  final isEven = index.isEven;
+                  return Material(
+                    color: isEven
+                        ? Colors.white
+                        : AppColors.backgroundSecondary.withValues(alpha: 0.4),
+                    child: InkWell(
+                      onTap: widget.onTap != null
+                          ? () => widget.onTap!(item)
+                          : null,
+                      child: Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: widget.horizontalMargin,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: AppColors.borderLight.withValues(alpha: 0.6),
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        child: widget.rowBuilder(context, item, index),
                       ),
                     ),
-                  ],
-                );
-              }).toList(),
+                  );
+                }),
+              ],
             ),
           ),
         ),
@@ -161,7 +205,7 @@ class _BaseDataTableState<T> extends State<BaseDataTable<T>> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          'Showing ${_currentPage * widget.rowsPerPage + 1}â\u0080\u0093${((_currentPage + 1) * widget.rowsPerPage).clamp(0, widget.items.length)} of ${widget.items.length}',
+          'Showing ${_currentPage * widget.rowsPerPage + 1}–${((_currentPage + 1) * widget.rowsPerPage).clamp(0, widget.items.length)} of ${widget.items.length}',
           style: const TextStyle(
             fontSize: 13,
             color: AppColors.foregroundTertiary,
@@ -171,11 +215,15 @@ class _BaseDataTableState<T> extends State<BaseDataTable<T>> {
           children: [
             IconButton(
               icon: const Icon(Icons.chevron_left_rounded, size: 20),
-              onPressed: _currentPage > 0 ? () => _handlePageChange(_currentPage - 1) : null,
+              onPressed: _currentPage > 0
+                  ? () => _handlePageChange(_currentPage - 1)
+                  : null,
             ),
             IconButton(
               icon: const Icon(Icons.chevron_right_rounded, size: 20),
-              onPressed: _currentPage < _totalPages - 1 ? () => _handlePageChange(_currentPage + 1) : null,
+              onPressed: _currentPage < _totalPages - 1
+                  ? () => _handlePageChange(_currentPage + 1)
+                  : null,
             ),
           ],
         ),
@@ -239,6 +287,7 @@ class _DefaultEmptyState extends StatelessWidget {
 /// Configuration class for data table styling and behavior
 class DataTableConfig<T> {
   final List<DataColumn> columns;
+  final List<int>? columnFlexes;
   final Widget Function(BuildContext context, T item, int index) rowBuilder;
   final Widget? emptyState;
   final int rowsPerPage;
@@ -250,6 +299,7 @@ class DataTableConfig<T> {
   const DataTableConfig({
     required this.columns,
     required this.rowBuilder,
+    this.columnFlexes,
     this.emptyState,
     this.rowsPerPage = 20,
     this.showPagination = true,
@@ -263,6 +313,7 @@ class DataTableConfig<T> {
     return BaseDataTable<T>(
       items: items,
       columns: columns,
+      columnFlexes: columnFlexes,
       rowBuilder: rowBuilder,
       emptyState: emptyState,
       rowsPerPage: rowsPerPage,

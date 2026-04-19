@@ -345,7 +345,6 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
 
       final result =
           await remoteDataSource.releaseResults(assessmentId: assessmentId);
-      // Fix: also cache the updated assessment (results_released = true)
       await localDataSource.cacheAssessments([result]);
       return Right(result);
     } on ServerException catch (e) {

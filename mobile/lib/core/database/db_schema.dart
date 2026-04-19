@@ -36,6 +36,7 @@ abstract final class DbTables {
   static const String tosCompetencies = 'tos_competencies';
   static const String melcs = 'melcs';
   static const String assessmentStatisticsCache = 'assessment_statistics_cache';
+  static const String validationMetadata = 'validation_metadata';
 }
 
 // ─── Common columns ───────────────────────────────────────────────────────────
@@ -294,6 +295,15 @@ abstract final class StudentResultsCacheCols {
 abstract final class AssessmentStatisticsCacheCols {
   static const String assessmentId = 'assessment_id';
   static const String statisticsJson = 'statistics_json';
+}
+
+abstract final class ValidationMetadataCols {
+  static const String entityType = 'entity_type';
+  static const String lastModified = 'last_modified';
+  static const String recordCount = 'record_count';
+  static const String etag = 'etag';
+  static const String validatedAt = 'validated_at';
+  static const String databaseId = 'database_id';
 }
 
 abstract final class TosCols {

@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/services/school_setup_service.dart';
 import 'package:likha/injection_container.dart' as di;
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
 import 'package:likha/presentation/pages/setup/school_setup_page.dart';
 import 'package:likha/presentation/pages/shared/widgets/auth_desktop_layout.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 import 'package:likha/presentation/widgets/styled_dialog.dart';
@@ -54,7 +52,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final state = ref.read(authProvider);
 
     if (state.error != null) {
-      setState(() => _formError = AppErrorMapper.toUserMessage(state.error));
+      setState(() => _formError = state.error);
     }
   }
 
@@ -151,10 +149,27 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             ),
             const SizedBox(height: 32),
             _buildSchoolIndicator(),
-            FormMessage(
-              message: _formError,
-              severity: MessageSeverity.error,
-            ),
+            if (_formError != null)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFEDED),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color(0xFFDC3545),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  _formError!,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFFDC3545),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             const SizedBox(height: 16),
             StyledTextField(
               controller: _usernameController,

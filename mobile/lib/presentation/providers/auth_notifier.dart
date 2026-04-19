@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/errors/failures.dart';
@@ -23,6 +24,7 @@ class AuthState {
   final String? loginUsername;
   final int? attemptsRemaining;
   final int? lockoutRemainingSeconds;
+  final int? lockoutLevel;
   final bool pendingForceLogout;
   final int pendingSyncCount;
 
@@ -37,6 +39,7 @@ class AuthState {
     this.loginUsername,
     this.attemptsRemaining,
     this.lockoutRemainingSeconds,
+    this.lockoutLevel,
     this.pendingForceLogout = false,
     this.pendingSyncCount = 0,
   });
@@ -52,6 +55,7 @@ class AuthState {
     String? loginUsername,
     int? attemptsRemaining,
     int? lockoutRemainingSeconds,
+    int? lockoutLevel,
     bool? pendingForceLogout,
     int? pendingSyncCount,
     bool clearError = false,
@@ -78,6 +82,7 @@ class AuthState {
           : (loginUsername ?? this.loginUsername),
       attemptsRemaining: clearAttempts ? null : (attemptsRemaining ?? this.attemptsRemaining),
       lockoutRemainingSeconds: clearLockout ? null : (lockoutRemainingSeconds ?? this.lockoutRemainingSeconds),
+      lockoutLevel: clearLockout ? null : (lockoutLevel ?? this.lockoutLevel),
       pendingForceLogout: pendingForceLogout ?? this.pendingForceLogout,
       pendingSyncCount: pendingSyncCount ?? this.pendingSyncCount,
     );
@@ -130,9 +135,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     result.fold(
       (failure) {
+        String errorMessage;
+        // Special handling for username not found errors
+        if (failure is ServerFailure && 
+            failure.statusCode == 404 && 
+            failure.message.contains('Username does not exist')) {
+          errorMessage = 'Username does not exist';
+        } else {
+          errorMessage = AppErrorMapper.fromFailureAuth(failure);
+        }
+        
         state = state.copyWith(
           isLoading: false,
-          error: AppErrorMapper.fromFailure(failure),
+          error: errorMessage,
         );
       },
       (checkResult) {
@@ -176,19 +191,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
     result.fold(
       (failure) {
         if (failure is TooManyRequestsFailure) {
+          debugPrint('[AUTH] TooManyRequestsFailure - remainingSeconds: ${failure.remainingSeconds}');
           state = state.copyWith(
             isLoading: false,
             clearAttempts: true,
             lockoutRemainingSeconds: failure.remainingSeconds,
             clearError: true,
           );
+          debugPrint('[AUTH] State updated - lockoutRemainingSeconds: ${state.lockoutRemainingSeconds}');
           _startLockoutCountdown(failure.remainingSeconds);
         } else if (failure is InvalidCredentialsFailure) {
+          debugPrint('[AUTH] InvalidCredentialsFailure - attemptsRemaining: ${failure.attemptsRemaining}');
           state = state.copyWith(
             isLoading: false,
             attemptsRemaining: failure.attemptsRemaining,
             clearError: true,
           );
+          debugPrint('[AUTH] State updated - attemptsRemaining: ${state.attemptsRemaining}');
         } else if (failure is ActivationRequiredFailure) {
           state = state.copyWith(
             isLoading: false,
@@ -199,7 +218,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         } else {
           state = state.copyWith(
             isLoading: false,
-            error: AppErrorMapper.fromFailure(failure),
+            error: AppErrorMapper.fromFailureAuth(failure),
           );
         }
       },

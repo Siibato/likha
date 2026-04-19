@@ -15,6 +15,7 @@ mixin LearningMaterialFileMixin on LearningMaterialRepositoryBase {
     required String materialId,
     required String filePath,
     required String fileName,
+    void Function(int sent, int total)? onSendProgress,
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
@@ -46,6 +47,7 @@ mixin LearningMaterialFileMixin on LearningMaterialRepositoryBase {
         materialId: materialId,
         filePath: filePath,
         fileName: fileName,
+        onSendProgress: onSendProgress,
       );
 
       try {

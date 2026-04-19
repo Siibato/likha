@@ -43,7 +43,7 @@ class SchoolSetupNotifier extends StateNotifier<SchoolSetupState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: AppErrorMapper.fromFailure(failure),
+        error: AppErrorMapper.fromFailureAuth(failure),
       ),
       (config) => state = state.copyWith(
         isLoading: false,
@@ -59,7 +59,7 @@ class SchoolSetupNotifier extends StateNotifier<SchoolSetupState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: AppErrorMapper.fromFailure(failure),
+        error: AppErrorMapper.fromFailureAuth(failure),
       ),
       (config) => state = state.copyWith(
         isLoading: false,
@@ -75,7 +75,7 @@ class SchoolSetupNotifier extends StateNotifier<SchoolSetupState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
-        error: AppErrorMapper.fromFailure(failure),
+        error: AppErrorMapper.fromFailureAuth(failure),
       ),
       (config) => state = state.copyWith(
         isLoading: false,

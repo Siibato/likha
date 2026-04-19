@@ -1,4 +1,5 @@
 use axum::{
+    extract::DefaultBodyLimit,
     routing::{delete, get, post, put},
     Router,
 };
@@ -45,7 +46,8 @@ pub fn routes(material_service: Arc<LearningMaterialService>) -> Router {
         // File management
         .route(
             "/materials/{id}/files",
-            post(learning_material_handler::upload_file),
+            post(learning_material_handler::upload_file)
+                .layer(DefaultBodyLimit::max(50 * 1024 * 1024)),
         )
         .route(
             "/material-files/{file_id}",

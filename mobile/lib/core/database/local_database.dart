@@ -1,6 +1,28 @@
 import 'package:sqflite/sqflite.dart';
-import 'package:likha/core/database/migrations.dart';
 
+/// Local SQLite Database for offline-first functionality
+///
+/// SCHEMA VERSION: 1 (consolidated from v12)
+/// TOTAL TABLES: 32
+///
+/// This database was consolidated from 12 historical versions into a single
+/// clean v1 schema. All migrations are now handled via nuclear reset:
+/// - Fresh installs: Create tables via _createTables
+/// - Upgrades/Downgrades: Drop all tables and recreate (users must resync)
+///
+/// TABLE CATEGORIES:
+/// - Core: users, refresh_tokens, login_attempts, activity_logs
+/// - Classes: classes, class_participants
+/// - Assessments: assessments, assessment_questions, answer_keys,
+///   answer_key_acceptable_answers, question_choices, assessment_submissions,
+///   submission_answers, submission_answer_items, assessment_statistics_cache
+/// - Assignments: assignments, assignment_submissions, submission_files
+/// - Materials: learning_materials, material_files
+/// - Grading: grade_record, grade_items, grade_scores, period_grades
+/// - TOS: table_of_specifications, tos_competencies, melcs
+/// - Sync: sync_queue, sync_metadata, student_results_cache, validation_metadata
+///
+/// INDEXES: 40+ indexes for query performance on foreign keys and common filters
 class LocalDatabase {
   static final LocalDatabase _instance = LocalDatabase._internal();
 
@@ -27,15 +49,24 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 11,
+      version: 1,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onDowngrade: _downgradeDatabase,
       onOpen: (db) async {
-        await db.execute('PRAGMA foreign_keys = ON');
-        // Run any pending migrations
-        await MigrationRunner.runMigrations(db, MigrationRunner.allMigrations);
+        try {
+          await db.execute('PRAGMA foreign_keys = ON');
+          await db.execute('PRAGMA synchronous = NORMAL');
+          await db.execute('PRAGMA cache_size = 10000');
+          await db.execute('PRAGMA temp_store = MEMORY');
+        } catch (e) {
+          print('Warning: Failed to set database PRAGMA settings: $e');
+        }
+        // MigrationRunner disabled - all migrations consolidated into _createTables
+        // Future migrations will be handled via onUpgrade with version increments
       },
+      // Configure database for better performance
+      singleInstance: true,
     );
   }
 
@@ -578,6 +609,18 @@ class LocalDatabase {
         )
       ''');
 
+      // Validation metadata table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS validation_metadata (
+          entity_type TEXT PRIMARY KEY,
+          last_modified TEXT NOT NULL,
+          record_count INTEGER NOT NULL,
+          etag TEXT,
+          validated_at TEXT NOT NULL,
+          database_id TEXT
+        )
+      ''');
+
       // Create indexes
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_class_id ON class_participants(class_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_user_id ON class_participants(user_id)');
@@ -625,572 +668,11 @@ class LocalDatabase {
   }
 
   Future<void> _upgradeDatabase(Database db, int oldVersion, int newVersion) async {
-    // Handle upgrade: v1 → v2 adds student_results_cache table
-    if (oldVersion < 2) {
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS student_results_cache (
-          submission_id TEXT PRIMARY KEY,
-          results_json TEXT NOT NULL,
-          cached_at TEXT NOT NULL
-        )
-      ''');
-    }
-
-    // Handle upgrade: v2 → v3 adds grading system tables
-    if (oldVersion < 3) {
-      await db.execute('ALTER TABLE classes ADD COLUMN grade_level TEXT');
-      await db.execute('ALTER TABLE classes ADD COLUMN subject_group TEXT');
-      await db.execute('ALTER TABLE classes ADD COLUMN school_year TEXT');
-      await db.execute('ALTER TABLE classes ADD COLUMN semester INTEGER');
-
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS grade_components_config (
-          id TEXT PRIMARY KEY,
-          class_id TEXT NOT NULL,
-          quarter INTEGER NOT NULL,
-          ww_weight REAL NOT NULL DEFAULT 30.0,
-          pt_weight REAL NOT NULL DEFAULT 50.0,
-          qa_weight REAL NOT NULL DEFAULT 20.0,
-          created_at TEXT NOT NULL,
-          updated_at TEXT NOT NULL,
-          deleted_at TEXT,
-          cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
-          UNIQUE(class_id, quarter)
-        )
-      ''');
-
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS grade_items (
-          id TEXT PRIMARY KEY,
-          class_id TEXT NOT NULL,
-          title TEXT NOT NULL,
-          component TEXT NOT NULL,
-          quarter INTEGER NOT NULL,
-          total_points REAL NOT NULL,
-          is_departmental_exam INTEGER NOT NULL DEFAULT 0,
-          source_type TEXT NOT NULL DEFAULT 'manual',
-          source_id TEXT,
-          order_index INTEGER NOT NULL DEFAULT 0,
-          created_at TEXT NOT NULL,
-          updated_at TEXT NOT NULL,
-          deleted_at TEXT,
-          cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
-        )
-      ''');
-
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS grade_scores (
-          id TEXT PRIMARY KEY,
-          grade_item_id TEXT NOT NULL,
-          student_id TEXT NOT NULL,
-          score REAL,
-          is_auto_populated INTEGER NOT NULL DEFAULT 0,
-          override_score REAL,
-          created_at TEXT NOT NULL,
-          updated_at TEXT NOT NULL,
-          deleted_at TEXT,
-          cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY(grade_item_id) REFERENCES grade_items(id) ON DELETE CASCADE,
-          FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
-          UNIQUE(grade_item_id, student_id)
-        )
-      ''');
-
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS quarterly_grades (
-          id TEXT PRIMARY KEY,
-          class_id TEXT NOT NULL,
-          student_id TEXT NOT NULL,
-          quarter INTEGER NOT NULL,
-          ww_percentage REAL,
-          pt_percentage REAL,
-          qa_percentage REAL,
-          ww_weighted REAL,
-          pt_weighted REAL,
-          qa_weighted REAL,
-          initial_grade REAL,
-          transmuted_grade INTEGER,
-          is_complete INTEGER NOT NULL DEFAULT 0,
-          computed_at TEXT,
-          created_at TEXT NOT NULL,
-          updated_at TEXT NOT NULL,
-          deleted_at TEXT,
-          cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
-          FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
-          UNIQUE(class_id, student_id, quarter)
-        )
-      ''');
-
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_record_class_id ON grade_record(class_id)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_items_class_id ON grade_items(class_id)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_items_updated_at ON grade_items(updated_at)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_items_deleted_at ON grade_items(deleted_at)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_scores_grade_item_id ON grade_scores(grade_item_id)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_scores_student_id ON grade_scores(student_id)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_scores_updated_at ON grade_scores(updated_at)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_grade_scores_deleted_at ON grade_scores(deleted_at)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_period_grades_class_id ON period_grades(class_id)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_period_grades_student_id ON period_grades(student_id)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_period_grades_updated_at ON period_grades(updated_at)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_period_grades_deleted_at ON period_grades(deleted_at)');
-    }
-
-    // Handle upgrade: v3 → v4 adds TOS, competencies, MELCs, and new columns
-    if (oldVersion < 4) {
-      await db.execute('ALTER TABLE classes ADD COLUMN is_advisory INTEGER NOT NULL DEFAULT 0');
-      await db.execute('ALTER TABLE assessment_questions ADD COLUMN tos_competency_id TEXT');
-      await db.execute('ALTER TABLE assessment_questions ADD COLUMN cognitive_level TEXT');
-
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS table_of_specifications (
-          id TEXT PRIMARY KEY,
-          class_id TEXT NOT NULL,
-          quarter INTEGER NOT NULL,
-          title TEXT NOT NULL,
-          classification_mode TEXT NOT NULL,
-          total_items INTEGER NOT NULL,
-          created_at TEXT NOT NULL,
-          updated_at TEXT NOT NULL,
-          deleted_at TEXT,
-          cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
-          UNIQUE(class_id, quarter)
-        )
-      ''');
-
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS tos_competencies (
-          id TEXT PRIMARY KEY,
-          tos_id TEXT NOT NULL,
-          competency_code TEXT,
-          competency_text TEXT NOT NULL,
-          days_taught INTEGER NOT NULL,
-          order_index INTEGER NOT NULL DEFAULT 0,
-          created_at TEXT NOT NULL,
-          updated_at TEXT NOT NULL,
-          deleted_at TEXT,
-          cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY (tos_id) REFERENCES table_of_specifications(id)
-        )
-      ''');
-
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS melcs (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          subject TEXT NOT NULL,
-          grade_level TEXT NOT NULL,
-          quarter INTEGER,
-          competency_code TEXT NOT NULL,
-          competency_text TEXT NOT NULL,
-          domain TEXT
-        )
-      ''');
-    }
-
-    // Handle upgrade: v4 → v5 adds assessment_statistics_cache table
-    if (oldVersion < 5) {
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS assessment_statistics_cache (
-          assessment_id TEXT PRIMARY KEY,
-          statistics_json TEXT NOT NULL,
-          cached_at TEXT NOT NULL
-        )
-      ''');
-    }
-
-    // Handle upgrade: v5 → v6 adds TOS time unit, difficulty percentages, competency counts, assessment linked_tos_id
-    if (oldVersion < 6) {
-      await db.execute("ALTER TABLE table_of_specifications ADD COLUMN time_unit TEXT NOT NULL DEFAULT 'days'");
-      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN easy_percentage REAL NOT NULL DEFAULT 50.0');
-      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN medium_percentage REAL NOT NULL DEFAULT 30.0');
-      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN hard_percentage REAL NOT NULL DEFAULT 20.0');
-      await db.execute('ALTER TABLE tos_competencies ADD COLUMN easy_count INTEGER');
-      await db.execute('ALTER TABLE tos_competencies ADD COLUMN medium_count INTEGER');
-      await db.execute('ALTER TABLE tos_competencies ADD COLUMN hard_count INTEGER');
-      await db.execute('ALTER TABLE assessments ADD COLUMN linked_tos_id TEXT');
-    }
-
-    if (oldVersion < 7) {
-      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN remembering_percentage REAL NOT NULL DEFAULT 16.67');
-      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN understanding_percentage REAL NOT NULL DEFAULT 16.67');
-      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN applying_percentage REAL NOT NULL DEFAULT 16.67');
-      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN analyzing_percentage REAL NOT NULL DEFAULT 16.67');
-      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN evaluating_percentage REAL NOT NULL DEFAULT 16.67');
-      await db.execute('ALTER TABLE table_of_specifications ADD COLUMN creating_percentage REAL NOT NULL DEFAULT 16.67');
-    }
-
-    if (oldVersion < 8) {
-      await db.execute('ALTER TABLE assessments ADD COLUMN quarter INTEGER');
-      await db.execute('ALTER TABLE assessments ADD COLUMN component TEXT');
-      await db.execute('ALTER TABLE assignments ADD COLUMN quarter INTEGER');
-      await db.execute('ALTER TABLE assignments ADD COLUMN component TEXT');
-    }
-
-    // Handle upgrade: v8 → v9 ensures quarter/component columns exist on assessments
-    // and assignments. Uses try/catch because fresh installs at v9 already have
-    // these columns from _createTables and ALTER TABLE would fail on duplicates.
-    if (oldVersion < 9) {
-      try { await db.execute('ALTER TABLE assessments ADD COLUMN quarter INTEGER'); } catch (_) {}
-      try { await db.execute('ALTER TABLE assessments ADD COLUMN component TEXT'); } catch (_) {}
-      try { await db.execute('ALTER TABLE assignments ADD COLUMN quarter INTEGER'); } catch (_) {}
-      try { await db.execute('ALTER TABLE assignments ADD COLUMN component TEXT'); } catch (_) {}
-    }
-
-    // Handle upgrade: v9 → v10 fixes assessment_submissions.total_points type from
-    // INTEGER to REAL. The server stores fractional earned scores (e.g. 8.5 / 10) and
-    // SQLite INTEGER silently truncates them during sync writes.
-    // Uses table-swap pattern because SQLite does not support ALTER COLUMN.
-    if (oldVersion < 10) {
-      await db.execute('PRAGMA foreign_keys = OFF');
-      await db.execute('''
-        CREATE TABLE assessment_submissions_v10 (
-          id TEXT PRIMARY KEY,
-          assessment_id TEXT NOT NULL,
-          user_id TEXT NOT NULL,
-          started_at TEXT NOT NULL,
-          submitted_at TEXT,
-          total_points REAL NOT NULL DEFAULT 0.0,
-          earned_points REAL NOT NULL DEFAULT 0.0,
-          created_at TEXT NOT NULL,
-          updated_at TEXT NOT NULL,
-          deleted_at TEXT,
-          cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY(assessment_id) REFERENCES assessments(id) ON DELETE CASCADE,
-          FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
-          UNIQUE(assessment_id, user_id)
-        )
-      ''');
-      await db.execute('''
-        INSERT INTO assessment_submissions_v10
-        SELECT id, assessment_id, user_id, started_at, submitted_at,
-               CAST(total_points AS REAL), earned_points,
-               created_at, updated_at, deleted_at, cached_at, needs_sync
-        FROM assessment_submissions
-      ''');
-      await db.execute('DROP TABLE assessment_submissions');
-      await db.execute(
-        'ALTER TABLE assessment_submissions_v10 RENAME TO assessment_submissions',
-      );
-      await db.execute(
-        'CREATE INDEX IF NOT EXISTS idx_assessment_submissions_assessment_id ON assessment_submissions(assessment_id)',
-      );
-      await db.execute(
-        'CREATE INDEX IF NOT EXISTS idx_assessment_submissions_user_id ON assessment_submissions(user_id)',
-      );
-      await db.execute(
-        'CREATE INDEX IF NOT EXISTS idx_assessment_submissions_updated_at ON assessment_submissions(updated_at)',
-      );
-      await db.execute(
-        'CREATE INDEX IF NOT EXISTS idx_assessment_submissions_deleted_at ON assessment_submissions(deleted_at)',
-      );
-      await db.execute('PRAGMA foreign_keys = ON');
-    }
-
-    // Handle upgrade: v10 -> v11 Phase 2 ERD alignment
-    if (oldVersion < 11) {
-      await db.execute('PRAGMA foreign_keys = OFF');
-
-      // Add new columns to classes table
-      try { await db.execute('ALTER TABLE classes ADD COLUMN grading_period_type TEXT NOT NULL DEFAULT \'quarter\''); } catch (_) {}
-
-      // Rename tables using table-swap pattern
-      // 1. grade_components_config -> grade_record
-      await db.execute('''
-        CREATE TABLE grade_record_v11 (
-          id TEXT PRIMARY KEY,
-          class_id TEXT NOT NULL,
-          grading_period_number INTEGER NOT NULL,
-          ww_weight REAL NOT NULL DEFAULT 30.0,
-          pt_weight REAL NOT NULL DEFAULT 50.0,
-          qa_weight REAL NOT NULL DEFAULT 20.0,
-          created_at TEXT NOT NULL,
-          updated_at TEXT NOT NULL,
-          deleted_at TEXT,
-          cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
-          UNIQUE(class_id, grading_period_number)
-        )
-      ''');
-      await db.execute('''
-        INSERT INTO grade_record_v11
-        SELECT id, class_id, quarter, ww_weight, pt_weight, qa_weight,
-               created_at, updated_at, deleted_at, cached_at, needs_sync
-        FROM grade_components_config
-      ''');
-      await db.execute('DROP TABLE grade_components_config');
-      await db.execute('ALTER TABLE grade_record_v11 RENAME TO grade_record');
-
-      // 2. quarterly_grades -> period_grades (remove percentage columns)
-      await db.execute('''
-        CREATE TABLE period_grades_v11 (
-          id TEXT PRIMARY KEY,
-          class_id TEXT NOT NULL,
-          student_id TEXT NOT NULL,
-          grading_period_number INTEGER NOT NULL,
-          initial_grade REAL,
-          transmuted_grade INTEGER,
-          is_locked INTEGER NOT NULL DEFAULT 0,
-          computed_at TEXT,
-          created_at TEXT NOT NULL,
-          updated_at TEXT NOT NULL,
-          deleted_at TEXT,
-          cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
-          FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
-          UNIQUE(class_id, student_id, grading_period_number)
-        )
-      ''');
-      await db.execute('''
-        INSERT INTO period_grades_v11
-        SELECT id, class_id, student_id, quarter, initial_grade, transmuted_grade,
-               is_complete, computed_at, created_at, updated_at, deleted_at,
-               cached_at, needs_sync
-        FROM quarterly_grades
-      ''');
-      await db.execute('DROP TABLE quarterly_grades');
-      await db.execute('ALTER TABLE period_grades_v11 RENAME TO period_grades');
-
-      // Rename columns in existing tables
-      // assessments table
-      await db.execute('UPDATE assessments SET tos_id = linked_tos_id WHERE linked_tos_id IS NOT NULL');
-      // Note: SQLite doesn't support DROP COLUMN, so we'll recreate the table
-      
-      await db.execute('''
-        CREATE TABLE assessments_v11 (
-          id TEXT PRIMARY KEY,
-          class_id TEXT NOT NULL,
-          title TEXT NOT NULL,
-          description TEXT,
-          time_limit_minutes INTEGER NOT NULL DEFAULT 0,
-          open_at TEXT NOT NULL,
-          close_at TEXT NOT NULL,
-          show_results_immediately INTEGER NOT NULL DEFAULT 0,
-          results_released INTEGER NOT NULL DEFAULT 0,
-          is_published INTEGER NOT NULL DEFAULT 0,
-          order_index INTEGER NOT NULL DEFAULT 0,
-          total_points INTEGER NOT NULL DEFAULT 0,
-          question_count INTEGER NOT NULL DEFAULT 0,
-          submission_count INTEGER NOT NULL DEFAULT 0,
-          tos_id TEXT,
-          grading_period_number INTEGER,
-          component TEXT,
-          created_at TEXT NOT NULL,
-          updated_at TEXT NOT NULL,
-          deleted_at TEXT,
-          cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
-        )
-      ''');
-      await db.execute('''
-        INSERT INTO assessments_v11
-        SELECT id, class_id, title, description, time_limit_minutes, open_at, close_at,
-               show_results_immediately, results_released, is_published, order_index,
-               total_points, question_count, submission_count, tos_id, quarter, component,
-               created_at, updated_at, deleted_at, cached_at, needs_sync
-        FROM assessments
-      ''');
-      await db.execute('DROP TABLE assessments');
-      await db.execute('ALTER TABLE assessments_v11 RENAME TO assessments');
-
-      // assignments table (remove submission_type, add allows_* columns)
-      await db.execute('''
-        CREATE TABLE assignments_v11 (
-          id TEXT PRIMARY KEY,
-          class_id TEXT NOT NULL,
-          title TEXT NOT NULL,
-          instructions TEXT NOT NULL,
-          total_points INTEGER NOT NULL DEFAULT 0,
-          allows_text_submission INTEGER NOT NULL DEFAULT 1,
-          allows_file_submission INTEGER NOT NULL DEFAULT 0,
-          allowed_file_types TEXT,
-          max_file_size_mb INTEGER,
-          due_at TEXT NOT NULL,
-          is_published INTEGER NOT NULL DEFAULT 0,
-          order_index INTEGER NOT NULL DEFAULT 0,
-          grading_period_number INTEGER,
-          component TEXT,
-          submission_count INTEGER NOT NULL DEFAULT 0,
-          graded_count INTEGER NOT NULL DEFAULT 0,
-          submission_status TEXT,
-          submission_id TEXT,
-          score INTEGER,
-          created_at TEXT NOT NULL,
-          updated_at TEXT NOT NULL,
-          deleted_at TEXT,
-          cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
-        )
-      ''');
-      await db.execute('''
-        INSERT INTO assignments_v11
-        SELECT id, class_id, title, instructions, total_points,
-               CASE WHEN submission_type = 'text_only' OR submission_type = 'both' THEN 1 ELSE 0 END,
-               CASE WHEN submission_type = 'file_only' OR submission_type = 'both' THEN 1 ELSE 0 END,
-               allowed_file_types, max_file_size_mb, due_at, is_published, order_index,
-               quarter, component, submission_count, graded_count, submission_status,
-               submission_id, score, created_at, updated_at, deleted_at, cached_at, needs_sync
-        FROM assignments
-      ''');
-      await db.execute('DROP TABLE assignments');
-      await db.execute('ALTER TABLE assignments_v11 RENAME TO assignments');
-
-      // assignment_submissions table (remove is_late)
-      await db.execute('''
-        CREATE TABLE assignment_submissions_v11 (
-          id TEXT PRIMARY KEY,
-          assignment_id TEXT NOT NULL,
-          student_id TEXT NOT NULL,
-          status TEXT NOT NULL DEFAULT 'draft',
-          text_content TEXT,
-          submitted_at TEXT,
-          points INTEGER,
-          feedback TEXT,
-          graded_at TEXT,
-          graded_by TEXT,
-          created_at TEXT NOT NULL,
-          updated_at TEXT NOT NULL,
-          deleted_at TEXT,
-          cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY(assignment_id) REFERENCES assignments(id) ON DELETE CASCADE,
-          FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
-          FOREIGN KEY(graded_by) REFERENCES users(id) ON DELETE SET NULL,
-          UNIQUE(assignment_id, student_id)
-        )
-      ''');
-      await db.execute('''
-        INSERT INTO assignment_submissions_v11
-        SELECT id, assignment_id, student_id, status, text_content, submitted_at,
-               points, feedback, graded_at, graded_by, created_at, updated_at,
-               deleted_at, cached_at, needs_sync
-        FROM assignment_submissions
-      ''');
-      await db.execute('DROP TABLE assignment_submissions');
-      await db.execute('ALTER TABLE assignment_submissions_v11 RENAME TO assignment_submissions');
-
-      // assessment_questions table (add difficulty)
-      try { await db.execute('ALTER TABLE assessment_questions ADD COLUMN difficulty TEXT'); } catch (_) {}
-
-      // grade_items table
-      await db.execute('''
-        CREATE TABLE grade_items_v11 (
-          id TEXT PRIMARY KEY,
-          class_id TEXT NOT NULL,
-          title TEXT NOT NULL,
-          component TEXT NOT NULL,
-          grading_period_number INTEGER NOT NULL,
-          total_points REAL NOT NULL,
-          source_type TEXT NOT NULL DEFAULT 'manual',
-          source_id TEXT,
-          order_index INTEGER NOT NULL DEFAULT 0,
-          created_at TEXT NOT NULL,
-          updated_at TEXT NOT NULL,
-          deleted_at TEXT,
-          cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
-        )
-      ''');
-      await db.execute('''
-        INSERT INTO grade_items_v11
-        SELECT id, class_id, title, component, quarter, total_points, source_type, source_id, order_index, created_at, updated_at, deleted_at,
-               cached_at, needs_sync
-        FROM grade_items
-      ''');
-      await db.execute('DROP TABLE grade_items');
-      await db.execute('ALTER TABLE grade_items_v11 RENAME TO grade_items');
-
-      // table_of_specifications table
-      await db.execute('''
-        CREATE TABLE table_of_specifications_v11 (
-          id TEXT PRIMARY KEY,
-          class_id TEXT NOT NULL,
-          grading_period_number INTEGER NOT NULL,
-          title TEXT NOT NULL,
-          classification_mode TEXT NOT NULL,
-          total_items INTEGER NOT NULL,
-          time_unit TEXT NOT NULL DEFAULT 'days',
-          easy_percentage REAL NOT NULL DEFAULT 50.0,
-          medium_percentage REAL NOT NULL DEFAULT 30.0,
-          hard_percentage REAL NOT NULL DEFAULT 20.0,
-          remembering_percentage REAL NOT NULL DEFAULT 16.67,
-          understanding_percentage REAL NOT NULL DEFAULT 16.67,
-          applying_percentage REAL NOT NULL DEFAULT 16.67,
-          analyzing_percentage REAL NOT NULL DEFAULT 16.67,
-          evaluating_percentage REAL NOT NULL DEFAULT 16.67,
-          creating_percentage REAL NOT NULL DEFAULT 16.67,
-          created_at TEXT NOT NULL,
-          updated_at TEXT NOT NULL,
-          deleted_at TEXT,
-          cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
-          UNIQUE(class_id, grading_period_number)
-        )
-      ''');
-      await db.execute('''
-        INSERT INTO table_of_specifications_v11
-        SELECT id, class_id, quarter, title, classification_mode, total_items, time_unit,
-               easy_percentage, medium_percentage, hard_percentage, remembering_percentage,
-               understanding_percentage, applying_percentage, analyzing_percentage,
-               evaluating_percentage, creating_percentage, created_at, updated_at,
-               deleted_at, cached_at, needs_sync
-        FROM table_of_specifications
-      ''');
-      await db.execute('DROP TABLE table_of_specifications');
-      await db.execute('ALTER TABLE table_of_specifications_v11 RENAME TO table_of_specifications');
-
-      // tos_competencies table
-      await db.execute('''
-        CREATE TABLE tos_competencies_v11 (
-          id TEXT PRIMARY KEY,
-          tos_id TEXT NOT NULL,
-          competency_code TEXT,
-          competency_text TEXT NOT NULL,
-          time_units_taught INTEGER NOT NULL,
-          order_index INTEGER NOT NULL DEFAULT 0,
-          easy_count INTEGER,
-          medium_count INTEGER,
-          hard_count INTEGER,
-          remembering_count INTEGER,
-          understanding_count INTEGER,
-          applying_count INTEGER,
-          analyzing_count INTEGER,
-          evaluating_count INTEGER,
-          creating_count INTEGER,
-          created_at TEXT NOT NULL,
-          updated_at TEXT NOT NULL,
-          deleted_at TEXT,
-          cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY (tos_id) REFERENCES table_of_specifications(id)
-        )
-      ''');
-      await db.execute('''
-        INSERT INTO tos_competencies_v11
-        SELECT id, tos_id, competency_code, competency_text, days_taught, order_index,
-               easy_count, medium_count, hard_count, remembering_count, understanding_count,
-               applying_count, analyzing_count, evaluating_count, creating_count,
-               created_at, updated_at, deleted_at, cached_at, needs_sync
-        FROM tos_competencies
-      ''');
-      await db.execute('DROP TABLE tos_competencies');
-      await db.execute('ALTER TABLE tos_competencies_v11 RENAME TO tos_competencies');
-
-      await db.execute('PRAGMA foreign_keys = ON');
-    }
+    // Nuclear reset: Drop all tables and recreate with current v1 schema
+    // This ensures a clean state for any upgrade from old versions
+    // Note: Users will lose local data but can resync from server
+    await _dropAllTables(db);
+    await _createTables(db, newVersion);
   }
 
   Future<void> _downgradeDatabase(Database db, int oldVersion, int newVersion) async {
@@ -1225,6 +707,7 @@ class LocalDatabase {
       'sync_queue',
       'sync_metadata',
       'student_results_cache',
+      'validation_metadata',
       'period_grades',
       'grade_scores',
       'grade_items',

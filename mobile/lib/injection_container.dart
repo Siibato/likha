@@ -145,6 +145,8 @@ import 'package:likha/domain/grading/usecases/get_general_averages.dart';
 import 'package:likha/domain/grading/usecases/get_sf9.dart';
 import 'package:likha/domain/grading/usecases/get_sf10.dart';
 import 'package:likha/domain/grading/usecases/update_period_grade.dart';
+import 'package:likha/domain/grading/services/score_generation_service.dart';
+import 'package:likha/domain/grading/usecases/generate_scores.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/data/datasources/local/tos/impl/tos_local_datasource_impl.dart';
 import 'package:likha/data/datasources/remote/tos_remote_datasource.dart';
@@ -508,6 +510,19 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetGeneralAverages(sl()));
   sl.registerLazySingleton(() => GetSf9(sl()));
   sl.registerLazySingleton(() => GetSf10(sl()));
+
+  // Score Generation Service
+  sl.registerLazySingleton<ScoreGenerationService>(
+    () => ScoreGenerationService(
+      gradingRepository: sl<GradingRepository>(),
+      assessmentRepository: sl<AssessmentRepository>(),
+    ),
+  );
+
+  // Score Generation use cases
+  sl.registerLazySingleton(() => GenerateScores(sl<ScoreGenerationService>()));
+  sl.registerLazySingleton(() => HasScoresForGradeItem(sl<ScoreGenerationService>()));
+  sl.registerLazySingleton(() => GetScoreSummary(sl<ScoreGenerationService>()));
 
   // TOS - Remote Data Source
   sl.registerLazySingleton<TosRemoteDataSource>(

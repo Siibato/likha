@@ -35,6 +35,10 @@ FullSyncResponseModel _$FullSyncResponseModelFromJson(
   learningMaterials: (json['learning_materials'] as List<dynamic>)
       .map((e) => e as Map<String, dynamic>)
       .toList(),
+  user: json['user'] as Map<String, dynamic>?,
+  enrolledStudents: (json['enrolled_students'] as List<dynamic>?)
+      ?.map((e) => e as Map<String, dynamic>)
+      .toList(),
 );
 
 Map<String, dynamic> _$FullSyncResponseModelToJson(
@@ -50,4 +54,6 @@ Map<String, dynamic> _$FullSyncResponseModelToJson(
   'assignments': instance.assignments,
   'assignment_submissions': instance.assignmentSubmissions,
   'learning_materials': instance.learningMaterials,
+  'user': instance.user,
+  'enrolled_students': instance.enrolledStudents,
 };

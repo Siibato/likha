@@ -73,22 +73,26 @@ class StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: padding ?? const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: isActive 
-            ? (activeBackgroundColor ?? const Color(0xFF28A745).withValues(alpha: 0.12))
-            : (inactiveBackgroundColor ?? AppColors.foregroundTertiary.withValues(alpha: 0.12)),
-        borderRadius: BorderRadius.circular(borderRadius ?? 8),
-      ),
-      child: Text(
-        isActive ? activeText : inactiveText,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: isActive 
-              ? (activeColor ?? const Color(0xFF28A745))
-              : (inactiveColor ?? AppColors.foregroundTertiary),
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: padding ?? const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: isActive
+              ? (activeBackgroundColor ?? const Color(0xFF28A745).withValues(alpha: 0.12))
+              : (inactiveBackgroundColor ??
+                  AppColors.foregroundTertiary.withValues(alpha: 0.12)),
+          borderRadius: BorderRadius.circular(borderRadius ?? 8),
+        ),
+        child: Text(
+          isActive ? activeText : inactiveText,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isActive
+                ? (activeColor ?? const Color(0xFF28A745))
+                : (inactiveColor ?? AppColors.foregroundTertiary),
+          ),
         ),
       ),
     );

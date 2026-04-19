@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/repositories/auth/auth_repository_base.dart';
 import 'package:likha/domain/auth/entities/check_username_result.dart';
@@ -73,6 +74,7 @@ mixin AuthLoginMixin on AuthRepositoryBase {
     } on TooManyRequestsException catch (e) {
       return Left(TooManyRequestsFailure(e.message, remainingSeconds: e.remainingSeconds));
     } on InvalidCredentialsException catch (e) {
+      RepoLogger.instance.log('Caught InvalidCredentialsException with attemptsRemaining: ${e.attemptsRemaining}');
       return Left(InvalidCredentialsFailure(e.message, attemptsRemaining: e.attemptsRemaining));
     } on ActivationRequiredException catch (e) {
       return Left(ActivationRequiredFailure(

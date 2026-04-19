@@ -82,6 +82,7 @@ abstract class AssignmentRepository {
     required String submissionId,
     required String filePath,
     required String fileName,
+    void Function(int sent, int total)? onSendProgress,
   });
 
   ResultVoid deleteFile({required String fileId});

@@ -977,37 +977,38 @@ class SyncUpsertHelpers {
     final deletedCounts = <String, int>{};
 
     // Handle classes separately (requires mobile-only defaults)
-    final classesDeltas = deltas['classes'] as Map<String, dynamic>?;
+    final classesDeltas = deltas['classes'];
     if (classesDeltas != null) {
-      final updated = classesDeltas['updated'] as List<dynamic>? ?? [];
+      // EntityDeltas has 'updated' and 'deleted' as properties
+      final updated = classesDeltas.updated;
       await upsertClasses(db, updated);
       updatedCounts['classes'] = updated.length;
 
-      final deleted = classesDeltas['deleted'] as List<dynamic>? ?? [];
+      final deleted = classesDeltas.deleted;
       deletedCounts['classes'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           DbTables.classes,
           {CommonCols.deletedAt: DateTime.now().toIso8601String()},
           where: '${CommonCols.id} = ?',
-          whereArgs: [id as String],
+          whereArgs: [id],
         );
       }
     }
 
     // Handle enrollments separately (requires student data lookup)
-    final enrollmentDeltas = deltas['enrollments'] as Map<String, dynamic>?;
+    final enrollmentDeltas = deltas['enrollments'];
     if (enrollmentDeltas != null) {
-      final updated = enrollmentDeltas['updated'] as List<dynamic>? ?? [];
+      final updated = enrollmentDeltas.updated;
       updatedCounts['enrollments'] = updated.length;
       await upsertParticipants(db, updated, []);
 
-      final deleted = enrollmentDeltas['deleted'] as List<dynamic>? ?? [];
+      final deleted = enrollmentDeltas.deleted;
       deletedCounts['enrollments'] = deleted.length;
       for (final id in deleted) {
         await db.update(DbTables.classParticipants,
             {ClassParticipantsCols.removedAt: DateTime.now().toIso8601String()},
-            where: '${CommonCols.id} = ?', whereArgs: [id as String]);
+            where: '${CommonCols.id} = ?', whereArgs: [id]);
       }
     }
 
@@ -1019,273 +1020,273 @@ class SyncUpsertHelpers {
     }
 
     // Handle assessments separately (requires explicit field mapping)
-    final assessmentDeltas = deltas['assessments'] as Map<String, dynamic>?;
+    final assessmentDeltas = deltas['assessments'];
     if (assessmentDeltas != null) {
-      final updated = assessmentDeltas['updated'] as List<dynamic>? ?? [];
+      final updated = assessmentDeltas.updated;
       updatedCounts['assessments'] = updated.length;
       await upsertAssessments(db, updated);
 
-      final deleted = assessmentDeltas['deleted'] as List<dynamic>? ?? [];
+      final deleted = assessmentDeltas.deleted;
       deletedCounts['assessments'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           DbTables.assessments,
           {CommonCols.deletedAt: DateTime.now().toIso8601String()},
           where: '${CommonCols.id} = ?',
-          whereArgs: [id as String],
+          whereArgs: [id],
         );
       }
     }
 
     // Handle questions separately (preserves cached choices)
-    final questionDeltas = deltas['questions'] as Map<String, dynamic>?;
+    final questionDeltas = deltas['questions'];
     if (questionDeltas != null) {
-      final updated = questionDeltas['updated'] as List<dynamic>? ?? [];
+      final updated = questionDeltas.updated;
       updatedCounts['questions'] = updated.length;
       await upsertQuestions(db, updated);
 
-      final deleted = questionDeltas['deleted'] as List<dynamic>? ?? [];
+      final deleted = questionDeltas.deleted;
       deletedCounts['questions'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           DbTables.assessmentQuestions,
           {CommonCols.deletedAt: DateTime.now().toIso8601String()},
           where: '${CommonCols.id} = ?',
-          whereArgs: [id as String],
+          whereArgs: [id],
         );
       }
     }
 
     // Handle assessment submissions separately (requires student enrichment)
-    final assessmentSubmissionDeltas = deltas['assessment_submissions'] as Map<String, dynamic>?;
+    final assessmentSubmissionDeltas = deltas['assessment_submissions'];
     if (assessmentSubmissionDeltas != null) {
-      final updated = assessmentSubmissionDeltas['updated'] as List<dynamic>? ?? [];
+      final updated = assessmentSubmissionDeltas.updated;
       updatedCounts['assessment_submissions'] = updated.length;
       await upsertAssessmentSubmissions(db, updated, studentMap);
 
-      final deleted = assessmentSubmissionDeltas['deleted'] as List<dynamic>? ?? [];
+      final deleted = assessmentSubmissionDeltas.deleted;
       deletedCounts['assessment_submissions'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           DbTables.assessmentSubmissions,
           {CommonCols.deletedAt: DateTime.now().toIso8601String()},
           where: '${CommonCols.id} = ?',
-          whereArgs: [id as String],
+          whereArgs: [id],
         );
       }
     }
 
     // Handle assignments separately (requires explicit field mapping)
-    final assignmentDeltas = deltas['assignments'] as Map<String, dynamic>?;
+    final assignmentDeltas = deltas['assignments'];
     if (assignmentDeltas != null) {
-      final updated = assignmentDeltas['updated'] as List<dynamic>? ?? [];
+      final updated = assignmentDeltas.updated;
       updatedCounts['assignments'] = updated.length;
       await upsertAssignments(db, updated);
 
-      final deleted = assignmentDeltas['deleted'] as List<dynamic>? ?? [];
+      final deleted = assignmentDeltas.deleted;
       deletedCounts['assignments'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           DbTables.assignments,
           {CommonCols.deletedAt: DateTime.now().toIso8601String()},
           where: '${CommonCols.id} = ?',
-          whereArgs: [id as String],
+          whereArgs: [id],
         );
       }
     }
 
     // Handle assignment submissions separately (requires student enrichment)
-    final assignmentSubmissionDeltas = deltas['assignment_submissions'] as Map<String, dynamic>?;
+    final assignmentSubmissionDeltas = deltas['assignment_submissions'];
     if (assignmentSubmissionDeltas != null) {
-      final updated = assignmentSubmissionDeltas['updated'] as List<dynamic>? ?? [];
+      final updated = assignmentSubmissionDeltas.updated;
       updatedCounts['assignment_submissions'] = updated.length;
       await upsertAssignmentSubmissions(db, updated, studentMap);
 
-      final deleted = assignmentSubmissionDeltas['deleted'] as List<dynamic>? ?? [];
+      final deleted = assignmentSubmissionDeltas.deleted;
       deletedCounts['assignment_submissions'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           DbTables.assignmentSubmissions,
           {CommonCols.deletedAt: DateTime.now().toIso8601String()},
           where: '${CommonCols.id} = ?',
-          whereArgs: [id as String],
+          whereArgs: [id],
         );
       }
     }
 
     // Handle learning materials separately (requires explicit field mapping)
-    final materialDeltas = deltas['learning_materials'] as Map<String, dynamic>?;
+    final materialDeltas = deltas['learning_materials'];
     if (materialDeltas != null) {
-      final updated = materialDeltas['updated'] as List<dynamic>? ?? [];
+      final updated = materialDeltas.updated;
       updatedCounts['learning_materials'] = updated.length;
       await upsertLearningMaterials(db, updated);
 
-      final deleted = materialDeltas['deleted'] as List<dynamic>? ?? [];
+      final deleted = materialDeltas.deleted;
       deletedCounts['learning_materials'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           DbTables.learningMaterials,
           {CommonCols.deletedAt: DateTime.now().toIso8601String()},
           where: '${CommonCols.id} = ?',
-          whereArgs: [id as String],
+          whereArgs: [id],
         );
       }
     }
 
     // NEW: Handle material files delta
-    final materialFilesDeltas = deltas['material_files'] as Map<String, dynamic>?;
+    final materialFilesDeltas = deltas['material_files'];
     if (materialFilesDeltas != null) {
-      final updated = materialFilesDeltas['updated'] as List<dynamic>? ?? [];
+      final updated = materialFilesDeltas.updated;
       updatedCounts['material_files'] = updated.length;
       await upsertMaterialFiles(db, updated);
 
-      final deleted = materialFilesDeltas['deleted'] as List<dynamic>? ?? [];
+      final deleted = materialFilesDeltas.deleted;
       deletedCounts['material_files'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           DbTables.materialFiles,
           {CommonCols.deletedAt: DateTime.now().toIso8601String()},
           where: '${CommonCols.id} = ?',
-          whereArgs: [id as String],
+          whereArgs: [id],
         );
       }
     }
 
     // NEW: Handle submission files delta
-    final submissionFilesDeltas = deltas['submission_files'] as Map<String, dynamic>?;
+    final submissionFilesDeltas = deltas['submission_files'];
     if (submissionFilesDeltas != null) {
-      final updated = submissionFilesDeltas['updated'] as List<dynamic>? ?? [];
+      final updated = submissionFilesDeltas.updated;
       updatedCounts['submission_files'] = updated.length;
       await upsertSubmissionFiles(db, updated);
 
-      final deleted = submissionFilesDeltas['deleted'] as List<dynamic>? ?? [];
+      final deleted = submissionFilesDeltas.deleted;
       deletedCounts['submission_files'] = deleted.length;
       for (final id in deleted) {
         await db.delete(
           DbTables.submissionFiles,
           where: '${CommonCols.id} = ?',
-          whereArgs: [id as String],
+          whereArgs: [id],
         );
       }
     }
 
     // Handle grade configs delta
-    final gradeConfigsDeltas = deltas['grade_configs'] as Map<String, dynamic>?;
+    final gradeConfigsDeltas = deltas['grade_configs'];
     if (gradeConfigsDeltas != null) {
-      final updated = gradeConfigsDeltas['updated'] as List<dynamic>? ?? [];
+      final updated = gradeConfigsDeltas.updated;
       updatedCounts['grade_configs'] = updated.length;
       await upsertGradeConfigs(db, updated);
 
-      final deleted = gradeConfigsDeltas['deleted'] as List<dynamic>? ?? [];
+      final deleted = gradeConfigsDeltas.deleted;
       deletedCounts['grade_configs'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           DbTables.gradeRecord,
           {CommonCols.deletedAt: DateTime.now().toIso8601String()},
           where: '${CommonCols.id} = ?',
-          whereArgs: [id as String],
+          whereArgs: [id],
         );
       }
     }
 
     // Handle grade items delta
-    final gradeItemsDeltas = deltas['grade_items'] as Map<String, dynamic>?;
+    final gradeItemsDeltas = deltas['grade_items'];
     if (gradeItemsDeltas != null) {
-      final updated = gradeItemsDeltas['updated'] as List<dynamic>? ?? [];
+      final updated = gradeItemsDeltas.updated;
       updatedCounts['grade_items'] = updated.length;
       await upsertGradeItems(db, updated);
 
-      final deleted = gradeItemsDeltas['deleted'] as List<dynamic>? ?? [];
+      final deleted = gradeItemsDeltas.deleted;
       deletedCounts['grade_items'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           DbTables.gradeItems,
           {CommonCols.deletedAt: DateTime.now().toIso8601String()},
           where: '${CommonCols.id} = ?',
-          whereArgs: [id as String],
+          whereArgs: [id],
         );
       }
     }
 
     // Handle grade scores delta
-    final gradeScoresDeltas = deltas['grade_scores'] as Map<String, dynamic>?;
+    final gradeScoresDeltas = deltas['grade_scores'];
     if (gradeScoresDeltas != null) {
-      final updated = gradeScoresDeltas['updated'] as List<dynamic>? ?? [];
+      final updated = gradeScoresDeltas.updated;
       updatedCounts['grade_scores'] = updated.length;
       await upsertGradeScores(db, updated);
 
-      final deleted = gradeScoresDeltas['deleted'] as List<dynamic>? ?? [];
+      final deleted = gradeScoresDeltas.deleted;
       deletedCounts['grade_scores'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           DbTables.gradeScores,
           {CommonCols.deletedAt: DateTime.now().toIso8601String()},
           where: '${CommonCols.id} = ?',
-          whereArgs: [id as String],
+          whereArgs: [id],
         );
       }
     }
 
     // Handle period grades delta
-    final periodGradesDeltas = deltas['period_grades'] as Map<String, dynamic>?;
+    final periodGradesDeltas = deltas['period_grades'];
     if (periodGradesDeltas != null) {
-      final updated = periodGradesDeltas['updated'] as List<dynamic>? ?? [];
+      final updated = periodGradesDeltas.updated;
       updatedCounts['period_grades'] = updated.length;
       await upsertQuarterlyGrades(db, updated);
 
-      final deleted = periodGradesDeltas['deleted'] as List<dynamic>? ?? [];
+      final deleted = periodGradesDeltas.deleted;
       deletedCounts['period_grades'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           DbTables.periodGrades,
           {CommonCols.deletedAt: DateTime.now().toIso8601String()},
           where: '${CommonCols.id} = ?',
-          whereArgs: [id as String],
+          whereArgs: [id],
         );
       }
     }
 
     // Handle table_of_specifications delta
-    final tosDeltas = deltas['table_of_specifications'] as Map<String, dynamic>?;
+    final tosDeltas = deltas['table_of_specifications'];
     if (tosDeltas != null) {
-      final updated = tosDeltas['updated'] as List<dynamic>? ?? [];
+      final updated = tosDeltas.updated;
       updatedCounts['table_of_specifications'] = updated.length;
       await upsertTableOfSpecifications(db, updated);
 
-      final deleted = tosDeltas['deleted'] as List<dynamic>? ?? [];
+      final deleted = tosDeltas.deleted;
       deletedCounts['table_of_specifications'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           DbTables.tableOfSpecifications,
           {CommonCols.deletedAt: DateTime.now().toIso8601String()},
           where: '${CommonCols.id} = ?',
-          whereArgs: [id as String],
+          whereArgs: [id],
         );
       }
     }
 
     // Handle tos_competencies delta
-    final tosCompetenciesDeltas = deltas['tos_competencies'] as Map<String, dynamic>?;
+    final tosCompetenciesDeltas = deltas['tos_competencies'];
     if (tosCompetenciesDeltas != null) {
-      final updated = tosCompetenciesDeltas['updated'] as List<dynamic>? ?? [];
+      final updated = tosCompetenciesDeltas.updated;
       updatedCounts['tos_competencies'] = updated.length;
       await upsertTosCompetencies(db, updated);
 
-      final deleted = tosCompetenciesDeltas['deleted'] as List<dynamic>? ?? [];
+      final deleted = tosCompetenciesDeltas.deleted;
       deletedCounts['tos_competencies'] = deleted.length;
       for (final id in deleted) {
         await db.update(
           DbTables.tosCompetencies,
           {CommonCols.deletedAt: DateTime.now().toIso8601String()},
           where: '${CommonCols.id} = ?',
-          whereArgs: [id as String],
+          whereArgs: [id],
         );
       }
     }
 
-    final enrolledStudentsDeltas = deltas['enrolled_students'] as Map<String, dynamic>?;
+    final enrolledStudentsDeltas = deltas['enrolled_students'];
     if (enrolledStudentsDeltas != null) {
-      final updated = enrolledStudentsDeltas['updated'] as List<dynamic>? ?? [];
+      final updated = enrolledStudentsDeltas.updated;
       updatedCounts['enrolled_students'] = updated.length;
       await upsertEnrolledStudents(db, updated);
 

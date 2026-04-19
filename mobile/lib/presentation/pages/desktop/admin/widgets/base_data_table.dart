@@ -6,7 +6,7 @@ import 'package:likha/core/theme/app_colors.dart';
 class BaseDataTable<T> extends StatefulWidget {
   final List<T> items;
   final List<DataColumn> columns;
-  final Widget Function(BuildContext context, T item, int index) rowBuilder;
+  final List<Widget> Function(BuildContext context, T item, int index) rowBuilder;
   final int rowsPerPage;
   final bool showPagination;
   final bool showCheckboxColumn;
@@ -129,16 +129,12 @@ class _BaseDataTableState<T> extends State<BaseDataTable<T>> {
                 final item = entry.value;
                 return DataRow(
                   key: ValueKey(item),
-                  onSelectChanged: widget.onTap != null 
+                  onSelectChanged: widget.onTap != null
                       ? (_) => widget.onTap!(item)
                       : widget.showCheckboxColumn ? (_) {} : null,
-                  cells: [
-                    DataCell(
-                      Builder(
-                        builder: (context) => widget.rowBuilder(context, item, index),
-                      ),
-                    ),
-                  ],
+                  cells: widget.rowBuilder(context, item, index)
+                      .map((widget) => DataCell(widget))
+                      .toList(),
                 );
               }).toList(),
             ),
@@ -239,7 +235,7 @@ class _DefaultEmptyState extends StatelessWidget {
 /// Configuration class for data table styling and behavior
 class DataTableConfig<T> {
   final List<DataColumn> columns;
-  final Widget Function(BuildContext context, T item, int index) rowBuilder;
+  final List<Widget> Function(BuildContext context, T item, int index) rowBuilder;
   final Widget? emptyState;
   final int rowsPerPage;
   final bool showPagination;

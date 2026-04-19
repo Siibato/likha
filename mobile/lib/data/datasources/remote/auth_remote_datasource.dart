@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/errors/exceptions.dart';
+import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/models/auth/activity_log_model.dart';
 import 'package:likha/data/models/auth/auth_response_model.dart';
@@ -107,6 +108,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     String? deviceId,
   }) async {
     try {
+      RepoLogger.instance.log('Login request for username: $username');
       final authResponse = await _dioClient.postTyped(
         ApiEndpoints.login,
         data: {
@@ -122,12 +124,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         userId: authResponse.user.id,
       );
 
+      RepoLogger.instance.log('Login successful for username: $username');
       return authResponse;
     } on DioException catch (e) {
+      RepoLogger.instance.log('DioException in login: ${e.response?.statusCode}, path: ${e.requestOptions.path}');
       // Handle 429 Too Many Requests (lockout)
       if (e.response?.statusCode == 429) {
         final data = e.response?.data;
         final secs = data?['remaining_seconds'] as int? ?? 300;
+        RepoLogger.instance.log('429 Too Many Requests - remaining_seconds: $secs');
         throw TooManyRequestsException(
           data?['message'] ?? 'Too many failed attempts',
           remainingSeconds: secs,
@@ -135,6 +140,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       }
       // Handle 409 Conflict (activation required)
       if (e.response?.statusCode == 409) {
+        RepoLogger.instance.log('409 Conflict - activation required');
         throw ActivationRequiredException(
           e.response?.data['message'] ?? 'Account requires activation',
           username: username,
@@ -144,13 +150,16 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       if (e.response?.statusCode == 401) {
         final data = e.response?.data;
         final remaining = data?['attempts_remaining'] as int?;
+        RepoLogger.instance.log('401 Unauthorized - attempts_remaining: $remaining');
         if (remaining != null) {
+          RepoLogger.instance.log('Throwing InvalidCredentialsException with attemptsRemaining: $remaining');
           throw InvalidCredentialsException(
             data?['message'] ?? 'Invalid password',
             attemptsRemaining: remaining,
           );
         }
       }
+      RepoLogger.instance.log('Falling back to handleError for status code: ${e.response?.statusCode}');
       throw _dioClient.handleError(e);
     }
   }
@@ -222,9 +231,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<List<UserModel>> getAllAccounts() async {
+    RepoLogger.instance.log('getAllAccounts: Calling remote API');
     try {
-      return await _dioClient.getTyped(ApiEndpoints.accountsList);
+      final result = await _dioClient.getTyped(ApiEndpoints.accountsList);
+      RepoLogger.instance.log('getAllAccounts: Remote API returned ${result.length} accounts');
+      return result;
     } on DioException catch (e) {
+      RepoLogger.instance.error('getAllAccounts: DioException - ${e.message}', e);
       throw _dioClient.handleError(e);
     }
   }
