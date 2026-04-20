@@ -551,16 +551,23 @@ Widget _buildCompetencyTile(TosCompetency competency, String timeUnit) {
 
     // Use the SAME formula as the grid: sum of actual cognitive cells per row.
     // This respects per-competency overrides so banner and grid always agree.
+    final isBloomsMode = tos.classificationMode == 'blooms';
     final assigned = competencies.fold<int>(0, (sum, c) {
       if (totalDays == 0) return sum;
       final targetItems =
           (c.timeUnitsTaught / totalDays * tos.totalItems).round();
-      final easy = c.easyCount ??
-          (targetItems * tos.easyPercentage / 100).round();
-      final medium = c.mediumCount ??
-          (targetItems * tos.mediumPercentage / 100).round();
-      final hard = c.hardCount ??
-          (targetItems * tos.hardPercentage / 100).round();
+      if (isBloomsMode) {
+        final r = c.rememberingCount ?? (targetItems * tos.rememberingPercentage / 100).round();
+        final u = c.understandingCount ?? (targetItems * tos.understandingPercentage / 100).round();
+        final ap = c.applyingCount ?? (targetItems * tos.applyingPercentage / 100).round();
+        final an = c.analyzingCount ?? (targetItems * tos.analyzingPercentage / 100).round();
+        final e = c.evaluatingCount ?? (targetItems * tos.evaluatingPercentage / 100).round();
+        final bl = c.creatingCount ?? (targetItems * tos.creatingPercentage / 100).round();
+        return sum + r + u + ap + an + e + bl;
+      }
+      final easy = c.easyCount ?? (targetItems * tos.easyPercentage / 100).round();
+      final medium = c.mediumCount ?? (targetItems * tos.mediumPercentage / 100).round();
+      final hard = c.hardCount ?? (targetItems * tos.hardPercentage / 100).round();
       return sum + easy + medium + hard;
     });
 

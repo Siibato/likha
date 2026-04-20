@@ -129,11 +129,16 @@ mixin TosMutationMixin on TosLocalDataSourceBase {
   ) async {
     final db = await localDatabase.database;
     final now = DateTime.now();
+    // Map API/UI key names to the local SQLite column names.
+    final localData = {
+      for (final e in data.entries)
+        (e.key == 'days_taught' ? 'time_units_taught' : e.key): e.value,
+    };
     await db.transaction((txn) async {
       await txn.update(
         DbTables.tosCompetencies,
         {
-          ...data,
+          ...localData,
           CommonCols.updatedAt: now.toIso8601String(),
           CommonCols.needsSync: 1,
           CommonCols.cachedAt: now.toIso8601String(),

@@ -185,7 +185,7 @@ class _TosGridTableState extends State<TosGridTable> {
                         _headerCell('Competency', competencyWidth),
                         _headerCell(_timeUnitLabel, 56),
                         _headerCell('%', 72),
-                        ..._cognitiveHeaders.map((h) => _headerCell(h, 48)),
+                        ..._cognitiveHeaders.map((h) => _headerCell(h, cogColWidth)),
                         _headerCell('Total', 56),
                       ],
                     ),
@@ -210,7 +210,18 @@ class _TosGridTableState extends State<TosGridTable> {
                           (targetItems * widget.tos.mediumPercentage / 100).round();
                       final hardItems = c.hardCount ??
                           (targetItems * widget.tos.hardPercentage / 100).round();
-                      final rowTotal = easyItems + mediumItems + hardItems;
+                      final int rowTotal;
+                      if (_isBloomsMode) {
+                        final r = c.rememberingCount ?? (targetItems * widget.tos.rememberingPercentage / 100).round();
+                        final u = c.understandingCount ?? (targetItems * widget.tos.understandingPercentage / 100).round();
+                        final ap = c.applyingCount ?? (targetItems * widget.tos.applyingPercentage / 100).round();
+                        final an = c.analyzingCount ?? (targetItems * widget.tos.analyzingPercentage / 100).round();
+                        final e = c.evaluatingCount ?? (targetItems * widget.tos.evaluatingPercentage / 100).round();
+                        final bl = c.creatingCount ?? (targetItems * widget.tos.creatingPercentage / 100).round();
+                        rowTotal = r + u + ap + an + e + bl;
+                      } else {
+                        rowTotal = easyItems + mediumItems + hardItems;
+                      }
                       gridActualTotal += rowTotal;
 
                       rowWidgets.add(Container(
@@ -255,7 +266,7 @@ class _TosGridTableState extends State<TosGridTable> {
                           _staticCell('100%', 72,
                               align: TextAlign.center, bold: true),
                           ..._cognitiveHeaders.map(
-                              (_) => _staticCell('-', 48,
+                              (_) => _staticCell('-', cogColWidth,
                                   align: TextAlign.center)),
                           // Show actual sum of rows, not the configured totalItems
                           _staticCell('$gridActualTotal', 56,
