@@ -32,18 +32,18 @@ void main() {
       child: const MaterialApp(home: AuthWrapper()),
     ));
 
-    // Wait for all async operations to complete including addPostFrameCallback
-    await tester.pumpAndSettle();
+    // First pump runs the addPostFrameCallback; second pump flushes the async mock Future
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
-    // _schoolConfigInitialized = true, _hasSchoolConfig = false → SchoolSetupPage
-    // SchoolSetupPage is rendered, no more spinner in the auth wrapper itself.
-    // Verify no auth content — just check that we're past the loading state.
+    // _schoolConfigInitialized = true, _hasSchoolConfig = false → SchoolSetupPage shown.
     expect(
       find.byType(CircularProgressIndicator),
       findsNothing,
       reason: 'AuthWrapper should no longer be in its initial loading state',
     );
-  }, timeout: const Timeout(Duration(seconds: 10)));
+    expect(find.text('Welcome to Likha'), findsOneWidget);
+  });
 
   testWidgets('does not show auth content until school check completes', (tester) async {
     await tester.pumpWidget(ProviderScope(
@@ -60,5 +60,5 @@ void main() {
     // Before school config resolves, shows loading — not the login form
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(find.byType(TextFormField), findsNothing);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 }
