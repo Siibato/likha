@@ -93,7 +93,7 @@ class _CreateTosDesktopState extends ConsumerState<CreateTosDesktop> {
       widget.classId,
       {
         'title': _titleController.text.trim(),
-        'quarter': _selectedQuarter!,
+        'grading_period_number': _selectedQuarter!,
         'classification_mode': _classificationMode,
         'total_items': int.tryParse(_totalItemsController.text.trim()) ?? 50,
         'time_unit': _timeUnit,

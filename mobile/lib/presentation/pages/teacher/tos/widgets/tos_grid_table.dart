@@ -8,7 +8,8 @@ class TosGridTable extends StatefulWidget {
 
   // ── Inline-editing callbacks (desktop) ────────────────────────────────────
   /// Called when a cognitive count cell is committed.
-  /// [levelKey] is one of 'easy', 'medium', 'hard'.
+  /// [levelKey] is one of 'easy', 'medium', 'hard', 'remembering', 'understanding',
+  /// 'applying', 'analyzing', 'evaluating', 'creating'.
   /// [newValue] is the override (0 means 0 items; null not used — empty = 0).
   final void Function(String competencyId, String levelKey, int? newValue)?
       onCellChanged;
@@ -44,7 +45,7 @@ class _TosGridTableState extends State<TosGridTable> {
   // Inline-editing state — only one cell editable at a time.
   String? _editingCellKey; // "{fieldType}_{competencyId}"
   String? _editingCompetencyId;
-  String? _editingFieldType; // 'competency' | 'days' | 'easy' | 'medium' | 'hard'
+  String? _editingFieldType; // 'competency' | 'days' | 'easy' | 'medium' | 'hard' | 'remembering' | 'understanding' | 'applying' | 'analyzing' | 'evaluating' | 'creating'
   String _originalValue = '';
 
   final _editController = TextEditingController();
@@ -133,7 +134,7 @@ class _TosGridTableState extends State<TosGridTable> {
   bool get _isBloomsMode => widget.tos.classificationMode == 'blooms';
 
   List<String> get _cognitiveHeaders {
-    if (_isBloomsMode) return ['R', 'U', 'Ap', 'An', 'E', 'C'];
+    if (_isBloomsMode) return ['Remembering', 'Understanding', 'Applying', 'Analyzing', 'Evaluating', 'Creating'];
     return ['Easy', 'Avg', 'Diff'];
   }
 
@@ -148,7 +149,8 @@ class _TosGridTableState extends State<TosGridTable> {
         .fold<int>(0, (sum, c) => sum + c.timeUnitsTaught);
 
     const double fixedColWidth = 56 + 72 + 56; // Days + % + Total
-    const double cogColWidth = 48;
+    // Bloom mode needs wider columns for full names (Remembering, Understanding, etc.)
+    final double cogColWidth = _isBloomsMode ? 80 : 48;
     final double totalFixed =
         fixedColWidth + _cognitiveHeaders.length * cogColWidth;
 
@@ -347,49 +349,27 @@ class _TosGridTableState extends State<TosGridTable> {
       ];
     }
 
-    // Bloom's mode: R U Ap An E C
-    final int r, u, ap, an, e, bl;
-    if (c.easyCount != null) {
-      final totalRU =
-          widget.tos.rememberingPercentage + widget.tos.understandingPercentage;
-      final rRatio =
-          totalRU > 0 ? widget.tos.rememberingPercentage / totalRU : 0.5;
-      r = (easyItems * rRatio).round();
-      u = easyItems - r;
-    } else {
-      r = (targetItems * widget.tos.rememberingPercentage / 100).round();
-      u = (targetItems * widget.tos.understandingPercentage / 100).round();
-    }
-    if (c.mediumCount != null) {
-      final totalApAn =
-          widget.tos.applyingPercentage + widget.tos.analyzingPercentage;
-      final apRatio =
-          totalApAn > 0 ? widget.tos.applyingPercentage / totalApAn : 0.5;
-      ap = (mediumItems * apRatio).round();
-      an = mediumItems - ap;
-    } else {
-      ap = (targetItems * widget.tos.applyingPercentage / 100).round();
-      an = (targetItems * widget.tos.analyzingPercentage / 100).round();
-    }
-    if (c.hardCount != null) {
-      final totalEC =
-          widget.tos.evaluatingPercentage + widget.tos.creatingPercentage;
-      final eRatio =
-          totalEC > 0 ? widget.tos.evaluatingPercentage / totalEC : 0.5;
-      e = (hardItems * eRatio).round();
-      bl = hardItems - e;
-    } else {
-      e = (targetItems * widget.tos.evaluatingPercentage / 100).round();
-      bl = (targetItems * widget.tos.creatingPercentage / 100).round();
-    }
+    // Bloom's mode: R U Ap An E C - using individual fields
+    final int r = c.rememberingCount ??
+        (targetItems * widget.tos.rememberingPercentage / 100).round();
+    final int u = c.understandingCount ??
+        (targetItems * widget.tos.understandingPercentage / 100).round();
+    final int ap = c.applyingCount ??
+        (targetItems * widget.tos.applyingPercentage / 100).round();
+    final int an = c.analyzingCount ??
+        (targetItems * widget.tos.analyzingPercentage / 100).round();
+    final int e = c.evaluatingCount ??
+        (targetItems * widget.tos.evaluatingPercentage / 100).round();
+    final int bl = c.creatingCount ??
+        (targetItems * widget.tos.creatingPercentage / 100).round();
 
     return [
-      _cognitiveCell(c, 'easy', '$r', c.easyCount != null),
-      _cognitiveCell(c, 'easy', '$u', c.easyCount != null),
-      _cognitiveCell(c, 'medium', '$ap', c.mediumCount != null),
-      _cognitiveCell(c, 'medium', '$an', c.mediumCount != null),
-      _cognitiveCell(c, 'hard', '$e', c.hardCount != null),
-      _cognitiveCell(c, 'hard', '$bl', c.hardCount != null),
+      _cognitiveCell(c, 'remembering', '$r', c.rememberingCount != null),
+      _cognitiveCell(c, 'understanding', '$u', c.understandingCount != null),
+      _cognitiveCell(c, 'applying', '$ap', c.applyingCount != null),
+      _cognitiveCell(c, 'analyzing', '$an', c.analyzingCount != null),
+      _cognitiveCell(c, 'evaluating', '$e', c.evaluatingCount != null),
+      _cognitiveCell(c, 'creating', '$bl', c.creatingCount != null),
     ];
   }
 
@@ -400,7 +380,8 @@ class _TosGridTableState extends State<TosGridTable> {
     String displayValue,
     bool isOverride,
   ) {
-    const double width = 48;
+    // Bloom mode needs wider columns for full names
+    final double width = _isBloomsMode ? 80 : 48;
 
     // Inline editing mode
     if (_inlineMode && widget.onCellChanged != null) {
@@ -413,11 +394,18 @@ class _TosGridTableState extends State<TosGridTable> {
           onCancel: _cancelEdit,
         );
       }
-      final overrideForLevel = levelKey == 'easy'
-          ? c.easyCount
-          : levelKey == 'medium'
-              ? c.mediumCount
-              : c.hardCount;
+      final overrideForLevel = switch (levelKey) {
+        'easy' => c.easyCount,
+        'medium' => c.mediumCount,
+        'hard' => c.hardCount,
+        'remembering' => c.rememberingCount,
+        'understanding' => c.understandingCount,
+        'applying' => c.applyingCount,
+        'analyzing' => c.analyzingCount,
+        'evaluating' => c.evaluatingCount,
+        'creating' => c.creatingCount,
+        _ => null,
+      };
       return MouseRegion(
         cursor: SystemMouseCursors.text,
         child: GestureDetector(
@@ -451,11 +439,18 @@ class _TosGridTableState extends State<TosGridTable> {
       onTap: widget.onCellTap == null
           ? null
           : () {
-              final override = levelKey == 'easy'
-                  ? c.easyCount
-                  : levelKey == 'medium'
-                      ? c.mediumCount
-                      : c.hardCount;
+              final override = switch (levelKey) {
+                'easy' => c.easyCount,
+                'medium' => c.mediumCount,
+                'hard' => c.hardCount,
+                'remembering' => c.rememberingCount,
+                'understanding' => c.understandingCount,
+                'applying' => c.applyingCount,
+                'analyzing' => c.analyzingCount,
+                'evaluating' => c.evaluatingCount,
+                'creating' => c.creatingCount,
+                _ => null,
+              };
               widget.onCellTap!(c.id, levelKey, override);
             },
       child: SizedBox(

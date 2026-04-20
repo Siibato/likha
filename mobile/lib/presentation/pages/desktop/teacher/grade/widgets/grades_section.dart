@@ -205,7 +205,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
                     ],
                   ),
                 )
-              : scoresState.isLoading || gradesState.isLoading
+              : gradesState.isLoading
                   ? const Center(
                       child: CircularProgressIndicator(
                         color: AppColors.foregroundPrimary,

@@ -97,10 +97,7 @@ class _BloomsRatioSectionState extends State<BloomsRatioSection> {
             ],
           ),
           const SizedBox(height: 4),
-          const Text(
-            'R=Remembering, U=Understanding, Ap=Applying, An=Analyzing, E=Evaluating, C=Creating',
-            style: TextStyle(fontSize: 11, color: Color(0xFF999999)),
-          ),
+          const SizedBox(height: 4),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -127,11 +124,7 @@ class _BloomsRatioSectionState extends State<BloomsRatioSection> {
                   color: const Color(0xFF2E7D32),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
+              const SizedBox(width: 8),
               Expanded(
                 child: _PctField(
                   controller: widget.analyzingController,

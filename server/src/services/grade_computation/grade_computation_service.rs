@@ -88,6 +88,8 @@ impl GradeComputationService {
             .get_items_by_component(class_id, grading_period_number, &request.component)
             .await?;
         let order_index = existing.len() as i32;
+        let source_type = request.source_type.unwrap_or_else(|| "manual".to_string());
+        let source_id = request.source_id;
         let item = self
             .repo
             .create_item(
@@ -96,8 +98,8 @@ impl GradeComputationService {
                 request.component,
                 request.grading_period_number,
                 request.total_points,
-                "manual".to_string(),
-                None,
+                source_type,
+                source_id,
                 order_index,
             )
             .await?;
@@ -111,7 +113,7 @@ impl GradeComputationService {
     ) -> AppResult<GradeItemResponse> {
         let item = self
             .repo
-            .update_item(id, request.title, request.component, request.total_points, request.order_index)
+            .update_item(id, request.title, request.component, request.total_points, request.order_index, request.source_type, request.source_id)
             .await?;
         Ok(GradeItemResponse::from(item))
     }

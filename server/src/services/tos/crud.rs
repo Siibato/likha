@@ -31,17 +31,7 @@ pub async fn create_tos(
         return Err(AppError::BadRequest("grading_period_number must be between 1 and 4".to_string()));
     }
 
-    // Check uniqueness (one TOS per class per period)
-    let existing = tos_repo
-        .find_tos_by_class_and_period(class_id, request.grading_period_number)
-        .await?;
-    if existing.is_some() {
-        return Err(AppError::Conflict(format!(
-            "A TOS already exists for period {} in this class",
-            request.grading_period_number
-        )));
-    }
-
+    
     let time_unit = request.time_unit.as_deref().unwrap_or("days");
     if time_unit != "days" && time_unit != "hours" {
         return Err(AppError::BadRequest(

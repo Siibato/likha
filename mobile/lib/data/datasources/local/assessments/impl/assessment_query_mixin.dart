@@ -41,6 +41,8 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
 
         final effectiveTotalPoints = computedTotalPoints > 0 ? computedTotalPoints : assessment.totalPoints;
 
+        print('*** DS ASSESS: ${assessment.title} | dbTotalPoints=${assessment.totalPoints} | computedFromQuestions=$computedTotalPoints | effectiveTotalPoints=$effectiveTotalPoints | gradingPeriod=${assessment.gradingPeriodNumber} | component=${assessment.component}');
+
         final updatedAssessment = AssessmentModel(
           id: assessment.id,
           classId: assessment.classId,
@@ -56,6 +58,10 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
           totalPoints: effectiveTotalPoints,
           questionCount: actualCount > 0 ? actualCount : assessment.questionCount,
           submissionCount: effectiveSubCount,
+          tosId: assessment.tosId,
+          gradingPeriodNumber: assessment.gradingPeriodNumber,
+          component: assessment.component,
+          isSubmitted: assessment.isSubmitted,
           createdAt: assessment.createdAt,
           updatedAt: assessment.updatedAt,
           cachedAt: assessment.cachedAt,

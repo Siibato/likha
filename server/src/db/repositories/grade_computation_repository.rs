@@ -205,6 +205,8 @@ impl GradeComputationRepository {
         component: Option<String>,
         total_points: Option<f64>,
         order_index: Option<i32>,
+        source_type: Option<String>,
+        source_id: Option<String>,
     ) -> AppResult<grade_items::Model> {
         let mut item: grade_items::ActiveModel = grade_items::Entity::find_by_id(id)
             .one(&self.db)
@@ -224,6 +226,12 @@ impl GradeComputationRepository {
         }
         if let Some(order_index) = order_index {
             item.order_index = Set(order_index);
+        }
+        if let Some(source_type) = source_type {
+            item.source_type = Set(source_type);
+        }
+        if let Some(source_id) = source_id {
+            item.source_id = Set(Some(source_id));
         }
         item.updated_at = Set(Utc::now().naive_utc());
 

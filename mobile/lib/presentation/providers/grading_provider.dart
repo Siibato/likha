@@ -223,8 +223,8 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
         print('*** GRADE PROVIDER: loadItems success: loaded ${items.length} items');
         ProviderLogger.instance.log('loadItems() - success: loaded ${items.length} items');
         for (final item in items) {
-          print('*** GRADE PROVIDER: item: ${item.title} (${item.component}) - source: ${item.sourceType}, sourceId: ${item.sourceId}');
-          ProviderLogger.instance.log('loadItems() - item: ${item.title} (${item.component}) - source: ${item.sourceType}, sourceId: ${item.sourceId}');
+          print('*** GRADE PROVIDER: item: ${item.title} (${item.component}) - totalPoints=${item.totalPoints} - source: ${item.sourceType}, sourceId: ${item.sourceId}');
+          ProviderLogger.instance.log('loadItems() - item: ${item.title} (${item.component}) - totalPoints=${item.totalPoints} - source: ${item.sourceType}, sourceId: ${item.sourceId}');
         }
         state = state.copyWith(isLoading: false, items: items);
         print('*** GRADE PROVIDER: state updated with ${state.items.length} items');
@@ -290,14 +290,11 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
 
     final List<GradeItem> newItems = [];
 
-    // Process assessments
-    print('*** GRADE PROVIDER: fetching assessments for backfill');
-    ProviderLogger.instance.log('backfillFromActivities() - fetching assessments');
-    
-    // Wait a moment for background assessment fetch to complete
-    await Future.delayed(Duration(milliseconds: 500));
-    
-    final assessmentResult = await sl<GetAssessments>()(classId);
+    // Process assessments — forceRemote ensures we get fresh data even on cold cache
+    print('*** GRADE PROVIDER: fetching assessments for backfill (forceRemote)');
+    ProviderLogger.instance.log('backfillFromActivities() - fetching assessments (forceRemote)');
+
+    final assessmentResult = await sl<GetAssessments>()(classId, forceRemote: true);
     await assessmentResult.fold(
       (failure) {
         print('*** GRADE PROVIDER: Failed to get assessments for backfill: $failure');
@@ -314,36 +311,73 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
           print('*** GRADE PROVIDER: checking assessment: ${a.title} (${a.component}) - quarter: ${a.gradingPeriodNumber}, id: ${a.id}');
           ProviderLogger.instance.log('backfillFromActivities() - checking assessment: ${a.title} (${a.component}) - quarter: ${a.gradingPeriodNumber}, id: ${a.id}');
           if (a.gradingPeriodNumber == gradingPeriodNumber && a.component != null && !existingSourceIds.contains(a.id)) {
-            print('*** GRADE PROVIDER: assessment qualifies for backfill, creating grade item');
-            ProviderLogger.instance.log('backfillFromActivities() - assessment qualifies for backfill, creating grade item');
-            try {
-              final result = await sl<GradingRepository>().createGradeItem(
-                classId: classId,
-                data: {
-                  'title': a.title,
-                  'component': _toGradeComponent(a.component!),
-                  'grading_period_number': gradingPeriodNumber,
-                  'total_points': a.totalPoints.toDouble(),
-                  'is_departmental_exam': false,
-                  'source_type': 'assessment',
-                  'source_id': a.id,
-                  'order_index': 0,
-                },
-              );
-              result.fold(
-                (failure) {
-                  print('*** GRADE PROVIDER: Failed to create grade item from assessment: ${a.title} - $failure');
-                  ProviderLogger.instance.error('Failed to create grade item from assessment: ${a.title}', failure);
-                },
-                (item) {
-                  print('*** GRADE PROVIDER: Created grade item from assessment: ${a.title} with ID: ${item.id}');
-                  newItems.add(item);
-                  ProviderLogger.instance.log('Created grade item from assessment: ${a.title} with ID: ${item.id}');
-                },
-              );
-            } catch (e) {
-              print('*** GRADE PROVIDER: Exception creating grade item from assessment: ${a.title} - $e');
-              ProviderLogger.instance.error('Exception creating grade item from assessment: ${a.title}', e);
+            final component = _toGradeComponent(a.component!);
+            // Check if a manually-created item with the same title+component exists (link it instead of creating a duplicate)
+            final GradeItem? manualMatch = state.items.cast<GradeItem?>().firstWhere(
+              (item) => item?.sourceId == null
+                  && item?.component == component
+                  && item?.title.toLowerCase() == a.title.toLowerCase(),
+              orElse: () => null,
+            );
+
+            if (manualMatch != null) {
+              print('*** GRADE PROVIDER: linking manual item "${manualMatch.title}" to assessment ${a.id}, fixing totalPoints ${manualMatch.totalPoints} -> ${a.totalPoints}');
+              ProviderLogger.instance.log('backfillFromActivities() - linking manual item to assessment: ${a.title}');
+              try {
+                final updateResult = await sl<UpdateGradeItem>()(
+                  id: manualMatch.id,
+                  data: {
+                    'source_type': 'assessment',
+                    'source_id': a.id,
+                    'total_points': a.totalPoints.toDouble(),
+                  },
+                );
+                updateResult.fold(
+                  (failure) {
+                    print('*** GRADE PROVIDER: Failed to link manual item: ${a.title} - $failure');
+                    ProviderLogger.instance.error('Failed to link manual item: ${a.title}', failure);
+                  },
+                  (_) {
+                    print('*** GRADE PROVIDER: Linked manual item "${manualMatch.title}" to assessment ${a.id}');
+                    ProviderLogger.instance.log('Linked manual item to assessment: ${a.title}');
+                  },
+                );
+              } catch (e) {
+                print('*** GRADE PROVIDER: Exception linking manual item: ${a.title} - $e');
+                ProviderLogger.instance.error('Exception linking manual item: ${a.title}', e);
+              }
+            } else {
+              print('*** GRADE PROVIDER: assessment qualifies for backfill, creating grade item');
+              ProviderLogger.instance.log('backfillFromActivities() - assessment qualifies for backfill, creating grade item');
+              try {
+                final result = await sl<GradingRepository>().createGradeItem(
+                  classId: classId,
+                  data: {
+                    'title': a.title,
+                    'component': component,
+                    'grading_period_number': gradingPeriodNumber,
+                    'total_points': a.totalPoints.toDouble(),
+                    'is_departmental_exam': false,
+                    'source_type': 'assessment',
+                    'source_id': a.id,
+                    'order_index': 0,
+                  },
+                );
+                result.fold(
+                  (failure) {
+                    print('*** GRADE PROVIDER: Failed to create grade item from assessment: ${a.title} - $failure');
+                    ProviderLogger.instance.error('Failed to create grade item from assessment: ${a.title}', failure);
+                  },
+                  (item) {
+                    print('*** GRADE PROVIDER: Created grade item from assessment: ${a.title} with ID: ${item.id}');
+                    newItems.add(item);
+                    ProviderLogger.instance.log('Created grade item from assessment: ${a.title} with ID: ${item.id}');
+                  },
+                );
+              } catch (e) {
+                print('*** GRADE PROVIDER: Exception creating grade item from assessment: ${a.title} - $e');
+                ProviderLogger.instance.error('Exception creating grade item from assessment: ${a.title}', e);
+              }
             }
           } else {
             String reason = "";
@@ -358,6 +392,7 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
                 (item) => item?.sourceId == a.id,
                 orElse: () => null,
               );
+              print('*** BACKFILL UPDATE CHECK: ${a.title} | assessment.totalPoints=${a.totalPoints} | existingItem.totalPoints=${existingItem?.totalPoints} | needsUpdate=${existingItem != null && existingItem.totalPoints != a.totalPoints.toDouble()}');
               if (existingItem != null && existingItem.totalPoints != a.totalPoints.toDouble()) {
                 ProviderLogger.instance.log('backfillFromActivities() - updating totalPoints for ${a.title}: ${existingItem.totalPoints} -> ${a.totalPoints}');
                 try {
@@ -576,7 +611,7 @@ class GradeScoresNotifier extends StateNotifier<GradeScoresState> {
     String gradeItemId,
     List<Map<String, dynamic>> scores,
   ) async {
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    state = state.copyWith(error: null, successMessage: null);
     final result = await _saveScores(gradeItemId: gradeItemId, scores: scores);
     String? errorMsg;
     result.fold(

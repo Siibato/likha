@@ -16,7 +16,22 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
     required String classId,
     bool publishedOnly = false,
     bool skipBackgroundRefresh = false,
+    bool forceRemote = false,
   }) async {
+    // forceRemote: skip cache entirely and go straight to remote (used by backfill).
+    if (forceRemote && serverReachabilityService.isServerReachable) {
+      try {
+        RepoLogger.instance.log('getAssessments() - forceRemote=true, fetching from remote for classId: $classId');
+        final fresh = await remoteDataSource.getAssessments(classId: classId);
+        await localDataSource.cacheAssessments(fresh);
+        RepoLogger.instance.log('getAssessments() - forceRemote: got ${fresh.length} assessments');
+        return Right(fresh);
+      } catch (e) {
+        RepoLogger.instance.warn('getAssessments() - forceRemote fetch failed, falling through to cache', e);
+        // Fall through to cache-first path below
+      }
+    }
+
     try {
       try {
         // STEP 1: Try cache first (immediate, non-blocking)
@@ -55,7 +70,8 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
 
             RepoLogger.instance.log('${assessment.title}: cached=${assessment.submissionCount}, actual=$actualSubmissionCount, isSubmitted=$isSubmitted');
             if (actualSubmissionCount != assessment.submissionCount || isSubmitted != null) {
-              // Create new assessment with updated submissionCount and isSubmitted
+              // Create new assessment with updated submissionCount and isSubmitted,
+              // preserving all other fields (including gradingPeriodNumber and component).
               assessmentsWithDynamicCounts.add(Assessment(
                 id: assessment.id,
                 classId: assessment.classId,
@@ -72,8 +88,13 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
                 questionCount: assessment.questionCount,
                 submissionCount: actualSubmissionCount > 0 ? actualSubmissionCount : assessment.submissionCount,
                 isSubmitted: isSubmitted,
+                tosId: assessment.tosId,
+                gradingPeriodNumber: assessment.gradingPeriodNumber,
+                component: assessment.component,
                 createdAt: assessment.createdAt,
                 updatedAt: assessment.updatedAt,
+                cachedAt: assessment.cachedAt,
+                needsSync: assessment.needsSync,
               ));
             } else {
               assessmentsWithDynamicCounts.add(assessment);
@@ -90,6 +111,9 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
         }
 
         // STEP 3: Return cache immediately (don't wait for remote)
+        for (final a in assessmentsWithDynamicCounts) {
+          print('*** REPO ASSESS RETURN: ${a.title} | totalPoints=${a.totalPoints} | gradingPeriod=${a.gradingPeriodNumber} | component=${a.component}');
+        }
         return Right(assessmentsWithDynamicCounts);
       } on CacheException {
         // Cache miss: return empty immediately, trigger background fetch to populate cache
@@ -486,9 +510,11 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
     final localById = {for (final a in local) a.id: a};
     for (final r in remote) {
       final l = localById[r.id];
-      if (l == null) return true;                           // New item
-      if (l.updatedAt.isBefore(r.updatedAt)) return true;  // Updated item
-      if (l.submissionCount != r.submissionCount) return true;  // Submission count changed (students submitted)
+      if (l == null) return true;
+      if (l.updatedAt.isBefore(r.updatedAt)) return true;
+      if (l.submissionCount != r.submissionCount) return true;
+      if (l.gradingPeriodNumber != r.gradingPeriodNumber) return true;
+      if (l.component != r.component) return true;
     }
     return false;
   }

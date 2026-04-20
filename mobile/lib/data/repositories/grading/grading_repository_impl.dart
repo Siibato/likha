@@ -484,7 +484,7 @@ class GradingRepositoryImpl implements GradingRepository {
 
       // Save each score locally (optimistic)
       final models = scores.map((s) => GradeScoreModel(
-        id: const Uuid().v4(),
+        id: s['id'] as String? ?? const Uuid().v4(),
         gradeItemId: gradeItemId,
         studentId: s['student_id'] as String,
         score: (s['score'] as num).toDouble(),

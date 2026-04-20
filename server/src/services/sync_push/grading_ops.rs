@@ -73,6 +73,8 @@ impl super::SyncPushService {
                     component,
                     grading_period_number: Some(quarter),
                     total_points,
+                    source_type: op.payload.get("source_type").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                    source_id: op.payload.get("source_id").and_then(|v| v.as_str()).map(|s| s.to_string()),
                 };
 
                 match self.grade_computation_service.create_grade_item(class_id, request).await {
@@ -87,6 +89,8 @@ impl super::SyncPushService {
                     component: op.payload.get("component").and_then(|v| v.as_str()).map(|s| s.to_string()),
                     total_points: op.payload.get("total_points").and_then(|v| v.as_f64()),
                     order_index: op.payload.get("order_index").and_then(|v| v.as_i64()).map(|v| v as i32),
+                    source_type: op.payload.get("source_type").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                    source_id: op.payload.get("source_id").and_then(|v| v.as_str()).map(|s| s.to_string()),
                 };
 
                 match self.grade_computation_service.update_grade_item(id, request).await {
