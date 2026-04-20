@@ -4,3 +4,6 @@ pub mod auth_schema_test;
 pub mod assignment_schema_test;
 pub mod assessment_schema_test;
 pub mod grading_schema_test;
+pub mod tos_schema_test;
+pub mod class_schema_test;
+pub mod learning_material_schema_test;
