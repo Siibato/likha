@@ -425,7 +425,7 @@ impl super::GradeComputationService {
 }
 
 /// Compute percentage and weighted score for a single component.
-fn compute_component(
+pub(crate) fn compute_component(
     items: &[&::entity::grade_items::Model],
     score_map: &std::collections::HashMap<Uuid, f64>,
     weight: f64,

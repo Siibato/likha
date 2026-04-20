@@ -10,4 +10,5 @@ pub mod manifest_repository;
 pub mod processed_operations_repository;
 pub mod submission_repository;
 pub mod tos_repository;
+pub mod traits;
 pub mod user_repository;
