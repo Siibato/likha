@@ -82,6 +82,8 @@ pub struct MelcsSearchQuery {
     pub grade_level: Option<String>,
     pub quarter: Option<i32>,
     pub q: Option<String>,
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
 }
 
 // ===== RESPONSE SCHEMAS =====

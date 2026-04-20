@@ -23,33 +23,66 @@ class MelcsSearchSheet extends ConsumerStatefulWidget {
   ConsumerState<MelcsSearchSheet> createState() => _MelcsSearchSheetState();
 }
 
+const _kGrades = ['7', '8', '9', '10', '11', '12'];
+const _kSubjects = [
+  'Mathematics',
+  'Science',
+  'English',
+  'Araling Panlipunan',
+  'Edukasyon sa Pagpapakatao',
+  'Filipino',
+  'General Mathematics',
+  'Statistics and Probability',
+  'Earth and Life Science',
+  'Physical Science',
+  'Oral Communication',
+  'Reading and Writing',
+  '21st Century Literature',
+  'Media and Information Literacy',
+];
+
 class _MelcsSearchSheetState extends ConsumerState<MelcsSearchSheet> {
   final _searchController = TextEditingController();
+  final _scrollController = ScrollController();
   final _selectedItems = <MelcEntryModel>{};
   Timer? _debounce;
+  String? _selectedGrade;
+  String? _selectedSubject;
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
-    // Initial search
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(tosProvider.notifier).searchMelcs(SearchMelcsParams());
+      _triggerSearch();
     });
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      ref.read(tosProvider.notifier).loadMoreMelcs();
+    }
+  }
+
+  void _triggerSearch() {
+    ref.read(tosProvider.notifier).searchMelcs(SearchMelcsParams(
+          query: _searchController.text.trim(),
+          gradeLevel: _selectedGrade,
+          subject: _selectedSubject,
+        ));
   }
 
   void _onSearchChanged() {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 400), () {
-      ref.read(tosProvider.notifier).searchMelcs(
-            SearchMelcsParams(query: _searchController.text.trim()),
-          );
-    });
+    _debounce = Timer(const Duration(milliseconds: 400), _triggerSearch);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     _debounce?.cancel();
     super.dispose();
   }
@@ -138,6 +171,40 @@ class _MelcsSearchSheetState extends ConsumerState<MelcsSearchSheet> {
               ),
             ),
             const SizedBox(height: 8),
+            // Filter chips row
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _FilterDropdown<String>(
+                      hint: 'Grade',
+                      value: _selectedGrade,
+                      items: _kGrades,
+                      itemLabel: (g) => 'Grade $g',
+                      onChanged: (val) {
+                        setState(() => _selectedGrade = val);
+                        _triggerSearch();
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _FilterDropdown<String>(
+                      hint: 'Subject',
+                      value: _selectedSubject,
+                      items: _kSubjects,
+                      itemLabel: (s) => s,
+                      onChanged: (val) {
+                        setState(() => _selectedSubject = val);
+                        _triggerSearch();
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
             // Results
             Expanded(
               child: state.isMelcSearching
@@ -155,9 +222,15 @@ class _MelcsSearchSheetState extends ConsumerState<MelcsSearchSheet> {
                           ),
                         )
                       : ListView.builder(
-                          controller: scrollController,
-                          itemCount: results.length,
+                          controller: _scrollController,
+                          itemCount: results.length + 1,
                           itemBuilder: (context, index) {
+                            if (index == results.length) {
+                              return _SheetListFooter(
+                                isLoadingMore: state.isLoadingMore,
+                                hasMore: state.melcHasMore,
+                              );
+                            }
                             final melc = results[index];
                             final isSelected = _selectedItems.contains(melc);
                             return CheckboxListTile(
@@ -225,6 +298,96 @@ class _MelcsSearchSheetState extends ConsumerState<MelcsSearchSheet> {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SheetListFooter extends StatelessWidget {
+  final bool isLoadingMore;
+  final bool hasMore;
+
+  const _SheetListFooter({required this.isLoadingMore, required this.hasMore});
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoadingMore) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Center(
+          child: SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Color(0xFF999999),
+            ),
+          ),
+        ),
+      );
+    }
+    if (!hasMore) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 10),
+        child: Center(
+          child: Text(
+            'All results loaded',
+            style: TextStyle(
+              fontSize: 11,
+              color: Color(0xFFCCCCCC),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      );
+    }
+    return const SizedBox.shrink();
+  }
+}
+
+class _FilterDropdown<T> extends StatelessWidget {
+  final String hint;
+  final T? value;
+  final List<T> items;
+  final String Function(T) itemLabel;
+  final ValueChanged<T?> onChanged;
+
+  const _FilterDropdown({
+    required this.hint,
+    required this.value,
+    required this.items,
+    required this.itemLabel,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F9FA),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE0E0E0)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<T>(
+          value: value,
+          hint: Text(hint, style: const TextStyle(fontSize: 13, color: Color(0xFF999999))),
+          isExpanded: true,
+          iconSize: 18,
+          style: const TextStyle(fontSize: 13, color: Color(0xFF2B2B2B)),
+          items: [
+            DropdownMenuItem<T>(
+              value: null,
+              child: Text('All $hint', style: const TextStyle(fontSize: 13, color: Color(0xFF999999))),
+            ),
+            ...items.map((item) => DropdownMenuItem<T>(
+                  value: item,
+                  child: Text(itemLabel(item), overflow: TextOverflow.ellipsis),
+                )),
+          ],
+          onChanged: onChanged,
         ),
       ),
     );

@@ -622,11 +622,38 @@ class GradeScoresNotifier extends StateNotifier<GradeScoresState> {
       state = state.copyWith(isLoading: false, error: errorMsg);
       return;
     }
-    // Reload fresh scores for just this item so the grid cell reflects the
-    // saved value immediately (without a full reload).
-    final fresh = await _getScoresByItem(gradeItemId);
+    // Optimistically update the in-memory map so the cell shows the new value
+    // immediately. The save is sync-queued and will reach the server later;
+    // re-fetching from remote right now would return the stale (pre-save) value.
     final updated = Map<String, List<GradeScore>>.from(state.scoresByItem);
-    fresh.fold((_) {}, (newScores) => updated[gradeItemId] = newScores);
+    final existing = List<GradeScore>.from(updated[gradeItemId] ?? []);
+    for (final s in scores) {
+      final studentId = s['student_id'] as String;
+      final scoreVal = (s['score'] as num).toDouble();
+      final existingId = s['id'] as String?;
+      final idx = existing.indexWhere((e) => e.studentId == studentId);
+      if (idx >= 0) {
+        final old = existing[idx];
+        existing[idx] = GradeScore(
+          id: existingId ?? old.id,
+          gradeItemId: gradeItemId,
+          studentId: studentId,
+          score: scoreVal,
+          isAutoPopulated: false,
+          overrideScore: null,
+        );
+      } else {
+        existing.add(GradeScore(
+          id: existingId ?? 'optimistic_${studentId}_$gradeItemId',
+          gradeItemId: gradeItemId,
+          studentId: studentId,
+          score: scoreVal,
+          isAutoPopulated: false,
+          overrideScore: null,
+        ));
+      }
+    }
+    updated[gradeItemId] = existing;
     state = state.copyWith(
       isLoading: false,
       scoresByItem: updated,

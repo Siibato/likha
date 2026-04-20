@@ -1,4 +1,5 @@
 import 'package:likha/core/database/db_schema.dart';
+import 'package:likha/data/datasources/local/tos/melcs_seed.dart';
 import 'package:likha/data/models/tos/tos_model.dart';
 import 'package:likha/data/models/tos/melcs_model.dart';
 import '../tos_local_datasource_base.dart';
@@ -61,6 +62,8 @@ mixin TosQueryMixin on TosLocalDataSourceBase {
     String? gradeLevel,
     int? gradingPeriodNumber,
     String? query,
+    int limit = 30,
+    int offset = 0,
   }) async {
     final db = await localDatabase.database;
 
@@ -76,7 +79,7 @@ mixin TosQueryMixin on TosLocalDataSourceBase {
       args.add(gradeLevel);
     }
     if (gradingPeriodNumber != null) {
-      conditions.add('(${MelcsCols.gradingPeriodNumber} = ? OR ${MelcsCols.gradingPeriodNumber} IS NULL)');
+      conditions.add('(quarter = ? OR quarter IS NULL)');
       args.add(gradingPeriodNumber);
     }
     if (query != null && query.isNotEmpty) {
@@ -94,10 +97,32 @@ mixin TosQueryMixin on TosLocalDataSourceBase {
       where: where,
       whereArgs: args.isEmpty ? null : args,
       orderBy: '${MelcsCols.competencyCode} ASC',
-      limit: 50,
+      limit: limit,
+      offset: offset,
     );
 
     // MelcEntryModel.fromJson uses the same snake_case keys as SQLite columns
     return results.map((row) => MelcEntryModel.fromJson(row)).toList();
+  }
+
+  @override
+  Future<void> seedMelcsIfEmpty() async {
+    final db = await localDatabase.database;
+    final countResult = await db.rawQuery('SELECT COUNT(*) as c FROM ${DbTables.melcs}');
+    final count = (countResult.first['c'] as int?) ?? 0;
+    if (count > 0) return;
+
+    final batch = db.batch();
+    for (final row in kMelcsSeedData) {
+      batch.insert(DbTables.melcs, {
+        MelcsCols.subject: row['subject'],
+        MelcsCols.gradeLevel: row['grade_level'],
+        'quarter': row['quarter'],
+        MelcsCols.competencyCode: row['competency_code'],
+        MelcsCols.competencyText: row['competency_text'],
+        MelcsCols.domain: row['domain'],
+      });
+    }
+    await batch.commit(noResult: true);
   }
 }

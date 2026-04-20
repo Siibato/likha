@@ -16,7 +16,10 @@ abstract class TosLocalDataSource {
     String? gradeLevel,
     int? gradingPeriodNumber,
     String? query,
+    int limit = 30,
+    int offset = 0,
   });
+  Future<void> seedMelcsIfEmpty();
 
   // Mutations (offline-first)
   Future<void> saveTos(TosModel tos);

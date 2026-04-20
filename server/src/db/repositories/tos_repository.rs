@@ -403,6 +403,8 @@ impl TosRepository {
         grade_level: Option<&str>,
         quarter: Option<i32>,
         query: Option<&str>,
+        limit: i64,
+        offset: i64,
     ) -> AppResult<Vec<MelcRow>> {
         let mut sql = String::from(
             "SELECT id, subject, grade_level, quarter, competency_code, competency_text, domain FROM melcs WHERE 1=1",
@@ -434,7 +436,13 @@ impl TosRepository {
             // Fix: we pushed twice, so params.len() is already idx+1
         }
 
-        sql.push_str(" ORDER BY grade_level, quarter, competency_code LIMIT 100");
+        params.push(limit.into());
+        params.push(offset.into());
+        sql.push_str(&format!(
+            " ORDER BY grade_level, quarter, competency_code LIMIT ${} OFFSET ${}",
+            params.len() - 1,
+            params.len()
+        ));
 
         let rows = self
             .db

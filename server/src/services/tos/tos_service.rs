@@ -167,6 +167,8 @@ impl TosService {
         grade_level: Option<&str>,
         quarter: Option<i32>,
         query: Option<&str>,
+        limit: i64,
+        offset: i64,
     ) -> AppResult<MelcSearchResponse> {
         super::melcs_search::search_melcs(
             &self.tos_repo,
@@ -174,6 +176,8 @@ impl TosService {
             grade_level,
             quarter,
             query,
+            limit,
+            offset,
         ).await
     }
 }

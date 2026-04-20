@@ -35,6 +35,10 @@ class GradeSpreadsheet extends StatefulWidget {
 
   final void Function(String studentId, int? currentQg) onQgChanged;
 
+  /// Called when the teacher taps the '+' button in a section header.
+  /// [component] is 'ww', 'pt', or 'qa'.
+  final void Function(String component) onAddColumn;
+
   const GradeSpreadsheet({
     super.key,
     required this.students,
@@ -44,6 +48,7 @@ class GradeSpreadsheet extends StatefulWidget {
     required this.summary,
     required this.onScoreChanged,
     required this.onQgChanged,
+    required this.onAddColumn,
   });
 
   // Cell dimensions (desktop — wider than mobile)
@@ -220,9 +225,10 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
     return _Stats(total: total, hs: hs, pct: pct, ws: pct * weight / 100);
   }
 
+  // +1 scoreColW for the add-column button cell at the end of each section
   double _secW(int n) =>
-      n * GradeSpreadsheet.scoreColW +
-      GradeSpreadsheet.sumColW * 2 +
+      (n + 1) * GradeSpreadsheet.scoreColW +
+      GradeSpreadsheet.sumColW +
       GradeSpreadsheet.pctColW * 2;
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -365,9 +371,9 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
                       height: GradeSpreadsheet.hdrH2,
                       child: Row(
                         children: [
-                          ..._sectionHdrs(wwItems),
-                          ..._sectionHdrs(ptItems),
-                          ..._sectionHdrs(qaItems),
+                          ..._sectionHdrs(wwItems, 'ww'),
+                          ..._sectionHdrs(ptItems, 'pt'),
+                          ..._sectionHdrs(qaItems, 'qa'),
                           _hdrCell('Initial Grade', GradeSpreadsheet.initGradeW,
                               GradeSpreadsheet.hdrH2),
                           _hdrCell(
@@ -422,16 +428,17 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
     );
   }
 
-  List<Widget> _sectionHdrs(List<GradeItem> items) => [
+  List<Widget> _sectionHdrs(List<GradeItem> items, String component) => [
         for (int i = 0; i < items.length; i++)
           Tooltip(
             message: items[i].title,
             child: _hdrCell('${i + 1}', GradeSpreadsheet.scoreColW,
                 GradeSpreadsheet.hdrH2),
           ),
+        // Add-column button cell
+        _addColHdrCell(component),
         _hdrCell(
             'Total', GradeSpreadsheet.sumColW, GradeSpreadsheet.hdrH2),
-        _hdrCell('HS', GradeSpreadsheet.sumColW, GradeSpreadsheet.hdrH2),
         _hdrCell('%', GradeSpreadsheet.pctColW, GradeSpreadsheet.hdrH2),
         _hdrCell('WS', GradeSpreadsheet.pctColW, GradeSpreadsheet.hdrH2),
       ];
@@ -443,9 +450,8 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
         _computedCell(_fmt(item.totalPoints), GradeSpreadsheet.scoreColW,
             AppColors.backgroundTertiary,
             bold: true),
-      _computedCell(items.isNotEmpty ? _fmt(hs) : '--',
-          GradeSpreadsheet.sumColW, AppColors.backgroundTertiary,
-          bold: true),
+      // Blank cell under the add-column button
+      _computedCell('', GradeSpreadsheet.scoreColW, AppColors.backgroundTertiary),
       _computedCell(items.isNotEmpty ? _fmt(hs) : '--',
           GradeSpreadsheet.sumColW, AppColors.backgroundTertiary,
           bold: true),
@@ -571,12 +577,10 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
           );
         }(),
       ],
+      // Blank spacer cell under the add-column header button
+      _computedCell('', GradeSpreadsheet.scoreColW, bgColor),
       _computedCell(
           stats.total != null ? _fmt(stats.total!) : '--',
-          GradeSpreadsheet.sumColW,
-          bgColor),
-      _computedCell(
-          items.isNotEmpty ? _fmt(stats.hs) : '--',
           GradeSpreadsheet.sumColW,
           bgColor),
       _computedCell(
@@ -599,6 +603,7 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
       height: GradeSpreadsheet.hdrH1,
       color: color,
       alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
       child: Text(
         label,
         style: const TextStyle(
@@ -607,6 +612,33 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
             color: Color(0xFF444444)),
         overflow: TextOverflow.ellipsis,
         maxLines: 1,
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  Widget _addColHdrCell(String component) {
+    return Tooltip(
+      message: 'Add column',
+      child: InkWell(
+        onTap: () => widget.onAddColumn(component),
+        child: Container(
+          width: GradeSpreadsheet.scoreColW,
+          height: GradeSpreadsheet.hdrH2,
+          decoration: const BoxDecoration(
+            color: AppColors.backgroundTertiary,
+            border: Border(
+              right: BorderSide(color: AppColors.borderLight, width: 0.5),
+              bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
+            ),
+          ),
+          alignment: Alignment.center,
+          child: const Icon(
+            Icons.add_rounded,
+            size: 16,
+            color: AppColors.foregroundSecondary,
+          ),
+        ),
       ),
     );
   }

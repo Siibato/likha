@@ -8,9 +8,11 @@ pub async fn search_melcs(
     grade_level: Option<&str>,
     quarter: Option<i32>,
     query: Option<&str>,
+    limit: i64,
+    offset: i64,
 ) -> AppResult<MelcSearchResponse> {
     let rows = tos_repo
-        .search_melcs(subject, grade_level, quarter, query)
+        .search_melcs(subject, grade_level, quarter, query, limit, offset)
         .await?;
 
     Ok(MelcSearchResponse {

@@ -163,12 +163,16 @@ pub async fn search_melcs(
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
+    let limit = query.limit.unwrap_or(30).clamp(1, 200);
+    let offset = query.offset.unwrap_or(0).max(0);
     match service
         .search_melcs(
             query.subject.as_deref(),
             query.grade_level.as_deref(),
             query.quarter,
             query.q.as_deref(),
+            limit,
+            offset,
         )
         .await
     {

@@ -9,7 +9,7 @@ import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart
 import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.dart';
 import 'package:likha/presentation/widgets/styled_dialog.dart';
 import 'package:likha/presentation/pages/teacher/assessment/widgets/bulk_paste_sheet.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/melcs_search_sheet.dart';
+import 'package:likha/presentation/pages/desktop/teacher/tos/widgets/melcs_search_dialog.dart';
 import 'package:likha/presentation/pages/teacher/tos/widgets/tos_grid_table.dart';
 import 'package:likha/presentation/pages/teacher/tos/widgets/tos_print_preview.dart';
 import 'package:likha/presentation/pages/teacher/tos/widgets/tos_summary_row.dart';
@@ -270,7 +270,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
                                   ),
                                 ),
                                 OutlinedButton.icon(
-                                  onPressed: () => MelcsSearchSheet.show(
+                                  onPressed: () => MelcsSearchDialog.show(
                                       context, widget.tosId),
                                   icon: const Icon(Icons.search, size: 18),
                                   label: const Text('Import from MELCs'),

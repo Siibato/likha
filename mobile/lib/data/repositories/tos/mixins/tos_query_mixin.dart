@@ -104,6 +104,8 @@ mixin TosQueryMixin on TosRepositoryBase {
     String? gradeLevel,
     int? gradingPeriodNumber,
     String? query,
+    int limit = 30,
+    int offset = 0,
   }) async {
     try {
       // Try remote first
@@ -113,6 +115,8 @@ mixin TosQueryMixin on TosRepositoryBase {
           gradeLevel: gradeLevel,
           quarter: gradingPeriodNumber,
           query: query,
+          limit: limit,
+          offset: offset,
         );
         return Right(remote);
       }
@@ -123,6 +127,8 @@ mixin TosQueryMixin on TosRepositoryBase {
         gradeLevel: gradeLevel,
         gradingPeriodNumber: gradingPeriodNumber,
         query: query,
+        limit: limit,
+        offset: offset,
       );
       return Right(local);
     } on ServerFailure catch (e) {

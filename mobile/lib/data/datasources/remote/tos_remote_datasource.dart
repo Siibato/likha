@@ -16,7 +16,7 @@ abstract class TosRemoteDataSource {
   Future<CompetencyModel> updateCompetency({required String competencyId, required Map<String, dynamic> data});
   Future<void> deleteCompetency({required String competencyId});
   Future<List<CompetencyModel>> bulkAddCompetencies({required String tosId, required List<Map<String, dynamic>> competencies});
-  Future<List<MelcEntryModel>> searchMelcs({String? subject, String? gradeLevel, int? quarter, String? query});
+  Future<List<MelcEntryModel>> searchMelcs({String? subject, String? gradeLevel, int? quarter, String? query, int limit = 30, int offset = 0});
 }
 
 class TosRemoteDataSourceImpl implements TosRemoteDataSource {
@@ -167,9 +167,11 @@ class TosRemoteDataSourceImpl implements TosRemoteDataSource {
     String? gradeLevel,
     int? quarter,
     String? query,
+    int limit = 30,
+    int offset = 0,
   }) async {
     try {
-      final queryParams = <String, dynamic>{};
+      final queryParams = <String, dynamic>{'limit': limit, 'offset': offset};
       if (subject != null) queryParams['subject'] = subject;
       if (gradeLevel != null) queryParams['grade_level'] = gradeLevel;
       if (quarter != null) queryParams['quarter'] = quarter;
