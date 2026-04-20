@@ -139,9 +139,13 @@ class _SubmissionDataTableState extends State<SubmissionDataTable> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                  child: DataTable(
               showCheckboxColumn: false,
               horizontalMargin: 20,
               columnSpacing: 24,
@@ -187,8 +191,10 @@ class _SubmissionDataTableState extends State<SubmissionDataTable> {
                   }).toList(),
                 );
               }).toList(),
-            ),
-          ),
+                ),
+              ),
+            );
+          }),
           _buildPaginationFooter(startIndex + 1, endIndex, widget.rows.length),
         ],
       ),

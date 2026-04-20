@@ -3,7 +3,7 @@ use sea_orm::*;
 use uuid::Uuid;
 
 use ::entity::{
-    grade_record, grade_items, grade_scores, period_grades, class_participants,
+    grade_record, grade_items, grade_scores, period_grades, class_participants, users,
 };
 use crate::utils::{AppError, AppResult};
 
@@ -561,14 +561,23 @@ impl GradeComputationRepository {
     // ===== HELPER =====
 
     pub async fn get_enrolled_student_ids(&self, class_id: Uuid) -> AppResult<Vec<Uuid>> {
+        use sea_orm::QuerySelect;
+        
         let participants = class_participants::Entity::find()
+            .column_as(class_participants::Column::UserId, "user_id")
+            .join(
+                sea_orm::JoinType::InnerJoin,
+                class_participants::Relation::User.def()
+            )
             .filter(class_participants::Column::ClassId.eq(class_id))
             .filter(class_participants::Column::RemovedAt.is_null())
+            .filter(users::Column::Role.eq("student"))
+            .into_tuple::<(Uuid,)>()
             .all(&self.db)
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-        Ok(participants.into_iter().map(|p| p.user_id).collect())
+        Ok(participants.into_iter().map(|(user_id,)| user_id).collect())
     }
 
     // ===== CROSS-CLASS QUERIES (GSA / SF9) =====

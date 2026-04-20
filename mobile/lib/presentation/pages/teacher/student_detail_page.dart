@@ -4,7 +4,7 @@ import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/presentation/pages/teacher/widgets/student_detail_info_card.dart';
 import 'package:likha/presentation/pages/teacher/widgets/student_assessment_row.dart';
 import 'package:likha/presentation/pages/teacher/widgets/student_assignment_row.dart';
-import 'package:likha/presentation/pages/teacher/submission_review_page.dart';
+import 'package:likha/presentation/pages/teacher/assessment/submission_review_page.dart';
 import 'package:likha/presentation/pages/teacher/assessment/assessment_detail_page.dart';
 import 'package:likha/presentation/pages/teacher/grade/grade_submission_page.dart';
 import 'package:likha/presentation/pages/teacher/assignment/assignment_detail_page.dart';

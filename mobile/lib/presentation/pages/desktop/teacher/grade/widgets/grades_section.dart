@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/grade/class_grading_setup_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/grade/widgets/grade_spreadsheet.dart';
+import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
 
 /// Grades section widget for TeacherClassDetailDesktop
@@ -27,19 +29,70 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(gradingConfigProvider.notifier).loadConfig(widget.classId);
-      ref.read(gradeItemsProvider.notifier).loadItems(widget.classId);
+      _loadGradeData();
+    });
+  }
+
+  void _loadGradeData() {
+    final itemsNotifier = ref.read(gradeItemsProvider.notifier);
+    itemsNotifier.setQuarter(_selectedQuarter);
+    itemsNotifier.loadItems(widget.classId).then((_) {
+      // Backfill grade items from assessments/assignments
+      itemsNotifier.backfillFromActivities(widget.classId, _selectedQuarter).then((_) {
+        // After backfill completes, reload items to get newly created ones
+        itemsNotifier.loadItems(widget.classId).then((_) {
+          final itemsState = ref.read(gradeItemsProvider);
+          // Load scores for all items (including newly created ones)
+          if (itemsState.items.isNotEmpty) {
+            final itemIds = itemsState.items.map((i) => i.id).toList();
+            ref.read(gradeScoresProvider.notifier).loadScoresForItems(itemIds);
+          }
+        });
+      });
+      // Load quarterly grades summary
+      ref.read(quarterlyGradesProvider.notifier).loadSummary(widget.classId, _selectedQuarter);
     });
   }
 
   void _onQuarterChanged(int quarter) {
     setState(() => _selectedQuarter = quarter);
-    ref.read(gradeItemsProvider.notifier).loadItems(widget.classId);
+    _loadGradeData();
+  }
+
+  void _handleScoreChanged(
+    String studentId,
+    String itemId,
+    dynamic existingScore,
+    double newScore,
+  ) {
+    ref.read(gradeScoresProvider.notifier).saveScores(itemId, [
+      {
+        'student_id': studentId,
+        'score': newScore,
+        if (existingScore != null) 'id': existingScore.id,
+      }
+    ]);
+  }
+
+  void _handleQgChanged(String studentId, int? newQg) {
+    if (newQg == null) return;
+    ref.read(quarterlyGradesProvider.notifier).updatePeriodGrade(
+      classId: widget.classId,
+      studentId: studentId,
+      quarter: _selectedQuarter,
+      transmutedGrade: newQg,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final configState = ref.watch(gradingConfigProvider);
     final itemsState = ref.watch(gradeItemsProvider);
+    final scoresState = ref.watch(gradeScoresProvider);
+    final gradesState = ref.watch(quarterlyGradesProvider);
+    final classState = ref.watch(classProvider);
+    final students = classState.currentClassDetail?.students ?? [];
+    final config = configState.configs.isNotEmpty ? configState.configs.first : null;
 
     return DesktopPageScaffold(
       title: 'Grades',
@@ -152,17 +205,32 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
                     ],
                   ),
                 )
-              : Container(
-                  child: Center(
-                    child: Text(
-                      'Grading setup configured. Grade spreadsheet functionality will be implemented.',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: AppColors.foregroundSecondary,
+              : scoresState.isLoading || gradesState.isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.foregroundPrimary,
+                        strokeWidth: 2.5,
                       ),
-                    ),
-                  ),
-                ),
+                    )
+                  : students.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'No students in this class',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: AppColors.foregroundTertiary,
+                            ),
+                          ),
+                        )
+                      : GradeSpreadsheet(
+                          students: students,
+                          allItems: itemsState.items,
+                          scoresByItem: scoresState.scoresByItem,
+                          config: config,
+                          summary: gradesState.summary,
+                          onScoreChanged: _handleScoreChanged,
+                          onQgChanged: _handleQgChanged,
+                        ),
     );
   }
 }

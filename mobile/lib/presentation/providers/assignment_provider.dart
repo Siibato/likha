@@ -378,6 +378,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   }
 
   Future<void> loadSubmissionDetail(String submissionId) async {
+    print('DEBUG: Loading submission detail for ID: $submissionId');
     state = state.copyWith(isLoading: true, clearError: true);
     final result = await _getSubmissionDetail(submissionId);
     result.fold(
@@ -390,15 +391,20 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
         
         if (isNetworkFailure) {
           // Try to load from cache as fallback for offline scenarios
-          state = state.copyWith(isLoading: false);
-          // Don't set error state for expected network issues in offline-first app
+          // For now, set a user-friendly error message instead of silent failure
+          state = state.copyWith(
+            isLoading: false, 
+            error: 'Unable to load submission details. Check your connection and try again.'
+          );
           return;
         }
         
         state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure));
       },
-      (submission) => state =
-          state.copyWith(isLoading: false, currentSubmission: submission),
+      (submission) {
+        print('DEBUG: Successfully loaded submission: ${submission.studentName}');
+        state = state.copyWith(isLoading: false, currentSubmission: submission);
+      },
     );
   }
 

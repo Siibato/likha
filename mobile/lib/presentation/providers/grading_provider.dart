@@ -19,6 +19,7 @@ import 'package:likha/domain/grading/usecases/set_score_override.dart';
 import 'package:likha/domain/grading/usecases/setup_grading.dart';
 import 'package:likha/domain/grading/usecases/update_grading_config.dart';
 import 'package:likha/domain/grading/usecases/update_period_grade.dart';
+import 'package:likha/domain/grading/usecases/update_grade_item.dart';
 import 'package:likha/domain/grading/usecases/generate_scores.dart';
 import 'package:likha/domain/assessments/usecases/get_assessments.dart';
 import 'package:likha/domain/assignments/usecases/get_assignments.dart';
@@ -352,6 +353,50 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
               reason = "component is null";
             } else if (existingSourceIds.contains(a.id)) {
               reason = "source ID already exists";
+              // Check if totalPoints needs updating for existing grade item
+              final GradeItem? existingItem = state.items.cast<GradeItem?>().firstWhere(
+                (item) => item?.sourceId == a.id,
+                orElse: () => null,
+              );
+              if (existingItem != null && existingItem.totalPoints != a.totalPoints.toDouble()) {
+                ProviderLogger.instance.log('backfillFromActivities() - updating totalPoints for ${a.title}: ${existingItem.totalPoints} -> ${a.totalPoints}');
+                try {
+                  final updateResult = await sl<UpdateGradeItem>()(
+                    id: existingItem.id,
+                    data: {'total_points': a.totalPoints.toDouble()},
+                  );
+                  updateResult.fold(
+                    (failure) {
+                      ProviderLogger.instance.error('Failed to update totalPoints for ${a.title}', failure);
+                    },
+                    (_) {
+                      // Update local state
+                      final updatedItems = state.items.map((item) {
+                        if (item.id == existingItem.id) {
+                          return GradeItem(
+                            id: item.id,
+                            classId: item.classId,
+                            title: item.title,
+                            component: item.component,
+                            gradingPeriodNumber: item.gradingPeriodNumber,
+                            totalPoints: a.totalPoints.toDouble(),
+                            sourceType: item.sourceType,
+                            sourceId: item.sourceId,
+                            orderIndex: item.orderIndex,
+                            createdAt: item.createdAt,
+                            updatedAt: DateTime.now(),
+                          );
+                        }
+                        return item;
+                      }).toList();
+                      state = state.copyWith(items: updatedItems);
+                      ProviderLogger.instance.log('Updated totalPoints for ${a.title} to ${a.totalPoints}');
+                    },
+                  );
+                } catch (e) {
+                  ProviderLogger.instance.error('Exception updating totalPoints for ${a.title}', e);
+                }
+              }
             }
             print('*** DEBUG: assessment ${a.title} does not qualify: $reason');
             print('*** GRADE PROVIDER: assessment ${a.title} does not qualify: $reason');

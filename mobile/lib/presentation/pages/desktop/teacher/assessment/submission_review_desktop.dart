@@ -7,7 +7,7 @@ import 'package:likha/domain/assessments/usecases/override_answer.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/status_badge.dart';
-import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/widgets/styled_dialog.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 
 class SubmissionReviewDesktop extends ConsumerStatefulWidget {
@@ -62,22 +62,26 @@ class _SubmissionReviewDesktopState
     return '$month/$day/${dt.year} $hour:$minute $period';
   }
 
-  void _confirmOverride(SubmissionAnswer answer, bool isCorrect) {
-    final action = isCorrect ? 'correct' : 'incorrect';
-    AppDialogs.showConfirmation(
+  void _confirmOverride(SubmissionAnswer answer) {
+    showDialog(
       context: context,
-      title: 'Override Grade',
-      body: 'Mark this answer as $action?',
-      confirmLabel: 'Confirm',
-      onConfirm: () => _overrideAnswer(answer.id, isCorrect),
+      builder: (ctx) => Center(
+        child: _OverrideGradeDialog(
+          answer: answer,
+          onConfirm: (isCorrect, points) {
+            _overrideAnswer(answer.id, isCorrect, points: points);
+          },
+        ),
+      ),
     );
   }
 
-  Future<void> _overrideAnswer(String answerId, bool isCorrect) async {
+  Future<void> _overrideAnswer(String answerId, bool isCorrect, {double? points}) async {
     await ref.read(teacherAssessmentProvider.notifier).overrideAnswer(
           OverrideAnswerParams(
             answerId: answerId,
             isCorrect: isCorrect,
+            points: points,
           ),
         );
 
@@ -118,6 +122,7 @@ class _SubmissionReviewDesktopState
               color: AppColors.foregroundPrimary),
           onPressed: () => Navigator.pop(context),
         ),
+        scrollable: false,
         body: state.isLoading && detail == null
             ? const Center(
                 child: CircularProgressIndicator(
@@ -324,35 +329,14 @@ class _SubmissionReviewDesktopState
                           child: SizedBox(
                             height: 32,
                             child: TextButton.icon(
-                              onPressed: () =>
-                                  _confirmOverride(answer, true),
-                              icon: const Icon(Icons.check,
+                              onPressed: () => _confirmOverride(answer),
+                              icon: const Icon(Icons.edit,
                                   size: 16),
-                              label: const Text('Correct',
+                              label: const Text('Override Grade',
                                   style: TextStyle(fontSize: 12)),
                               style: TextButton.styleFrom(
                                 foregroundColor:
-                                    AppColors.semanticSuccess,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: SizedBox(
-                            height: 32,
-                            child: TextButton.icon(
-                              onPressed: () =>
-                                  _confirmOverride(answer, false),
-                              icon: const Icon(Icons.close,
-                                  size: 16),
-                              label: const Text('Incorrect',
-                                  style: TextStyle(fontSize: 12)),
-                              style: TextButton.styleFrom(
-                                foregroundColor:
-                                    AppColors.semanticError,
+                                    AppColors.foregroundPrimary,
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 8),
                               ),
@@ -610,6 +594,144 @@ class _SubmissionReviewDesktopState
           ),
         );
       }).toList(),
+    );
+  }
+}
+
+class _OverrideGradeDialog extends StatefulWidget {
+  final SubmissionAnswer answer;
+  final Function(bool isCorrect, double points) onConfirm;
+
+  const _OverrideGradeDialog({
+    required this.answer,
+    required this.onConfirm,
+  });
+
+  @override
+  State<_OverrideGradeDialog> createState() => _OverrideGradeDialogState();
+}
+
+class _OverrideGradeDialogState extends State<_OverrideGradeDialog> {
+  late final TextEditingController _pointsController;
+  bool _isCorrect = true;
+  bool _showPointsInput = true;
+  String? _validationError;
+
+  @override
+  void initState() {
+    super.initState();
+    _pointsController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _pointsController.dispose();
+    super.dispose();
+  }
+
+  void _handleConfirm() {
+    double? points;
+    if (_isCorrect) {
+      final raw = _pointsController.text.trim();
+      final pts = double.tryParse(raw);
+      if (pts == null || pts < 0 || pts > widget.answer.points) {
+        setState(() => _validationError = 'Enter a valid score between 0 and ${widget.answer.points}');
+        return;
+      }
+      points = pts;
+    } else {
+      points = 0.0;
+    }
+    setState(() => _validationError = null);
+    Navigator.of(context).pop();
+    widget.onConfirm(_isCorrect, points);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StyledDialog(
+      title: 'Override Grade',
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          RadioListTile<bool>(
+            title: const Text('Mark as Incorrect (0 points)'),
+            value: false,
+            groupValue: _isCorrect,
+            onChanged: (value) {
+              setState(() {
+                _isCorrect = value!;
+                _showPointsInput = false;
+                _validationError = null;
+              });
+            },
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+          ),
+          RadioListTile<bool>(
+            title: const Text('Mark as Correct (specify points)'),
+            value: true,
+            groupValue: _isCorrect,
+            onChanged: (value) {
+              setState(() {
+                _isCorrect = value!;
+                _showPointsInput = true;
+                _validationError = null;
+              });
+            },
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+          ),
+          if (_showPointsInput) ...[
+            const SizedBox(height: 12),
+            TextField(
+              controller: _pointsController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'Points (0 – ${widget.answer.points})',
+                labelStyle: const TextStyle(fontSize: 13, color: AppColors.foregroundTertiary),
+                filled: true,
+                fillColor: const Color(0xFFFAFAFA),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppColors.borderLight),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppColors.borderLight),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppColors.foregroundPrimary, width: 1.5),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppColors.semanticError, width: 1.5),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppColors.semanticError, width: 1.5),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                isDense: true,
+                errorText: _validationError,
+              ),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        StyledDialogAction(
+          label: 'Cancel',
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        StyledDialogAction(
+          label: 'Confirm',
+          isPrimary: true,
+          onPressed: _handleConfirm,
+        ),
+      ],
     );
   }
 }

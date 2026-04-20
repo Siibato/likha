@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,7 +13,6 @@ import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.
 import 'package:likha/presentation/pages/shared/widgets/forms/styled_button.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
-import 'package:likha/presentation/pages/shared/widgets/cards/markdown_display.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/status_badge.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/card_icon_slot.dart';
 import 'package:likha/presentation/pages/shared/widgets/tokens/app_text_styles.dart';
@@ -98,6 +99,40 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  /// Parse rich text JSON (Quill Delta) to plain text for display
+  String _parseRichTextContent(String? textContent) {
+    if (textContent == null || textContent.isEmpty) {
+      return '';
+    }
+
+    try {
+      // Try to parse as JSON (rich text editor format)
+      final List<dynamic> delta = jsonDecode(textContent);
+      final StringBuffer plainText = StringBuffer();
+      
+      for (final operation in delta) {
+        if (operation is Map<String, dynamic>) {
+          final insert = operation['insert'];
+          if (insert != null) {
+            // Handle different insert types
+            if (insert is String) {
+              plainText.write(insert);
+            } else if (insert is Map<String, dynamic>) {
+              // Handle special inserts like images, etc.
+              // For now, just add a placeholder
+              plainText.write('[Embedded content]');
+            }
+          }
+        }
+      }
+      
+      return plainText.toString().trim();
+    } catch (e) {
+      // If parsing fails, return the original text
+      return textContent;
+    }
   }
 
   Future<void> _handleGrade() async {
@@ -229,7 +264,23 @@ class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
                         submission.textContent!.isNotEmpty) ...[
                       _buildSection(
                         'Text Content',
-                        child: MarkdownDisplay(content: submission.textContent),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFAFAFA),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.borderLight),
+                          ),
+                          child: Text(
+                            _parseRichTextContent(submission.textContent),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.foregroundPrimary,
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 16),
                     ],
