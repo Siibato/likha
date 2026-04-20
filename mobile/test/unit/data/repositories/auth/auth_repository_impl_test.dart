@@ -61,6 +61,11 @@ void main() {
   late MockServerReachabilityService reachability;
   late MockStorageService storage;
 
+  setUpAll(() {
+    registerFallbackValue(_fakeUser());
+    registerFallbackValue('');
+  });
+
   setUp(() {
     local = MockAuthLocalDataSource();
     remote = MockAuthRemoteDataSource();
@@ -71,8 +76,6 @@ void main() {
     when(() => storage.isAuthenticated()).thenAnswer((_) async => false);
     when(() => local.cacheCurrentUser(any())).thenAnswer((_) async {});
     when(() => storage.saveUserRole(any())).thenAnswer((_) async {});
-
-    registerFallbackValue(_fakeUser());
   });
 
   group('AuthRepositoryImpl', () {

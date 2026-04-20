@@ -6,6 +6,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/domain/grading/repositories/grading_repository.dart';
+import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
 import 'package:likha/domain/assessments/usecases/create_assessment.dart';
 import 'package:likha/domain/assessments/usecases/delete_assessment.dart';
@@ -48,7 +49,12 @@ class MockUpdateQuestion extends Mock implements UpdateQuestion {}
 class MockDeleteQuestion extends Mock implements DeleteQuestion {}
 class MockReorderAllQuestions extends Mock implements ReorderAllQuestions {}
 class MockReorderAllAssessments extends Mock implements ReorderAllAssessments {}
-class MockGradingRepository extends Mock implements GradingRepository {}
+class MockGradingRepository extends Mock implements GradingRepository {
+  @override
+  Future<Either<Failure, GradeItem?>> findGradeItemBySourceId(String sourceId) async {
+    return const Right(null);
+  }
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
