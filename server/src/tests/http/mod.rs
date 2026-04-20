@@ -8,10 +8,14 @@ pub mod auth_handler_test;
 pub mod class_handler_test;
 pub mod grading_handler_test;
 pub mod health_handler_test;
+pub mod learning_material_handler_test;
 pub mod middleware;
+pub mod setup_handler_test;
+pub mod sync_conflict_handler_test;
 pub mod sync_delta_handler_test;
 pub mod sync_full_handler_test;
 pub mod sync_push_handler_test;
+pub mod tasks_handler_test;
 pub mod tos_handler_test;
 
 // ── Shared request/response helpers used by all handler test modules ──────────
