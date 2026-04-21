@@ -225,10 +225,10 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
     return _Stats(total: total, hs: hs, pct: pct, ws: pct * weight / 100);
   }
 
-  // +1 scoreColW for the add-column button cell at the end of each section
+  // +1 sumColW for the HS column
   double _secW(int n) =>
-      (n + 1) * GradeSpreadsheet.scoreColW +
-      GradeSpreadsheet.sumColW +
+      n * GradeSpreadsheet.scoreColW +
+      GradeSpreadsheet.sumColW * 2 +
       GradeSpreadsheet.pctColW * 2;
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -435,10 +435,9 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
             child: _hdrCell('${i + 1}', GradeSpreadsheet.scoreColW,
                 GradeSpreadsheet.hdrH2),
           ),
-        // Add-column button cell
-        _addColHdrCell(component),
         _hdrCell(
             'Total', GradeSpreadsheet.sumColW, GradeSpreadsheet.hdrH2),
+        _hdrCell('HS', GradeSpreadsheet.sumColW, GradeSpreadsheet.hdrH2),
         _hdrCell('%', GradeSpreadsheet.pctColW, GradeSpreadsheet.hdrH2),
         _hdrCell('WS', GradeSpreadsheet.pctColW, GradeSpreadsheet.hdrH2),
       ];
@@ -450,8 +449,9 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
         _computedCell(_fmt(item.totalPoints), GradeSpreadsheet.scoreColW,
             AppColors.backgroundTertiary,
             bold: true),
-      // Blank cell under the add-column button
-      _computedCell('', GradeSpreadsheet.scoreColW, AppColors.backgroundTertiary),
+      _computedCell(items.isNotEmpty ? _fmt(hs) : '--',
+          GradeSpreadsheet.sumColW, AppColors.backgroundTertiary,
+          bold: true),
       _computedCell(items.isNotEmpty ? _fmt(hs) : '--',
           GradeSpreadsheet.sumColW, AppColors.backgroundTertiary,
           bold: true),
@@ -577,10 +577,12 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
           );
         }(),
       ],
-      // Blank spacer cell under the add-column header button
-      _computedCell('', GradeSpreadsheet.scoreColW, bgColor),
       _computedCell(
           stats.total != null ? _fmt(stats.total!) : '--',
+          GradeSpreadsheet.sumColW,
+          bgColor),
+      _computedCell(
+          items.isNotEmpty ? _fmt(stats.hs) : '--',
           GradeSpreadsheet.sumColW,
           bgColor),
       _computedCell(
@@ -617,32 +619,7 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
     );
   }
 
-  Widget _addColHdrCell(String component) {
-    return Tooltip(
-      message: 'Add column',
-      child: InkWell(
-        onTap: () => widget.onAddColumn(component),
-        child: Container(
-          width: GradeSpreadsheet.scoreColW,
-          height: GradeSpreadsheet.hdrH2,
-          decoration: const BoxDecoration(
-            color: AppColors.backgroundTertiary,
-            border: Border(
-              right: BorderSide(color: AppColors.borderLight, width: 0.5),
-              bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
-            ),
-          ),
-          alignment: Alignment.center,
-          child: const Icon(
-            Icons.add_rounded,
-            size: 16,
-            color: AppColors.foregroundSecondary,
-          ),
-        ),
-      ),
-    );
-  }
-
+  
   Widget _hdrCell(
     String text,
     double width,

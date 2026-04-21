@@ -453,34 +453,56 @@ class SyncUpsertHelpers {
     List<dynamic> records,
     Map<String, dynamic> studentMap,
   ) async {
+    int successCount = 0;
+    int failedCount = 0;
+    int skippedCount = 0;
+
+    _log.log('Upserting ${records.length} assessment submissions...');
+
     for (final record in records) {
-      final data = record as Map<String, dynamic>;
-      final userId = (data['student_id'] ?? data['user_id'])?.toString();
+      try {
+        final data = record as Map<String, dynamic>;
+        final userId = (data['student_id'] ?? data['user_id'])?.toString();
+        final submissionId = data['id']?.toString();
 
-      // Skip if user_id is missing (required field)
-      if (userId == null || userId.isEmpty) {
-        _log.warn('Assessment submission ${data['id']} has missing user_id, skipping');
-        continue;
+        // Skip if user_id is missing (required field)
+        if (userId == null || userId.isEmpty) {
+          _log.warn('Assessment submission $submissionId has missing user_id, skipping');
+          skippedCount++;
+          continue;
+        }
+
+        await db.insert(
+          DbTables.assessmentSubmissions,
+          {
+            CommonCols.id: data['id'],
+            AssessmentSubmissionsCols.assessmentId: data['assessment_id'],
+            AssessmentSubmissionsCols.userId: userId,
+            AssessmentSubmissionsCols.startedAt: data['started_at'] ?? DateTime.now().toIso8601String(),
+            AssessmentSubmissionsCols.submittedAt: data['submitted_at'],
+            AssessmentSubmissionsCols.totalPoints: data['total_points'] ?? 0,
+            AssessmentSubmissionsCols.earnedPoints: ((data['earned_points'] ?? data['auto_score'] ?? data['final_score'] ?? data['total_points']) as num?)?.toDouble() ?? 0.0,
+            CommonCols.createdAt: data['created_at'] ?? DateTime.now().toIso8601String(),
+            CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
+            CommonCols.deletedAt: data['deleted_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.needsSync: 0,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert assessment submission', e);
       }
+    }
 
-      await db.insert(
-        DbTables.assessmentSubmissions,
-        {
-          CommonCols.id: data['id'],
-          AssessmentSubmissionsCols.assessmentId: data['assessment_id'],
-          AssessmentSubmissionsCols.userId: userId,
-          AssessmentSubmissionsCols.startedAt: data['started_at'] ?? DateTime.now().toIso8601String(),
-          AssessmentSubmissionsCols.submittedAt: data['submitted_at'],
-          AssessmentSubmissionsCols.totalPoints: data['total_points'] ?? 0,
-          AssessmentSubmissionsCols.earnedPoints: ((data['earned_points'] ?? data['auto_score'] ?? data['final_score'] ?? data['total_points']) as num?)?.toDouble() ?? 0.0,
-          CommonCols.createdAt: data['created_at'] ?? DateTime.now().toIso8601String(),
-          CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
-          CommonCols.deletedAt: data['deleted_at'],
-          CommonCols.cachedAt: DateTime.now().toIso8601String(),
-          CommonCols.needsSync: 0,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+    _log.upsertSummary('assessment_submissions', successCount);
+    if (skippedCount > 0) {
+      _log.warn('Skipped $skippedCount submissions (missing user_id)');
+    }
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert $failedCount assessment submissions');
     }
   }
 
@@ -502,7 +524,7 @@ class SyncUpsertHelpers {
           AssignmentSubmissionsCols.status: data['status'] ?? 'pending',
           AssignmentSubmissionsCols.textContent: data['text_content'],
           AssignmentSubmissionsCols.submittedAt: data['submitted_at'],
-          AssignmentSubmissionsCols.points: data['score'],
+          AssignmentSubmissionsCols.points: data['points'] ?? data['score'],
           AssignmentSubmissionsCols.feedback: data['feedback'],
           AssignmentSubmissionsCols.gradedAt: data['graded_at'],
           AssignmentSubmissionsCols.gradedBy: data['graded_by'],

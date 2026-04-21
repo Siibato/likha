@@ -17,35 +17,68 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
     required String assessmentId,
   }) async {
     try {
-      // Network-first: always try server for fresh data
+      // Offline-first: always try cache first for immediate display
+      List<SubmissionSummary>? cachedSubmissions;
       try {
-        final result =
-            await remoteDataSource.getSubmissions(assessmentId: assessmentId);
-        try {
-          await localDataSource.cacheSubmissions(assessmentId, result);
-        } catch (_) {
-          // Non-fatal: caching failed (e.g. FK constraint if students not yet synced)
-          // Remote data is still valid — return it
-        }
-        unawaited(validationService.validateAndSync('assessments'));
-        return Right(result);
-      } on NetworkException {
-        // Offline — fall back to cache
-        try {
-          final cached =
-              await localDataSource.getCachedSubmissions(assessmentId);
-          if (cached.isNotEmpty) {
-            return Right(cached);
-          }
-        } on CacheException {
-          // No cache available
-        }
-        return const Left(NetworkFailure('No network connection and no cached submissions'));
-      } on ServerException catch (e) {
-        return Left(ServerFailure(e.message, statusCode: e.statusCode));
+        cachedSubmissions = await localDataSource.getCachedSubmissions(assessmentId);
+        RepoLogger.instance.log('getSubmissions: Loaded ${cachedSubmissions.length} cached submissions for assessment $assessmentId');
+      } on CacheException catch (e) {
+        RepoLogger.instance.log('getSubmissions: No cached submissions available: $e');
+        // No cache available, continue to network
       }
+
+      // If we have cached data, return it immediately
+      // Then trigger background refresh if online
+      if (cachedSubmissions != null && cachedSubmissions.isNotEmpty) {
+        // Trigger background refresh if server is reachable
+        if (serverReachabilityService.isServerReachable) {
+          unawaited(_refreshSubmissionsFromNetwork(assessmentId));
+        }
+        return Right(cachedSubmissions);
+      }
+
+      // No cached data - must fetch from network
+      if (!serverReachabilityService.isServerReachable) {
+        return const Left(NetworkFailure('No network connection and no cached submissions'));
+      }
+
+      // Fetch from network and cache
+      return await _fetchAndCacheSubmissions(assessmentId);
     } catch (e) {
       return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  /// Background refresh from network - called after returning cached data
+  Future<void> _refreshSubmissionsFromNetwork(String assessmentId) async {
+    try {
+      final result = await remoteDataSource.getSubmissions(assessmentId: assessmentId);
+      await localDataSource.cacheSubmissions(assessmentId, result);
+      RepoLogger.instance.log('getSubmissions: Background refresh cached ${result.length} submissions');
+      unawaited(validationService.validateAndSync('assessments'));
+    } catch (e) {
+      // Background refresh failures are non-fatal
+      RepoLogger.instance.log('getSubmissions: Background refresh failed: $e');
+    }
+  }
+
+  /// Fetch from network and cache - used when no cache available
+  Future<Either<Failure, List<SubmissionSummary>>> _fetchAndCacheSubmissions(String assessmentId) async {
+    try {
+      final result = await remoteDataSource.getSubmissions(assessmentId: assessmentId);
+      try {
+        await localDataSource.cacheSubmissions(assessmentId, result);
+        RepoLogger.instance.log('getSubmissions: Fetched and cached ${result.length} submissions from network');
+      } catch (e) {
+        // Non-fatal: caching failed (e.g. FK constraint if students not yet synced)
+        RepoLogger.instance.log('getSubmissions: Caching failed (non-fatal): $e');
+      }
+      unawaited(validationService.validateAndSync('assessments'));
+      return Right(result);
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     }
   }
 

@@ -37,6 +37,24 @@ DeltaPayload _$DeltaPayloadFromJson(Map<String, dynamic> json) => DeltaPayload(
   learningMaterials: EntityDeltas.fromJson(
     json['learning_materials'] as Map<String, dynamic>,
   ),
+  gradeConfigs: EntityDeltas.fromJson(
+    json['grade_configs'] as Map<String, dynamic>,
+  ),
+  gradeItems: EntityDeltas.fromJson(
+    json['grade_items'] as Map<String, dynamic>,
+  ),
+  gradeScores: EntityDeltas.fromJson(
+    json['grade_scores'] as Map<String, dynamic>,
+  ),
+  periodGrades: EntityDeltas.fromJson(
+    json['period_grades'] as Map<String, dynamic>,
+  ),
+  tableOfSpecifications: EntityDeltas.fromJson(
+    json['table_of_specifications'] as Map<String, dynamic>,
+  ),
+  tosCompetencies: EntityDeltas.fromJson(
+    json['tos_competencies'] as Map<String, dynamic>,
+  ),
 );
 
 Map<String, dynamic> _$DeltaPayloadToJson(DeltaPayload instance) =>
@@ -49,6 +67,12 @@ Map<String, dynamic> _$DeltaPayloadToJson(DeltaPayload instance) =>
       'assignments': instance.assignments,
       'assignment_submissions': instance.assignmentSubmissions,
       'learning_materials': instance.learningMaterials,
+      'grade_configs': instance.gradeConfigs,
+      'grade_items': instance.gradeItems,
+      'grade_scores': instance.gradeScores,
+      'period_grades': instance.periodGrades,
+      'table_of_specifications': instance.tableOfSpecifications,
+      'tos_competencies': instance.tosCompetencies,
     };
 
 DeltaSyncResponseModel _$DeltaSyncResponseModelFromJson(

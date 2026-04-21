@@ -483,6 +483,27 @@ impl super::SyncFullService {
         tracing::debug!("Fetched grading data: configs={}, items={}, scores={}, quarterly={}",
             grade_configs.len(), grade_items_data.len(), grade_scores_data.len(), quarterly_grades_data.len());
 
+        // Fetch TOS data for batch classes
+        let table_of_specifications = self.manifest_repo
+            .get_table_of_specifications_for_classes(batch_class_ids.clone())
+            .await?;
+
+        let tos_ids: Vec<Uuid> = table_of_specifications
+            .iter()
+            .filter_map(|tos| tos.get("id").and_then(|id| id.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+            .collect();
+
+        let tos_competencies = if tos_ids.is_empty() {
+            Vec::new()
+        } else {
+            self.manifest_repo
+                .get_tos_competencies_for_tos_ids(tos_ids)
+                .await?
+        };
+
+        tracing::debug!("Fetched TOS data: table_of_specifications={}, tos_competencies={}",
+            table_of_specifications.len(), tos_competencies.len());
+
         let now = Utc::now();
         let sync_token = now.to_rfc3339();
         let server_time = now.to_rfc3339();
@@ -527,8 +548,8 @@ impl super::SyncFullService {
             grade_items: grade_items_data,
             grade_scores: grade_scores_data,
             period_grades: quarterly_grades_data,
-            table_of_specifications: vec![], // TOS data fetched when available
-            tos_competencies: vec![],
+            table_of_specifications,
+            tos_competencies,
         })
     }
 

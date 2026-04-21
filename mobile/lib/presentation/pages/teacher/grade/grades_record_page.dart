@@ -14,6 +14,7 @@ import 'package:likha/presentation/pages/teacher/class/class_grading_setup_page.
 import 'package:likha/presentation/pages/teacher/grade/grade_summary_page.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
+import 'package:likha/services/grade_export_service.dart';
 
 class ClassRecordPage extends ConsumerStatefulWidget {
   final String classId;
@@ -251,6 +252,178 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
       selectedQuarter: _selectedQuarter,
       ref: ref,
     );
+    
+    // Reload items and scores after dialog closes
+    Future.delayed(Duration.zero, () {
+      ref.read(gradeItemsProvider.notifier).loadItems(widget.classId).then((_) {
+        final itemsState = ref.read(gradeItemsProvider);
+        if (itemsState.items.isNotEmpty) {
+          final itemIds = itemsState.items.map((i) => i.id).toList();
+          ref.read(gradeScoresProvider.notifier).loadScoresForItems(itemIds);
+        }
+      });
+    });
+  }
+
+  void _showExportDialog(BuildContext context, {required bool isDownload}) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(isDownload ? 'Export Grades' : 'Print Grades'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Choose export format:'),
+              const SizedBox(height: 16),
+              ListTile(
+                title: const Text('PDF'),
+                subtitle: const Text('DepEd-style class record'),
+                leading: const Icon(Icons.picture_as_pdf),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  if (isDownload) {
+                    _exportToPdf();
+                  } else {
+                    _printGrades();
+                  }
+                },
+              ),
+              ListTile(
+                title: const Text('Excel'),
+                subtitle: const Text('Editable spreadsheet'),
+                leading: const Icon(Icons.table_chart),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  if (isDownload) {
+                    _exportToExcel();
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Excel export only available for download')),
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _exportToPdf() async {
+    try {
+      final configState = ref.read(gradingConfigProvider);
+      final itemsState = ref.read(gradeItemsProvider);
+      final scoresState = ref.read(gradeScoresProvider);
+      final gradesState = ref.read(quarterlyGradesProvider);
+      final classState = ref.read(classProvider);
+      
+      final students = classState.currentClassDetail?.students ?? [];
+      final config = configState.configs.isNotEmpty ? configState.configs.first : null;
+      
+      await ref.read(gradeExportServiceProvider).exportToPdf(
+        classId: widget.classId,
+        className: classState.currentClassDetail?.title ?? 'Unknown Class',
+        quarter: _selectedQuarter,
+        students: students,
+        gradeItems: itemsState.items,
+        scoresByItem: scoresState.scoresByItem,
+        config: config,
+        summary: gradesState.summary,
+      );
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('PDF exported successfully!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to export PDF: $e')),
+        );
+      }
+    }
+  }
+
+  void _exportToExcel() async {
+    try {
+      final configState = ref.read(gradingConfigProvider);
+      final itemsState = ref.read(gradeItemsProvider);
+      final scoresState = ref.read(gradeScoresProvider);
+      final gradesState = ref.read(quarterlyGradesProvider);
+      final classState = ref.read(classProvider);
+      
+      final students = classState.currentClassDetail?.students ?? [];
+      final config = configState.configs.isNotEmpty ? configState.configs.first : null;
+      
+      await ref.read(gradeExportServiceProvider).exportToExcel(
+        classId: widget.classId,
+        className: classState.currentClassDetail?.title ?? 'Unknown Class',
+        quarter: _selectedQuarter,
+        students: students,
+        gradeItems: itemsState.items,
+        scoresByItem: scoresState.scoresByItem,
+        config: config,
+        summary: gradesState.summary,
+      );
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Excel exported successfully!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to export Excel: $e')),
+        );
+      }
+    }
+  }
+
+  void _printGrades() async {
+    try {
+      final configState = ref.read(gradingConfigProvider);
+      final itemsState = ref.read(gradeItemsProvider);
+      final scoresState = ref.read(gradeScoresProvider);
+      final gradesState = ref.read(quarterlyGradesProvider);
+      final classState = ref.read(classProvider);
+      
+      final students = classState.currentClassDetail?.students ?? [];
+      final config = configState.configs.isNotEmpty ? configState.configs.first : null;
+      
+      await ref.read(gradeExportServiceProvider).printGrades(
+        classId: widget.classId,
+        className: classState.currentClassDetail?.title ?? 'Unknown Class',
+        quarter: _selectedQuarter,
+        students: students,
+        gradeItems: itemsState.items,
+        scoresByItem: scoresState.scoresByItem,
+        config: config,
+        summary: gradesState.summary,
+      );
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Print dialog opened!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to print: $e')),
+        );
+      }
+    }
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────
@@ -412,6 +585,8 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
                   ),
                 ),
               ),
+              onDownload: () => _showExportDialog(context, isDownload: true),
+              onPrint: () => _showExportDialog(context, isDownload: false),
             ),
 
             // Content
@@ -475,8 +650,56 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
     );
   }
 
-  // ── DepEd single-sheet layout ─────────────────────────────────────────────
+  void _showQuickTooltip(BuildContext context, String title) {
+    // Get the render box and position of the tapped widget
+    final renderBox = context.findRenderObject() as RenderBox;
+    final offset = renderBox.localToGlobal(Offset.zero);
+    final size = renderBox.size;
+    
+    // Create overlay
+    final overlay = Overlay.of(context);
+    
+    final entry = OverlayEntry(
+      builder: (context) => Positioned(
+        left: offset.dx + (size.width / 2) - 50, // Center horizontally above the widget
+        top: offset.dy - 30, // Position above the widget
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.black87,
+              borderRadius: BorderRadius.circular(6),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    
+    overlay.insert(entry);
+    
+    // Auto-hide after 2 seconds
+    Future.delayed(const Duration(seconds: 2), () {
+      entry.remove();
+    });
+  }
 
+  // +1 scoreColW for the add-column button cell at the end of each section
   double _secW(int n) => n * _scoreColW + _sumColW * 2 + _pctColW * 2;
 
   Widget _buildSheet({
@@ -517,6 +740,25 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
                 _hdrCell("Learner's Name", _nameColW, _hdrH2,
                     align: Alignment.centerLeft,
                     padding: const EdgeInsets.symmetric(horizontal: 10)),
+                const Divider(height: 1, color: Color(0xFFDDDDDD)),
+                // HPS row
+                Container(
+                  height: _rowH,
+                  width: _nameColW,
+                  color: const Color(0xFFF0F4F8),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  alignment: Alignment.centerLeft,
+                  child: const Text(
+                    'HIGHEST POSSIBLE SCORE',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF666666),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
                 const Divider(height: 1, color: Color(0xFFDDDDDD)),
                 // Student rows
                 for (int i = 0; i < students.length; i++) ...[
@@ -591,6 +833,22 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
                     ),
                     const Divider(height: 1, color: Color(0xFFDDDDDD)),
 
+                    // HPS row
+                    SizedBox(
+                      height: _rowH,
+                      child: Row(
+                        children: [
+                          ..._buildHpsSectionCells(wwItems, wwW),
+                          ..._buildHpsSectionCells(ptItems, ptW),
+                          ..._buildHpsSectionCells(qaItems, qaW),
+                          _computedCell('--', _initGradeW, const Color(0xFFF0F4F8)),
+                          _computedCell('--', _qgColW, const Color(0xFFF0F4F8)),
+                          _computedCell('--', _remarksW, const Color(0xFFF0F4F8)),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1, color: Color(0xFFDDDDDD)),
+
                     // Data rows
                     for (int i = 0; i < students.length; i++) ...[
                       _buildDataRow(
@@ -621,12 +879,40 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
 
   List<Widget> _sectionHdrs(List<GradeItem> items, String prefix) => [
         for (int i = 0; i < items.length; i++)
-          _hdrCell('$prefix${i + 1}', _scoreColW, _hdrH2),
+          Builder(
+            builder: (context) => GestureDetector(
+              onTap: () => _showQuickTooltip(context, items[i].title),
+              child: _hdrCell('$prefix${i + 1}', _scoreColW, _hdrH2),
+            ),
+          ),
         _hdrCell('Total', _sumColW, _hdrH2),
         _hdrCell('HS', _sumColW, _hdrH2),
         _hdrCell('%', _pctColW, _hdrH2),
         _hdrCell('WS', _pctColW, _hdrH2),
       ];
+
+  List<Widget> _buildHpsSectionCells(List<GradeItem> items, double weight) {
+    final hs = items.fold<double>(0.0, (sum, item) => sum + item.totalPoints);
+    return [
+      for (final item in items)
+        _computedCell(_fmt(item.totalPoints), _scoreColW,
+            const Color(0xFFF0F4F8),
+            bold: true),
+      _computedCell(items.isNotEmpty ? _fmt(hs) : '--',
+          _sumColW, const Color(0xFFF0F4F8),
+          bold: true),
+      _computedCell(items.isNotEmpty ? _fmt(hs) : '--',
+          _sumColW, const Color(0xFFF0F4F8),
+          bold: true),
+      _computedCell(items.isNotEmpty ? '100%' : '--',
+          _pctColW, const Color(0xFFF0F4F8)),
+      _computedCell(
+          items.isNotEmpty ? '${weight.toStringAsFixed(0)}%' : '--',
+          _pctColW,
+          const Color(0xFFF0F4F8),
+          bold: true),
+    ];
+  }
 
   Widget _buildDataRow({
     required int index,

@@ -4,7 +4,7 @@ use uuid::Uuid;
 use crate::utils::{AppError, AppResult};
 use crate::services::sync_common::enrich_questions;
 
-use super::sync_delta_service::{DeltaRequest, DeltaResponse, DeltaPayload, EntityDeltas};
+use super::sync_delta_service::{DeltaRequest, DeltaResponse, DeltaPayload};
 use super::separate_deltas::separate_deltas;
 
 impl super::SyncDeltaService {
@@ -174,6 +174,13 @@ impl super::SyncDeltaService {
                 .await?,
         };
 
+        let tos_raw = self.manifest_repo
+            .get_table_of_specifications_since(manifest.classes.iter().map(|e| e.id).collect(), last_sync_at)
+            .await?;
+        let tos_competencies_raw = self.manifest_repo
+            .get_tos_competencies_since(manifest.classes.iter().map(|e| e.id).collect(), last_sync_at)
+            .await?;
+
         // Step 6: Separate updated vs deleted for each entity type
         let classes_deltas = separate_deltas(classes);
         let enrollments_deltas = separate_deltas(enrollments);
@@ -187,6 +194,8 @@ impl super::SyncDeltaService {
         let grade_items_deltas = separate_deltas(grade_items_raw);
         let grade_scores_deltas = separate_deltas(grade_scores_raw);
         let quarterly_grades_deltas = separate_deltas(quarterly_grades_raw);
+        let tos_deltas = separate_deltas(tos_raw);
+        let tos_competencies_deltas = separate_deltas(tos_competencies_raw);
 
         let now = Utc::now();
         let sync_token = now.to_rfc3339();
@@ -217,8 +226,8 @@ impl super::SyncDeltaService {
                 grade_items: grade_items_deltas,
                 grade_scores: grade_scores_deltas,
                 period_grades: quarterly_grades_deltas,
-                table_of_specifications: EntityDeltas { updated: vec![], deleted: vec![] },
-                tos_competencies: EntityDeltas { updated: vec![], deleted: vec![] },
+                table_of_specifications: tos_deltas,
+                tos_competencies: tos_competencies_deltas,
             },
         })
     }

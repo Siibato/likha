@@ -86,9 +86,13 @@ impl super::EntitlementService {
 
         let assessment_submissions = if assessment_ids.is_empty() {
             Vec::new()
-        } else {
+        } else if user_role == "student" {
             self.manifest_repo
                 .get_assessment_submissions_manifest(user_id, assessment_ids)
+                .await?
+        } else {
+            self.manifest_repo
+                .get_all_assessment_submissions_manifest(assessment_ids)
                 .await?
         };
 

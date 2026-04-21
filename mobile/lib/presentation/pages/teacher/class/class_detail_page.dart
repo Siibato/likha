@@ -5,7 +5,7 @@ import 'package:likha/presentation/pages/teacher/class/class_student_list_page.d
 import 'package:likha/presentation/pages/teacher/assessment/assessment_list_page.dart';
 import 'package:likha/presentation/pages/teacher/assignment/assignment_list_page.dart';
 import 'package:likha/presentation/pages/teacher/material/material_list_page.dart';
-import 'package:likha/presentation/pages/teacher/class/class_record_page.dart';
+import 'package:likha/presentation/pages/teacher/grade/grades_record_page.dart';
 import 'package:likha/presentation/pages/teacher/grade/sf9_student_list_page.dart';
 import 'package:likha/presentation/pages/teacher/tos/tos_list_page.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';

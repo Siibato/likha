@@ -6,6 +6,8 @@ class QuarterSelector extends StatelessWidget {
   final VoidCallback? onComputeGrades;
   final VoidCallback? onFinalGrades;
   final VoidCallback? onGradingSettings;
+  final VoidCallback? onDownload;
+  final VoidCallback? onPrint;
 
   const QuarterSelector({
     super.key,
@@ -14,6 +16,8 @@ class QuarterSelector extends StatelessWidget {
     this.onComputeGrades,
     this.onFinalGrades,
     this.onGradingSettings,
+    this.onDownload,
+    this.onPrint,
   });
 
   @override
@@ -77,6 +81,20 @@ class QuarterSelector extends StatelessWidget {
               color: const Color(0xFF666666),
               tooltip: 'Grading Settings',
               onPressed: onGradingSettings,
+            ),
+          if (onDownload != null)
+            IconButton(
+              icon: const Icon(Icons.download_outlined, size: 20),
+              color: const Color(0xFF666666),
+              tooltip: 'Download Grades',
+              onPressed: onDownload,
+            ),
+          if (onPrint != null)
+            IconButton(
+              icon: const Icon(Icons.print_outlined, size: 20),
+              color: const Color(0xFF666666),
+              tooltip: 'Print Grades',
+              onPressed: onPrint,
             ),
         ],
       ),

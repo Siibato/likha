@@ -9,6 +9,7 @@ use ::entity::{
     assignments, assignment_submissions, learning_materials, activity_logs, users,
     material_files, submission_files,
     grade_record, grade_items, grade_scores, period_grades,
+    table_of_specifications, tos_competencies,
 };
 
 /// Record entry in the manifest (id + updated_at + deleted flag)
@@ -94,6 +95,27 @@ impl ManifestRepository {
                 id: r.id,
                 updated_at: r.updated_at,
                 deleted: false, // Classes don't have soft delete column yet
+            })
+            .collect())
+    }
+
+    /// Get manifest entries for all assessment submissions under given assessments (teacher/admin)
+    pub async fn get_all_assessment_submissions_manifest(
+        &self,
+        assessment_ids: Vec<Uuid>,
+    ) -> AppResult<Vec<ManifestEntry>> {
+        let records = assessment_submissions::Entity::find()
+            .filter(assessment_submissions::Column::AssessmentId.is_in(assessment_ids))
+            .all(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+        Ok(records
+            .into_iter()
+            .map(|r| ManifestEntry {
+                id: r.id,
+                updated_at: r.updated_at,
+                deleted: false,
             })
             .collect())
     }
@@ -813,12 +835,11 @@ impl ManifestRepository {
     /// Get assessment submissions that have been updated since a given time
     pub async fn get_assessment_submissions_since(
         &self,
-        user_id: Uuid,
+        _user_id: Uuid,
         submission_ids: Vec<Uuid>,
         since: NaiveDateTime,
     ) -> AppResult<Vec<Value>> {
         let records = assessment_submissions::Entity::find()
-            .filter(assessment_submissions::Column::UserId.eq(user_id))
             .filter(assessment_submissions::Column::Id.is_in(submission_ids))
             .filter(assessment_submissions::Column::UpdatedAt.gt(since))
             .all(&self.db)
@@ -869,8 +890,13 @@ impl ManifestRepository {
                     "assignment_id": r.assignment_id.to_string(),
                     "student_id": r.student_id.to_string(),
                     "status": r.status,
+                    "text_content": r.text_content,
                     "submitted_at": r.submitted_at.map(|d| d.to_string()),
                     "points": r.points,
+                    "feedback": r.feedback,
+                    "graded_at": r.graded_at.map(|d| d.to_string()),
+                    "graded_by": r.graded_by.map(|id| id.to_string()),
+                    "created_at": r.created_at.to_string(),
                     "updated_at": r.updated_at.to_string(),
                     "deleted_at": r.deleted_at.map(|d| d.to_string()),
                 })
@@ -937,6 +963,7 @@ impl ManifestRepository {
                 "points": r.points,
                 "feedback": r.feedback,
                 "graded_at": r.graded_at.map(|d| d.to_string()),
+                "graded_by": r.graded_by.map(|id| id.to_string()),
                 "created_at": r.created_at.to_string(),
                 "updated_at": r.updated_at.to_string(),
                 "deleted_at": r.deleted_at.map(|d| d.to_string()),
@@ -1115,6 +1142,53 @@ impl ManifestRepository {
         })
     }
 
+    fn tos_to_json(r: table_of_specifications::Model) -> Value {
+        json!({
+            "id": r.id.to_string(),
+            "class_id": r.class_id.to_string(),
+            "grading_period_number": r.grading_period_number,
+            "title": r.title,
+            "classification_mode": r.classification_mode,
+            "total_items": r.total_items,
+            "time_unit": r.time_unit,
+            "easy_percentage": r.easy_percentage,
+            "medium_percentage": r.medium_percentage,
+            "hard_percentage": r.hard_percentage,
+            "remembering_percentage": r.remembering_percentage,
+            "understanding_percentage": r.understanding_percentage,
+            "applying_percentage": r.applying_percentage,
+            "analyzing_percentage": r.analyzing_percentage,
+            "evaluating_percentage": r.evaluating_percentage,
+            "creating_percentage": r.creating_percentage,
+            "created_at": r.created_at.to_string(),
+            "updated_at": r.updated_at.to_string(),
+            "deleted_at": r.deleted_at.map(|d| d.to_string()),
+        })
+    }
+
+    fn tos_competency_to_json(r: tos_competencies::Model) -> Value {
+        json!({
+            "id": r.id.to_string(),
+            "tos_id": r.tos_id.to_string(),
+            "competency_code": r.competency_code,
+            "competency_text": r.competency_text,
+            "time_units_taught": r.time_units_taught,
+            "order_index": r.order_index,
+            "easy_count": r.easy_count,
+            "medium_count": r.medium_count,
+            "hard_count": r.hard_count,
+            "remembering_count": r.remembering_count,
+            "understanding_count": r.understanding_count,
+            "applying_count": r.applying_count,
+            "analyzing_count": r.analyzing_count,
+            "evaluating_count": r.evaluating_count,
+            "creating_count": r.creating_count,
+            "created_at": r.created_at.to_string(),
+            "updated_at": r.updated_at.to_string(),
+            "deleted_at": r.deleted_at.map(|d| d.to_string()),
+        })
+    }
+
     fn grade_item_to_json(r: grade_items::Model) -> Value {
         json!({
             "id": r.id.to_string(),
@@ -1210,6 +1284,24 @@ impl ManifestRepository {
         Ok(records.into_iter().map(Self::quarterly_grade_to_json).collect())
     }
 
+    pub async fn get_table_of_specifications_for_classes(&self, class_ids: Vec<Uuid>) -> AppResult<Vec<Value>> {
+        if class_ids.is_empty() { return Ok(vec![]); }
+        let records = table_of_specifications::Entity::find()
+            .filter(table_of_specifications::Column::ClassId.is_in(class_ids))
+            .all(&self.db).await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+        Ok(records.into_iter().map(Self::tos_to_json).collect())
+    }
+
+    pub async fn get_tos_competencies_for_tos_ids(&self, tos_ids: Vec<Uuid>) -> AppResult<Vec<Value>> {
+        if tos_ids.is_empty() { return Ok(vec![]); }
+        let records = tos_competencies::Entity::find()
+            .filter(tos_competencies::Column::TosId.is_in(tos_ids))
+            .all(&self.db).await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+        Ok(records.into_iter().map(Self::tos_competency_to_json).collect())
+    }
+
     pub async fn get_student_quarterly_grades(&self, student_id: Uuid, class_ids: Vec<Uuid>) -> AppResult<Vec<Value>> {
         if class_ids.is_empty() { return Ok(vec![]); }
         let records = period_grades::Entity::find()
@@ -1282,6 +1374,37 @@ impl ManifestRepository {
             .all(&self.db).await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
         Ok(records.into_iter().map(Self::quarterly_grade_to_json).collect())
+    }
+
+    pub async fn get_table_of_specifications_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> AppResult<Vec<Value>> {
+        if class_ids.is_empty() { return Ok(vec![]); }
+        let records = table_of_specifications::Entity::find()
+            .filter(table_of_specifications::Column::ClassId.is_in(class_ids))
+            .filter(table_of_specifications::Column::UpdatedAt.gt(since))
+            .all(&self.db).await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+        Ok(records.into_iter().map(Self::tos_to_json).collect())
+    }
+
+    pub async fn get_tos_competencies_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> AppResult<Vec<Value>> {
+        if class_ids.is_empty() { return Ok(vec![]); }
+
+        let tos_ids = table_of_specifications::Entity::find()
+            .filter(table_of_specifications::Column::ClassId.is_in(class_ids))
+            .all(&self.db).await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
+            .into_iter()
+            .map(|r| r.id)
+            .collect::<Vec<Uuid>>();
+
+        if tos_ids.is_empty() { return Ok(vec![]); }
+
+        let records = tos_competencies::Entity::find()
+            .filter(tos_competencies::Column::TosId.is_in(tos_ids))
+            .filter(tos_competencies::Column::UpdatedAt.gt(since))
+            .all(&self.db).await
+            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+        Ok(records.into_iter().map(Self::tos_competency_to_json).collect())
     }
 
     /// Get all grade_item IDs for given classes (used by delta sync to scope score queries)
