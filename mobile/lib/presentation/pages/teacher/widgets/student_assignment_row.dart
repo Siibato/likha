@@ -3,7 +3,7 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
 import 'package:likha/presentation/pages/teacher/assignment/assignment_detail_page.dart';
-import 'package:likha/presentation/pages/teacher/grade/grade_submission_page.dart';
+import 'package:likha/presentation/pages/teacher/assignment/assignment_submission_grading_page.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/base_card_sm.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/chevron_trailing.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/status_badge.dart';
@@ -27,7 +27,7 @@ class StudentAssignmentRow extends StatelessWidget {
           ? () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => GradeSubmissionPage(
+                  builder: (_) => AssignmentSubmissionGradingPage(
                     submissionId: status!.submissionId,
                     totalPoints: assignment.totalPoints,
                   ),

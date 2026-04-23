@@ -18,22 +18,22 @@ import 'package:likha/presentation/pages/shared/widgets/primitives/card_icon_slo
 import 'package:likha/presentation/pages/shared/widgets/tokens/app_text_styles.dart';
 import 'package:open_file/open_file.dart';
 
-class GradeSubmissionPage extends ConsumerStatefulWidget {
+class AssignmentSubmissionGradingPage extends ConsumerStatefulWidget {
   final String submissionId;
   final int totalPoints;
 
-  const GradeSubmissionPage({
+  const AssignmentSubmissionGradingPage({
     super.key,
     required this.submissionId,
     required this.totalPoints,
   });
 
   @override
-  ConsumerState<GradeSubmissionPage> createState() =>
+  ConsumerState<AssignmentSubmissionGradingPage> createState() =>
       _GradeSubmissionPageState();
 }
 
-class _GradeSubmissionPageState extends ConsumerState<GradeSubmissionPage> {
+class _GradeSubmissionPageState extends ConsumerState<AssignmentSubmissionGradingPage> {
   final _scoreController = TextEditingController();
   final _feedbackController = TextEditingController();
   String? _formError;

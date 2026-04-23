@@ -6,7 +6,7 @@ import 'package:likha/presentation/pages/teacher/widgets/student_assessment_row.
 import 'package:likha/presentation/pages/teacher/widgets/student_assignment_row.dart';
 import 'package:likha/presentation/pages/teacher/assessment/submission_review_page.dart';
 import 'package:likha/presentation/pages/teacher/assessment/assessment_detail_page.dart';
-import 'package:likha/presentation/pages/teacher/grade/grade_submission_page.dart';
+import 'package:likha/presentation/pages/teacher/assignment/assignment_submission_grading_page.dart';
 import 'package:likha/presentation/pages/teacher/assignment/assignment_detail_page.dart';
 import 'package:likha/presentation/providers/teacher_student_detail_provider.dart';
 
@@ -198,7 +198,7 @@ class _TeacherStudentDetailPageState extends ConsumerState<TeacherStudentDetailP
             await Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => GradeSubmissionPage(
+                builder: (_) => AssignmentSubmissionGradingPage(
                   submissionId: a.status!.submissionId,
                   totalPoints: a.assignment.totalPoints,
                 ),

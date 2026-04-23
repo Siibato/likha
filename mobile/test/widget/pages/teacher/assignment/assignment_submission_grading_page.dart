@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:likha/presentation/pages/teacher/grade/grade_submission_page.dart';
+import 'package:likha/presentation/pages/teacher/assignment/assignment_submission_grading_page.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 
 import '../../../helpers/widget_test_helpers.dart';
@@ -14,7 +14,7 @@ Widget _buildPage({AssignmentState? state}) {
       ),
     ],
     child: const MaterialApp(
-      home: GradeSubmissionPage(submissionId: 's1', totalPoints: 100),
+      home: AssignmentSubmissionGradingPage(submissionId: 's1', totalPoints: 100),
     ),
   );
 }
@@ -41,6 +41,6 @@ void main() {
     await tester.pumpWidget(_buildPage());
     await tester.pump();
 
-    expect(find.byType(GradeSubmissionPage), findsOneWidget);
+    expect(find.byType(AssignmentSubmissionGradingPage), findsOneWidget);
   });
 }
