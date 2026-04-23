@@ -52,20 +52,42 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
   /// Background refresh from network - called after returning cached data
   Future<void> _refreshSubmissionsFromNetwork(String assessmentId) async {
     try {
+      RepoLogger.instance.log('_refreshSubmissionsFromNetwork: START for assessmentId=$assessmentId');
       final result = await remoteDataSource.getSubmissions(assessmentId: assessmentId);
+      RepoLogger.instance.log('_refreshSubmissionsFromNetwork: fetched ${result.length} summaries from remote');
       await localDataSource.cacheSubmissions(assessmentId, result);
       RepoLogger.instance.log('getSubmissions: Background refresh cached ${result.length} submissions');
-      unawaited(validationService.validateAndSync('assessments'));
+
+      // Pre-cache submission details (with answers) for offline review
+      RepoLogger.instance.log('_refreshSubmissionsFromNetwork: pre-caching ${result.length} submission details');
+      for (final submission in result) {
+        unawaited(_backgroundFetchAndCacheSubmissionDetail(submission.id));
+      }
+      RepoLogger.instance.log('_refreshSubmissionsFromNetwork: DONE');
     } catch (e) {
       // Background refresh failures are non-fatal
       RepoLogger.instance.log('getSubmissions: Background refresh failed: $e');
     }
   }
 
+  Future<void> _backgroundFetchAndCacheSubmissionDetail(String submissionId) async {
+    try {
+      RepoLogger.instance.log('_backgroundFetchAndCacheSubmissionDetail: START for $submissionId');
+      final detail = await remoteDataSource.getSubmissionDetail(submissionId: submissionId);
+      RepoLogger.instance.log('_backgroundFetchAndCacheSubmissionDetail: fetched detail with ${detail.answers.length} answers');
+      await localDataSource.cacheSubmissionDetail(detail);
+      RepoLogger.instance.log('_backgroundFetchAndCacheSubmissionDetail: cached OK for $submissionId');
+    } catch (e) {
+      RepoLogger.instance.log('getSubmissions: Detail pre-cache failed for $submissionId: $e');
+    }
+  }
+
   /// Fetch from network and cache - used when no cache available
   Future<Either<Failure, List<SubmissionSummary>>> _fetchAndCacheSubmissions(String assessmentId) async {
     try {
+      RepoLogger.instance.log('_fetchAndCacheSubmissions: START for assessmentId=$assessmentId');
       final result = await remoteDataSource.getSubmissions(assessmentId: assessmentId);
+      RepoLogger.instance.log('_fetchAndCacheSubmissions: fetched ${result.length} summaries from remote');
       try {
         await localDataSource.cacheSubmissions(assessmentId, result);
         RepoLogger.instance.log('getSubmissions: Fetched and cached ${result.length} submissions from network');
@@ -73,7 +95,13 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
         // Non-fatal: caching failed (e.g. FK constraint if students not yet synced)
         RepoLogger.instance.log('getSubmissions: Caching failed (non-fatal): $e');
       }
-      unawaited(validationService.validateAndSync('assessments'));
+
+      // Pre-cache submission details (with answers) for offline review
+      RepoLogger.instance.log('_fetchAndCacheSubmissions: pre-caching ${result.length} submission details');
+      for (final submission in result) {
+        unawaited(_backgroundFetchAndCacheSubmissionDetail(submission.id));
+      }
+      RepoLogger.instance.log('_fetchAndCacheSubmissions: DONE');
       return Right(result);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
@@ -87,17 +115,49 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
     required String submissionId,
   }) async {
     try {
-      final cached =
-          await localDataSource.getCachedSubmissionDetail(submissionId);
-      if (cached != null && cached.answers.isNotEmpty) {
-        unawaited(validationService.validateAndSync('assessments'));
-        return Right(cached);
+      RepoLogger.instance.log('getSubmissionDetail: START for $submissionId');
+      final cached = await localDataSource.getCachedSubmissionDetail(submissionId);
+      RepoLogger.instance.log('getSubmissionDetail: cached=${cached != null}, answers=${cached?.answers.length ?? 0}');
+      if (cached != null) {
+        if (cached.answers.isNotEmpty) {
+          // Full cache hit — serve immediately and refresh in background
+          if (serverReachabilityService.isServerReachable) {
+            unawaited(_backgroundRefreshSubmissionDetail(submissionId));
+          }
+          RepoLogger.instance.log('getSubmissionDetail: returning cached with ${cached.answers.length} answers');
+          return Right(cached);
+        }
+        // Submission metadata cached but no answers yet
+        if (!serverReachabilityService.isServerReachable) {
+          RepoLogger.instance.log('getSubmissionDetail: OFFLINE, returning cached metadata without answers');
+          // Offline — return what we have (page shows empty-answers message)
+          return Right(cached);
+        }
+        // Online + no answers — fetch fresh so answers are shown immediately
+        RepoLogger.instance.log('getSubmissionDetail: ONLINE but cached answers empty, fetching remote');
+        try {
+          final result = await remoteDataSource.getSubmissionDetail(submissionId: submissionId);
+          RepoLogger.instance.log('getSubmissionDetail: fetched ${result.answers.length} answers from remote');
+          unawaited(localDataSource.cacheSubmissionDetail(result));
+          return Right(result);
+        } catch (_) {
+          RepoLogger.instance.log('getSubmissionDetail: remote fetch failed, falling back to cached');
+          return Right(cached);
+        }
       }
-    } catch (_) {}
+    } catch (e) {
+      RepoLogger.instance.log('getSubmissionDetail: cache read error: $e');
+    }
+
+    if (!serverReachabilityService.isServerReachable) {
+      RepoLogger.instance.log('getSubmissionDetail: OFFLINE and no cache, returning NetworkFailure');
+      return const Left(NetworkFailure('Submission not available offline'));
+    }
 
     try {
-      final result = await remoteDataSource.getSubmissionDetail(
-          submissionId: submissionId);
+      RepoLogger.instance.log('getSubmissionDetail: fetching from remote (no cache)');
+      final result = await remoteDataSource.getSubmissionDetail(submissionId: submissionId);
+      RepoLogger.instance.log('getSubmissionDetail: fetched ${result.answers.length} answers from remote');
       unawaited(localDataSource.cacheSubmissionDetail(result));
       return Right(result);
     } on ServerException catch (e) {
@@ -107,6 +167,13 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
+  }
+
+  Future<void> _backgroundRefreshSubmissionDetail(String submissionId) async {
+    try {
+      final result = await remoteDataSource.getSubmissionDetail(submissionId: submissionId);
+      await localDataSource.cacheSubmissionDetail(result);
+    } catch (_) {}
   }
 
   @override
@@ -136,10 +203,24 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
       final result = await remoteDataSource.overrideAnswer(
           answerId: answerId, isCorrect: isCorrect, points: points);
       return Right(result);
+    } on NetworkException catch (_) {
+      // Fall back to local when network is unreachable mid-request
+      await localDataSource.overrideAnswerLocally(
+        answerId: answerId,
+        isCorrect: isCorrect,
+        points: points,
+      );
+      return Right(SubmissionAnswer(
+        id: answerId,
+        questionId: '',
+        questionText: '',
+        questionType: '',
+        points: 0,
+        isOverrideCorrect: isCorrect,
+        pointsAwarded: points ?? (isCorrect ? 0 : 0),
+      ));
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -151,15 +232,44 @@ mixin AssessmentSubmissionMixin on AssessmentRepositoryBase {
     required double points,
   }) async {
     try {
+      if (!serverReachabilityService.isServerReachable) {
+        await localDataSource.gradeEssayLocally(
+          answerId: answerId,
+          points: points,
+        );
+        return Right(SubmissionAnswer(
+          id: answerId,
+          questionId: '',
+          questionText: '',
+          questionType: '',
+          points: 0,
+          pointsAwarded: points,
+          isPendingEssayGrade: false,
+        ));
+      }
+
       final result = await remoteDataSource.gradeEssayAnswer(
         answerId: answerId,
         points: points,
       );
       return Right(result);
+    } on NetworkException catch (_) {
+      // Fall back to local when network is unreachable mid-request
+      await localDataSource.gradeEssayLocally(
+        answerId: answerId,
+        points: points,
+      );
+      return Right(SubmissionAnswer(
+        id: answerId,
+        questionId: '',
+        questionText: '',
+        questionType: '',
+        points: 0,
+        pointsAwarded: points,
+        isPendingEssayGrade: false,
+      ));
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

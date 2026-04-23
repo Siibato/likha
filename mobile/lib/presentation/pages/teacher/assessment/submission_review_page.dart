@@ -38,7 +38,9 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
   @override
   void initState() {
     super.initState();
+    debugPrint('SubmissionReviewPage.initState: submissionId=${widget.submissionId}');
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('SubmissionReviewPage.initState: calling loadSubmissionDetail(${widget.submissionId})');
       ref
           .read(teacherAssessmentProvider.notifier)
           .loadSubmissionDetail(widget.submissionId);
@@ -185,9 +187,27 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      ...detail.answers.asMap().entries.map(
-                            (entry) => _buildAnswerCard(entry.value, entry.key),
+                      Builder(
+                        builder: (context) {
+                          debugPrint('SubmissionReviewPage: detail.answers.length=${detail.answers.length} for submissionId=${widget.submissionId}');
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                      if (detail.answers.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24),
+                          child: Center(
+                            child: Text(
+                              'Answers not available offline.\nOpen this submission while online to cache them.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: AppColors.foregroundTertiary),
+                            ),
                           ),
+                        )
+                      else
+                        ...detail.answers.asMap().entries.map(
+                              (entry) => _buildAnswerCard(entry.value, entry.key),
+                            ),
                       const SizedBox(height: 32),
                     ],
                   ),

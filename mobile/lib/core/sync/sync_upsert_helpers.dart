@@ -490,6 +490,12 @@ class SyncUpsertHelpers {
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
+
+        final answers = data['answers'] as List<dynamic>? ?? [];
+        if (answers.isNotEmpty && submissionId != null) {
+          await _upsertSubmissionAnswers(db, submissionId, answers);
+        }
+
         successCount++;
       } catch (e) {
         failedCount++;
@@ -503,6 +509,62 @@ class SyncUpsertHelpers {
     }
     if (failedCount > 0) {
       _log.warn('Failed to upsert $failedCount assessment submissions');
+    }
+  }
+
+  Future<void> _upsertSubmissionAnswers(
+    Database db,
+    String submissionId,
+    List<dynamic> answers,
+  ) async {
+    for (final answer in answers) {
+      try {
+        final answerData = answer as Map<String, dynamic>;
+        final answerId = answerData['id']?.toString();
+        if (answerId == null) continue;
+
+        await db.insert(
+          DbTables.submissionAnswers,
+          {
+            CommonCols.id: answerId,
+            SubmissionAnswersCols.submissionId: submissionId,
+            SubmissionAnswersCols.questionId: answerData['question_id'],
+            SubmissionAnswersCols.points: (answerData['points_earned'] as num?)?.toDouble() ?? 0.0,
+            SubmissionAnswersCols.overriddenBy: answerData['overridden_by'],
+            SubmissionAnswersCols.overriddenAt: answerData['overridden_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.needsSync: 0,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+
+        final items = answerData['items'] as List<dynamic>? ?? [];
+        for (final item in items) {
+          try {
+            final itemData = item as Map<String, dynamic>;
+            final itemId = itemData['id']?.toString();
+            if (itemId == null) continue;
+
+            await db.insert(
+              DbTables.submissionAnswerItems,
+              {
+                CommonCols.id: itemId,
+                SubmissionAnswerItemsCols.submissionAnswerId: answerId,
+                SubmissionAnswerItemsCols.choiceId: itemData['choice_id'],
+                SubmissionAnswerItemsCols.answerText: itemData['answer_text'],
+                SubmissionAnswerItemsCols.isCorrect: (itemData['is_correct'] == true) ? 1 : 0,
+                CommonCols.cachedAt: DateTime.now().toIso8601String(),
+                CommonCols.needsSync: 0,
+              },
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+          } catch (e) {
+            _log.error('Failed to upsert submission answer item for answer $answerId', e);
+          }
+        }
+      } catch (e) {
+        _log.error('Failed to upsert submission answer for submission $submissionId', e);
+      }
     }
   }
 

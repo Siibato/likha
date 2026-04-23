@@ -206,6 +206,7 @@ class _GradeSubmissionPageState extends ConsumerState<AssignmentSubmissionGradin
     ref.listen<AssignmentState>(assignmentProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
+        context.showSuccessSnackBar(next.successMessage!, durationMs: 3000);
         ref.read(assignmentProvider.notifier).clearMessages();
         if (next.successMessage == 'Submission graded' ||
             next.successMessage == 'Submission returned for revision') {

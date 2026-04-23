@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
+import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
@@ -98,6 +99,8 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
   final ReorderAllAssessments _reorderAllAssessments;
 
   String? _currentClassId;
+  String? _currentAssessmentId;
+  String? _currentSubmissionId;
   late StreamSubscription<String?> _refreshSub;
 
   TeacherAssessmentNotifier(
@@ -421,7 +424,17 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
   }
 
   Future<void> loadSubmissions(String assessmentId) async {
-    state = state.copyWith(isLoading: true, error: null);
+    if (_currentAssessmentId != assessmentId) {
+      _currentAssessmentId = assessmentId;
+      state = state.copyWith(
+        isLoading: true,
+        error: null,
+        submissions: [],
+        currentSubmission: null,
+      );
+    } else {
+      state = state.copyWith(isLoading: true, error: null);
+    }
     final result = await _getSubmissions(assessmentId);
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
@@ -430,11 +443,27 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
   }
 
   Future<void> loadSubmissionDetail(String submissionId) async {
-    state = state.copyWith(isLoading: true, error: null);
+    RepoLogger.instance.log('TeacherAssessmentNotifier.loadSubmissionDetail: START $submissionId');
+    if (_currentSubmissionId != submissionId) {
+      _currentSubmissionId = submissionId;
+      state = state.copyWith(
+        isLoading: true,
+        error: null,
+        currentSubmission: null,
+      );
+    } else {
+      state = state.copyWith(isLoading: true, error: null);
+    }
     final result = await _getSubmissionDetail(submissionId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
-      (detail) => state = state.copyWith(isLoading: false, currentSubmission: detail),
+      (failure) {
+        RepoLogger.instance.log('TeacherAssessmentNotifier.loadSubmissionDetail: FAILURE $submissionId - ${failure.message}');
+        state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure));
+      },
+      (detail) {
+        RepoLogger.instance.log('TeacherAssessmentNotifier.loadSubmissionDetail: SUCCESS $submissionId - answers=${detail.answers.length}');
+        state = state.copyWith(isLoading: false, currentSubmission: detail);
+      },
     );
   }
 
@@ -478,6 +507,8 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
   @override
   void dispose() {
     _refreshSub.cancel();
+    _currentAssessmentId = null;
+    _currentSubmissionId = null;
     super.dispose();
   }
 }

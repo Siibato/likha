@@ -44,7 +44,6 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
             assignmentId: assignmentId);
         await localDataSource.cacheSubmissions(
             assignmentId, result.cast<SubmissionListItemModel>());
-        unawaited(validationService.validateAndSync('assignments'));
 
         // Sort by submittedAt ASC (drafts last) for consistent ordering with cache queries
         final sorted = [...result]..sort((a, b) {
@@ -91,7 +90,6 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
             submissionId: submissionId);
         // Await cache write to ensure DB is ready for subsequent reads
         await localDataSource.cacheSubmissionDetail(result);
-        unawaited(validationService.validateAndSync('assignments'));
 
         // Auto-repair: load from cache to restore file.localPath from disk if files exist
         // This ensures files downloaded in previous sessions show as cached on initial load

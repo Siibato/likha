@@ -37,40 +37,21 @@ class ValidationService {
         _materialRemote = materialRemote;
 
   /// Validate and sync a single entity type
+  /// NOTE: Global cache clear is disabled. Data freshness is handled by
+  /// per-entity delta updates in repository background fetch methods.
+  /// clearAllCache() is only called during logout (clearAllUserData).
   Future<void> validateAndSync(String entityType) async {
     try {
       final result = await _validator.validate(entityType);
 
-      // If data is outdated, clear cache so repository will refetch fresh data
+      // Log only — never clear cache during normal data fetching.
+      // Global cache wipe destroys offline-first data integrity.
+      // Freshness is managed by per-entity upsert in background fetch methods.
       if (result.isOutdated) {
-        ValidationLogger.instance.log('Data outdated for $entityType - clearing cache to force refetch');
-        await _clearCacheForEntity(entityType);
+        ValidationLogger.instance.log('Data flagged outdated for $entityType — skipping global clear (handled by delta updates)');
       }
     } catch (e) {
       ValidationLogger.instance.error('Validation error for $entityType', e);
-    }
-  }
-
-  /// Clear cached data for a specific entity type
-  Future<void> _clearCacheForEntity(String entityType) async {
-    try {
-      switch (entityType) {
-        case 'classes':
-          await _classLocal.clearAllCache();
-          break;
-        case 'assessments':
-          await _assessmentLocal.clearAllCache();
-          break;
-        case 'assignments':
-          await _assignmentLocal.clearAllCache();
-          break;
-        case 'learning_materials':
-          await _materialLocal.clearAllCache();
-          break;
-      }
-      ValidationLogger.instance.log('Cleared cache for $entityType');
-    } catch (e) {
-      ValidationLogger.instance.error('Error clearing cache for $entityType', e);
     }
   }
 

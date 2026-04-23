@@ -314,10 +314,14 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
     required String submissionId,
   }) async {
     try {
-      return await _dioClient.getTyped(
+      RepoLogger.instance.log('remote.getSubmissionDetail: fetching $submissionId');
+      final result = await _dioClient.getTyped(
         ApiEndpoints.submissionDetail(submissionId),
       );
+      RepoLogger.instance.log('remote.getSubmissionDetail: fetched $submissionId with ${result.answers.length} answers');
+      return result;
     } on DioException catch (e) {
+      RepoLogger.instance.log('remote.getSubmissionDetail: FAILED for $submissionId: ${e.message}');
       throw _dioClient.handleError(e);
     }
   }
