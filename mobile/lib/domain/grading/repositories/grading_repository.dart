@@ -111,4 +111,10 @@ abstract class GradingRepository {
     required String classId,
     required String studentId,
   });
+
+  // Batch Operations
+  ResultFuture<Map<String, dynamic>> getGradeDataBatch({
+    required String classId,
+    required int gradingPeriodNumber,
+  });
 }

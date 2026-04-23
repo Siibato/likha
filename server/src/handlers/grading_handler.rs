@@ -392,3 +392,76 @@ pub async fn get_sf10(
         Err(e) => e.into_response(),
     }
 }
+
+// ===== BATCH OPERATIONS =====
+
+pub async fn create_grade_items_batch(
+    State(service): State<Arc<GradeComputationService>>,
+    auth_user: AuthUser,
+    Path(class_id): Path<Uuid>,
+    Json(request): Json<Vec<CreateGradeItemRequest>>,
+) -> impl IntoResponse {
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
+    }
+    let mut results = Vec::new();
+    for item_request in request {
+        match service.create_grade_item(class_id, item_request).await {
+            Ok(response) => results.push(response),
+            Err(_) => continue, // Skip failed items but continue processing others
+        }
+    }
+    success_response(results, StatusCode::CREATED).into_response()
+}
+
+pub async fn update_scores_batch(
+    State(service): State<Arc<GradeComputationService>>,
+    auth_user: AuthUser,
+    Json(request): Json<Vec<BulkUpdateScoresRequest>>,
+) -> impl IntoResponse {
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
+    }
+    let mut results = Vec::new();
+    for score_request in request {
+        let item_id = Uuid::parse_str(&score_request.grade_item_id).unwrap_or_default();
+        let scores: Vec<(Uuid, f64)> = score_request
+            .scores
+            .into_iter()
+            .map(|s| (s.student_id, s.score))
+            .collect();
+        match service.save_scores(item_id, scores).await {
+            Ok(response) => results.push(response),
+            Err(_) => continue, // Skip failed items but continue processing others
+        }
+    }
+    success_response(results, StatusCode::OK).into_response()
+}
+
+pub async fn get_all_grade_data(
+    State(service): State<Arc<GradeComputationService>>,
+    auth_user: AuthUser,
+    Path(class_id): Path<Uuid>,
+    Query(query): Query<QuarterQuery>,
+) -> impl IntoResponse {
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
+    }
+    let quarter = query.grading_period_number.unwrap_or(1);
+    
+    // Fetch all grade-related data in parallel
+    let grade_items_result = service.get_grade_items(class_id, quarter).await;
+    let grade_summary_result = service.get_grade_summary(class_id, quarter).await;
+    
+    match (grade_items_result, grade_summary_result) {
+        (Ok(items), Ok(summary)) => {
+            let response = AllGradeDataResponse {
+                grade_items: items,
+                grade_summary: summary,
+                quarter,
+            };
+            success_response(response, StatusCode::OK).into_response()
+        }
+        (Err(e), _) | (_, Err(e)) => e.into_response(),
+    }
+}

@@ -376,6 +376,29 @@ impl GradeComputationRepository {
         let now = Utc::now().naive_utc();
         let id = Uuid::new_v4();
 
+        // Validate foreign key constraints before attempting upsert
+        // Check if grade item exists
+        let grade_item_exists = grade_items::Entity::find_by_id(grade_item_id)
+            .one(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error checking grade item: {}", e)))?
+            .is_some();
+
+        if !grade_item_exists {
+            return Err(AppError::BadRequest(format!("Grade item {} does not exist", grade_item_id)));
+        }
+
+        // Check if student exists (assuming students are in users table with appropriate role)
+        let student_exists = users::Entity::find_by_id(student_id)
+            .one(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error checking student: {}", e)))?
+            .is_some();
+
+        if !student_exists {
+            return Err(AppError::BadRequest(format!("Student {} does not exist", student_id)));
+        }
+
         let sql = r#"
             INSERT INTO grade_scores (id, grade_item_id, student_id, score, is_auto_populated, override_score, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, (SELECT override_score FROM grade_scores WHERE grade_item_id = ? AND student_id = ?), ?, ?)
@@ -420,10 +443,33 @@ impl GradeComputationRepository {
         grade_item_id: Uuid,
         scores: Vec<(Uuid, f64)>,
     ) -> AppResult<()> {
-        for (student_id, score) in scores {
-            self.upsert_score(grade_item_id, student_id, Some(score), false)
-                .await?;
+        // Validate grade item once for the entire batch
+        let grade_item_exists = grade_items::Entity::find_by_id(grade_item_id)
+            .one(&self.db)
+            .await
+            .map_err(|e| AppError::InternalServerError(format!("Database error checking grade item: {}", e)))?
+            .is_some();
+
+        if !grade_item_exists {
+            return Err(AppError::BadRequest(format!("Grade item {} does not exist", grade_item_id)));
         }
+
+        // Process each score individually to avoid one failure affecting others
+        for (student_id, score) in scores {
+            match self.upsert_score(grade_item_id, student_id, Some(score), false).await {
+                Ok(_) => {
+                    // Successfully saved this score
+                }
+                Err(e) => {
+                    // Log the error but continue processing other scores
+                    tracing::warn!(
+                        "Failed to save score for student {} in grade item {}: {}",
+                        student_id, grade_item_id, e
+                    );
+                }
+            }
+        }
+        
         Ok(())
     }
 

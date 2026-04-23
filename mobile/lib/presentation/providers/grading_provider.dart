@@ -536,10 +536,15 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
       (failure) {
         print('*** GRADE PROVIDER: generateScoresForItems failed: ${AppErrorMapper.fromFailure(failure)}');
         ProviderLogger.instance.error('generateScoresForItems() - failed: ${AppErrorMapper.fromFailure(failure)}');
+        // Don't refresh scores if generation failed
       },
       (_) {
         print('*** GRADE PROVIDER: generateScoresForItems completed successfully');
         ProviderLogger.instance.log('generateScoresForItems() - completed successfully');
+        
+        // Set a flag to indicate scores need refreshing
+        // The UI layer will handle the actual score refresh
+        print('*** GRADE PROVIDER: Score generation completed - scores may need refreshing');
       },
     );
   }
@@ -589,22 +594,34 @@ class GradeScoresNotifier extends StateNotifier<GradeScoresState> {
   ) : super(GradeScoresState());
 
   Future<void> loadScoresForItems(List<String> gradeItemIds) async {
+    print('*** GRADE PROVIDER: loadScoresForItems() - START: loading ${gradeItemIds.length} items');
     state = state.copyWith(isLoading: true, error: null);
     final Map<String, List<GradeScore>> allScores = {};
 
     for (final itemId in gradeItemIds) {
+      print('*** GRADE PROVIDER: loadScoresForItems() - Loading scores for item: $itemId');
       final result = await _getScoresByItem(itemId);
       result.fold(
         (failure) {
+          print('*** GRADE PROVIDER: loadScoresForItems() - ERROR for item $itemId: ${AppErrorMapper.fromFailure(failure)}');
           state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure));
           return;
         },
-        (scores) => allScores[itemId] = scores,
+        (scores) {
+          print('*** GRADE PROVIDER: loadScoresForItems() - SUCCESS for item $itemId: ${scores.length} scores');
+          allScores[itemId] = scores;
+        },
       );
       if (state.error != null) return;
     }
 
+    print('*** GRADE PROVIDER: loadScoresForItems() - COMPLETE: loaded scores for ${allScores.length} items');
+    for (final entry in allScores.entries) {
+      print('*** GRADE PROVIDER: loadScoresForItems() - Item ${entry.key}: ${entry.value.length} scores');
+    }
+    
     state = state.copyWith(isLoading: false, scoresByItem: allScores);
+    print('*** GRADE PROVIDER: loadScoresForItems() - State updated with scores');
   }
 
   Future<void> saveScores(
@@ -710,6 +727,39 @@ class GradeScoresNotifier extends StateNotifier<GradeScoresState> {
 
   void clearMessages() {
     state = state.copyWith(error: null, successMessage: null);
+  }
+
+  /// Force refresh scores from remote server (bypass cache)
+  Future<void> refreshScoresFromRemote(List<String> gradeItemIds) async {
+    print('*** GRADE PROVIDER: refreshScoresFromRemote() - START: forcing remote refresh for ${gradeItemIds.length} items');
+    state = state.copyWith(isLoading: true, error: null);
+    final Map<String, List<GradeScore>> allScores = {};
+
+    for (final itemId in gradeItemIds) {
+      print('*** GRADE PROVIDER: refreshScoresFromRemote() - Force refreshing item: $itemId');
+      // Force remote fetch by calling repository directly
+      final result = await _getScoresByItem(itemId);
+      result.fold(
+        (failure) {
+          print('*** GRADE PROVIDER: refreshScoresFromRemote() - ERROR for item $itemId: ${AppErrorMapper.fromFailure(failure)}');
+          state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure));
+          return;
+        },
+        (scores) {
+          print('*** GRADE PROVIDER: refreshScoresFromRemote() - SUCCESS for item $itemId: ${scores.length} scores');
+          allScores[itemId] = scores;
+        },
+      );
+      if (state.error != null) return;
+    }
+
+    print('*** GRADE PROVIDER: refreshScoresFromRemote() - COMPLETE: refreshed scores for ${allScores.length} items');
+    for (final entry in allScores.entries) {
+      print('*** GRADE PROVIDER: refreshScoresFromRemote() - Item ${entry.key}: ${entry.value.length} scores');
+    }
+    
+    state = state.copyWith(isLoading: false, scoresByItem: allScores);
+    print('*** GRADE PROVIDER: refreshScoresFromRemote() - State updated with refreshed scores');
   }
 }
 

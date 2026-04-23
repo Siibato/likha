@@ -146,7 +146,17 @@ impl super::SyncPushService {
                         self.recompute_after_score_change(grade_item_id).await;
                         self.success_result(op, None, Some(Utc::now().to_rfc3339()))
                     }
-                    Err(e) => self.error_result(op, &e.to_string()),
+                    Err(e) => {
+                        // Provide more specific error messages for common issues
+                        let error_msg = if e.to_string().contains("does not exist") {
+                            format!("Foreign key constraint failed: {}. This usually happens when the grade item or student no longer exists. The operation will be skipped.", e)
+                        } else if e.to_string().contains("FOREIGN KEY constraint failed") {
+                            format!("Foreign key constraint failed: {}. This usually happens when the grade item or student no longer exists. The operation will be skipped.", e)
+                        } else {
+                            e.to_string()
+                        };
+                        self.error_result(op, &error_msg)
+                    }
                 }
             }
             "set_override" => {

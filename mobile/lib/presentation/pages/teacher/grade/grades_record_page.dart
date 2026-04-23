@@ -180,18 +180,42 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _scoreFocus.requestFocus());
   }
 
-  void _commitScore() {
+  void _commitScore() async {
     final score = double.tryParse(_scoreCtrl.text.trim());
     if (score != null && _editingStudentId != null && _editingItemId != null) {
       final existing = _editingExistingScore;
-      if (existing != null && existing.isAutoPopulated) {
-        ref.read(gradeScoresProvider.notifier).setOverride(existing.id, score);
-      } else {
-        ref.read(gradeScoresProvider.notifier).saveScores(_editingItemId!, [
-          {'student_id': _editingStudentId!, 'score': score},
-        ]);
+      
+      try {
+        if (existing != null && existing.isAutoPopulated) {
+          await ref.read(gradeScoresProvider.notifier).setOverride(existing.id, score);
+        } else {
+          await ref.read(gradeScoresProvider.notifier).saveScores(_editingItemId!, [
+            {'student_id': _editingStudentId!, 'score': score},
+          ]);
+        }
+        
+        // Show success feedback
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Score saved'),
+              duration: Duration(seconds: 1),
+            ),
+          );
+        }
+      } catch (e) {
+        // Show error feedback
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to save score: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
+    
     if (mounted) {
       setState(() {
         _editingKey = null;
@@ -478,7 +502,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
     final students = classState.currentClassDetail?.students ?? [];
     final config = _configForQuarter(configState.configs);
 
-    ref.listen<GradeItemsState>(gradeItemsProvider, (prev, next) {
+    ref.listen<GradeItemsState>(gradeItemsProvider, (prev, next) async {
       print('*** CLASS RECORD PAGE: Grade items state changed - loading: ${next.isLoading}, items count: ${next.items.length}');
       PageLogger.instance.log('Grade items state changed - loading: ${next.isLoading}, items count: ${next.items.length}');
       
@@ -500,7 +524,15 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
           // Generate scores for grade items that don't have scores yet
           print('*** CLASS RECORD PAGE: Generating scores for grade items');
           PageLogger.instance.log('Generating scores for grade items');
-          ref.read(gradeItemsProvider.notifier).generateScoresForItems(widget.classId);
+          await ref.read(gradeItemsProvider.notifier).generateScoresForItems(widget.classId);
+          
+          // After score generation completes, refresh scores to show newly generated scores
+          if (next.items.isNotEmpty) {
+            final itemIds = next.items.map((i) => i.id).toList();
+            print('*** CLASS RECORD PAGE: Refreshing scores after generation');
+            PageLogger.instance.log('Refreshing scores after generation');
+            await ref.read(gradeScoresProvider.notifier).loadScoresForItems(itemIds);
+          }
         } else {
           print('*** CLASS RECORD PAGE: No grade items found for class: ${widget.classId}, quarter: $_selectedQuarter');
           PageLogger.instance.warn('No grade items found for class: ${widget.classId}, quarter: $_selectedQuarter');

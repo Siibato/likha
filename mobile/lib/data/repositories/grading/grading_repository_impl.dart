@@ -450,27 +450,83 @@ class GradingRepositoryImpl implements GradingRepository {
   ResultFuture<List<GradeScore>> getScoresByItem({
     required String gradeItemId,
   }) async {
+    print('*** REPO: getScoresByItem() - START: gradeItemId=$gradeItemId');
+    print('*** REPO: getScoresByItem() - Server reachable: ${_serverReachabilityService.isServerReachable}');
+    
     try {
+      // CACHE-FIRST STRATEGY: Always check cache first
+      print('*** REPO: getScoresByItem() - Checking local cache first...');
+      final cached = await _localDataSource.getScoresByItem(gradeItemId);
+      print('*** REPO: getScoresByItem() - Cache returned ${cached.length} scores');
+      
+      // If cache has data, return it immediately (offline-first)
+      if (cached.isNotEmpty) {
+        final entities = cached.map(_scoreToEntity).toList();
+        print('*** REPO: getScoresByItem() - SUCCESS: Returning ${entities.length} scores from cache (cache-first)');
+        
+        // Background sync if server is reachable, but don't wait for it
+        if (_serverReachabilityService.isServerReachable) {
+          print('*** REPO: getScoresByItem() - Background sync: fetching from remote to update cache...');
+          _backgroundSyncScores(gradeItemId, cached.length);
+        }
+        
+        return Right(entities);
+      }
+      
+      // Cache is empty, try remote
       if (_serverReachabilityService.isServerReachable) {
+        print('*** REPO: getScoresByItem() - Cache empty, fetching from remote server...');
         final models = await _remoteDataSource.getScoresByItem(
           gradeItemId: gradeItemId,
         );
+        print('*** REPO: getScoresByItem() - Remote returned ${models.length} scores');
+        
+        print('*** REPO: getScoresByItem() - Saving ${models.length} scores to local cache');
         await _localDataSource.saveScores(models);
-        return Right(models.map(_scoreToEntity).toList());
+        
+        final entities = models.map(_scoreToEntity).toList();
+        print('*** REPO: getScoresByItem() - SUCCESS: Returning ${entities.length} scores from remote');
+        return Right(entities);
+      } else {
+        print('*** REPO: getScoresByItem() - Cache empty and server not reachable');
+        final entities = cached.map(_scoreToEntity).toList();
+        print('*** REPO: getScoresByItem() - SUCCESS: Returning ${entities.length} empty scores from cache');
+        return Right(entities);
       }
-      final cached = await _localDataSource.getScoresByItem(gradeItemId);
-      return Right(cached.map(_scoreToEntity).toList());
     } on ServerFailure catch (e) {
+      print('*** REPO: getScoresByItem() - Server failure: ${e.toString()}, trying cache...');
       return Left(e);
     } on Failure catch (e) {
+      print('*** REPO: getScoresByItem() - General failure: ${e.toString()}, trying cache...');
       return Left(e);
     } catch (e) {
+      print('*** REPO: getScoresByItem() - Unexpected exception: ${e.toString()}, trying cache...');
       try {
         final cached = await _localDataSource.getScoresByItem(gradeItemId);
+        print('*** REPO: getScoresByItem() - Fallback cache returned ${cached.length} scores');
         return Right(cached.map(_scoreToEntity).toList());
       } catch (_) {
+        print('*** REPO: getScoresByItem() - ERROR: Cache fallback failed: ${e.toString()}');
         return Left(CacheFailure(e.toString()));
       }
+    }
+  }
+
+  /// Background sync to update cache without blocking UI
+  Future<void> _backgroundSyncScores(String gradeItemId, int currentCacheCount) async {
+    try {
+      final models = await _remoteDataSource.getScoresByItem(gradeItemId: gradeItemId);
+      print('*** REPO: _backgroundSyncScores() - Background sync got ${models.length} scores');
+      
+      // Only update cache if remote has more data than current cache
+      if (models.length > currentCacheCount) {
+        print('*** REPO: _backgroundSyncScores() - Updating cache with ${models.length} remote scores');
+        await _localDataSource.saveScores(models);
+      } else {
+        print('*** REPO: _backgroundSyncScores() - Remote has same or fewer scores, keeping cache data');
+      }
+    } catch (e) {
+      print('*** REPO: _backgroundSyncScores() - Background sync failed: ${e.toString()}');
     }
   }
 
@@ -479,23 +535,43 @@ class GradingRepositoryImpl implements GradingRepository {
     required String gradeItemId,
     required List<Map<String, dynamic>> scores,
   }) async {
+    print('*** REPO: saveScores() - START: gradeItemId=$gradeItemId, scoresCount=${scores.length}');
+    
     try {
+      // Basic validation of grade item ID format
+      if (gradeItemId.isEmpty) {
+        print('*** REPO: saveScores() - WARNING: Empty grade item ID, skipping sync enqueue');
+        return const Right(null);
+      }
+
       final now = DateTime.now().toIso8601String();
 
       // Save each score locally (optimistic)
-      final models = scores.map((s) => GradeScoreModel(
-        id: s['id'] as String? ?? const Uuid().v4(),
-        gradeItemId: gradeItemId,
-        studentId: s['student_id'] as String,
-        score: (s['score'] as num).toDouble(),
-        isAutoPopulated: false,
-        overrideScore: null,
-        createdAt: now,
-        updatedAt: now,
-      )).toList();
+      print('*** REPO: saveScores() - Creating ${scores.length} score models');
+      final models = scores.map((s) {
+        final scoreId = s['id'] as String? ?? const Uuid().v4();
+        final studentId = s['student_id'] as String;
+        final scoreValue = (s['score'] as num).toDouble();
+        print('*** REPO: saveScores() - Score model: id=$scoreId, studentId=$studentId, score=$scoreValue');
+        
+        return GradeScoreModel(
+          id: scoreId,
+          gradeItemId: gradeItemId,
+          studentId: studentId,
+          score: scoreValue,
+          isAutoPopulated: false,
+          overrideScore: null,
+          createdAt: now,
+          updatedAt: now,
+        );
+      }).toList();
+      
+      print('*** REPO: saveScores() - Upserting ${models.length} scores to local database');
       await _localDataSource.upsertScoresByItem(gradeItemId, models);
+      print('*** REPO: saveScores() - Local upsert completed');
 
       // Enqueue batch save for sync
+      print('*** REPO: saveScores() - Enqueuing sync operation');
       await _syncQueue.enqueue(SyncQueueEntry(
         id: const Uuid().v4(),
         entityType: SyncEntityType.gradeScore,
@@ -509,9 +585,11 @@ class GradingRepositoryImpl implements GradingRepository {
         maxRetries: 3,
         createdAt: DateTime.now(),
       ));
+      print('*** REPO: saveScores() - SUCCESS: Saved ${scores.length} scores and enqueued sync');
 
       return const Right(null);
     } catch (e) {
+      print('*** REPO: saveScores() - ERROR: ${e.toString()}');
       return Left(CacheFailure(e.toString()));
     }
   }
@@ -783,6 +861,52 @@ class GradingRepositoryImpl implements GradingRepository {
       return Left(e);
     } on Failure catch (e) {
       return Left(e);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  ResultFuture<Map<String, dynamic>> getGradeDataBatch({
+    required String classId,
+    required int gradingPeriodNumber,
+  }) async {
+    try {
+      // For now, implement batch loading by combining individual calls
+      // This can be optimized later with a proper batch endpoint
+      final gradeItemsResult = await getGradeItems(
+        classId: classId,
+        gradingPeriodNumber: gradingPeriodNumber,
+      );
+      
+      final gradeSummaryResult = await getGradeSummary(
+        classId: classId,
+        gradingPeriodNumber: gradingPeriodNumber,
+      );
+      
+      return gradeItemsResult.fold(
+        (failure) => Left(failure),
+        (gradeItems) => gradeSummaryResult.fold(
+          (failure) => Left(failure),
+          (gradeSummary) => Right({
+            'grade_items': gradeItems.map((item) => GradeItemModel(
+              id: item.id,
+              classId: item.classId,
+              title: item.title,
+              component: item.component,
+              gradingPeriodNumber: item.gradingPeriodNumber,
+              totalPoints: item.totalPoints,
+              sourceType: item.sourceType,
+              sourceId: item.sourceId,
+              orderIndex: item.orderIndex,
+              createdAt: item.createdAt,
+              updatedAt: item.updatedAt,
+            ).toJson()).toList(),
+            'grade_summary': gradeSummary,
+            'quarter': gradingPeriodNumber,
+          }),
+        ),
+      );
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

@@ -49,6 +49,7 @@ pub struct StudentScore {
 
 #[derive(Debug, Deserialize)]
 pub struct BulkUpdateScoresRequest {
+    pub grade_item_id: String,
     pub scores: Vec<StudentScore>,
 }
 
@@ -282,4 +283,13 @@ impl From<::entity::period_grades::Model> for PeriodGradeResponse {
             is_locked: m.is_locked,
         }
     }
+}
+
+// ===== BATCH RESPONSE SCHEMAS =====
+
+#[derive(Debug, Serialize)]
+pub struct AllGradeDataResponse {
+    pub grade_items: Vec<GradeItemResponse>,
+    pub grade_summary: GradeSummaryResponse,
+    pub quarter: i32,
 }

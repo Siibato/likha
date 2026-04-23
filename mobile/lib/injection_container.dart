@@ -147,6 +147,7 @@ import 'package:likha/domain/grading/usecases/get_sf10.dart';
 import 'package:likha/domain/grading/usecases/update_period_grade.dart';
 import 'package:likha/domain/grading/services/score_generation_service.dart';
 import 'package:likha/domain/grading/usecases/generate_scores.dart';
+import 'package:likha/domain/grading/usecases/get_grade_data_batch.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/data/datasources/local/tos/impl/tos_local_datasource_impl.dart';
 import 'package:likha/data/datasources/remote/tos_remote_datasource.dart';
@@ -516,6 +517,7 @@ Future<void> init() async {
     () => ScoreGenerationService(
       gradingRepository: sl<GradingRepository>(),
       assessmentRepository: sl<AssessmentRepository>(),
+      assignmentRepository: sl<AssignmentRepository>(),
     ),
   );
 
@@ -523,6 +525,9 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GenerateScores(sl<ScoreGenerationService>()));
   sl.registerLazySingleton(() => HasScoresForGradeItem(sl<ScoreGenerationService>()));
   sl.registerLazySingleton(() => GetScoreSummary(sl<ScoreGenerationService>()));
+  
+  // Batch Operations
+  sl.registerLazySingleton(() => GetGradeDataBatch(sl<GradingRepository>()));
 
   // TOS - Remote Data Source
   sl.registerLazySingleton<TosRemoteDataSource>(
