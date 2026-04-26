@@ -552,14 +552,15 @@ class GradingRepositoryImpl implements GradingRepository {
         final scoreId = s['id'] as String? ?? const Uuid().v4();
         final studentId = s['student_id'] as String;
         final scoreValue = (s['score'] as num).toDouble();
-        print('*** REPO: saveScores() - Score model: id=$scoreId, studentId=$studentId, score=$scoreValue');
+        final isAutoPopulated = s['is_auto_populated'] == true || s['is_auto_populated'] == 1;
+        print('*** REPO: saveScores() - Score model: id=$scoreId, studentId=$studentId, score=$scoreValue, isAutoPopulated=$isAutoPopulated');
         
         return GradeScoreModel(
           id: scoreId,
           gradeItemId: gradeItemId,
           studentId: studentId,
           score: scoreValue,
-          isAutoPopulated: false,
+          isAutoPopulated: isAutoPopulated,
           overrideScore: null,
           createdAt: now,
           updatedAt: now,
@@ -567,25 +568,9 @@ class GradingRepositoryImpl implements GradingRepository {
       }).toList();
       
       print('*** REPO: saveScores() - Upserting ${models.length} scores to local database');
+      // upsertScoresByItem enqueues the sync operation transactionally — no second enqueue needed.
       await _localDataSource.upsertScoresByItem(gradeItemId, models);
-      print('*** REPO: saveScores() - Local upsert completed');
-
-      // Enqueue batch save for sync
-      print('*** REPO: saveScores() - Enqueuing sync operation');
-      await _syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
-        entityType: SyncEntityType.gradeScore,
-        operation: SyncOperation.saveScores,
-        payload: {
-          'grade_item_id': gradeItemId,
-          'scores': scores,
-        },
-        status: SyncStatus.pending,
-        retryCount: 0,
-        maxRetries: 3,
-        createdAt: DateTime.now(),
-      ));
-      print('*** REPO: saveScores() - SUCCESS: Saved ${scores.length} scores and enqueued sync');
+      print('*** REPO: saveScores() - SUCCESS: Saved ${models.length} scores (sync enqueued by upsert)');
 
       return const Right(null);
     } catch (e) {

@@ -50,18 +50,31 @@ mixin GradingScoreMixin on GradingLocalDataSourceBase {
         );
 
         if (existing.isNotEmpty) {
-          // Update existing score
-          await txn.update(
-            DbTables.gradeScores,
-            {
-              GradeScoresCols.score: score.score,
-              CommonCols.updatedAt: score.updatedAt,
-              CommonCols.cachedAt: now.toIso8601String(),
-              CommonCols.needsSync: 1,
-            },
-            where: '${CommonCols.id} = ?',
-            whereArgs: [existing.first[CommonCols.id]],
-          );
+          final existingRow = existing.first;
+          final wasAutoPopulated = (existingRow[GradeScoresCols.isAutoPopulated] as int? ?? 0) == 1;
+          final hasNoScore = existingRow[GradeScoresCols.score] == null;
+          final incomingIsManual = !score.isAutoPopulated;
+
+          // Allow update when:
+          //   - teacher is editing (incomingIsManual): teacher always wins
+          //   - existing row was auto-populated: safe to refresh
+          //   - existing row has no score yet: fill the blank
+          // Skip when auto-populate tries to overwrite a teacher-edited cell.
+          if (incomingIsManual || wasAutoPopulated || hasNoScore) {
+            await txn.update(
+              DbTables.gradeScores,
+              {
+                GradeScoresCols.score: score.score,
+                GradeScoresCols.isAutoPopulated: score.isAutoPopulated ? 1 : 0,
+                CommonCols.updatedAt: score.updatedAt,
+                CommonCols.cachedAt: now.toIso8601String(),
+                CommonCols.needsSync: 1,
+              },
+              where: '${CommonCols.id} = ?',
+              whereArgs: [existingRow[CommonCols.id]],
+            );
+          }
+          // else: teacher-edited row — leave it untouched
         } else {
           // Insert new score with needsSync = 1
           final map = score.toMap();

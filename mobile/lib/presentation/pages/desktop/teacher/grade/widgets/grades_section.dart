@@ -32,31 +32,38 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
     });
   }
 
-  void _loadGradeData() {
+  Future<void> _loadGradeData() async {
     final itemsNotifier = ref.read(gradeItemsProvider.notifier);
     itemsNotifier.setQuarter(_selectedQuarter);
-    itemsNotifier.loadItems(widget.classId).then((_) {
-      // Backfill grade items from assessments/assignments
-      itemsNotifier
-          .backfillFromActivities(widget.classId, _selectedQuarter)
-          .then((_) {
-            // After backfill completes, reload items to get newly created ones
-            itemsNotifier.loadItems(widget.classId).then((_) {
-              final itemsState = ref.read(gradeItemsProvider);
-              // Load scores for all items (including newly created ones)
-              if (itemsState.items.isNotEmpty) {
-                final itemIds = itemsState.items.map((i) => i.id).toList();
-                ref
-                    .read(gradeScoresProvider.notifier)
-                    .loadScoresForItems(itemIds);
-              }
-            });
-          });
-      // Load quarterly grades summary
-      ref
-          .read(quarterlyGradesProvider.notifier)
-          .loadSummary(widget.classId, _selectedQuarter);
-    });
+    await itemsNotifier.loadItems(widget.classId);
+
+    // Backfill grade items from assessments/assignments
+    await itemsNotifier.backfillFromActivities(widget.classId, _selectedQuarter);
+
+    // Reload items to pick up any newly created ones
+    await itemsNotifier.loadItems(widget.classId);
+
+    final itemsState = ref.read(gradeItemsProvider);
+    if (itemsState.items.isNotEmpty) {
+      final itemIds = itemsState.items.map((i) => i.id).toList();
+
+      // Load whatever scores already exist so the sheet is not blank while generating
+      await ref.read(gradeScoresProvider.notifier).loadScoresForItems(itemIds);
+
+      // Auto-populate scores from assessment/assignment submissions
+      await itemsNotifier.generateScoresForItems(widget.classId);
+
+      // Reload scores to reflect newly generated values
+      final refreshedIds = ref.read(gradeItemsProvider).items.map((i) => i.id).toList();
+      if (refreshedIds.isNotEmpty) {
+        await ref.read(gradeScoresProvider.notifier).loadScoresForItems(refreshedIds);
+      }
+    }
+
+    // Load quarterly grades summary
+    ref
+        .read(quarterlyGradesProvider.notifier)
+        .loadSummary(widget.classId, _selectedQuarter);
   }
 
   void _onQuarterChanged(int quarter) {

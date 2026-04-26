@@ -530,6 +530,7 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
     final result = await _generateScores.generateScoresForClass(GenerateScoresParams(
       classId: classId,
       gradingPeriodNumber: state.currentQuarter,
+      items: state.items.isNotEmpty ? state.items : null,
     ));
     
     result.fold(

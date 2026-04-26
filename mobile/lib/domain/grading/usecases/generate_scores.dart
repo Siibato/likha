@@ -1,14 +1,17 @@
 import 'package:likha/core/utils/typedef.dart';
+import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/services/score_generation_service.dart';
 
 /// Parameters for generating scores for a class
 class GenerateScoresParams {
   final String classId;
   final int gradingPeriodNumber;
+  final List<GradeItem>? items;
 
   const GenerateScoresParams({
     required this.classId,
     required this.gradingPeriodNumber,
+    this.items,
   });
 }
 
@@ -32,6 +35,7 @@ class GenerateScores {
     return await _service.generateScoresForClass(
       classId: params.classId,
       gradingPeriodNumber: params.gradingPeriodNumber,
+      items: params.items,
     );
   }
 

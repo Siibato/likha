@@ -25,43 +25,55 @@ class ScoreGenerationService {
        _assessmentRepository = assessmentRepository,
        _assignmentRepository = assignmentRepository;
 
-  /// Generate scores for all grade items in a class for a specific grading period
+  /// Generate scores for all grade items in a class for a specific grading period.
+  ///
+  /// [items] — when supplied, use these directly instead of fetching from the
+  /// repository. Pass `state.items` from the provider to include locally-created
+  /// items that have not yet synced to the server.
   ResultFuture<void> generateScoresForClass({
     required String classId,
     required int gradingPeriodNumber,
+    List<GradeItem>? items,
   }) async {
-    _logger.log('generateScoresForClass() - START: classId=$classId, period=$gradingPeriodNumber');
-    
-    try {
-      // Get all grade items for the class and grading period
-      _logger.log('generateScoresForClass() - Fetching grade items...');
-      final gradeItemsResult = await _gradingRepository.getGradeItems(
-        classId: classId,
-        gradingPeriodNumber: gradingPeriodNumber,
-      );
+    _logger.log('generateScoresForClass() - START: classId=$classId, period=$gradingPeriodNumber, providedItems=${items?.length}');
 
-      return gradeItemsResult.fold(
-        (failure) {
-          _logger.error('generateScoresForClass() - Failed to get grade items', failure);
-          return Left(failure);
-        },
-        (gradeItems) async {
-          _logger.log('generateScoresForClass() - Found ${gradeItems.length} grade items');
-          
-          // Generate scores for each grade item
-          for (final gradeItem in gradeItems) {
-            _logger.log('generateScoresForClass() - Processing grade item: ${gradeItem.title} (${gradeItem.id}) - source: ${gradeItem.sourceType}');
-            final result = await generateScoresForGradeItem(gradeItem);
-            if (result.isLeft()) {
-              _logger.error('generateScoresForClass() - Failed to generate scores for item ${gradeItem.id}', result);
-              return result;
-            }
-          }
-          
-          _logger.log('generateScoresForClass() - SUCCESS: Generated scores for all items');
-          return const Right(null);
-        },
-      );
+    try {
+      List<GradeItem> gradeItems;
+
+      if (items != null) {
+        gradeItems = items;
+        _logger.log('generateScoresForClass() - Using ${gradeItems.length} provided grade items');
+      } else {
+        _logger.log('generateScoresForClass() - Fetching grade items from repository...');
+        final gradeItemsResult = await _gradingRepository.getGradeItems(
+          classId: classId,
+          gradingPeriodNumber: gradingPeriodNumber,
+        );
+        List<GradeItem>? fetched;
+        Failure? fetchFailure;
+        gradeItemsResult.fold(
+          (f) => fetchFailure = f,
+          (items) => fetched = items,
+        );
+        if (fetchFailure != null) {
+          _logger.error('generateScoresForClass() - Failed to get grade items', fetchFailure);
+          return Left(fetchFailure!);
+        }
+        gradeItems = fetched!;
+        _logger.log('generateScoresForClass() - Fetched ${gradeItems.length} grade items');
+      }
+
+      for (final gradeItem in gradeItems) {
+        _logger.log('generateScoresForClass() - Processing: ${gradeItem.title} (${gradeItem.id}) - source: ${gradeItem.sourceType}');
+        final result = await generateScoresForGradeItem(gradeItem);
+        if (result.isLeft()) {
+          _logger.error('generateScoresForClass() - Failed for item ${gradeItem.id}', result);
+          return result;
+        }
+      }
+
+      _logger.log('generateScoresForClass() - SUCCESS: Generated scores for all items');
+      return const Right(null);
     } catch (e) {
       _logger.error('generateScoresForClass() - Unexpected exception', e);
       return Left(CacheFailure(e.toString()));

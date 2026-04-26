@@ -95,39 +95,61 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
     }
   }
 
-  void _loadItemsAndSummary() {
+  Future<void> _loadItemsAndSummary() async {
     print('*** CLASS RECORD PAGE: Loading items and summary for class: ${widget.classId}, quarter: $_selectedQuarter');
     PageLogger.instance.log('Loading items and summary for class: ${widget.classId}, quarter: $_selectedQuarter');
-    
-    ref.read(gradeItemsProvider.notifier).setQuarter(_selectedQuarter);
-    ref.read(gradeItemsProvider.notifier).setComponent(''); // load all components
-    
-    print('*** CLASS RECORD PAGE: Loading grade items for class: ${widget.classId}');
-    PageLogger.instance.log('Loading grade items for class: ${widget.classId}');
-    ref.read(gradeItemsProvider.notifier).loadItems(widget.classId).then((_) {
-      print('*** CLASS RECORD PAGE: Grade items loaded, starting backfill from activities for quarter: $_selectedQuarter');
-      PageLogger.instance.log('Grade items loaded, starting backfill from activities for quarter: $_selectedQuarter');
-      ref.read(gradeItemsProvider.notifier).backfillFromActivities(widget.classId, _selectedQuarter).then((_) {
-        print('*** CLASS RECORD PAGE: Backfill from activities completed for quarter: $_selectedQuarter');
-        PageLogger.instance.log('Backfill from activities completed for quarter: $_selectedQuarter');
-      }).catchError((e) {
-        print('*** CLASS RECORD PAGE: Error in backfill from activities for quarter: $_selectedQuarter: $e');
-        PageLogger.instance.error('Error in backfill from activities for quarter: $_selectedQuarter', e);
-      });
-    }).catchError((e) {
-      print('*** CLASS RECORD PAGE: Error loading grade items for class: ${widget.classId}: $e');
-      PageLogger.instance.error('Error loading grade items for class: ${widget.classId}', e);
-    });
-    
+
+    final itemsNotifier = ref.read(gradeItemsProvider.notifier);
+    itemsNotifier.setQuarter(_selectedQuarter);
+    itemsNotifier.setComponent(''); // load all components
+
+    try {
+      print('*** CLASS RECORD PAGE: Loading grade items for class: ${widget.classId}');
+      PageLogger.instance.log('Loading grade items for class: ${widget.classId}');
+      await itemsNotifier.loadItems(widget.classId);
+
+      print('*** CLASS RECORD PAGE: Starting backfill from activities for quarter: $_selectedQuarter');
+      PageLogger.instance.log('Starting backfill from activities for quarter: $_selectedQuarter');
+      await itemsNotifier.backfillFromActivities(widget.classId, _selectedQuarter);
+
+      // Reload to pick up items created during backfill
+      await itemsNotifier.loadItems(widget.classId);
+
+      final itemsState = ref.read(gradeItemsProvider);
+      if (itemsState.items.isNotEmpty) {
+        final itemIds = itemsState.items.map((i) => i.id).toList();
+
+        // Load any scores already in the DB so the sheet is not blank while generating
+        print('*** CLASS RECORD PAGE: Loading scores for ${itemIds.length} grade items');
+        PageLogger.instance.log('Loading scores for ${itemIds.length} grade items');
+        await ref.read(gradeScoresProvider.notifier).loadScoresForItems(itemIds);
+
+        // Auto-populate scores from assessment/assignment submissions
+        print('*** CLASS RECORD PAGE: Generating scores for grade items');
+        PageLogger.instance.log('Generating scores for grade items');
+        await itemsNotifier.generateScoresForItems(widget.classId);
+
+        // Reload scores to surface newly generated values
+        print('*** CLASS RECORD PAGE: Refreshing scores after generation');
+        PageLogger.instance.log('Refreshing scores after generation');
+        final refreshedIds = ref.read(gradeItemsProvider).items.map((i) => i.id).toList();
+        if (refreshedIds.isNotEmpty) {
+          await ref.read(gradeScoresProvider.notifier).loadScoresForItems(refreshedIds);
+        }
+      } else {
+        print('*** CLASS RECORD PAGE: No grade items found for class: ${widget.classId}, quarter: $_selectedQuarter');
+        PageLogger.instance.warn('No grade items found for class: ${widget.classId}, quarter: $_selectedQuarter');
+      }
+    } catch (e) {
+      print('*** CLASS RECORD PAGE: Error loading grade data: $e');
+      PageLogger.instance.error('Error loading grade data', e);
+    }
+
     print('*** CLASS RECORD PAGE: Loading quarterly grades summary for class: ${widget.classId}, quarter: $_selectedQuarter');
     PageLogger.instance.log('Loading quarterly grades summary for class: ${widget.classId}, quarter: $_selectedQuarter');
     ref
         .read(quarterlyGradesProvider.notifier)
-        .loadSummary(widget.classId, _selectedQuarter)
-        .catchError((e) {
-          print('*** CLASS RECORD PAGE: Error loading quarterly grades summary: $e');
-          PageLogger.instance.error('Error loading quarterly grades summary', e);
-        });
+        .loadSummary(widget.classId, _selectedQuarter);
   }
 
   void _navigateToSetup() async {
@@ -146,20 +168,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
   void _onQuarterChanged(int quarter) {
     PageLogger.instance.log('Quarter changed from $_selectedQuarter to $quarter');
     setState(() => _selectedQuarter = quarter);
-    
-    ref.read(gradeItemsProvider.notifier).setQuarter(quarter);
-    ref.read(gradeItemsProvider.notifier).setComponent('');
-    
-    PageLogger.instance.log('Loading grade items for new quarter: $quarter');
-    ref.read(gradeItemsProvider.notifier).loadItems(widget.classId).then((_) {
-      PageLogger.instance.log('Starting backfill for quarter: $quarter');
-      ref.read(gradeItemsProvider.notifier).backfillFromActivities(widget.classId, quarter);
-    });
-    
-    PageLogger.instance.log('Loading quarterly grades summary for new quarter: $quarter');
-    ref
-        .read(quarterlyGradesProvider.notifier)
-        .loadSummary(widget.classId, quarter);
+    _loadItemsAndSummary();
   }
 
   // ── Score inline editing ─────────────────────────────────────────────────
@@ -276,17 +285,9 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
       selectedQuarter: _selectedQuarter,
       ref: ref,
     );
-    
+
     // Reload items and scores after dialog closes
-    Future.delayed(Duration.zero, () {
-      ref.read(gradeItemsProvider.notifier).loadItems(widget.classId).then((_) {
-        final itemsState = ref.read(gradeItemsProvider);
-        if (itemsState.items.isNotEmpty) {
-          final itemIds = itemsState.items.map((i) => i.id).toList();
-          ref.read(gradeScoresProvider.notifier).loadScoresForItems(itemIds);
-        }
-      });
-    });
+    Future.delayed(Duration.zero, () => _loadItemsAndSummary());
   }
 
   void _showExportDialog(BuildContext context, {required bool isDownload}) {
@@ -502,42 +503,9 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
     final students = classState.currentClassDetail?.students ?? [];
     final config = _configForQuarter(configState.configs);
 
-    ref.listen<GradeItemsState>(gradeItemsProvider, (prev, next) async {
+    ref.listen<GradeItemsState>(gradeItemsProvider, (prev, next) {
       print('*** CLASS RECORD PAGE: Grade items state changed - loading: ${next.isLoading}, items count: ${next.items.length}');
       PageLogger.instance.log('Grade items state changed - loading: ${next.isLoading}, items count: ${next.items.length}');
-      
-      if (prev?.isLoading == true && !next.isLoading) {
-        print('*** CLASS RECORD PAGE: Grade items loaded - total items: ${next.items.length}');
-        PageLogger.instance.log('Grade items loaded - total items: ${next.items.length}');
-        
-        for (final item in next.items) {
-          print('*** CLASS RECORD PAGE: Grade item: ${item.title} (${item.component}) - source: ${item.sourceType}, sourceId: ${item.sourceId}');
-          PageLogger.instance.log('Grade item: ${item.title} (${item.component}) - source: ${item.sourceType}, sourceId: ${item.sourceId}');
-        }
-        
-        if (next.items.isNotEmpty) {
-          final ids = next.items.map((i) => i.id).toList();
-          print('*** CLASS RECORD PAGE: Loading scores for ${ids.length} grade items');
-          PageLogger.instance.log('Loading scores for ${ids.length} grade items');
-          ref.read(gradeScoresProvider.notifier).loadScoresForItems(ids);
-          
-          // Generate scores for grade items that don't have scores yet
-          print('*** CLASS RECORD PAGE: Generating scores for grade items');
-          PageLogger.instance.log('Generating scores for grade items');
-          await ref.read(gradeItemsProvider.notifier).generateScoresForItems(widget.classId);
-          
-          // After score generation completes, refresh scores to show newly generated scores
-          if (next.items.isNotEmpty) {
-            final itemIds = next.items.map((i) => i.id).toList();
-            print('*** CLASS RECORD PAGE: Refreshing scores after generation');
-            PageLogger.instance.log('Refreshing scores after generation');
-            await ref.read(gradeScoresProvider.notifier).loadScoresForItems(itemIds);
-          }
-        } else {
-          print('*** CLASS RECORD PAGE: No grade items found for class: ${widget.classId}, quarter: $_selectedQuarter');
-          PageLogger.instance.warn('No grade items found for class: ${widget.classId}, quarter: $_selectedQuarter');
-        }
-      }
     });
 
     final wwItems = itemsState.items
