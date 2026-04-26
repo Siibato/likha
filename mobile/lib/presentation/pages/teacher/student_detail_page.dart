@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/presentation/pages/teacher/widgets/student_detail_info_card.dart';
 import 'package:likha/presentation/pages/teacher/widgets/student_assessment_row.dart';
@@ -81,17 +82,17 @@ class _TeacherStudentDetailPageState extends ConsumerState<TeacherStudentDetailP
     ]..sort((a, b) => b.dueDate.compareTo(a.dueDate));
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF2B2B2B)),
+        iconTheme: const IconThemeData(color: AppColors.foregroundPrimary),
         title: Text(
           widget.student.fullName,
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.foregroundPrimary,
             letterSpacing: -0.4,
           ),
         ),
@@ -115,7 +116,7 @@ class _TeacherStudentDetailPageState extends ConsumerState<TeacherStudentDetailP
                 child: Padding(
                   padding: EdgeInsets.all(24),
                   child: CircularProgressIndicator(
-                    color: Color(0xFF2B2B2B),
+                    color: AppColors.accentCharcoal,
                     strokeWidth: 2.5,
                   ),
                 ),
@@ -131,7 +132,7 @@ class _TeacherStudentDetailPageState extends ConsumerState<TeacherStudentDetailP
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: const Color(0xFFE0E0E0),
+                        color: AppColors.borderLight,
                         width: 1,
                       ),
                     ),
@@ -140,7 +141,7 @@ class _TeacherStudentDetailPageState extends ConsumerState<TeacherStudentDetailP
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Color(0xFF999999),
+                        color: AppColors.foregroundTertiary,
                       ),
                     ),
                   ),

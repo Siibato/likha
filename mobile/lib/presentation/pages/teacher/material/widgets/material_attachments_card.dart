@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
 import 'package:likha/presentation/pages/shared/widgets/primitives/card_icon_slot.dart';
@@ -51,7 +52,7 @@ class MaterialAttachmentsCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF202020),
+                  color: AppColors.foregroundDark,
                   letterSpacing: -0.4,
                 ),
               ),
@@ -59,7 +60,7 @@ class MaterialAttachmentsCard extends StatelessWidget {
                 FilledButton(
                   onPressed: isLoading ? null : onUploadFile,
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF2B2B2B),
+                    backgroundColor: AppColors.accentCharcoal,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
@@ -71,7 +72,7 @@ class MaterialAttachmentsCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Container(height: 1, color: const Color(0xFFF0F0F0)),
+          Container(height: 1, color: AppColors.borderLight),
           const SizedBox(height: 12),
           ...files.asMap().entries.map((entry) {
             final file = entry.value;
@@ -85,7 +86,7 @@ class MaterialAttachmentsCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -93,7 +94,7 @@ class MaterialAttachmentsCard extends StatelessWidget {
                 _formatFileSize(file.fileSize),
                 style: const TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF999999),
+                  color: AppColors.foregroundTertiary,
                 ),
               ),
               trailing: Row(
@@ -102,7 +103,7 @@ class MaterialAttachmentsCard extends StatelessWidget {
                   IconButton(
                     icon: file.isCached
                         ? const Icon(Icons.folder_open_rounded)
-                        : const Icon(Icons.download_rounded, color: Color(0xFF2B2B2B)),
+                        : const Icon(Icons.download_rounded, color: AppColors.accentCharcoal),
                     onPressed: isLoading
                         ? null
                         : () => file.isCached
@@ -110,7 +111,7 @@ class MaterialAttachmentsCard extends StatelessWidget {
                             : onSaveFile(file),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF5350)),
+                    icon: const Icon(Icons.delete_outline_rounded, color: AppColors.semanticError),
                     onPressed: isLoading ? null : () => onDeleteFile(file),
                   ),
                 ],

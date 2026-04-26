@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/core/errors/error_messages.dart';
@@ -366,7 +367,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
         child: Column(
           children: [
@@ -386,23 +387,23 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         margin: const EdgeInsets.only(bottom: 16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF0F0F0),
+                          color: AppColors.backgroundDisabled,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.restore_rounded, size: 16, color: Color(0xFF666666)),
+                            const Icon(Icons.restore_rounded, size: 16, color: AppColors.foregroundSecondary),
                             const SizedBox(width: 8),
                             const Expanded(
                               child: Text(
                                 'Resuming draft',
-                                style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
+                                style: TextStyle(fontSize: 13, color: AppColors.foregroundSecondary),
                               ),
                             ),
                             TextButton(
                               onPressed: _discardDraft,
                               style: TextButton.styleFrom(
-                                foregroundColor: const Color(0xFFE57373),
+                                foregroundColor: AppColors.semanticError,
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               ),
                               child: const Text(
@@ -420,7 +421,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.foregroundPrimary,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -433,7 +434,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFE0E0E0)),
+                        border: Border.all(color: AppColors.borderLight),
                       ),
                       padding: const EdgeInsets.all(16),
                       child: AssessmentDetailsSection(
@@ -490,7 +491,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.foregroundPrimary,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -514,11 +515,11 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                         OutlinedButton(
                           onPressed: _isSaving ? null : _saveDraftWithFeedback,
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF2B2B2B),
-                            side: const BorderSide(color: Color(0xFFE0E0E0)),
+                            foregroundColor: AppColors.accentCharcoal,
+                            side: const BorderSide(color: AppColors.borderLight),
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            disabledForegroundColor: const Color(0xFFCCCCCC),
+                            disabledForegroundColor: AppColors.foregroundLight,
                           ),
                           child: const Text(
                             'Save Draft',
@@ -530,9 +531,9 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                           child: ElevatedButton(
                             onPressed: _isSaving || _isQuestionReorderMode ? null : _handleSave,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2B2B2B),
+                              backgroundColor: AppColors.accentCharcoal,
                               foregroundColor: Colors.white,
-                              disabledBackgroundColor: const Color(0xFFE0E0E0),
+                              disabledBackgroundColor: AppColors.borderLight,
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               elevation: 0,

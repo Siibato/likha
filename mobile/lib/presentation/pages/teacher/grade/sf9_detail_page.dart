@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
@@ -40,7 +41,7 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
     final sf9 = state.currentSf9;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
         child: Column(
           children: [
@@ -50,7 +51,7 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
               trailing: sf9 != null
                   ? IconButton(
                       icon: const Icon(Icons.download_outlined),
-                      color: const Color(0xFF666666),
+                      color: AppColors.foregroundSecondary,
                       tooltip: 'Download SF9',
                       onPressed: () =>
                           Sf9PrintService.printSf9(context, sf9),
@@ -61,7 +62,7 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
               child: state.isLoading && sf9 == null
                   ? const Center(
                       child: CircularProgressIndicator(
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                         strokeWidth: 2.5,
                       ),
                     )
@@ -72,7 +73,7 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
                             child: Text(
                               state.error!,
                               style: const TextStyle(
-                                color: Color(0xFFE57373),
+                                color: AppColors.semanticError,
                                 fontSize: 14,
                               ),
                               textAlign: TextAlign.center,
@@ -126,7 +127,7 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
                                     style: TextStyle(
                                       fontSize: 17,
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xFF202020),
+                                      color: AppColors.foregroundDark,
                                       letterSpacing: -0.3,
                                     ),
                                   ),

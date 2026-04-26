@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 /// A fully-styled dialog that matches the app's design system.
 ///
@@ -78,7 +79,7 @@ class StyledDialog extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF202020),
+                      color: AppColors.foregroundDark,
                       letterSpacing: -0.4,
                     ),
                   ),
@@ -88,7 +89,7 @@ class StyledDialog extends StatelessWidget {
                       subtitle!,
                       style: const TextStyle(
                         fontSize: 13,
-                        color: Color(0xFF999999),
+                        color: AppColors.foregroundTertiary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -108,10 +109,10 @@ class StyledDialog extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFAFAFA),
+                  color: AppColors.backgroundSecondary,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: const Color(0xFFE8E8E8),
+                    color: AppColors.borderLight,
                     width: 1,
                   ),
                 ),
@@ -122,7 +123,7 @@ class StyledDialog extends StatelessWidget {
             // Divider
             Container(
               height: 1,
-              color: const Color(0xFFEEEEEE),
+              color: AppColors.borderLight,
               margin: const EdgeInsets.symmetric(horizontal: 24),
             ),
             // Actions Section
@@ -162,7 +163,7 @@ class StyledDialog extends StatelessWidget {
   }
 
   Widget _buildPrimaryButton(StyledDialogAction action) {
-    final bgColor = action.isDestructive ? const Color(0xFFEF5350) : const Color(0xFF2B2B2B);
+    final bgColor = action.isDestructive ? AppColors.semanticError : AppColors.accentCharcoal;
 
     return FilledButton(
       onPressed: action.onPressed,
@@ -190,8 +191,8 @@ class StyledDialog extends StatelessWidget {
     return OutlinedButton(
       onPressed: action.onPressed,
       style: OutlinedButton.styleFrom(
-        foregroundColor: const Color(0xFFEF5350),
-        side: const BorderSide(color: Color(0xFFEF5350), width: 1.5),
+        foregroundColor: AppColors.semanticError,
+        side: const BorderSide(color: AppColors.semanticError, width: 1.5),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
@@ -212,9 +213,9 @@ class StyledDialog extends StatelessWidget {
     return OutlinedButton(
       onPressed: action.onPressed,
       style: OutlinedButton.styleFrom(
-        foregroundColor: const Color(0xFF666666),
+        foregroundColor: AppColors.foregroundSecondary,
         side: const BorderSide(
-          color: Color(0xFFE0E0E0),
+          color: AppColors.borderLight,
           width: 1.5,
         ),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -260,38 +261,38 @@ extension StyledTextFieldDecoration on InputDecoration {
       hintText: hintText,
       labelStyle: const TextStyle(
         fontSize: 13,
-        color: Color(0xFF999999),
+        color: AppColors.foregroundTertiary,
         fontWeight: FontWeight.w500,
       ),
       hintStyle: const TextStyle(
         fontSize: 14,
-        color: Color(0xFFCCCCCC),
+        color: AppColors.foregroundLight,
       ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(
-          color: Color(0xFFE0E0E0),
+          color: AppColors.borderLight,
           width: 1,
         ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(
-          color: Color(0xFFE0E0E0),
+          color: AppColors.borderLight,
           width: 1,
         ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(
-          color: Color(0xFF2B2B2B),
+          color: AppColors.accentCharcoal,
           width: 1.5,
         ),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(
-          color: Color(0xFFEF5350),
+          color: AppColors.semanticError,
           width: 1,
         ),
       ),

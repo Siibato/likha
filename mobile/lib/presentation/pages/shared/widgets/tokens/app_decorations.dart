@@ -11,7 +11,7 @@ abstract final class AppDecorations {
   /// Outer container decoration for Pattern A cards (raised bottom border effect)
   static BoxDecoration cardShellOuter() {
     return BoxDecoration(
-      color: AppColors.borderLight,
+      color: AppColors.accentCharcoal,
       borderRadius: BorderRadius.circular(AppDimensions.kCardOuterRadius),
     );
   }
@@ -28,7 +28,7 @@ abstract final class AppDecorations {
   /// Outer container decoration for Pattern A-Small cards (teacher list items)
   static BoxDecoration cardShellSmOuter() {
     return BoxDecoration(
-      color: AppColors.borderLight,
+      color: AppColors.accentCharcoal,
       borderRadius: BorderRadius.circular(AppDimensions.kCardSmOuterRadius),
     );
   }
@@ -88,8 +88,41 @@ abstract final class AppDecorations {
   /// Outer wrapper for text inputs (2-layer shell)
   static BoxDecoration inputShellOuter() {
     return BoxDecoration(
-      color: AppColors.borderLight,
+      color: AppColors.accentCharcoal,
       borderRadius: BorderRadius.circular(12),
+    );
+  }
+
+  // ============ CARD SHELLS - PATTERN CHARCOAL (PROMINENT) ============
+  /// Charcoal background card - for prominent/featured cards
+  static BoxDecoration cardShellCharcoalOuter() {
+    return BoxDecoration(
+      color: AppColors.accentCharcoalDark,
+      borderRadius: BorderRadius.circular(AppDimensions.kCardOuterRadius),
+    );
+  }
+
+  static BoxDecoration cardShellCharcoalInner() {
+    return BoxDecoration(
+      color: AppColors.accentCharcoal,
+      borderRadius: BorderRadius.circular(AppDimensions.kCardInnerRadius),
+    );
+  }
+
+  // ============ CARD SHELLS - PATTERN AMBER (ACCENT) ============
+  /// Amber surface card - for amber-accented content
+  static BoxDecoration cardShellAmberOuter() {
+    return BoxDecoration(
+      color: AppColors.accentAmberBorder,
+      borderRadius: BorderRadius.circular(AppDimensions.kCardOuterRadius),
+    );
+  }
+
+  static BoxDecoration cardShellAmberInner() {
+    return BoxDecoration(
+      color: AppColors.accentAmberSurface,
+      borderRadius: BorderRadius.circular(AppDimensions.kCardInnerRadius),
+      border: Border.all(color: AppColors.accentAmberBorder, width: 1),
     );
   }
 

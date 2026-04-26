@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/teacher/tos/widgets/tos_competency_row.dart';
@@ -33,7 +34,7 @@ class _TosViewPageState extends ConsumerState<TosViewPage> {
     final competencies = state.competencies;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
         child: Column(
           children: [
@@ -45,7 +46,7 @@ class _TosViewPageState extends ConsumerState<TosViewPage> {
               child: state.isLoading && tos == null
                   ? const Center(
                       child: CircularProgressIndicator(
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                         strokeWidth: 2.5,
                       ),
                     )
@@ -55,7 +56,7 @@ class _TosViewPageState extends ConsumerState<TosViewPage> {
                           onRefresh: () => ref
                               .read(tosProvider.notifier)
                               .loadTosDetail(widget.tosId),
-                          color: const Color(0xFF2B2B2B),
+                          color: AppColors.accentCharcoal,
                           child: SingleChildScrollView(
                             physics: const AlwaysScrollableScrollPhysics(),
                             padding: const EdgeInsets.all(24),
@@ -67,7 +68,7 @@ class _TosViewPageState extends ConsumerState<TosViewPage> {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 10, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFF0F0F0),
+                                    color: AppColors.borderLight,
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: const Text(
@@ -75,7 +76,7 @@ class _TosViewPageState extends ConsumerState<TosViewPage> {
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFF888888),
+                                      color: AppColors.foregroundTertiary,
                                     ),
                                   ),
                                 ),
@@ -92,7 +93,7 @@ class _TosViewPageState extends ConsumerState<TosViewPage> {
                                   style: TextStyle(
                                     fontSize: 17,
                                     fontWeight: FontWeight.w700,
-                                    color: Color(0xFF202020),
+                                    color: AppColors.foregroundDark,
                                     letterSpacing: -0.3,
                                   ),
                                 ),
@@ -104,13 +105,13 @@ class _TosViewPageState extends ConsumerState<TosViewPage> {
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
-                                          color: const Color(0xFFE0E0E0)),
+                                          color: AppColors.borderLight),
                                     ),
                                     child: const Center(
                                       child: Text(
                                         'No competencies in this TOS.',
                                         style: TextStyle(
-                                          color: Color(0xFF999999),
+                                          color: AppColors.foregroundTertiary,
                                           fontSize: 13,
                                         ),
                                       ),
@@ -135,7 +136,7 @@ class _TosViewPageState extends ConsumerState<TosViewPage> {
                                   style: TextStyle(
                                     fontSize: 17,
                                     fontWeight: FontWeight.w700,
-                                    color: Color(0xFF202020),
+                                    color: AppColors.foregroundDark,
                                     letterSpacing: -0.3,
                                   ),
                                 ),

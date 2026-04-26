@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class ScoreDisplayCard extends StatelessWidget {
   final num score;
@@ -46,7 +47,7 @@ class ScoreDisplayCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: scoreFontSize,
                   fontWeight: FontWeight.w800,
-                  color: const Color(0xFF2B2B2B),
+                  color: AppColors.foregroundDark,
                   letterSpacing: useBaseCardStyle ? -1.5 : 0,
                 ),
               ),
@@ -56,7 +57,7 @@ class ScoreDisplayCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: denominatorFontSize,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF2B2B2B),
+                  color: AppColors.foregroundDark,
                 ),
               ),
             ],
@@ -66,8 +67,8 @@ class ScoreDisplayCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FA),
-              border: Border.all(color: const Color(0xFFE0E0E0)),
+              color: AppColors.backgroundTertiary,
+              border: Border.all(color: AppColors.borderLight),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -75,7 +76,7 @@ class ScoreDisplayCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: percentageFontSize,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF2B2B2B),
+                color: AppColors.foregroundDark,
                 letterSpacing: useBaseCardStyle ? -0.3 : 0,
               ),
             ),
@@ -87,8 +88,8 @@ class ScoreDisplayCard extends StatelessWidget {
             child: LinearProgressIndicator(
               value: totalPoints > 0 ? (score / totalPoints).clamp(0, 1) : 0,
               minHeight: 10,
-              backgroundColor: const Color(0xFFE0E0E0),
-              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF2B2B2B)),
+              backgroundColor: AppColors.borderLight,
+              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accentCharcoal),
             ),
           ),
           // Optional timestamp (assignment card style)
@@ -98,7 +99,7 @@ class ScoreDisplayCard extends StatelessWidget {
               formatDateTime!(gradedAt!),
               style: const TextStyle(
                 fontSize: 12,
-                color: Color(0xFF999999),
+                color: AppColors.foregroundTertiary,
               ),
             ),
           ],
@@ -111,7 +112,7 @@ class ScoreDisplayCard extends StatelessWidget {
       return Container(
         margin: const EdgeInsets.only(bottom: 14),
         decoration: BoxDecoration(
-          color: const Color(0xFFE0E0E0),
+          color: AppColors.accentCharcoal,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Container(
@@ -131,7 +132,7 @@ class ScoreDisplayCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: scoreContent,
     );
@@ -143,7 +144,7 @@ class ScoreDisplayCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: AppColors.borderLight),
       ),
       padding: const EdgeInsets.all(24),
       child: const Center(
@@ -152,7 +153,7 @@ class ScoreDisplayCard extends StatelessWidget {
           height: 40,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
           ),
         ),
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class AssessmentField extends StatelessWidget {
   final String label;
@@ -39,13 +40,13 @@ class AssessmentField extends StatelessWidget {
       style: const TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w500,
-        color: Color(0xFF2B2B2B),
+        color: AppColors.foregroundPrimary,
       ),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(
           fontSize: 14,
-          color: Color(0xFF999999),
+          color: AppColors.foregroundTertiary,
         ),
         prefixIcon: isMultiLine
             ? Align(
@@ -56,14 +57,14 @@ class AssessmentField extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 16),
                   child: Icon(
                     icon,
-                    color: const Color(0xFF666666),
+                    color: AppColors.foregroundSecondary,
                     size: 20,
                   ),
                 ),
               )
             : Icon(
                 icon,
-                color: const Color(0xFF666666),
+                color: AppColors.foregroundSecondary,
                 size: 20,
               ),
         filled: true,
@@ -71,35 +72,35 @@ class AssessmentField extends StatelessWidget {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(
-            color: Color(0xFFE0E0E0),
+            color: AppColors.borderLight,
             width: 1,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(
-            color: Color(0xFFE0E0E0),
+            color: AppColors.borderLight,
             width: 1,
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
             width: 1.5,
           ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(
-            color: Color(0xFFEF5350),
+            color: AppColors.semanticError,
             width: 1,
           ),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(
-            color: Color(0xFFEF5350),
+            color: AppColors.semanticError,
             width: 1.5,
           ),
         ),

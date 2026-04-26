@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'question_draft.dart';
 
 // Data classes for editor state (replaces file-local _ChoiceEdit, _EnumerationItemEdit)
@@ -120,11 +121,11 @@ class QuestionEditorBody extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             color: variant == EditorStyleVariant.questionCard
-                ? const Color(0xFFFAFAFA)
+                ? AppColors.backgroundSecondary
                 : Colors.white,
             borderRadius: BorderRadius.circular(8),
             border: variant == EditorStyleVariant.form
-                ? Border.all(color: const Color(0xFFE0E0E0))
+                ? Border.all(color: AppColors.borderLight)
                 : null,
           ),
           padding: variant == EditorStyleVariant.form
@@ -142,11 +143,11 @@ class QuestionEditorBody extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF2B2B2B),
+                color: AppColors.foregroundPrimary,
               ),
             ),
             value: isMultiSelect,
-            activeThumbColor: const Color(0xFF2B2B2B),
+            activeThumbColor: AppColors.accentCharcoal,
             onChanged: isLoading
                 ? null
                 : (value) {
@@ -175,7 +176,7 @@ class QuestionEditorBody extends StatelessWidget {
           style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 15,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.foregroundPrimary,
             letterSpacing: -0.2,
           ),
         ),
@@ -195,7 +196,7 @@ class QuestionEditorBody extends StatelessWidget {
               children: [
                 Checkbox(
                   value: isCorrect,
-                  activeColor: const Color(0xFF2B2B2B),
+                  activeColor: AppColors.accentCharcoal,
                   checkColor: Colors.white,
                   onChanged: isLoading
                       ? null
@@ -219,7 +220,7 @@ class QuestionEditorBody extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFF2B2B2B),
+                            color: AppColors.foregroundPrimary,
                           ),
                           decoration: _buildInputDecoration(
                             labelText: 'Choice ${index + 1}',
@@ -241,7 +242,7 @@ class QuestionEditorBody extends StatelessWidget {
                     icon: const Icon(
                       Icons.close_rounded,
                       size: 20,
-                      color: Color(0xFF666666),
+                      color: AppColors.foregroundSecondary,
                     ),
                     onPressed: isLoading
                         ? null
@@ -262,7 +263,7 @@ class QuestionEditorBody extends StatelessWidget {
         TextButton.icon(
           onPressed: isLoading ? null : onAddChoice,
           style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF2B2B2B),
+            foregroundColor: AppColors.accentCharcoal,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
           icon: const Icon(Icons.add_rounded, size: 18),
@@ -287,7 +288,7 @@ class QuestionEditorBody extends StatelessWidget {
           style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 15,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.foregroundPrimary,
             letterSpacing: -0.2,
           ),
         ),
@@ -311,7 +312,7 @@ class QuestionEditorBody extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFF2B2B2B),
+                            color: AppColors.foregroundPrimary,
                           ),
                           decoration: _buildInputDecoration(
                             labelText: 'Answer ${index + 1}',
@@ -333,7 +334,7 @@ class QuestionEditorBody extends StatelessWidget {
                     icon: const Icon(
                       Icons.close_rounded,
                       size: 20,
-                      color: Color(0xFF666666),
+                      color: AppColors.foregroundSecondary,
                     ),
                     onPressed: isLoading
                         ? null
@@ -354,7 +355,7 @@ class QuestionEditorBody extends StatelessWidget {
         TextButton.icon(
           onPressed: isLoading ? null : onAddAnswer,
           style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF2B2B2B),
+            foregroundColor: AppColors.accentCharcoal,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
           icon: const Icon(Icons.add_rounded, size: 18),
@@ -379,7 +380,7 @@ class QuestionEditorBody extends StatelessWidget {
           style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 15,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.foregroundPrimary,
             letterSpacing: -0.2,
           ),
         ),
@@ -398,9 +399,9 @@ class QuestionEditorBody extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFAFAFA),
+              color: AppColors.backgroundSecondary,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE0E0E0)),
+              border: Border.all(color: AppColors.borderLight),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -413,13 +414,13 @@ class QuestionEditorBody extends StatelessWidget {
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.foregroundPrimary,
                       ),
                     ),
                     if (enumerationItems!.length > 1)
                       IconButton(
                         icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                        color: const Color(0xFFEF5350),
+                        color: AppColors.semanticError,
                         onPressed: isLoading
                             ? null
                             : () {
@@ -438,7 +439,7 @@ class QuestionEditorBody extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.w500,
                     fontSize: 12,
-                    color: Color(0xFF666666),
+                    color: AppColors.foregroundSecondary,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -479,7 +480,7 @@ class QuestionEditorBody extends StatelessWidget {
                         if (answers.length > 1)
                           IconButton(
                             icon: const Icon(Icons.close_rounded, size: 18),
-                            color: const Color(0xFF666666),
+                            color: AppColors.foregroundSecondary,
                             onPressed: isLoading
                                 ? null
                                 : () {
@@ -499,7 +500,7 @@ class QuestionEditorBody extends StatelessWidget {
                 TextButton.icon(
                   onPressed: isLoading ? null : () => onAddEnumAnswer?.call(itemIndex),
                   style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF2B2B2B),
+                    foregroundColor: AppColors.accentCharcoal,
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     minimumSize: const Size(0, 32),
                   ),
@@ -515,7 +516,7 @@ class QuestionEditorBody extends StatelessWidget {
         TextButton.icon(
           onPressed: isLoading ? null : onAddEnumItem,
           style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF2B2B2B),
+            foregroundColor: AppColors.accentCharcoal,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
           icon: const Icon(Icons.add_rounded, size: 18),
@@ -531,14 +532,14 @@ class QuestionEditorBody extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
+        color: AppColors.backgroundSecondary,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.edit_note_rounded, size: 20, color: Color(0xFF999999)),
+          Icon(Icons.edit_note_rounded, size: 20, color: AppColors.foregroundTertiary),
           SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -549,7 +550,7 @@ class QuestionEditorBody extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: Color(0xFF2B2B2B),
+                    color: AppColors.foregroundPrimary,
                   ),
                 ),
                 SizedBox(height: 4),
@@ -557,7 +558,7 @@ class QuestionEditorBody extends StatelessWidget {
                   'Students will write a free-form essay response. No answer key required — you will grade this manually after submission.',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF666666),
+                    color: AppColors.foregroundSecondary,
                     height: 1.4,
                   ),
                 ),
@@ -578,7 +579,7 @@ class QuestionEditorBody extends StatelessWidget {
     final baseBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(borderRadius),
       borderSide: const BorderSide(
-        color: Color(0xFFE0E0E0),
+        color: AppColors.borderLight,
         width: 1,
       ),
     );
@@ -586,7 +587,7 @@ class QuestionEditorBody extends StatelessWidget {
     final focusedBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(borderRadius),
       borderSide: const BorderSide(
-        color: Color(0xFF2B2B2B),
+        color: AppColors.accentCharcoal,
         width: 1.5,
       ),
     );
@@ -594,7 +595,7 @@ class QuestionEditorBody extends StatelessWidget {
     final errorBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(borderRadius),
       borderSide: const BorderSide(
-        color: Color(0xFFEF5350),
+        color: AppColors.semanticError,
         width: 1,
       ),
     );
@@ -602,7 +603,7 @@ class QuestionEditorBody extends StatelessWidget {
     final focusedErrorBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(borderRadius),
       borderSide: const BorderSide(
-        color: Color(0xFFEF5350),
+        color: AppColors.semanticError,
         width: 1.5,
       ),
     );
@@ -611,11 +612,11 @@ class QuestionEditorBody extends StatelessWidget {
       labelText: labelText,
       labelStyle: const TextStyle(
         fontSize: 14,
-        color: Color(0xFF999999),
+        color: AppColors.foregroundTertiary,
       ),
       filled: true,
       fillColor: variant == EditorStyleVariant.questionCard
-          ? const Color(0xFFFAFAFA)
+          ? AppColors.backgroundSecondary
           : Colors.white,
       border: baseBorder,
       enabledBorder: baseBorder,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
@@ -85,17 +86,17 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF2B2B2B)),
+        iconTheme: const IconThemeData(color: AppColors.accentCharcoal),
         title: Text(
           assignment?.title ?? 'Assignment Detail',
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
             letterSpacing: -0.4,
           ),
         ),
@@ -170,13 +171,13 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                     children: [
                       Icon(
                         Icons.delete_rounded,
-                        color: Color(0xFFEF5350),
+                        color: AppColors.semanticError,
                         size: 20,
                       ),
                       SizedBox(width: 12),
                       Text(
                         'Delete',
-                        style: TextStyle(color: Color(0xFFEF5350)),
+                        style: TextStyle(color: AppColors.semanticError),
                       ),
                     ],
                   ),
@@ -188,7 +189,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       body: state.isLoading && assignment == null
           ? const Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
                 strokeWidth: 2.5,
               ),
             )
@@ -198,7 +199,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                     'Assignment not found',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Color(0xFF999999),
+                      color: AppColors.foregroundTertiary,
                     ),
                   ),
                 )
@@ -206,7 +207,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                   onRefresh: () => ref
                       .read(assignmentProvider.notifier)
                       .loadAssignmentDetail(widget.assignmentId),
-                  color: const Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(24),

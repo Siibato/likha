@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
@@ -74,8 +75,8 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF5350)),
-              title: const Text('Delete Module', style: TextStyle(color: Color(0xFFEF5350))),
+              leading: const Icon(Icons.delete_outline_rounded, color: AppColors.semanticError),
+              title: const Text('Delete Module', style: TextStyle(color: AppColors.semanticError)),
               onTap: () {
                 Navigator.pop(ctx);
                 _confirmDeleteMaterial();
@@ -158,7 +159,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
           'Are you sure you want to permanently delete "$title" and all of its contents?',
           style: const TextStyle(
             fontSize: 13,
-            color: Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
             height: 1.5,
             fontWeight: FontWeight.w500,
           ),
@@ -211,20 +212,20 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
         child: state.isLoading && material == null
             ? const Center(
-                child: CircularProgressIndicator(color: Color(0xFF2B2B2B), strokeWidth: 2.5),
+                child: CircularProgressIndicator(color: AppColors.accentCharcoal, strokeWidth: 2.5),
               )
             : state.error != null && material == null
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline_rounded, size: 64, color: Color(0xFFCCCCCC)),
+                        const Icon(Icons.error_outline_rounded, size: 64, color: AppColors.foregroundLight),
                         const SizedBox(height: 16),
-                        const Text('Failed to load module', style: TextStyle(fontSize: 16, color: Color(0xFF666666))),
+                        const Text('Failed to load module', style: TextStyle(fontSize: 16, color: AppColors.foregroundSecondary)),
                         const SizedBox(height: 24),
                         OutlinedButton(
                           onPressed: () => ref.read(learningMaterialProvider.notifier).loadMaterialDetail(widget.materialId),
@@ -247,13 +248,13 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                               top: 24,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF8F9FA),
+                                  color: AppColors.backgroundTertiary,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: IconButton(
                                   icon: const Icon(
                                     Icons.more_vert_rounded,
-                                    color: Color(0xFF404040),
+                                    color: AppColors.foregroundDark,
                                     size: 24,
                                   ),
                                   onPressed: () => _showMoreOptions(material),
@@ -317,19 +318,19 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF2B2B2B),
+              color: AppColors.accentCharcoal,
               letterSpacing: -0.5,
             ),
           ),
           if (material.description != null && material.description!.isNotEmpty) ...[
             const SizedBox(height: 16),
-            Container(height: 1, color: const Color(0xFFF0F0F0)),
+            Container(height: 1, color: AppColors.borderLight),
             const SizedBox(height: 12),
             Text(
               material.description!,
               style: const TextStyle(
                 fontSize: 15,
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
                 height: 1.5,
               ),
             ),
@@ -352,7 +353,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
             const SizedBox(height: 12),
             const StatusBadge(
               label: 'Pending sync',
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
               variant: BadgeVariant.outlined,
             ),
           ],
@@ -373,12 +374,12 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF666666),
+              color: AppColors.foregroundSecondary,
               letterSpacing: 0.5,
             ),
           ),
           const SizedBox(height: 12),
-          Container(height: 1, color: const Color(0xFFF0F0F0)),
+          Container(height: 1, color: AppColors.borderLight),
           const SizedBox(height: 12),
           MarkdownDisplay(content: material.contentText),
         ],
@@ -392,7 +393,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -403,7 +404,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                 width: 16,
                 height: 16,
                 child: CircularProgressIndicator(
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                   strokeWidth: 2,
                 ),
               ),
@@ -414,7 +415,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF2B2B2B),
+                    color: AppColors.accentCharcoal,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -424,7 +425,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                 ),
               ),
             ],
@@ -434,8 +435,8 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: state.uploadProgress > 0 ? state.uploadProgress : null,
-              backgroundColor: const Color(0xFFF0F0F0),
-              color: const Color(0xFF2B2B2B),
+              backgroundColor: AppColors.borderLight,
+              color: AppColors.accentCharcoal,
               minHeight: 6,
             ),
           ),
@@ -459,14 +460,14 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF202020),
+                  color: AppColors.foregroundDark,
                   letterSpacing: -0.4,
                 ),
               ),
               FilledButton(
                 onPressed: isLoading ? null : _uploadFile,
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF2B2B2B),
+                  backgroundColor: AppColors.accentCharcoal,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
@@ -478,7 +479,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
             ],
           ),
           const SizedBox(height: 12),
-          Container(height: 1, color: const Color(0xFFF0F0F0)),
+          Container(height: 1, color: AppColors.borderLight),
           const SizedBox(height: 12),
           ...material.files.asMap().entries.map((entry) {
             final file = entry.value;
@@ -492,7 +493,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -500,7 +501,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                 formatFileSize(file.fileSize),
                 style: const TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF999999),
+                  color: AppColors.foregroundTertiary,
                 ),
               ),
               trailing: Row(
@@ -511,7 +512,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                         strokeWidth: 2,
                       ),
                     )
@@ -519,7 +520,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                     IconButton(
                       icon: file.isCached
                           ? const Icon(Icons.folder_open_rounded)
-                          : const Icon(Icons.download_rounded, color: Color(0xFF2B2B2B)),
+                          : const Icon(Icons.download_rounded, color: AppColors.accentCharcoal),
                       onPressed: (isLoading || _downloadingFileId != null)
                           ? null
                           : () => file.isCached
@@ -527,7 +528,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                               : _saveFile(file),
                     ),
                   IconButton(
-                    icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF5350)),
+                    icon: const Icon(Icons.delete_outline_rounded, color: AppColors.semanticError),
                     onPressed: (isLoading || _downloadingFileId != null) ? null : () => _deleteFile(file),
                   ),
                 ],

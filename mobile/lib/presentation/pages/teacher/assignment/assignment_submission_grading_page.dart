@@ -269,7 +269,7 @@ class _GradeSubmissionPageState extends ConsumerState<AssignmentSubmissionGradin
                           width: double.infinity,
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFAFAFA),
+                            color: AppColors.backgroundSecondary,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: AppColors.borderLight),
                           ),
@@ -439,7 +439,7 @@ class _GradeSubmissionPageState extends ConsumerState<AssignmentSubmissionGradin
         statusColor = AppColors.semanticSuccess;
         break;
       case 'returned':
-        statusColor = AppColors.deprecatedWarningYellow;
+        statusColor = AppColors.accentAmber;
         break;
       default: // draft
         statusColor = AppColors.foregroundTertiary;

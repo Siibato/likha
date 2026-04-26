@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class TimeUnitToggle extends StatelessWidget {
   final String value;
@@ -13,7 +14,7 @@ class TimeUnitToggle extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -23,7 +24,7 @@ class TimeUnitToggle extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF666666),
+              color: AppColors.foregroundSecondary,
             ),
           ),
           const SizedBox(height: 10),
@@ -71,23 +72,23 @@ class _UnitChip extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFF2B2B2B) : const Color(0xFFF5F5F5),
+          color: selected ? AppColors.accentCharcoal : AppColors.backgroundTertiary,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: selected ? const Color(0xFF2B2B2B) : const Color(0xFFE0E0E0),
+            color: selected ? AppColors.accentCharcoal : AppColors.borderLight,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: selected ? Colors.white : const Color(0xFF666666)),
+            Icon(icon, size: 16, color: selected ? Colors.white : AppColors.foregroundSecondary),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: selected ? Colors.white : const Color(0xFF666666),
+                color: selected ? Colors.white : AppColors.foregroundSecondary,
               ),
             ),
           ],

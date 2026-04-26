@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 
 class BulkPasteSheet extends ConsumerStatefulWidget {
@@ -100,7 +101,7 @@ class _BulkPasteSheetState extends ConsumerState<BulkPasteSheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE0E0E0),
+                    color: AppColors.borderLight,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -110,24 +111,24 @@ class _BulkPasteSheetState extends ConsumerState<BulkPasteSheet> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.foregroundPrimary,
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Paste one competency per line.\nOptional format: CODE | Text | Days',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF999999),
+                  color: AppColors.foregroundTertiary,
                 ),
               ),
               const SizedBox(height: 16),
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8F9FA),
+                    color: AppColors.backgroundTertiary,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                    border: Border.all(color: AppColors.borderLight),
                   ),
                   child: TextField(
                     controller: _pasteController,
@@ -138,9 +139,9 @@ class _BulkPasteSheetState extends ConsumerState<BulkPasteSheet> {
                       hintText: 'Paste competencies here...',
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.all(12),
-                      hintStyle: TextStyle(fontSize: 13, color: Color(0xFFCCCCCC)),
+                      hintStyle: TextStyle(fontSize: 13, color: AppColors.foregroundLight),
                     ),
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF2B2B2B)),
+                    style: const TextStyle(fontSize: 13, color: AppColors.foregroundPrimary),
                   ),
                 ),
               ),
@@ -150,7 +151,7 @@ class _BulkPasteSheetState extends ConsumerState<BulkPasteSheet> {
                 child: ElevatedButton(
                   onPressed: state.isLoading ? null : _handleImport,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2B2B2B),
+                    backgroundColor: AppColors.accentCharcoal,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

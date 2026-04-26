@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/utils/formatters.dart';
 
 class AssessmentInfoCard extends StatelessWidget {
@@ -36,7 +37,7 @@ class AssessmentInfoCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: const Color(0xFFE0E0E0),
+            color: AppColors.borderLight,
             width: 1,
           ),
         ),
@@ -52,7 +53,7 @@ class AssessmentInfoCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF202020),
+                      color: AppColors.foregroundDark,
                       letterSpacing: -0.3,
                     ),
                   ),
@@ -71,7 +72,7 @@ class AssessmentInfoCard extends StatelessWidget {
                 description!,
                 style: const TextStyle(
                   fontSize: 15,
-                  color: Color(0xFF666666),
+                  color: AppColors.foregroundSecondary,
                   height: 1.5,
                 ),
               ),
@@ -148,7 +149,7 @@ class _InfoRow extends StatelessWidget {
         Icon(
           icon,
           size: 18,
-          color: const Color(0xFF666666),
+          color: AppColors.foregroundSecondary,
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -156,7 +157,7 @@ class _InfoRow extends StatelessWidget {
             text: TextSpan(
               style: const TextStyle(
                 fontSize: 14,
-                color: Color(0xFF2B2B2B),
+                color: AppColors.foregroundPrimary,
               ),
               children: [
                 TextSpan(
@@ -169,7 +170,7 @@ class _InfoRow extends StatelessWidget {
                   text: value,
                   style: const TextStyle(
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF666666),
+                    color: AppColors.foregroundSecondary,
                   ),
                 ),
               ],

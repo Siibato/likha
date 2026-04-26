@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/presentation/pages/teacher/class/class_student_list_page.dart';
@@ -43,12 +44,12 @@ class _ClassDetailPageState extends ConsumerState<ClassDetailPage> {
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: null,
       body: detail == null
           ? const Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
                 strokeWidth: 2.5,
               ),
             )

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 /// A reusable question type dropdown that extends StyledDropdown styling
 /// with specific field styling for question type selection.
@@ -18,8 +19,8 @@ class QuestionTypeDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     return Theme(
       data: Theme.of(context).copyWith(
-        highlightColor: const Color(0xFFFAFAFA),
-        splashColor: const Color(0xFFFAFAFA),
+        highlightColor: AppColors.backgroundSecondary,
+        splashColor: AppColors.backgroundSecondary,
       ),
       child: DropdownButtonFormField<String>(
         initialValue: value,
@@ -28,28 +29,28 @@ class QuestionTypeDropdown extends StatelessWidget {
           labelText: 'Question Type',
           labelStyle: const TextStyle(
             fontSize: 14,
-            color: Color(0xFF999999),
+            color: AppColors.foregroundTertiary,
           ),
           filled: true,
           fillColor: Colors.white,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(
-              color: Color(0xFFE0E0E0),
+              color: AppColors.borderLight,
               width: 1,
             ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(
-              color: Color(0xFFE0E0E0),
+              color: AppColors.borderLight,
               width: 1,
             ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(
-              color: Color(0xFF2B2B2B),
+              color: AppColors.accentCharcoal,
               width: 1.5,
             ),
           ),
@@ -61,7 +62,7 @@ class QuestionTypeDropdown extends StatelessWidget {
         style: const TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w500,
-          color: Color(0xFF2B2B2B),
+          color: AppColors.foregroundPrimary,
         ),
         items: const [
           DropdownMenuItem(

@@ -148,7 +148,7 @@ class _AssignmentSubmissionsPageState
                 color: Colors.white,
                 border: Border(
                   top: BorderSide(
-                    color: Color(0xFFE0E0E0),
+                    color: AppColors.borderLight,
                     width: 1,
                   ),
                 ),
@@ -157,8 +157,8 @@ class _AssignmentSubmissionsPageState
                 onPressed: _isDownloadingAll ? null : _downloadAll,
                 style: FilledButton.styleFrom(
                   backgroundColor: _isDownloadingAll
-                      ? const Color(0xFFCCCCCC)
-                      : const Color(0xFF2B2B2B),
+                      ? AppColors.foregroundLight
+                      : AppColors.accentCharcoal,
                   padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),

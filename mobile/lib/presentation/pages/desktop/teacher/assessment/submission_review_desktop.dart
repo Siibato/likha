@@ -471,7 +471,7 @@ class _SubmissionReviewDesktopState
             const SizedBox(height: 12),
             const StatusBadge(
               label: 'Grade overridden',
-              color: AppColors.deprecatedWarningYellow,
+              color: AppColors.accentAmber,
               icon: Icons.edit_outlined,
               variant: BadgeVariant.filled,
             ),

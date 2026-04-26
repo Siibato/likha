@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/teacher/class/class_detail_page.dart';
 import 'package:likha/presentation/pages/teacher/widgets/empty_class_state.dart';
@@ -28,7 +29,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
     final classState = ref.watch(classProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -37,14 +38,14 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.foregroundPrimary,
             letterSpacing: -0.4,
           ),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout_rounded),
-            color: const Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
             onPressed: () => handleLogoutTap(context, ref),
           ),
         ],
@@ -52,7 +53,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
       body: classState.isLoading && classState.classes.isEmpty
           ? const Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
                 strokeWidth: 2.5,
               ),
             )
@@ -61,7 +62,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
               : RefreshIndicator(
                   onRefresh: () =>
                       ref.read(classProvider.notifier).loadClasses(),
-                  color: const Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                   child: ListView.builder(
                     padding: const EdgeInsets.all(24),
                     itemCount: classState.classes.length,

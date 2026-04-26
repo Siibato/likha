@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class EmptyStudentState extends StatelessWidget {
   const EmptyStudentState({super.key});
@@ -14,13 +15,13 @@ class EmptyStudentState extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FA),
+                color: AppColors.backgroundTertiary,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: const Icon(
                 Icons.people_outline_rounded,
                 size: 48,
-                color: Color(0xFFCCCCCC),
+                color: AppColors.foregroundLight,
               ),
             ),
             const SizedBox(height: 16),
@@ -29,7 +30,7 @@ class EmptyStudentState extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF999999),
+                color: AppColors.foregroundTertiary,
               ),
             ),
           ],

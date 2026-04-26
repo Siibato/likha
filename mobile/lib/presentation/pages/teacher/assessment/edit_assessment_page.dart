@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
@@ -123,12 +124,12 @@ class _EditAssessmentPageState extends ConsumerState<EditAssessmentPage> {
     final state = ref.watch(teacherAssessmentProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close_rounded, color: Color(0xFF2B2B2B)),
+          icon: const Icon(Icons.close_rounded, color: AppColors.foregroundPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -136,7 +137,7 @@ class _EditAssessmentPageState extends ConsumerState<EditAssessmentPage> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.foregroundPrimary,
             letterSpacing: -0.3,
           ),
         ),
@@ -146,7 +147,7 @@ class _EditAssessmentPageState extends ConsumerState<EditAssessmentPage> {
             child: TextButton(
               onPressed: state.isLoading ? null : _handleSave,
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF2B2B2B),
+                foregroundColor: AppColors.accentCharcoal,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
               child: state.isLoading
@@ -155,7 +156,7 @@ class _EditAssessmentPageState extends ConsumerState<EditAssessmentPage> {
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                       ),
                     )
                   : const Text(
@@ -250,7 +251,7 @@ class _EditAssessmentPageState extends ConsumerState<EditAssessmentPage> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+                  border: Border.all(color: AppColors.borderLight, width: 1),
                 ),
                 child: SwitchListTile(
                   contentPadding: const EdgeInsets.symmetric(
@@ -262,18 +263,18 @@ class _EditAssessmentPageState extends ConsumerState<EditAssessmentPage> {
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 15,
-                      color: Color(0xFF2B2B2B),
+                      color: AppColors.foregroundPrimary,
                     ),
                   ),
                   subtitle: const Text(
                     'Students can see results right after submission',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Color(0xFF999999),
+                      color: AppColors.foregroundTertiary,
                     ),
                   ),
                   value: _showResultsImmediately,
-                  activeThumbColor: const Color(0xFF2B2B2B),
+                  activeThumbColor: AppColors.accentCharcoal,
                   onChanged: state.isLoading
                       ? null
                       : (value) => setState(() => _showResultsImmediately = value),

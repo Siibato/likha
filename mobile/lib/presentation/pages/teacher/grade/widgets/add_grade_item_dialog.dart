@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/styled_button.dart';
@@ -36,7 +37,7 @@ void showAddGradeItemDialog({
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE0E0E0),
+                  color: AppColors.borderLight,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -47,7 +48,7 @@ void showAddGradeItemDialog({
               style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF2B2B2B)),
+                  color: AppColors.accentCharcoal),
             ),
             const SizedBox(height: 16),
             // Component selector
@@ -64,13 +65,13 @@ void showAddGradeItemDialog({
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: selectedComponent == _componentKeys[i]
-                              ? const Color(0xFF2B2B2B)
+                              ? AppColors.accentCharcoal
                               : Colors.white,
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: selectedComponent == _componentKeys[i]
-                                ? const Color(0xFF2B2B2B)
-                                : const Color(0xFFE0E0E0),
+                                ? AppColors.accentCharcoal
+                                : AppColors.borderLight,
                           ),
                         ),
                         child: Text(
@@ -80,7 +81,7 @@ void showAddGradeItemDialog({
                             fontWeight: FontWeight.w600,
                             color: selectedComponent == _componentKeys[i]
                                 ? Colors.white
-                                : const Color(0xFF666666),
+                                : AppColors.foregroundSecondary,
                           ),
                         ),
                       ),
@@ -101,7 +102,7 @@ void showAddGradeItemDialog({
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(13),
                   borderSide:
-                      const BorderSide(color: Color(0xFF2B2B2B), width: 1.5),
+                      const BorderSide(color: AppColors.accentCharcoal, width: 1.5),
                 ),
               ),
             ),
@@ -117,7 +118,7 @@ void showAddGradeItemDialog({
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(13),
                   borderSide:
-                      const BorderSide(color: Color(0xFF2B2B2B), width: 1.5),
+                      const BorderSide(color: AppColors.accentCharcoal, width: 1.5),
                 ),
               ),
             ),

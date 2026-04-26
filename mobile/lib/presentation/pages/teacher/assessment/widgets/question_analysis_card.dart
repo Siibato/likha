@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
 
 class QuestionAnalysisCard extends StatelessWidget {
@@ -26,11 +27,11 @@ class QuestionAnalysisCard extends StatelessWidget {
 
   Color _getPerformanceColor(double percentage) {
     if (percentage >= 75) {
-      return const Color(0xFF4CAF50);
+      return AppColors.semanticSuccess;
     } else if (percentage >= 50) {
-      return const Color(0xFFFFA726);
+      return AppColors.accentAmber;
     } else {
-      return const Color(0xFFEF5350);
+      return AppColors.semanticError;
     }
   }
 
@@ -42,7 +43,7 @@ class QuestionAnalysisCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
+        color: AppColors.accentCharcoal,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Container(
@@ -63,7 +64,7 @@ class QuestionAnalysisCard extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: AppColors.backgroundTertiary,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -71,7 +72,7 @@ class QuestionAnalysisCard extends StatelessWidget {
                     style: const TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 12,
-                      color: Color(0xFF2B2B2B),
+                      color: AppColors.foregroundPrimary,
                     ),
                   ),
                 ),
@@ -82,14 +83,14 @@ class QuestionAnalysisCard extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: AppColors.backgroundTertiary,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
                     _questionTypeLabel(stats.questionType),
                     style: const TextStyle(
                       fontSize: 11,
-                      color: Color(0xFF666666),
+                      color: AppColors.foregroundSecondary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -99,7 +100,7 @@ class QuestionAnalysisCard extends StatelessWidget {
                   '${stats.points} pt${stats.points != 1 ? 's' : ''}',
                   style: const TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF999999),
+                    color: AppColors.foregroundTertiary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -110,7 +111,7 @@ class QuestionAnalysisCard extends StatelessWidget {
               stats.questionText,
               style: const TextStyle(
                 fontSize: 14,
-                color: Color(0xFF404040),
+                color: AppColors.foregroundPrimary,
                 fontWeight: FontWeight.w500,
               ),
               maxLines: 2,
@@ -125,7 +126,7 @@ class QuestionAnalysisCard extends StatelessWidget {
                     child: LinearProgressIndicator(
                       value: pct / 100,
                       minHeight: 10,
-                      backgroundColor: const Color(0xFFF5F5F5),
+                      backgroundColor: AppColors.backgroundTertiary,
                       valueColor: AlwaysStoppedAnimation<Color>(barColor),
                     ),
                   ),
@@ -146,7 +147,7 @@ class QuestionAnalysisCard extends StatelessWidget {
               '${stats.correctCount} correct • ${stats.incorrectCount} incorrect',
               style: const TextStyle(
                 fontSize: 12,
-                color: Color(0xFF999999),
+                color: AppColors.foregroundTertiary,
                 fontWeight: FontWeight.w500,
                 ),
             ),

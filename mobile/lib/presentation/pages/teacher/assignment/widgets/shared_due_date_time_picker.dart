@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class SharedDueDateTimePicker extends StatelessWidget {
   final String label;
@@ -51,10 +52,10 @@ class SharedDueDateTimePicker extends StatelessWidget {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF2B2B2B),
+              primary: AppColors.accentCharcoal,
               onPrimary: Colors.white,
               surface: Colors.white,
-              onSurface: Color(0xFF2B2B2B),
+              onSurface: AppColors.accentCharcoal,
             ),
           ),
           child: child!,
@@ -71,12 +72,12 @@ class SharedDueDateTimePicker extends StatelessWidget {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF2B2B2B),
+              primary: AppColors.accentCharcoal,
               onPrimary: Colors.white,
               surface: Colors.white,
-              onSurface: Color(0xFF2B2B2B),
-              secondary: Color(0xFF2B2B2B),
-              tertiary: Color(0xFF2B2B2B),
+              onSurface: AppColors.accentCharcoal,
+              secondary: AppColors.accentCharcoal,
+              tertiary: AppColors.accentCharcoal,
               onTertiary: Colors.white,
             ),
           ),
@@ -99,30 +100,30 @@ class SharedDueDateTimePicker extends StatelessWidget {
           labelText: label,
           labelStyle: const TextStyle(
             fontSize: 14,
-            color: Color(0xFF999999),
+            color: AppColors.foregroundTertiary,
           ),
           prefixIcon: Icon(
             icon,
-            color: const Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
             size: 20,
           ),
           suffixIcon: const Icon(
             Icons.arrow_drop_down_rounded,
-            color: Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
           ),
           filled: true,
           fillColor: Colors.white,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(
-              color: Color(0xFFE0E0E0),
+              color: AppColors.borderLight,
               width: 1,
             ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(
-              color: Color(0xFFE0E0E0),
+              color: AppColors.borderLight,
               width: 1,
             ),
           ),
@@ -133,7 +134,7 @@ class SharedDueDateTimePicker extends StatelessWidget {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
           ),
         ),
       ),

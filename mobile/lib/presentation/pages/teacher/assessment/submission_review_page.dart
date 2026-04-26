@@ -301,7 +301,7 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
     IconData statusIcon;
 
     if (isEssay && isPending) {
-      statusColor = AppColors.deprecatedWarningYellow;
+      statusColor = AppColors.accentAmber;
       statusIcon = Icons.hourglass_empty_rounded;
     } else {
       final isAutoCorrect = answer.isAutoCorrect ??
@@ -371,7 +371,7 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
             const SizedBox(height: 8),
             const StatusBadge(
               label: 'Grade overridden',
-              color: AppColors.deprecatedWarningYellow,
+              color: AppColors.accentAmber,
               icon: Icons.edit_outlined,
               variant: BadgeVariant.filled,
             ),
@@ -424,7 +424,7 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
               labelText: 'Score (0 – ${answer.points})',
               labelStyle: const TextStyle(fontSize: 13, color: AppColors.foregroundTertiary),
               filled: true,
-              fillColor: const Color(0xFFFAFAFA),
+              fillColor: AppColors.backgroundSecondary,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: const BorderSide(color: AppColors.borderLight),
@@ -525,7 +525,7 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
+        color: AppColors.backgroundSecondary,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.borderLight),
       ),
@@ -687,7 +687,7 @@ class _OverrideGradeDialogState extends State<_OverrideGradeDialog> {
                 labelText: 'Points (0 – ${widget.answer.points})',
                 labelStyle: const TextStyle(fontSize: 13, color: AppColors.foregroundTertiary),
                 filled: true,
-                fillColor: const Color(0xFFFAFAFA),
+                fillColor: AppColors.backgroundSecondary,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: const BorderSide(color: AppColors.borderLight),

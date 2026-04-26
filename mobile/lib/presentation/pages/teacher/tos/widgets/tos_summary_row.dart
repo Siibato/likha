@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 
 class TosSummaryRow extends StatelessWidget {
@@ -20,9 +21,9 @@ class TosSummaryRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0F0F0),
+        color: AppColors.borderLight,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: Row(
         children: [
@@ -31,7 +32,7 @@ class TosSummaryRow extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF2B2B2B),
+              color: AppColors.accentCharcoal,
             ),
           ),
           const Spacer(),
@@ -40,7 +41,7 @@ class TosSummaryRow extends StatelessWidget {
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF666666),
+              color: AppColors.foregroundSecondary,
             ),
           ),
           const SizedBox(width: 16),
@@ -49,7 +50,7 @@ class TosSummaryRow extends StatelessWidget {
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF666666),
+              color: AppColors.foregroundSecondary,
             ),
           ),
         ],

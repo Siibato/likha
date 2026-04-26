@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/presentation/pages/teacher/assessment/widgets/assessment_field.dart';
 import 'package:likha/presentation/pages/teacher/assignment/widgets/shared_due_date_time_picker.dart';
@@ -124,7 +125,7 @@ class AssessmentDetailsSection extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: const Color(0xFFE0E0E0),
+                color: AppColors.borderLight,
                 width: 1,
               ),
             ),
@@ -138,18 +139,18 @@ class AssessmentDetailsSection extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.foregroundPrimary,
                 ),
               ),
               subtitle: const Text(
                 'Students can see results right after submission',
                 style: TextStyle(
                   fontSize: 13,
-                  color: Color(0xFF999999),
+                  color: AppColors.foregroundTertiary,
                 ),
               ),
               value: showResultsImmediately,
-              activeThumbColor: const Color(0xFF2B2B2B),
+              activeThumbColor: AppColors.accentCharcoal,
               onChanged: isLoading ? null : onShowResultsChanged,
             ),
           ),
@@ -159,7 +160,7 @@ class AssessmentDetailsSection extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: const Color(0xFFE0E0E0),
+                color: AppColors.borderLight,
                 width: 1,
               ),
             ),
@@ -169,22 +170,22 @@ class AssessmentDetailsSection extends StatelessWidget {
                 vertical: 4,
               ),
               title: const Text(
-                'Publish immediately',
+                'Publish',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.foregroundPrimary,
                 ),
               ),
               subtitle: const Text(
                 'Students can see this assessment right away',
                 style: TextStyle(
                   fontSize: 13,
-                  color: Color(0xFF999999),
+                  color: AppColors.foregroundTertiary,
                 ),
               ),
               value: isPublished,
-              activeThumbColor: const Color(0xFF2B2B2B),
+              activeThumbColor: AppColors.accentCharcoal,
               onChanged: isLoading ? null : onIsPublishedChanged,
             ),
           ),
@@ -195,28 +196,28 @@ class AssessmentDetailsSection extends StatelessWidget {
               labelText: 'Quarter (for grading)',
               labelStyle: const TextStyle(
                 fontSize: 14,
-                color: Color(0xFF999999),
+                color: AppColors.foregroundTertiary,
               ),
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: Color(0xFFE0E0E0),
+                borderSide: BorderSide(
+                  color: AppColors.borderLight,
                   width: 1,
                 ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: Color(0xFFE0E0E0),
+                borderSide: BorderSide(
+                  color: AppColors.borderLight,
                   width: 1,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: Color(0xFF2B2B2B),
+                borderSide: BorderSide(
+                  color: AppColors.accentCharcoal,
                   width: 1.5,
                 ),
               ),
@@ -238,28 +239,28 @@ class AssessmentDetailsSection extends StatelessWidget {
               labelText: 'Grade Component',
               labelStyle: const TextStyle(
                 fontSize: 14,
-                color: Color(0xFF999999),
+                color: AppColors.foregroundTertiary,
               ),
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: Color(0xFFE0E0E0),
+                borderSide: BorderSide(
+                  color: AppColors.borderLight,
                   width: 1,
                 ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: Color(0xFFE0E0E0),
+                borderSide: BorderSide(
+                  color: AppColors.borderLight,
                   width: 1,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: Color(0xFF2B2B2B),
+                borderSide: BorderSide(
+                  color: AppColors.accentCharcoal,
                   width: 1.5,
                 ),
               ),
@@ -283,7 +284,7 @@ class AssessmentDetailsSection extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: const Color(0xFFE0E0E0),
+                  color: AppColors.borderLight,
                   width: 1,
                 ),
               ),
@@ -293,22 +294,22 @@ class AssessmentDetailsSection extends StatelessWidget {
                   vertical: 4,
                 ),
                 title: const Text(
-                  'Departmental Exam',
+                  'Departmental Quarterly Exam',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF2B2B2B),
+                    color: AppColors.foregroundPrimary,
                   ),
                 ),
                 subtitle: const Text(
                   'Mark as departmental quarterly exam',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF999999),
+                    color: AppColors.foregroundTertiary,
                   ),
                 ),
                 value: isDepartmentalExam,
-                activeThumbColor: const Color(0xFF2B2B2B),
+                activeThumbColor: AppColors.accentCharcoal,
                 onChanged: isLoading ? null : onDepartmentalExamChanged,
               ),
             ),
@@ -321,28 +322,28 @@ class AssessmentDetailsSection extends StatelessWidget {
                 labelText: 'Link to TOS (optional)',
                 labelStyle: const TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF999999),
+                  color: AppColors.foregroundTertiary,
                 ),
                 filled: true,
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(
-                    color: Color(0xFFE0E0E0),
+                    color: AppColors.borderLight,
                     width: 1,
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(
-                    color: Color(0xFFE0E0E0),
+                    color: AppColors.borderLight,
                     width: 1,
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(
-                    color: Color(0xFF2B2B2B),
+                    color: AppColors.accentCharcoal,
                     width: 1.5,
                   ),
                 ),

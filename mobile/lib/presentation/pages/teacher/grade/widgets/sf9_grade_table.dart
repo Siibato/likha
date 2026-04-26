@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/grading/entities/sf9.dart';
 
 class Sf9GradeTable extends StatelessWidget {
@@ -25,7 +26,7 @@ class Sf9GradeTable extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE0E0E0)),
+          border: Border.all(color: AppColors.borderLight),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -33,7 +34,7 @@ class Sf9GradeTable extends StatelessWidget {
             // Header
             Container(
               decoration: const BoxDecoration(
-                color: Color(0xFFF8F9FA),
+                color: AppColors.backgroundTertiary,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(11),
                   topRight: Radius.circular(11),
@@ -51,13 +52,13 @@ class Sf9GradeTable extends StatelessWidget {
                 ],
               ),
             ),
-            const Divider(height: 1, color: Color(0xFFE0E0E0)),
+            const Divider(height: 1, color: AppColors.borderLight),
             // Subject rows
             ...subjects.asMap().entries.map((entry) {
               final i = entry.key;
               final s = entry.value;
               return Container(
-                color: i.isEven ? Colors.white : const Color(0xFFFAFAFA),
+                color: i.isEven ? Colors.white : AppColors.backgroundSecondary,
                 child: Row(
                   children: [
                     _cell(s.classTitle, nameWidth, cellHeight, align: Alignment.centerLeft),
@@ -67,17 +68,17 @@ class Sf9GradeTable extends StatelessWidget {
                     _gradeCell(s.q4, cellWidth, cellHeight),
                     _gradeCell(s.finalGrade, fgWidth, cellHeight, bold: true),
                     _cell(s.descriptor ?? '--', descWidth, cellHeight,
-                        color: const Color(0xFF666666), size: 10),
+                        color: AppColors.foregroundSecondary, size: 10),
                   ],
                 ),
               );
             }),
             // General Average row
             if (generalAverage != null) ...[
-              const Divider(height: 1, color: Color(0xFFE0E0E0)),
+              const Divider(height: 1, color: AppColors.borderLight),
               Container(
                 decoration: const BoxDecoration(
-                  color: Color(0xFFF0F0F0),
+                  color: AppColors.borderLight,
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(11),
                     bottomRight: Radius.circular(11),
@@ -110,7 +111,7 @@ class Sf9GradeTable extends StatelessWidget {
     double height, {
     bool bold = false,
     Alignment align = Alignment.center,
-    Color color = const Color(0xFF2B2B2B),
+    Color color = AppColors.accentCharcoal,
     double size = 12,
   }) {
     return SizedBox(
@@ -141,7 +142,7 @@ class Sf9GradeTable extends StatelessWidget {
       width,
       height,
       bold: bold,
-      color: grade != null ? const Color(0xFF2B2B2B) : const Color(0xFFCCCCCC),
+      color: grade != null ? AppColors.accentCharcoal : AppColors.foregroundLight,
     );
   }
 }

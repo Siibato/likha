@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/auth/entities/user.dart';
@@ -47,17 +48,17 @@ class _ClassStudentListPageState extends ConsumerState<ClassStudentListPage> {
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF2B2B2B)),
+        iconTheme: const IconThemeData(color: AppColors.accentCharcoal),
         title: const Text(
           'Students',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
             letterSpacing: -0.4,
           ),
         ),
@@ -72,7 +73,7 @@ class _ClassStudentListPageState extends ConsumerState<ClassStudentListPage> {
           if (classState.isLoading && students.isEmpty) {
             return const Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
                 strokeWidth: 2.5,
               ),
             );
@@ -93,7 +94,7 @@ class _ClassStudentListPageState extends ConsumerState<ClassStudentListPage> {
               return Container(
                 margin: const EdgeInsets.only(bottom: 14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE0E0E0),
+                  color: AppColors.borderLight,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Container(
@@ -125,7 +126,7 @@ class _ClassStudentListPageState extends ConsumerState<ClassStudentListPage> {
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF8F9FA),
+                                color: AppColors.backgroundTertiary,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -135,7 +136,7 @@ class _ClassStudentListPageState extends ConsumerState<ClassStudentListPage> {
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF2B2B2B),
+                                  color: AppColors.accentCharcoal,
                                 ),
                               ),
                             ),
@@ -150,7 +151,7 @@ class _ClassStudentListPageState extends ConsumerState<ClassStudentListPage> {
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xFF202020),
+                                      color: AppColors.foregroundDark,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -158,7 +159,7 @@ class _ClassStudentListPageState extends ConsumerState<ClassStudentListPage> {
                                     '@${user.username}',
                                     style: const TextStyle(
                                       fontSize: 13,
-                                      color: Color(0xFF999999),
+                                      color: AppColors.foregroundTertiary,
                                     ),
                                   ),
                                 ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class AssignmentDueDatePicker extends StatelessWidget {
   final DateTime dueAt;
@@ -47,30 +48,30 @@ class AssignmentDueDatePicker extends StatelessWidget {
           labelText: 'Due Date',
           labelStyle: const TextStyle(
             fontSize: 14,
-            color: Color(0xFF999999),
+            color: AppColors.foregroundTertiary,
           ),
           prefixIcon: const Icon(
             Icons.event_rounded,
-            color: Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
             size: 20,
           ),
           suffixIcon: const Icon(
             Icons.arrow_drop_down_rounded,
-            color: Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
           ),
           filled: true,
           fillColor: Colors.white,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(
-              color: Color(0xFFE0E0E0),
+              color: AppColors.borderLight,
               width: 1,
             ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(
-              color: Color(0xFFE0E0E0),
+              color: AppColors.borderLight,
               width: 1,
             ),
           ),
@@ -81,7 +82,7 @@ class AssignmentDueDatePicker extends StatelessWidget {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
           ),
         ),
       ),

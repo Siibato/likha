@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/markdown_display.dart';
 
 class AssignmentInstructionsCard extends StatelessWidget {
@@ -16,7 +17,7 @@ class AssignmentInstructionsCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFFE0E0E0),
+          color: AppColors.borderLight,
           width: 1,
         ),
       ),
@@ -29,7 +30,7 @@ class AssignmentInstructionsCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
               letterSpacing: -0.3,
             ),
           ),

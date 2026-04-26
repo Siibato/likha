@@ -231,7 +231,7 @@ class _AssessmentDetailDesktopState
           fontWeight: FontWeight.w600,
           color: isPublished
               ? AppColors.semanticSuccess
-              : AppColors.deprecatedDraftOrange,
+              : AppColors.accentAmber,
         ),
       ),
     );

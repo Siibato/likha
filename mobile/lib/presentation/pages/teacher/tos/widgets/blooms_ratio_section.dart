@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class BloomsRatioSection extends StatefulWidget {
   final TextEditingController rememberingController;
@@ -60,14 +61,14 @@ class _BloomsRatioSectionState extends State<BloomsRatioSection> {
   @override
   Widget build(BuildContext context) {
     final isValid = (_total - 100).abs() <= 0.5;
-    final totalColor = isValid ? const Color(0xFF2E7D32) : const Color(0xFFD32F2F);
+    final totalColor = isValid ? AppColors.semanticSuccess : AppColors.semanticErrorDark;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,7 +81,7 @@ class _BloomsRatioSectionState extends State<BloomsRatioSection> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF666666),
+                    color: AppColors.foregroundSecondary,
                   ),
                 ),
               ),
@@ -105,7 +106,7 @@ class _BloomsRatioSectionState extends State<BloomsRatioSection> {
                 child: _PctField(
                   controller: widget.rememberingController,
                   label: 'R',
-                  color: const Color(0xFF1565C0),
+                  color: AppColors.accentCharcoal,
                 ),
               ),
               const SizedBox(width: 8),
@@ -113,7 +114,7 @@ class _BloomsRatioSectionState extends State<BloomsRatioSection> {
                 child: _PctField(
                   controller: widget.understandingController,
                   label: 'U',
-                  color: const Color(0xFF283593),
+                  color: AppColors.accentCharcoal,
                 ),
               ),
               const SizedBox(width: 8),
@@ -121,7 +122,7 @@ class _BloomsRatioSectionState extends State<BloomsRatioSection> {
                 child: _PctField(
                   controller: widget.applyingController,
                   label: 'Ap',
-                  color: const Color(0xFF2E7D32),
+                  color: AppColors.semanticSuccess,
                 ),
               ),
               const SizedBox(width: 8),
@@ -129,7 +130,7 @@ class _BloomsRatioSectionState extends State<BloomsRatioSection> {
                 child: _PctField(
                   controller: widget.analyzingController,
                   label: 'An',
-                  color: const Color(0xFFF57F17),
+                  color: AppColors.accentAmber,
                 ),
               ),
               const SizedBox(width: 8),
@@ -137,7 +138,7 @@ class _BloomsRatioSectionState extends State<BloomsRatioSection> {
                 child: _PctField(
                   controller: widget.evaluatingController,
                   label: 'E',
-                  color: const Color(0xFFE65100),
+                  color: AppColors.accentAmberBorder,
                 ),
               ),
               const SizedBox(width: 8),
@@ -145,7 +146,7 @@ class _BloomsRatioSectionState extends State<BloomsRatioSection> {
                 child: _PctField(
                   controller: widget.creatingController,
                   label: 'C',
-                  color: const Color(0xFFC62828),
+                  color: AppColors.semanticErrorDark,
                 ),
               ),
             ],
@@ -181,7 +182,7 @@ class _PctField extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             Text(label,
-                style: const TextStyle(fontSize: 11, color: Color(0xFF666666))),
+                style: const TextStyle(fontSize: 11, color: AppColors.foregroundSecondary)),
           ],
         ),
         const SizedBox(height: 4),
@@ -192,20 +193,20 @@ class _PctField extends StatelessWidget {
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
           ),
           decoration: InputDecoration(
             suffixText: '%',
-            suffixStyle: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
+            suffixStyle: const TextStyle(fontSize: 12, color: AppColors.foregroundTertiary),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+              borderSide: const BorderSide(color: AppColors.borderLight),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+              borderSide: const BorderSide(color: AppColors.borderLight),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),

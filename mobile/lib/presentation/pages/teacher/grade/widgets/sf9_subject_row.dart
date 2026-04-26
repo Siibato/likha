@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/grading/entities/sf9.dart';
 
 class Sf9SubjectRowWidget extends StatelessWidget {
@@ -19,7 +20,7 @@ class Sf9SubjectRowWidget extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
               ),
             ),
           ),
@@ -36,8 +37,8 @@ class Sf9SubjectRowWidget extends StatelessWidget {
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 color: row.finalGrade != null
-                    ? const Color(0xFF2B2B2B)
-                    : const Color(0xFFCCCCCC),
+                    ? AppColors.accentCharcoal
+                    : AppColors.foregroundLight,
               ),
             ),
           ),
@@ -54,7 +55,7 @@ class Sf9SubjectRowWidget extends StatelessWidget {
         textAlign: TextAlign.center,
         style: TextStyle(
           fontSize: 12,
-          color: grade != null ? const Color(0xFF2B2B2B) : const Color(0xFFCCCCCC),
+          color: grade != null ? AppColors.accentCharcoal : AppColors.foregroundLight,
         ),
       ),
     );

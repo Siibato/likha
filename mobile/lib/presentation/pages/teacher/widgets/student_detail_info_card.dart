@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
 
@@ -23,7 +24,7 @@ class StudentDetailInfoCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FA),
+              color: AppColors.backgroundTertiary,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
@@ -34,7 +35,7 @@ class StudentDetailInfoCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.foregroundPrimary,
                 ),
               ),
             ),
@@ -52,7 +53,7 @@ class StudentDetailInfoCard extends StatelessWidget {
                 const Divider(
                   height: 16,
                   thickness: 1,
-                  color: Color(0xFFEEEEEE),
+                  color: AppColors.borderLight,
                 ),
                 _InfoRow(
                   label: 'Full Name',
@@ -61,7 +62,7 @@ class StudentDetailInfoCard extends StatelessWidget {
                 const Divider(
                   height: 16,
                   thickness: 1,
-                  color: Color(0xFFEEEEEE),
+                  color: AppColors.borderLight,
                 ),
                 _InfoRow(
                   label: 'Class',
@@ -97,7 +98,7 @@ class _InfoRow extends StatelessWidget {
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
             ),
           ),
         ),
@@ -107,7 +108,7 @@ class _InfoRow extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
             ),
             overflow: TextOverflow.ellipsis,
           ),

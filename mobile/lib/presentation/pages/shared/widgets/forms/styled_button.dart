@@ -36,7 +36,7 @@ class StyledButton extends StatelessWidget {
 
     final button = Container(
       decoration: BoxDecoration(
-        color: isLoading ? const Color(0xFFE0E0E0) : bgColor,
+        color: isLoading ? AppColors.borderLight : bgColor,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Container(
@@ -44,7 +44,7 @@ class StyledButton extends StatelessWidget {
         child: ElevatedButton(
           onPressed: isLoading ? null : onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: isLoading ? const Color(0xFFF5F5F5) : bgColor,
+            backgroundColor: isLoading ? AppColors.backgroundDisabled : bgColor,
             foregroundColor: fgColor,
             elevation: 0,
             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -58,7 +58,7 @@ class StyledButton extends StatelessWidget {
                   width: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2.5,
-                    color: Color(0xFF999999),
+                    color: AppColors.foregroundTertiary,
                   ),
                 )
               : Row(
@@ -93,8 +93,8 @@ class StyledButton extends StatelessWidget {
   /// Returns (backgroundColor, foregroundColor) tuple based on variant.
   (Color, Color) _getColors() {
     return switch (variant) {
-      StyledButtonVariant.primary => (AppColors.foregroundPrimary, Colors.white),
-      StyledButtonVariant.destructive => (const Color(0xFFEF5350), Colors.white),
+      StyledButtonVariant.primary => (AppColors.accentCharcoal, Colors.white),
+      StyledButtonVariant.destructive => (AppColors.semanticError, Colors.white),
       StyledButtonVariant.outlined => (Colors.transparent, AppColors.foregroundSecondary),
     };
   }

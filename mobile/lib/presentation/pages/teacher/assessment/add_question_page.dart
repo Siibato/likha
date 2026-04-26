@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
@@ -160,12 +161,12 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
     final state = ref.watch(teacherAssessmentProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close_rounded, color: Color(0xFF2B2B2B)),
+          icon: const Icon(Icons.close_rounded, color: AppColors.foregroundPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -173,7 +174,7 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.foregroundPrimary,
             letterSpacing: -0.3,
           ),
         ),
@@ -183,7 +184,7 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
             child: TextButton(
               onPressed: state.isLoading ? null : _handleSave,
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF2B2B2B),
+                foregroundColor: AppColors.accentCharcoal,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
               child: state.isLoading
@@ -192,7 +193,7 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                       ),
                     )
                   : const Text(
@@ -265,17 +266,17 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                    border: Border.all(color: AppColors.borderLight),
                   ),
                   child: DropdownButtonFormField<String?>(
                     initialValue: _selectedCompetencyId,
                     isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: 'Competency (optional)',
-                      prefixIcon: Icon(Icons.list_alt_rounded, color: Color(0xFF999999), size: 20),
+                      prefixIcon: Icon(Icons.list_alt_rounded, color: AppColors.foregroundTertiary, size: 20),
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      labelStyle: TextStyle(fontSize: 14, color: Color(0xFF999999)),
+                      labelStyle: TextStyle(fontSize: 14, color: AppColors.foregroundTertiary),
                     ),
                     items: [
                       const DropdownMenuItem(value: null, child: Text('None')),
@@ -300,16 +301,16 @@ class _AddQuestionPageState extends ConsumerState<AddQuestionPage> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                    border: Border.all(color: AppColors.borderLight),
                   ),
                   child: DropdownButtonFormField<String?>(
                     initialValue: _selectedCognitiveLevel,
                     decoration: const InputDecoration(
                       labelText: 'Cognitive Level (optional)',
-                      prefixIcon: Icon(Icons.psychology_outlined, color: Color(0xFF999999), size: 20),
+                      prefixIcon: Icon(Icons.psychology_outlined, color: AppColors.foregroundTertiary, size: 20),
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      labelStyle: TextStyle(fontSize: 14, color: Color(0xFF999999)),
+                      labelStyle: TextStyle(fontSize: 14, color: AppColors.foregroundTertiary),
                     ),
                     items: [
                       const DropdownMenuItem(value: null, child: Text('None')),

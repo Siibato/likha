@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 /// A reusable submission type dropdown for assignment configuration.
 /// Displays options: Text Only, File Only, Text and/or File
@@ -18,8 +19,8 @@ class SubmissionTypeDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     return Theme(
       data: Theme.of(context).copyWith(
-        highlightColor: const Color(0xFFFAFAFA),
-        splashColor: const Color(0xFFFAFAFA),
+        highlightColor: AppColors.backgroundSecondary,
+        splashColor: AppColors.backgroundSecondary,
       ),
       child: DropdownButtonFormField<String>(
         initialValue: value,
@@ -28,11 +29,11 @@ class SubmissionTypeDropdown extends StatelessWidget {
           labelText: 'Submission Type',
           labelStyle: const TextStyle(
             fontSize: 14,
-            color: Color(0xFF999999),
+            color: AppColors.foregroundTertiary,
           ),
           prefixIcon: const Icon(
             Icons.upload_file_rounded,
-            color: Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
             size: 20,
           ),
           filled: true,
@@ -40,21 +41,21 @@ class SubmissionTypeDropdown extends StatelessWidget {
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(
-              color: Color(0xFFE0E0E0),
+              color: AppColors.borderLight,
               width: 1,
             ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(
-              color: Color(0xFFE0E0E0),
+              color: AppColors.borderLight,
               width: 1,
             ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(
-              color: Color(0xFF2B2B2B),
+              color: AppColors.accentCharcoal,
               width: 1.5,
             ),
           ),
@@ -66,7 +67,7 @@ class SubmissionTypeDropdown extends StatelessWidget {
         style: const TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w500,
-          color: Color(0xFF202020),
+          color: AppColors.foregroundDark,
         ),
         items: const [
           DropdownMenuItem(value: 'text', child: Text('Text Only')),

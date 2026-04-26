@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class AssignmentCard extends StatelessWidget {
   final String title;
@@ -40,7 +41,7 @@ class AssignmentCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
         decoration: BoxDecoration(
-          color: const Color(0xFFE0E0E0),
+          color: AppColors.accentCharcoal,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Container(
@@ -55,12 +56,12 @@ class AssignmentCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8F9FA),
+                  color: AppColors.backgroundTertiary,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.assignment_outlined,
-                  color: Color(0xFF404040),
+                  color: AppColors.accentCharcoal,
                   size: 22,
                 ),
               ),
@@ -74,44 +75,44 @@ class AssignmentCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF202020),
+                        color: AppColors.foregroundDark,
                         letterSpacing: -0.4,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.star_outline_rounded,
                           size: 14,
-                          color: Colors.grey[600],
+                          color: AppColors.foregroundSecondary,
                         ),
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
                             '$totalPoints pts',
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 13,
-                              color: Colors.grey[600],
+                              color: AppColors.foregroundSecondary,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Icon(
+                        const Icon(
                           Icons.event_rounded,
                           size: 14,
-                          color: Colors.grey[600],
+                          color: AppColors.foregroundSecondary,
                         ),
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
                             _formatDateTime(dueAt),
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 13,
-                              color: Colors.grey[600],
+                              color: AppColors.foregroundSecondary,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -128,17 +129,17 @@ class AssignmentCard extends StatelessWidget {
                               vertical: 3,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8F9FA),
+                              color: AppColors.backgroundTertiary,
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(
-                                color: const Color(0xFFE0E0E0),
+                                color: AppColors.borderLight,
                               ),
                             ),
                             child: Text(
                               'Score: $score/$totalPoints',
                               style: const TextStyle(
                                 fontSize: 11,
-                                color: Color(0xFF666666),
+                                color: AppColors.foregroundSecondary,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -151,17 +152,17 @@ class AssignmentCard extends StatelessWidget {
                               vertical: 3,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8F9FA),
+                              color: AppColors.backgroundTertiary,
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(
-                                color: const Color(0xFFE0E0E0),
+                                color: AppColors.borderLight,
                               ),
                             ),
                             child: const Text(
                               'Submitted',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Color(0xFF666666),
+                                color: AppColors.foregroundSecondary,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -174,17 +175,17 @@ class AssignmentCard extends StatelessWidget {
                               vertical: 3,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8F9FA),
+                              color: AppColors.backgroundTertiary,
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(
-                                color: const Color(0xFFE0E0E0),
+                                color: AppColors.borderLight,
                               ),
                             ),
                             child: const Text(
                               'Returned',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Color(0xFF666666),
+                                color: AppColors.foregroundSecondary,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -198,17 +199,17 @@ class AssignmentCard extends StatelessWidget {
                               vertical: 3,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8F9FA),
+                              color: AppColors.backgroundTertiary,
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(
-                                color: const Color(0xFFE0E0E0),
+                                color: AppColors.borderLight,
                               ),
                             ),
                             child: const Text(
                               'Past Due',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Color(0xFF666666),
+                                color: AppColors.foregroundSecondary,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -221,7 +222,7 @@ class AssignmentCard extends StatelessWidget {
               ),
               const Icon(
                 Icons.chevron_right_rounded,
-                color: Color(0xFFCCCCCC),
+                color: AppColors.borderLight,
                 size: 24,
               ),
             ],

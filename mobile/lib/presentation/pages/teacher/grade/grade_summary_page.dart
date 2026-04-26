@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/utils/transmutation_util.dart';
 import 'package:likha/domain/grading/usecases/get_final_grades.dart';
 import 'package:likha/injection_container.dart';
@@ -143,7 +144,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
     final configState = ref.watch(gradingConfigProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
         child: Column(
           children: [
@@ -163,12 +164,12 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                     child: ChoiceChip(
                       label: Text('Q$q'),
                       selected: _selectedQuarter == q,
-                      selectedColor: const Color(0xFF2B2B2B),
+                      selectedColor: AppColors.accentCharcoal,
                       backgroundColor: Colors.white,
                       labelStyle: TextStyle(
                         color: _selectedQuarter == q
                             ? Colors.white
-                            : const Color(0xFF666666),
+                            : AppColors.foregroundSecondary,
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),
@@ -176,8 +177,8 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                         borderRadius: BorderRadius.circular(10),
                         side: BorderSide(
                           color: _selectedQuarter == q
-                              ? const Color(0xFF2B2B2B)
-                              : const Color(0xFFE0E0E0),
+                              ? AppColors.accentCharcoal
+                              : AppColors.borderLight,
                         ),
                       ),
                       onSelected: (_) => _onQuarterChanged(q),
@@ -193,12 +194,12 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE0E0E0)),
+                border: Border.all(color: AppColors.borderLight),
               ),
               child: TabBar(
                 controller: _tabController,
-                labelColor: const Color(0xFF2B2B2B),
-                unselectedLabelColor: const Color(0xFF999999),
+                labelColor: AppColors.accentCharcoal,
+                unselectedLabelColor: AppColors.foregroundTertiary,
                 labelStyle: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -208,7 +209,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                   fontWeight: FontWeight.w500,
                 ),
                 indicator: BoxDecoration(
-                  color: const Color(0xFFF8F9FA),
+                  color: AppColors.backgroundTertiary,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 indicatorSize: TabBarIndicatorSize.tab,
@@ -247,7 +248,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
     if (gradesState.isLoading) {
       return const Center(
         child: CircularProgressIndicator(
-          color: Color(0xFF2B2B2B),
+          color: AppColors.accentCharcoal,
           strokeWidth: 2.5,
         ),
       );
@@ -259,7 +260,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
           padding: const EdgeInsets.all(24),
           child: Text(
             gradesState.error!,
-            style: const TextStyle(fontSize: 14, color: Color(0xFFE57373)),
+            style: const TextStyle(fontSize: 14, color: AppColors.semanticError),
             textAlign: TextAlign.center,
           ),
         ),
@@ -272,16 +273,16 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.assessment_outlined, size: 48, color: Color(0xFFCCCCCC)),
+            Icon(Icons.assessment_outlined, size: 48, color: AppColors.foregroundLight),
             SizedBox(height: 12),
             Text(
               'No grade summary available',
-              style: TextStyle(fontSize: 14, color: Color(0xFF999999)),
+              style: TextStyle(fontSize: 14, color: AppColors.foregroundTertiary),
             ),
             SizedBox(height: 4),
             Text(
               'Compute grades from the Class Record first',
-              style: TextStyle(fontSize: 12, color: Color(0xFFCCCCCC)),
+              style: TextStyle(fontSize: 12, color: AppColors.foregroundLight),
             ),
           ],
         ),
@@ -327,7 +328,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE0E0E0)),
+          border: Border.all(color: AppColors.borderLight),
         ),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -337,7 +338,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
               // Header
               Container(
                 decoration: const BoxDecoration(
-                  color: Color(0xFFF8F9FA),
+                  color: AppColors.backgroundTertiary,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12),
@@ -353,7 +354,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                   ],
                 ),
               ),
-              const Divider(height: 1, color: Color(0xFFE0E0E0)),
+              const Divider(height: 1, color: AppColors.borderLight),
 
               // Rows
               ...summary.asMap().entries.map((entry) {
@@ -376,7 +377,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                   decoration: BoxDecoration(
                     color: index.isEven
                         ? Colors.white
-                        : const Color(0xFFFAFAFA),
+                        : AppColors.backgroundSecondary,
                   ),
                   child: Row(
                     children: [
@@ -388,7 +389,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF2B2B2B),
+                          color: AppColors.foregroundPrimary,
                         ),
                       ),
                       GradeTableCells.dataCell(
@@ -441,21 +442,21 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(4),
                                     borderSide: const BorderSide(
-                                      color: Color(0xFF1976D2),
+                                      color: AppColors.accentCharcoal,
                                       width: 1.5,
                                     ),
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(4),
                                     borderSide: const BorderSide(
-                                      color: Color(0xFF1976D2),
+                                      color: AppColors.accentCharcoal,
                                       width: 1.5,
                                     ),
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(4),
                                     borderSide: const BorderSide(
-                                      color: Color(0xFF1976D2),
+                                      color: AppColors.accentCharcoal,
                                       width: 1.5,
                                     ),
                                   ),
@@ -475,8 +476,8 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                               color: qg != null
-                                  ? const Color(0xFF2B2B2B)
-                                  : const Color(0xFFCCCCCC),
+                                  ? AppColors.foregroundPrimary
+                                  : AppColors.foregroundLight,
                             ),
                           ),
                         ),
@@ -508,7 +509,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                                   '--',
                                   style: TextStyle(
                                     fontSize: 13,
-                                    color: Color(0xFFCCCCCC),
+                                    color: AppColors.foregroundLight,
                                   ),
                                 ),
                         ),
@@ -532,7 +533,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
     if (_finalGradesLoading) {
       return const Center(
         child: CircularProgressIndicator(
-          color: Color(0xFF2B2B2B),
+          color: AppColors.accentCharcoal,
           strokeWidth: 2.5,
         ),
       );
@@ -547,7 +548,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
             children: [
               Text(
                 _finalGradesError!,
-                style: const TextStyle(fontSize: 14, color: Color(0xFFE57373)),
+                style: const TextStyle(fontSize: 14, color: AppColors.semanticError),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
@@ -555,7 +556,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                 onPressed: _loadFinalGrades,
                 child: const Text(
                   'Retry',
-                  style: TextStyle(color: Color(0xFF2B2B2B)),
+                  style: TextStyle(color: AppColors.foregroundPrimary),
                 ),
               ),
             ],
@@ -569,16 +570,16 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.grade_outlined, size: 48, color: Color(0xFFCCCCCC)),
+            Icon(Icons.grade_outlined, size: 48, color: AppColors.foregroundLight),
             SizedBox(height: 12),
             Text(
               'No final grades available',
-              style: TextStyle(fontSize: 14, color: Color(0xFF999999)),
+              style: TextStyle(fontSize: 14, color: AppColors.foregroundTertiary),
             ),
             SizedBox(height: 4),
             Text(
               'Compute quarterly grades first',
-              style: TextStyle(fontSize: 12, color: Color(0xFFCCCCCC)),
+              style: TextStyle(fontSize: 12, color: AppColors.foregroundLight),
             ),
           ],
         ),
@@ -605,7 +606,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE0E0E0)),
+          border: Border.all(color: AppColors.borderLight),
         ),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -615,7 +616,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
               // Header
               Container(
                 decoration: const BoxDecoration(
-                  color: Color(0xFFF8F9FA),
+                  color: AppColors.backgroundTertiary,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12),
@@ -634,7 +635,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                   ],
                 ),
               ),
-              const Divider(height: 1, color: Color(0xFFE0E0E0)),
+              const Divider(height: 1, color: AppColors.borderLight),
 
               // Rows
               ...data.asMap().entries.map((entry) {
@@ -665,7 +666,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                   decoration: BoxDecoration(
                     color: index.isEven
                         ? Colors.white
-                        : const Color(0xFFFAFAFA),
+                        : AppColors.backgroundSecondary,
                   ),
                   child: Row(
                     children: [
@@ -677,7 +678,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF2B2B2B),
+                          color: AppColors.foregroundPrimary,
                         ),
                       ),
                       GradeTableCells.dataCell(q1?.toString() ?? '--', cellWidth, cellHeight),
@@ -692,8 +693,8 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: finalGrade != null
-                              ? const Color(0xFF2B2B2B)
-                              : const Color(0xFFCCCCCC),
+                              ? AppColors.foregroundPrimary
+                              : AppColors.foregroundLight,
                         ),
                       ),
                       // GA column
@@ -713,8 +714,8 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: ga != null
-                                ? const Color(0xFF2B2B2B)
-                                : const Color(0xFFCCCCCC),
+                                ? AppColors.foregroundPrimary
+                                : AppColors.foregroundLight,
                           ),
                         );
                       }(),
@@ -746,7 +747,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                                   '--',
                                   style: TextStyle(
                                     fontSize: 13,
-                                    color: Color(0xFFCCCCCC),
+                                    color: AppColors.foregroundLight,
                                   ),
                                 ),
                         ),

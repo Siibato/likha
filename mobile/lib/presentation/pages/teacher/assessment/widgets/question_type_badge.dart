@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class QuestionTypeBadge extends StatelessWidget {
   final String questionType;
@@ -32,7 +33,7 @@ class QuestionTypeBadge extends StatelessWidget {
         icon = Icons.help_outline_rounded;
     }
 
-    const Color backgroundColor = Color(0xFF2C2C2C); // dark gray
+    const Color backgroundColor = AppColors.accentCharcoal;
     const Color foregroundColor = Colors.white;
 
     return Container(

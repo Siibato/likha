@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 
 class TosCompetencyRow extends StatelessWidget {
@@ -31,7 +32,7 @@ class TosCompetencyRow extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFFE0E0E0)),
+          border: Border.all(color: AppColors.borderLight),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -45,7 +46,7 @@ class TosCompetencyRow extends StatelessWidget {
                       margin: const EdgeInsets.only(bottom: 4),
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF0F0F0),
+                        color: AppColors.borderLight,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -53,7 +54,7 @@ class TosCompetencyRow extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF666666),
+                          color: AppColors.foregroundSecondary,
                         ),
                       ),
                     ),
@@ -62,7 +63,7 @@ class TosCompetencyRow extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF2B2B2B),
+                      color: AppColors.accentCharcoal,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -72,7 +73,7 @@ class TosCompetencyRow extends StatelessWidget {
                         '${competency.timeUnitsTaught} $timeUnit taught',
                         style: const TextStyle(
                           fontSize: 11,
-                          color: Color(0xFF999999),
+                          color: AppColors.foregroundTertiary,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -81,7 +82,7 @@ class TosCompetencyRow extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF666666),
+                          color: AppColors.foregroundSecondary,
                         ),
                       ),
                     ],
@@ -94,7 +95,7 @@ class TosCompetencyRow extends StatelessWidget {
                 onTap: onDelete,
                 child: const Padding(
                   padding: EdgeInsets.only(left: 8),
-                  child: Icon(Icons.close, size: 18, color: Color(0xFF999999)),
+                  child: Icon(Icons.close, size: 18, color: AppColors.foregroundTertiary),
                 ),
               ),
           ],

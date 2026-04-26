@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
 import 'package:likha/presentation/pages/teacher/assessment/widgets/item_analysis_card.dart';
 import 'package:likha/presentation/pages/teacher/assessment/widgets/item_analysis_print.dart';
@@ -21,7 +22,7 @@ class ItemAnalysisTab extends StatelessWidget {
               Icon(
                 Icons.analytics_outlined,
                 size: 64,
-                color: Color(0xFFCCCCCC),
+                color: AppColors.foregroundLight,
               ),
               SizedBox(height: 16),
               Text(
@@ -29,7 +30,7 @@ class ItemAnalysisTab extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.foregroundPrimary,
                 ),
               ),
               SizedBox(height: 8),
@@ -37,7 +38,7 @@ class ItemAnalysisTab extends StatelessWidget {
                 'At least 10 submitted responses are needed for meaningful analysis.',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF999999),
+                  color: AppColors.foregroundTertiary,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -65,7 +66,7 @@ class ItemAnalysisTab extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF202020),
+                    color: AppColors.foregroundDark,
                     letterSpacing: -0.3,
                   ),
                 ),
@@ -75,7 +76,7 @@ class ItemAnalysisTab extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2B2B2B),
+                    color: AppColors.accentCharcoal,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Row(

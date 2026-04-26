@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/presentation/pages/teacher/assessment/widgets/question_card.dart';
 
@@ -31,7 +32,7 @@ class QuestionsSection extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFFE0E0E0),
+          color: AppColors.borderLight,
           width: 1,
         ),
       ),
@@ -47,7 +48,7 @@ class QuestionsSection extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF202020),
+                    color: AppColors.foregroundDark,
                     letterSpacing: -0.3,
                   ),
                 ),
@@ -56,7 +57,7 @@ class QuestionsSection extends StatelessWidget {
                 ElevatedButton.icon(
                   onPressed: onAddQuestion,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2B2B2B),
+                    backgroundColor: AppColors.accentCharcoal,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(
@@ -81,9 +82,9 @@ class QuestionsSection extends StatelessWidget {
                   OutlinedButton.icon(
                     onPressed: onEnterReorderMode,
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF2B2B2B),
+                      foregroundColor: AppColors.accentCharcoal,
                       side: const BorderSide(
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                       ),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -110,10 +111,10 @@ class QuestionsSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF3E0),
+                color: AppColors.accentAmberSurface,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: const Color(0xFFFFE0B2),
+                  color: AppColors.accentAmberBorder,
                   width: 1,
                 ),
               ),
@@ -121,7 +122,7 @@ class QuestionsSection extends StatelessWidget {
                 children: [
                   const Icon(
                     Icons.warning_amber_rounded,
-                    color: Color(0xFFFFA726),
+                    color: AppColors.accentAmber,
                     size: 20,
                   ),
                   const SizedBox(width: 10),
@@ -129,7 +130,7 @@ class QuestionsSection extends StatelessWidget {
                     child: Text(
                       'This assessment has $submissionCount submission(s). Editing questions may affect scores.',
                       style: const TextStyle(
-                        color: Color(0xFFE65100),
+                        color: AppColors.accentAmberBorder,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
@@ -144,18 +145,18 @@ class QuestionsSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF3E0),
+                color: AppColors.backgroundTertiary,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: const Color(0xFFFFE0B2),
+                  color: AppColors.borderLight,
                   width: 1,
                 ),
               ),
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(
                     Icons.lock_rounded,
-                    color: Color(0xFFFFA726),
+                    color: AppColors.foregroundDark,
                     size: 20,
                   ),
                   SizedBox(width: 10),
@@ -163,7 +164,7 @@ class QuestionsSection extends StatelessWidget {
                     child: Text(
                       'This assessment is published. Questions and details can no longer be edited.',
                       style: TextStyle(
-                        color: Color(0xFFE65100),
+                        color: AppColors.foregroundDark,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
@@ -183,13 +184,13 @@ class QuestionsSection extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8F9FA),
+                        color: AppColors.backgroundTertiary,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Icon(
                         Icons.quiz_outlined,
                         size: 48,
-                        color: Color(0xFFCCCCCC),
+                        color: AppColors.foregroundLight,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -197,7 +198,7 @@ class QuestionsSection extends StatelessWidget {
                       'No questions added yet',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Color(0xFF999999),
+                        color: AppColors.foregroundTertiary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),

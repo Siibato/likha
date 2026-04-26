@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class QuarterSelector extends StatelessWidget {
   final int selectedQuarter;
@@ -37,12 +38,12 @@ class QuarterSelector extends StatelessWidget {
                     child: ChoiceChip(
                       label: Text('Q$q'),
                       selected: selectedQuarter == q,
-                      selectedColor: const Color(0xFF2B2B2B),
+                      selectedColor: AppColors.accentCharcoal,
                       backgroundColor: Colors.white,
                       labelStyle: TextStyle(
                         color: selectedQuarter == q
                             ? Colors.white
-                            : const Color(0xFF666666),
+                            : AppColors.foregroundSecondary,
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),
@@ -50,8 +51,8 @@ class QuarterSelector extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                         side: BorderSide(
                           color: selectedQuarter == q
-                              ? const Color(0xFF2B2B2B)
-                              : const Color(0xFFE0E0E0),
+                              ? AppColors.accentCharcoal
+                              : AppColors.borderLight,
                         ),
                       ),
                       onSelected: (_) => onQuarterChanged(q),
@@ -64,35 +65,35 @@ class QuarterSelector extends StatelessWidget {
           if (onComputeGrades != null)
             IconButton(
               icon: const Icon(Icons.calculate_outlined, size: 20),
-              color: const Color(0xFF666666),
+              color: AppColors.foregroundSecondary,
               tooltip: 'Compute Grades',
               onPressed: onComputeGrades,
             ),
           if (onFinalGrades != null)
             IconButton(
               icon: const Icon(Icons.grade_outlined, size: 20),
-              color: const Color(0xFF666666),
+              color: AppColors.foregroundSecondary,
               tooltip: 'Final Grades',
               onPressed: onFinalGrades,
             ),
           if (onGradingSettings != null)
             IconButton(
               icon: const Icon(Icons.settings_outlined, size: 20),
-              color: const Color(0xFF666666),
+              color: AppColors.foregroundSecondary,
               tooltip: 'Grading Settings',
               onPressed: onGradingSettings,
             ),
           if (onDownload != null)
             IconButton(
               icon: const Icon(Icons.download_outlined, size: 20),
-              color: const Color(0xFF666666),
+              color: AppColors.foregroundSecondary,
               tooltip: 'Download Grades',
               onPressed: onDownload,
             ),
           if (onPrint != null)
             IconButton(
               icon: const Icon(Icons.print_outlined, size: 20),
-              color: const Color(0xFF666666),
+              color: AppColors.foregroundSecondary,
               tooltip: 'Print Grades',
               onPressed: onPrint,
             ),

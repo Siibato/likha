@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/navigation_card.dart';
@@ -34,7 +35,7 @@ class _TeacherGradesPageState extends ConsumerState<TeacherGradesPage> {
             child: classState.isLoading && classState.classes.isEmpty
                 ? const Center(
                     child: CircularProgressIndicator(
-                      color: Color(0xFF2B2B2B),
+                      color: AppColors.accentCharcoal,
                       strokeWidth: 2.5,
                     ),
                   )
@@ -46,14 +47,14 @@ class _TeacherGradesPageState extends ConsumerState<TeacherGradesPage> {
                             Icon(
                               Icons.school_outlined,
                               size: 64,
-                              color: Color(0xFFCCCCCC),
+                              color: AppColors.foregroundLight,
                             ),
                             SizedBox(height: 16),
                             Text(
                               'No classes yet',
                               style: TextStyle(
                                 fontSize: 16,
-                                color: Color(0xFF999999),
+                                color: AppColors.foregroundTertiary,
                               ),
                             ),
                           ],
@@ -62,7 +63,7 @@ class _TeacherGradesPageState extends ConsumerState<TeacherGradesPage> {
                     : RefreshIndicator(
                         onRefresh: () =>
                             ref.read(classProvider.notifier).loadClasses(),
-                        color: const Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                         child: ListView(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 24, vertical: 16),
@@ -74,7 +75,7 @@ class _TeacherGradesPageState extends ConsumerState<TeacherGradesPage> {
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
-                                  color: Color(0xFF999999),
+                                  color: AppColors.foregroundTertiary,
                                   letterSpacing: 0.2,
                                 ),
                               ),

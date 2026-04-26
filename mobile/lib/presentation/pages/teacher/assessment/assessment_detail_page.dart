@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
@@ -80,20 +81,20 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
         ? Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFEBEE),
+              color: AppColors.semanticErrorBackground,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFFFCDD2)),
+              border: Border.all(color: AppColors.semanticError.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.warning_rounded, color: Color(0xFFEF5350), size: 18),
+                const Icon(Icons.warning_rounded, color: AppColors.semanticError, size: 18),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     assessment.isPublished
                         ? 'This assessment is published and has ${assessment.submissionCount} submission(s). All data will be lost.'
                         : 'This assessment has ${assessment.submissionCount} submission(s). All data will be lost.',
-                    style: const TextStyle(fontSize: 13, color: Color(0xFFC62828)),
+                    style: const TextStyle(fontSize: 13, color: AppColors.semanticErrorDark),
                   ),
                 ),
               ],
@@ -127,18 +128,18 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
         ? Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF3E0),
+              color: AppColors.accentAmberSurface,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFFFE0B2)),
+              border: Border.all(color: AppColors.accentAmberBorder.withValues(alpha: 0.4)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.info_outline_rounded, color: Color(0xFFFFA726), size: 18),
+                const Icon(Icons.info_outline_rounded, color: AppColors.accentAmber, size: 18),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'This assessment has ${assessment.submissionCount} submission(s). Deleting a question may affect existing scores.',
-                    style: const TextStyle(fontSize: 13, color: Color(0xFFE65100)),
+                    style: const TextStyle(fontSize: 13, color: AppColors.accentAmberBorder),
                   ),
                 ),
               ],
@@ -314,17 +315,17 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF2B2B2B)),
+        iconTheme: const IconThemeData(color: AppColors.foregroundPrimary),
         title: Text(
           assessment?.title ?? 'Assessment Detail',
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.foregroundPrimary,
             letterSpacing: -0.4,
           ),
         ),
@@ -333,7 +334,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
       body: assessmentState.isLoading && assessment == null
           ? const Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
                 strokeWidth: 2.5,
               ),
             )
@@ -343,7 +344,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                     'Assessment not found',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Color(0xFF999999),
+                      color: AppColors.foregroundTertiary,
                     ),
                   ),
                 )
@@ -351,7 +352,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                   onRefresh: () => ref
                       .read(teacherAssessmentProvider.notifier)
                       .loadAssessmentDetail(widget.assessmentId),
-                  color: const Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(24),
@@ -432,10 +433,10 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                                   ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.white,
-                                    foregroundColor: const Color(0xFF2B2B2B),
+                                    foregroundColor: AppColors.foregroundPrimary,
                                     elevation: 0,
                                     side: const BorderSide(
-                                      color: Color(0xFFE0E0E0),
+                                      color: AppColors.borderLight,
                                       width: 1,
                                     ),
                                     padding: const EdgeInsets.symmetric(
@@ -471,10 +472,10 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                                   ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.white,
-                                    foregroundColor: const Color(0xFF2B2B2B),
+                                    foregroundColor: AppColors.foregroundPrimary,
                                     elevation: 0,
                                     side: const BorderSide(
-                                      color: Color(0xFFE0E0E0),
+                                      color: AppColors.borderLight,
                                       width: 1,
                                     ),
                                     padding: const EdgeInsets.symmetric(
@@ -507,7 +508,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFE0E0E0)),
+                            border: Border.all(color: AppColors.borderLight),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -520,7 +521,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xFF2B2B2B),
+                                      color: AppColors.foregroundPrimary,
                                     ),
                                   ),
                                   if (!_isEditingGrading)
@@ -529,7 +530,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                                       icon: const Icon(Icons.edit_outlined, size: 16),
                                       label: const Text('Edit'),
                                       style: TextButton.styleFrom(
-                                        foregroundColor: const Color(0xFF2B2B2B),
+                                        foregroundColor: AppColors.foregroundPrimary,
                                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                       ),
                                     ),
@@ -542,20 +543,20 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                                     Icon(
                                       Icons.grain_rounded,
                                       size: 16,
-                                      color: assessment.gradingPeriodNumber != null 
-                                          ? const Color(0xFF2B2B2B) 
-                                          : const Color(0xFF999999),
+                                      color: assessment.gradingPeriodNumber != null
+                                          ? AppColors.foregroundPrimary
+                                          : AppColors.foregroundTertiary,
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
-                                      assessment.gradingPeriodNumber != null 
+                                      assessment.gradingPeriodNumber != null
                                           ? 'Quarter ${assessment.gradingPeriodNumber}'
                                           : 'No quarter assigned',
                                       style: TextStyle(
                                         fontSize: 14,
-                                        color: assessment.gradingPeriodNumber != null 
-                                            ? const Color(0xFF2B2B2B) 
-                                            : const Color(0xFF999999),
+                                        color: assessment.gradingPeriodNumber != null
+                                            ? AppColors.foregroundPrimary
+                                            : AppColors.foregroundTertiary,
                                       ),
                                     ),
                                     if (assessment.component != null) ...[
@@ -563,14 +564,14 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                                       Icon(
                                         Icons.category_rounded,
                                         size: 16,
-                                        color: const Color(0xFF2B2B2B),
+                                        color: AppColors.foregroundPrimary,
                                       ),
                                       const SizedBox(width: 8),
                                       Text(
                                         _getComponentDisplayName(assessment.component!),
                                         style: const TextStyle(
                                           fontSize: 14,
-                                          color: Color(0xFF2B2B2B),
+                                          color: AppColors.foregroundPrimary,
                                         ),
                                       ),
                                     ],
@@ -584,7 +585,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                                     labelText: 'Quarter (for grading)',
                                     labelStyle: TextStyle(
                                       fontSize: 14,
-                                      color: Color(0xFF999999),
+                                      color: AppColors.foregroundTertiary,
                                     ),
                                     border: OutlineInputBorder(),
                                     contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -610,7 +611,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                                     labelText: 'Grade Component',
                                     labelStyle: TextStyle(
                                       fontSize: 14,
-                                      color: Color(0xFF999999),
+                                      color: AppColors.foregroundTertiary,
                                     ),
                                     border: OutlineInputBorder(),
                                     contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -639,7 +640,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                                       child: ElevatedButton(
                                         onPressed: _saveGradingSettings,
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFF2B2B2B),
+                                          backgroundColor: AppColors.accentCharcoal,
                                           foregroundColor: Colors.white,
                                           elevation: 0,
                                           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -711,9 +712,9 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                           child: OutlinedButton.icon(
                             onPressed: () => _confirmDelete(assessment),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFFEF5350),
+                              foregroundColor: AppColors.semanticError,
                               side: const BorderSide(
-                                color: Color(0xFFEF5350),
+                                color: AppColors.semanticError,
                                 width: 1.5,
                               ),
                               padding: const EdgeInsets.symmetric(vertical: 14),

@@ -4,6 +4,7 @@ import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assignments/usecases/create_assignment.dart';
 import 'package:likha/presentation/pages/teacher/assignment/widgets/shared_due_date_time_picker.dart';
@@ -166,17 +167,17 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
     final assignState = ref.watch(assignmentProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF2B2B2B)),
+        iconTheme: const IconThemeData(color: AppColors.accentCharcoal),
         title: const Text(
           'Create Assignment',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
             letterSpacing: -0.4,
           ),
         ),
@@ -216,7 +217,7 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
                     'Submission Options',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Color(0xFF999999),
+                      color: AppColors.foregroundTertiary,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -271,28 +272,28 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
                   labelText: 'Quarter (for grading)',
                   labelStyle: const TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF999999),
+                    color: AppColors.foregroundTertiary,
                   ),
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
-                      color: Color(0xFFE0E0E0),
+                      color: AppColors.borderLight,
                       width: 1,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
-                      color: Color(0xFFE0E0E0),
+                      color: AppColors.borderLight,
                       width: 1,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
-                      color: Color(0xFF2B2B2B),
+                      color: AppColors.accentCharcoal,
                       width: 1.5,
                     ),
                   ),
@@ -316,28 +317,28 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
                   labelText: 'Grade Component',
                   labelStyle: const TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF999999),
+                    color: AppColors.foregroundTertiary,
                   ),
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
-                      color: Color(0xFFE0E0E0),
+                      color: AppColors.borderLight,
                       width: 1,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
-                      color: Color(0xFFE0E0E0),
+                      color: AppColors.borderLight,
                       width: 1,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
-                      color: Color(0xFF2B2B2B),
+                      color: AppColors.accentCharcoal,
                       width: 1.5,
                     ),
                   ),
@@ -362,7 +363,7 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: const Color(0xFFE0E0E0),
+                    color: AppColors.borderLight,
                     width: 1,
                   ),
                 ),
@@ -376,18 +377,18 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF2B2B2B),
+                      color: AppColors.accentCharcoal,
                     ),
                   ),
                   subtitle: const Text(
                     'Grade item only \u2014 no student submission expected',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Color(0xFF999999),
+                      color: AppColors.foregroundTertiary,
                     ),
                   ),
                   value: _noSubmissionRequired,
-                  activeThumbColor: const Color(0xFF2B2B2B),
+                  activeThumbColor: AppColors.accentCharcoal,
                   onChanged: assignState.isLoading
                       ? null
                       : (v) => setState(() => _noSubmissionRequired = v),
@@ -399,7 +400,7 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: const Color(0xFFE0E0E0),
+                    color: AppColors.borderLight,
                     width: 1,
                   ),
                 ),
@@ -413,18 +414,18 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF2B2B2B),
+                      color: AppColors.accentCharcoal,
                     ),
                   ),
                   subtitle: const Text(
                     'Students can see this assignment right away',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Color(0xFF999999),
+                      color: AppColors.foregroundTertiary,
                     ),
                   ),
                   value: _isPublished,
-                  activeThumbColor: const Color(0xFF2B2B2B),
+                  activeThumbColor: AppColors.accentCharcoal,
                   onChanged: assignState.isLoading
                       ? null
                       : (value) => setState(() => _isPublished = value),
@@ -434,9 +435,9 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
               ElevatedButton(
                 onPressed: assignState.isLoading ? null : _handleCreate,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2B2B2B),
+                  backgroundColor: AppColors.accentCharcoal,
                   foregroundColor: Colors.white,
-                  disabledBackgroundColor: const Color(0xFFE0E0E0),
+                  disabledBackgroundColor: AppColors.borderLight,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -501,7 +502,7 @@ class _AllowedFileTypesSelector extends StatelessWidget {
           'Allowed File Types (optional)',
           style: TextStyle(
             fontSize: 14,
-            color: Color(0xFF999999),
+            color: AppColors.foregroundTertiary,
             fontWeight: FontWeight.w400,
           ),
         ),
@@ -513,7 +514,7 @@ class _AllowedFileTypesSelector extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: const Color(0xFFE0E0E0),
+                color: AppColors.borderLight,
                 width: 1,
               ),
             ),
@@ -525,7 +526,7 @@ class _AllowedFileTypesSelector extends StatelessWidget {
               children: [
                 const Icon(
                   Icons.file_present_rounded,
-                  color: Color(0xFF666666),
+                  color: AppColors.foregroundSecondary,
                   size: 20,
                 ),
                 const SizedBox(width: 12),
@@ -536,8 +537,8 @@ class _AllowedFileTypesSelector extends StatelessWidget {
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                       color: selectedTypes.isEmpty
-                          ? const Color(0xFFCCCCCC)
-                          : const Color(0xFF2B2B2B),
+                          ? AppColors.foregroundLight
+                          : AppColors.accentCharcoal,
                     ),
                   ),
                 ),
@@ -569,17 +570,17 @@ class _MaxFileSizeField extends StatelessWidget {
       style: const TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w500,
-        color: Color(0xFF2B2B2B),
+        color: AppColors.accentCharcoal,
       ),
       decoration: InputDecoration(
         labelText: 'Max File Size (MB)',
         labelStyle: const TextStyle(
           fontSize: 14,
-          color: Color(0xFF999999),
+          color: AppColors.foregroundTertiary,
         ),
         prefixIcon: const Icon(
           Icons.sd_storage_rounded,
-          color: Color(0xFF666666),
+          color: AppColors.foregroundSecondary,
           size: 20,
         ),
         filled: true,
@@ -587,21 +588,21 @@ class _MaxFileSizeField extends StatelessWidget {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(
-            color: Color(0xFFE0E0E0),
+            color: AppColors.borderLight,
             width: 1,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(
-            color: Color(0xFFE0E0E0),
+            color: AppColors.borderLight,
             width: 1,
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
             width: 1.5,
           ),
         ),

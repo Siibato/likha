@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class WarningBanner extends StatelessWidget {
   final String message;
@@ -15,22 +16,22 @@ class WarningBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3E0),
+        color: AppColors.accentAmberSurface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFFFFB74D),
+          color: AppColors.accentAmber,
           width: 1,
         ),
       ),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFFFF6F00), size: 20),
+          Icon(icon, color: AppColors.accentAmberBorder, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               message,
               style: const TextStyle(
-                color: Color(0xFFE65100),
+                color: AppColors.accentAmberBorder,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 height: 1.4,

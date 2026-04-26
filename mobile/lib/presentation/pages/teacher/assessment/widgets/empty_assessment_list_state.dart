@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class EmptyAssessmentListState extends StatelessWidget {
   const EmptyAssessmentListState({super.key});
@@ -12,13 +13,13 @@ class EmptyAssessmentListState extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FA),
+              color: AppColors.backgroundTertiary,
               borderRadius: BorderRadius.circular(20),
             ),
             child: const Icon(
               Icons.quiz_outlined,
               size: 64,
-              color: Color(0xFFCCCCCC),
+              color: AppColors.foregroundLight,
             ),
           ),
           const SizedBox(height: 24),
@@ -27,7 +28,7 @@ class EmptyAssessmentListState extends StatelessWidget {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF666666),
+              color: AppColors.foregroundSecondary,
               letterSpacing: -0.3,
             ),
           ),
@@ -36,7 +37,7 @@ class EmptyAssessmentListState extends StatelessWidget {
             'Create an assessment to get started',
             style: TextStyle(
               fontSize: 14,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
             ),
           ),
         ],

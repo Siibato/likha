@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
 import 'package:likha/presentation/pages/teacher/widgets/class_performance_card.dart';
 import 'package:likha/presentation/pages/teacher/assessment/widgets/item_analysis_tab.dart';
@@ -52,17 +53,17 @@ class _AssessmentStatisticsPageState
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF2B2B2B)),
+        iconTheme: const IconThemeData(color: AppColors.foregroundPrimary),
         title: const Text(
           'Statistics',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.foregroundPrimary,
             letterSpacing: -0.4,
           ),
         ),
@@ -70,7 +71,7 @@ class _AssessmentStatisticsPageState
       body: state.isLoading && stats == null
           ? const Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
                 strokeWidth: 2.5,
               ),
             )
@@ -80,7 +81,7 @@ class _AssessmentStatisticsPageState
                     'No statistics available',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Color(0xFF999999),
+                      color: AppColors.foregroundTertiary,
                     ),
                   ),
                 )
@@ -90,20 +91,20 @@ class _AssessmentStatisticsPageState
                     Container(
                       margin: const EdgeInsets.fromLTRB(24, 16, 24, 0),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.backgroundPrimary,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE0E0E0)),
+                        border: Border.all(color: AppColors.borderLight),
                       ),
                       child: TabBar(
                         controller: _tabController,
                         indicator: BoxDecoration(
-                          color: const Color(0xFF2B2B2B),
+                          color: AppColors.accentCharcoal,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         indicatorSize: TabBarIndicatorSize.tab,
                         indicatorPadding: const EdgeInsets.all(3),
                         labelColor: Colors.white,
-                        unselectedLabelColor: const Color(0xFF666666),
+                        unselectedLabelColor: AppColors.foregroundSecondary,
                         labelStyle: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -140,7 +141,7 @@ class _AssessmentStatisticsPageState
       onRefresh: () => ref
           .read(teacherAssessmentProvider.notifier)
           .loadStatistics(widget.assessmentId),
-      color: const Color(0xFF2B2B2B),
+      color: AppColors.accentCharcoal,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(24),
@@ -167,7 +168,7 @@ class _AssessmentStatisticsPageState
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF202020),
+                  color: AppColors.foregroundDark,
                   letterSpacing: -0.3,
                 ),
               ),

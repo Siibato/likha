@@ -67,7 +67,7 @@ extension SnackBarExtension on BuildContext {
     ScaffoldMessenger.of(this).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: AppColors.deprecatedDraftOrange,
+        backgroundColor: AppColors.accentAmber,
         behavior: SnackBarBehavior.floating,
         duration: Duration(milliseconds: durationMs),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class EmptySubmissionsState extends StatelessWidget {
   const EmptySubmissionsState({super.key});
@@ -12,13 +13,13 @@ class EmptySubmissionsState extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FA),
+              color: AppColors.backgroundTertiary,
               borderRadius: BorderRadius.circular(20),
             ),
             child: const Icon(
               Icons.inbox_outlined,
               size: 64,
-              color: Color(0xFFCCCCCC),
+              color: AppColors.foregroundLight,
             ),
           ),
           const SizedBox(height: 24),
@@ -27,7 +28,7 @@ class EmptySubmissionsState extends StatelessWidget {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF666666),
+              color: AppColors.foregroundSecondary,
               letterSpacing: -0.3,
             ),
           ),
@@ -36,7 +37,7 @@ class EmptySubmissionsState extends StatelessWidget {
             'Submissions will appear here',
             style: TextStyle(
               fontSize: 14,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
             ),
           ),
         ],

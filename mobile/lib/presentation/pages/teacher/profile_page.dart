@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/utils/logout_helper.dart';
 
@@ -23,7 +24,7 @@ class TeacherProfilePage extends ConsumerWidget {
                     width: double.infinity,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE0E0E0),
+                        color: AppColors.accentCharcoal,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Container(
@@ -45,7 +46,7 @@ class TeacherProfilePage extends ConsumerWidget {
                                 children: [
                                   Icon(
                                     Icons.logout_rounded,
-                                    color: Color(0xFF404040),
+                                    color: AppColors.accentCharcoal,
                                     size: 20,
                                   ),
                                   SizedBox(width: 10),
@@ -54,7 +55,7 @@ class TeacherProfilePage extends ConsumerWidget {
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFF202020),
+                                      color: AppColors.foregroundDark,
                                     ),
                                   ),
                                 ],

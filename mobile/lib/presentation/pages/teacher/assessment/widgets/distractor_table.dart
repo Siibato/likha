@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
 
 class DistractorTable extends StatelessWidget {
@@ -11,32 +12,32 @@ class DistractorTable extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(top: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA),
+        color: AppColors.backgroundTertiary,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Padding(
-            padding: EdgeInsets.fromLTRB(12, 10, 12, 6),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Text(
               'Distractor Analysis',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF666666),
+                color: AppColors.foregroundSecondary,
               ),
             ),
           ),
           // Header
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               border: Border(
-                bottom: BorderSide(color: Color(0xFFE0E0E0)),
+                bottom: BorderSide(color: AppColors.borderLight),
               ),
             ),
-            child: const Row(
+            child: Row(
               children: [
                 Expanded(
                   flex: 4,
@@ -72,7 +73,7 @@ class DistractorTable extends StatelessWidget {
   static const _headerStyle = TextStyle(
     fontSize: 11,
     fontWeight: FontWeight.w600,
-    color: Color(0xFF999999),
+    color: AppColors.foregroundTertiary,
   );
 }
 
@@ -94,7 +95,7 @@ class _DistractorRow extends StatelessWidget {
                 if (distractor.isCorrect)
                   const Padding(
                     padding: EdgeInsets.only(right: 4),
-                    child: Icon(Icons.star_rounded, size: 14, color: Color(0xFFF9A825)),
+                    child: Icon(Icons.star_rounded, size: 14, color: AppColors.accentAmber),
                   ),
                 Expanded(
                   child: Text(
@@ -102,7 +103,7 @@ class _DistractorRow extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: distractor.isCorrect ? FontWeight.w600 : FontWeight.w400,
-                      color: const Color(0xFF2B2B2B),
+                      color: AppColors.foregroundPrimary,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -115,7 +116,7 @@ class _DistractorRow extends StatelessWidget {
             width: 44,
             child: Text(
               '${distractor.upperCount}',
-              style: const TextStyle(fontSize: 12, color: Color(0xFF2B2B2B)),
+              style: const TextStyle(fontSize: 12, color: AppColors.foregroundPrimary),
               textAlign: TextAlign.center,
             ),
           ),
@@ -123,7 +124,7 @@ class _DistractorRow extends StatelessWidget {
             width: 44,
             child: Text(
               '${distractor.lowerCount}',
-              style: const TextStyle(fontSize: 12, color: Color(0xFF2B2B2B)),
+              style: const TextStyle(fontSize: 12, color: AppColors.foregroundPrimary),
               textAlign: TextAlign.center,
             ),
           ),
@@ -131,7 +132,7 @@ class _DistractorRow extends StatelessWidget {
             width: 44,
             child: Text(
               '${distractor.totalPercentage.toStringAsFixed(0)}%',
-              style: const TextStyle(fontSize: 12, color: Color(0xFF2B2B2B)),
+              style: const TextStyle(fontSize: 12, color: AppColors.foregroundPrimary),
               textAlign: TextAlign.center,
             ),
           ),
@@ -143,8 +144,8 @@ class _DistractorRow extends StatelessWidget {
                   : Icons.cancel_rounded,
               size: 16,
               color: distractor.isEffective
-                  ? const Color(0xFF4CAF50)
-                  : const Color(0xFFE57373),
+                  ? AppColors.semanticSuccess
+                  : AppColors.semanticError,
             ),
           ),
         ],

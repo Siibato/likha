@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class StudentListItem extends StatelessWidget {
   final String studentId;
@@ -19,7 +20,7 @@ class StudentListItem extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
+        color: AppColors.borderLight,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Container(
@@ -34,11 +35,11 @@ class StudentListItem extends StatelessWidget {
             vertical: 4,
           ),
           leading: CircleAvatar(
-            backgroundColor: const Color(0xFFF8F9FA),
+            backgroundColor: AppColors.backgroundTertiary,
             child: Text(
               fullName[0].toUpperCase(),
               style: const TextStyle(
-                color: Color(0xFF404040),
+                color: AppColors.foregroundDark,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -48,7 +49,7 @@ class StudentListItem extends StatelessWidget {
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
               letterSpacing: -0.2,
             ),
           ),
@@ -56,13 +57,13 @@ class StudentListItem extends StatelessWidget {
             username,
             style: const TextStyle(
               fontSize: 13,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
             ),
           ),
           trailing: IconButton(
             icon: const Icon(
               Icons.remove_circle_outline_rounded,
-              color: Color(0xFFEF5350),
+              color: AppColors.semanticError,
             ),
             onPressed: onRemove,
           ),

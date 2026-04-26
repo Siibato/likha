@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class StudentSearchField extends StatelessWidget {
   final TextEditingController controller;
@@ -18,17 +19,17 @@ class StudentSearchField extends StatelessWidget {
       style: const TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w500,
-        color: Color(0xFF2B2B2B),
+        color: AppColors.accentCharcoal,
       ),
       decoration: InputDecoration(
         hintText: 'Search students...',
         hintStyle: const TextStyle(
           fontSize: 15,
-          color: Color(0xFF999999),
+          color: AppColors.foregroundTertiary,
         ),
         prefixIcon: const Icon(
           Icons.search_rounded,
-          color: Color(0xFF666666),
+          color: AppColors.foregroundSecondary,
           size: 22,
         ),
         filled: true,
@@ -36,21 +37,21 @@ class StudentSearchField extends StatelessWidget {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(
-            color: Color(0xFFE0E0E0),
+            color: AppColors.borderLight,
             width: 1,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(
-            color: Color(0xFFE0E0E0),
+            color: AppColors.borderLight,
             width: 1,
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
             width: 1.5,
           ),
         ),

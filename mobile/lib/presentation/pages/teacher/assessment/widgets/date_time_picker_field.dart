@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class DateTimePickerField extends StatelessWidget {
   final String label;
@@ -37,22 +38,22 @@ class DateTimePickerField extends StatelessWidget {
           labelText: label,
           labelStyle: const TextStyle(
             fontSize: 14,
-            color: Color(0xFF999999),
+            color: AppColors.foregroundTertiary,
           ),
-          prefixIcon: Icon(icon, color: const Color(0xFF666666), size: 20),
+          prefixIcon: Icon(icon, color: AppColors.foregroundSecondary, size: 20),
           suffixIcon: const Icon(
             Icons.arrow_drop_down_rounded,
-            color: Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
           ),
           filled: true,
           fillColor: Colors.white,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+            borderSide: const BorderSide(color: AppColors.borderLight, width: 1),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+            borderSide: const BorderSide(color: AppColors.borderLight, width: 1),
           ),
           enabled: enabled,
         ),
@@ -61,7 +62,7 @@ class DateTimePickerField extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: enabled ? const Color(0xFF2B2B2B) : const Color(0xFF999999),
+            color: enabled ? AppColors.foregroundPrimary : AppColors.foregroundTertiary,
           ),
         ),
       ),

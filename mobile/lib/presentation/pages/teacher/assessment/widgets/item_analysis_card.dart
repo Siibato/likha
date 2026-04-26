@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
 import 'package:likha/presentation/pages/teacher/assessment/widgets/distractor_table.dart';
 
@@ -20,7 +21,7 @@ class ItemAnalysisCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -32,7 +33,7 @@ class ItemAnalysisCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -54,7 +55,7 @@ class ItemAnalysisCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.foregroundPrimary,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -64,7 +65,7 @@ class ItemAnalysisCard extends StatelessWidget {
                       '${_typeLabel(item.questionType)} | ${item.points} pt${item.points == 1 ? '' : 's'}',
                       style: const TextStyle(
                         fontSize: 11,
-                        color: Color(0xFF999999),
+                        color: AppColors.foregroundTertiary,
                       ),
                     ),
                   ],
@@ -119,16 +120,16 @@ class ItemAnalysisCard extends StatelessWidget {
   }
 
   Color _difficultyColor(double p) {
-    if (p >= 0.81 || p <= 0.20) return const Color(0xFFE57373);
-    if (p >= 0.61 || p <= 0.40) return const Color(0xFFF9A825);
-    return const Color(0xFF4CAF50);
+    if (p >= 0.81 || p <= 0.20) return AppColors.semanticError;
+    if (p >= 0.61 || p <= 0.40) return AppColors.accentAmber;
+    return AppColors.semanticSuccess;
   }
 
   Color _discriminationColor(double d) {
-    if (d >= 0.40) return const Color(0xFF4CAF50);
-    if (d >= 0.30) return const Color(0xFF2196F3);
-    if (d >= 0.20) return const Color(0xFFF9A825);
-    return const Color(0xFFE57373);
+    if (d >= 0.40) return AppColors.semanticSuccess;
+    if (d >= 0.30) return AppColors.accentCharcoal;
+    if (d >= 0.20) return AppColors.accentAmber;
+    return AppColors.semanticError;
   }
 }
 
@@ -140,10 +141,10 @@ class _VerdictBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, label) = switch (verdict.toLowerCase()) {
-      'retain' => (const Color(0xFF4CAF50), 'RETAIN'),
-      'revise' => (const Color(0xFFF9A825), 'REVISE'),
-      'discard' => (const Color(0xFFE57373), 'DISCARD'),
-      _ => (const Color(0xFF999999), verdict.toUpperCase()),
+      'retain' => (AppColors.semanticSuccess, 'RETAIN'),
+      'revise' => (AppColors.accentAmber, 'REVISE'),
+      'discard' => (AppColors.semanticError, 'DISCARD'),
+      _ => (AppColors.foregroundTertiary, verdict.toUpperCase()),
     };
 
     return Container(
@@ -183,7 +184,7 @@ class _IndexChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA),
+        color: AppColors.backgroundTertiary,
         borderRadius: BorderRadius.circular(8),
         border: Border(left: BorderSide(color: color, width: 3)),
       ),
@@ -195,7 +196,7 @@ class _IndexChip extends StatelessWidget {
             style: const TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
             ),
           ),
           const SizedBox(height: 2),
@@ -206,7 +207,7 @@ class _IndexChip extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.foregroundPrimary,
                 ),
               ),
               const SizedBox(width: 6),

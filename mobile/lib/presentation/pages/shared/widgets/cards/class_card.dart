@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'base_card.dart';
 import '../primitives/card_icon_slot.dart';
 import '../primitives/chevron_trailing.dart';
@@ -49,14 +50,14 @@ class ClassCard extends StatelessWidget {
                   const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.star_rounded, size: 12, color: Color(0xFF4CAF50)),
+                      Icon(Icons.star_rounded, size: 12, color: AppColors.accentAmberBorder),
                       SizedBox(width: 3),
                       Text(
                         'Advisory',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF4CAF50),
+                          color: AppColors.accentAmberBorder,
                         ),
                       ),
                     ],

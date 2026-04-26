@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/presentation/widgets/styled_dialog.dart';
 
@@ -61,7 +62,7 @@ class _ReorderPositionDialogState extends State<ReorderPositionDialog> {
             'Total ${widget.resourceType}: ${widget.totalCount}',
             style: const TextStyle(
               fontSize: 13,
-              color: Color(0xFF666666),
+              color: AppColors.foregroundSecondary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -74,7 +75,7 @@ class _ReorderPositionDialogState extends State<ReorderPositionDialog> {
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
             ),
             decoration: StyledTextFieldDecoration.styled(
               labelText: 'Position (1-${widget.totalCount})',

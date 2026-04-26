@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/data/models/tos/melcs_model.dart';
 import 'package:likha/domain/tos/usecases/search_melcs.dart';
@@ -131,7 +132,7 @@ class _MelcsSearchSheetState extends ConsumerState<MelcsSearchSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE0E0E0),
+                  color: AppColors.borderLight,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -144,29 +145,29 @@ class _MelcsSearchSheetState extends ConsumerState<MelcsSearchSheet> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.foregroundPrimary,
                 ),
               ),
             ),
-            // Search field
+            const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8F9FA),
+                  color: AppColors.backgroundTertiary,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFE0E0E0)),
+                  border: Border.all(color: AppColors.borderLight),
                 ),
                 child: TextField(
                   controller: _searchController,
                   decoration: const InputDecoration(
                     hintText: 'Search competencies...',
-                    prefixIcon: Icon(Icons.search, size: 20, color: Color(0xFF999999)),
+                    prefixIcon: Icon(Icons.search, size: 20, color: AppColors.foregroundTertiary),
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(vertical: 12),
-                    hintStyle: TextStyle(fontSize: 14, color: Color(0xFFCCCCCC)),
+                    hintStyle: TextStyle(fontSize: 14, color: AppColors.foregroundLight),
                   ),
-                  style: const TextStyle(fontSize: 14, color: Color(0xFF2B2B2B)),
+                  style: const TextStyle(fontSize: 14, color: AppColors.foregroundPrimary),
                 ),
               ),
             ),
@@ -210,7 +211,7 @@ class _MelcsSearchSheetState extends ConsumerState<MelcsSearchSheet> {
               child: state.isMelcSearching
                   ? const Center(
                       child: CircularProgressIndicator(
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                         strokeWidth: 2.5,
                       ),
                     )
@@ -218,7 +219,7 @@ class _MelcsSearchSheetState extends ConsumerState<MelcsSearchSheet> {
                       ? const Center(
                           child: Text(
                             'No competencies found',
-                            style: TextStyle(color: Color(0xFF999999)),
+                            style: TextStyle(color: AppColors.foregroundTertiary),
                           ),
                         )
                       : ListView.builder(
@@ -249,19 +250,19 @@ class _MelcsSearchSheetState extends ConsumerState<MelcsSearchSheet> {
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF2B2B2B),
+                                  color: AppColors.foregroundPrimary,
                                 ),
                               ),
                               subtitle: Text(
                                 melc.competencyText,
                                 style: const TextStyle(
                                   fontSize: 12,
-                                  color: Color(0xFF666666),
+                                  color: AppColors.foregroundSecondary,
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              activeColor: const Color(0xFF2B2B2B),
+                              activeColor: AppColors.accentCharcoal,
                               controlAffinity: ListTileControlAffinity.leading,
                               dense: true,
                             );
@@ -279,7 +280,7 @@ class _MelcsSearchSheetState extends ConsumerState<MelcsSearchSheet> {
                     child: ElevatedButton(
                       onPressed: state.isLoading ? null : _handleImport,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2B2B2B),
+                        backgroundColor: AppColors.accentCharcoal,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -321,7 +322,7 @@ class _SheetListFooter extends StatelessWidget {
             height: 18,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
             ),
           ),
         ),
@@ -335,7 +336,7 @@ class _SheetListFooter extends StatelessWidget {
             'All results loaded',
             style: TextStyle(
               fontSize: 11,
-              color: Color(0xFFCCCCCC),
+              color: AppColors.foregroundLight,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -366,21 +367,21 @@ class _FilterDropdown<T> extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA),
+        color: AppColors.backgroundTertiary,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
           value: value,
-          hint: Text(hint, style: const TextStyle(fontSize: 13, color: Color(0xFF999999))),
+          hint: Text(hint, style: const TextStyle(fontSize: 13, color: AppColors.foregroundTertiary)),
           isExpanded: true,
           iconSize: 18,
-          style: const TextStyle(fontSize: 13, color: Color(0xFF2B2B2B)),
+          style: const TextStyle(fontSize: 13, color: AppColors.foregroundPrimary),
           items: [
             DropdownMenuItem<T>(
               value: null,
-              child: Text('All $hint', style: const TextStyle(fontSize: 13, color: Color(0xFF999999))),
+              child: Text('All $hint', style: const TextStyle(fontSize: 13, color: AppColors.foregroundTertiary)),
             ),
             ...items.map((item) => DropdownMenuItem<T>(
                   value: item,

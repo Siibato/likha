@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class SearchableStudentItem extends StatelessWidget {
   final String fullName;
@@ -21,13 +22,13 @@ class SearchableStudentItem extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
+        color: AppColors.accentCharcoal,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Container(
         margin: const EdgeInsets.fromLTRB(1, 1, 1, 2.5),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.backgroundPrimary,
           borderRadius: BorderRadius.circular(11),
         ),
         child: ListTile(
@@ -36,11 +37,11 @@ class SearchableStudentItem extends StatelessWidget {
             vertical: 4,
           ),
           leading: CircleAvatar(
-            backgroundColor: const Color(0xFFF8F9FA),
+            backgroundColor: AppColors.backgroundTertiary,
             child: Text(
               fullName[0].toUpperCase(),
               style: const TextStyle(
-                color: Color(0xFF404040),
+                color: AppColors.accentCharcoal,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -50,7 +51,7 @@ class SearchableStudentItem extends StatelessWidget {
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
               letterSpacing: -0.2,
             ),
           ),
@@ -58,7 +59,7 @@ class SearchableStudentItem extends StatelessWidget {
             '$username • $accountStatus',
             style: const TextStyle(
               fontSize: 13,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
             ),
           ),
           trailing: IconButton(
@@ -67,8 +68,8 @@ class SearchableStudentItem extends StatelessWidget {
                   ? Icons.remove_circle_rounded
                   : Icons.add_circle_rounded,
               color: isParticipant
-                  ? const Color(0xFFEF5350)
-                  : const Color(0xFF2B2B2B),
+                  ? AppColors.semanticError
+                  : AppColors.accentCharcoal,
             ),
             onPressed: onAction,
           ),

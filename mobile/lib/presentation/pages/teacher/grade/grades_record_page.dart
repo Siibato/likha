@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/logging/page_logger.dart';
@@ -549,7 +550,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
         child: Column(
           children: [
@@ -601,7 +602,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
               const Expanded(
                 child: Center(
                   child: CircularProgressIndicator(
-                      color: Color(0xFF2B2B2B), strokeWidth: 2.5),
+                      color: AppColors.accentCharcoal, strokeWidth: 2.5),
                 ),
               )
             else if (!configState.isConfigured)
@@ -611,17 +612,17 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.tune_outlined,
-                          size: 64, color: Color(0xFFCCCCCC)),
+                          size: 64, color: AppColors.foregroundLight),
                       SizedBox(height: 16),
                       Text('Grading not configured',
                           style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF999999))),
+                              color: AppColors.foregroundTertiary)),
                       SizedBox(height: 8),
                       Text('Set up grading weights to get started',
                           style:
-                              TextStyle(fontSize: 13, color: Color(0xFFCCCCCC))),
+                              TextStyle(fontSize: 13, color: AppColors.foregroundLight)),
                     ],
                   ),
                 ),
@@ -644,7 +645,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
       ),
       floatingActionButton: configState.isConfigured
           ? FloatingActionButton(
-              backgroundColor: const Color(0xFF2B2B2B),
+              backgroundColor: AppColors.accentCharcoal,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
@@ -740,18 +741,18 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
                 // Row 1: group label (blank)
                 Container(
                   height: _hdrH1,
-                  color: const Color(0xFFF0F4F8),
+                  color: AppColors.backgroundTertiary,
                 ),
                 // Row 2: column label
                 _hdrCell("Learner's Name", _nameColW, _hdrH2,
                     align: Alignment.centerLeft,
                     padding: const EdgeInsets.symmetric(horizontal: 10)),
-                const Divider(height: 1, color: Color(0xFFDDDDDD)),
+                const Divider(height: 1, color: AppColors.borderLight),
                 // HPS row
                 Container(
                   height: _rowH,
                   width: _nameColW,
-                  color: const Color(0xFFF0F4F8),
+                  color: AppColors.backgroundTertiary,
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   alignment: Alignment.centerLeft,
                   child: const Text(
@@ -759,19 +760,19 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
                     style: TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF666666),
+                      color: AppColors.foregroundSecondary,
                     ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                   ),
                 ),
-                const Divider(height: 1, color: Color(0xFFDDDDDD)),
+                const Divider(height: 1, color: AppColors.borderLight),
                 // Student rows
                 for (int i = 0; i < students.length; i++) ...[
                   Container(
                     height: _rowH,
                     width: _nameColW,
-                    color: i.isEven ? Colors.white : const Color(0xFFFAFAFA),
+                    color: i.isEven ? Colors.white : AppColors.backgroundSecondary,
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -779,20 +780,20 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
                       style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF2B2B2B)),
+                          color: AppColors.foregroundPrimary),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                     ),
                   ),
                   if (i < students.length - 1)
-                    const Divider(height: 1, color: Color(0xFFF0F0F0)),
+                    const Divider(height: 1, color: AppColors.borderLight),
                 ],
               ],
             ),
           ),
 
           // Vertical separator
-          Container(width: 1, color: const Color(0xFFCCCCCC)),
+          Container(width: 1, color: AppColors.foregroundLight),
 
           // ── Scrollable data columns ──────────────────────────────────────
           Expanded(
@@ -809,17 +810,17 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
                       child: Row(
                         children: [
                           _grpCell('WRITTEN WORKS (${wwW.toStringAsFixed(0)}%)',
-                              wwSecW, const Color(0xFFDEEBFF)),
+                            wwSecW, AppColors.backgroundTertiary),
                           _grpCell(
                               'PERFORMANCE TASKS (${ptW.toStringAsFixed(0)}%)',
                               ptSecW,
-                              const Color(0xFFDCF5E4)),
+                              AppColors.accentAmberSurface),
                           _grpCell(
                               'QUARTERLY ASSESSMENT (${qaW.toStringAsFixed(0)}%)',
                               qaSecW,
-                              const Color(0xFFFFF2D6)),
+                              AppColors.backgroundSecondary),
                           _grpCell('SUMMARY', summaryW,
-                              const Color(0xFFF0E6FF)),
+                              AppColors.backgroundDisabled),
                         ],
                       ),
                     ),
@@ -837,7 +838,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
                         ],
                       ),
                     ),
-                    const Divider(height: 1, color: Color(0xFFDDDDDD)),
+                    const Divider(height: 1, color: AppColors.borderLight),
 
                     // HPS row
                     SizedBox(
@@ -847,13 +848,13 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
                           ..._buildHpsSectionCells(wwItems, wwW),
                           ..._buildHpsSectionCells(ptItems, ptW),
                           ..._buildHpsSectionCells(qaItems, qaW),
-                          _computedCell('--', _initGradeW, const Color(0xFFF0F4F8)),
-                          _computedCell('--', _qgColW, const Color(0xFFF0F4F8)),
-                          _computedCell('--', _remarksW, const Color(0xFFF0F4F8)),
+                          _computedCell('--', _initGradeW, AppColors.backgroundTertiary),
+                          _computedCell('--', _qgColW, AppColors.backgroundTertiary),
+                          _computedCell('--', _remarksW, AppColors.backgroundTertiary),
                         ],
                       ),
                     ),
-                    const Divider(height: 1, color: Color(0xFFDDDDDD)),
+                    const Divider(height: 1, color: AppColors.borderLight),
 
                     // Data rows
                     for (int i = 0; i < students.length; i++) ...[
@@ -872,7 +873,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
                         isLoadingScores: isLoadingScores,
                       ),
                       if (i < students.length - 1)
-                        const Divider(height: 1, color: Color(0xFFF0F0F0)),
+                        const Divider(height: 1, color: AppColors.borderLight),
                     ],
                   ],
                 ),
@@ -903,20 +904,20 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
     return [
       for (final item in items)
         _computedCell(_fmt(item.totalPoints), _scoreColW,
-            const Color(0xFFF0F4F8),
+            AppColors.backgroundTertiary,
             bold: true),
       _computedCell(items.isNotEmpty ? _fmt(hs) : '--',
-          _sumColW, const Color(0xFFF0F4F8),
+          _sumColW, AppColors.backgroundTertiary,
           bold: true),
       _computedCell(items.isNotEmpty ? _fmt(hs) : '--',
-          _sumColW, const Color(0xFFF0F4F8),
+          _sumColW, AppColors.backgroundTertiary,
           bold: true),
       _computedCell(items.isNotEmpty ? '100%' : '--',
-          _pctColW, const Color(0xFFF0F4F8)),
+          _pctColW, AppColors.backgroundTertiary),
       _computedCell(
           items.isNotEmpty ? '${weight.toStringAsFixed(0)}%' : '--',
           _pctColW,
-          const Color(0xFFF0F4F8),
+          AppColors.backgroundTertiary,
           bold: true),
     ];
   }
@@ -936,7 +937,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
     bool isLoadingScores = false,
   }) {
     final sid = participant.student.id;
-    final bgColor = index.isEven ? Colors.white : const Color(0xFFFAFAFA);
+    final bgColor = index.isEven ? Colors.white : AppColors.backgroundSecondary;
 
     final wwStats = _computeStats(sid, wwItems, scoreLookup, wwW);
     final ptStats = _computeStats(sid, ptItems, scoreLookup, ptW);
@@ -983,9 +984,9 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
                 bgColor,
                 bold: true,
                 color: storedQg != null
-                    ? const Color(0xFF1565C0)
+                    ? AppColors.accentCharcoal
                     : (displayQg != null
-                        ? const Color(0xFF2B2B2B)
+                        ? AppColors.foregroundPrimary
                         : null),
               ),
             ),
@@ -1069,7 +1070,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
       child: Text(
         label,
         style: const TextStyle(
-            fontSize: 9, fontWeight: FontWeight.w700, color: Color(0xFF444444)),
+            fontSize: 9, fontWeight: FontWeight.w700, color: AppColors.foregroundSecondary),
         overflow: TextOverflow.ellipsis,
         maxLines: 1,
       ),
@@ -1088,17 +1089,17 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
       height: height,
       padding: padding,
       decoration: const BoxDecoration(
-        color: Color(0xFFF4F6F8),
+        color: AppColors.backgroundTertiary,
         border: Border(
-          right: BorderSide(color: Color(0xFFDDDDDD), width: 0.5),
-          bottom: BorderSide(color: Color(0xFFDDDDDD), width: 0.5),
+          right: BorderSide(color: AppColors.borderLight, width: 0.5),
+          bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
         ),
       ),
       alignment: align,
       child: Text(
         text,
         style: const TextStyle(
-            fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF555555)),
+            fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.foregroundSecondary),
         overflow: TextOverflow.ellipsis,
         maxLines: 1,
       ),
@@ -1118,7 +1119,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
       decoration: BoxDecoration(
         color: bgColor,
         border: const Border(
-            right: BorderSide(color: Color(0xFFEEEEEE), width: 0.5)),
+            right: BorderSide(color: AppColors.borderLight, width: 0.5)),
       ),
       alignment: Alignment.center,
       child: Text(
@@ -1127,8 +1128,8 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
           fontSize: 12,
           fontWeight: isOverride ? FontWeight.w700 : FontWeight.w400,
           color: isOverride
-              ? const Color(0xFF1565C0)
-              : (empty ? const Color(0xFFCCCCCC) : const Color(0xFF2B2B2B)),
+              ? AppColors.accentCharcoal
+              : (empty ? AppColors.foregroundLight : AppColors.foregroundPrimary),
         ),
       ),
     );
@@ -1145,9 +1146,9 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
       width: width,
       height: _rowH,
       decoration: const BoxDecoration(
-        color: Color(0xFFF8F9FA),
+        color: AppColors.backgroundTertiary,
         border: Border(
-            right: BorderSide(color: Color(0xFFE0E0E0), width: 0.5)),
+            right: BorderSide(color: AppColors.borderLight, width: 0.5)),
       ),
       alignment: Alignment.center,
       child: Text(
@@ -1156,7 +1157,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
           fontSize: 11,
           fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
           color: color ??
-              (text == '--' ? const Color(0xFFCCCCCC) : const Color(0xFF555555)),
+              (text == '--' ? AppColors.foregroundLight : AppColors.foregroundSecondary),
         ),
       ),
     );
@@ -1170,14 +1171,14 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
     return Container(
       width: _remarksW,
       height: _rowH,
-      color: const Color(0xFFF8F9FA),
+      color: AppColors.backgroundTertiary,
       alignment: Alignment.center,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
         decoration: BoxDecoration(
           color: passed
-              ? const Color(0xFF4CAF50).withValues(alpha: 0.12)
-              : const Color(0xFFE57373).withValues(alpha: 0.12),
+              ? AppColors.semanticSuccessAlt.withValues(alpha: 0.12)
+              : AppColors.semanticError.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(5),
         ),
         child: Text(
@@ -1186,7 +1187,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
             fontSize: 9,
             fontWeight: FontWeight.w600,
             color:
-                passed ? const Color(0xFF2E7D32) : const Color(0xFFC62828),
+                passed ? AppColors.semanticSuccess : AppColors.semanticErrorDark,
           ),
         ),
       ),
@@ -1229,17 +1230,17 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(4),
                 borderSide: const BorderSide(
-                    color: Color(0xFF1976D2), width: 1.5),
+                    color: AppColors.accentCharcoal, width: 1.5),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(4),
                 borderSide: const BorderSide(
-                    color: Color(0xFF1976D2), width: 1.5),
+                    color: AppColors.accentCharcoal, width: 1.5),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(4),
                 borderSide: const BorderSide(
-                    color: Color(0xFF1976D2), width: 1.5),
+                    color: AppColors.accentCharcoal, width: 1.5),
               ),
             ),
           ),

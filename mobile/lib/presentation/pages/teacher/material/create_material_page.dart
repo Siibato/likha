@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/pages/teacher/material/material_detail_page.dart';
@@ -141,17 +142,17 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
     final state = ref.watch(learningMaterialProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.backgroundSecondary,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF2B2B2B)),
+        iconTheme: const IconThemeData(color: AppColors.accentCharcoal),
         title: const Text(
           'Create Module',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
           ),
         ),
       ),
@@ -171,14 +172,14 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
                 labelText: 'Title',
                 hintText: 'e.g., Week 1: Introduction',
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: AppColors.backgroundPrimary,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                  borderSide: const BorderSide(color: AppColors.borderLight),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                  borderSide: const BorderSide(color: AppColors.borderLight),
                 ),
               ),
               validator: (value) {
@@ -207,15 +208,15 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF2B2B2B),
+                    color: AppColors.accentCharcoal,
                   ),
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
                   onPressed: state.isLoading ? null : _pickFiles,
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFF2B2B2B)),
-                    foregroundColor: const Color(0xFF2B2B2B),
+                    side: const BorderSide(color: AppColors.accentCharcoal),
+                    foregroundColor: AppColors.accentCharcoal,
                     padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -235,15 +236,15 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
                   Container(
                     padding: const EdgeInsets.all(32),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.backgroundPrimary,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFE0E0E0)),
+                      border: Border.all(color: AppColors.borderLight),
                     ),
                     child: const Center(
                       child: Text(
                         'No files selected',
                         style: TextStyle(
-                          color: Color(0xFF999999),
+                          color: AppColors.foregroundTertiary,
                           fontSize: 14,
                         ),
                       ),
@@ -259,12 +260,12 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
-                          side: const BorderSide(color: Color(0xFFE0E0E0)),
+                          side: const BorderSide(color: AppColors.borderLight),
                         ),
                         child: ListTile(
                           leading: const Icon(
                             Icons.insert_drive_file_rounded,
-                            color: Color(0xFF2B2B2B),
+                            color: AppColors.accentCharcoal,
                           ),
                           title: Text(
                             file.name,
@@ -276,14 +277,14 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
                           subtitle: Text(
                             _formatFileSize(file.size),
                             style: const TextStyle(
-                              color: Color(0xFF999999),
+                              color: AppColors.foregroundTertiary,
                               fontSize: 12,
                             ),
                           ),
                           trailing: IconButton(
                             icon: const Icon(
                               Icons.close_rounded,
-                              color: Color(0xFFEF5350),
+                              color: AppColors.semanticError,
                             ),
                             onPressed: () => _removeFile(index),
                           ),
@@ -300,9 +301,9 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.backgroundPrimary,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE0E0E0)),
+                  border: Border.all(color: AppColors.borderLight),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -313,7 +314,7 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
-                            color: Color(0xFF2B2B2B),
+                            color: AppColors.accentCharcoal,
                             strokeWidth: 2,
                           ),
                         ),
@@ -324,7 +325,7 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF2B2B2B),
+                              color: AppColors.accentCharcoal,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -334,7 +335,7 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF2B2B2B),
+                            color: AppColors.accentCharcoal,
                           ),
                         ),
                       ],
@@ -344,8 +345,8 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
                         value: state.uploadProgress > 0 ? state.uploadProgress : null,
-                        backgroundColor: const Color(0xFFF0F0F0),
-                        color: const Color(0xFF2B2B2B),
+                        backgroundColor: AppColors.borderLight,
+                        color: AppColors.accentCharcoal,
                         minHeight: 6,
                       ),
                     ),
@@ -358,8 +359,8 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
             ElevatedButton(
               onPressed: state.isLoading ? null : _createMaterial,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2B2B2B),
-                foregroundColor: Colors.white,
+                backgroundColor: AppColors.accentCharcoal,
+                foregroundColor: AppColors.backgroundPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

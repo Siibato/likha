@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class ClassificationModeToggle extends StatelessWidget {
   final String value;
@@ -20,7 +21,7 @@ class ClassificationModeToggle extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
           ),
         ),
         const SizedBox(height: 8),
@@ -70,10 +71,10 @@ class _ModeChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF2B2B2B) : Colors.white,
+          color: isSelected ? AppColors.accentCharcoal : Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? const Color(0xFF2B2B2B) : const Color(0xFFE0E0E0),
+            color: isSelected ? AppColors.accentCharcoal : AppColors.borderLight,
           ),
         ),
         child: Row(
@@ -82,7 +83,7 @@ class _ModeChip extends StatelessWidget {
             Icon(
               icon,
               size: 16,
-              color: isSelected ? Colors.white : const Color(0xFF666666),
+              color: isSelected ? Colors.white : AppColors.foregroundSecondary,
             ),
             const SizedBox(width: 6),
             Text(
@@ -90,7 +91,7 @@ class _ModeChip extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : const Color(0xFF666666),
+                color: isSelected ? Colors.white : AppColors.foregroundSecondary,
               ),
             ),
           ],

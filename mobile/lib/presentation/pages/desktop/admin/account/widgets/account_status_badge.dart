@@ -19,19 +19,19 @@ class AccountStatusBadge extends StatelessWidget {
     
     switch (status) {
       case 'activated':
-        statusColor = const Color(0xFF28A745);
+        statusColor = AppColors.accentCharcoal;
         statusLabel = 'Active';
         break;
       case 'pending_activation':
-        statusColor = const Color(0xFFFFC107);
+        statusColor = AppColors.accentAmberBorder;
         statusLabel = 'Pending';
         break;
       case 'locked':
-        statusColor = const Color(0xFFDC3545);
+        statusColor = AppColors.semanticErrorDark;
         statusLabel = 'Locked';
         break;
       case 'suspended':
-        statusColor = const Color(0xFF6F42C1);
+        statusColor = AppColors.foregroundSecondary;
         statusLabel = 'Suspended';
         break;
       case 'deactivated':
@@ -83,13 +83,13 @@ class AccountStatusBadge extends StatelessWidget {
   static Color getStatusColor(String status) {
     switch (status) {
       case 'activated':
-        return const Color(0xFF28A745);
+        return AppColors.accentCharcoal;
       case 'pending_activation':
-        return const Color(0xFFFFC107);
+        return AppColors.accentAmberBorder;
       case 'locked':
-        return const Color(0xFFDC3545);
+        return AppColors.semanticErrorDark;
       case 'suspended':
-        return const Color(0xFF6F42C1);
+        return AppColors.foregroundSecondary;
       case 'deactivated':
         return AppColors.foregroundTertiary;
       default:

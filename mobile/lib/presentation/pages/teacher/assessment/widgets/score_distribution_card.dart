@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
 
 class ScoreDistributionCard extends StatelessWidget {
@@ -21,7 +22,7 @@ class ScoreDistributionCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFFE0E0E0),
+          color: AppColors.borderLight,
           width: 1,
         ),
       ),
@@ -34,7 +35,7 @@ class ScoreDistributionCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
               letterSpacing: -0.3,
             ),
           ),
@@ -52,19 +53,20 @@ class ScoreDistributionCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF666666),
+                        color: AppColors.foregroundSecondary,
                       ),
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(6),
                       child: LinearProgressIndicator(
                         value: fraction,
                         minHeight: 24,
-                        backgroundColor: const Color(0xFFF5F5F5),
+                        backgroundColor: AppColors.backgroundTertiary,
                         valueColor: const AlwaysStoppedAnimation<Color>(
-                          Color(0xFF2B2B2B),
+                          AppColors.accentCharcoal,
                         ),
                       ),
                     ),
@@ -78,7 +80,7 @@ class ScoreDistributionCard extends StatelessWidget {
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.foregroundPrimary,
                       ),
                     ),
                   ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 
 class QuestionReorderList extends StatelessWidget {
@@ -23,7 +24,7 @@ class QuestionReorderList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
+        color: AppColors.accentCharcoal,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Container(
@@ -44,7 +45,7 @@ class QuestionReorderList extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF2B2B2B),
+                    color: AppColors.foregroundPrimary,
                     letterSpacing: -0.3,
                   ),
                 ),
@@ -52,7 +53,7 @@ class QuestionReorderList extends StatelessWidget {
                 TextButton(
                   onPressed: onCancel,
                   style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF666666),
+                    foregroundColor: AppColors.foregroundSecondary,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   ),
                   child: const Text('Cancel'),
@@ -61,7 +62,7 @@ class QuestionReorderList extends StatelessWidget {
                 ElevatedButton(
                   onPressed: onConfirm,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2B2B2B),
+                    backgroundColor: AppColors.accentCharcoal,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   ),
@@ -93,7 +94,7 @@ class QuestionReorderList extends StatelessWidget {
                             child: Container(
                               margin: const EdgeInsets.only(bottom: 4),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFE0E0E0),
+                                color: AppColors.accentCharcoal,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Container(
@@ -109,10 +110,10 @@ class QuestionReorderList extends StatelessWidget {
                                       width: 32,
                                       height: 32,
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFF8F9FA),
+                                        color: AppColors.backgroundTertiary,
                                         borderRadius: BorderRadius.circular(8),
                                         border: Border.all(
-                                          color: const Color(0xFFE0E0E0),
+                                          color: AppColors.borderLight,
                                           width: 1,
                                         ),
                                       ),
@@ -121,7 +122,7 @@ class QuestionReorderList extends StatelessWidget {
                                           '${index + 1}',
                                           style: const TextStyle(
                                             fontWeight: FontWeight.w700,
-                                            color: Color(0xFF2B2B2B),
+                                            color: AppColors.foregroundPrimary,
                                             fontSize: 14,
                                           ),
                                         ),
@@ -137,7 +138,7 @@ class QuestionReorderList extends StatelessWidget {
                                             style: const TextStyle(
                                               fontWeight: FontWeight.w600,
                                               fontSize: 14,
-                                              color: Color(0xFF2B2B2B),
+                                              color: AppColors.foregroundPrimary,
                                               letterSpacing: -0.2,
                                             ),
                                             maxLines: 1,
@@ -153,7 +154,7 @@ class QuestionReorderList extends StatelessWidget {
                                     ),
                                     const Icon(
                                       Icons.chevron_right_rounded,
-                                      color: Color(0xFFCCCCCC),
+                                      color: AppColors.foregroundLight,
                                     ),
                                   ],
                                 ),
@@ -189,13 +190,13 @@ class QuestionReorderList extends StatelessWidget {
   Color _questionTypeColor(String type) {
     switch (type) {
       case 'multiple_choice':
-        return const Color(0xFF2B2B2B);
+        return AppColors.accentCharcoal;
       case 'identification':
-        return const Color(0xFF666666);
+        return AppColors.foregroundSecondary;
       case 'enumeration':
-        return const Color(0xFF999999);
+        return AppColors.foregroundTertiary;
       default:
-        return const Color(0xFF999999);
+        return AppColors.foregroundTertiary;
     }
   }
 }

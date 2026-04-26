@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class StatisticsOverviewCard extends StatelessWidget {
   final String title;
@@ -19,7 +20,7 @@ class StatisticsOverviewCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFFE0E0E0),
+          color: AppColors.borderLight,
           width: 1,
         ),
       ),
@@ -32,7 +33,7 @@ class StatisticsOverviewCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
               letterSpacing: -0.3,
             ),
           ),
@@ -68,7 +69,7 @@ class _StatItem extends StatelessWidget {
           style: const TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.foregroundPrimary,
             letterSpacing: -0.5,
           ),
         ),
@@ -77,7 +78,7 @@ class _StatItem extends StatelessWidget {
           label,
           style: const TextStyle(
             fontSize: 13,
-            color: Color(0xFF999999),
+            color: AppColors.foregroundTertiary,
             fontWeight: FontWeight.w500,
           ),
         ),

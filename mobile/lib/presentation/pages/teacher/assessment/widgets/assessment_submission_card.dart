@@ -61,7 +61,7 @@ class AssessmentSubmissionCard extends StatelessWidget {
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
-                    color: Color(0xFF202020),
+                    color: AppColors.foregroundDark,
                     letterSpacing: -0.2,
                   ),
                 ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 /// Dialog showing file upload progress with linear progress bar and percentage
 class UploadProgressDialog extends StatelessWidget {
@@ -28,7 +29,7 @@ class UploadProgressDialog extends StatelessWidget {
           const Icon(
             Icons.cloud_upload_outlined,
             size: 48,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
           ),
           const SizedBox(height: 16),
           Text(
@@ -36,7 +37,7 @@ class UploadProgressDialog extends StatelessWidget {
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF2B2B2B),
+              color: AppColors.accentCharcoal,
             ),
           ),
           const SizedBox(height: 8),
@@ -44,7 +45,7 @@ class UploadProgressDialog extends StatelessWidget {
             fileName,
             style: const TextStyle(
               fontSize: 14,
-              color: Color(0xFF666666),
+              color: AppColors.foregroundSecondary,
             ),
             textAlign: TextAlign.center,
             maxLines: 2,
@@ -53,8 +54,8 @@ class UploadProgressDialog extends StatelessWidget {
           const SizedBox(height: 24),
           LinearProgressIndicator(
             value: progress,
-            backgroundColor: const Color(0xFFE0E0E0),
-            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF2B2B2B)),
+            backgroundColor: AppColors.borderLight,
+            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accentCharcoal),
             borderRadius: BorderRadius.circular(4),
             minHeight: 8,
           ),
@@ -64,7 +65,7 @@ class UploadProgressDialog extends StatelessWidget {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF2B2B2B),
+              color: AppColors.accentCharcoal,
             ),
           ),
           if (onCancel != null) ...[
@@ -74,7 +75,7 @@ class UploadProgressDialog extends StatelessWidget {
               child: const Text(
                 'Cancel',
                 style: TextStyle(
-                  color: Color(0xFFEF5350),
+                  color: AppColors.semanticError,
                   fontWeight: FontWeight.w600,
                 ),
               ),

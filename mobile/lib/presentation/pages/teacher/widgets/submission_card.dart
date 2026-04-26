@@ -93,7 +93,7 @@ class SubmissionCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF202020),
+                    color: AppColors.foregroundDark,
                     letterSpacing: -0.2,
                   ),
                 ),

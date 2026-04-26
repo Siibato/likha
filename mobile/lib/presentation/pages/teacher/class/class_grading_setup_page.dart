@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/domain/grading/usecases/setup_grading.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
@@ -129,7 +130,7 @@ class _ClassGradingSetupPageState extends ConsumerState<ClassGradingSetupPage> {
         : null;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
         child: Column(
           children: [
@@ -148,7 +149,7 @@ class _ClassGradingSetupPageState extends ConsumerState<ClassGradingSetupPage> {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF999999),
+                        color: AppColors.foregroundTertiary,
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -232,7 +233,7 @@ class _ClassGradingSetupPageState extends ConsumerState<ClassGradingSetupPage> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: const Color(0xFFE0E0E0),
+                            color: AppColors.borderLight,
                             width: 1,
                           ),
                         ),
@@ -244,7 +245,7 @@ class _ClassGradingSetupPageState extends ConsumerState<ClassGradingSetupPage> {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF2B2B2B),
+                                color: AppColors.accentCharcoal,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -310,14 +311,14 @@ class _WeightRow extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF666666),
+              color: AppColors.foregroundSecondary,
             ),
           ),
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8F9FA),
+            color: AppColors.backgroundTertiary,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -325,7 +326,7 @@ class _WeightRow extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF2B2B2B),
+              color: AppColors.accentCharcoal,
             ),
           ),
         ),

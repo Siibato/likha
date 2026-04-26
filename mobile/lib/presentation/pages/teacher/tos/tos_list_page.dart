@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
@@ -30,7 +31,7 @@ class _TosListPageState extends ConsumerState<TosListPage> {
     final state = ref.watch(tosProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
         child: Column(
           children: [
@@ -42,7 +43,7 @@ class _TosListPageState extends ConsumerState<TosListPage> {
               child: state.isLoading && state.tosList.isEmpty
                   ? const Center(
                       child: CircularProgressIndicator(
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                         strokeWidth: 2.5,
                       ),
                     )
@@ -52,7 +53,7 @@ class _TosListPageState extends ConsumerState<TosListPage> {
                           onRefresh: () => ref
                               .read(tosProvider.notifier)
                               .loadTosList(widget.classId),
-                          color: const Color(0xFF2B2B2B),
+                          color: AppColors.accentCharcoal,
                           child: ListView.builder(
                             padding: const EdgeInsets.all(24),
                             itemCount: state.tosList.length,
@@ -77,7 +78,7 @@ class _TosListPageState extends ConsumerState<TosListPage> {
                                         width: 44,
                                         height: 44,
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFF0F0F0),
+                                          color: AppColors.borderLight,
                                           borderRadius: BorderRadius.circular(10),
                                         ),
                                         child: Center(
@@ -86,7 +87,7 @@ class _TosListPageState extends ConsumerState<TosListPage> {
                                             style: const TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w700,
-                                              color: Color(0xFF2B2B2B),
+                                              color: AppColors.accentCharcoal,
                                             ),
                                           ),
                                         ),
@@ -101,7 +102,7 @@ class _TosListPageState extends ConsumerState<TosListPage> {
                                               style: const TextStyle(
                                                 fontSize: 15,
                                                 fontWeight: FontWeight.w600,
-                                                color: Color(0xFF2B2B2B),
+                                                color: AppColors.accentCharcoal,
                                               ),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
@@ -111,7 +112,7 @@ class _TosListPageState extends ConsumerState<TosListPage> {
                                               '$modeLabel | ${tos.totalItems} items',
                                               style: const TextStyle(
                                                 fontSize: 12,
-                                                color: Color(0xFF999999),
+                                                color: AppColors.foregroundTertiary,
                                               ),
                                             ),
                                           ],
@@ -136,7 +137,7 @@ class _TosListPageState extends ConsumerState<TosListPage> {
             builder: (_) => CreateTosPage(classId: widget.classId),
           ),
         ),
-        backgroundColor: const Color(0xFF2B2B2B),
+        backgroundColor: AppColors.accentCharcoal,
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
@@ -150,7 +151,7 @@ class _TosListPageState extends ConsumerState<TosListPage> {
           const Icon(
             Icons.table_chart_outlined,
             size: 64,
-            color: Color(0xFFCCCCCC),
+            color: AppColors.foregroundLight,
           ),
           const SizedBox(height: 16),
           const Text(
@@ -158,7 +159,7 @@ class _TosListPageState extends ConsumerState<TosListPage> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF2B2B2B),
+              color: AppColors.accentCharcoal,
             ),
           ),
           const SizedBox(height: 8),
@@ -166,7 +167,7 @@ class _TosListPageState extends ConsumerState<TosListPage> {
             'Create your first Table of Specifications',
             style: TextStyle(
               fontSize: 14,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
             ),
           ),
         ],

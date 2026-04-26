@@ -22,7 +22,7 @@ class AssignmentSubmissionsCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: const Color(0xFFE0E0E0),
+            color: AppColors.borderLight,
             width: 1,
           ),
         ),
@@ -51,7 +51,7 @@ class AssignmentSubmissionsCard extends StatelessWidget {
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 15,
-                      color: Color(0xFF202020),
+                      color: AppColors.foregroundDark,
                       letterSpacing: -0.2,
                     ),
                   ),

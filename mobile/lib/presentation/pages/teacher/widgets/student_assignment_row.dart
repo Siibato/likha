@@ -48,13 +48,13 @@ class StudentAssignmentRow extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5),
+              color: AppColors.backgroundDisabled,
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(
               Icons.task_alt_outlined,
               size: 18,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
             ),
           ),
           const SizedBox(width: 12),
@@ -68,7 +68,7 @@ class StudentAssignmentRow extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF202020),
+                    color: AppColors.foregroundDark,
                     letterSpacing: -0.2,
                   ),
                   maxLines: 2,
@@ -79,7 +79,7 @@ class StudentAssignmentRow extends StatelessWidget {
                   'Due: ${_formatDate(assignment.dueAt)}',
                   style: const TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF999999),
+                    color: AppColors.foregroundTertiary,
                   ),
                 ),
               ],
@@ -130,7 +130,7 @@ class StudentAssignmentRow extends StatelessWidget {
       case 'returned':
         return const StatusBadge(
           label: 'Returned',
-          color: AppColors.deprecatedDraftOrange,
+          color: AppColors.accentAmber,
           variant: BadgeVariant.filled,
         );
       default:

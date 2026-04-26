@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class DifficultyRatioSection extends StatefulWidget {
   final TextEditingController easyController;
@@ -51,14 +52,14 @@ class _DifficultyRatioSectionState extends State<DifficultyRatioSection> {
   @override
   Widget build(BuildContext context) {
     final isValid = (_total - 100).abs() <= 0.5;
-    final totalColor = isValid ? const Color(0xFF2E7D32) : const Color(0xFFD32F2F);
+    final totalColor = isValid ? AppColors.semanticSuccess : AppColors.semanticErrorDark;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,7 +72,7 @@ class _DifficultyRatioSectionState extends State<DifficultyRatioSection> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF666666),
+                    color: AppColors.foregroundSecondary,
                   ),
                 ),
               ),
@@ -90,7 +91,7 @@ class _DifficultyRatioSectionState extends State<DifficultyRatioSection> {
           const SizedBox(height: 4),
           const Text(
             'Sets default % of items per difficulty level. Each competency can override these.',
-            style: TextStyle(fontSize: 11, color: Color(0xFF999999)),
+            style: TextStyle(fontSize: 11, color: AppColors.foregroundTertiary),
           ),
           const SizedBox(height: 12),
           Row(
@@ -99,7 +100,7 @@ class _DifficultyRatioSectionState extends State<DifficultyRatioSection> {
                 child: _PctField(
                   controller: widget.easyController,
                   label: 'Easy',
-                  color: const Color(0xFF4CAF50),
+                  color: AppColors.semanticSuccessAlt,
                 ),
               ),
               const SizedBox(width: 10),
@@ -107,7 +108,7 @@ class _DifficultyRatioSectionState extends State<DifficultyRatioSection> {
                 child: _PctField(
                   controller: widget.mediumController,
                   label: 'Medium',
-                  color: const Color(0xFFFF9800),
+                  color: AppColors.accentAmber,
                 ),
               ),
               const SizedBox(width: 10),
@@ -115,7 +116,7 @@ class _DifficultyRatioSectionState extends State<DifficultyRatioSection> {
                 child: _PctField(
                   controller: widget.hardController,
                   label: 'Hard',
-                  color: const Color(0xFFF44336),
+                  color: AppColors.semanticError,
                 ),
               ),
             ],
@@ -151,7 +152,7 @@ class _PctField extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             Text(label,
-                style: const TextStyle(fontSize: 11, color: Color(0xFF666666))),
+                style: const TextStyle(fontSize: 11, color: AppColors.foregroundSecondary)),
           ],
         ),
         const SizedBox(height: 4),
@@ -162,19 +163,19 @@ class _PctField extends StatelessWidget {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
           ),
           decoration: InputDecoration(
             suffixText: '%',
-            suffixStyle: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
+            suffixStyle: const TextStyle(fontSize: 12, color: AppColors.foregroundTertiary),
             contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+              borderSide: const BorderSide(color: AppColors.borderLight),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+              borderSide: const BorderSide(color: AppColors.borderLight),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),

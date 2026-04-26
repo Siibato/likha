@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
 import 'package:likha/presentation/pages/admin/account/widgets/search_bar.dart';
@@ -50,13 +51,13 @@ class _TeacherClassesPageState extends ConsumerState<TeacherClassesPage> {
       child: classState.isLoading && classState.classes.isEmpty
           ? const Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
                 strokeWidth: 2.5,
               ),
             )
           : RefreshIndicator(
               onRefresh: () => ref.read(classProvider.notifier).loadClasses(),
-              color: const Color(0xFF2B2B2B),
+              color: AppColors.accentCharcoal,
               child: CustomScrollView(
                 slivers: [
                   const SliverToBoxAdapter(

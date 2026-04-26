@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/base_card_sm.dart';
 
@@ -23,7 +24,7 @@ class TeacherAssignmentCard extends StatelessWidget {
           Expanded(child: _buildContent()),
           const Icon(
             Icons.chevron_right_rounded,
-            color: Color(0xFFCCCCCC),
+            color: AppColors.foregroundLight,
             size: 22,
           ),
         ],
@@ -36,8 +37,8 @@ class TeacherAssignmentCard extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: assignment.isPublished
-            ? const Color(0xFFE0E0E0)
-            : const Color(0xFFF5F5F5),
+            ? AppColors.borderLight
+            : AppColors.backgroundDisabled,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Icon(
@@ -45,8 +46,8 @@ class TeacherAssignmentCard extends StatelessWidget {
             ? Icons.assignment_turned_in_rounded
             : Icons.assignment_outlined,
         color: assignment.isPublished
-            ? const Color(0xFF2B2B2B)
-            : const Color(0xFF999999),
+            ? AppColors.accentCharcoal
+            : AppColors.foregroundTertiary,
         size: 20,
       ),
     );
@@ -61,7 +62,7 @@ class TeacherAssignmentCard extends StatelessWidget {
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF202020),
+            color: AppColors.foregroundDark,
             letterSpacing: -0.3,
           ),
         ),
@@ -70,7 +71,7 @@ class TeacherAssignmentCard extends StatelessWidget {
           '${assignment.totalPoints} pts • ${assignment.submissionCount} submissions • ${assignment.gradedCount} graded',
           style: const TextStyle(
             fontSize: 12,
-            color: Color(0xFF999999),
+            color: AppColors.foregroundTertiary,
             fontWeight: FontWeight.w500,
           ),
         ),

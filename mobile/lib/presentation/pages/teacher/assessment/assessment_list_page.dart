@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
@@ -111,7 +112,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFE0E0E0),
+          color: AppColors.accentCharcoal,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Container(
@@ -129,7 +130,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
                   height: 40,
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: const Color(0xFF2B2B2B),
+                      color: AppColors.accentCharcoal,
                       width: 2,
                     ),
                     borderRadius: BorderRadius.circular(6),
@@ -138,7 +139,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
                     child: Text(
                       '${index + 1}',
                       style: const TextStyle(
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
                       ),
@@ -148,7 +149,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
               else
                 const Icon(
                   Icons.quiz_outlined,
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                   size: 20,
                 ),
               const SizedBox(width: 14),
@@ -161,7 +162,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF202020),
+                        color: AppColors.foregroundDark,
                         letterSpacing: -0.3,
                       ),
                     ),
@@ -170,7 +171,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
                       '${assessment.questionCount} question(s)',
                       style: const TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF999999),
+                        color: AppColors.foregroundTertiary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -179,7 +180,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
               ),
               const Icon(
                 Icons.chevron_right_rounded,
-                color: Color(0xFFCCCCCC),
+                color: AppColors.foregroundLight,
                 size: 22,
               ),
             ],
@@ -211,7 +212,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: null,
       body: SafeArea(
         child: Column(
@@ -234,7 +235,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
                     ElevatedButton(
                       onPressed: _exitReorderMode,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2B2B2B),
+                        backgroundColor: AppColors.accentCharcoal,
                         foregroundColor: Colors.white,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -246,8 +247,8 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
                     OutlinedButton.icon(
                       onPressed: () => _enterReorderMode(assessmentState.assessments),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF2B2B2B),
-                        side: const BorderSide(color: Color(0xFF2B2B2B)),
+                        foregroundColor: AppColors.accentCharcoal,
+                        side: const BorderSide(color: AppColors.accentCharcoal),
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
@@ -267,7 +268,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
                         }
                       }),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2B2B2B),
+                        backgroundColor: AppColors.accentCharcoal,
                         foregroundColor: Colors.white,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -287,7 +288,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
               child: assessmentState.isLoading && assessmentState.assessments.isEmpty
                   ? const Center(
                       child: CircularProgressIndicator(
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                         strokeWidth: 2.5,
                       ),
                     )
@@ -329,7 +330,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
                               onRefresh: () => ref
                                   .read(teacherAssessmentProvider.notifier)
                                   .loadAssessments(widget.classId),
-                              color: const Color(0xFF2B2B2B),
+                              color: AppColors.accentCharcoal,
                               child: ListView.builder(
                                 padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                                 itemCount: assessmentState.assessments.length,

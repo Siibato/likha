@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import '../tokens/app_dimensions.dart';
 
 /// A rounded-square icon container used in cards and list items.
@@ -18,8 +19,8 @@ class CardIconSlot extends StatelessWidget {
     required this.icon,
     required this.iconSize,
     required this.padding,
-    this.bgColor = const Color(0xFFF8F9FA),
-    this.iconColor = const Color(0xFF404040),
+    this.bgColor = AppColors.backgroundTertiary,
+    this.iconColor = AppColors.accentCharcoal,
     this.borderRadius = AppDimensions.kIconSlotRadius,
   });
 
@@ -33,8 +34,8 @@ class CardIconSlot extends StatelessWidget {
       icon: icon,
       iconSize: AppDimensions.kIconSizeSm,
       padding: AppDimensions.kIconSlotPadSm,
-      bgColor: bgColor ?? const Color(0xFFF8F9FA),
-      iconColor: iconColor ?? const Color(0xFF404040),
+      bgColor: bgColor ?? AppColors.backgroundTertiary,
+      iconColor: iconColor ?? AppColors.accentCharcoal,
       borderRadius: AppDimensions.kIconSlotRadiusSm,
     );
   }
@@ -49,8 +50,8 @@ class CardIconSlot extends StatelessWidget {
       icon: icon,
       iconSize: AppDimensions.kIconSizeMd,
       padding: AppDimensions.kIconSlotPadMd,
-      bgColor: bgColor ?? const Color(0xFFF8F9FA),
-      iconColor: iconColor ?? const Color(0xFF404040),
+      bgColor: bgColor ?? AppColors.backgroundTertiary,
+      iconColor: iconColor ?? AppColors.accentCharcoal,
       borderRadius: AppDimensions.kIconSlotRadius,
     );
   }
@@ -65,8 +66,8 @@ class CardIconSlot extends StatelessWidget {
       icon: icon,
       iconSize: AppDimensions.kIconSizeLg,
       padding: AppDimensions.kIconSlotPadLg,
-      bgColor: bgColor ?? const Color(0xFFF8F9FA),
-      iconColor: iconColor ?? const Color(0xFF404040),
+      bgColor: bgColor ?? AppColors.backgroundTertiary,
+      iconColor: iconColor ?? AppColors.accentCharcoal,
       borderRadius: AppDimensions.kIconSlotRadius,
     );
   }

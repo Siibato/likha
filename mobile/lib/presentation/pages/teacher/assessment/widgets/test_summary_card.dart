@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
 
 class TestSummaryCard extends StatelessWidget {
@@ -13,7 +14,7 @@ class TestSummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -23,7 +24,7 @@ class TestSummaryCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
               letterSpacing: -0.3,
             ),
           ),
@@ -53,24 +54,24 @@ class TestSummaryCard extends StatelessWidget {
               _VerdictChip(
                 label: 'Retain',
                 count: summary.retainCount,
-                color: const Color(0xFF4CAF50),
+                color: AppColors.semanticSuccess,
               ),
               const SizedBox(width: 8),
               _VerdictChip(
                 label: 'Revise',
                 count: summary.reviseCount,
-                color: const Color(0xFFF9A825),
+                color: AppColors.accentAmber,
               ),
               const SizedBox(width: 8),
               _VerdictChip(
                 label: 'Discard',
                 count: summary.discardCount,
-                color: const Color(0xFFE57373),
+                color: AppColors.semanticError,
               ),
             ],
           ),
           const SizedBox(height: 16),
-          const Divider(height: 1, color: Color(0xFFEEEEEE)),
+          const Divider(height: 1, color: AppColors.borderLight),
           const SizedBox(height: 12),
           _InfoLine(label: 'Items Analyzed', value: '${summary.totalItemsAnalyzed}'),
           const SizedBox(height: 6),
@@ -114,7 +115,7 @@ class _StatBox extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA),
+        color: AppColors.backgroundTertiary,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -125,7 +126,7 @@ class _StatBox extends StatelessWidget {
             style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
             ),
           ),
           const SizedBox(height: 4),
@@ -134,7 +135,7 @@ class _StatBox extends StatelessWidget {
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF2B2B2B),
+              color: AppColors.foregroundPrimary,
             ),
           ),
           const SizedBox(height: 2),
@@ -143,7 +144,7 @@ class _StatBox extends StatelessWidget {
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF666666),
+              color: AppColors.foregroundSecondary,
             ),
           ),
         ],
@@ -214,7 +215,7 @@ class _InfoLine extends StatelessWidget {
           label,
           style: const TextStyle(
             fontSize: 13,
-            color: Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
           ),
         ),
         Text(
@@ -222,7 +223,7 @@ class _InfoLine extends StatelessWidget {
           style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.foregroundPrimary,
           ),
         ),
       ],

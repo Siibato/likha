@@ -22,7 +22,7 @@ class BaseCard extends StatelessWidget {
       bottom: AppDimensions.kCardListSpacing,
     ),
     this.padding = const EdgeInsets.all(AppDimensions.kCardPadMd),
-    this.outerColor = AppColors.borderLight,
+    this.outerColor = AppColors.accentCharcoal,
   });
 
   @override

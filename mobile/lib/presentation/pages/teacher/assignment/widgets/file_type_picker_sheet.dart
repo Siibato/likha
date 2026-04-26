@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/constants/file_types.dart';
 
 class FileTypePickerSheet extends StatefulWidget {
@@ -66,7 +67,7 @@ class _FileTypePickerSheetState extends State<FileTypePickerSheet> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
               ),
             ),
             const SizedBox(height: 16),
@@ -79,12 +80,12 @@ class _FileTypePickerSheetState extends State<FileTypePickerSheet> {
                       margin: const EdgeInsets.only(top: 16, bottom: 12),
                       decoration: BoxDecoration(
                         color: _getCategoryState(category) > 0
-                            ? const Color(0xFF2B2B2B).withValues(alpha: 0.05)
+                            ? AppColors.accentCharcoal.withValues(alpha: 0.05)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: _getCategoryState(category) > 0
-                              ? const Color(0xFF2B2B2B).withValues(alpha: 0.2)
+                              ? AppColors.accentCharcoal.withValues(alpha: 0.2)
                               : Colors.transparent,
                         ),
                       ),
@@ -103,7 +104,7 @@ class _FileTypePickerSheetState extends State<FileTypePickerSheet> {
                                       : false,
                               tristate: true,
                               onChanged: (_) => _toggleCategory(category),
-                              activeColor: const Color(0xFF2B2B2B),
+                              activeColor: AppColors.accentCharcoal,
                               materialTapTargetSize:
                                   MaterialTapTargetSize.shrinkWrap,
                             ),
@@ -115,8 +116,8 @@ class _FileTypePickerSheetState extends State<FileTypePickerSheet> {
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: _getCategoryState(category) > 0
-                                      ? const Color(0xFF2B2B2B)
-                                      : const Color(0xFF666666),
+                                      ? AppColors.accentCharcoal
+                                      : AppColors.foregroundSecondary,
                                 ),
                               ),
                             ),
@@ -141,20 +142,20 @@ class _FileTypePickerSheetState extends State<FileTypePickerSheet> {
                                 }
                               });
                             },
-                            selectedColor: const Color(0xFF2B2B2B),
+                            selectedColor: AppColors.accentCharcoal,
                             labelStyle: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
                               color: _tempSelection.contains(type)
                                   ? Colors.white
-                                  : const Color(0xFF2B2B2B),
+                                  : AppColors.accentCharcoal,
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20),
                               side: BorderSide(
                                 color: _tempSelection.contains(type)
-                                    ? const Color(0xFF2B2B2B)
-                                    : const Color(0xFFE0E0E0),
+                                    ? AppColors.accentCharcoal
+                                    : AppColors.borderLight,
                               ),
                             ),
                             backgroundColor: Colors.white,
@@ -172,7 +173,7 @@ class _FileTypePickerSheetState extends State<FileTypePickerSheet> {
             ElevatedButton(
               onPressed: () => Navigator.pop(context, _tempSelection),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2B2B2B),
+                backgroundColor: AppColors.accentCharcoal,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class GradeStatsFooter extends StatelessWidget {
   final List<Map<String, dynamic>> summary;
@@ -31,7 +32,7 @@ class GradeStatsFooter extends StatelessWidget {
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(
-          top: BorderSide(color: Color(0xFFE0E0E0), width: 1),
+          top: BorderSide(color: AppColors.borderLight, width: 1),
         ),
       ),
       child: Row(
@@ -55,7 +56,7 @@ class GradeStatsFooter extends StatelessWidget {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
           ),
         ),
         const SizedBox(height: 2),
@@ -63,7 +64,7 @@ class GradeStatsFooter extends StatelessWidget {
           label,
           style: const TextStyle(
             fontSize: 11,
-            color: Color(0xFF999999),
+            color: AppColors.foregroundTertiary,
           ),
         ),
       ],

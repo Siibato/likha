@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
@@ -125,7 +126,7 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
     final state = ref.watch(tosProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
         child: Column(
           children: [
@@ -159,14 +160,14 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFE0E0E0)),
+                          border: Border.all(color: AppColors.borderLight),
                         ),
                         child: DropdownButtonFormField<int>(
                           initialValue: _selectedQuarter,
                           decoration: const InputDecoration(
                             labelText: 'Quarter',
                             prefixIcon: Icon(Icons.calendar_month_outlined,
-                                color: Color(0xFF999999), size: 20),
+                                color: AppColors.foregroundTertiary, size: 20),
                             border: InputBorder.none,
                             contentPadding:
                                 EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -227,7 +228,7 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
                         child: ElevatedButton(
                           onPressed: state.isLoading ? null : _handleSave,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2B2B2B),
+                            backgroundColor: AppColors.accentCharcoal,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -274,7 +275,7 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: TextFormField(
         controller: controller,
@@ -282,12 +283,12 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
         validator: validator,
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon, color: const Color(0xFF999999), size: 20),
+          prefixIcon: Icon(icon, color: AppColors.foregroundTertiary, size: 20),
           border: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
-        style: const TextStyle(fontSize: 15, color: Color(0xFF2B2B2B)),
+        style: const TextStyle(fontSize: 15, color: AppColors.accentCharcoal),
       ),
     );
   }

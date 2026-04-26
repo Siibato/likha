@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
@@ -30,7 +31,7 @@ class _Sf9StudentListPageState extends ConsumerState<Sf9StudentListPage> {
     final state = ref.watch(sf9Provider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
         child: Column(
           children: [
@@ -42,7 +43,7 @@ class _Sf9StudentListPageState extends ConsumerState<Sf9StudentListPage> {
               child: state.isLoading && state.students.isEmpty
                   ? const Center(
                       child: CircularProgressIndicator(
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                         strokeWidth: 2.5,
                       ),
                     )
@@ -53,7 +54,7 @@ class _Sf9StudentListPageState extends ConsumerState<Sf9StudentListPage> {
                             child: Text(
                               state.error!,
                               style: const TextStyle(
-                                color: Color(0xFFE57373),
+                                color: AppColors.semanticError,
                                 fontSize: 14,
                               ),
                               textAlign: TextAlign.center,
@@ -66,14 +67,14 @@ class _Sf9StudentListPageState extends ConsumerState<Sf9StudentListPage> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(Icons.people_outline_rounded,
-                                      size: 64, color: Color(0xFFCCCCCC)),
+                                      size: 64, color: AppColors.foregroundLight),
                                   SizedBox(height: 16),
                                   Text(
                                     'No students found',
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFF2B2B2B),
+                                      color: AppColors.accentCharcoal,
                                     ),
                                   ),
                                 ],
@@ -103,7 +104,7 @@ class _Sf9StudentListPageState extends ConsumerState<Sf9StudentListPage> {
                                           width: 44,
                                           height: 44,
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFFF0F0F0),
+                                            color: AppColors.borderLight,
                                             borderRadius:
                                                 BorderRadius.circular(10),
                                           ),
@@ -111,7 +112,7 @@ class _Sf9StudentListPageState extends ConsumerState<Sf9StudentListPage> {
                                             child: Icon(
                                               Icons.person_outline_rounded,
                                               size: 22,
-                                              color: Color(0xFF666666),
+                                              color: AppColors.foregroundSecondary,
                                             ),
                                           ),
                                         ),
@@ -126,7 +127,7 @@ class _Sf9StudentListPageState extends ConsumerState<Sf9StudentListPage> {
                                                 style: const TextStyle(
                                                   fontSize: 15,
                                                   fontWeight: FontWeight.w600,
-                                                  color: Color(0xFF2B2B2B),
+                                                  color: AppColors.accentCharcoal,
                                                 ),
                                               ),
                                               const SizedBox(height: 4),
@@ -136,7 +137,7 @@ class _Sf9StudentListPageState extends ConsumerState<Sf9StudentListPage> {
                                                     : 'GA: --',
                                                 style: const TextStyle(
                                                   fontSize: 12,
-                                                  color: Color(0xFF999999),
+                                                  color: AppColors.foregroundTertiary,
                                                 ),
                                               ),
                                             ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 /// A styled text input field that matches the app's design system.
 ///
@@ -47,7 +48,7 @@ class StyledTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
+        color: AppColors.accentCharcoal,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Container(
@@ -70,7 +71,7 @@ class StyledTextField extends StatelessWidget {
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF202020),
+            color: AppColors.foregroundDark,
           ),
           decoration: InputDecoration(
             alignLabelWithHint: maxLines != 1 || maxLines == null,
@@ -80,11 +81,11 @@ class StyledTextField extends StatelessWidget {
             labelStyle: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
             ),
             hintStyle: const TextStyle(
               fontSize: 14,
-              color: Color(0xFFCCCCCC),
+              color: AppColors.foregroundLight,
             ),
             prefixIcon: maxLines != 1 || maxLines == null
                 ? Align(
@@ -94,14 +95,14 @@ class StyledTextField extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 14),
                       child: Icon(
                         icon,
-                        color: const Color(0xFF999999),
+                        color: AppColors.foregroundTertiary,
                         size: 22,
                       ),
                     ),
                   )
                 : Icon(
                     icon,
-                    color: const Color(0xFF999999),
+                    color: AppColors.foregroundTertiary,
                     size: 22,
                   ),
             suffixIcon: suffixIcon,
@@ -116,21 +117,21 @@ class StyledTextField extends StatelessWidget {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
               borderSide: const BorderSide(
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
                 width: 1.5,
               ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
               borderSide: const BorderSide(
-                color: Color(0xFFEF5350),
+                color: AppColors.semanticError,
                 width: 1.5,
               ),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
               borderSide: const BorderSide(
-                color: Color(0xFFEF5350),
+                color: AppColors.semanticError,
                 width: 1.5,
               ),
             ),

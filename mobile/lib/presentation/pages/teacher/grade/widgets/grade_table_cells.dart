@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class GradeTableCells {
   static Widget headerCell(
@@ -16,7 +17,7 @@ class GradeTableCells {
         style: const TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w700,
-          color: Color(0xFF999999),
+          color: AppColors.foregroundTertiary,
           letterSpacing: 0.3,
         ),
         overflow: TextOverflow.ellipsis,
@@ -44,8 +45,8 @@ class GradeTableCells {
               fontSize: 13,
               fontWeight: FontWeight.w500,
               color: text == '--'
-                  ? const Color(0xFFCCCCCC)
-                  : const Color(0xFF2B2B2B),
+                  ? AppColors.foregroundLight
+                  : AppColors.accentCharcoal,
             ),
         overflow: TextOverflow.ellipsis,
         maxLines: 1,

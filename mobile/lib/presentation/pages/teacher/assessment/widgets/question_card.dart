@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/presentation/pages/teacher/assessment/widgets/question_draft.dart';
 import 'package:likha/presentation/pages/teacher/assessment/widgets/question_type_dropdown.dart';
@@ -39,13 +40,13 @@ class QuestionCard extends StatelessWidget {
   Color _questionTypeColor(String type) {
     switch (type) {
       case 'multiple_choice':
-        return const Color(0xFF2B2B2B);
+        return AppColors.accentCharcoal;
       case 'identification':
-        return const Color(0xFF666666);
+        return AppColors.foregroundSecondary;
       case 'enumeration':
-        return const Color(0xFF999999);
+        return AppColors.foregroundTertiary;
       default:
-        return const Color(0xFF999999);
+        return AppColors.foregroundTertiary;
     }
   }
 
@@ -56,7 +57,7 @@ class QuestionCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFE0E0E0),
+          color: AppColors.accentCharcoal,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Container(
@@ -76,10 +77,10 @@ class QuestionCard extends StatelessWidget {
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF8F9FA),
+                      color: AppColors.backgroundTertiary,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: const Color(0xFFE0E0E0),
+                        color: AppColors.borderLight,
                         width: 1,
                       ),
                     ),
@@ -88,7 +89,7 @@ class QuestionCard extends StatelessWidget {
                         '${index + 1}',
                         style: const TextStyle(
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF2B2B2B),
+                          color: AppColors.foregroundPrimary,
                           fontSize: 14,
                         ),
                       ),
@@ -104,7 +105,7 @@ class QuestionCard extends StatelessWidget {
                           style: const TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 15,
-                            color: Color(0xFF202020),
+                            color: AppColors.foregroundDark,
                             letterSpacing: -0.2,
                           ),
                           maxLines: 2,
@@ -121,7 +122,7 @@ class QuestionCard extends StatelessWidget {
                             Text(
                               '${question.points} pt${question.points == 1 ? '' : 's'}',
                               style: const TextStyle(
-                                color: Color(0xFF999999),
+                                color: AppColors.foregroundTertiary,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -137,7 +138,7 @@ class QuestionCard extends StatelessWidget {
                       icon: const Icon(
                         Icons.edit_outlined,
                         size: 20,
-                        color: Color(0xFF666666),
+                        color: AppColors.foregroundSecondary,
                       ),
                       onPressed: onEdit,
                       tooltip: 'Edit question',
@@ -148,7 +149,7 @@ class QuestionCard extends StatelessWidget {
                       icon: const Icon(
                         Icons.delete_outline_rounded,
                         size: 20,
-                        color: Color(0xFFEF5350),
+                        color: AppColors.semanticError,
                       ),
                       onPressed: onDelete,
                       tooltip: 'Delete question',
@@ -173,8 +174,8 @@ class QuestionCard extends StatelessWidget {
                                   : Icons.circle_outlined,
                               size: 14,
                               color: choice.isCorrect
-                                  ? const Color(0xFF4CAF50)
-                                  : const Color(0xFFCCCCCC),
+                                  ? AppColors.semanticSuccess
+                                  : AppColors.foregroundLight,
                             ),
                             const SizedBox(width: 8),
                             Expanded(
@@ -182,7 +183,7 @@ class QuestionCard extends StatelessWidget {
                                 choice.choiceText,
                                 style: const TextStyle(
                                   fontSize: 13,
-                                  color: Color(0xFF666666),
+                                  color: AppColors.foregroundSecondary,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -199,7 +200,7 @@ class QuestionCard extends StatelessWidget {
                       '+${question.choices!.length - 4} more choices',
                       style: const TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF999999),
+                        color: AppColors.foregroundTertiary,
                         fontStyle: FontStyle.italic,
                       ),
                     ),
@@ -215,7 +216,7 @@ class QuestionCard extends StatelessWidget {
                     'Answers: ${question.correctAnswers!.map((a) => a.answerText).join(', ')}',
                     style: const TextStyle(
                       fontSize: 13,
-                      color: Color(0xFF666666),
+                      color: AppColors.foregroundSecondary,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -236,7 +237,7 @@ class QuestionCard extends StatelessWidget {
                           '${entry.key + 1}.',
                           style: const TextStyle(
                             fontSize: 13,
-                            color: Color(0xFF999999),
+                            color: AppColors.foregroundTertiary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -248,7 +249,7 @@ class QuestionCard extends StatelessWidget {
                                 .join(' / '),
                             style: const TextStyle(
                               fontSize: 13,
-                              color: Color(0xFF666666),
+                              color: AppColors.foregroundSecondary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -265,7 +266,7 @@ class QuestionCard extends StatelessWidget {
                       '+${question.enumerationItems!.length - 4} more items',
                       style: const TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF999999),
+                        color: AppColors.foregroundTertiary,
                         fontStyle: FontStyle.italic,
                       ),
                     ),
@@ -468,15 +469,15 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
   Color _getQuestionTypeColor(String type) {
     switch (type) {
       case 'multiple_choice':
-        return const Color(0xFF2B2B2B);
+        return AppColors.accentCharcoal;
       case 'identification':
-        return const Color(0xFF666666);
+        return AppColors.foregroundSecondary;
       case 'enumeration':
-        return const Color(0xFF999999);
+        return AppColors.foregroundTertiary;
       case 'essay':
-        return const Color(0xFF4CAF50);
+        return AppColors.semanticSuccess;
       default:
-        return const Color(0xFF999999);
+        return AppColors.foregroundTertiary;
     }
   }
 
@@ -485,7 +486,7 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
+        color: AppColors.accentCharcoal,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Container(
@@ -514,10 +515,10 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FA),
+                color: AppColors.backgroundTertiary,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: const Color(0xFFE0E0E0),
+                  color: AppColors.borderLight,
                   width: 1,
                 ),
               ),
@@ -526,7 +527,7 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
                   '${widget.index + 1}',
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF2B2B2B),
+                    color: AppColors.foregroundPrimary,
                     fontSize: 14,
                   ),
                 ),
@@ -544,7 +545,7 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 15,
-                      color: Color(0xFF202020),
+                      color: AppColors.foregroundDark,
                       letterSpacing: -0.2,
                     ),
                     maxLines: 3,
@@ -572,7 +573,7 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
                       Text(
                         '${widget.question.points} pt${widget.question.points == 1 ? '' : 's'}',
                         style: const TextStyle(
-                          color: Color(0xFF999999),
+                          color: AppColors.foregroundTertiary,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -599,8 +600,8 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
                         : Icons.circle_outlined,
                     size: 14,
                     color: choice.isCorrect
-                        ? const Color(0xFF4CAF50)
-                        : const Color(0xFFCCCCCC),
+                        ? AppColors.semanticSuccess
+                        : AppColors.foregroundLight,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -609,8 +610,8 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
                       style: TextStyle(
                         fontSize: 13,
                         color: choice.isCorrect
-                            ? const Color(0xFF2B2B2B)
-                            : const Color(0xFF666666),
+                            ? AppColors.foregroundPrimary
+                            : AppColors.foregroundSecondary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -627,7 +628,7 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
                 '+${widget.question.choices.length - 4} more choices',
                 style: const TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF999999),
+                  color: AppColors.foregroundTertiary,
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -642,7 +643,7 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
               'Answers: ${widget.question.acceptableAnswers.where((a) => a.isNotEmpty).join(', ')}',
               style: const TextStyle(
                 fontSize: 13,
-                color: Color(0xFF666666),
+                color: AppColors.foregroundSecondary,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -662,7 +663,7 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
                     '${entry.key + 1}.',
                     style: const TextStyle(
                       fontSize: 13,
-                      color: Color(0xFF999999),
+                      color: AppColors.foregroundTertiary,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -672,7 +673,7 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
                       entry.value.answers.where((a) => a.isNotEmpty).join(' / '),
                       style: const TextStyle(
                         fontSize: 13,
-                        color: Color(0xFF666666),
+                        color: AppColors.foregroundSecondary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -689,7 +690,7 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
                 '+${widget.question.enumerationItems.length - 3} more items',
                 style: const TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF999999),
+                  color: AppColors.foregroundTertiary,
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -704,14 +705,14 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
                 Icon(
                   Icons.edit_note_rounded,
                   size: 16,
-                  color: const Color(0xFF4CAF50).withValues(alpha: 0.7),
+                  color: AppColors.semanticSuccess.withValues(alpha: 0.7),
                 ),
                 const SizedBox(width: 8),
                 const Text(
                   'Essay question - manually graded',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF666666),
+                    color: AppColors.foregroundSecondary,
                     fontStyle: FontStyle.italic,
                   ),
                 ),
@@ -726,7 +727,7 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
             IconButton(
               icon: const Icon(
                 Icons.edit_outlined,
-                color: Color(0xFF666666),
+                color: AppColors.foregroundSecondary,
                 size: 20,
               ),
               onPressed: _enterEditMode,
@@ -737,7 +738,7 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
             IconButton(
               icon: const Icon(
                 Icons.delete_outline_rounded,
-                color: Color(0xFFEF5350),
+                color: AppColors.semanticError,
                 size: 20,
               ),
               onPressed: widget.onRemove,
@@ -764,7 +765,7 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF202020),
+                color: AppColors.foregroundDark,
                 letterSpacing: -0.3,
               ),
             ),
@@ -772,7 +773,7 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
             TextButton(
               onPressed: _cancelEdit,
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF666666),
+                foregroundColor: AppColors.foregroundSecondary,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
               child: const Text('Cancel'),
@@ -781,7 +782,7 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
             ElevatedButton(
               onPressed: _saveEdit,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2B2B2B),
+                backgroundColor: AppColors.accentCharcoal,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 shape: RoundedRectangleBorder(
@@ -800,19 +801,19 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFDEDED),
+              color: AppColors.semanticErrorBackground,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFEF5350)),
+              border: Border.all(color: AppColors.semanticError),
             ),
             child: Row(
               children: [
-                const Icon(Icons.error_outline, color: Color(0xFFEF5350), size: 18),
+                const Icon(Icons.error_outline, color: AppColors.semanticError, size: 18),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     _validationError!,
                     style: const TextStyle(
-                      color: Color(0xFFEF5350),
+                      color: AppColors.semanticError,
                       fontSize: 13,
                     ),
                   ),
@@ -833,34 +834,34 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.foregroundPrimary,
           ),
           decoration: InputDecoration(
             labelText: 'Question Text',
             labelStyle: const TextStyle(
               fontSize: 14,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
             ),
             filled: true,
-            fillColor: const Color(0xFFFAFAFA),
+            fillColor: AppColors.backgroundSecondary,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
-                color: Color(0xFFE0E0E0),
+                color: AppColors.borderLight,
                 width: 1,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
-                color: Color(0xFFE0E0E0),
+                color: AppColors.borderLight,
                 width: 1,
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
                 width: 1.5,
               ),
             ),
@@ -884,34 +885,34 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.foregroundPrimary,
           ),
           decoration: InputDecoration(
             labelText: 'Points',
             labelStyle: const TextStyle(
               fontSize: 14,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
             ),
             filled: true,
-            fillColor: const Color(0xFFFAFAFA),
+            fillColor: AppColors.backgroundSecondary,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
-                color: Color(0xFFE0E0E0),
+                color: AppColors.borderLight,
                 width: 1,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
-                color: Color(0xFFE0E0E0),
+                color: AppColors.borderLight,
                 width: 1,
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
                 width: 1.5,
               ),
             ),

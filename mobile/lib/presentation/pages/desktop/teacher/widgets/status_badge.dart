@@ -36,9 +36,9 @@ class StatusBadge extends StatelessWidget {
   }) : isActive = isPublished,
        activeText = 'Published',
        inactiveText = 'Draft',
-       activeColor = const Color(0xFF28A745),
+       activeColor = AppColors.accentCharcoal,
        inactiveColor = AppColors.foregroundTertiary,
-       activeBackgroundColor = const Color(0xFF28A745).withOpacity(0.12),
+       activeBackgroundColor = AppColors.accentCharcoal,
        inactiveBackgroundColor = AppColors.foregroundTertiary.withOpacity(0.12);
 
   /// Creates an active/inactive status badge
@@ -52,9 +52,9 @@ class StatusBadge extends StatelessWidget {
   }) : isActive = isActive,
        activeText = activeText ?? 'Active',
        inactiveText = inactiveText ?? 'Inactive',
-       activeColor = const Color(0xFF28A745),
+       activeColor = AppColors.accentCharcoal,
        inactiveColor = AppColors.foregroundTertiary,
-       activeBackgroundColor = const Color(0xFF28A745).withOpacity(0.12),
+       activeBackgroundColor = AppColors.accentCharcoal,
        inactiveBackgroundColor = AppColors.foregroundTertiary.withOpacity(0.12);
 
   /// Creates a custom status badge with specified colors
@@ -79,7 +79,7 @@ class StatusBadge extends StatelessWidget {
         padding: padding ?? const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
           color: isActive
-              ? (activeBackgroundColor ?? const Color(0xFF28A745).withValues(alpha: 0.12))
+              ? (activeBackgroundColor ?? AppColors.accentCharcoal).withValues(alpha: 0.12)
               : (inactiveBackgroundColor ??
                   AppColors.foregroundTertiary.withValues(alpha: 0.12)),
           borderRadius: BorderRadius.circular(borderRadius ?? 8),
@@ -90,7 +90,7 @@ class StatusBadge extends StatelessWidget {
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: isActive
-                ? (activeColor ?? const Color(0xFF28A745))
+                ? (activeColor ?? AppColors.accentCharcoal)
                 : (inactiveColor ?? AppColors.foregroundTertiary),
           ),
         ),
@@ -125,9 +125,9 @@ extension StatusBadgeExtensions on StatusBadge {
       isActive: isCompleted,
       activeText: 'Completed',
       inactiveText: 'Pending',
-      activeColor: const Color(0xFF28A745),
+      activeColor: AppColors.accentCharcoal,
       inactiveColor: AppColors.foregroundTertiary,
-      activeBackgroundColor: const Color(0xFF28A745).withValues(alpha: 0.12),
+      activeBackgroundColor: AppColors.accentCharcoal.withValues(alpha: 0.12),
       inactiveBackgroundColor: AppColors.foregroundTertiary.withValues(alpha: 0.12),
       padding: padding,
     );
@@ -139,9 +139,9 @@ extension StatusBadgeExtensions on StatusBadge {
       isActive: isSubmitted,
       activeText: 'Submitted',
       inactiveText: 'Not Submitted',
-      activeColor: const Color(0xFF007BFF),
+      activeColor: AppColors.accentCharcoal,
       inactiveColor: AppColors.foregroundTertiary,
-      activeBackgroundColor: const Color(0xFF007BFF).withValues(alpha: 0.12),
+      activeBackgroundColor: AppColors.accentCharcoal.withValues(alpha: 0.12),
       inactiveBackgroundColor: AppColors.foregroundTertiary.withValues(alpha: 0.12),
       padding: padding,
     );
@@ -153,9 +153,9 @@ extension StatusBadgeExtensions on StatusBadge {
       isActive: isGraded,
       activeText: 'Graded',
       inactiveText: 'Ungraded',
-      activeColor: const Color(0xFF6F42C1),
+      activeColor: AppColors.onAmber,
       inactiveColor: AppColors.foregroundTertiary,
-      activeBackgroundColor: const Color(0xFF6F42C1).withValues(alpha: 0.12),
+      activeBackgroundColor: AppColors.accentAmber.withValues(alpha: 0.25),
       inactiveBackgroundColor: AppColors.foregroundTertiary.withValues(alpha: 0.12),
       padding: padding,
     );

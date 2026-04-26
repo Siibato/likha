@@ -31,9 +31,9 @@ class _GradeItemScoresDesktopState
   bool _isSaving = false;
 
   static const _componentColors = {
-    'ww': Color(0xFF2196F3),
-    'pt': Color(0xFF4CAF50),
-    'qa': Color(0xFFFF9800),
+    'ww': AppColors.accentCharcoal,
+    'pt': AppColors.accentAmber,
+    'qa': AppColors.accentCharcoal,
   };
 
   static const _componentLabels = {
@@ -162,7 +162,7 @@ class _GradeItemScoresDesktopState
     }).length;
 
     final componentColor =
-        _componentColors[widget.gradeItem.component] ?? AppColors.accentPrimary;
+        _componentColors[widget.gradeItem.component] ?? AppColors.accentCharcoal;
     final componentLabel =
         _componentLabels[widget.gradeItem.component] ?? widget.gradeItem.component.toUpperCase();
 

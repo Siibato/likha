@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
@@ -90,7 +91,7 @@ class _CreateTosPageState extends ConsumerState<CreateTosPage> {
     final state = ref.watch(tosProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
         child: Column(
           children: [
@@ -126,18 +127,18 @@ class _CreateTosPageState extends ConsumerState<CreateTosPage> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFE0E0E0)),
+                          border: Border.all(color: AppColors.borderLight),
                         ),
                         child: DropdownButtonFormField<int>(
                           initialValue: _selectedQuarter,
                           decoration: const InputDecoration(
                             labelText: 'Quarter',
                             prefixIcon: Icon(Icons.calendar_month_outlined,
-                                color: Color(0xFF999999), size: 20),
+                                color: AppColors.foregroundTertiary, size: 20),
                             border: InputBorder.none,
                             contentPadding:
                                 EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            labelStyle: TextStyle(fontSize: 14, color: Color(0xFF999999)),
+                            labelStyle: TextStyle(fontSize: 14, color: AppColors.foregroundTertiary),
                           ),
                           items: [1, 2, 3, 4]
                               .map((q) => DropdownMenuItem(
@@ -194,7 +195,7 @@ class _CreateTosPageState extends ConsumerState<CreateTosPage> {
                         child: ElevatedButton(
                           onPressed: state.isLoading ? null : _handleCreate,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2B2B2B),
+                            backgroundColor: AppColors.accentCharcoal,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -242,7 +243,7 @@ class _CreateTosPageState extends ConsumerState<CreateTosPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: TextFormField(
         controller: controller,
@@ -251,14 +252,14 @@ class _CreateTosPageState extends ConsumerState<CreateTosPage> {
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
-          prefixIcon: Icon(icon, color: const Color(0xFF999999), size: 20),
+          prefixIcon: Icon(icon, color: AppColors.foregroundTertiary, size: 20),
           border: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          labelStyle: const TextStyle(fontSize: 14, color: Color(0xFF999999)),
-          hintStyle: const TextStyle(fontSize: 14, color: Color(0xFFCCCCCC)),
+          labelStyle: const TextStyle(fontSize: 14, color: AppColors.foregroundTertiary),
+          hintStyle: const TextStyle(fontSize: 14, color: AppColors.foregroundLight),
         ),
-        style: const TextStyle(fontSize: 15, color: Color(0xFF2B2B2B)),
+        style: const TextStyle(fontSize: 15, color: AppColors.accentCharcoal),
       ),
     );
   }

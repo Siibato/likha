@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 
@@ -167,14 +168,14 @@ class _TosGridTableState extends State<TosGridTable> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE0E0E0)),
+                border: Border.all(color: AppColors.borderLight),
               ),
               child: Column(
                 children: [
                   // Header row
                   Container(
                     decoration: const BoxDecoration(
-                      color: Color(0xFFF8F9FA),
+                      color: AppColors.backgroundTertiary,
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(11),
                         topRight: Radius.circular(11),
@@ -190,7 +191,7 @@ class _TosGridTableState extends State<TosGridTable> {
                       ],
                     ),
                   ),
-                  const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                  const Divider(height: 1, color: AppColors.borderLight),
                   // Pre-compute per-row totals so the TOTAL cell shows the
                   // real sum of cognitive cells, not the configured totalItems.
                   ...() {
@@ -228,7 +229,7 @@ class _TosGridTableState extends State<TosGridTable> {
                         decoration: BoxDecoration(
                           border: Border(
                             bottom: BorderSide(
-                              color: const Color(0xFFEEEEEE),
+                              color: AppColors.borderLight,
                               width:
                                   idx < widget.competencies.length - 1 ? 1 : 0,
                             ),
@@ -252,7 +253,7 @@ class _TosGridTableState extends State<TosGridTable> {
                     // Totals row
                     rowWidgets.add(Container(
                       decoration: const BoxDecoration(
-                        color: Color(0xFFF0F0F0),
+                        color: AppColors.borderLight,
                         borderRadius: BorderRadius.only(
                           bottomLeft: Radius.circular(11),
                           bottomRight: Radius.circular(11),
@@ -434,8 +435,8 @@ class _TosGridTableState extends State<TosGridTable> {
                   fontWeight:
                       isOverride ? FontWeight.w700 : FontWeight.w400,
                   color: isOverride
-                      ? const Color(0xFF2B6CB0)
-                      : const Color(0xFF2B2B2B),
+                      ? AppColors.accentCharcoal
+                      : AppColors.accentCharcoal,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -474,8 +475,8 @@ class _TosGridTableState extends State<TosGridTable> {
               fontSize: 12,
               fontWeight: isOverride ? FontWeight.w700 : FontWeight.w400,
               color: isOverride
-                  ? const Color(0xFF2B6CB0)
-                  : const Color(0xFF2B2B2B),
+                  ? AppColors.accentCharcoal
+                  : AppColors.accentCharcoal,
             ),
             textAlign: TextAlign.center,
           ),
@@ -515,16 +516,16 @@ class _TosGridTableState extends State<TosGridTable> {
               isDense: true,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(4),
-                borderSide: const BorderSide(color: Color(0xFF2B6CB0)),
+                borderSide: const BorderSide(color: AppColors.accentCharcoal),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(4),
                 borderSide:
-                    const BorderSide(color: Color(0xFF2B6CB0), width: 1.5),
+                    const BorderSide(color: AppColors.accentCharcoal, width: 1.5),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(4),
-                borderSide: const BorderSide(color: Color(0xFF2B6CB0)),
+                borderSide: const BorderSide(color: AppColors.accentCharcoal),
               ),
             ),
             onSubmitted: (_) => onCommit(),
@@ -546,7 +547,7 @@ class _TosGridTableState extends State<TosGridTable> {
           style: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
           ),
           textAlign: TextAlign.center,
           overflow: TextOverflow.ellipsis,
@@ -572,7 +573,7 @@ class _TosGridTableState extends State<TosGridTable> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
-            color: const Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
           ),
           textAlign: align,
           maxLines: maxLines,
@@ -599,7 +600,7 @@ class _TosGridTableState extends State<TosGridTable> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
-            color: const Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
           ),
           textAlign: align,
           maxLines: maxLines,
