@@ -556,12 +556,14 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
 class GradeScoresState {
   final Map<String, List<GradeScore>> scoresByItem;
   final bool isLoading;
+  final bool isGeneratingScores;
   final String? error;
   final String? successMessage;
 
   GradeScoresState({
     this.scoresByItem = const {},
     this.isLoading = false,
+    this.isGeneratingScores = false,
     this.error,
     this.successMessage,
   });
@@ -569,12 +571,14 @@ class GradeScoresState {
   GradeScoresState copyWith({
     Map<String, List<GradeScore>>? scoresByItem,
     bool? isLoading,
+    bool? isGeneratingScores,
     Object? error = _unset,
     Object? successMessage = _unset,
   }) {
     return GradeScoresState(
       scoresByItem: scoresByItem ?? this.scoresByItem,
       isLoading: isLoading ?? this.isLoading,
+      isGeneratingScores: isGeneratingScores ?? this.isGeneratingScores,
       error: identical(error, _unset) ? this.error : error as String?,
       successMessage: identical(successMessage, _unset) ? this.successMessage : successMessage as String?,
     );
@@ -593,6 +597,10 @@ class GradeScoresNotifier extends StateNotifier<GradeScoresState> {
     this._setScoreOverride,
     this._clearScoreOverride,
   ) : super(GradeScoresState());
+
+  void setGenerating(bool value) {
+    state = state.copyWith(isGeneratingScores: value);
+  }
 
   Future<void> loadScoresForItems(List<String> gradeItemIds) async {
     print('*** GRADE PROVIDER: loadScoresForItems() - START: loading ${gradeItemIds.length} items');

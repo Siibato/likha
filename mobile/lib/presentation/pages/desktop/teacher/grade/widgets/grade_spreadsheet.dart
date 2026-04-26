@@ -6,6 +6,7 @@ import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
+import 'package:likha/presentation/pages/shared/grade_skeleton_cell.dart';
 
 /// DepEd-style Class Record spreadsheet.
 ///
@@ -25,6 +26,9 @@ class GradeSpreadsheet extends StatefulWidget {
   /// Per-student quarterly grade summary rows from the server.
   /// Each map contains at minimum: 'student_id' and 'quarterly_grade'.
   final List<Map<String, dynamic>>? summary;
+
+  /// When true, score cells render as pulsing skeletons and are non-tappable.
+  final bool isLoadingScores;
 
   final void Function(
     String studentId,
@@ -46,6 +50,7 @@ class GradeSpreadsheet extends StatefulWidget {
     required this.scoresByItem,
     required this.config,
     required this.summary,
+    this.isLoadingScores = false,
     required this.onScoreChanged,
     required this.onQgChanged,
     required this.onAddColumn,
@@ -551,10 +556,17 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
   ) {
     final sid = participant.student.id;
     final studentScores = scoreLookup[sid] ?? {};
+    final loading = widget.isLoadingScores;
 
     return [
       for (final item in items) ...[
         () {
+          if (loading) {
+            return GradeSkeletonCell(
+              width: GradeSpreadsheet.scoreColW,
+              height: GradeSpreadsheet.rowH,
+            );
+          }
           final gs = studentScores[item.id];
           final cellKey = '${sid}_${item.id}';
           final isEditing = _editingKey == cellKey;
@@ -577,23 +589,31 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
           );
         }(),
       ],
-      _computedCell(
-          stats.total != null ? _fmt(stats.total!) : '--',
-          GradeSpreadsheet.sumColW,
-          bgColor),
-      _computedCell(
-          items.isNotEmpty ? _fmt(stats.hs) : '--',
-          GradeSpreadsheet.sumColW,
-          bgColor),
-      _computedCell(
-          stats.pct != null ? '${stats.pct!.toStringAsFixed(1)}%' : '--',
-          GradeSpreadsheet.pctColW,
-          bgColor),
-      _computedCell(
-          stats.ws != null ? _fmt(stats.ws!) : '--',
-          GradeSpreadsheet.pctColW,
-          bgColor,
-          bold: true),
+      loading
+          ? GradeSkeletonCell(width: GradeSpreadsheet.sumColW, height: GradeSpreadsheet.rowH)
+          : _computedCell(
+              stats.total != null ? _fmt(stats.total!) : '--',
+              GradeSpreadsheet.sumColW,
+              bgColor),
+      loading
+          ? GradeSkeletonCell(width: GradeSpreadsheet.sumColW, height: GradeSpreadsheet.rowH)
+          : _computedCell(
+              items.isNotEmpty ? _fmt(stats.hs) : '--',
+              GradeSpreadsheet.sumColW,
+              bgColor),
+      loading
+          ? GradeSkeletonCell(width: GradeSpreadsheet.pctColW, height: GradeSpreadsheet.rowH)
+          : _computedCell(
+              stats.pct != null ? '${stats.pct!.toStringAsFixed(1)}%' : '--',
+              GradeSpreadsheet.pctColW,
+              bgColor),
+      loading
+          ? GradeSkeletonCell(width: GradeSpreadsheet.pctColW, height: GradeSpreadsheet.rowH)
+          : _computedCell(
+              stats.ws != null ? _fmt(stats.ws!) : '--',
+              GradeSpreadsheet.pctColW,
+              bgColor,
+              bold: true),
     ];
   }
 

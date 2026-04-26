@@ -8,6 +8,7 @@ import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
+import 'package:likha/presentation/pages/shared/grade_skeleton_cell.dart';
 import 'package:likha/presentation/pages/teacher/grade/widgets/add_grade_item_dialog.dart';
 import 'package:likha/presentation/pages/teacher/grade/widgets/quarter_selector.dart';
 import 'package:likha/presentation/pages/teacher/class/class_grading_setup_page.dart';
@@ -124,6 +125,8 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
         PageLogger.instance.log('Loading scores for ${itemIds.length} grade items');
         await ref.read(gradeScoresProvider.notifier).loadScoresForItems(itemIds);
 
+        // Show skeleton cells during score generation
+        ref.read(gradeScoresProvider.notifier).setGenerating(true);
         // Auto-populate scores from assessment/assignment submissions
         print('*** CLASS RECORD PAGE: Generating scores for grade items');
         PageLogger.instance.log('Generating scores for grade items');
@@ -136,6 +139,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
         if (refreshedIds.isNotEmpty) {
           await ref.read(gradeScoresProvider.notifier).loadScoresForItems(refreshedIds);
         }
+        ref.read(gradeScoresProvider.notifier).setGenerating(false);
       } else {
         print('*** CLASS RECORD PAGE: No grade items found for class: ${widget.classId}, quarter: $_selectedQuarter');
         PageLogger.instance.warn('No grade items found for class: ${widget.classId}, quarter: $_selectedQuarter');
@@ -632,6 +636,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
                   config: config,
                   scoreLookup: scoreLookup,
                   qgLookup: qgLookup,
+                  isLoadingScores: scoresState.isGeneratingScores,
                 ),
               ),
           ],
@@ -710,6 +715,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
     required GradeConfig? config,
     required Map<String, Map<String, GradeScore>> scoreLookup,
     required Map<String, int?> qgLookup,
+    bool isLoadingScores = false,
   }) {
     final wwW = config?.wwWeight ?? 40.0;
     final ptW = config?.ptWeight ?? 40.0;
@@ -863,6 +869,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
                         wwW: wwW,
                         ptW: ptW,
                         qaW: qaW,
+                        isLoadingScores: isLoadingScores,
                       ),
                       if (i < students.length - 1)
                         const Divider(height: 1, color: Color(0xFFF0F0F0)),
@@ -926,6 +933,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
     required double wwW,
     required double ptW,
     required double qaW,
+    bool isLoadingScores = false,
   }) {
     final sid = participant.student.id;
     final bgColor = index.isEven ? Colors.white : const Color(0xFFFAFAFA);
@@ -954,9 +962,9 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
       height: _rowH,
       child: Row(
         children: [
-          ..._sectionScoreCells(participant, wwItems, scoreLookup, wwStats, bgColor),
-          ..._sectionScoreCells(participant, ptItems, scoreLookup, ptStats, bgColor),
-          ..._sectionScoreCells(participant, qaItems, scoreLookup, qaStats, bgColor),
+          ..._sectionScoreCells(participant, wwItems, scoreLookup, wwStats, bgColor, isLoadingScores: isLoadingScores),
+          ..._sectionScoreCells(participant, ptItems, scoreLookup, ptStats, bgColor, isLoadingScores: isLoadingScores),
+          ..._sectionScoreCells(participant, qaItems, scoreLookup, qaStats, bgColor, isLoadingScores: isLoadingScores),
           // Initial grade
           _computedCell(
               initialGrade != null ? _fmt(initialGrade) : '--',
@@ -993,14 +1001,18 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
     List<GradeItem> items,
     Map<String, Map<String, GradeScore>> scoreLookup,
     _Stats stats,
-    Color bgColor,
-  ) {
+    Color bgColor, {
+    bool isLoadingScores = false,
+  }) {
     final sid = participant.student.id;
     final studentScores = scoreLookup[sid] ?? {};
 
     return [
       for (final item in items) ...[
         () {
+          if (isLoadingScores) {
+            return GradeSkeletonCell(width: _scoreColW, height: _rowH);
+          }
           final gs = studentScores[item.id];
           final cellKey = '${sid}_${item.id}';
           final isEditing = _editingKey == cellKey;
@@ -1024,17 +1036,25 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
           );
         }(),
       ],
-      _computedCell(
-          stats.total != null ? _fmt(stats.total!) : '--', _sumColW, bgColor),
-      _computedCell(
-          items.isNotEmpty ? _fmt(stats.hs) : '--', _sumColW, bgColor),
-      _computedCell(
-          stats.pct != null ? '${stats.pct!.toStringAsFixed(1)}%' : '--',
-          _pctColW,
-          bgColor),
-      _computedCell(
-          stats.ws != null ? _fmt(stats.ws!) : '--', _pctColW, bgColor,
-          bold: true),
+      isLoadingScores
+          ? GradeSkeletonCell(width: _sumColW, height: _rowH)
+          : _computedCell(
+              stats.total != null ? _fmt(stats.total!) : '--', _sumColW, bgColor),
+      isLoadingScores
+          ? GradeSkeletonCell(width: _sumColW, height: _rowH)
+          : _computedCell(
+              items.isNotEmpty ? _fmt(stats.hs) : '--', _sumColW, bgColor),
+      isLoadingScores
+          ? GradeSkeletonCell(width: _pctColW, height: _rowH)
+          : _computedCell(
+              stats.pct != null ? '${stats.pct!.toStringAsFixed(1)}%' : '--',
+              _pctColW,
+              bgColor),
+      isLoadingScores
+          ? GradeSkeletonCell(width: _pctColW, height: _rowH)
+          : _computedCell(
+              stats.ws != null ? _fmt(stats.ws!) : '--', _pctColW, bgColor,
+              bold: true),
     ];
   }
 

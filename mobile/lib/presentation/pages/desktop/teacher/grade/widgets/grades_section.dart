@@ -50,6 +50,8 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
       // Load whatever scores already exist so the sheet is not blank while generating
       await ref.read(gradeScoresProvider.notifier).loadScoresForItems(itemIds);
 
+      // Show skeleton cells during score generation
+      ref.read(gradeScoresProvider.notifier).setGenerating(true);
       // Auto-populate scores from assessment/assignment submissions
       await itemsNotifier.generateScoresForItems(widget.classId);
 
@@ -58,6 +60,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
       if (refreshedIds.isNotEmpty) {
         await ref.read(gradeScoresProvider.notifier).loadScoresForItems(refreshedIds);
       }
+      ref.read(gradeScoresProvider.notifier).setGenerating(false);
     }
 
     // Load quarterly grades summary
@@ -396,6 +399,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
                         scoresByItem: scoresState.scoresByItem,
                         config: config,
                         summary: gradesState.summary,
+                        isLoadingScores: scoresState.isGeneratingScores,
                         onScoreChanged: _handleScoreChanged,
                         onQgChanged: _handleQgChanged,
                         onAddColumn: _handleAddColumn,
