@@ -53,19 +53,24 @@ mixin GradingScoreMixin on GradingLocalDataSourceBase {
           final existingRow = existing.first;
           final wasAutoPopulated = (existingRow[GradeScoresCols.isAutoPopulated] as int? ?? 0) == 1;
           final hasNoScore = existingRow[GradeScoresCols.score] == null;
+          final hasOverride = existingRow[GradeScoresCols.overrideScore] != null;
           final incomingIsManual = !score.isAutoPopulated;
 
           // Allow update when:
           //   - teacher is editing (incomingIsManual): teacher always wins
-          //   - existing row was auto-populated: safe to refresh
+          //   - existing row was auto-populated AND has no override: safe to refresh
           //   - existing row has no score yet: fill the blank
-          // Skip when auto-populate tries to overwrite a teacher-edited cell.
-          if (incomingIsManual || wasAutoPopulated || hasNoScore) {
+          // Skip when auto-populate tries to overwrite a row that has an override
+          // or a row that the teacher manually edited (is_auto_populated = 0).
+          if (incomingIsManual || ((wasAutoPopulated || hasNoScore) && !hasOverride)) {
             await txn.update(
               DbTables.gradeScores,
               {
                 GradeScoresCols.score: score.score,
                 GradeScoresCols.isAutoPopulated: score.isAutoPopulated ? 1 : 0,
+                // Only touch override_score when teacher is explicitly saving —
+                // auto-populate must never blank out an existing override.
+                if (incomingIsManual) GradeScoresCols.overrideScore: score.overrideScore,
                 CommonCols.updatedAt: score.updatedAt,
                 CommonCols.cachedAt: now.toIso8601String(),
                 CommonCols.needsSync: 1,
@@ -74,7 +79,7 @@ mixin GradingScoreMixin on GradingLocalDataSourceBase {
               whereArgs: [existingRow[CommonCols.id]],
             );
           }
-          // else: teacher-edited row — leave it untouched
+          // else: row has a teacher override or manual edit — leave it untouched
         } else {
           // Insert new score with needsSync = 1
           final map = score.toMap();
