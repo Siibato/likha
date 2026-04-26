@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 
 enum AssessmentStatus {
@@ -85,7 +86,7 @@ class AssessmentCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
         decoration: BoxDecoration(
-          color: const Color(0xFFE0E0E0),
+          color: AppColors.borderLight,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Container(
@@ -127,7 +128,7 @@ class AssessmentCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
               letterSpacing: -0.4,
             ),
           ),
@@ -136,10 +137,10 @@ class AssessmentCard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8F9FA),
+            color: AppColors.backgroundTertiary,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: const Color(0xFFE0E0E0),
+              color: AppColors.borderLight,
               width: 1,
             ),
           ),
@@ -149,13 +150,13 @@ class AssessmentCard extends StatelessWidget {
               Icon(
                 _statusIcon(status),
                 size: 14,
-                color: const Color(0xFF666666),
+                color: AppColors.foregroundSecondary,
               ),
               const SizedBox(width: 5),
               Text(
                 _statusLabel(status),
                 style: const TextStyle(
-                  color: Color(0xFF666666),
+                  color: AppColors.foregroundSecondary,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   letterSpacing: -0.2,
@@ -172,7 +173,7 @@ class AssessmentCard extends StatelessWidget {
     return Text(
       assessment.description!,
       style: const TextStyle(
-        color: Color(0xFF666666),
+        color: AppColors.foregroundSecondary,
         fontSize: 14,
         height: 1.4,
       ),
@@ -238,7 +239,7 @@ class AssessmentCard extends StatelessWidget {
             hintText,
             style: const TextStyle(
               fontSize: 13,
-              color: Color(0xFF666666),
+              color: AppColors.foregroundSecondary,
               fontWeight: FontWeight.w600,
               letterSpacing: -0.2,
             ),
@@ -247,7 +248,7 @@ class AssessmentCard extends StatelessWidget {
           const Icon(
             Icons.arrow_forward_rounded,
             size: 16,
-            color: Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
           ),
         ],
       ),
@@ -266,13 +267,13 @@ class _InfoChip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 15, color: const Color(0xFF666666)),
+        Icon(icon, size: 15, color: AppColors.foregroundSecondary,),
         const SizedBox(width: 5),
         Text(
           label,
           style: const TextStyle(
             fontSize: 13,
-            color: Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
             fontWeight: FontWeight.w500,
             letterSpacing: -0.2,
           ),
@@ -297,13 +298,13 @@ class _DateRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 13, color: const Color(0xFF999999)),
+        Icon(icon, size: 13, color: AppColors.foregroundTertiary,),
         const SizedBox(width: 6),
         Text(
           '$label: ',
           style: const TextStyle(
             fontSize: 12,
-            color: Color(0xFF999999),
+            color: AppColors.foregroundTertiary,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -311,7 +312,7 @@ class _DateRow extends StatelessWidget {
           dateTime,
           style: const TextStyle(
             fontSize: 12,
-            color: Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
             fontWeight: FontWeight.w500,
           ),
         ),

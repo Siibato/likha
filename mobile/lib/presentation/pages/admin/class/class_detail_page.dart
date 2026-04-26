@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/admin/class/class_edit_page.dart';
 import 'package:likha/presentation/pages/admin/account/widgets/student_action_card.dart';
 import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
@@ -89,17 +90,17 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
         : 'Unknown';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF2B2B2B)),
+        iconTheme: const IconThemeData(color: AppColors.accentCharcoal),
         title: Text(
           detail?.title ?? 'Class Detail',
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
             letterSpacing: -0.4,
           ),
         ),
@@ -123,7 +124,7 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
       body: detail == null
           ? const Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
                 strokeWidth: 2.5,
               ),
             )
@@ -166,21 +167,21 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                                color: AppColors.semanticSuccessAlt.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: const Color(0xFF4CAF50).withValues(alpha: 0.3)),
+                                border: Border.all(color: AppColors.semanticSuccessAlt.withValues(alpha: 0.3)),
                               ),
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.star_rounded, size: 16, color: Color(0xFF4CAF50)),
+                                  Icon(Icons.star_rounded, size: 16, color: AppColors.semanticSuccessAlt),
                                   SizedBox(width: 4),
                                   Text(
                                     'Advisory Class',
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFF4CAF50),
+                                      color: AppColors.semanticSuccessAlt,
                                     ),
                                   ),
                                 ],
@@ -199,7 +200,7 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE0E0E0)),
+                        border: Border.all(color: AppColors.borderLight),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -207,7 +208,7 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                           children: [
                             const Icon(
                               Icons.search_rounded,
-                              color: Color(0xFF999999),
+                              color: AppColors.foregroundTertiary,
                               size: 20,
                             ),
                             const SizedBox(width: 8),
@@ -217,7 +218,7 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                                 decoration: const InputDecoration(
                                   hintText: 'Search students...',
                                   hintStyle: TextStyle(
-                                    color: Color(0xFF999999),
+                                    color: AppColors.foregroundTertiary,
                                     fontSize: 14,
                                   ),
                                   border: InputBorder.none,
@@ -225,7 +226,7 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                                 ),
                                 style: const TextStyle(
                                   fontSize: 14,
-                                  color: Color(0xFF2B2B2B),
+                                  color: AppColors.accentCharcoal,
                                 ),
                               ),
                             ),
@@ -238,7 +239,7 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                                 },
                                 child: const Icon(
                                   Icons.clear_rounded,
-                                  color: Color(0xFF999999),
+                                  color: AppColors.foregroundTertiary,
                                   size: 20,
                                 ),
                               ),
@@ -259,7 +260,7 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                       ),
                     ),
                   ),
@@ -271,7 +272,7 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                           padding: const EdgeInsets.symmetric(vertical: 32),
                           child: const Center(
                             child: CircularProgressIndicator(
-                              color: Color(0xFF2B2B2B),
+                              color: AppColors.accentCharcoal,
                               strokeWidth: 2.5,
                             ),
                           ),
@@ -289,7 +290,7 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                                       ? Icons.person_outline_rounded
                                       : Icons.person_search_rounded,
                                   size: 48,
-                                  color: const Color(0xFFCCCCCC),
+                                  color: AppColors.foregroundLight,
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
@@ -298,7 +299,7 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                                       : 'No students found',
                                   style: const TextStyle(
                                     fontSize: 14,
-                                    color: Color(0xFF999999),
+                                    color: AppColors.foregroundTertiary,
                                   ),
                                 ),
                               ],

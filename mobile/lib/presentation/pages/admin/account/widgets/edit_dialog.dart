@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/widgets/styled_dialog.dart';
 
 class EditDialog extends StatefulWidget {
@@ -37,7 +38,7 @@ class _EditDialogState extends State<EditDialog> {
     return StyledDialog(
       title: widget.title,
       content: Container(
-        decoration: BoxDecoration(color: const Color(0xFFE0E0E0), borderRadius: BorderRadius.circular(14)),
+        decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(14)),
         child: Container(
           margin: const EdgeInsets.fromLTRB(1, 1, 1, 3),
           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(13)),
@@ -47,7 +48,7 @@ class _EditDialogState extends State<EditDialog> {
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
             ),
             decoration: InputDecoration(
               border: OutlineInputBorder(
@@ -61,7 +62,7 @@ class _EditDialogState extends State<EditDialog> {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(13),
                 borderSide: const BorderSide(
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                   width: 1.5,
                 ),
               ),

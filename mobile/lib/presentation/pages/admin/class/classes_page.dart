@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
 import 'package:likha/presentation/pages/admin/class/class_detail_page.dart';
 import 'package:likha/presentation/pages/admin/class/class_create_page.dart';
@@ -52,7 +53,7 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
     final classState = ref.watch(classProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -61,16 +62,16 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
             letterSpacing: -0.4,
           ),
         ),
-        iconTheme: const IconThemeData(color: Color(0xFF2B2B2B)),
+        iconTheme: const IconThemeData(color: AppColors.accentCharcoal),
       ),
       body: classState.isLoading && classState.classes.isEmpty
           ? const Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
                 strokeWidth: 2.5,
               ),
             )
@@ -91,7 +92,7 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
                           }
                           return RefreshIndicator(
                             onRefresh: () => ref.read(classProvider.notifier).loadAllClasses(),
-                            color: const Color(0xFF2B2B2B),
+                            color: AppColors.accentCharcoal,
                             child: ListView.builder(
                               padding: const EdgeInsets.all(24),
                               itemCount: filteredClasses.length,
@@ -124,7 +125,7 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
           context,
           MaterialPageRoute(builder: (_) => const AdminCreateClassPage()),
         ),
-        backgroundColor: const Color(0xFF2B2B2B),
+        backgroundColor: AppColors.accentCharcoal,
         child: const Icon(Icons.add_rounded, color: Colors.white),
       ),
     );

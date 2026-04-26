@@ -179,23 +179,23 @@ class _AdvisoryBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF4CAF50).withOpacity(0.1),
+        color: AppColors.semanticSuccessAlt.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: const Color(0xFF4CAF50).withOpacity(0.3),
+          color: AppColors.semanticSuccessAlt.withOpacity(0.3),
         ),
       ),
       child: const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.star_rounded, size: 16, color: Color(0xFF4CAF50)),
+          Icon(Icons.star_rounded, size: 16, color: AppColors.semanticSuccessAlt),
           SizedBox(width: 4),
           Text(
             'Advisory Class',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF4CAF50),
+              color: AppColors.semanticSuccessAlt,
             ),
           ),
         ],
@@ -218,9 +218,9 @@ class _ClassStatusBadge extends StatelessWidget {
       isActive: !isArchived,
       activeText: 'Active',
       inactiveText: 'Archived',
-      activeColor: const Color(0xFF28A745),
+      activeColor: AppColors.semanticSuccessAlt,
       inactiveColor: AppColors.foregroundTertiary,
-      activeBackgroundColor: const Color(0xFF28A745).withOpacity(0.12),
+      activeBackgroundColor: AppColors.semanticSuccessAlt.withOpacity(0.12),
       inactiveBackgroundColor: AppColors.foregroundTertiary.withOpacity(0.12),
     );
   }
@@ -278,7 +278,7 @@ class ClassOverviewCard extends StatelessWidget {
                       child: Icon(
                         Icons.star_rounded,
                         size: 18,
-                        color: Color(0xFF4CAF50),
+                        color: AppColors.semanticSuccessAlt,
                       ),
                     ),
                 ],

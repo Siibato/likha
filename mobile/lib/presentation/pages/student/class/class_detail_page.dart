@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/student/assessment/assessment_list_page.dart';
 import 'package:likha/presentation/pages/student/assignment/assignment_list_page.dart';
 import 'package:likha/presentation/pages/student/material/material_list_page.dart';
@@ -19,7 +20,7 @@ class StudentClassDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: null,
       body: SafeArea(
         child: Column(

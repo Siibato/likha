@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/utils/formatters.dart';
 
 class AssessmentSubmitSection extends StatelessWidget {
@@ -14,9 +15,9 @@ class AssessmentSubmitSection extends StatelessWidget {
   });
 
   Color _timerColor() {
-    if (remainingSeconds <= 60) return const Color(0xFFEA4335);
-    if (remainingSeconds <= 300) return const Color(0xFFFFBD59);
-    return const Color(0xFF666666);
+    if (remainingSeconds <= 60) return AppColors.semanticError;
+    if (remainingSeconds <= 300) return AppColors.accentAmber;
+    return AppColors.foregroundSecondary;
   }
 
   @override
@@ -27,7 +28,7 @@ class AssessmentSubmitSection extends StatelessWidget {
         children: [
           Container(
             height: 1,
-            color: const Color(0xFFE0E0E0),
+            color: AppColors.borderLight,
           ),
           const SizedBox(height: 20),
           Text(
@@ -45,8 +46,8 @@ class AssessmentSubmitSection extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: isSubmitting ? null : onSubmit,
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF2B2B2B),
-                disabledBackgroundColor: const Color(0xFFE0E0E0),
+                backgroundColor: AppColors.accentCharcoal,
+                disabledBackgroundColor: AppColors.borderLight,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -57,7 +58,7 @@ class AssessmentSubmitSection extends StatelessWidget {
                       height: 22,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.5,
-                        color: Color(0xFF999999),
+                        color: AppColors.foregroundTertiary,
                       ),
                     )
                   : const Icon(Icons.send_rounded),

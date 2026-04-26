@@ -21,7 +21,7 @@ class AssignmentSubmittedBanner extends StatelessWidget {
             child: Text(
               'Assignment submitted. Waiting for teacher to grade.',
               style: TextStyle(
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
               ),

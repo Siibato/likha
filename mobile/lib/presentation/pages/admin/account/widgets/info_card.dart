@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 
 class UserInfoCard extends StatelessWidget {
@@ -19,7 +20,7 @@ class UserInfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
+        color: AppColors.borderLight,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Container(
@@ -33,13 +34,13 @@ class UserInfoCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _InfoRow(label: 'Username', value: user.username),
-            const Divider(height: 24, color: Color(0xFFF0F0F0)),
+            const Divider(height: 24, color: AppColors.borderLight),
             _EditableInfoRow(
               label: 'Full Name',
               value: user.fullName,
               onEdit: isLoading ? null : onEditFullName,
             ),
-            const Divider(height: 24, color: Color(0xFFF0F0F0)),
+            const Divider(height: 24, color: AppColors.borderLight),
             if (onEditRole != null)
               _EditableInfoRow(
                 label: 'Role',
@@ -48,15 +49,15 @@ class UserInfoCard extends StatelessWidget {
               )
             else
               _InfoRow(label: 'Role', value: user.role),
-            const Divider(height: 24, color: Color(0xFFF0F0F0)),
+            const Divider(height: 24, color: AppColors.borderLight),
             _InfoRow(label: 'Status', value: user.accountStatus),
-            const Divider(height: 24, color: Color(0xFFF0F0F0)),
+            const Divider(height: 24, color: AppColors.borderLight),
             _InfoRow(
               label: 'Created',
               value: _formatDate(user.createdAt),
             ),
             if (user.activatedAt != null) ...[
-              const Divider(height: 24, color: Color(0xFFF0F0F0)),
+              const Divider(height: 24, color: AppColors.borderLight),
               _InfoRow(
                 label: 'Activated',
                 value: _formatDate(user.activatedAt!),
@@ -96,7 +97,7 @@ class _EditableInfoRow extends StatelessWidget {
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
             ),
           ),
         ),
@@ -107,7 +108,7 @@ class _EditableInfoRow extends StatelessWidget {
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
             ),
           ),
         ),
@@ -117,13 +118,13 @@ class _EditableInfoRow extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FA),
+                color: AppColors.backgroundTertiary,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
                 Icons.edit_outlined,
                 size: 18,
-                color: Color(0xFF404040),
+                color: AppColors.foregroundDark,
               ),
             ),
           ),
@@ -153,7 +154,7 @@ class _InfoRow extends StatelessWidget {
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
             ),
           ),
         ),
@@ -164,7 +165,7 @@ class _InfoRow extends StatelessWidget {
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
             ),
           ),
         ),

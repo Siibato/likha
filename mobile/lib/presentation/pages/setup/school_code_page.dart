@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
 import 'package:likha/presentation/pages/shared/widgets/auth_desktop_layout.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
@@ -49,14 +50,14 @@ class _SchoolCodePageState extends ConsumerState<SchoolCodePage> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           const Text(
             'Ask your school admin for the code.',
-            style: TextStyle(fontSize: 13, color: Color(0xFF999999)),
+            style: TextStyle(fontSize: 13, color: AppColors.foregroundTertiary),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -106,7 +107,7 @@ class _SchoolCodePageState extends ConsumerState<SchoolCodePage> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF202020),
+            color: AppColors.foregroundDark,
           ),
         ),
       ),
@@ -127,7 +128,7 @@ class _ConnectButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: isLoading ? const Color(0xFFE0E0E0) : const Color(0xFF2B2B2B),
+        color: isLoading ? AppColors.borderLight : AppColors.accentCharcoal,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Container(
@@ -136,7 +137,7 @@ class _ConnectButton extends StatelessWidget {
           onPressed: isLoading ? null : onPressed,
           style: ElevatedButton.styleFrom(
             backgroundColor:
-                isLoading ? const Color(0xFFF5F5F5) : const Color(0xFF2B2B2B),
+                isLoading ? AppColors.backgroundTertiary : AppColors.accentCharcoal,
             foregroundColor: Colors.white,
             elevation: 0,
             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -150,7 +151,7 @@ class _ConnectButton extends StatelessWidget {
                   width: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2.5,
-                    color: Color(0xFF999999),
+                    color: AppColors.foregroundTertiary,
                   ),
                 )
               : const Text(

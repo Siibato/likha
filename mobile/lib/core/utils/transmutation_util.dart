@@ -1,3 +1,4 @@
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 
 /// Philippine DepEd Grade Transmutation Utility
@@ -59,10 +60,10 @@ class TransmutationUtil {
   /// Get color for descriptor badge based on report grade
   /// Used only for small status badge, not the main grade number
   static int getDescriptorColor(int reportGrade) {
-    if (reportGrade >= 90) return 0xFF4CAF50; // green
-    if (reportGrade >= 85) return 0xFF2196F3; // blue
-    if (reportGrade >= 80) return 0xFF4A90D9; // blue
-    if (reportGrade >= 75) return 0xFFFFC107; // amber
-    return 0xFFE57373; // red
+    if (reportGrade >= 90) return AppColors.semanticSuccessAlt.toARGB32(); // green
+    if (reportGrade >= 85) return AppColors.accentCharcoal.toARGB32(); // charcoal (replacing blue)
+    if (reportGrade >= 80) return AppColors.accentCharcoal.toARGB32(); // charcoal (replacing blue)
+    if (reportGrade >= 75) return AppColors.accentAmber.toARGB32(); // amber
+    return AppColors.semanticError.toARGB32(); // red
   }
 }

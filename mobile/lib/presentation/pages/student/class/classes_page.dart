@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/student/class/class_detail_page.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/student/class/widgets/class_list_section.dart';
@@ -42,7 +43,7 @@ class _StudentClassesPageState extends ConsumerState<StudentClassesPage> {
           : RefreshIndicator(
               onRefresh: () =>
                   ref.read(classProvider.notifier).loadClasses(),
-              color: const Color(0xFF2B2B2B),
+              color: AppColors.accentCharcoal,
               child: CustomScrollView(
                 slivers: [
                   const SliverToBoxAdapter(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import '../tokens/app_text_styles.dart';
 
 /// A label-value row used in card details and info sections.
@@ -31,7 +32,7 @@ class InfoRow extends StatelessWidget {
           Icon(
             icon,
             size: 20,
-            color: const Color(0xFF404040),
+            color: AppColors.foregroundDark,
           ),
           const SizedBox(width: 12),
         ],
@@ -59,13 +60,13 @@ class InfoRow extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FA),
+                color: AppColors.backgroundTertiary,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: const Icon(
                 Icons.edit_outlined,
                 size: 16,
-                color: Color(0xFF404040),
+                color: AppColors.foregroundDark,
               ),
             ),
           ),

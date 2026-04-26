@@ -640,10 +640,10 @@ class _CreateAssessmentDesktopState
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF2B2B2B),
+              primary: AppColors.accentCharcoal,
               onPrimary: Colors.white,
               surface: Colors.white,
-              onSurface: Color(0xFF2B2B2B),
+              onSurface: AppColors.accentCharcoal,
             ),
           ),
           child: child!,
@@ -660,12 +660,12 @@ class _CreateAssessmentDesktopState
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF2B2B2B),
+              primary: AppColors.accentCharcoal,
               onPrimary: Colors.white,
               surface: Colors.white,
-              onSurface: Color(0xFF2B2B2B),
-              secondary: Color(0xFF2B2B2B),
-              tertiary: Color(0xFF2B2B2B),
+              onSurface: AppColors.accentCharcoal,
+              secondary: AppColors.accentCharcoal,
+              tertiary: AppColors.accentCharcoal,
               onTertiary: Colors.white,
             ),
           ),
@@ -701,20 +701,20 @@ class _CreateAssessmentDesktopState
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(fontSize: 14, color: Color(0xFF999999)),
+      labelStyle: const TextStyle(fontSize: 14, color: AppColors.foregroundTertiary),
       filled: true,
       fillColor: Colors.white,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+        borderSide: const BorderSide(color: AppColors.borderLight),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+        borderSide: const BorderSide(color: AppColors.borderLight),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF2B2B2B), width: 1.5),
+        borderSide: const BorderSide(color: AppColors.accentCharcoal, width: 1.5),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
@@ -741,8 +741,8 @@ class _CreateAssessmentDesktopState
           OutlinedButton(
             onPressed: _isSaving ? null : _saveDraftWithFeedback,
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF2B2B2B),
-              side: const BorderSide(color: Color(0xFFE0E0E0)),
+              foregroundColor: AppColors.accentCharcoal,
+              side: const BorderSide(color: AppColors.borderLight),
               padding:
                   const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               shape: RoundedRectangleBorder(
@@ -758,9 +758,9 @@ class _CreateAssessmentDesktopState
             onPressed:
                 _isSaving || _isQuestionReorderMode ? null : _handleSave,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2B2B2B),
+              backgroundColor: AppColors.accentCharcoal,
               foregroundColor: Colors.white,
-              disabledBackgroundColor: const Color(0xFFE0E0E0),
+              disabledBackgroundColor: AppColors.borderLight,
               padding:
                   const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               shape: RoundedRectangleBorder(
@@ -794,25 +794,25 @@ class _CreateAssessmentDesktopState
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF0F0F0),
+                  color: AppColors.backgroundTertiary,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
                     const Icon(Icons.restore_rounded,
-                        size: 16, color: Color(0xFF666666)),
+                        size: 16, color: AppColors.foregroundSecondary),
                     const SizedBox(width: 8),
                     const Expanded(
                       child: Text(
                         'Resuming draft',
                         style: TextStyle(
-                            fontSize: 13, color: Color(0xFF666666)),
+                            fontSize: 13, color: AppColors.foregroundSecondary),
                       ),
                     ),
                     TextButton(
                       onPressed: _discardDraft,
                       style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFFE57373),
+                        foregroundColor: AppColors.semanticError,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                       ),
@@ -871,7 +871,7 @@ class _CreateAssessmentDesktopState
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
               ),
             ),
             const SizedBox(height: 20),
@@ -1104,14 +1104,14 @@ class _CreateAssessmentDesktopState
       child: InputDecorator(
         decoration: _inputDecoration(label).copyWith(
           suffixIcon: const Icon(Icons.arrow_drop_down_rounded,
-              color: Color(0xFF666666)),
+              color: AppColors.foregroundSecondary),
         ),
         child: Text(
           _formatDateTime(dateTime),
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
           ),
         ),
       ),
@@ -1128,7 +1128,7 @@ class _CreateAssessmentDesktopState
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: SwitchListTile(
         contentPadding:
@@ -1138,15 +1138,15 @@ class _CreateAssessmentDesktopState
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
           ),
         ),
         subtitle: Text(
           subtitle,
-          style: const TextStyle(fontSize: 13, color: Color(0xFF999999)),
+          style: const TextStyle(fontSize: 13, color: AppColors.foregroundTertiary),
         ),
         value: value,
-        activeThumbColor: const Color(0xFF2B2B2B),
+        activeThumbColor: AppColors.accentCharcoal,
         onChanged: onChanged,
       ),
     );
@@ -1176,7 +1176,7 @@ class _CreateAssessmentDesktopState
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF2B2B2B),
+                    color: AppColors.accentCharcoal,
                   ),
                 ),
               ),
@@ -1186,7 +1186,7 @@ class _CreateAssessmentDesktopState
                   icon: const Icon(Icons.check_rounded, size: 18),
                   label: const Text('Done'),
                   style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF2B2B2B),
+                    foregroundColor: AppColors.accentCharcoal,
                   ),
                 )
               else if (_questions.length > 1)
@@ -1195,7 +1195,7 @@ class _CreateAssessmentDesktopState
                   icon: const Icon(Icons.swap_vert_rounded, size: 18),
                   label: const Text('Reorder'),
                   style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF666666),
+                    foregroundColor: AppColors.foregroundSecondary,
                   ),
                 ),
             ],
@@ -1209,7 +1209,7 @@ class _CreateAssessmentDesktopState
               alignment: Alignment.center,
               child: const Text(
                 'No questions yet. Add your first question below.',
-                style: TextStyle(fontSize: 14, color: Color(0xFF999999)),
+                style: TextStyle(fontSize: 14, color: AppColors.foregroundTertiary),
               ),
             ),
 
@@ -1233,8 +1233,8 @@ class _CreateAssessmentDesktopState
                   icon: const Icon(Icons.add_rounded, size: 20),
                   label: const Text('Add Question'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF2B2B2B),
-                    side: const BorderSide(color: Color(0xFFE0E0E0)),
+                    foregroundColor: AppColors.accentCharcoal,
+                    side: const BorderSide(color: AppColors.borderLight),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
@@ -1254,10 +1254,10 @@ class _CreateAssessmentDesktopState
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isEditing ? Colors.white : const Color(0xFFFAFAFA),
+        color: isEditing ? Colors.white : AppColors.backgroundSecondary,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: isEditing ? const Color(0xFF2B2B2B) : const Color(0xFFE8E8E8),
+          color: isEditing ? AppColors.accentCharcoal : AppColors.borderLight,
           width: isEditing ? 1.5 : 1,
         ),
       ),
@@ -1281,7 +1281,7 @@ class _CreateAssessmentDesktopState
               height: 28,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: const Color(0xFFE8E8E8),
+                color: AppColors.borderLight,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -1289,7 +1289,7 @@ class _CreateAssessmentDesktopState
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                 ),
               ),
             ),
@@ -1320,7 +1320,7 @@ class _CreateAssessmentDesktopState
                         '${q.points} pt${q.points != 1 ? 's' : ''}',
                         style: const TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF999999),
+                          color: AppColors.foregroundTertiary,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1333,7 +1333,7 @@ class _CreateAssessmentDesktopState
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 14,
-                      color: q.questionText.isEmpty ? const Color(0xFF999999) : const Color(0xFF2B2B2B),
+                      color: q.questionText.isEmpty ? AppColors.foregroundTertiary : AppColors.accentCharcoal,
                     ),
                   ),
                   // Answer preview
@@ -1346,7 +1346,7 @@ class _CreateAssessmentDesktopState
                           Icon(
                             choice.isCorrect ? Icons.check_circle_rounded : Icons.circle_outlined,
                             size: 12,
-                            color: choice.isCorrect ? const Color(0xFF4CAF50) : const Color(0xFFCCCCCC),
+                            color: choice.isCorrect ? AppColors.semanticSuccessAlt : AppColors.foregroundLight,
                           ),
                           const SizedBox(width: 6),
                           Expanded(
@@ -1354,7 +1354,7 @@ class _CreateAssessmentDesktopState
                               choice.text.isEmpty ? '(empty)' : choice.text,
                               style: TextStyle(
                                 fontSize: 12,
-                                color: choice.isCorrect ? const Color(0xFF2B2B2B) : const Color(0xFF888888),
+                                color: choice.isCorrect ? AppColors.accentCharcoal : AppColors.foregroundSecondary,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -1368,7 +1368,7 @@ class _CreateAssessmentDesktopState
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
                           '+${q.choices.length - 3} more',
-                          style: const TextStyle(fontSize: 11, color: Color(0xFF999999), fontStyle: FontStyle.italic),
+                          style: const TextStyle(fontSize: 11, color: AppColors.foregroundTertiary, fontStyle: FontStyle.italic),
                         ),
                       ),
                   ],
@@ -1376,7 +1376,7 @@ class _CreateAssessmentDesktopState
                     const SizedBox(height: 8),
                     Text(
                       'Answers: ${q.acceptableAnswers.where((a) => a.isNotEmpty).take(3).join(', ')}${q.acceptableAnswers.where((a) => a.isNotEmpty).length > 3 ? '...' : ''}',
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
+                      style: const TextStyle(fontSize: 12, color: AppColors.foregroundSecondary),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1387,7 +1387,7 @@ class _CreateAssessmentDesktopState
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
                         '${entry.key + 1}. ${entry.value.answers.where((a) => a.isNotEmpty).join(' / ')}',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
+                        style: const TextStyle(fontSize: 12, color: AppColors.foregroundSecondary),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1397,7 +1397,7 @@ class _CreateAssessmentDesktopState
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
                           '+${q.enumerationItems.length - 2} more items',
-                          style: const TextStyle(fontSize: 11, color: Color(0xFF999999), fontStyle: FontStyle.italic),
+                          style: const TextStyle(fontSize: 11, color: AppColors.foregroundTertiary, fontStyle: FontStyle.italic),
                         ),
                       ),
                   ],
@@ -1405,11 +1405,11 @@ class _CreateAssessmentDesktopState
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Icon(Icons.edit_note_rounded, size: 14, color: const Color(0xFF7B1FA2).withValues(alpha: 0.7)),
+                        Icon(Icons.edit_note_rounded, size: 14, color: AppColors.accentAmber.withValues(alpha: 0.7)),
                         const SizedBox(width: 6),
                         const Text(
                           'Essay - manually graded',
-                          style: TextStyle(fontSize: 12, color: Color(0xFF666666), fontStyle: FontStyle.italic),
+                          style: TextStyle(fontSize: 12, color: AppColors.foregroundSecondary, fontStyle: FontStyle.italic),
                         ),
                       ],
                     ),
@@ -1422,14 +1422,14 @@ class _CreateAssessmentDesktopState
                 icon: const Icon(Icons.swap_vert_rounded, size: 20),
                 onPressed: () => _showQuestionMoveDialog(index),
                 tooltip: 'Move',
-                color: const Color(0xFF666666),
+                color: AppColors.foregroundSecondary,
               )
             else ...[
               IconButton(
                 icon: const Icon(Icons.edit_outlined, size: 18),
                 onPressed: () => _enterEditMode(index),
                 tooltip: 'Edit',
-                color: const Color(0xFF666666),
+                color: AppColors.foregroundSecondary,
               ),
               IconButton(
                 icon: const Icon(Icons.close_rounded, size: 20),
@@ -1438,7 +1438,7 @@ class _CreateAssessmentDesktopState
                   _scheduleAutoSave();
                 },
                 tooltip: 'Remove',
-                color: const Color(0xFFE57373),
+                color: AppColors.semanticError,
               ),
             ],
           ],
@@ -1461,7 +1461,7 @@ class _CreateAssessmentDesktopState
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                 ),
               ),
               const Spacer(),
@@ -1470,17 +1470,17 @@ class _CreateAssessmentDesktopState
                   margin: const EdgeInsets.only(right: 12),
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFDEDED),
+                    color: AppColors.semanticErrorBackground,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.error_outline, color: Color(0xFFEF5350), size: 14),
+                      const Icon(Icons.error_outline, color: AppColors.semanticError, size: 14),
                       const SizedBox(width: 6),
                       Text(
                         _editValidationError!,
-                        style: const TextStyle(color: Color(0xFFEF5350), fontSize: 12),
+                        style: const TextStyle(color: AppColors.semanticError, fontSize: 12),
                       ),
                     ],
                   ),
@@ -1488,7 +1488,7 @@ class _CreateAssessmentDesktopState
               TextButton(
                 onPressed: _cancelEditMode,
                 style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF666666),
+                  foregroundColor: AppColors.foregroundSecondary,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
                 child: const Text('Cancel'),
@@ -1497,7 +1497,7 @@ class _CreateAssessmentDesktopState
               ElevatedButton(
                 onPressed: _saveEditMode,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2B2B2B),
+                  backgroundColor: AppColors.accentCharcoal,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -1574,7 +1574,7 @@ class _CreateAssessmentDesktopState
               padding: EdgeInsets.symmetric(vertical: 8),
               child: Text(
                 'Essay questions are graded manually. No additional fields needed.',
-                style: TextStyle(fontSize: 13, color: Color(0xFF999999)),
+                style: TextStyle(fontSize: 13, color: AppColors.foregroundTertiary),
               ),
             ),
         ],
@@ -1588,7 +1588,7 @@ class _CreateAssessmentDesktopState
       children: [
         const Text(
           'Choices',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF2B2B2B)),
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.accentCharcoal),
         ),
         const SizedBox(height: 8),
         ...List.generate(_editChoices.length, (i) {
@@ -1598,7 +1598,7 @@ class _CreateAssessmentDesktopState
               children: [
                 Checkbox(
                   value: _editChoices[i].isCorrect,
-                  activeColor: const Color(0xFF2B2B2B),
+                  activeColor: AppColors.accentCharcoal,
                   onChanged: (v) {
                     setState(() {
                       if (!_editQuestionMultiSelect && (v ?? false)) {
@@ -1620,7 +1620,7 @@ class _CreateAssessmentDesktopState
                 ),
                 if (_editChoices.length > 2)
                   IconButton(
-                    icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFFE57373)),
+                    icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.semanticError,),
                     onPressed: () => setState(() => _editChoices.removeAt(i)),
                   ),
               ],
@@ -1633,7 +1633,7 @@ class _CreateAssessmentDesktopState
             onPressed: () => setState(() => _editChoices.add(ChoiceDraft())),
             icon: const Icon(Icons.add_rounded, size: 18),
             label: const Text('Add Choice'),
-            style: TextButton.styleFrom(foregroundColor: const Color(0xFF666666)),
+            style: TextButton.styleFrom(foregroundColor: AppColors.foregroundSecondary),
           ),
         ),
       ],
@@ -1646,7 +1646,7 @@ class _CreateAssessmentDesktopState
       children: [
         const Text(
           'Acceptable Answers',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF2B2B2B)),
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.accentCharcoal),
         ),
         const SizedBox(height: 8),
         ...List.generate(_editAcceptableAnswers.length, (i) {
@@ -1663,7 +1663,7 @@ class _CreateAssessmentDesktopState
                 ),
                 if (_editAcceptableAnswers.length > 1)
                   IconButton(
-                    icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFFE57373)),
+                    icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.semanticError,),
                     onPressed: () => setState(() => _editAcceptableAnswers.removeAt(i)),
                   ),
               ],
@@ -1676,7 +1676,7 @@ class _CreateAssessmentDesktopState
             onPressed: () => setState(() => _editAcceptableAnswers.add('')),
             icon: const Icon(Icons.add_rounded, size: 18),
             label: const Text('Add Answer'),
-            style: TextButton.styleFrom(foregroundColor: const Color(0xFF666666)),
+            style: TextButton.styleFrom(foregroundColor: AppColors.foregroundSecondary),
           ),
         ),
       ],
@@ -1689,7 +1689,7 @@ class _CreateAssessmentDesktopState
       children: [
         const Text(
           'Enumeration Items',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF2B2B2B)),
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.accentCharcoal),
         ),
         const SizedBox(height: 8),
         ...List.generate(_editEnumerationItems.length, (itemIndex) {
@@ -1698,9 +1698,9 @@ class _CreateAssessmentDesktopState
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFAFAFA),
+              color: AppColors.backgroundSecondary,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE0E0E0)),
+              border: Border.all(color: AppColors.borderLight),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1709,12 +1709,12 @@ class _CreateAssessmentDesktopState
                   children: [
                     Text(
                       'Item ${itemIndex + 1}',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF2B2B2B)),
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.accentCharcoal),
                     ),
                     const Spacer(),
                     if (_editEnumerationItems.length > 1)
                       IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 16, color: Color(0xFFE57373)),
+                        icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.semanticError,),
                         onPressed: () => setState(() => _editEnumerationItems.removeAt(itemIndex)),
                         constraints: const BoxConstraints(),
                         padding: EdgeInsets.zero,
@@ -1736,7 +1736,7 @@ class _CreateAssessmentDesktopState
                         ),
                         if (item.answers.length > 1)
                           IconButton(
-                            icon: const Icon(Icons.close_rounded, size: 16, color: Color(0xFFE57373)),
+                            icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.semanticError,),
                             onPressed: () => setState(() => item.answers.removeAt(ansIndex)),
                             constraints: const BoxConstraints(),
                             padding: const EdgeInsets.only(left: 4),
@@ -1749,7 +1749,7 @@ class _CreateAssessmentDesktopState
                   onPressed: () => setState(() => item.answers.add('')),
                   icon: const Icon(Icons.add_rounded, size: 16),
                   label: const Text('Add Answer', style: TextStyle(fontSize: 12)),
-                  style: TextButton.styleFrom(foregroundColor: const Color(0xFF666666), padding: EdgeInsets.zero),
+                  style: TextButton.styleFrom(foregroundColor: AppColors.foregroundSecondary, padding: EdgeInsets.zero),
                 ),
               ],
             ),
@@ -1761,7 +1761,7 @@ class _CreateAssessmentDesktopState
             onPressed: () => setState(() => _editEnumerationItems.add(EnumerationItemDraft())),
             icon: const Icon(Icons.add_rounded, size: 18),
             label: const Text('Add Item'),
-            style: TextButton.styleFrom(foregroundColor: const Color(0xFF666666)),
+            style: TextButton.styleFrom(foregroundColor: AppColors.foregroundSecondary),
           ),
         ),
       ],
@@ -1780,11 +1780,11 @@ class _CreateAssessmentDesktopState
 
   Color _questionTypeColor(String type) {
     return switch (type) {
-      'multiple_choice' => const Color(0xFF1976D2),
-      'identification' => const Color(0xFF388E3C),
-      'enumeration' => const Color(0xFFF57C00),
-      'essay' => const Color(0xFF7B1FA2),
-      _ => const Color(0xFF666666),
+      'multiple_choice' => AppColors.accentCharcoal,
+      'identification' => AppColors.semanticSuccessAlt,
+      'enumeration' => AppColors.accentAmber,
+      'essay' => AppColors.accentAmber,
+      _ => AppColors.foregroundSecondary,
     };
   }
 
@@ -1797,9 +1797,9 @@ class _CreateAssessmentDesktopState
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
+        color: AppColors.backgroundSecondary,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF2B2B2B), width: 1.5),
+        border: Border.all(color: AppColors.accentCharcoal, width: 1.5),
       ),
       child: Form(
         key: _addQuestionFormKey,
@@ -1811,7 +1811,7 @@ class _CreateAssessmentDesktopState
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
               ),
             ),
             const SizedBox(height: 16),
@@ -1901,7 +1901,7 @@ class _CreateAssessmentDesktopState
                 padding: EdgeInsets.symmetric(vertical: 8),
                 child: Text(
                   'Essay questions are graded manually. No additional fields needed.',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF999999)),
+                  style: TextStyle(fontSize: 13, color: AppColors.foregroundTertiary),
                 ),
               ),
 
@@ -1914,7 +1914,7 @@ class _CreateAssessmentDesktopState
                 TextButton(
                   onPressed: _cancelAddQuestion,
                   style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF666666),
+                    foregroundColor: AppColors.foregroundSecondary,
                   ),
                   child: const Text('Cancel'),
                 ),
@@ -1922,7 +1922,7 @@ class _CreateAssessmentDesktopState
                 ElevatedButton(
                   onPressed: _confirmAddQuestion,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2B2B2B),
+                    backgroundColor: AppColors.accentCharcoal,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 24, vertical: 12),
@@ -1953,7 +1953,7 @@ class _CreateAssessmentDesktopState
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
           ),
         ),
         const SizedBox(height: 8),
@@ -1964,7 +1964,7 @@ class _CreateAssessmentDesktopState
               children: [
                 Checkbox(
                   value: _newChoices[i].isCorrect,
-                  activeColor: const Color(0xFF2B2B2B),
+                  activeColor: AppColors.accentCharcoal,
                   onChanged: (v) {
                     setState(() => _newChoices[i].isCorrect = v ?? false);
                   },
@@ -1979,7 +1979,7 @@ class _CreateAssessmentDesktopState
                 if (_newChoices.length > 2)
                   IconButton(
                     icon: const Icon(Icons.close_rounded,
-                        size: 18, color: Color(0xFFE57373)),
+                        size: 18, color: AppColors.semanticError,),
                     onPressed: () {
                       setState(() => _newChoices.removeAt(i));
                     },
@@ -1997,7 +1997,7 @@ class _CreateAssessmentDesktopState
             icon: const Icon(Icons.add_rounded, size: 18),
             label: const Text('Add Choice'),
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF666666),
+              foregroundColor: AppColors.foregroundSecondary,
             ),
           ),
         ),
@@ -2018,7 +2018,7 @@ class _CreateAssessmentDesktopState
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
           ),
         ),
         const SizedBox(height: 8),
@@ -2037,7 +2037,7 @@ class _CreateAssessmentDesktopState
                 if (_newAcceptableAnswers.length > 1)
                   IconButton(
                     icon: const Icon(Icons.close_rounded,
-                        size: 18, color: Color(0xFFE57373)),
+                        size: 18, color: AppColors.semanticError,),
                     onPressed: () {
                       setState(() => _newAcceptableAnswers.removeAt(i));
                     },
@@ -2055,7 +2055,7 @@ class _CreateAssessmentDesktopState
             icon: const Icon(Icons.add_rounded, size: 18),
             label: const Text('Add Answer'),
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF666666),
+              foregroundColor: AppColors.foregroundSecondary,
             ),
           ),
         ),
@@ -2076,7 +2076,7 @@ class _CreateAssessmentDesktopState
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
           ),
         ),
         const SizedBox(height: 8),
@@ -2088,7 +2088,7 @@ class _CreateAssessmentDesktopState
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE0E0E0)),
+              border: Border.all(color: AppColors.borderLight),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2100,14 +2100,14 @@ class _CreateAssessmentDesktopState
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                       ),
                     ),
                     const Spacer(),
                     if (_newEnumerationItems.length > 1)
                       IconButton(
                         icon: const Icon(Icons.close_rounded,
-                            size: 16, color: Color(0xFFE57373)),
+                            size: 16, color: AppColors.semanticError,),
                         onPressed: () {
                           setState(
                               () => _newEnumerationItems.removeAt(itemIndex));
@@ -2135,7 +2135,7 @@ class _CreateAssessmentDesktopState
                         if (item.answers.length > 1)
                           IconButton(
                             icon: const Icon(Icons.close_rounded,
-                                size: 16, color: Color(0xFFE57373)),
+                                size: 16, color: AppColors.semanticError,),
                             onPressed: () {
                               setState(
                                   () => item.answers.removeAt(ansIndex));
@@ -2155,7 +2155,7 @@ class _CreateAssessmentDesktopState
                   label: const Text('Add Answer',
                       style: TextStyle(fontSize: 12)),
                   style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF666666),
+                    foregroundColor: AppColors.foregroundSecondary,
                     padding: EdgeInsets.zero,
                   ),
                 ),
@@ -2173,7 +2173,7 @@ class _CreateAssessmentDesktopState
             icon: const Icon(Icons.add_rounded, size: 18),
             label: const Text('Add Item'),
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF666666),
+              foregroundColor: AppColors.foregroundSecondary,
             ),
           ),
         ),

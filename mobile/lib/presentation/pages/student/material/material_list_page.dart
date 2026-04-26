@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/student/material/material_detail_page.dart';
@@ -40,7 +41,7 @@ class _StudentMaterialListPageState extends ConsumerState<StudentMaterialListPag
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: null,
       body: SafeArea(
         child: Column(
@@ -67,14 +68,14 @@ class _StudentMaterialListPageState extends ConsumerState<StudentMaterialListPag
                               Icon(
                                 Icons.library_books_outlined,
                                 size: 64,
-                                color: Color(0xFFCCCCCC),
+                                color: AppColors.foregroundLight,
                               ),
                               SizedBox(height: 16),
                               Text(
                                 'No modules yet',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Color(0xFF999999),
+                                  color: AppColors.foregroundTertiary,
                                 ),
                               ),
                             ],
@@ -84,7 +85,7 @@ class _StudentMaterialListPageState extends ConsumerState<StudentMaterialListPag
                               onRefresh: () => ref
                                   .read(learningMaterialProvider.notifier)
                                   .loadMaterials(widget.classId),
-                              color: const Color(0xFF2B2B2B),
+                              color: AppColors.accentCharcoal,
                               child: ListView.builder(
                                 padding: const EdgeInsets.all(24),
                                 itemCount: state.materials.length,
@@ -104,7 +105,7 @@ class _StudentMaterialListPageState extends ConsumerState<StudentMaterialListPag
                                     child: Container(
                                       margin: const EdgeInsets.only(bottom: 12),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFE0E0E0),
+                                        color: AppColors.borderLight,
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Container(
@@ -120,7 +121,7 @@ class _StudentMaterialListPageState extends ConsumerState<StudentMaterialListPag
                                               material.fileCount > 0
                                                   ? Icons.attach_file_rounded
                                                   : Icons.article_outlined,
-                                              color: const Color(0xFF2B2B2B),
+                                              color: AppColors.accentCharcoal,
                                               size: 20,
                                             ),
                                             const SizedBox(width: 14),
@@ -133,7 +134,7 @@ class _StudentMaterialListPageState extends ConsumerState<StudentMaterialListPag
                                                     style: const TextStyle(
                                                       fontSize: 15,
                                                       fontWeight: FontWeight.w700,
-                                                      color: Color(0xFF202020),
+                                                      color: AppColors.foregroundDark,
                                                       letterSpacing: -0.3,
                                                     ),
                                                   ),
@@ -142,7 +143,7 @@ class _StudentMaterialListPageState extends ConsumerState<StudentMaterialListPag
                                                     '${material.fileCount} file(s)',
                                                     style: const TextStyle(
                                                       fontSize: 12,
-                                                      color: Color(0xFF999999),
+                                                      color: AppColors.foregroundTertiary,
                                                       fontWeight: FontWeight.w500,
                                                     ),
                                                   ),
@@ -151,7 +152,7 @@ class _StudentMaterialListPageState extends ConsumerState<StudentMaterialListPag
                                             ),
                                             const Icon(
                                               Icons.chevron_right_rounded,
-                                              color: Color(0xFFCCCCCC),
+                                              color: AppColors.foregroundLight,
                                               size: 22,
                                             ),
                                           ],

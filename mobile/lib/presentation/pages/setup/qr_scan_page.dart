@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/setup/qr_scanner_widget.dart';
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
@@ -50,7 +51,7 @@ class _QrScanPageState extends ConsumerState<QrScanPage> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF202020),
+            color: AppColors.foregroundDark,
           ),
         ),
       ),
@@ -81,7 +82,7 @@ class _QrScanPageState extends ConsumerState<QrScanPage> {
                 padding: EdgeInsets.fromLTRB(24, 0, 24, 32),
                 child: Text(
                   'Point the camera at the QR code provided by your school admin.',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF999999)),
+                  style: TextStyle(fontSize: 13, color: AppColors.foregroundTertiary),
                   textAlign: TextAlign.center,
                 ),
               ),

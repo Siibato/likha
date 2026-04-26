@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/injection_container.dart';
@@ -44,7 +45,7 @@ class _StudentAssignmentListPageState extends ConsumerState<StudentAssignmentLis
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: null,
       body: SafeArea(
         child: Column(
@@ -69,7 +70,7 @@ class _StudentAssignmentListPageState extends ConsumerState<StudentAssignmentLis
                           onRefresh: () => ref
                               .read(assignmentProvider.notifier)
                               .loadAssignments(widget.classId, publishedOnly: true),
-                          color: const Color(0xFF2B2B2B),
+                          color: AppColors.accentCharcoal,
                           child: ListView.builder(
                             padding: const EdgeInsets.all(24),
                             itemCount: state.assignments.length,

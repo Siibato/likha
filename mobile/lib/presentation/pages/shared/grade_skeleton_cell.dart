@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 /// A pulsing grey placeholder cell shown in the grade spreadsheet while
 /// scores are being fetched or auto-generated. Uses Flutter's built-in
@@ -31,8 +32,8 @@ class _GradeSkeletonCellState extends State<GradeSkeletonCell>
     )..repeat(reverse: true);
 
     _color = ColorTween(
-      begin: const Color(0xFFE0E0E0),
-      end: const Color(0xFFF5F5F5),
+      begin: AppColors.borderLight,
+      end: AppColors.backgroundTertiary,
     ).animate(_ctrl);
   }
 

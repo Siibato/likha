@@ -60,13 +60,13 @@ class FormMessage extends StatelessWidget {
           Icons.error_rounded,
         ),
       MessageSeverity.warning => (
-          const Color(0xFFFFF3E0),
-          const Color(0xFFF57C00),
+          AppColors.accentAmber.withValues(alpha: 0.1),
+          AppColors.accentAmber,
           Icons.warning_rounded,
         ),
       MessageSeverity.info => (
-          const Color(0xFFE3F2FD),
-          const Color(0xFF1976D2),
+          AppColors.accentCharcoal.withValues(alpha: 0.1),
+          AppColors.accentCharcoal,
           Icons.info_rounded,
         ),
       MessageSeverity.success => (

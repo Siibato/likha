@@ -68,7 +68,7 @@ class _AssessmentResultsPageState
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFE0E0E0),
+                color: AppColors.borderLight,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
@@ -87,7 +87,7 @@ class _AssessmentResultsPageState
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF2B2B2B),
+                      color: AppColors.accentCharcoal,
                       letterSpacing: -0.3,
                     ),
                   ),
@@ -127,13 +127,13 @@ class _AssessmentResultsPageState
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFE0E0),
+                color: AppColors.semanticError.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
                 Icons.info_outline_rounded,
                 size: 24,
-                color: Color(0xFFD32F2F),
+                color: AppColors.semanticError,
               ),
             ),
             const SizedBox(width: 16),
@@ -146,7 +146,7 @@ class _AssessmentResultsPageState
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF2B2B2B),
+                      color: AppColors.accentCharcoal,
                       letterSpacing: -0.3,
                     ),
                   ),
@@ -176,7 +176,7 @@ class _AssessmentResultsPageState
         state.error?.toLowerCase().contains('not been released') ?? false;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
         child: state.isLoading && result == null && !isResultsNotReleased
             ? Center(
@@ -187,13 +187,13 @@ class _AssessmentResultsPageState
                           Container(
                             padding: const EdgeInsets.all(24),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFEEBEE),
+                              color: AppColors.semanticError.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(24),
                             ),
                             child: const Icon(
                               Icons.error_outline_rounded,
                               size: 64,
-                              color: Color(0xFFEA4335),
+                              color: AppColors.semanticError,
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -203,7 +203,7 @@ class _AssessmentResultsPageState
                               state.error!,
                               textAlign: TextAlign.center,
                               style: const TextStyle(
-                                color: Color(0xFFEA4335),
+                                color: AppColors.semanticError,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -213,7 +213,7 @@ class _AssessmentResultsPageState
                           FilledButton(
                             onPressed: () => Navigator.pop(context),
                             style: FilledButton.styleFrom(
-                              backgroundColor: const Color(0xFF2B2B2B),
+                              backgroundColor: AppColors.accentCharcoal,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 32,
                                 vertical: 12,
@@ -227,7 +227,7 @@ class _AssessmentResultsPageState
                         ],
                       )
                     : const CircularProgressIndicator(
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                         strokeWidth: 2.5,
                       ),
               )
@@ -255,7 +255,7 @@ class _AssessmentResultsPageState
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF2B2B2B),
+                              color: AppColors.accentCharcoal,
                               letterSpacing: -0.4,
                             ),
                           ),

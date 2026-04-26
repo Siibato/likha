@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/presentation/pages/admin/widgets/styled_button.dart';
 import 'package:likha/presentation/pages/admin/widgets/styled_dropdown.dart';
@@ -81,7 +82,7 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
     // If no teachers, show empty state
     if (teachers.isEmpty) {
       return Scaffold(
-        backgroundColor: const Color(0xFFFAFAFA),
+        backgroundColor: AppColors.backgroundSecondary,
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,
@@ -90,11 +91,11 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF2B2B2B),
+              color: AppColors.accentCharcoal,
               letterSpacing: -0.4,
             ),
           ),
-          iconTheme: const IconThemeData(color: Color(0xFF2B2B2B)),
+          iconTheme: const IconThemeData(color: AppColors.accentCharcoal),
         ),
         body: const Center(
           child: Padding(
@@ -102,14 +103,14 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.person_outline_rounded, size: 64, color: Color(0xFFCCCCCC)),
+                Icon(Icons.person_outline_rounded, size: 64, color: AppColors.foregroundLight),
                 SizedBox(height: 16),
                 Text(
                   'No teachers available',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF2B2B2B),
+                    color: AppColors.accentCharcoal,
                   ),
                 ),
                 SizedBox(height: 8),
@@ -117,7 +118,7 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
                   'Create teacher accounts before creating classes',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF999999),
+                    color: AppColors.foregroundTertiary,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -129,7 +130,7 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -138,11 +139,11 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
             letterSpacing: -0.4,
           ),
         ),
-        iconTheme: const IconThemeData(color: Color(0xFF2B2B2B)),
+        iconTheme: const IconThemeData(color: AppColors.accentCharcoal),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -213,9 +214,9 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
                 const SizedBox(height: 16),
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.backgroundPrimary,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                    border: Border.all(color: AppColors.borderLight),
                   ),
                   child: SwitchListTile(
                     value: _isAdvisory,
@@ -227,17 +228,17 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                       ),
                     ),
                     subtitle: const Text(
                       'Enables SF9/SF10 report card access for this teacher',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF999999),
+                        color: AppColors.foregroundTertiary,
                       ),
                     ),
-                    activeColor: const Color(0xFF2B2B2B),
+                    activeColor: AppColors.accentCharcoal,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

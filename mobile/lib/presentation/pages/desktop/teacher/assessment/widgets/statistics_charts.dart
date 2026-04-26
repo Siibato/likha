@@ -182,9 +182,9 @@ class ItemDifficultyChart extends StatelessWidget {
   }
 
   Color _barColor(double difficultyIndex) {
-    if (difficultyIndex < 0.3) return Colors.red;
-    if (difficultyIndex > 0.7) return Colors.green;
-    return Colors.orange;
+    if (difficultyIndex < 0.3) return AppColors.semanticError;
+    if (difficultyIndex > 0.7) return AppColors.semanticSuccessAlt;
+    return AppColors.accentAmber;
   }
 
   BarChartData _buildBarChartData() {

@@ -304,7 +304,7 @@ class _LockReasonDialogState extends State<_LockReasonDialog> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF666666),
+              color: AppColors.foregroundSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -315,15 +315,15 @@ class _LockReasonDialogState extends State<_LockReasonDialog> {
               hintText: 'Enter reason...',
               hintStyle: const TextStyle(
                 fontSize: 14,
-                color: Color(0xFFCCCCCC),
+                color: AppColors.foregroundLight,
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                borderSide: const BorderSide(color: AppColors.borderLight),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                borderSide: const BorderSide(color: AppColors.borderLight),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
@@ -337,7 +337,7 @@ class _LockReasonDialogState extends State<_LockReasonDialog> {
             ),
             style: const TextStyle(
               fontSize: 14,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
             ),
           ),
         ],
@@ -400,24 +400,24 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
       warningBox: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0xFFDC3545).withValues(alpha: 0.08),
+          color: AppColors.semanticErrorDark.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: const Color(0xFFDC3545).withValues(alpha: 0.2),
+            color: AppColors.semanticErrorDark.withValues(alpha: 0.2),
           ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Icon(Icons.warning_rounded,
-                size: 18, color: Color(0xFFDC3545)),
+                size: 18, color: AppColors.semanticErrorDark),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 'This will permanently delete "${widget.userName}". This action cannot be undone.',
                 style: const TextStyle(
                   fontSize: 13,
-                  color: Color(0xFFDC3545),
+                  color: AppColors.semanticErrorDark,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -434,7 +434,7 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF666666),
+              color: AppColors.foregroundSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -445,20 +445,20 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
               hintText: 'DELETE',
               hintStyle: const TextStyle(
                 fontSize: 14,
-                color: Color(0xFFCCCCCC),
+                color: AppColors.foregroundLight,
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                borderSide: const BorderSide(color: AppColors.borderLight),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                borderSide: const BorderSide(color: AppColors.borderLight),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: const BorderSide(
-                    color: Color(0xFFDC3545), width: 1.5),
+                    color: AppColors.semanticErrorDark, width: 1.5),
               ),
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -467,7 +467,7 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
             ),
             style: const TextStyle(
               fontSize: 14,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
               fontWeight: FontWeight.w600,
             ),
           ),

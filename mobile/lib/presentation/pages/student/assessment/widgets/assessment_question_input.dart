@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 
 class AssessmentQuestionInput extends StatelessWidget {
@@ -87,7 +88,7 @@ class _MultipleChoiceInputState extends State<_MultipleChoiceInput> {
         children: [
           const Text(
             'Select all that apply',
-            style: TextStyle(fontSize: 12, color: Color(0xFF999999)),
+            style: TextStyle(fontSize: 12, color: AppColors.foregroundTertiary),
           ),
           const SizedBox(height: 4),
           ...choices.map((choice) => CheckboxListTile(
@@ -109,7 +110,7 @@ class _MultipleChoiceInputState extends State<_MultipleChoiceInput> {
                 contentPadding: EdgeInsets.zero,
                 dense: true,
                 controlAffinity: ListTileControlAffinity.leading,
-                activeColor: const Color(0xFFFFBD59),
+                activeColor: AppColors.accentAmber,
               )),
         ],
       );
@@ -135,7 +136,7 @@ class _MultipleChoiceInputState extends State<_MultipleChoiceInput> {
                     value: choice.id,
                     contentPadding: EdgeInsets.zero,
                     dense: true,
-                    activeColor: const Color(0xFFFFBD59),
+                    activeColor: AppColors.accentAmber,
                   ))
               .toList(),
         ),
@@ -159,20 +160,20 @@ class _IdentificationInput extends StatelessWidget {
       controller: controller,
       decoration: InputDecoration(
         hintText: 'Type your answer here',
-        hintStyle: const TextStyle(color: Color(0xFFCCCCCC)),
+        hintStyle: const TextStyle(color: AppColors.foregroundLight),
         filled: true,
-        fillColor: const Color(0xFFFAFAFA),
+        fillColor: AppColors.backgroundSecondary,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+          borderSide: const BorderSide(color: AppColors.borderLight),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+          borderSide: const BorderSide(color: AppColors.borderLight),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFFFBD59), width: 2),
+          borderSide: const BorderSide(color: AppColors.accentAmber, width: 2),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -198,7 +199,7 @@ class _EssayInput extends StatelessWidget {
       children: [
         const Text(
           'Write your essay response below',
-          style: TextStyle(fontSize: 12, color: Color(0xFF999999)),
+          style: TextStyle(fontSize: 12, color: AppColors.foregroundTertiary),
         ),
         const SizedBox(height: 8),
         TextField(
@@ -208,20 +209,20 @@ class _EssayInput extends StatelessWidget {
           keyboardType: TextInputType.multiline,
           decoration: InputDecoration(
             hintText: 'Write your essay here...',
-            hintStyle: const TextStyle(color: Color(0xFFCCCCCC)),
+            hintStyle: const TextStyle(color: AppColors.foregroundLight),
             filled: true,
-            fillColor: const Color(0xFFFAFAFA),
+            fillColor: AppColors.backgroundSecondary,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+              borderSide: const BorderSide(color: AppColors.borderLight),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+              borderSide: const BorderSide(color: AppColors.borderLight),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFFFBD59), width: 2),
+              borderSide: const BorderSide(color: AppColors.accentAmber, width: 2),
             ),
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           ),
@@ -251,7 +252,7 @@ class _EnumerationInput extends StatelessWidget {
       children: [
         Text(
           'Provide $count answer${count != 1 ? 's' : ''}',
-          style: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
+          style: const TextStyle(fontSize: 12, color: AppColors.foregroundTertiary),
         ),
         const SizedBox(height: 8),
         ...List.generate(count, (i) {
@@ -261,27 +262,27 @@ class _EnumerationInput extends StatelessWidget {
               controller: controllers[i],
               decoration: InputDecoration(
                 hintText: 'Answer ${i + 1}',
-                hintStyle: const TextStyle(color: Color(0xFFCCCCCC)),
+                hintStyle: const TextStyle(color: AppColors.foregroundLight),
                 filled: true,
-                fillColor: const Color(0xFFFAFAFA),
+                fillColor: AppColors.backgroundSecondary,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                  borderSide: const BorderSide(color: AppColors.borderLight),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                  borderSide: const BorderSide(color: AppColors.borderLight),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide:
-                      const BorderSide(color: Color(0xFFFFBD59), width: 2),
+                      const BorderSide(color: AppColors.accentAmber, width: 2),
                 ),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 prefixText: '${i + 1}. ',
                 prefixStyle: const TextStyle(
-                  color: Color(0xFF666666),
+                  color: AppColors.foregroundSecondary,
                   fontWeight: FontWeight.w600,
                 ),
               ),

@@ -293,8 +293,8 @@ class _AssessmentStatisticsDesktopState
         textColor = AppColors.semanticSuccess;
         break;
       case 'revise':
-        backgroundColor = const Color(0xFFFFF8E1);
-        textColor = const Color(0xFFF9A825);
+        backgroundColor = AppColors.accentAmber.withValues(alpha: 0.08);
+        textColor = AppColors.accentAmber;
         break;
       case 'discard':
         backgroundColor = AppColors.semanticErrorBackground;

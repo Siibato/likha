@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/student/class/class_grade_detail_page.dart';
 import 'package:likha/presentation/pages/student/class/widgets/class_grade_card.dart';
@@ -28,7 +29,7 @@ class _StudentGradesPageState extends ConsumerState<StudentGradesPage> {
     final gradesState = ref.watch(studentClassGradesProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,7 +42,7 @@ class _StudentGradesPageState extends ConsumerState<StudentGradesPage> {
               child: gradesState.isLoading && gradesState.classGrades.isEmpty
                   ? const Center(
                       child: CircularProgressIndicator(
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                         strokeWidth: 2.5,
                       ),
                     )
@@ -51,7 +52,7 @@ class _StudentGradesPageState extends ConsumerState<StudentGradesPage> {
                           onRefresh: () => ref
                               .read(studentClassGradesProvider.notifier)
                               .loadAllClassGrades(),
-                          color: const Color(0xFF2B2B2B),
+                          color: AppColors.accentCharcoal,
                           child: ListView.builder(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 24, vertical: 16),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 /// Reusable placeholder box for skeleton screens.
 /// A simple gray container used as shimmer blocks inside skeleton cards.
@@ -12,7 +13,7 @@ class SkeletonBox extends StatelessWidget {
     super.key,
     required this.width,
     required this.height,
-    this.color = const Color(0xFFF0F0F0),
+    this.color = AppColors.backgroundTertiary,
     this.borderRadius = 4.0,
   });
 

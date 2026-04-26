@@ -1,7 +1,8 @@
 import 'dart:convert';
 
-import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
+import 'package:fleather/fleather.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 /// A rich text editor with WYSIWYG formatting and toolbar.
 ///
@@ -67,7 +68,7 @@ class _RichTextFieldState extends State<RichTextField> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
+        color: AppColors.borderLight,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Container(
@@ -112,8 +113,8 @@ class _RichTextFieldState extends State<RichTextField> {
                     ),
                     iconSize: 20,
                     color: _showMoreTools
-                        ? const Color(0xFF2B2B2B)
-                        : const Color(0xFF666666),
+                        ? AppColors.accentCharcoal
+                        : AppColors.foregroundSecondary,
                     onPressed: () => setState(() => _showMoreTools = !_showMoreTools),
                   ),
                 ],
@@ -145,7 +146,7 @@ class _RichTextFieldState extends State<RichTextField> {
                     : const SizedBox.shrink(),
               ),
               // Divider between toolbar(s) and editor
-              const Divider(height: 1, color: Color(0xFFE0E0E0)),
+              const Divider(height: 1, color: AppColors.borderLight),
             ],
             // Editor
             Container(

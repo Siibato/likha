@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
 import 'package:likha/presentation/pages/shared/widgets/auth_desktop_layout.dart';
@@ -69,13 +70,13 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
               height: 96,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FA),
+                color: AppColors.backgroundTertiary,
                 borderRadius: BorderRadius.circular(24),
               ),
               child: const Icon(
                 Icons.lock_open_rounded,
                 size: 56,
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
               ),
             ),
             const SizedBox(height: 32),
@@ -84,18 +85,18 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
               style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF202020),
+                color: AppColors.foregroundDark,
                 letterSpacing: -0.5,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Create a password to activate your account',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF999999),
+                color: AppColors.foregroundTertiary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -104,7 +105,7 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
             // Password field
             Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFE0E0E0),
+                color: AppColors.borderLight,
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Container(
@@ -119,18 +120,18 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF202020),
+                    color: AppColors.foregroundDark,
                   ),
                   decoration: InputDecoration(
                     labelText: 'Password',
                     labelStyle: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF999999),
+                      color: AppColors.foregroundTertiary,
                     ),
                     prefixIcon: const Icon(
                       Icons.lock_outline_rounded,
-                      color: Color(0xFF999999),
+                      color: AppColors.foregroundTertiary,
                       size: 22,
                     ),
                     suffixIcon: IconButton(
@@ -138,7 +139,7 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
                         _obscurePassword
                             ? Icons.visibility_off_outlined
                             : Icons.visibility_outlined,
-                        color: const Color(0xFF999999),
+                        color: AppColors.foregroundTertiary,
                         size: 22,
                       ),
                       onPressed: () {
@@ -155,8 +156,8 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(13),
-                      borderSide: const BorderSide(
-                        color: Color(0xFF2B2B2B),
+                      borderSide: BorderSide(
+                        color: AppColors.accentCharcoal,
                         width: 1.5,
                       ),
                     ),
@@ -184,7 +185,7 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
             // Confirm password field
             Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFE0E0E0),
+                color: AppColors.borderLight,
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Container(
@@ -199,18 +200,18 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF202020),
+                    color: AppColors.foregroundDark,
                   ),
                   decoration: InputDecoration(
                     labelText: 'Confirm Password',
                     labelStyle: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF999999),
+                      color: AppColors.foregroundTertiary,
                     ),
                     prefixIcon: const Icon(
                       Icons.lock_outline_rounded,
-                      color: Color(0xFF999999),
+                      color: AppColors.foregroundTertiary,
                       size: 22,
                     ),
                     suffixIcon: IconButton(
@@ -218,7 +219,7 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
                         _obscureConfirm
                             ? Icons.visibility_off_outlined
                             : Icons.visibility_outlined,
-                        color: const Color(0xFF999999),
+                        color: AppColors.foregroundTertiary,
                         size: 22,
                       ),
                       onPressed: () {
@@ -235,8 +236,8 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(13),
-                      borderSide: const BorderSide(
-                        color: Color(0xFF2B2B2B),
+                      borderSide: BorderSide(
+                        color: AppColors.accentCharcoal,
                         width: 1.5,
                       ),
                     ),
@@ -266,8 +267,8 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
             Container(
               decoration: BoxDecoration(
                 color: isLoading
-                    ? const Color(0xFFE0E0E0)
-                    : const Color(0xFF2B2B2B),
+                    ? AppColors.borderLight
+                    : AppColors.accentCharcoal,
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Container(
@@ -276,8 +277,8 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
                   onPressed: isLoading ? null : _handleActivate,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isLoading
-                        ? const Color(0xFFF5F5F5)
-                        : const Color(0xFF2B2B2B),
+                        ? AppColors.backgroundDisabled
+                        : AppColors.accentCharcoal,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -286,19 +287,20 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
                     ),
                   ),
                   child: isLoading
-                      ? const SizedBox(
+                      ? SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
-                            color: Color(0xFF999999),
+                            color: AppColors.foregroundTertiary,
                           ),
                         )
-                      : const Text(
+                      : Text(
                           'Activate Account',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
+                            color: AppColors.foregroundLight,
                             letterSpacing: -0.3,
                           ),
                         ),
@@ -315,7 +317,7 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
                       ref.read(authProvider.notifier).clearPendingActivation();
                     },
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF2B2B2B),
+                foregroundColor: AppColors.accentCharcoal,
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
               child: const Text(

@@ -692,7 +692,7 @@ class _OverrideGradeDialogState extends State<_OverrideGradeDialog> {
                 labelText: 'Points (0 – ${widget.answer.points})',
                 labelStyle: const TextStyle(fontSize: 13, color: AppColors.foregroundTertiary),
                 filled: true,
-                fillColor: const Color(0xFFFAFAFA),
+                fillColor: AppColors.backgroundSecondary,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: const BorderSide(color: AppColors.borderLight),

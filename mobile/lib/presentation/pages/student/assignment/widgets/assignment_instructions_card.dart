@@ -28,7 +28,7 @@ class AssignmentInstructionsCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF202020),
+                  color: AppColors.foregroundDark,
                   letterSpacing: -0.4,
                 ),
               ),
@@ -43,7 +43,7 @@ class AssignmentInstructionsCard extends StatelessWidget {
                 child: Text(
                   '$totalPoints pts',
                   style: const TextStyle(
-                    color: Color(0xFF666666),
+                    color: AppColors.foregroundSecondary,
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
                   ),
@@ -54,7 +54,7 @@ class AssignmentInstructionsCard extends StatelessWidget {
           const SizedBox(height: 12),
           Container(
             height: 1,
-            color: const Color(0xFFF0F0F0),
+            color: AppColors.borderLight,
           ),
           const SizedBox(height: 12),
           MarkdownDisplay(

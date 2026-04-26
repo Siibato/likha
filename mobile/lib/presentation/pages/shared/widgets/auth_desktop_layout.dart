@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class AuthDesktopLayout extends StatelessWidget {
   const AuthDesktopLayout({super.key, required this.formContent});
@@ -12,7 +13,7 @@ class AuthDesktopLayout extends StatelessWidget {
         // Left branding panel (50%)
         Expanded(
           child: Container(
-            color: const Color(0xFFF8F9FA),
+            color: AppColors.backgroundTertiary,
             child: Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -28,7 +29,7 @@ class AuthDesktopLayout extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 40,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF202020),
+                      color: AppColors.foregroundDark,
                       letterSpacing: -1,
                     ),
                   ),
@@ -38,7 +39,7 @@ class AuthDesktopLayout extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF999999),
+                      color: AppColors.foregroundTertiary,
                     ),
                   ),
                 ],

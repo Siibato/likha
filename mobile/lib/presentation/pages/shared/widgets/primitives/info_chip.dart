@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class InfoChip extends StatelessWidget {
   final IconData icon;
@@ -11,13 +12,13 @@ class InfoChip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 15, color: const Color(0xFF666666)),
+        Icon(icon, size: 15, color: AppColors.foregroundSecondary),
         const SizedBox(width: 5),
         Text(
           label,
           style: const TextStyle(
             fontSize: 13,
-            color: Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
             fontWeight: FontWeight.w500,
             letterSpacing: -0.2,
           ),

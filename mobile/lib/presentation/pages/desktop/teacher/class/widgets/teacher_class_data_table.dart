@@ -158,7 +158,7 @@ class _TeacherClassDataTableState extends State<TeacherClassDataTable> {
                     DataCell(
                       cls.isAdvisory
                           ? const Icon(Icons.star_rounded,
-                              size: 18, color: Color(0xFF4CAF50))
+                              size: 18, color: AppColors.semanticSuccessAlt)
                           : const SizedBox.shrink(),
                     ),
                     DataCell(Text(

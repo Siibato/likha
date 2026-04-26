@@ -31,15 +31,15 @@ class AccountDataTable extends StatelessWidget {
     
     switch (status) {
       case 'activated':
-        statusColor = const Color(0xFF28A745);
+        statusColor = AppColors.semanticSuccessAlt;
         statusLabel = 'Active';
         break;
       case 'pending_activation':
-        statusColor = const Color(0xFFFFC107);
+        statusColor = AppColors.accentAmber;
         statusLabel = 'Pending';
         break;
       case 'locked':
-        statusColor = const Color(0xFFDC3545);
+        statusColor = AppColors.semanticErrorDark;
         statusLabel = 'Locked';
         break;
       default:

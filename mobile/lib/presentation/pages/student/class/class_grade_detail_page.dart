@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/utils/transmutation_util.dart';
 import 'package:likha/domain/grading/entities/period_grade.dart';
@@ -164,7 +165,7 @@ class _StudentClassGradeDetailPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,11 +179,11 @@ class _StudentClassGradeDetailPageState
                 onRefresh: () async {
                   await _loadPeriodGrades();
                 },
-                color: const Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
                 child: _isLoading
                     ? const Center(
                         child: CircularProgressIndicator(
-                          color: Color(0xFF2B2B2B),
+                          color: AppColors.accentCharcoal,
                           strokeWidth: 2.5,
                         ),
                       )
@@ -207,7 +208,7 @@ class _StudentClassGradeDetailPageState
             const Icon(
               Icons.error_outline,
               size: 48,
-              color: Color(0xFFCCCCCC),
+              color: AppColors.foregroundLight,
             ),
             const SizedBox(height: 16),
             Text(
@@ -215,7 +216,7 @@ class _StudentClassGradeDetailPageState
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 14,
-                color: Color(0xFF999999),
+                color: AppColors.foregroundTertiary,
               ),
             ),
             const SizedBox(height: 16),
@@ -224,7 +225,7 @@ class _StudentClassGradeDetailPageState
               child: const Text(
                 'Retry',
                 style: TextStyle(
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -307,10 +308,10 @@ class _StudentClassGradeDetailPageState
         const SizedBox(height: 8),
         Text(
           gradeDisplay,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 56,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
           ),
         ),
         const SizedBox(height: 8),
@@ -319,7 +320,7 @@ class _StudentClassGradeDetailPageState
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF999999),
+            color: AppColors.foregroundTertiary,
           ),
         ),
       ],
@@ -346,13 +347,13 @@ class _StudentClassGradeDetailPageState
               _loadQuarterDetail();
             }
           },
-          selectedColor: const Color(0xFF2B2B2B),
+          selectedColor: AppColors.accentCharcoal,
           backgroundColor:
-              hasData ? const Color(0xFFE8E8E8) : const Color(0xFFF0F0F0),
+              hasData ? AppColors.borderLight : AppColors.backgroundTertiary,
           labelStyle: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : const Color(0xFF666666),
+            color: isSelected ? Colors.white : AppColors.foregroundSecondary,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
@@ -376,7 +377,7 @@ class _StudentClassGradeDetailPageState
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
+        color: AppColors.borderLight,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Container(
@@ -399,14 +400,14 @@ class _StudentClassGradeDetailPageState
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF202020),
+                      color: AppColors.foregroundDark,
                     ),
                   ),
                   Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF0F0F0),
+                      color: AppColors.backgroundTertiary,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -414,7 +415,7 @@ class _StudentClassGradeDetailPageState
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF666666),
+                        color: AppColors.foregroundSecondary,
                       ),
                     ),
                   ),
@@ -423,7 +424,7 @@ class _StudentClassGradeDetailPageState
 
               if (componentItems.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                const Divider(height: 1, color: Color(0xFFF0F0F0)),
+                const Divider(height: 1, color: AppColors.borderLight,),
                 const SizedBox(height: 8),
 
                 // Individual items
@@ -436,7 +437,7 @@ class _StudentClassGradeDetailPageState
                               item.title,
                               style: const TextStyle(
                                 fontSize: 13,
-                                color: Color(0xFF555555),
+                                color: AppColors.foregroundSecondary,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -450,7 +451,7 @@ class _StudentClassGradeDetailPageState
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF2B2B2B),
+                              color: AppColors.accentCharcoal,
                             ),
                           ),
                         ],
@@ -458,7 +459,7 @@ class _StudentClassGradeDetailPageState
                     )),
 
                 const SizedBox(height: 8),
-                const Divider(height: 1, color: Color(0xFFF0F0F0)),
+                const Divider(height: 1, color: AppColors.borderLight,),
                 const SizedBox(height: 8),
               ] else ...[
                 const SizedBox(height: 12),
@@ -466,7 +467,7 @@ class _StudentClassGradeDetailPageState
                   'No items yet',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Color(0xFFBBBBBB),
+                    color: AppColors.foregroundTertiary,
                     fontStyle: FontStyle.italic,
                   ),
                 ),
@@ -481,7 +482,7 @@ class _StudentClassGradeDetailPageState
                     'Percentage: ${percentage != null ? '${percentage.toStringAsFixed(1)}%' : '--'}',
                     style: const TextStyle(
                       fontSize: 12,
-                      color: Color(0xFF999999),
+                      color: AppColors.foregroundTertiary,
                     ),
                   ),
                   Text(
@@ -489,7 +490,7 @@ class _StudentClassGradeDetailPageState
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF666666),
+                      color: AppColors.foregroundSecondary,
                     ),
                   ),
                 ],
@@ -508,7 +509,7 @@ class _StudentClassGradeDetailPageState
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
+        color: AppColors.borderLight,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Container(
@@ -541,7 +542,7 @@ class _StudentClassGradeDetailPageState
                     'Descriptor',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Color(0xFF999999),
+                      color: AppColors.foregroundTertiary,
                     ),
                   ),
                   Container(
@@ -577,7 +578,7 @@ class _StudentClassGradeDetailPageState
           label,
           style: const TextStyle(
             fontSize: 13,
-            color: Color(0xFF999999),
+            color: AppColors.foregroundTertiary,
           ),
         ),
         Text(
@@ -585,7 +586,7 @@ class _StudentClassGradeDetailPageState
           style: TextStyle(
             fontSize: 14,
             fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
-            color: const Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
           ),
         ),
       ],
@@ -613,7 +614,7 @@ class _StudentClassGradeDetailPageState
         const SizedBox(height: 20),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFE0E0E0),
+            color: AppColors.borderLight,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Container(
@@ -631,16 +632,16 @@ class _StudentClassGradeDetailPageState
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF202020),
+                      color: AppColors.foregroundDark,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     '$finalGradeRounded',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 40,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF2B2B2B),
+                      color: AppColors.accentCharcoal,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -677,7 +678,7 @@ class _StudentClassGradeDetailPageState
           Icon(
             Icons.assignment_outlined,
             size: 48,
-            color: Color(0xFFCCCCCC),
+            color: AppColors.foregroundLight,
           ),
           SizedBox(height: 12),
           Text(
@@ -685,7 +686,7 @@ class _StudentClassGradeDetailPageState
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
             ),
           ),
           SizedBox(height: 4),
@@ -693,7 +694,7 @@ class _StudentClassGradeDetailPageState
             'Grades will appear here once computed by your teacher',
             style: TextStyle(
               fontSize: 12,
-              color: Color(0xFFBBBBBB),
+              color: AppColors.foregroundLight,
             ),
           ),
         ],

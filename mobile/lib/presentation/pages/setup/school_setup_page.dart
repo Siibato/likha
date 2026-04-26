@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
 import 'package:likha/presentation/pages/setup/connection_method_page.dart';
 import 'package:likha/presentation/pages/shared/widgets/auth_desktop_layout.dart';
@@ -30,7 +31,7 @@ class SchoolSetupPage extends StatelessWidget {
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
               letterSpacing: -0.5,
             ),
             textAlign: TextAlign.center,
@@ -41,14 +42,14 @@ class SchoolSetupPage extends StatelessWidget {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 48),
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF2B2B2B),
+              color: AppColors.accentCharcoal,
               borderRadius: BorderRadius.circular(14),
             ),
             child: Container(
@@ -60,7 +61,7 @@ class SchoolSetupPage extends StatelessWidget {
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2B2B2B),
+                  backgroundColor: AppColors.accentCharcoal,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 16),

@@ -36,7 +36,7 @@ class AssignmentFilesCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
               letterSpacing: -0.4,
             ),
           ),
@@ -46,7 +46,7 @@ class AssignmentFilesCard extends StatelessWidget {
               'Allowed: $allowedFileTypes',
               style: const TextStyle(
                 fontSize: 12,
-                color: Color(0xFF999999),
+                color: AppColors.foregroundTertiary,
               ),
             ),
           ],
@@ -56,14 +56,14 @@ class AssignmentFilesCard extends StatelessWidget {
               'Max size: $maxFileSizeMb MB',
               style: const TextStyle(
                 fontSize: 12,
-                color: Color(0xFF999999),
+                color: AppColors.foregroundTertiary,
               ),
             ),
           ],
           const SizedBox(height: 12),
           Container(
             height: 1,
-            color: const Color(0xFFF0F0F0),
+            color: AppColors.borderLight,
           ),
           if (files.isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -116,14 +116,14 @@ class _FileListTile extends StatelessWidget {
         style: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: Color(0xFF2B2B2B),
+          color: AppColors.accentCharcoal,
         ),
       ),
       subtitle: Text(
         Formatters.formatFileSize(fileSize),
         style: const TextStyle(
           fontSize: 12,
-          color: Color(0xFF999999),
+          color: AppColors.foregroundTertiary,
         ),
       ),
       trailing: isReadOnly
@@ -131,7 +131,7 @@ class _FileListTile extends StatelessWidget {
           : IconButton(
               icon: const Icon(
                 Icons.delete_outline_rounded,
-                color: Color(0xFFEA4335),
+                color: AppColors.semanticError,
               ),
               onPressed: onDelete,
             ),

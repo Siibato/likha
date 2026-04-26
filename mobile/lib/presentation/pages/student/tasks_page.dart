@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/student/assignment/assignment_detail_page.dart';
 import 'package:likha/presentation/pages/student/assessment/assessment_detail_page.dart';
@@ -85,7 +86,7 @@ class _StudentTasksPageState extends ConsumerState<StudentTasksPage> {
                             Icon(
                               Icons.assignment_outlined,
                               size: 64,
-                              color: Color(0xFFCCCCCC),
+                              color: AppColors.foregroundLight,
                             ),
                             SizedBox(height: 16),
                             Text(
@@ -93,7 +94,7 @@ class _StudentTasksPageState extends ConsumerState<StudentTasksPage> {
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF2B2B2B),
+                                color: AppColors.accentCharcoal,
                               ),
                             ),
                             SizedBox(height: 6),
@@ -101,7 +102,7 @@ class _StudentTasksPageState extends ConsumerState<StudentTasksPage> {
                               'Check back later',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Color(0xFF7A7A7A),
+                                color: AppColors.foregroundSecondary,
                               ),
                             ),
                           ],
@@ -110,7 +111,7 @@ class _StudentTasksPageState extends ConsumerState<StudentTasksPage> {
                     : RefreshIndicator(
                         onRefresh: () =>
                             ref.read(studentTasksProvider.notifier).loadAllTasks(),
-                        color: const Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                         child: CustomScrollView(
                           slivers: [
                             ..._buildDateGroupedTasks(taskState.tasks),
@@ -184,7 +185,7 @@ class _StudentTasksPageState extends ConsumerState<StudentTasksPage> {
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF999999),
+                color: AppColors.foregroundTertiary,
                 letterSpacing: 0.2,
               ),
             ),

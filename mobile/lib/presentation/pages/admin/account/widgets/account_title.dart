@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 
 class AccountTile extends StatelessWidget {
@@ -14,13 +15,13 @@ class AccountTile extends StatelessWidget {
   Color _statusColor(String status) {
     switch (status) {
       case 'activated':
-        return const Color(0xFF28A745);
+        return AppColors.semanticSuccessAlt;
       case 'pending_activation':
-        return const Color(0xFFFFC107);
+        return AppColors.accentAmber;
       case 'locked':
-        return const Color(0xFFDC3545);
+        return AppColors.semanticErrorDark;
       default:
-        return const Color(0xFF999999);
+        return AppColors.foregroundTertiary;
     }
   }
 
@@ -44,7 +45,7 @@ class AccountTile extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
         decoration: BoxDecoration(
-          color: const Color(0xFFE0E0E0),
+          color: AppColors.borderLight,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Container(
@@ -61,7 +62,7 @@ class AccountTile extends StatelessWidget {
                 height: 48,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8F9FA),
+                  color: AppColors.backgroundTertiary,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -69,7 +70,7 @@ class AccountTile extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF404040),
+                    color: AppColors.foregroundDark,
                   ),
                 ),
               ),
@@ -83,7 +84,7 @@ class AccountTile extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF202020),
+                        color: AppColors.foregroundDark,
                         letterSpacing: -0.4,
                       ),
                     ),
@@ -93,7 +94,7 @@ class AccountTile extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF999999),
+                        color: AppColors.foregroundTertiary,
                       ),
                     ),
                   ],

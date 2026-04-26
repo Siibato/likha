@@ -139,10 +139,10 @@ class _AssignmentSubmissionsDesktopState
         badgeColor = AppColors.foregroundSecondary;
         break;
       case 'graded':
-        badgeColor = const Color(0xFF28A745);
+        badgeColor = AppColors.semanticSuccessAlt;
         break;
       case 'returned':
-        badgeColor = const Color(0xFFFFA726);
+        badgeColor = AppColors.accentAmber;
         break;
       default:
         badgeColor = AppColors.foregroundTertiary;

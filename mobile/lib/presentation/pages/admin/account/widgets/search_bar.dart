@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class AdminSearchBar extends StatelessWidget {
   final ValueChanged<String> onChanged;
@@ -16,7 +17,7 @@ class AdminSearchBar extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFE0E0E0),
+          color: AppColors.borderLight,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Container(
@@ -29,18 +30,18 @@ class AdminSearchBar extends StatelessWidget {
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
             ),
             decoration: InputDecoration(
               hintText: hintText,
               hintStyle: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF999999),
+                color: AppColors.foregroundTertiary,
               ),
               prefixIcon: const Icon(
                 Icons.search_rounded,
-                color: Color(0xFF999999),
+                color: AppColors.foregroundTertiary,
                 size: 22,
               ),
               border: OutlineInputBorder(
@@ -54,7 +55,7 @@ class AdminSearchBar extends StatelessWidget {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(13),
                 borderSide: const BorderSide(
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                   width: 1.5,
                 ),
               ),

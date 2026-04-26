@@ -39,7 +39,7 @@ class AnswerResultCard extends StatelessWidget {
     Color statusColor;
     IconData statusIcon;
     if (isPending) {
-      statusColor = const Color(0xFFFFBD59);
+      statusColor = AppColors.accentAmber;
       statusIcon = Icons.hourglass_empty_rounded;
     } else if (isAutoCorrect) {
       statusColor = AppColors.semanticSuccess;
@@ -99,7 +99,7 @@ class AnswerResultCard extends StatelessWidget {
             const SizedBox(height: 8),
             const StatusBadge(
               label: 'Awaiting teacher grading',
-              color: Color(0xFFFFBD59),
+              color: AppColors.accentAmber,
               icon: Icons.schedule,
               variant: BadgeVariant.filled,
             ),
@@ -181,10 +181,10 @@ class _MCAnswerDetail extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF8ED),
+              color: AppColors.backgroundTertiary,
               borderRadius: BorderRadius.circular(6),
               border: Border.all(
-                color: const Color(0xFFFFBD59).withValues(alpha: 0.3),
+                color: AppColors.accentAmber.withValues(alpha: 0.3),
               ),
             ),
             child: Text(
@@ -239,10 +239,10 @@ class _IdentificationAnswerDetail extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF8ED),
+              color: AppColors.backgroundTertiary,
               borderRadius: BorderRadius.circular(6),
               border: Border.all(
-                color: const Color(0xFFFFBD59).withValues(alpha: 0.3),
+                color: AppColors.accentAmber.withValues(alpha: 0.3),
               ),
             ),
             child: Text(
@@ -275,7 +275,7 @@ class _EssayAnswerDetail extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
+        color: AppColors.backgroundSecondary,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.borderLight),
       ),
@@ -350,10 +350,10 @@ class _EnumerationAnswerDetail extends StatelessWidget {
             children: answer.correctAnswers!.map((ans) => Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF8ED),
+                color: AppColors.backgroundTertiary,
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                  color: const Color(0xFFFFBD59).withValues(alpha: 0.3),
+                  color: AppColors.accentAmber.withValues(alpha: 0.3),
                 ),
               ),
               child: Text(

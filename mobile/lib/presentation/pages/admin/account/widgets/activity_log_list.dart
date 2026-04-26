@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/auth/entities/activity_log.dart';
 
 class ActivityLogList extends StatelessWidget {
@@ -18,7 +19,7 @@ class ActivityLogList extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.all(32),
           child: CircularProgressIndicator(
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
             strokeWidth: 2.5,
           ),
         ),
@@ -34,7 +35,7 @@ class ActivityLogList extends StatelessWidget {
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF999999),
+            color: AppColors.foregroundTertiary,
           ),
         ),
       );
@@ -76,19 +77,19 @@ class _ActivityLogItem extends StatelessWidget {
     switch (action) {
       case 'account_created':
       case 'account_activated':
-        return const Color(0xFF28A745);
+        return AppColors.semanticSuccessAlt;
       case 'account_updated':
-        return const Color(0xFF0D6EFD);
+        return AppColors.accentCharcoal;
       case 'password_reset':
-        return const Color(0xFFFFC107);
+        return AppColors.accentAmber;
       case 'account_locked':
-        return const Color(0xFFDC3545);
+        return AppColors.semanticErrorDark;
       case 'account_unlocked':
-        return const Color(0xFF28A745);
+        return AppColors.semanticSuccessAlt;
       case 'login':
-        return const Color(0xFF6C757D);
+        return AppColors.foregroundSecondary;
       default:
-        return const Color(0xFF999999);
+        return AppColors.foregroundTertiary;
     }
   }
 
@@ -109,7 +110,7 @@ class _ActivityLogItem extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
+        color: AppColors.borderLight,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Container(
@@ -144,7 +145,7 @@ class _ActivityLogItem extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF202020),
+                      color: AppColors.foregroundDark,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -153,7 +154,7 @@ class _ActivityLogItem extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF999999),
+                      color: AppColors.foregroundTertiary,
                     ),
                   ),
                   if (log.details != null) ...[
@@ -163,7 +164,7 @@ class _ActivityLogItem extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF666666),
+                        color: AppColors.foregroundSecondary,
                       ),
                     ),
                   ],

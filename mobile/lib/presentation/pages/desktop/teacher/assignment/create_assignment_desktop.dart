@@ -83,10 +83,10 @@ class _CreateAssignmentDesktopState
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
           colorScheme: const ColorScheme.light(
-            primary: Color(0xFF2B2B2B),
+            primary: AppColors.accentCharcoal,
             onPrimary: Colors.white,
             surface: Colors.white,
-            onSurface: Color(0xFF2B2B2B),
+            onSurface: AppColors.accentCharcoal,
           ),
         ),
         child: child!,
@@ -101,12 +101,12 @@ class _CreateAssignmentDesktopState
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
           colorScheme: const ColorScheme.light(
-            primary: Color(0xFF2B2B2B),
+            primary: AppColors.accentCharcoal,
             onPrimary: Colors.white,
             surface: Colors.white,
-            onSurface: Color(0xFF2B2B2B),
-            secondary: Color(0xFF2B2B2B),
-            tertiary: Color(0xFF2B2B2B),
+            onSurface: AppColors.accentCharcoal,
+            secondary: AppColors.accentCharcoal,
+            tertiary: AppColors.accentCharcoal,
             onTertiary: Colors.white,
           ),
         ),
@@ -370,7 +370,7 @@ class _CreateAssignmentDesktopState
         decoration: _inputDecoration(label).copyWith(
           suffixIcon: const Icon(
             Icons.arrow_drop_down_rounded,
-            color: Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
           ),
         ),
         child: Text(

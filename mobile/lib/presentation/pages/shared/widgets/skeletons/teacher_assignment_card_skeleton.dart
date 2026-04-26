@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/shared/widgets/tokens/app_dimensions.dart';
 import 'skeleton_box.dart';
 
@@ -14,7 +15,7 @@ class TeacherAssignmentCardSkeleton extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: AppDimensions.kCardSmListSpacing),
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
+        color: AppColors.borderLight,
         borderRadius:
             BorderRadius.circular(AppDimensions.kCardSmOuterRadius),
       ),

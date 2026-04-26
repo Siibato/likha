@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/data/models/tos/melcs_model.dart';
 import 'package:likha/domain/tos/usecases/search_melcs.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
@@ -151,7 +152,7 @@ class _MelcsSearchDialogState extends ConsumerState<MelcsSearchDialog> {
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF202020),
+                            color: AppColors.foregroundDark,
                             letterSpacing: -0.4,
                           ),
                         ),
@@ -160,7 +161,7 @@ class _MelcsSearchDialogState extends ConsumerState<MelcsSearchDialog> {
                           'Filter by grade and subject, then select competencies to import',
                           style: TextStyle(
                             fontSize: 13,
-                            color: Color(0xFF999999),
+                            color: AppColors.foregroundTertiary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -171,7 +172,7 @@ class _MelcsSearchDialogState extends ConsumerState<MelcsSearchDialog> {
                     icon: const Icon(Icons.close_rounded, size: 20),
                     onPressed: () => Navigator.of(context).pop(),
                     style: IconButton.styleFrom(
-                      foregroundColor: const Color(0xFF999999),
+                      foregroundColor: AppColors.foregroundTertiary,
                     ),
                   ),
                 ],
@@ -186,9 +187,9 @@ class _MelcsSearchDialogState extends ConsumerState<MelcsSearchDialog> {
                   // Search bar
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFAFAFA),
+                      color: AppColors.backgroundSecondary,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFE8E8E8)),
+                      border: Border.all(color: AppColors.borderLight),
                     ),
                     child: TextField(
                       controller: _searchController,
@@ -197,19 +198,19 @@ class _MelcsSearchDialogState extends ConsumerState<MelcsSearchDialog> {
                         prefixIcon: Icon(
                           Icons.search_rounded,
                           size: 18,
-                          color: Color(0xFF999999),
+                          color: AppColors.foregroundTertiary,
                         ),
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(vertical: 12),
                         hintStyle: TextStyle(
                           fontSize: 13,
-                          color: Color(0xFFCCCCCC),
+                          color: AppColors.foregroundLight,
                           fontWeight: FontWeight.w400,
                         ),
                       ),
                       style: const TextStyle(
                         fontSize: 13,
-                        color: Color(0xFF202020),
+                        color: AppColors.foregroundDark,
                       ),
                     ),
                   ),
@@ -255,9 +256,9 @@ class _MelcsSearchDialogState extends ConsumerState<MelcsSearchDialog> {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFAFAFA),
+                    color: AppColors.backgroundSecondary,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFE8E8E8)),
+                    border: Border.all(color: AppColors.borderLight),
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: state.isMelcSearching
@@ -265,7 +266,7 @@ class _MelcsSearchDialogState extends ConsumerState<MelcsSearchDialog> {
                           height: 200,
                           child: Center(
                             child: CircularProgressIndicator(
-                              color: Color(0xFF2B2B2B),
+                              color: AppColors.accentCharcoal,
                               strokeWidth: 2,
                             ),
                           ),
@@ -278,7 +279,7 @@ class _MelcsSearchDialogState extends ConsumerState<MelcsSearchDialog> {
                                   'No competencies found',
                                   style: TextStyle(
                                     fontSize: 13,
-                                    color: Color(0xFF999999),
+                                    color: AppColors.foregroundTertiary,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -292,7 +293,7 @@ class _MelcsSearchDialogState extends ConsumerState<MelcsSearchDialog> {
                                   ? const Divider(
                                       height: 1,
                                       thickness: 1,
-                                      color: Color(0xFFEEEEEE),
+                                      color: AppColors.borderLight,
                                       indent: 16,
                                       endIndent: 16,
                                     )
@@ -334,9 +335,9 @@ class _MelcsSearchDialogState extends ConsumerState<MelcsSearchDialog> {
                                                 _selectedItems.remove(melc);
                                               }
                                             }),
-                                            activeColor: const Color(0xFF2B2B2B),
+                                            activeColor: AppColors.accentCharcoal,
                                             side: const BorderSide(
-                                              color: Color(0xFFCCCCCC),
+                                              color: AppColors.borderLight,
                                               width: 1.5,
                                             ),
                                             shape: RoundedRectangleBorder(
@@ -357,7 +358,7 @@ class _MelcsSearchDialogState extends ConsumerState<MelcsSearchDialog> {
                                                 style: const TextStyle(
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w600,
-                                                  color: Color(0xFF202020),
+                                                  color: AppColors.foregroundDark,
                                                   letterSpacing: -0.1,
                                                 ),
                                               ),
@@ -366,7 +367,7 @@ class _MelcsSearchDialogState extends ConsumerState<MelcsSearchDialog> {
                                                 melc.competencyText,
                                                 style: const TextStyle(
                                                   fontSize: 12,
-                                                  color: Color(0xFF666666),
+                                                  color: AppColors.foregroundSecondary,
                                                   height: 1.4,
                                                 ),
                                                 maxLines: 2,
@@ -380,7 +381,7 @@ class _MelcsSearchDialogState extends ConsumerState<MelcsSearchDialog> {
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: 7, vertical: 3),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFFEEEEEE),
+                                            color: AppColors.borderLight,
                                             borderRadius: BorderRadius.circular(6),
                                           ),
                                           child: Text(
@@ -388,7 +389,7 @@ class _MelcsSearchDialogState extends ConsumerState<MelcsSearchDialog> {
                                             style: const TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.w600,
-                                              color: Color(0xFF666666),
+                                              color: AppColors.foregroundSecondary,
                                             ),
                                           ),
                                         ),
@@ -405,7 +406,7 @@ class _MelcsSearchDialogState extends ConsumerState<MelcsSearchDialog> {
             // ── Divider ───────────────────────────────────────────────
             Container(
               height: 1,
-              color: const Color(0xFFEEEEEE),
+              color: AppColors.borderLight,
               margin: const EdgeInsets.symmetric(horizontal: 24),
             ),
             // ── Footer ────────────────────────────────────────────────
@@ -420,7 +421,7 @@ class _MelcsSearchDialogState extends ConsumerState<MelcsSearchDialog> {
                         '${_selectedItems.length} selected',
                         style: const TextStyle(
                           fontSize: 13,
-                          color: Color(0xFF999999),
+                          color: AppColors.foregroundTertiary,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -429,8 +430,8 @@ class _MelcsSearchDialogState extends ConsumerState<MelcsSearchDialog> {
                   OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF666666),
-                      side: const BorderSide(color: Color(0xFFE0E0E0), width: 1.5),
+                      foregroundColor: AppColors.foregroundSecondary,
+                      side: const BorderSide(color: AppColors.borderLight, width: 1.5),
                       padding: const EdgeInsets.symmetric(
                           vertical: 12, horizontal: 16),
                       shape: RoundedRectangleBorder(
@@ -452,10 +453,10 @@ class _MelcsSearchDialogState extends ConsumerState<MelcsSearchDialog> {
                         ? null
                         : _handleImport,
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF2B2B2B),
+                      backgroundColor: AppColors.accentCharcoal,
                       foregroundColor: Colors.white,
-                      disabledBackgroundColor: const Color(0xFFE0E0E0),
-                      disabledForegroundColor: const Color(0xFF999999),
+                      disabledBackgroundColor: AppColors.borderLight,
+                      disabledForegroundColor: AppColors.foregroundTertiary,
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(
                           vertical: 12, horizontal: 16),
@@ -501,7 +502,7 @@ class _MelcListFooter extends StatelessWidget {
             height: 18,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
             ),
           ),
         ),
@@ -515,7 +516,7 @@ class _MelcListFooter extends StatelessWidget {
             'All results loaded',
             style: TextStyle(
               fontSize: 11,
-              color: Color(0xFFCCCCCC),
+              color: AppColors.foregroundLight,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -546,9 +547,9 @@ class _FilterDropdown<T> extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
+        color: AppColors.backgroundSecondary,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE8E8E8)),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
@@ -557,16 +558,16 @@ class _FilterDropdown<T> extends StatelessWidget {
             hint,
             style: const TextStyle(
               fontSize: 13,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
               fontWeight: FontWeight.w500,
             ),
           ),
           isExpanded: true,
           iconSize: 16,
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF999999)),
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.foregroundTertiary),
           style: const TextStyle(
             fontSize: 13,
-            color: Color(0xFF202020),
+            color: AppColors.foregroundDark,
             fontWeight: FontWeight.w500,
           ),
           dropdownColor: Colors.white,
@@ -578,7 +579,7 @@ class _FilterDropdown<T> extends StatelessWidget {
                 hint,
                 style: const TextStyle(
                   fontSize: 13,
-                  color: Color(0xFF999999),
+                  color: AppColors.foregroundTertiary,
                   fontWeight: FontWeight.w500,
                 ),
               ),

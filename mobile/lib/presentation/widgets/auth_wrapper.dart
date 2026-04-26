@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/constants/api_constants.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/core/services/school_setup_service.dart';
@@ -208,7 +209,7 @@ class _ForceLogoutWarningPage extends ConsumerWidget {
               const Icon(
                 Icons.lock_outline,
                 size: 64,
-                color: Color(0xFFD32F2F),
+                color: AppColors.semanticError,
               ),
               const SizedBox(height: 24),
               const Text(
@@ -216,7 +217,7 @@ class _ForceLogoutWarningPage extends ConsumerWidget {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -225,7 +226,7 @@ class _ForceLogoutWarningPage extends ConsumerWidget {
                 'You had $pendingSyncCount unsaved change(s) that could not be synced.',
                 style: const TextStyle(
                   fontSize: 16,
-                  color: Color(0xFF7A7A7A),
+                  color: AppColors.foregroundSecondary,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -237,7 +238,7 @@ class _ForceLogoutWarningPage extends ConsumerWidget {
                     ref.read(authProvider.notifier).confirmForceLogout();
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2B2B2B),
+                    backgroundColor: AppColors.accentCharcoal,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

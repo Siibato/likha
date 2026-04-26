@@ -244,7 +244,7 @@ class _AssignmentDetailDesktopState
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: isPublished
-            ? const Color(0xFF28A745).withValues(alpha: 0.12)
+            ? AppColors.semanticSuccessAlt.withValues(alpha: 0.12)
             : AppColors.foregroundTertiary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
       ),
@@ -254,7 +254,7 @@ class _AssignmentDetailDesktopState
           fontSize: 13,
           fontWeight: FontWeight.w600,
           color: isPublished
-              ? const Color(0xFF28A745)
+              ? AppColors.semanticSuccessAlt
               : AppColors.foregroundTertiary,
         ),
       ),

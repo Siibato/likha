@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/student/class/classes_page.dart';
 import 'package:likha/presentation/pages/student/tasks_page.dart';
 import 'package:likha/presentation/pages/student/profile_page.dart';
@@ -23,7 +24,7 @@ class _StudentShellPageState extends ConsumerState<StudentShellPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: AppColors.backgroundTertiary,
       body: IndexedStack(
         index: _currentIndex,
         children: _pages,
@@ -31,8 +32,8 @@ class _StudentShellPageState extends ConsumerState<StudentShellPage> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
-        selectedItemColor: const Color(0xFF2B2B2B),
-        unselectedItemColor: const Color(0xFF9E9E9E),
+        selectedItemColor: AppColors.accentCharcoal,
+        unselectedItemColor: AppColors.foregroundTertiary,
         backgroundColor: Colors.white,
         type: BottomNavigationBarType.fixed,
         elevation: 8,

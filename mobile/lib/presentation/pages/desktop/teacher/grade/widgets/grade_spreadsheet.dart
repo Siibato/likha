@@ -358,16 +358,16 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
                           _grpCell(
                               'WRITTEN WORKS (${wwW.toStringAsFixed(0)}%)',
                               wwSecW,
-                              const Color(0xFFDEEBFF)),
+                              AppColors.accentCharcoal.withValues(alpha: 0.1)),
                           _grpCell(
                               'PERFORMANCE TASKS (${ptW.toStringAsFixed(0)}%)',
                               ptSecW,
-                              const Color(0xFFDCF5E4)),
+                              AppColors.semanticSuccessAlt.withValues(alpha: 0.1)),
                           _grpCell(
                               'QUARTERLY ASSESSMENT (${qaW.toStringAsFixed(0)}%)',
                               qaSecW,
-                              const Color(0xFFFFF2D6)),
-                          _grpCell('SUMMARY', summaryW, const Color(0xFFF0E6FF)),
+                              AppColors.accentAmber.withValues(alpha: 0.1)),
+                          _grpCell('SUMMARY', summaryW, AppColors.accentAmber.withValues(alpha: 0.1)),
                         ],
                       ),
                     ),
@@ -536,7 +536,7 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
                 bgColor,
                 bold: true,
                 color: storedQg != null
-                    ? const Color(0xFF1565C0)
+                    ? AppColors.accentCharcoal
                     : (displayQg != null ? AppColors.foregroundPrimary : null),
               ),
             ),
@@ -631,7 +631,7 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
         style: const TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF444444)),
+            color: AppColors.foregroundDark),
         overflow: TextOverflow.ellipsis,
         maxLines: 1,
         textAlign: TextAlign.center,
@@ -694,7 +694,7 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
           fontSize: 13,
           fontWeight: isOverride ? FontWeight.w700 : FontWeight.w400,
           color: isOverride
-              ? const Color(0xFF1565C0)
+              ? AppColors.accentCharcoal
               : (empty
                   ? AppColors.foregroundTertiary
                   : AppColors.foregroundPrimary),
@@ -748,8 +748,8 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
             const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: passed
-              ? const Color(0xFF4CAF50).withValues(alpha: 0.12)
-              : const Color(0xFFE57373).withValues(alpha: 0.12),
+              ? AppColors.semanticSuccessAlt.withValues(alpha: 0.12)
+              : AppColors.semanticErrorDark.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(6),
         ),
         child: Text(
@@ -758,8 +758,8 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
             fontSize: 11,
             fontWeight: FontWeight.w600,
             color: passed
-                ? const Color(0xFF2E7D32)
-                : const Color(0xFFC62828),
+                ? AppColors.semanticSuccessAlt
+                : AppColors.semanticErrorDark,
           ),
         ),
       ),
@@ -802,17 +802,17 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(4),
                 borderSide: const BorderSide(
-                    color: Color(0xFF1976D2), width: 1.5),
+                    color: AppColors.accentCharcoal, width: 1.5),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(4),
                 borderSide: const BorderSide(
-                    color: Color(0xFF1976D2), width: 1.5),
+                    color: AppColors.accentCharcoal, width: 1.5),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(4),
                 borderSide: const BorderSide(
-                    color: Color(0xFF1976D2), width: 1.5),
+                    color: AppColors.accentCharcoal, width: 1.5),
               ),
             ),
           ),

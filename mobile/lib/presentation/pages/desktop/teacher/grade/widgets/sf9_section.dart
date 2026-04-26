@@ -118,7 +118,7 @@ class Sf9Section extends ConsumerWidget {
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
                                 color: student.generalAverage != null
-                                    ? const Color(0xFF28A745).withOpacity(0.12)
+                                    ? AppColors.semanticSuccessAlt.withValues(alpha: 0.12)
                                     : AppColors.foregroundTertiary.withOpacity(0.12),
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -128,7 +128,7 @@ class Sf9Section extends ConsumerWidget {
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                   color: student.generalAverage != null
-                                      ? const Color(0xFF28A745)
+                                      ? AppColors.semanticSuccessAlt
                                       : AppColors.foregroundTertiary,
                                 ),
                               ),

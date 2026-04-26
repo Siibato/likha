@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class AdminHeader extends StatelessWidget {
   final String fullName;
@@ -18,7 +19,7 @@ class AdminHeader extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF999999),
+            color: AppColors.foregroundTertiary,
           ),
         ),
         const SizedBox(height: 4),
@@ -27,7 +28,7 @@ class AdminHeader extends StatelessWidget {
           style: const TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF202020),
+            color: AppColors.foregroundDark,
             letterSpacing: -0.5,
           ),
         ),

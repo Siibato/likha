@@ -151,7 +151,7 @@ class DesktopFormField {
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon ?? (enabled ? const Icon(
           Icons.arrow_drop_down_rounded,
-          color: Color(0xFF666666),
+          color: AppColors.foregroundSecondary,
         ) : null),
         errorText: errorText,
         enabled: enabled,
@@ -203,7 +203,7 @@ class DesktopFormField {
         decoration: inputDecoration(label).copyWith(
           suffixIcon: suffixIcon ?? (enabled ? const Icon(
             Icons.arrow_drop_down_rounded,
-            color: Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
           ) : null),
           fillColor: enabled ? Colors.white : AppColors.backgroundTertiary,
         ),
@@ -243,7 +243,7 @@ class DesktopFormField {
         decoration: inputDecoration(label).copyWith(
           suffixIcon: suffixIcon ?? (enabled ? const Icon(
             Icons.calendar_today_rounded,
-            color: Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
             size: 18,
           ) : null),
           fillColor: enabled ? Colors.white : AppColors.backgroundTertiary,

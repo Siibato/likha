@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class ClassSectionHeader extends StatelessWidget {
   final String title;
@@ -22,7 +23,7 @@ class ClassSectionHeader extends StatelessWidget {
         color: Colors.white,
         border: Border(
           bottom: BorderSide(
-            color: Color(0xFFE0E0E0),
+            color: AppColors.borderLight,
             width: 3,
           ),
         ),
@@ -40,12 +41,12 @@ class ClassSectionHeader extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8F9FA),
+                  color: AppColors.backgroundTertiary,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.arrow_back_rounded,
-                  color: Color(0xFF404040),
+                  color: AppColors.foregroundDark,
                   size: 24,
                 ),
               ),
@@ -58,7 +59,7 @@ class ClassSectionHeader extends StatelessWidget {
               style: TextStyle(
                 fontSize: fontSize,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
                 letterSpacing: -0.5,
               ),
             ),

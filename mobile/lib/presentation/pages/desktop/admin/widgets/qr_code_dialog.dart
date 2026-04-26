@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/widgets/styled_dialog.dart';
 
 class QrCodeDialog extends StatelessWidget {
@@ -24,7 +25,7 @@ class QrCodeDialog extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: const Color(0xFFE8E8E8),
+              color: AppColors.borderLight,
               width: 1,
             ),
           ),

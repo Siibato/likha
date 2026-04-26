@@ -182,24 +182,24 @@ class _DeleteClassDialogState extends State<_DeleteClassDialog> {
       warningBox: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0xFFDC3545).withValues(alpha: 0.08),
+          color: AppColors.semanticErrorDark.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: const Color(0xFFDC3545).withValues(alpha: 0.2),
+            color: AppColors.semanticErrorDark.withValues(alpha: 0.2),
           ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Icon(Icons.warning_rounded,
-                size: 18, color: Color(0xFFDC3545)),
+                size: 18, color: AppColors.semanticErrorDark),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 'This will remove all ${widget.studentCount} student(s) and the teacher from "${widget.className}". This action cannot be undone.',
                 style: const TextStyle(
                   fontSize: 13,
-                  color: Color(0xFFDC3545),
+                  color: AppColors.semanticErrorDark,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -216,7 +216,7 @@ class _DeleteClassDialogState extends State<_DeleteClassDialog> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF666666),
+              color: AppColors.foregroundSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -227,20 +227,20 @@ class _DeleteClassDialogState extends State<_DeleteClassDialog> {
               hintText: 'DELETE',
               hintStyle: const TextStyle(
                 fontSize: 14,
-                color: Color(0xFFCCCCCC),
+                color: AppColors.foregroundLight,
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                borderSide: const BorderSide(color: AppColors.borderLight),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                borderSide: const BorderSide(color: AppColors.borderLight),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: const BorderSide(
-                    color: Color(0xFFDC3545), width: 1.5),
+                    color: AppColors.semanticErrorDark, width: 1.5),
               ),
               contentPadding: const EdgeInsets.symmetric(
                   horizontal: 12, vertical: 12),
@@ -249,7 +249,7 @@ class _DeleteClassDialogState extends State<_DeleteClassDialog> {
             ),
             style: const TextStyle(
               fontSize: 14,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
               fontWeight: FontWeight.w600,
             ),
           ),

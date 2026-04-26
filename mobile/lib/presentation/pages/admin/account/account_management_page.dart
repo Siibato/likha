@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/admin/account/account_detail_page.dart';
 import 'package:likha/presentation/pages/admin/account/widgets/account_tile.dart';
 import 'package:likha/presentation/pages/admin/account/widgets/search_bar.dart';
@@ -46,14 +47,14 @@ class _AccountManagementPageState
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_rounded,
-            color: Color(0xFF404040),
+            color: AppColors.foregroundDark,
           ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Account Management',
           style: TextStyle(
-            color: Color(0xFF202020),
+            color: AppColors.foregroundDark,
             fontWeight: FontWeight.w700,
             fontSize: 20,
             letterSpacing: -0.4,
@@ -69,7 +70,7 @@ class _AccountManagementPageState
             child: adminState.isLoading && adminState.accounts.isEmpty
                 ? const Center(
                     child: CircularProgressIndicator(
-                      color: Color(0xFF2B2B2B),
+                      color: AppColors.accentCharcoal,
                       strokeWidth: 2.5,
                     ),
                   )
@@ -80,12 +81,12 @@ class _AccountManagementPageState
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFF999999),
+                            color: AppColors.foregroundTertiary,
                           ),
                         ),
                       )
                     : RefreshIndicator(
-                        color: const Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                         onRefresh: () =>
                             ref.read(adminProvider.notifier).loadAccounts(),
                         child: ListView.builder(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/services/server_clock_service.dart';
@@ -194,7 +195,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
@@ -248,7 +249,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(
-          bottom: BorderSide(color: Color(0xFFE0E0E0), width: 3),
+          bottom: BorderSide(color: AppColors.borderLight, width: 3),
         ),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(24),
@@ -262,13 +263,13 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FA),
+                color: AppColors.backgroundTertiary,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
                 Icons.arrow_back_ios_new_rounded,
                 size: 18,
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
               ),
             ),
           ),
@@ -279,7 +280,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
                 letterSpacing: -0.5,
               ),
               maxLines: 2,
@@ -295,7 +296,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
+        color: AppColors.borderLight,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Container(
@@ -313,7 +314,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
                 widget.assessment.description!,
                 style: const TextStyle(
                   fontSize: 15,
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                   height: 1.5,
                 ),
               ),
@@ -363,7 +364,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
       child: FilledButton(
         onPressed: _onStartPressed,
         style: FilledButton.styleFrom(
-          backgroundColor: const Color(0xFF34A853),
+          backgroundColor: AppColors.semanticSuccessAlt,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
         child: const Row(
@@ -388,20 +389,20 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
       child: FilledButton(
         onPressed: _onResumePressed,
         style: FilledButton.styleFrom(
-          backgroundColor: const Color(0xFFFFBD59),
+          backgroundColor: AppColors.accentAmber,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.play_circle_rounded, size: 20, color: Color(0xFF2B2B2B)),
+            Icon(Icons.play_circle_rounded, size: 20, color: AppColors.accentCharcoal),
             SizedBox(width: 8),
             Text(
               'Resume Assessment',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
               ),
             ),
           ],
@@ -417,7 +418,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
       child: FilledButton(
         onPressed: _onViewResultsPressed,
         style: FilledButton.styleFrom(
-          backgroundColor: const Color(0xFF2B2B2B),
+          backgroundColor: AppColors.accentCharcoal,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
         child: const Row(
@@ -475,13 +476,13 @@ class _InfoChip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 15, color: const Color(0xFF666666)),
+        Icon(icon, size: 15, color: AppColors.foregroundSecondary),
         const SizedBox(width: 5),
         Text(
           label,
           style: const TextStyle(
             fontSize: 13,
-            color: Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
             fontWeight: FontWeight.w500,
             letterSpacing: -0.2,
           ),
@@ -506,13 +507,13 @@ class _DateRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 13, color: const Color(0xFF999999)),
+        Icon(icon, size: 13, color: AppColors.foregroundTertiary),
         const SizedBox(width: 6),
         Text(
           '$label: ',
           style: const TextStyle(
             fontSize: 12,
-            color: Color(0xFF999999),
+            color: AppColors.foregroundTertiary,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -520,7 +521,7 @@ class _DateRow extends StatelessWidget {
           dateTime,
           style: const TextStyle(
             fontSize: 12,
-            color: Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
             fontWeight: FontWeight.w500,
           ),
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
 
 class ScoreSummaryCard extends StatelessWidget {
@@ -30,7 +31,7 @@ class ScoreSummaryCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
+        color: AppColors.borderLight,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Container(
@@ -64,7 +65,7 @@ class ScoreSummaryCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 52,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF2B2B2B),
+                    color: AppColors.accentCharcoal,
                     letterSpacing: -1.5,
                   ),
                 ),
@@ -73,7 +74,7 @@ class ScoreSummaryCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF999999),
+                    color: AppColors.foregroundTertiary,
                   ),
                 ),
               ],
@@ -82,10 +83,10 @@ class ScoreSummaryCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FA),
+                color: AppColors.backgroundTertiary,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: const Color(0xFFE0E0E0),
+                  color: AppColors.borderLight,
                 ),
               ),
               child: Text(
@@ -93,7 +94,7 @@ class ScoreSummaryCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                   letterSpacing: -0.3,
                 ),
               ),
@@ -106,8 +107,8 @@ class ScoreSummaryCard extends StatelessWidget {
                     ? result.finalScore / result.totalPoints
                     : 0,
                 minHeight: 10,
-                backgroundColor: const Color(0xFFF0F0F0),
-                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF2B2B2B)),
+                backgroundColor: AppColors.borderLight,
+                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accentCharcoal),
               ),
             ),
             if (result.submittedAt != null) ...[
@@ -116,7 +117,7 @@ class ScoreSummaryCard extends StatelessWidget {
                 'Submitted on ${_formatDateTime(result.submittedAt!)}',
                 style: const TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF999999),
+                  color: AppColors.foregroundTertiary,
                   fontWeight: FontWeight.w500,
                 ),
               ),

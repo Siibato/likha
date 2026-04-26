@@ -585,21 +585,21 @@ Widget _buildCompetencyTile(TosCompetency competency, String timeUnit) {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFF3E0),
+          color: AppColors.accentAmber.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFFF9800)),
+          border: Border.all(color: AppColors.accentAmber),
         ),
         child: Row(
           children: [
             const Icon(Icons.warning_amber_outlined,
-                size: 16, color: Color(0xFFE65100)),
+                size: 16, color: AppColors.accentAmber),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 message,
                 style: const TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF6D4C41),
+                  color: AppColors.accentAmber,
                 ),
               ),
             ),

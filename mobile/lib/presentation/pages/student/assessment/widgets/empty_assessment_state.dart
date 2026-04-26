@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class EmptyAssessmentState extends StatelessWidget {
   const EmptyAssessmentState({super.key});
@@ -12,13 +13,13 @@ class EmptyAssessmentState extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FA),
+              color: AppColors.backgroundTertiary,
               borderRadius: BorderRadius.circular(24),
             ),
             child: const Icon(
               Icons.assignment_outlined,
               size: 64,
-              color: Color(0xFFCCCCCC),
+              color: AppColors.foregroundLight,
             ),
           ),
           const SizedBox(height: 24),
@@ -27,7 +28,7 @@ class EmptyAssessmentState extends StatelessWidget {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF666666),
+              color: AppColors.foregroundSecondary,
               letterSpacing: -0.3,
             ),
           ),
@@ -35,7 +36,7 @@ class EmptyAssessmentState extends StatelessWidget {
           const Text(
             'Assessments will appear here when available',
             style: TextStyle(
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
               fontSize: 14,
             ),
           ),

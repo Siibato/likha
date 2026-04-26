@@ -1,5 +1,6 @@
 import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/shared/widgets/forms/rich_text_field.dart';
 
 class AssignmentTextInputCard extends StatelessWidget {
@@ -24,7 +25,7 @@ class AssignmentTextInputCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
               letterSpacing: -0.4,
             ),
           ),

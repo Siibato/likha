@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class EmptyClassesState extends StatelessWidget {
   const EmptyClassesState({super.key});
@@ -9,11 +10,11 @@ class EmptyClassesState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.class_outlined, size: 64, color: Color(0xFFCCCCCC)),
+          Icon(Icons.class_outlined, size: 64, color: AppColors.foregroundLight),
           SizedBox(height: 16),
           Text(
             'No classes yet',
-            style: TextStyle(fontSize: 16, color: Color(0xFF999999)),
+            style: TextStyle(fontSize: 16, color: AppColors.foregroundTertiary),
           ),
         ],
       ),

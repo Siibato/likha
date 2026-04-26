@@ -1,5 +1,6 @@
 // lib/presentation/pages/student/widgets/assessment_question_card.dart
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/presentation/utils/formatters.dart';
 import 'package:likha/presentation/pages/student/assessment/widgets/assessment_question_input.dart';
@@ -31,7 +32,7 @@ class AssessmentQuestionCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
+        color: AppColors.borderLight,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Container(
@@ -48,7 +49,7 @@ class AssessmentQuestionCard extends StatelessWidget {
             const SizedBox(height: 16),
             Container(
               height: 1,
-              color: const Color(0xFFF0F0F0),
+              color: AppColors.borderLight,
             ),
             const SizedBox(height: 16),
             AssessmentQuestionInput(
@@ -76,7 +77,7 @@ class AssessmentQuestionCard extends StatelessWidget {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: const Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Center(
@@ -100,7 +101,7 @@ class AssessmentQuestionCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF202020),
+                  color: AppColors.foregroundDark,
                   height: 1.3,
                 ),
               ),
@@ -109,7 +110,7 @@ class AssessmentQuestionCard extends StatelessWidget {
                 '${question.points} point${question.points != 1 ? 's' : ''} • ${Formatters.questionTypeLabel(question.questionType)}',
                 style: const TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF999999),
+                  color: AppColors.foregroundTertiary,
                   fontWeight: FontWeight.w500,
                 ),
               ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 enum DetailStatus {
   notYetOpen,
@@ -41,42 +42,42 @@ class AssessmentStatusBanner extends StatelessWidget {
     switch (status) {
       case DetailStatus.notYetOpen:
         return (
-          const Color(0xFF808080),
+          AppColors.foregroundSecondary,
           Icons.schedule_rounded,
           'Not Yet Open',
           openAt != null ? 'Opens on ${_formatDateTime(openAt!)}' : 'Opening soon',
         );
       case DetailStatus.available:
         return (
-          const Color(0xFF34A853),
+          AppColors.semanticSuccessAlt,
           Icons.play_circle_outline_rounded,
           'Available',
           'Start before the deadline',
         );
       case DetailStatus.resumable:
         return (
-          const Color(0xFFFFBD59),
+          AppColors.accentAmber,
           Icons.play_arrow_rounded,
           'In Progress',
           'You\'ve already started this assessment',
         );
       case DetailStatus.closed:
         return (
-          const Color(0xFF999999),
+          AppColors.foregroundTertiary,
           Icons.lock_outline_rounded,
           'Assessment Closed',
           'The deadline has passed',
         );
       case DetailStatus.pendingResults:
         return (
-          const Color(0xFF666666),
+          AppColors.foregroundSecondary,
           Icons.hourglass_empty_rounded,
           'Results Pending',
           'Your submission is being reviewed',
         );
       case DetailStatus.resultsAvailable:
         return (
-          const Color(0xFF34A853),
+          AppColors.semanticSuccessAlt,
           Icons.check_circle_outline_rounded,
           'Results Available',
           'View your score below',
@@ -91,7 +92,7 @@ class AssessmentStatusBanner extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
+        color: AppColors.borderLight,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Container(
@@ -130,7 +131,7 @@ class AssessmentStatusBanner extends StatelessWidget {
                     subtitle,
                     style: const TextStyle(
                       fontSize: 13,
-                      color: Color(0xFF666666),
+                      color: AppColors.foregroundSecondary,
                       height: 1.4,
                     ),
                   ),

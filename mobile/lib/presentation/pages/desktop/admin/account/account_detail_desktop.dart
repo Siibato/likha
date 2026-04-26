@@ -148,7 +148,7 @@ class _AccountDetailDesktopState extends ConsumerState<AccountDetailDesktop> {
             children: [
               const Text(
                 "Changing a user's role affects their access to features. This change will sync when connected.",
-                style: TextStyle(fontSize: 14, color: Color(0xFF666666)),
+                style: TextStyle(fontSize: 14, color: AppColors.foregroundSecondary),
               ),
               const SizedBox(height: 16),
               StyledDropdown<String>(

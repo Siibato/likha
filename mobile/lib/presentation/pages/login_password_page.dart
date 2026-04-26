@@ -85,7 +85,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF202020),
+                color: AppColors.foregroundDark,
                 letterSpacing: -0.5,
               ),
               textAlign: TextAlign.center,
@@ -96,7 +96,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
               style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF999999),
+                color: AppColors.foregroundTertiary,
               ),
               textAlign: TextAlign.center,
             ),

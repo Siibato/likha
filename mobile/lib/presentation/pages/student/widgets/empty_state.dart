@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 class EmptyState extends StatelessWidget {
   const EmptyState({super.key});
@@ -12,7 +13,7 @@ class EmptyState extends StatelessWidget {
           Icon(
             Icons.inbox_outlined,
             size: 64,
-            color: Color(0xFFD0D0D0),
+            color: AppColors.foregroundLight,
           ),
           SizedBox(height: 16),
           Text(
@@ -20,7 +21,7 @@ class EmptyState extends StatelessWidget {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF2B2B2B),
+              color: AppColors.accentCharcoal,
             ),
           ),
           SizedBox(height: 6),
@@ -28,7 +29,7 @@ class EmptyState extends StatelessWidget {
             'Check back later',
             style: TextStyle(
               fontSize: 14,
-              color: Color(0xFF7A7A7A),
+              color: AppColors.foregroundSecondary,
             ),
           ),
         ],

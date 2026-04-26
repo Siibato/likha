@@ -22,8 +22,8 @@ class AccountActionsMenu extends StatelessWidget {
 
     return Theme(
       data: Theme.of(context).copyWith(
-        highlightColor: const Color(0xFFFAFAFA),
-        splashColor: const Color(0xFFFAFAFA),
+        highlightColor: AppColors.backgroundSecondary,
+        splashColor: AppColors.backgroundSecondary,
       ),
       child: PopupMenuButton<String>(
         icon: const Icon(
@@ -113,8 +113,8 @@ class _MenuItem extends StatelessWidget {
           icon,
           size: 18,
           color: isDestructive
-              ? const Color(0xFFDC3545)
-              : const Color(0xFF999999),
+              ? AppColors.semanticErrorDark
+              : AppColors.foregroundTertiary,
         ),
         const SizedBox(width: 12),
         Text(
@@ -123,8 +123,8 @@ class _MenuItem extends StatelessWidget {
             fontSize: 15,
             fontWeight: FontWeight.w500,
             color: isDestructive
-                ? const Color(0xFFDC3545)
-                : const Color(0xFF202020),
+                ? AppColors.semanticErrorDark
+                : AppColors.foregroundDark,
           ),
         ),
       ],

@@ -28,20 +28,20 @@ class ActionButtons extends StatelessWidget {
           _ActionButton(
             icon: Icons.lock_outline_rounded,
             label: 'Lock Account',
-            backgroundColor: const Color(0xFFDC3545),
+            backgroundColor: AppColors.semanticErrorDark,
             onPressed: isLoading ? null : onLock,
           ),
         if (user.accountStatus == 'locked')
           _ActionButton(
             icon: Icons.lock_open_rounded,
             label: 'Unlock Account',
-            backgroundColor: const Color(0xFF28A745),
+            backgroundColor: AppColors.semanticSuccessAlt,
             onPressed: isLoading ? null : onUnlock,
           ),
         _ActionButton(
           icon: Icons.refresh_rounded,
           label: 'Reset Password',
-          backgroundColor: const Color(0xFFFFC107),
+          backgroundColor: AppColors.accentAmber,
           onPressed: isLoading ? null : onResetPassword,
         ),
       ],
@@ -71,12 +71,12 @@ class _ActionButton extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: isDisabled
-              ? const Color(0xFFE0E0E0)
+              ? AppColors.borderLight
               : _getLightBackground(),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isDisabled
-                ? const Color(0xFFCCCCCC)
+                ? AppColors.foregroundLight
                 : AppColors.borderLight,
             width: 1,
           ),
@@ -89,7 +89,7 @@ class _ActionButton extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             color: isDisabled
-                ? const Color(0xFFF5F5F5)
+                ? AppColors.backgroundDisabled
                 : _getLightBackground(),
             borderRadius: BorderRadius.circular(13),
           ),
@@ -99,7 +99,7 @@ class _ActionButton extends StatelessWidget {
               Icon(
                 icon,
                 size: 18,
-                color: isDisabled ? const Color(0xFF999999) : AppColors.foregroundPrimary,
+                color: isDisabled ? AppColors.foregroundTertiary : AppColors.foregroundPrimary,
               ),
               const SizedBox(width: 8),
               Text(
@@ -107,7 +107,7 @@ class _ActionButton extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: isDisabled ? const Color(0xFF999999) : AppColors.foregroundPrimary,
+                  color: isDisabled ? AppColors.foregroundTertiary : AppColors.foregroundPrimary,
                 ),
               ),
             ],

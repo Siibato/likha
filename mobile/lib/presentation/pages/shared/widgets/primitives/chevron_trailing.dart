@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 
 /// A right-pointing chevron icon used as a trailing indicator in cards.
 ///
@@ -10,14 +11,14 @@ class ChevronTrailing extends StatelessWidget {
   const ChevronTrailing({
     super.key,
     this.size = 24,
-    this.color = const Color(0xFFCCCCCC),
+    this.color = AppColors.foregroundLight,
   });
 
   /// Large chevron (size: 24, color: 0xFFCCCCCC)
   factory ChevronTrailing.large({Color? color}) {
     return ChevronTrailing(
       size: 24,
-      color: color ?? const Color(0xFFCCCCCC),
+      color: color ?? AppColors.foregroundLight,
     );
   }
 
@@ -25,7 +26,7 @@ class ChevronTrailing extends StatelessWidget {
   factory ChevronTrailing.small({Color? color}) {
     return ChevronTrailing(
       size: 22,
-      color: color ?? const Color(0xFFE0E0E0),
+      color: color ?? AppColors.borderLight,
     );
   }
 

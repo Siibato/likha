@@ -314,13 +314,13 @@ class SchoolSettingsCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF007BFF).withOpacity(0.1),
+                      color: AppColors.accentCharcoal.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(
                       Icons.school_rounded,
                       size: 24,
-                      color: Color(0xFF007BFF),
+                      color: AppColors.accentCharcoal,
                     ),
                   ),
                   const Spacer(),
@@ -359,7 +359,7 @@ class SchoolSettingsCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6F42C1).withOpacity(0.1),
+                    color: AppColors.accentAmber.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -367,7 +367,7 @@ class SchoolSettingsCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF6F42C1),
+                      color: AppColors.accentAmber,
                     ),
                   ),
                 ),

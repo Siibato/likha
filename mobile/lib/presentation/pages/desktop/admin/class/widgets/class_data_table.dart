@@ -86,7 +86,7 @@ class ClassDataTable extends StatelessWidget {
           // Advisory
           cls.isAdvisory
               ? const Icon(Icons.star_rounded,
-                  size: 18, color: Color(0xFF4CAF50))
+                  size: 18, color: AppColors.semanticSuccessAlt)
               : const Text(
                   'No',
                   style: TextStyle(
@@ -99,9 +99,9 @@ class ClassDataTable extends StatelessWidget {
             isActive: !cls.isArchived,
             activeText: 'Active',
             inactiveText: 'Archived',
-            activeColor: const Color(0xFF28A745),
+            activeColor: AppColors.semanticSuccessAlt,
             inactiveColor: AppColors.foregroundTertiary,
-            activeBackgroundColor: const Color(0xFF28A745).withOpacity(0.12),
+            activeBackgroundColor: AppColors.semanticSuccessAlt.withOpacity(0.12),
             inactiveBackgroundColor: AppColors.foregroundTertiary.withOpacity(0.12),
           ),
           // Created date
@@ -117,7 +117,7 @@ class ClassDataTable extends StatelessWidget {
             IconButton(
               icon: const Icon(
                 Icons.delete_outline_rounded,
-                color: Color(0xFFDC3545),
+                color: AppColors.semanticErrorDark,
                 size: 20,
               ),
               tooltip: 'Delete class',

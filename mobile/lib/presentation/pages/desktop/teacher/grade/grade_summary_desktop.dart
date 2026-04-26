@@ -382,21 +382,21 @@ class _GradeSummaryDesktopState extends ConsumerState<GradeSummaryDesktop>
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(4),
                                       borderSide: const BorderSide(
-                                        color: Color(0xFF1976D2),
+                                        color: AppColors.accentCharcoal,
                                         width: 1.5,
                                       ),
                                     ),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(4),
                                       borderSide: const BorderSide(
-                                        color: Color(0xFF1976D2),
+                                        color: AppColors.accentCharcoal,
                                         width: 1.5,
                                       ),
                                     ),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(4),
                                       borderSide: const BorderSide(
-                                        color: Color(0xFF1976D2),
+                                        color: AppColors.accentCharcoal,
                                         width: 1.5,
                                       ),
                                     ),

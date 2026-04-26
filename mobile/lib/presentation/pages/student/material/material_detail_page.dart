@@ -128,20 +128,20 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
     final uncachedFiles = material != null ? material.files.where((f) => !f.isCached).toList() : <MaterialFile>[];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
         child: state.isLoading && material == null
             ? const Center(
-                child: CircularProgressIndicator(color: Color(0xFF2B2B2B), strokeWidth: 2.5),
+                child: CircularProgressIndicator(color: AppColors.accentCharcoal, strokeWidth: 2.5),
               )
             : state.error != null && material == null
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline_rounded, size: 64, color: Color(0xFFCCCCCC)),
+                        const Icon(Icons.error_outline_rounded, size: 64, color: AppColors.foregroundLight,),
                         const SizedBox(height: 16),
-                        const Text('Failed to load module', style: TextStyle(fontSize: 16, color: Color(0xFF666666))),
+                        const Text('Failed to load module', style: TextStyle(fontSize: 16, color: AppColors.foregroundDark)),
                         const SizedBox(height: 24),
                         OutlinedButton(
                           onPressed: () => ref.read(learningMaterialProvider.notifier).loadMaterialDetail(widget.materialId),
@@ -212,19 +212,19 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF2B2B2B),
+              color: AppColors.accentCharcoal,
               letterSpacing: -0.5,
             ),
           ),
           if (material.description != null && material.description!.isNotEmpty) ...[
             const SizedBox(height: 16),
-            Container(height: 1, color: const Color(0xFFF0F0F0)),
+            Container(height: 1, color: AppColors.borderLight,),
             const SizedBox(height: 12),
             Text(
               material.description!,
               style: const TextStyle(
                 fontSize: 15,
-                color: Color(0xFF2B2B2B),
+                color: AppColors.foregroundDark,
                 height: 1.5,
               ),
             ),
@@ -247,7 +247,7 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
             const SizedBox(height: 12),
             const StatusBadge(
               label: 'Pending sync',
-              color: Color(0xFF999999),
+              color: AppColors.borderLight,
               variant: BadgeVariant.outlined,
             ),
           ],
@@ -268,12 +268,12 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF666666),
+              color: AppColors.foregroundDark,
               letterSpacing: 0.5,
             ),
           ),
           const SizedBox(height: 12),
-          Container(height: 1, color: const Color(0xFFF0F0F0)),
+          Container(height: 1, color: AppColors.borderLight,),
           const SizedBox(height: 12),
           MarkdownDisplay(content: material.contentText),
         ],
@@ -297,7 +297,7 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF34A853),
+              color: AppColors.semanticSuccessAlt,
             ),
           ),
         ],
@@ -320,7 +320,7 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF202020),
+                  color: AppColors.foregroundDark,
                   letterSpacing: -0.4,
                 ),
               ),
@@ -328,7 +328,7 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
                 FilledButton(
                   onPressed: _downloadingFileId != null ? null : _downloadAllFiles,
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF2B2B2B),
+                    backgroundColor: AppColors.backgroundPrimary,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
@@ -337,7 +337,7 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
                           width: 14,
                           height: 14,
                           child: CircularProgressIndicator(
-                            color: Colors.white,
+                            color: AppColors.accentCharcoal,
                             strokeWidth: 2,
                           ),
                         )
@@ -349,7 +349,7 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
             ],
           ),
           const SizedBox(height: 12),
-          Container(height: 1, color: const Color(0xFFF0F0F0)),
+          Container(height: 1, color: AppColors.borderLight,),
           const SizedBox(height: 12),
           ...material.files.asMap().entries.map((entry) {
             final file = entry.value;
@@ -363,7 +363,7 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -371,7 +371,7 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
                 _formatFileSize(file.fileSize),
                 style: const TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF999999),
+                  color: AppColors.foregroundTertiary,
                 ),
               ),
               trailing: _downloadingFileId == file.id
@@ -379,16 +379,16 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                         strokeWidth: 2,
                       ),
                     )
                   : IconButton(
                       icon: kIsWeb
-                          ? const Icon(Icons.open_in_browser_rounded, color: Color(0xFF2B2B2B))
+                          ? const Icon(Icons.open_in_browser_rounded, color: AppColors.accentCharcoal)
                           : file.isCached
                               ? const Icon(Icons.folder_open_rounded)
-                              : const Icon(Icons.download_rounded, color: Color(0xFF2B2B2B)),
+                              : const Icon(Icons.download_rounded, color: AppColors.accentCharcoal),
                       onPressed: _downloadingFileId != null
                           ? null
                           : kIsWeb
@@ -416,13 +416,13 @@ class _InfoChip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 15, color: const Color(0xFF666666)),
+        Icon(icon, size: 15, color: AppColors.foregroundSecondary,),
         const SizedBox(width: 5),
         Text(
           label,
           style: const TextStyle(
             fontSize: 13,
-            color: Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
             fontWeight: FontWeight.w500,
             letterSpacing: -0.2,
           ),

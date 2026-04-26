@@ -300,7 +300,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
         : null;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       body: Column(
         children: [
           // Custom header matching mobile design
@@ -309,7 +309,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
           // Quarter selector and actions
           _buildQuarterSelector(),
 
-          const Divider(height: 1, color: Color(0xFFE0E0E0)),
+          const Divider(height: 1, color: AppColors.borderLight),
 
           // Content area
           Expanded(
@@ -409,7 +409,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
                         bottom: 24,
                         right: 24,
                         child: FloatingActionButton(
-                          backgroundColor: const Color(0xFF2B2B2B),
+                          backgroundColor: AppColors.accentCharcoal,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
@@ -432,7 +432,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
       width: double.infinity,
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0), width: 3)),
+        border: Border(bottom: BorderSide(color: AppColors.borderLight, width: 3)),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
@@ -446,12 +446,12 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FA),
+                color: AppColors.backgroundTertiary,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
                 Icons.arrow_back_rounded,
-                color: Color(0xFF404040),
+                color: AppColors.foregroundDark,
                 size: 24,
               ),
             ),
@@ -463,7 +463,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
               ),
             ),
           ),
@@ -488,12 +488,12 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
                     child: ChoiceChip(
                       label: Text('Q$q'),
                       selected: _selectedQuarter == q,
-                      selectedColor: const Color(0xFF2B2B2B),
+                      selectedColor: AppColors.accentCharcoal,
                       backgroundColor: Colors.white,
                       labelStyle: TextStyle(
                         color: _selectedQuarter == q
                             ? Colors.white
-                            : const Color(0xFF666666),
+                            : AppColors.foregroundSecondary,
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),
@@ -501,8 +501,8 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
                         borderRadius: BorderRadius.circular(10),
                         side: BorderSide(
                           color: _selectedQuarter == q
-                              ? const Color(0xFF2B2B2B)
-                              : const Color(0xFFE0E0E0),
+                              ? AppColors.accentCharcoal
+                              : AppColors.borderLight,
                         ),
                       ),
                       onSelected: (_) => _onQuarterChanged(q),
@@ -514,7 +514,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
           ),
           IconButton(
             icon: const Icon(Icons.calculate_outlined, size: 20),
-            color: const Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
             tooltip: 'Compute Grades',
             onPressed: () async {
               final messenger = ScaffoldMessenger.of(context);
@@ -532,7 +532,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
           ),
           IconButton(
             icon: const Icon(Icons.grade_outlined, size: 20),
-            color: const Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
             tooltip: 'Final Grades',
             onPressed: () => Navigator.push(
               context,
@@ -546,7 +546,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
           ),
           IconButton(
             icon: const Icon(Icons.settings_outlined, size: 20),
-            color: const Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
             tooltip: 'Grading Settings',
             onPressed: () =>
                 Navigator.push(
@@ -566,13 +566,13 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
           ),
           IconButton(
             icon: const Icon(Icons.download_outlined, size: 20),
-            color: const Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
             tooltip: 'Download Grades',
             onPressed: () => _showExportDialog(context, isDownload: true),
           ),
           IconButton(
             icon: const Icon(Icons.print_outlined, size: 20),
-            color: const Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
             tooltip: 'Print Grades',
             onPressed: () => _showExportDialog(context, isDownload: false),
           ),

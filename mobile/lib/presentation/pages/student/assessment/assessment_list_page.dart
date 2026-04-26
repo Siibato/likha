@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/services/server_clock_service.dart';
@@ -118,12 +119,12 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
         child: state.isLoading && state.assessments.isEmpty
             ? const Center(
                 child: CircularProgressIndicator(
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                   strokeWidth: 2.5,
                 ),
               )
@@ -131,7 +132,7 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
                 onRefresh: () => ref
                     .read(studentAssessmentProvider.notifier)
                     .loadAssessments(widget.classId, publishedOnly: true),
-                color: const Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
                 child: CustomScrollView(
                   slivers: [
                     const SliverToBoxAdapter(

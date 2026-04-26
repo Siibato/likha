@@ -241,10 +241,10 @@ class _GradeSubmissionDesktopState
         statusColor = AppColors.foregroundSecondary;
         break;
       case 'graded':
-        statusColor = const Color(0xFF28A745);
+        statusColor = AppColors.semanticSuccessAlt;
         break;
       case 'returned':
-        statusColor = const Color(0xFFFFA726);
+        statusColor = AppColors.accentAmber;
         break;
       default:
         statusColor = AppColors.foregroundTertiary;

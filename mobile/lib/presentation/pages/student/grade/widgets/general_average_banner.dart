@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/utils/transmutation_util.dart';
 
 class GeneralAverageBanner extends StatelessWidget {
@@ -19,7 +20,7 @@ class GeneralAverageBanner extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
+        color: AppColors.borderLight,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Container(
@@ -38,7 +39,7 @@ class GeneralAverageBanner extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF202020),
+                    color: AppColors.foregroundDark,
                     letterSpacing: -0.4,
                   ),
                 ),
@@ -52,7 +53,7 @@ class GeneralAverageBanner extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF2B2B2B),
+                      color: AppColors.accentCharcoal,
                     ),
                   ),
                   const SizedBox(height: 4),

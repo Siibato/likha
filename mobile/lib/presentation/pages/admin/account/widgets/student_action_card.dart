@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 
 class StudentActionCard extends StatelessWidget {
@@ -22,7 +23,7 @@ class StudentActionCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
+        color: AppColors.borderLight,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Container(
@@ -45,7 +46,7 @@ class StudentActionCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF8F9FA),
+                      color: AppColors.backgroundTertiary,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -55,11 +56,11 @@ class StudentActionCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   // Student info
                   Expanded(
                     child: Column(
@@ -70,7 +71,7 @@ class StudentActionCard extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF202020),
+                            color: AppColors.foregroundDark,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -78,7 +79,7 @@ class StudentActionCard extends StatelessWidget {
                           '@${student.username}',
                           style: const TextStyle(
                             fontSize: 13,
-                            color: Color(0xFF999999),
+                            color: AppColors.foregroundTertiary,
                           ),
                         ),
                       ],
@@ -103,7 +104,7 @@ class StudentActionCard extends StatelessWidget {
         height: 24,
         child: CircularProgressIndicator(
           strokeWidth: 2,
-          color: Color(0xFF2B2B2B),
+          color: AppColors.accentCharcoal,
         ),
       );
     }
@@ -113,7 +114,7 @@ class StudentActionCard extends StatelessWidget {
         iconSize: 22,
         splashRadius: 20,
         icon: const Icon(Icons.remove_circle_outline_rounded),
-        color: const Color(0xFFE57373), // Error red
+        color: AppColors.semanticError,
         onPressed: onRemove,
       );
     }
@@ -122,7 +123,7 @@ class StudentActionCard extends StatelessWidget {
       iconSize: 22,
       splashRadius: 20,
       icon: const Icon(Icons.add_circle_outline_rounded),
-      color: const Color(0xFF4CAF50), // Success green
+      color: AppColors.semanticSuccessAlt,
       onPressed: onAdd,
     );
   }

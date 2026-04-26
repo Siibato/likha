@@ -48,7 +48,7 @@ class _TeacherDashboardDesktopState
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
               letterSpacing: -0.4,
             ),
           ),

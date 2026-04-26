@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/constants/api_constants.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/core/services/school_setup_service.dart';
@@ -102,7 +103,7 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
               letterSpacing: -0.3,
             ),
             textAlign: TextAlign.center,
@@ -113,7 +114,7 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
             ),
             textAlign: TextAlign.center,
           ),
@@ -131,7 +132,7 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
           const SizedBox(height: 32),
           Container(
             decoration: BoxDecoration(
-              color: _isSaving ? const Color(0xFFE0E0E0) : const Color(0xFF2B2B2B),
+              color: _isSaving ? AppColors.borderLight : AppColors.accentCharcoal,
               borderRadius: BorderRadius.circular(14),
             ),
             child: Container(
@@ -140,7 +141,7 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
                 onPressed: _isSaving ? null : _handleSave,
                 style: ElevatedButton.styleFrom(
                   backgroundColor:
-                      _isSaving ? const Color(0xFFF5F5F5) : const Color(0xFF2B2B2B),
+                      _isSaving ? AppColors.backgroundDisabled : AppColors.accentCharcoal,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -154,7 +155,7 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.5,
-                          color: Color(0xFF999999),
+                          color: AppColors.foregroundTertiary,
                         ),
                       )
                     : const Text(

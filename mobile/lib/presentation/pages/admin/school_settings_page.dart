@@ -193,17 +193,17 @@ class _AdminSchoolSettingsPageState extends State<AdminSchoolSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF2B2B2B)),
+        iconTheme: const IconThemeData(color: AppColors.accentCharcoal),
         title: const Text(
           'School Settings',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
             letterSpacing: -0.4,
           ),
         ),
@@ -211,7 +211,7 @@ class _AdminSchoolSettingsPageState extends State<AdminSchoolSettingsPage> {
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
                 strokeWidth: 2.5,
               ),
             )
@@ -248,7 +248,7 @@ class _AdminSchoolSettingsPageState extends State<AdminSchoolSettingsPage> {
                     child: ElevatedButton(
                       onPressed: _isSaving ? null : _handleSave,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2B2B2B),
+                        backgroundColor: AppColors.accentCharcoal,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -312,7 +312,7 @@ class _SchoolQrCodeDialog extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: const Color(0xFFE8E8E8),
+              color: AppColors.borderLight,
               width: 1,
             ),
           ),

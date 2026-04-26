@@ -3,10 +3,10 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/services/server_clock_service.dart';
-import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
 import 'package:likha/domain/assignments/entities/submission_file.dart';
@@ -467,12 +467,12 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
         if (ok) nav.pop(false);
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFFAFAFA),
+        backgroundColor: AppColors.backgroundSecondary,
         body: SafeArea(
           child: state.isLoading && submission == null && !isOfflineSubmitted && !widget.isNewAttempt
               ? const Center(
                   child: CircularProgressIndicator(
-                    color: Color(0xFF2B2B2B),
+                    color: AppColors.accentCharcoal,
                     strokeWidth: 2.5,
                   ),
                 )
@@ -501,7 +501,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                             style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF2B2B2B),
+                              color: AppColors.accentCharcoal,
                               letterSpacing: -0.5,
                               height: 1.2,
                             ),
@@ -626,8 +626,8 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
-          side: const BorderSide(color: Color(0xFF2B2B2B), width: 1.5),
-          foregroundColor: const Color(0xFF2B2B2B),
+          side: const BorderSide(color: AppColors.accentCharcoal, width: 1.5),
+          foregroundColor: AppColors.accentCharcoal,
         ),
         child: const Text(
           'Create New Attempt',
@@ -663,14 +663,14 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
               letterSpacing: -0.4,
             ),
           ),
           const SizedBox(height: 12),
           Container(
             height: 1,
-            color: const Color(0xFFF0F0F0),
+            color: AppColors.borderLight,
           ),
           const SizedBox(height: 12),
           Text(
@@ -678,7 +678,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
             style: const TextStyle(
               fontSize: 15,
               height: 1.5,
-              color: Color(0xFF2B2B2B),
+              color: AppColors.accentCharcoal,
             ),
           ),
         ],
@@ -698,14 +698,14 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
               letterSpacing: -0.4,
             ),
           ),
           const SizedBox(height: 12),
           Container(
             height: 1,
-            color: const Color(0xFFF0F0F0),
+            color: AppColors.borderLight,
           ),
           const SizedBox(height: 12),
           if (submission.textContent != null &&
@@ -715,7 +715,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF666666),
+                color: AppColors.foregroundSecondary,
               ),
             ),
             const SizedBox(height: 6),
@@ -728,7 +728,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF666666),
+                color: AppColors.foregroundSecondary,
               ),
             ),
             const SizedBox(height: 8),
@@ -744,22 +744,22 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF2B2B2B),
+                    color: AppColors.accentCharcoal,
                   ),
                 ),
                 subtitle: Text(
                   _formatFileSize(file.fileSize),
                   style: const TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF999999),
+                    color: AppColors.foregroundTertiary,
                   ),
                 ),
                 trailing: IconButton(
                   icon: kIsWeb
-                      ? const Icon(Icons.open_in_browser_rounded, color: Color(0xFF2B2B2B))
+                      ? const Icon(Icons.open_in_browser_rounded, color: AppColors.accentCharcoal,)
                       : file.isCached
                           ? const Icon(Icons.folder_open_rounded)
-                          : const Icon(Icons.download_rounded, color: Color(0xFF2B2B2B)),
+                          : const Icon(Icons.download_rounded, color: AppColors.accentCharcoal,),
                   onPressed: () => kIsWeb
                       ? _openFile(file)
                       : file.isCached
@@ -780,7 +780,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       child: Text(
         'Submitted: ${_formatDateTime(submittedAt)}',
         style: const TextStyle(
-          color: Color(0xFF999999),
+          color: AppColors.foregroundTertiary,
           fontSize: 13,
           fontWeight: FontWeight.w500,
         ),

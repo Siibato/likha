@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/providers/student_tasks_provider.dart';
 
 class TaskCard extends StatelessWidget {
@@ -14,11 +15,11 @@ class TaskCard extends StatelessWidget {
   final DateTime? closeAt;
 
   // 5-color palette
-  static const _kBlack = Color(0xFF1A1A1A);
+  static final _kBlack = AppColors.accentCharcoal;
   static const _kWhite = Colors.white;
-  static const _kBlue = Color(0xFF4A90D9);
-  static const _kGreen = Color(0xFF4CAF50);
-  static const _kRed = Color(0xFFE57373);
+  static final _kBlue = AppColors.accentAmber;
+  static final _kGreen = AppColors.semanticSuccessAlt;
+  static final _kRed = AppColors.semanticError;
 
   const TaskCard({
     super.key,
@@ -122,7 +123,7 @@ class TaskCard extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 title,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
                                   color: _kBlack,
@@ -157,7 +158,7 @@ class TaskCard extends StatelessWidget {
                               ),
                               child: Text(
                                 type == TaskType.assignment ? 'Assignment' : 'Quiz',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
                                   color: _kBlue,

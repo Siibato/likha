@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/student/grade/grades_page.dart';
 import 'package:likha/presentation/utils/logout_helper.dart';
@@ -24,7 +25,7 @@ class StudentProfilePage extends ConsumerWidget {
                     width: double.infinity,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE0E0E0),
+                        color: AppColors.borderLight,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Container(
@@ -51,13 +52,13 @@ class StudentProfilePage extends ConsumerWidget {
                                   Container(
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFF8F9FA),
+                                      color: AppColors.backgroundTertiary,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: const Icon(
                                       Icons.grade_outlined,
                                       size: 22,
-                                      color: Color(0xFF404040),
+                                      color: AppColors.foregroundDark,
                                     ),
                                   ),
                                   const SizedBox(width: 16),
@@ -71,7 +72,7 @@ class StudentProfilePage extends ConsumerWidget {
                                           style: TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.w700,
-                                            color: Color(0xFF202020),
+                                            color: AppColors.foregroundDark,
                                             letterSpacing: -0.4,
                                           ),
                                         ),
@@ -81,7 +82,7 @@ class StudentProfilePage extends ConsumerWidget {
                                           style: TextStyle(
                                             fontSize: 13,
                                             fontWeight: FontWeight.w500,
-                                            color: Color(0xFF999999),
+                                            color: AppColors.foregroundTertiary,
                                           ),
                                         ),
                                       ],
@@ -89,7 +90,7 @@ class StudentProfilePage extends ConsumerWidget {
                                   ),
                                   const Icon(
                                     Icons.chevron_right_rounded,
-                                    color: Color(0xFFCCCCCC),
+                                    color: AppColors.foregroundLight,
                                     size: 24,
                                   ),
                                 ],
@@ -105,7 +106,7 @@ class StudentProfilePage extends ConsumerWidget {
                     width: double.infinity,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE0E0E0),
+                        color: AppColors.borderLight,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Container(
@@ -128,7 +129,7 @@ class StudentProfilePage extends ConsumerWidget {
                                 children: [
                                   Icon(
                                     Icons.logout_rounded,
-                                    color: Color(0xFF404040),
+                                    color: AppColors.foregroundDark,
                                     size: 20,
                                   ),
                                   SizedBox(width: 10),
@@ -137,7 +138,7 @@ class StudentProfilePage extends ConsumerWidget {
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFF202020),
+                                      color: AppColors.foregroundDark,
                                     ),
                                   ),
                                 ],

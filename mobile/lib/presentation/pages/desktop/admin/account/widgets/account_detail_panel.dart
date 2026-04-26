@@ -119,20 +119,20 @@ class AccountDetailPanel extends StatelessWidget {
                       _ActionChip(
                         icon: Icons.lock_outline_rounded,
                         label: 'Lock Account',
-                        color: const Color(0xFFDC3545),
+                        color: AppColors.semanticErrorDark,
                         onTap: isLoading ? null : onLock,
                       ),
                     if (user.accountStatus == 'locked')
                       _ActionChip(
                         icon: Icons.lock_open_rounded,
                         label: 'Unlock Account',
-                        color: const Color(0xFF28A745),
+                        color: AppColors.semanticSuccessAlt,
                         onTap: isLoading ? null : onUnlock,
                       ),
                     _ActionChip(
                       icon: Icons.refresh_rounded,
                       label: 'Reset Password',
-                      color: const Color(0xFFFFC107),
+                      color: AppColors.accentAmber,
                       onTap: isLoading ? null : onResetPassword,
                     ),
                   ],

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/injection_container.dart';
@@ -307,7 +308,7 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
         );
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFFAFAFA),
+        backgroundColor: AppColors.backgroundSecondary,
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,
@@ -315,7 +316,7 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
             'Assessment',
             style: TextStyle(
               fontWeight: FontWeight.w700,
-              color: Color(0xFF2B2B2B),
+              color: AppColors.accentCharcoal,
             ),
           ),
           automaticallyImplyLeading: false,
@@ -370,16 +371,16 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
     final progress = _remainingSeconds / (widget.timeLimitMinutes * 60);
     Color progressColor;
     if (_remainingSeconds <= 60) {
-      progressColor = const Color(0xFFEA4335);
+      progressColor = AppColors.semanticError;
     } else if (_remainingSeconds <= 300) {
-      progressColor = const Color(0xFFFFBD59);
+      progressColor = AppColors.accentAmber;
     } else {
-      progressColor = const Color(0xFF666666);
+      progressColor = AppColors.foregroundSecondary;
     }
 
     return LinearProgressIndicator(
       value: progress,
-      backgroundColor: const Color(0xFFF0F0F0),
+      backgroundColor: AppColors.borderLight,
       valueColor: AlwaysStoppedAnimation<Color>(progressColor),
       minHeight: 4,
     );
@@ -387,7 +388,7 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
 
   Widget _buildLoadingOrErrorState(StudentAssessmentState state) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -395,7 +396,7 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
           'Assessment',
           style: TextStyle(
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
           ),
         ),
       ),
@@ -418,13 +419,13 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
                         Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFEEBEE),
+                            color: AppColors.semanticErrorBackground,
                             borderRadius: BorderRadius.circular(24),
                           ),
                           child: const Icon(
                             Icons.error_outline_rounded,
                             size: 64,
-                            color: Color(0xFFEA4335),
+                            color: AppColors.semanticError,
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -434,7 +435,7 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
                             _formError!,
                             textAlign: TextAlign.center,
                             style: const TextStyle(
-                              color: Color(0xFF2B2B2B),
+                              color: AppColors.accentCharcoal,
                               fontSize: 15,
                               fontWeight: FontWeight.w500,
                             ),
@@ -444,7 +445,7 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
                   FilledButton(
                     onPressed: () => Navigator.pop(context),
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF2B2B2B),
+                      backgroundColor: AppColors.accentCharcoal,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 32,
                         vertical: 12,
@@ -461,14 +462,14 @@ class _TakeAssessmentPageState extends ConsumerState<TakeAssessmentPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         CircularProgressIndicator(
-                          color: Color(0xFF2B2B2B),
+                          color: AppColors.accentCharcoal,
                           strokeWidth: 2.5,
                         ),
                         SizedBox(height: 16),
                         Text(
                           'Starting assessment...',
                           style: TextStyle(
-                            color: Color(0xFF666666),
+                            color: AppColors.foregroundSecondary,
                             fontSize: 15,
                           ),
                         ),

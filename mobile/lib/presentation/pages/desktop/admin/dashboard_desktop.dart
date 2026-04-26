@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/admin/account/create_account_desktop.dart';
 import 'package:likha/presentation/pages/desktop/admin/widgets/admin_stats_row.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
@@ -46,7 +47,7 @@ class _AdminDashboardDesktopState
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
               letterSpacing: -0.4,
             ),
           ),

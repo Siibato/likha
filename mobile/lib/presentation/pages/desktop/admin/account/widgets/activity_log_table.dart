@@ -38,15 +38,15 @@ class ActivityLogTable extends StatelessWidget {
       case 'account_created':
       case 'account_activated':
       case 'account_unlocked':
-        return const Color(0xFF28A745);
+        return AppColors.semanticSuccessAlt;
       case 'account_updated':
-        return const Color(0xFF0D6EFD);
+        return AppColors.accentCharcoal;
       case 'password_reset':
-        return const Color(0xFFFFC107);
+        return AppColors.accentAmber;
       case 'account_locked':
-        return const Color(0xFFDC3545);
+        return AppColors.semanticErrorDark;
       case 'login':
-        return const Color(0xFF6C757D);
+        return AppColors.foregroundSecondary;
       default:
         return AppColors.foregroundTertiary;
     }
