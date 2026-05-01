@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/teacher/grade/class_grading_setup_desktop.dart';
-import 'package:likha/presentation/widgets/desktop/teacher/grade/grade_spreadsheet.dart';
+import 'package:likha/presentation/widgets/shared/teacher/grade/grade_spreadsheet.dart';
+import 'package:likha/presentation/widgets/shared/teacher/grade/grade_spreadsheet_cells.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/add_grade_item_dialog.dart';
 import 'package:likha/presentation/pages/teacher/grade/grade_summary_page.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
@@ -399,6 +400,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
                         scoresByItem: scoresState.scoresByItem,
                         config: config,
                         summary: gradesState.summary,
+                        dimensions: const GradeSpreadsheetDimensions.standard(),
                         isLoadingScores: scoresState.isGeneratingScores,
                         onScoreChanged: _handleScoreChanged,
                         onQgChanged: _handleQgChanged,

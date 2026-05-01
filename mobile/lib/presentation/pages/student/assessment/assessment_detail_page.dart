@@ -10,7 +10,10 @@ import 'package:likha/presentation/widgets/shared/cards/score_display_card.dart'
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/presentation/pages/student/assessment/assessment_results_page.dart';
 import 'package:likha/presentation/pages/student/assessment/take_assessment_page.dart';
+import 'package:likha/presentation/widgets/mobile/student/assessment/assessment_action_button.dart';
+import 'package:likha/presentation/widgets/mobile/student/assessment/assessment_detail_header.dart';
 import 'package:likha/presentation/widgets/mobile/student/assessment/assessment_dialogs.dart';
+import 'package:likha/presentation/widgets/mobile/student/assessment/assessment_info_card.dart';
 import 'package:likha/presentation/widgets/mobile/student/assessment/assessment_status_banner.dart';
 import 'package:likha/presentation/providers/student_assessment_provider.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
@@ -199,7 +202,9 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            SliverToBoxAdapter(child: _buildHeader()),
+            SliverToBoxAdapter(
+                child: AssessmentDetailHeader(title: widget.assessment.title),
+              ),
             if (_formError != null)
               SliverToBoxAdapter(
                 child: Padding(
@@ -213,13 +218,20 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               sliver: SliverList(
-                delegate: SliverChildListDelegate([
+                  delegate: SliverChildListDelegate([
                   AssessmentStatusBanner(
                     status: status,
                     openAt: widget.assessment.openAt,
                     closeAt: widget.assessment.closeAt,
                   ),
-                  _buildInfoCard(),
+                  AssessmentInfoCard(
+                    description: widget.assessment.description,
+                    totalPoints: widget.assessment.totalPoints,
+                    timeLimitMinutes: widget.assessment.timeLimitMinutes,
+                    questionCount: widget.assessment.questionCount,
+                    openAt: widget.assessment.openAt,
+                    closeAt: widget.assessment.closeAt,
+                  ),
                   if (status == DetailStatus.resultsAvailable) ...[
                     ScoreDisplayCard(
                       score: state.studentResult?.finalScore ?? 0,
@@ -227,11 +239,20 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
                       isLoading: state.isLoading,
                       useBaseCardStyle: false,
                     ),
-                    _buildViewResultsButton(),
+                    AssessmentActionButton(
+                      variant: AssessmentActionVariant.viewResults,
+                      onPressed: _onViewResultsPressed,
+                    ),
                   ] else if (status == DetailStatus.available) ...[
-                    _buildStartButton(),
+                    AssessmentActionButton(
+                      variant: AssessmentActionVariant.start,
+                      onPressed: _onStartPressed,
+                    ),
                   ] else if (status == DetailStatus.resumable) ...[
-                    _buildResumeButton(),
+                    AssessmentActionButton(
+                      variant: AssessmentActionVariant.resume,
+                      onPressed: _onResumePressed,
+                    ),
                   ],
                   const SizedBox(height: 40),
                 ]),
@@ -243,289 +264,4 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 24, 32, 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: AppColors.borderLight, width: 3),
-        ),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(24),
-          bottomRight: Radius.circular(24),
-        ),
-      ),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.backgroundTertiary,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.arrow_back_ios_new_rounded,
-                size: 18,
-                color: AppColors.accentCharcoal,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              widget.assessment.title,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: AppColors.accentCharcoal,
-                letterSpacing: -0.5,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoCard() {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: AppColors.borderLight,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(1, 1, 1, 3.5),
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (widget.assessment.description != null && widget.assessment.description!.isNotEmpty) ...[
-              Text(
-                widget.assessment.description!,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: AppColors.accentCharcoal,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-            Row(
-              children: [
-                _InfoChip(
-                  icon: Icons.star_outline_rounded,
-                  label: '${widget.assessment.totalPoints} pts',
-                ),
-                const SizedBox(width: 14),
-                _InfoChip(
-                  icon: Icons.timer_outlined,
-                  label: _formatTimeLimit(widget.assessment.timeLimitMinutes),
-                ),
-                const SizedBox(width: 14),
-                _InfoChip(
-                  icon: Icons.help_outline_rounded,
-                  label:
-                      '${widget.assessment.questionCount} question${widget.assessment.questionCount != 1 ? 's' : ''}',
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _DateRow(
-              icon: Icons.calendar_today_rounded,
-              label: 'Opens',
-              dateTime: _formatDateTime(widget.assessment.openAt),
-            ),
-            const SizedBox(height: 6),
-            _DateRow(
-              icon: Icons.event_rounded,
-              label: 'Closes',
-              dateTime: _formatDateTime(widget.assessment.closeAt),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStartButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: FilledButton(
-        onPressed: _onStartPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: AppColors.semanticSuccessAlt,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.play_arrow_rounded, size: 20),
-            SizedBox(width: 8),
-            Text(
-              'Start Assessment',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResumeButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: FilledButton(
-        onPressed: _onResumePressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: AppColors.accentAmber,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.play_circle_rounded, size: 20, color: AppColors.accentCharcoal),
-            SizedBox(width: 8),
-            Text(
-              'Resume Assessment',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.accentCharcoal,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildViewResultsButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: FilledButton(
-        onPressed: _onViewResultsPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: AppColors.accentCharcoal,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.bar_chart_rounded, size: 20),
-            SizedBox(width: 8),
-            Text(
-              'View Full Results',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatTimeLimit(int minutes) {
-    if (minutes >= 60) {
-      final hours = minutes ~/ 60;
-      final remaining = minutes % 60;
-      if (remaining == 0) {
-        return '$hours hr${hours > 1 ? 's' : ''}';
-      }
-      return '$hours hr${hours > 1 ? 's' : ''} $remaining min';
-    }
-    return '$minutes min';
-  }
-
-  String _formatDateTime(DateTime dt) {
-    // Convert UTC to device local time before formatting
-    final local = dt.toLocal();
-    final month = local.month.toString().padLeft(2, '0');
-    final day = local.day.toString().padLeft(2, '0');
-    final year = local.year;
-    final hour = local.hour > 12
-        ? local.hour - 12
-        : local.hour == 0
-            ? 12
-            : local.hour;
-    final minute = local.minute.toString().padLeft(2, '0');
-    final period = local.hour >= 12 ? 'PM' : 'AM';
-    return '$month/$day/$year $hour:$minute $period';
-  }
-}
-
-class _InfoChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _InfoChip({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 15, color: AppColors.foregroundSecondary),
-        const SizedBox(width: 5),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            color: AppColors.foregroundSecondary,
-            fontWeight: FontWeight.w500,
-            letterSpacing: -0.2,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _DateRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String dateTime;
-
-  const _DateRow({
-    required this.icon,
-    required this.label,
-    required this.dateTime,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 13, color: AppColors.foregroundTertiary),
-        const SizedBox(width: 6),
-        Text(
-          '$label: ',
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppColors.foregroundTertiary,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        Text(
-          dateTime,
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppColors.foregroundSecondary,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
 }

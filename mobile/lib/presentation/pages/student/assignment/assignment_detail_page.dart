@@ -8,25 +8,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/injection_container.dart';
-import 'package:likha/domain/assignments/entities/assignment_submission.dart';
 import 'package:likha/domain/assignments/entities/submission_file.dart';
 import 'package:likha/domain/assignments/repositories/assignment_repository.dart';
 import 'package:likha/domain/assignments/usecases/create_submission.dart';
 import 'package:likha/domain/assignments/usecases/upload_file.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/widgets/shared/cards/base_card.dart';
-import 'package:likha/presentation/widgets/shared/cards/markdown_display.dart';
 import 'package:likha/presentation/widgets/shared/cards/score_display_card.dart';
-import 'package:likha/presentation/widgets/shared/primitives/card_icon_slot.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/utils/formatters.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
-import 'package:likha/presentation/widgets/mobile/student/assignment/assignment_instructions_card.dart';
-import 'package:likha/presentation/widgets/mobile/student/assignment/assignment_returned_banner.dart';
-import 'package:likha/presentation/widgets/mobile/student/assignment/assignment_text_input_card.dart';
+import 'package:likha/presentation/widgets/mobile/student/assignment/assignment_feedback_card.dart';
 import 'package:likha/presentation/widgets/mobile/student/assignment/assignment_files_card.dart';
+import 'package:likha/presentation/widgets/mobile/student/assignment/assignment_instructions_card.dart';
+import 'package:likha/presentation/widgets/mobile/student/assignment/assignment_new_attempt_button.dart';
+import 'package:likha/presentation/widgets/mobile/student/assignment/assignment_returned_banner.dart';
 import 'package:likha/presentation/widgets/mobile/student/assignment/assignment_submit_button.dart';
+import 'package:likha/presentation/widgets/mobile/student/assignment/assignment_submission_card.dart';
+import 'package:likha/presentation/widgets/mobile/student/assignment/assignment_submission_info.dart';
 import 'package:likha/presentation/widgets/mobile/student/assignment/assignment_submitted_banner.dart';
+import 'package:likha/presentation/widgets/mobile/student/assignment/assignment_text_input_card.dart';
 import 'package:flutter/foundation.dart';
 import 'package:likha/core/utils/file_opener.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
@@ -305,36 +305,6 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     }
   }
 
-  String _formatDateTime(DateTime dt) {
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ];
-    final hour = dt.hour > 12
-        ? dt.hour - 12
-        : dt.hour == 0
-            ? 12
-            : dt.hour;
-    final minute = dt.minute.toString().padLeft(2, '0');
-    final period = dt.hour >= 12 ? 'PM' : 'AM';
-    return '${months[dt.month - 1]} ${dt.day}, ${dt.year} $hour:$minute $period';
-  }
-
-  String _formatFileSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
 
   Future<bool> _confirmDiscard() async {
     final hasText = _submissionController.document.toPlainText().trim().isNotEmpty;
@@ -539,7 +509,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                             if (submission.status == 'returned')
                               AssignmentReturnedBanner(feedback: submission.feedback!)
                             else if (submission.status == 'graded')
-                              _buildFeedbackCard(submission.feedback!)
+                              AssignmentFeedbackCard(feedback: submission.feedback!)
                           ],
 
                           // ── VIEW MODE (submitted, not graded) ──────────────────────
@@ -551,19 +521,23 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                             // Read-only submission content
                             if (submission != null) ...[
                               const SizedBox(height: 16),
-                              _buildSubmissionCard(submission),
+                              AssignmentSubmissionCard(
+                                submission: submission,
+                                onOpenFile: _openFile,
+                                onSaveFile: _saveFile,
+                              ),
                             ],
 
                             // Submission timestamp
                             if (submission != null && submission.submittedAt != null) ...[
                               const SizedBox(height: 16),
-                              _buildSubmissionInfo(submission.submittedAt!),
+                              AssignmentSubmissionInfo(submittedAt: submission.submittedAt!),
                             ],
 
                             // Create new attempt button (only before deadline)
                             if (!isDeadlinePassed) ...[
                               const SizedBox(height: 24),
-                              _buildNewAttemptButton(),
+                              AssignmentNewAttemptButton(onPressed: _openNewAttempt),
                             ],
                           ],
 
@@ -598,10 +572,14 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                           // ── GRADED: read-only submission card ──────────────────────
                           if (isGraded && submission != null) ...[
                             const SizedBox(height: 16),
-                            _buildSubmissionCard(submission),
+                            AssignmentSubmissionCard(
+                              submission: submission,
+                              onOpenFile: _openFile,
+                              onSaveFile: _saveFile,
+                            ),
                             if (submission.submittedAt != null) ...[
                               const SizedBox(height: 16),
-                              _buildSubmissionInfo(submission.submittedAt!),
+                              AssignmentSubmissionInfo(submittedAt: submission.submittedAt!),
                             ],
                           ],
 
@@ -611,31 +589,6 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                     ),
                   ],
                 ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNewAttemptButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton(
-        onPressed: _openNewAttempt,
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          side: const BorderSide(color: AppColors.accentCharcoal, width: 1.5),
-          foregroundColor: AppColors.accentCharcoal,
-        ),
-        child: const Text(
-          'Create New Attempt',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.3,
-          ),
         ),
       ),
     );
@@ -651,141 +604,4 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     }
   }
 
-  Widget _buildFeedbackCard(String feedback) {
-    return BaseCard(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Teacher Feedback',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: AppColors.foregroundDark,
-              letterSpacing: -0.4,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            height: 1,
-            color: AppColors.borderLight,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            feedback,
-            style: const TextStyle(
-              fontSize: 15,
-              height: 1.5,
-              color: AppColors.accentCharcoal,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSubmissionCard(AssignmentSubmission submission) {
-    return BaseCard(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Your Submission',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: AppColors.foregroundDark,
-              letterSpacing: -0.4,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            height: 1,
-            color: AppColors.borderLight,
-          ),
-          const SizedBox(height: 12),
-          if (submission.textContent != null &&
-              submission.textContent!.isNotEmpty) ...[
-            const Text(
-              'Text Content:',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.foregroundSecondary,
-              ),
-            ),
-            const SizedBox(height: 6),
-            MarkdownDisplay(content: submission.textContent),
-            if (submission.files.isNotEmpty) const SizedBox(height: 16),
-          ],
-          if (submission.files.isNotEmpty) ...[
-            const Text(
-              'Files Submitted:',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.foregroundSecondary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            ...submission.files.map(
-              (file) => ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: CardIconSlot.sm(
-                  icon: Icons.attach_file_rounded,
-                  iconColor: AppColors.foregroundSecondary,
-                ),
-                title: Text(
-                  file.fileName,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.accentCharcoal,
-                  ),
-                ),
-                subtitle: Text(
-                  _formatFileSize(file.fileSize),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.foregroundTertiary,
-                  ),
-                ),
-                trailing: IconButton(
-                  icon: kIsWeb
-                      ? const Icon(Icons.open_in_browser_rounded, color: AppColors.accentCharcoal,)
-                      : file.isCached
-                          ? const Icon(Icons.folder_open_rounded)
-                          : const Icon(Icons.download_rounded, color: AppColors.accentCharcoal,),
-                  onPressed: () => kIsWeb
-                      ? _openFile(file)
-                      : file.isCached
-                          ? _openFile(file)
-                          : _saveFile(file),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  
-  Widget _buildSubmissionInfo(DateTime submittedAt) {
-    return Center(
-      child: Text(
-        'Submitted: ${_formatDateTime(submittedAt)}',
-        style: const TextStyle(
-          color: AppColors.foregroundTertiary,
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-        ),
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
 }
