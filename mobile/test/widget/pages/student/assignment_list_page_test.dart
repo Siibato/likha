@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:likha/presentation/pages/shared/widgets/skeletons/assignment_card_skeleton.dart';
+import 'package:likha/presentation/widgets/shared/skeletons/assignment_card_skeleton.dart';
 import 'package:likha/presentation/pages/student/assignment/assignment_list_page.dart';
-import 'package:likha/presentation/pages/student/assignment/widgets/empty_assignment_state.dart';
+import 'package:likha/presentation/widgets/mobile/student/assignment/empty_assignment_state.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 
 import '../../helpers/widget_test_helpers.dart';

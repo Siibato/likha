@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:likha/presentation/widgets/upload_progress_dialog.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/upload_progress_dialog.dart';
 
 Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 

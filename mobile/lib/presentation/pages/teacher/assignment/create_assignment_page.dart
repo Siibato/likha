@@ -2,16 +2,18 @@ import 'dart:convert';
 
 import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assignments/usecases/create_assignment.dart';
-import 'package:likha/presentation/widgets/mobile/teacher/assignment/shared_due_date_time_picker.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_grade_settings.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_instructions_field.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_points_field.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_publish_settings.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_submission_options.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_title_field.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assignment/file_type_picker_sheet.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assignment/shared_due_date_time_picker.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 
@@ -31,6 +33,7 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
   late final FleatherController _instructionsController;
   final _totalPointsController = TextEditingController(text: '100');
   final _maxFileSizeController = TextEditingController(text: '10');
+
   Set<String> _selectedFileTypes = {};
   bool _allowsTextSubmission = true;
   bool _allowsFileSubmission = false;
@@ -66,37 +69,6 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
         '${utc.second.toString().padLeft(2, '0')}';
   }
 
-  /// Calculate category selection state: 0 = none, 1 = partial, 2 = all
-  // COMMENTED OUT: Only called by _toggleCategory which is also commented out
-  // int _getCategorySelectionState(FileTypeCategory category) {
-  //   final selectedCount = category.types
-  //       .where((type) => _selectedFileTypes.contains(type))
-  //       .length;
-  //   if (selectedCount == 0) return 0;
-  //   if (selectedCount == category.types.length) return 2;
-  //   return 1;
-  // }
-
-  /// Toggle all types in a category
-  // COMMENTED OUT: Unused - no callers found
-  // void _toggleCategory(FileTypeCategory category) {
-  //   setState(() {
-  //     final state = _getCategorySelectionState(category);
-  //     if (state == 2) {
-  //       // All selected → deselect all
-  //       for (final type in category.types) {
-  //         _selectedFileTypes.remove(type);
-  //       }
-  //     } else {
-  //       // None or partial → select all
-  //       for (final type in category.types) {
-  //         _selectedFileTypes.add(type);
-  //       }
-  //     }
-  //   });
-  // }
-
-
   Future<void> _showFileTypesPicker() async {
     final result = await showModalBottomSheet<Set<String>>(
       context: context,
@@ -106,9 +78,7 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
       ),
       builder: (_) => FileTypePickerSheet(initialSelection: _selectedFileTypes),
     );
-    if (result != null) {
-      setState(() => _selectedFileTypes = result);
-    }
+    if (result != null) setState(() => _selectedFileTypes = result);
   }
 
   Future<void> _handleCreate() async {
@@ -122,22 +92,20 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
 
     String? allowedFileTypes;
     int? maxFileSizeMb;
-
     if (_allowsFileSubmission) {
       if (_selectedFileTypes.isNotEmpty) {
         allowedFileTypes = _selectedFileTypes.join(',');
       }
       final maxSize = int.tryParse(_maxFileSizeController.text.trim());
-      if (maxSize != null && maxSize > 0) {
-        maxFileSizeMb = maxSize;
-      }
+      if (maxSize != null && maxSize > 0) maxFileSizeMb = maxSize;
     }
 
     await ref.read(assignmentProvider.notifier).createAssignment(
           CreateAssignmentParams(
             classId: widget.classId,
             title: _titleController.text.trim(),
-            instructions: jsonEncode(_instructionsController.document.toJson()),
+            instructions:
+                jsonEncode(_instructionsController.document.toJson()),
             totalPoints: totalPoints,
             allowsTextSubmission: _allowsTextSubmission,
             allowsFileSubmission: _allowsFileSubmission,
@@ -165,6 +133,7 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
   @override
   Widget build(BuildContext context) {
     final assignState = ref.watch(assignmentProvider);
+    final isLoading = assignState.isLoading;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
@@ -189,251 +158,62 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              FormMessage(
-                message: _formError,
-                severity: MessageSeverity.error,
-              ),
+              FormMessage(message: _formError, severity: MessageSeverity.error),
               const SizedBox(height: 16),
               AssignmentTitleField(
                 controller: _titleController,
-                enabled: !assignState.isLoading,
+                enabled: !isLoading,
                 onChanged: (_) => setState(() => _formError = null),
               ),
               const SizedBox(height: 16),
               AssignmentInstructionsField(
                 controller: _instructionsController,
-                enabled: !assignState.isLoading,
+                enabled: !isLoading,
               ),
               const SizedBox(height: 16),
               AssignmentPointsField(
                 controller: _totalPointsController,
-                enabled: !assignState.isLoading,
+                enabled: !isLoading,
               ),
               const SizedBox(height: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Submission Options',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.foregroundTertiary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  CheckboxListTile(
-                    title: const Text('Allow text submission'),
-                    value: _allowsTextSubmission,
-                    enabled: !assignState.isLoading,
-                    onChanged: (value) {
-                      setState(() => _allowsTextSubmission = value ?? false);
-                    },
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  CheckboxListTile(
-                    title: const Text('Allow file submission'),
-                    value: _allowsFileSubmission,
-                    enabled: !assignState.isLoading,
-                    onChanged: (value) {
-                      setState(() => _allowsFileSubmission = value ?? false);
-                    },
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ],
+              AssignmentSubmissionOptions(
+                allowsTextSubmission: _allowsTextSubmission,
+                allowsFileSubmission: _allowsFileSubmission,
+                selectedFileTypes: _selectedFileTypes,
+                maxFileSizeController: _maxFileSizeController,
+                enabled: !isLoading,
+                onTextToggle: (v) => setState(() => _allowsTextSubmission = v),
+                onFileToggle: (v) => setState(() => _allowsFileSubmission = v),
+                onPickFileTypes: _showFileTypesPicker,
               ),
-              if (_allowsFileSubmission) ...[
-                const SizedBox(height: 16),
-                _AllowedFileTypesSelector(
-                  selectedTypes: _selectedFileTypes,
-                  enabled: !assignState.isLoading,
-                  onTap: () => _showFileTypesPicker(),
-                ),
-                const SizedBox(height: 16),
-                _MaxFileSizeField(
-                  controller: _maxFileSizeController,
-                  enabled: !assignState.isLoading,
-                ),
-              ],
               const SizedBox(height: 16),
               SharedDueDateTimePicker(
                 label: 'Due Date',
                 dateTime: _dueAt,
                 icon: Icons.event_rounded,
-                enabled: !assignState.isLoading,
+                enabled: !isLoading,
                 onChanged: (dt) => setState(() => _dueAt = dt),
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<int?>(
-                initialValue: _quarter,
-                decoration: InputDecoration(
-                  labelText: 'Quarter (for grading)',
-                  labelStyle: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.foregroundTertiary,
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: AppColors.borderLight,
-                      width: 1,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: AppColors.borderLight,
-                      width: 1,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: AppColors.accentCharcoal,
-                      width: 1.5,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                ),
-                items: [
-                  const DropdownMenuItem(value: null, child: Text('None')),
-                  ...List.generate(4, (i) => DropdownMenuItem(value: i + 1, child: Text('Quarter ${i + 1}'))),
-                ],
-                onChanged: assignState.isLoading
-                    ? null
-                    : (v) => setState(() => _quarter = v),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String?>(
-                initialValue: _component,
-                decoration: InputDecoration(
-                  labelText: 'Grade Component',
-                  labelStyle: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.foregroundTertiary,
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: AppColors.borderLight,
-                      width: 1,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: AppColors.borderLight,
-                      width: 1,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: AppColors.accentCharcoal,
-                      width: 1.5,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                ),
-                items: const [
-                  DropdownMenuItem(value: null, child: Text('None')),
-                  DropdownMenuItem(value: 'written_work', child: Text('Written Work')),
-                  DropdownMenuItem(value: 'performance_task', child: Text('Performance Task')),
-                  DropdownMenuItem(value: 'quarterly_assessment', child: Text('Quarterly Assessment')),
-                ],
-                onChanged: assignState.isLoading
-                    ? null
-                    : (v) => setState(() => _component = v),
+              AssignmentGradeSettings(
+                quarter: _quarter,
+                component: _component,
+                enabled: !isLoading,
+                onQuarterChanged: (v) => setState(() => _quarter = v),
+                onComponentChanged: (v) => setState(() => _component = v),
               ),
               const SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppColors.borderLight,
-                    width: 1,
-                  ),
-                ),
-                child: SwitchListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  title: const Text(
-                    'No submission required',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.accentCharcoal,
-                    ),
-                  ),
-                  subtitle: const Text(
-                    'Grade item only \u2014 no student submission expected',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.foregroundTertiary,
-                    ),
-                  ),
-                  value: _noSubmissionRequired,
-                  activeThumbColor: AppColors.accentCharcoal,
-                  onChanged: assignState.isLoading
-                      ? null
-                      : (v) => setState(() => _noSubmissionRequired = v),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppColors.borderLight,
-                    width: 1,
-                  ),
-                ),
-                child: SwitchListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  title: const Text(
-                    'Publish immediately',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.accentCharcoal,
-                    ),
-                  ),
-                  subtitle: const Text(
-                    'Students can see this assignment right away',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.foregroundTertiary,
-                    ),
-                  ),
-                  value: _isPublished,
-                  activeThumbColor: AppColors.accentCharcoal,
-                  onChanged: assignState.isLoading
-                      ? null
-                      : (value) => setState(() => _isPublished = value),
-                ),
+              AssignmentPublishSettings(
+                noSubmissionRequired: _noSubmissionRequired,
+                isPublished: _isPublished,
+                enabled: !isLoading,
+                onNoSubmissionChanged: (v) =>
+                    setState(() => _noSubmissionRequired = v),
+                onPublishChanged: (v) => setState(() => _isPublished = v),
               ),
               const SizedBox(height: 32),
               ElevatedButton(
-                onPressed: assignState.isLoading ? null : _handleCreate,
+                onPressed: isLoading ? null : _handleCreate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.accentCharcoal,
                   foregroundColor: Colors.white,
@@ -444,7 +224,7 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
                   ),
                   elevation: 0,
                 ),
-                child: assignState.isLoading
+                child: isLoading
                     ? const SizedBox(
                         height: 20,
                         width: 20,
@@ -465,150 +245,6 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-
-class _AllowedFileTypesSelector extends StatelessWidget {
-  final Set<String> selectedTypes;
-  final bool enabled;
-  final VoidCallback onTap;
-
-  const _AllowedFileTypesSelector({
-    required this.selectedTypes,
-    required this.enabled,
-    required this.onTap,
-  });
-
-  String _getDisplayText() {
-    if (selectedTypes.isEmpty) {
-      return 'Any file type';
-    }
-    if (selectedTypes.length <= 3) {
-      return selectedTypes.join(', ');
-    }
-    return '${selectedTypes.length} types selected';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Allowed File Types (optional)',
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.foregroundTertiary,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: enabled ? onTap : null,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppColors.borderLight,
-                width: 1,
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 16,
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.file_present_rounded,
-                  color: AppColors.foregroundSecondary,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    _getDisplayText(),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: selectedTypes.isEmpty
-                          ? AppColors.foregroundLight
-                          : AppColors.accentCharcoal,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _MaxFileSizeField extends StatelessWidget {
-  final TextEditingController controller;
-  final bool enabled;
-
-  const _MaxFileSizeField({
-    required this.controller,
-    required this.enabled,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      enabled: enabled,
-      keyboardType: TextInputType.number,
-      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-        color: AppColors.accentCharcoal,
-      ),
-      decoration: InputDecoration(
-        labelText: 'Max File Size (MB)',
-        labelStyle: const TextStyle(
-          fontSize: 14,
-          color: AppColors.foregroundTertiary,
-        ),
-        prefixIcon: const Icon(
-          Icons.sd_storage_rounded,
-          color: AppColors.foregroundSecondary,
-          size: 20,
-        ),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: AppColors.borderLight,
-            width: 1,
-          ),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: AppColors.borderLight,
-            width: 1,
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: AppColors.accentCharcoal,
-            width: 1.5,
-          ),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
         ),
       ),
     );

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:likha/core/theme/app_colors.dart';
-import 'package:likha/core/utils/transmutation_util.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
-import 'package:likha/presentation/pages/shared/grade_skeleton_cell.dart';
+import 'package:likha/presentation/widgets/desktop/teacher/grade/grade_data_row.dart';
+import 'package:likha/presentation/widgets/desktop/teacher/grade/grade_spreadsheet_cells.dart';
 
 /// DepEd-style Class Record spreadsheet.
 ///
@@ -56,18 +55,6 @@ class GradeSpreadsheet extends StatefulWidget {
     required this.onAddColumn,
   });
 
-  // Cell dimensions (desktop — wider than mobile)
-  static const double nameColW = 180.0;
-  static const double scoreColW = 68.0;
-  static const double sumColW = 68.0;
-  static const double pctColW = 72.0;
-  static const double initGradeW = 80.0;
-  static const double qgColW = 68.0;
-  static const double remarksW = 96.0;
-  static const double rowH = 44.0;
-  static const double hdrH1 = 28.0;
-  static const double hdrH2 = 40.0;
-
   @override
   State<GradeSpreadsheet> createState() => _GradeSpreadsheetState();
 }
@@ -106,7 +93,7 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
     super.dispose();
   }
 
-  // ── Score editing ────────────────────────────────────────────────────────
+  // ── Score editing ─────────────────────────────────────────────────────────
 
   void _startScore(String studentId, String itemId, GradeScore? existing) {
     if (_editingKey != null) _commitScore();
@@ -118,11 +105,10 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
       _editingItemId = itemId;
       _editingExistingScore = existing;
       _scoreCtrl.text = current != null ? _fmt(current) : '';
-      _scoreCtrl.selection = TextSelection.fromPosition(
-          TextPosition(offset: _scoreCtrl.text.length));
+      _scoreCtrl.selection =
+          TextSelection.fromPosition(TextPosition(offset: _scoreCtrl.text.length));
     });
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _scoreFocus.requestFocus());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scoreFocus.requestFocus());
   }
 
   void _commitScore() {
@@ -152,11 +138,10 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
     setState(() {
       _editingQgStudentId = studentId;
       _qgCtrl.text = current?.toString() ?? '';
-      _qgCtrl.selection = TextSelection.fromPosition(
-          TextPosition(offset: _qgCtrl.text.length));
+      _qgCtrl.selection =
+          TextSelection.fromPosition(TextPosition(offset: _qgCtrl.text.length));
     });
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _qgFocus.requestFocus());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _qgFocus.requestFocus());
   }
 
   void _commitQg() {
@@ -173,17 +158,14 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  String _fmt(double v) {
-    if (v == v.roundToDouble()) return v.toInt().toString();
-    return v.toStringAsFixed(1);
-  }
+  String _fmt(double v) =>
+      v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(1);
 
   Map<String, Map<String, GradeScore>> _buildScoreLookup() {
     final lookup = <String, Map<String, GradeScore>>{};
     for (final entry in widget.scoresByItem.entries) {
       for (final score in entry.value) {
-        lookup
-            .putIfAbsent(score.studentId, () => {})[score.gradeItemId] = score;
+        lookup.putIfAbsent(score.studentId, () => {})[score.gradeItemId] = score;
       }
     }
     return lookup;
@@ -205,36 +187,11 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
     return lookup;
   }
 
-  _Stats _computeStats(
-    String studentId,
-    List<GradeItem> items,
-    Map<String, Map<String, GradeScore>> lookup,
-    double weight,
-  ) {
-    final studentScores = lookup[studentId] ?? {};
-    double total = 0;
-    double hs = 0;
-    bool hasScore = false;
-    for (final item in items) {
-      hs += item.totalPoints;
-      final score = studentScores[item.id]?.effectiveScore;
-      if (score != null) {
-        total += score;
-        hasScore = true;
-      }
-    }
-    if (!hasScore || hs == 0) {
-      return _Stats(total: null, hs: hs, pct: null, ws: null);
-    }
-    final pct = (total / hs) * 100;
-    return _Stats(total: total, hs: hs, pct: pct, ws: pct * weight / 100);
-  }
-
-  // +1 sumColW for the HS column
+  // Section width = N score columns + Total + HS + % + WS
   double _secW(int n) =>
-      n * GradeSpreadsheet.scoreColW +
-      GradeSpreadsheet.sumColW * 2 +
-      GradeSpreadsheet.pctColW * 2;
+      n * GradeSpreadsheetDimensions.scoreColW +
+      GradeSpreadsheetDimensions.sumColW * 2 +
+      GradeSpreadsheetDimensions.pctColW * 2;
 
   // ── Build ─────────────────────────────────────────────────────────────────
 
@@ -243,17 +200,11 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
     final scoreLookup = _buildScoreLookup();
     final qgLookup = _buildQgLookup();
 
-    final wwItems = widget.allItems
-        .where((i) => i.component == 'ww')
-        .toList()
+    final wwItems = widget.allItems.where((i) => i.component == 'ww').toList()
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
-    final ptItems = widget.allItems
-        .where((i) => i.component == 'pt')
-        .toList()
+    final ptItems = widget.allItems.where((i) => i.component == 'pt').toList()
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
-    final qaItems = widget.allItems
-        .where((i) => i.component == 'qa')
-        .toList()
+    final qaItems = widget.allItems.where((i) => i.component == 'qa').toList()
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
 
     final wwW = widget.config?.wwWeight ?? 40.0;
@@ -263,38 +214,36 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
     final wwSecW = _secW(wwItems.length);
     final ptSecW = _secW(ptItems.length);
     final qaSecW = _secW(qaItems.length);
-    const summaryW =
-        GradeSpreadsheet.initGradeW + GradeSpreadsheet.qgColW + GradeSpreadsheet.remarksW;
+    const summaryW = GradeSpreadsheetDimensions.initGradeW +
+        GradeSpreadsheetDimensions.qgColW +
+        GradeSpreadsheetDimensions.remarksW;
     final scrollW = wwSecW + ptSecW + qaSecW + summaryW;
 
     return SingleChildScrollView(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Frozen name column ─────────────────────────────────────────
+          // ── Frozen name column ───────────────────────────────────────────
           SizedBox(
-            width: GradeSpreadsheet.nameColW,
+            width: GradeSpreadsheetDimensions.nameColW,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Group header row (blank)
                 Container(
-                  height: GradeSpreadsheet.hdrH1,
+                  height: GradeSpreadsheetDimensions.hdrH1,
                   color: AppColors.backgroundTertiary,
                 ),
-                // Column header
-                _hdrCell(
-                  "Learner's Name",
-                  GradeSpreadsheet.nameColW,
-                  GradeSpreadsheet.hdrH2,
+                GradeColumnHeaderCell(
+                  text: "Learner's Name",
+                  width: GradeSpreadsheetDimensions.nameColW,
+                  height: GradeSpreadsheetDimensions.hdrH2,
                   align: Alignment.centerLeft,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
                 const Divider(height: 1, color: AppColors.borderLight),
-                // HPS row — frozen side
                 Container(
-                  height: GradeSpreadsheet.rowH,
-                  width: GradeSpreadsheet.nameColW,
+                  height: GradeSpreadsheetDimensions.rowH,
+                  width: GradeSpreadsheetDimensions.nameColW,
                   color: AppColors.backgroundTertiary,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   alignment: Alignment.centerLeft,
@@ -310,11 +259,10 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
                   ),
                 ),
                 const Divider(height: 1, color: AppColors.borderLight),
-                // Student name rows
                 for (int i = 0; i < widget.students.length; i++) ...[
                   Container(
-                    height: GradeSpreadsheet.rowH,
-                    width: GradeSpreadsheet.nameColW,
+                    height: GradeSpreadsheetDimensions.rowH,
+                    width: GradeSpreadsheetDimensions.nameColW,
                     color: i.isEven
                         ? AppColors.backgroundPrimary
                         : AppColors.backgroundTertiary,
@@ -338,10 +286,9 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
             ),
           ),
 
-          // Vertical separator
           Container(width: 1, color: AppColors.borderLight),
 
-          // ── Scrollable columns ─────────────────────────────────────────
+          // ── Scrollable columns ───────────────────────────────────────────
           Expanded(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -350,65 +297,81 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Row 1: group headers
+                    // Group header row
                     SizedBox(
-                      height: GradeSpreadsheet.hdrH1,
+                      height: GradeSpreadsheetDimensions.hdrH1,
                       child: Row(
                         children: [
-                          _grpCell(
-                              'WRITTEN WORKS (${wwW.toStringAsFixed(0)}%)',
-                              wwSecW,
-                              AppColors.accentCharcoal.withValues(alpha: 0.1)),
-                          _grpCell(
-                              'PERFORMANCE TASKS (${ptW.toStringAsFixed(0)}%)',
-                              ptSecW,
-                              AppColors.semanticSuccessAlt.withValues(alpha: 0.1)),
-                          _grpCell(
-                              'QUARTERLY ASSESSMENT (${qaW.toStringAsFixed(0)}%)',
-                              qaSecW,
-                              AppColors.accentAmber.withValues(alpha: 0.1)),
-                          _grpCell('SUMMARY', summaryW, AppColors.accentAmber.withValues(alpha: 0.1)),
+                          GradeGroupHeaderCell(
+                            label: 'WRITTEN WORKS (${wwW.toStringAsFixed(0)}%)',
+                            width: wwSecW,
+                            color: AppColors.accentCharcoal.withValues(alpha: 0.1),
+                          ),
+                          GradeGroupHeaderCell(
+                            label:
+                                'PERFORMANCE TASKS (${ptW.toStringAsFixed(0)}%)',
+                            width: ptSecW,
+                            color: AppColors.semanticSuccessAlt.withValues(alpha: 0.1),
+                          ),
+                          GradeGroupHeaderCell(
+                            label:
+                                'QUARTERLY ASSESSMENT (${qaW.toStringAsFixed(0)}%)',
+                            width: qaSecW,
+                            color: AppColors.accentAmber.withValues(alpha: 0.1),
+                          ),
+                          GradeGroupHeaderCell(
+                            label: 'SUMMARY',
+                            width: summaryW,
+                            color: AppColors.accentAmber.withValues(alpha: 0.1),
+                          ),
                         ],
                       ),
                     ),
-                    // Row 2: column sub-headers
+                    // Column sub-header row
                     SizedBox(
-                      height: GradeSpreadsheet.hdrH2,
+                      height: GradeSpreadsheetDimensions.hdrH2,
                       child: Row(
                         children: [
-                          ..._sectionHdrs(wwItems, 'ww'),
-                          ..._sectionHdrs(ptItems, 'pt'),
-                          ..._sectionHdrs(qaItems, 'qa'),
-                          _hdrCell('Initial Grade', GradeSpreadsheet.initGradeW,
-                              GradeSpreadsheet.hdrH2),
-                          _hdrCell(
-                              'QG', GradeSpreadsheet.qgColW, GradeSpreadsheet.hdrH2),
-                          _hdrCell('Remarks', GradeSpreadsheet.remarksW,
-                              GradeSpreadsheet.hdrH2),
+                          ..._sectionHdrs(wwItems),
+                          ..._sectionHdrs(ptItems),
+                          ..._sectionHdrs(qaItems),
+                          GradeColumnHeaderCell(
+                            text: 'Initial Grade',
+                            width: GradeSpreadsheetDimensions.initGradeW,
+                            height: GradeSpreadsheetDimensions.hdrH2,
+                          ),
+                          GradeColumnHeaderCell(
+                            text: 'QG',
+                            width: GradeSpreadsheetDimensions.qgColW,
+                            height: GradeSpreadsheetDimensions.hdrH2,
+                          ),
+                          GradeColumnHeaderCell(
+                            text: 'Remarks',
+                            width: GradeSpreadsheetDimensions.remarksW,
+                            height: GradeSpreadsheetDimensions.hdrH2,
+                          ),
                         ],
                       ),
                     ),
                     const Divider(height: 1, color: AppColors.borderLight),
-
-                    // HPS row — scrollable side
+                    // HPS row
                     SizedBox(
-                      height: GradeSpreadsheet.rowH,
+                      height: GradeSpreadsheetDimensions.rowH,
                       child: Row(
                         children: [
-                          ..._buildHpsSectionCells(wwItems, wwW),
-                          ..._buildHpsSectionCells(ptItems, ptW),
-                          ..._buildHpsSectionCells(qaItems, qaW),
-                          _computedCell('--', GradeSpreadsheet.initGradeW, AppColors.backgroundTertiary),
-                          _computedCell('--', GradeSpreadsheet.qgColW, AppColors.backgroundTertiary),
-                          _computedCell('--', GradeSpreadsheet.remarksW, AppColors.backgroundTertiary),
+                          ..._buildHpsCells(wwItems, wwW),
+                          ..._buildHpsCells(ptItems, ptW),
+                          ..._buildHpsCells(qaItems, qaW),
+                          GradeComputedCell(text: '--', width: GradeSpreadsheetDimensions.initGradeW),
+                          GradeComputedCell(text: '--', width: GradeSpreadsheetDimensions.qgColW),
+                          GradeComputedCell(text: '--', width: GradeSpreadsheetDimensions.remarksW),
                         ],
                       ),
                     ),
                     const Divider(height: 1, color: AppColors.borderLight),
-
                     // Data rows
                     for (int i = 0; i < widget.students.length; i++) ...[
-                      _buildDataRow(
+                      GradeDataRow(
                         index: i,
                         participant: widget.students[i],
                         wwItems: wwItems,
@@ -416,9 +379,22 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
                         qaItems: qaItems,
                         scoreLookup: scoreLookup,
                         qgLookup: qgLookup,
-                        wwW: wwW,
-                        ptW: ptW,
-                        qaW: qaW,
+                        wwWeight: wwW,
+                        ptWeight: ptW,
+                        qaWeight: qaW,
+                        isLoadingScores: widget.isLoadingScores,
+                        editingKey: _editingKey,
+                        editingQgStudentId: _editingQgStudentId,
+                        scoreCtrl: _scoreCtrl,
+                        scoreFocus: _scoreFocus,
+                        qgCtrl: _qgCtrl,
+                        qgFocus: _qgFocus,
+                        onStartScore: _startScore,
+                        onCommitScore: _commitScore,
+                        onClearScore: _clearScore,
+                        onStartQg: _startQg,
+                        onCommitQg: _commitQg,
+                        onCancelQg: _cancelQg,
                       ),
                       if (i < widget.students.length - 1)
                         const Divider(height: 1, color: AppColors.borderLight),
@@ -433,407 +409,66 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
     );
   }
 
-  List<Widget> _sectionHdrs(List<GradeItem> items, String component) => [
+  List<Widget> _sectionHdrs(List<GradeItem> items) => [
         for (int i = 0; i < items.length; i++)
           Tooltip(
             message: items[i].title,
-            child: _hdrCell('${i + 1}', GradeSpreadsheet.scoreColW,
-                GradeSpreadsheet.hdrH2),
+            child: GradeColumnHeaderCell(
+              text: '${i + 1}',
+              width: GradeSpreadsheetDimensions.scoreColW,
+              height: GradeSpreadsheetDimensions.hdrH2,
+            ),
           ),
-        _hdrCell(
-            'Total', GradeSpreadsheet.sumColW, GradeSpreadsheet.hdrH2),
-        _hdrCell('HS', GradeSpreadsheet.sumColW, GradeSpreadsheet.hdrH2),
-        _hdrCell('%', GradeSpreadsheet.pctColW, GradeSpreadsheet.hdrH2),
-        _hdrCell('WS', GradeSpreadsheet.pctColW, GradeSpreadsheet.hdrH2),
+        GradeColumnHeaderCell(
+          text: 'Total',
+          width: GradeSpreadsheetDimensions.sumColW,
+          height: GradeSpreadsheetDimensions.hdrH2,
+        ),
+        GradeColumnHeaderCell(
+          text: 'HS',
+          width: GradeSpreadsheetDimensions.sumColW,
+          height: GradeSpreadsheetDimensions.hdrH2,
+        ),
+        GradeColumnHeaderCell(
+          text: '%',
+          width: GradeSpreadsheetDimensions.pctColW,
+          height: GradeSpreadsheetDimensions.hdrH2,
+        ),
+        GradeColumnHeaderCell(
+          text: 'WS',
+          width: GradeSpreadsheetDimensions.pctColW,
+          height: GradeSpreadsheetDimensions.hdrH2,
+        ),
       ];
 
-  List<Widget> _buildHpsSectionCells(List<GradeItem> items, double weight) {
+  List<Widget> _buildHpsCells(List<GradeItem> items, double weight) {
     final hs = items.fold<double>(0.0, (sum, item) => sum + item.totalPoints);
     return [
       for (final item in items)
-        _computedCell(_fmt(item.totalPoints), GradeSpreadsheet.scoreColW,
-            AppColors.backgroundTertiary,
-            bold: true),
-      _computedCell(items.isNotEmpty ? _fmt(hs) : '--',
-          GradeSpreadsheet.sumColW, AppColors.backgroundTertiary,
-          bold: true),
-      _computedCell(items.isNotEmpty ? _fmt(hs) : '--',
-          GradeSpreadsheet.sumColW, AppColors.backgroundTertiary,
-          bold: true),
-      _computedCell(items.isNotEmpty ? '100%' : '--',
-          GradeSpreadsheet.pctColW, AppColors.backgroundTertiary),
-      _computedCell(
-          items.isNotEmpty ? '${weight.toStringAsFixed(0)}%' : '--',
-          GradeSpreadsheet.pctColW,
-          AppColors.backgroundTertiary,
-          bold: true),
+        GradeComputedCell(
+          text: _fmt(item.totalPoints),
+          width: GradeSpreadsheetDimensions.scoreColW,
+          bold: true,
+        ),
+      GradeComputedCell(
+        text: items.isNotEmpty ? _fmt(hs) : '--',
+        width: GradeSpreadsheetDimensions.sumColW,
+        bold: true,
+      ),
+      GradeComputedCell(
+        text: items.isNotEmpty ? _fmt(hs) : '--',
+        width: GradeSpreadsheetDimensions.sumColW,
+        bold: true,
+      ),
+      GradeComputedCell(
+        text: items.isNotEmpty ? '100%' : '--',
+        width: GradeSpreadsheetDimensions.pctColW,
+      ),
+      GradeComputedCell(
+        text: items.isNotEmpty ? '${weight.toStringAsFixed(0)}%' : '--',
+        width: GradeSpreadsheetDimensions.pctColW,
+        bold: true,
+      ),
     ];
   }
-
-  Widget _buildDataRow({
-    required int index,
-    required Participant participant,
-    required List<GradeItem> wwItems,
-    required List<GradeItem> ptItems,
-    required List<GradeItem> qaItems,
-    required Map<String, Map<String, GradeScore>> scoreLookup,
-    required Map<String, int?> qgLookup,
-    required double wwW,
-    required double ptW,
-    required double qaW,
-  }) {
-    final sid = participant.student.id;
-    final bgColor = index.isEven
-        ? AppColors.backgroundPrimary
-        : AppColors.backgroundTertiary;
-
-    final wwStats = _computeStats(sid, wwItems, scoreLookup, wwW);
-    final ptStats = _computeStats(sid, ptItems, scoreLookup, ptW);
-    final qaStats = _computeStats(sid, qaItems, scoreLookup, qaW);
-
-    final parts = [wwStats.ws, ptStats.ws, qaStats.ws];
-    final available = parts.whereType<double>().toList();
-    final double? initialGrade = available.isNotEmpty
-        ? available.fold<double>(0.0, (sum, v) => sum + v)
-        : null;
-
-    final storedQg = qgLookup[sid];
-    final computedQg = initialGrade != null
-        ? TransmutationUtil.transmute(initialGrade).round()
-        : null;
-    final displayQg = storedQg ?? computedQg;
-    final remarks =
-        displayQg != null ? (displayQg >= 75 ? 'Passed' : 'Failed') : null;
-    final isEditingQg = _editingQgStudentId == sid;
-
-    return SizedBox(
-      height: GradeSpreadsheet.rowH,
-      child: Row(
-        children: [
-          ..._sectionCells(
-              participant, wwItems, scoreLookup, wwStats, bgColor),
-          ..._sectionCells(
-              participant, ptItems, scoreLookup, ptStats, bgColor),
-          ..._sectionCells(
-              participant, qaItems, scoreLookup, qaStats, bgColor),
-          // Initial grade
-          _computedCell(
-            initialGrade != null ? _fmt(initialGrade) : '--',
-            GradeSpreadsheet.initGradeW,
-            bgColor,
-            bold: true,
-          ),
-          // QG (inline-editable)
-          if (isEditingQg)
-            _inlineCell(_qgCtrl, _qgFocus, _commitQg, _cancelQg,
-                GradeSpreadsheet.qgColW, bgColor)
-          else
-            GestureDetector(
-              onTap: () => _startQg(sid, displayQg),
-              child: _computedCell(
-                displayQg?.toString() ?? '--',
-                GradeSpreadsheet.qgColW,
-                bgColor,
-                bold: true,
-                color: storedQg != null
-                    ? AppColors.accentCharcoal
-                    : (displayQg != null ? AppColors.foregroundPrimary : null),
-              ),
-            ),
-          // Remarks
-          _remarksCell(remarks, bgColor),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _sectionCells(
-    Participant participant,
-    List<GradeItem> items,
-    Map<String, Map<String, GradeScore>> scoreLookup,
-    _Stats stats,
-    Color bgColor,
-  ) {
-    final sid = participant.student.id;
-    final studentScores = scoreLookup[sid] ?? {};
-    final loading = widget.isLoadingScores;
-
-    return [
-      for (final item in items) ...[
-        () {
-          if (loading) {
-            return GradeSkeletonCell(
-              width: GradeSpreadsheet.scoreColW,
-              height: GradeSpreadsheet.rowH,
-            );
-          }
-          final gs = studentScores[item.id];
-          final cellKey = '${sid}_${item.id}';
-          final isEditing = _editingKey == cellKey;
-          final isOverride = gs?.overrideScore != null;
-          final displayScore = gs?.effectiveScore;
-
-          if (isEditing) {
-            return _inlineCell(_scoreCtrl, _scoreFocus, _commitScore,
-                _clearScore, GradeSpreadsheet.scoreColW, bgColor);
-          }
-          return GestureDetector(
-            onTap: () => _startScore(sid, item.id, gs),
-            child: _scoreCell(
-              displayScore != null ? _fmt(displayScore) : '--',
-              GradeSpreadsheet.scoreColW,
-              bgColor,
-              isOverride: isOverride,
-              empty: displayScore == null,
-            ),
-          );
-        }(),
-      ],
-      loading
-          ? GradeSkeletonCell(width: GradeSpreadsheet.sumColW, height: GradeSpreadsheet.rowH)
-          : _computedCell(
-              stats.total != null ? _fmt(stats.total!) : '--',
-              GradeSpreadsheet.sumColW,
-              bgColor),
-      loading
-          ? GradeSkeletonCell(width: GradeSpreadsheet.sumColW, height: GradeSpreadsheet.rowH)
-          : _computedCell(
-              items.isNotEmpty ? _fmt(stats.hs) : '--',
-              GradeSpreadsheet.sumColW,
-              bgColor),
-      loading
-          ? GradeSkeletonCell(width: GradeSpreadsheet.pctColW, height: GradeSpreadsheet.rowH)
-          : _computedCell(
-              stats.pct != null ? '${stats.pct!.toStringAsFixed(1)}%' : '--',
-              GradeSpreadsheet.pctColW,
-              bgColor),
-      loading
-          ? GradeSkeletonCell(width: GradeSpreadsheet.pctColW, height: GradeSpreadsheet.rowH)
-          : _computedCell(
-              stats.ws != null ? _fmt(stats.ws!) : '--',
-              GradeSpreadsheet.pctColW,
-              bgColor,
-              bold: true),
-    ];
-  }
-
-  // ── Cell builders ─────────────────────────────────────────────────────────
-
-  Widget _grpCell(String label, double width, Color color) {
-    return Container(
-      width: width,
-      height: GradeSpreadsheet.hdrH1,
-      color: color,
-      alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(horizontal: 6),
-      child: Text(
-        label,
-        style: const TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            color: AppColors.foregroundDark),
-        overflow: TextOverflow.ellipsis,
-        maxLines: 1,
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
-
-  
-  Widget _hdrCell(
-    String text,
-    double width,
-    double height, {
-    Alignment align = Alignment.center,
-    EdgeInsets padding = const EdgeInsets.symmetric(horizontal: 6),
-  }) {
-    return Container(
-      width: width,
-      height: height,
-      padding: padding,
-      decoration: const BoxDecoration(
-        color: AppColors.backgroundTertiary,
-        border: Border(
-          right: BorderSide(color: AppColors.borderLight, width: 0.5),
-          bottom: BorderSide(color: AppColors.borderLight, width: 0.5),
-        ),
-      ),
-      alignment: align,
-      child: Text(
-        text,
-        style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: AppColors.foregroundSecondary),
-        overflow: TextOverflow.ellipsis,
-        maxLines: 2,
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
-
-  Widget _scoreCell(
-    String text,
-    double width,
-    Color bgColor, {
-    bool isOverride = false,
-    bool empty = false,
-  }) {
-    return Container(
-      width: width,
-      height: GradeSpreadsheet.rowH,
-      decoration: BoxDecoration(
-        color: bgColor,
-        border: const Border(
-            right: BorderSide(color: AppColors.borderLight, width: 0.5)),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: isOverride ? FontWeight.w700 : FontWeight.w400,
-          color: isOverride
-              ? AppColors.accentCharcoal
-              : (empty
-                  ? AppColors.foregroundTertiary
-                  : AppColors.foregroundPrimary),
-        ),
-      ),
-    );
-  }
-
-  Widget _computedCell(
-    String text,
-    double width,
-    Color bgColor, {
-    bool bold = false,
-    Color? color,
-  }) {
-    return Container(
-      width: width,
-      height: GradeSpreadsheet.rowH,
-      decoration: const BoxDecoration(
-        color: AppColors.backgroundTertiary,
-        border: Border(
-            right: BorderSide(color: AppColors.borderLight, width: 0.5)),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
-          color: color ??
-              (text == '--'
-                  ? AppColors.foregroundTertiary
-                  : AppColors.foregroundSecondary),
-        ),
-      ),
-    );
-  }
-
-  Widget _remarksCell(String? remarks, Color bgColor) {
-    if (remarks == null) {
-      return _computedCell('--', GradeSpreadsheet.remarksW, bgColor);
-    }
-    final passed = remarks == 'Passed';
-    return Container(
-      width: GradeSpreadsheet.remarksW,
-      height: GradeSpreadsheet.rowH,
-      color: AppColors.backgroundTertiary,
-      alignment: Alignment.center,
-      child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: passed
-              ? AppColors.semanticSuccessAlt.withValues(alpha: 0.12)
-              : AppColors.semanticErrorDark.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          remarks,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: passed
-                ? AppColors.semanticSuccessAlt
-                : AppColors.semanticErrorDark,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _inlineCell(
-    TextEditingController ctrl,
-    FocusNode focus,
-    VoidCallback onCommit,
-    VoidCallback onCancel,
-    double width,
-    Color bgColor,
-  ) {
-    return SizedBox(
-      width: width,
-      height: GradeSpreadsheet.rowH,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-        child: CallbackShortcuts(
-          bindings: {
-            const SingleActivator(LogicalKeyboardKey.escape): onCancel,
-          },
-          child: TextField(
-            controller: ctrl,
-            focusNode: focus,
-            autofocus: true,
-            textAlign: TextAlign.center,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
-            ],
-            style: const TextStyle(fontSize: 13),
-            onSubmitted: (_) => onCommit(),
-            decoration: InputDecoration(
-              isDense: true,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(4),
-                borderSide: const BorderSide(
-                    color: AppColors.accentCharcoal, width: 1.5),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(4),
-                borderSide: const BorderSide(
-                    color: AppColors.accentCharcoal, width: 1.5),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(4),
-                borderSide: const BorderSide(
-                    color: AppColors.accentCharcoal, width: 1.5),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Internal helper ───────────────────────────────────────────────────────────
-
-class _Stats {
-  final double? total;
-  final double hs;
-  final double? pct;
-  final double? ws;
-
-  const _Stats({
-    required this.total,
-    required this.hs,
-    required this.pct,
-    required this.ws,
-  });
 }
