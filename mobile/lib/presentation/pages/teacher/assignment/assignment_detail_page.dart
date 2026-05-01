@@ -4,13 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/presentation/pages/teacher/assignment/assignment_submissions_page.dart';
-import 'package:likha/presentation/pages/teacher/assignment/widgets/assignment_info_card.dart';
-import 'package:likha/presentation/pages/teacher/assignment/widgets/assignment_instructions_card.dart';
-import 'package:likha/presentation/pages/teacher/assignment/widgets/assignment_status_card.dart';
-import 'package:likha/presentation/pages/teacher/assignment/widgets/assignment_submissions_card.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_info_card.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_instructions_card.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_status_card.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_submissions_card.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
-import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 
 class AssignmentDetailPage extends ConsumerStatefulWidget {
   final String assignmentId;

@@ -7,10 +7,10 @@ import 'package:likha/core/utils/file_opener.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
-import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/utils/formatters.dart';
-import 'package:likha/presentation/widgets/styled_dialog.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 
 class MaterialDetailDesktop extends ConsumerStatefulWidget {
   final String materialId;

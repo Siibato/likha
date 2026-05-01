@@ -3,7 +3,7 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/auth/entities/user.dart';
-import 'package:likha/presentation/pages/teacher/class/widgets/empty_student_state.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/class/empty_student_state.dart';
 import 'package:likha/presentation/pages/teacher/student_detail_page.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 

@@ -9,13 +9,13 @@ import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assignments/entities/submission_file.dart';
 import 'package:likha/domain/assignments/usecases/grade_submission.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/styled_button.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
-import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
-import 'package:likha/presentation/pages/shared/widgets/primitives/status_badge.dart';
-import 'package:likha/presentation/pages/shared/widgets/primitives/card_icon_slot.dart';
-import 'package:likha/presentation/pages/shared/widgets/tokens/app_text_styles.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_button.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
+import 'package:likha/presentation/widgets/shared/cards/base_card.dart';
+import 'package:likha/presentation/widgets/shared/primitives/status_badge.dart';
+import 'package:likha/presentation/widgets/shared/primitives/card_icon_slot.dart';
+import 'package:likha/presentation/widgets/shared/tokens/app_text_styles.dart';
 import 'package:open_file/open_file.dart';
 
 class AssignmentSubmissionGradingPage extends ConsumerStatefulWidget {

@@ -4,10 +4,10 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
 import 'package:likha/presentation/pages/desktop/admin/class/class_detail_desktop.dart';
 import 'package:likha/presentation/pages/desktop/admin/class/create_class_desktop.dart';
-import 'package:likha/presentation/pages/desktop/admin/class/widgets/class_data_table.dart';
+import 'package:likha/presentation/widgets/desktop/admin/class/class_data_table.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
-import 'package:likha/presentation/widgets/styled_dialog.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 
 class AdminClassesDesktop extends ConsumerStatefulWidget {
   const AdminClassesDesktop({super.key});

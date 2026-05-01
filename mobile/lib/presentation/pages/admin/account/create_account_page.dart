@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/logging/page_logger.dart';
-import 'package:likha/presentation/pages/admin/widgets/styled_text_field.dart';
-import 'package:likha/presentation/pages/admin/widgets/styled_dropdown.dart';
-import 'package:likha/presentation/pages/admin/widgets/styled_button.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_dropdown.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_button.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
 
 class CreateAccountPage extends ConsumerStatefulWidget {

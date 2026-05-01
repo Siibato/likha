@@ -7,12 +7,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assignments/usecases/create_assignment.dart';
-import 'package:likha/presentation/pages/teacher/assignment/widgets/shared_due_date_time_picker.dart';
-import 'package:likha/presentation/pages/teacher/assignment/widgets/assignment_instructions_field.dart';
-import 'package:likha/presentation/pages/teacher/assignment/widgets/assignment_points_field.dart';
-import 'package:likha/presentation/pages/teacher/assignment/widgets/assignment_title_field.dart';
-import 'package:likha/presentation/pages/teacher/assignment/widgets/file_type_picker_sheet.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assignment/shared_due_date_time_picker.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_instructions_field.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_points_field.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_title_field.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assignment/file_type_picker_sheet.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 
 class CreateAssignmentPage extends ConsumerStatefulWidget {

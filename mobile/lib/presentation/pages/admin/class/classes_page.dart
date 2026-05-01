@@ -4,10 +4,10 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
 import 'package:likha/presentation/pages/admin/class/class_detail_page.dart';
 import 'package:likha/presentation/pages/admin/class/class_create_page.dart';
-import 'package:likha/presentation/pages/admin/class/widgets/empty_classes_state.dart';
-import 'package:likha/presentation/pages/admin/class/widgets/empty_search_classes_state.dart';
-import 'package:likha/presentation/pages/admin/account/widgets/search_bar.dart';
-import 'package:likha/presentation/pages/shared/widgets/cards/class_card.dart';
+import 'package:likha/presentation/widgets/mobile/admin/class/empty_classes_state.dart';
+import 'package:likha/presentation/widgets/mobile/admin/class/empty_search_classes_state.dart';
+import 'package:likha/presentation/widgets/mobile/admin/account/search_bar.dart';
+import 'package:likha/presentation/widgets/shared/cards/class_card.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
 class AdminClassesPage extends ConsumerStatefulWidget {

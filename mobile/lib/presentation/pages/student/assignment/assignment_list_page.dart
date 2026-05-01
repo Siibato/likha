@@ -6,12 +6,12 @@ import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/student/assignment/assignment_detail_page.dart';
-import 'package:likha/presentation/pages/student/assignment/widgets/assignment_card.dart';
-import 'package:likha/presentation/pages/student/assignment/widgets/empty_assignment_state.dart';
+import 'package:likha/presentation/widgets/mobile/student/assignment/assignment_card.dart';
+import 'package:likha/presentation/widgets/mobile/student/assignment/empty_assignment_state.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
-import 'package:likha/presentation/pages/shared/widgets/skeletons/skeleton_pulse.dart';
-import 'package:likha/presentation/pages/shared/widgets/skeletons/assignment_card_skeleton.dart';
+import 'package:likha/presentation/widgets/shared/skeletons/skeleton_pulse.dart';
+import 'package:likha/presentation/widgets/shared/skeletons/assignment_card_skeleton.dart';
 
 class StudentAssignmentListPage extends ConsumerStatefulWidget {
   final String classId;

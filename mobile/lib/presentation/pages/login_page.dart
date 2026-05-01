@@ -6,9 +6,9 @@ import 'package:likha/injection_container.dart' as di;
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
 import 'package:likha/presentation/pages/setup/school_setup_page.dart';
 import 'package:likha/presentation/pages/shared/widgets/auth_desktop_layout.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
-import 'package:likha/presentation/widgets/styled_dialog.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});

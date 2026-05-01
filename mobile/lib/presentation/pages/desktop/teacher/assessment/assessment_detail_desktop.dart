@@ -7,7 +7,7 @@ import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart
 import 'package:likha/presentation/pages/desktop/teacher/assessment/edit_assessment_desktop.dart';
 import 'package:likha/presentation/pages/desktop/teacher/assessment/assessment_submissions_desktop.dart';
 import 'package:likha/presentation/pages/desktop/teacher/assessment/assessment_statistics_desktop.dart';
-import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 import 'package:likha/presentation/utils/formatters.dart';
 

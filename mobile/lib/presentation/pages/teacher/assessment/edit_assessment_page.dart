@@ -6,9 +6,9 @@ import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/usecases/update_assessment.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/assessment_field.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/date_time_picker_field.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_field.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/date_time_picker_field.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 
 class EditAssessmentPage extends ConsumerStatefulWidget {
   final Assessment assessment;

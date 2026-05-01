@@ -10,7 +10,7 @@ import 'package:likha/presentation/pages/teacher/grade/grades_record_page.dart';
 import 'package:likha/presentation/pages/teacher/grade/sf9_student_list_page.dart';
 import 'package:likha/presentation/pages/teacher/tos/tos_list_page.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/shared/widgets/cards/navigation_card.dart';
+import 'package:likha/presentation/widgets/shared/cards/navigation_card.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
 class ClassDetailPage extends ConsumerStatefulWidget {

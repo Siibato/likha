@@ -7,8 +7,8 @@ import 'package:likha/domain/setup/entities/school_config.dart';
 import 'package:likha/injection_container.dart' as di;
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
 import 'package:likha/presentation/pages/shared/widgets/auth_desktop_layout.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/school_settings_form.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
+import 'package:likha/presentation/widgets/shared/forms/school_settings_form.dart';
 import 'package:likha/presentation/widgets/auth_wrapper.dart';
 
 /// Shown after admin's first login when school_name is null.

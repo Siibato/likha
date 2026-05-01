@@ -6,7 +6,7 @@ import 'package:likha/domain/learning_materials/entities/learning_material.dart'
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/teacher/material/create_material_page.dart';
 import 'package:likha/presentation/pages/teacher/material/material_detail_page.dart';
-import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/dashboard/reorder_position_dialog.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
 

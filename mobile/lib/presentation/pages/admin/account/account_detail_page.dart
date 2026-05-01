@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/auth/entities/user.dart';
-import 'package:likha/presentation/pages/admin/account/widgets/info_card.dart';
-import 'package:likha/presentation/pages/admin/account/widgets/action_buttons.dart';
-import 'package:likha/presentation/pages/admin/account/widgets/activity_log_list.dart';
-import 'package:likha/presentation/pages/admin/account/widgets/edit_dialog.dart';
+import 'package:likha/presentation/widgets/mobile/admin/account/info_card.dart';
+import 'package:likha/presentation/widgets/mobile/admin/account/action_buttons.dart';
+import 'package:likha/presentation/widgets/mobile/admin/account/activity_log_list.dart';
+import 'package:likha/presentation/widgets/mobile/admin/account/edit_dialog.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
-import 'package:likha/presentation/widgets/styled_dialog.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/styled_dropdown.dart';
-import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_dropdown.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 
 class AccountDetailPage extends ConsumerStatefulWidget {
   final User user;

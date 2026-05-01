@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
-import 'package:likha/presentation/pages/shared/widgets/primitives/chevron_trailing.dart';
+import 'package:likha/presentation/widgets/shared/cards/base_card.dart';
+import 'package:likha/presentation/widgets/shared/primitives/chevron_trailing.dart';
 import 'package:likha/presentation/pages/teacher/grade/sf9_detail_page.dart';
 import 'package:likha/presentation/providers/sf9_provider.dart';
 

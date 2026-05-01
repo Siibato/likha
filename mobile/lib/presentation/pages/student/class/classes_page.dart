@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/student/class/class_detail_page.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/student/class/widgets/class_list_section.dart';
-import 'package:likha/presentation/pages/student/widgets/empty_state.dart';
+import 'package:likha/presentation/widgets/mobile/student/class/class_list_section.dart';
+import 'package:likha/presentation/widgets/mobile/student/class/empty_state.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
-import 'package:likha/presentation/pages/shared/widgets/skeletons/skeleton_pulse.dart';
-import 'package:likha/presentation/pages/shared/widgets/skeletons/class_card_skeleton.dart';
+import 'package:likha/presentation/widgets/shared/skeletons/skeleton_pulse.dart';
+import 'package:likha/presentation/widgets/shared/skeletons/class_card_skeleton.dart';
 
 class StudentClassesPage extends ConsumerStatefulWidget {
   const StudentClassesPage({super.key});

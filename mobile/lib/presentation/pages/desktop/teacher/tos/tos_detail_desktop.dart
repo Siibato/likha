@@ -4,15 +4,15 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/tos/edit_tos_desktop.dart';
-import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
-import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.dart';
-import 'package:likha/presentation/widgets/styled_dialog.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/bulk_paste_sheet.dart';
-import 'package:likha/presentation/pages/desktop/teacher/tos/widgets/melcs_search_dialog.dart';
-import 'package:likha/presentation/pages/teacher/tos/widgets/tos_grid_table.dart';
-import 'package:likha/presentation/pages/teacher/tos/widgets/tos_print_preview.dart';
-import 'package:likha/presentation/pages/teacher/tos/widgets/tos_summary_row.dart';
+import 'package:likha/presentation/widgets/shared/cards/info_panel.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/bulk_paste_sheet.dart';
+import 'package:likha/presentation/widgets/desktop/teacher/tos/melcs_search_dialog.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_grid_table.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_print_preview.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_summary_row.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 
 class TosDetailDesktop extends ConsumerStatefulWidget {

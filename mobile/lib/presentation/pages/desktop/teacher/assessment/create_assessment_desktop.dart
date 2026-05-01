@@ -9,12 +9,12 @@ import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assessments/usecases/create_assessment.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/question_draft.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_draft.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 import 'package:likha/presentation/utils/formatters.dart';
-import 'package:likha/presentation/widgets/styled_dialog.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CreateAssessmentDesktop extends ConsumerStatefulWidget {

@@ -6,8 +6,8 @@ import 'package:likha/core/utils/transmutation_util.dart';
 import 'package:likha/domain/grading/usecases/get_final_grades.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/teacher/grade/widgets/grade_stats_footer.dart';
-import 'package:likha/presentation/pages/teacher/grade/widgets/grade_table_cells.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/grade/grade_stats_footer.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/grade/grade_table_cells.dart';
 import 'package:likha/presentation/providers/general_average_provider.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
 

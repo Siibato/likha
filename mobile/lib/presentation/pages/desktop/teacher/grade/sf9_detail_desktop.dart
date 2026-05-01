@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
-import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
-import 'package:likha/presentation/pages/shared/widgets/primitives/info_row.dart';
-import 'package:likha/presentation/pages/teacher/grade/widgets/sf9_grade_table.dart';
-import 'package:likha/presentation/pages/teacher/grade/widgets/sf9_print_service.dart';
+import 'package:likha/presentation/widgets/shared/cards/info_panel.dart';
+import 'package:likha/presentation/widgets/shared/primitives/info_row.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/grade/sf9_grade_table.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/grade/sf9_print_service.dart';
 import 'package:likha/presentation/providers/sf9_provider.dart';
 
 class Sf9DetailDesktop extends ConsumerStatefulWidget {

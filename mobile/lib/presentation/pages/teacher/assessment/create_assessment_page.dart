@@ -8,15 +8,15 @@ import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
 import 'package:likha/domain/assessments/usecases/create_assessment.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/question_draft.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_draft.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/assessment_details_section.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/assessment_questions_section.dart';
-import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_details_section.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_questions_section.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/dashboard/reorder_position_dialog.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/utils/formatters.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CreateAssessmentPage extends ConsumerStatefulWidget {

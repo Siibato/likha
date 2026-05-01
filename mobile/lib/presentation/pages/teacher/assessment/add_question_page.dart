@@ -6,11 +6,11 @@ import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/question_type_dropdown.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/assessment_field.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/question_editor_body.dart';
-export 'package:likha/presentation/pages/teacher/assessment/widgets/question_editor_body.dart'
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_type_dropdown.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_field.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_editor_body.dart';
+export 'package:likha/presentation/widgets/mobile/teacher/assessment/question_editor_body.dart'
     show ChoiceEntry, EnumerationItemEntry, EditorStyleVariant;
 
 class AddQuestionPage extends ConsumerStatefulWidget {

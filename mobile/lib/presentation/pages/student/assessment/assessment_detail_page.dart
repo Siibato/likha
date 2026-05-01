@@ -5,13 +5,13 @@ import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/injection_container.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
-import 'package:likha/presentation/pages/shared/widgets/cards/score_display_card.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
+import 'package:likha/presentation/widgets/shared/cards/score_display_card.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/presentation/pages/student/assessment/assessment_results_page.dart';
 import 'package:likha/presentation/pages/student/assessment/take_assessment_page.dart';
-import 'package:likha/presentation/pages/student/assessment/widgets/assessment_dialogs.dart';
-import 'package:likha/presentation/pages/student/assessment/widgets/assessment_status_banner.dart';
+import 'package:likha/presentation/widgets/mobile/student/assessment/assessment_dialogs.dart';
+import 'package:likha/presentation/widgets/mobile/student/assessment/assessment_status_banner.dart';
 import 'package:likha/presentation/providers/student_assessment_provider.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 

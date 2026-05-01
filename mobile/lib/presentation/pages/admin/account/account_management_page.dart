@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/admin/account/account_detail_page.dart';
-import 'package:likha/presentation/pages/admin/account/widgets/account_tile.dart';
-import 'package:likha/presentation/pages/admin/account/widgets/search_bar.dart';
+import 'package:likha/presentation/widgets/mobile/admin/account/account_tile.dart';
+import 'package:likha/presentation/widgets/mobile/admin/account/search_bar.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
 
 class AccountManagementPage extends ConsumerStatefulWidget {

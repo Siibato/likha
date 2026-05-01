@@ -9,11 +9,11 @@ import 'package:likha/injection_container.dart';
 import 'package:likha/data/models/assessments/question_model.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/domain/assessments/usecases/save_answers.dart';
-import 'package:likha/presentation/pages/student/assessment/widgets/assessment_timer_badge.dart';
-import 'package:likha/presentation/pages/student/assessment/widgets/assessment_question_card.dart';
-import 'package:likha/presentation/pages/student/assessment/widgets/assessment_submit_section.dart';
-import 'package:likha/presentation/pages/student/assessment/widgets/assessment_dialogs.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/widgets/mobile/student/assessment/assessment_timer_badge.dart';
+import 'package:likha/presentation/widgets/mobile/student/assessment/assessment_question_card.dart';
+import 'package:likha/presentation/widgets/mobile/student/assessment/assessment_submit_section.dart';
+import 'package:likha/presentation/widgets/mobile/student/assessment/assessment_dialogs.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/providers/student_assessment_provider.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 

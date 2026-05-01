@@ -3,11 +3,11 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
-import 'package:likha/presentation/pages/teacher/tos/widgets/classification_mode_toggle.dart';
-import 'package:likha/presentation/pages/teacher/tos/widgets/blooms_ratio_section.dart';
-import 'package:likha/presentation/pages/teacher/tos/widgets/difficulty_ratio_section.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/time_unit_toggle.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/classification_mode_toggle.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/blooms_ratio_section.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/difficulty_ratio_section.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/time_unit_toggle.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 
 class EditTosPage extends ConsumerStatefulWidget {

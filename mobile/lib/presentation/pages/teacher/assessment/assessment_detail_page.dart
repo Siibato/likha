@@ -10,14 +10,14 @@ import 'package:likha/presentation/pages/teacher/assessment/assessment_statistic
 import 'package:likha/presentation/pages/teacher/assessment/edit_assessment_page.dart';
 import 'package:likha/presentation/pages/teacher/assessment/add_question_page.dart';
 import 'package:likha/presentation/pages/teacher/assessment/edit_question_page.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/assessment_info_card.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/assessment_status_card.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/questions_section.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/question_reorder_list.dart';
-import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
-import 'package:likha/presentation/pages/teacher/widgets/view_tos_chip.dart';
-import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_info_card.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_status_card.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/questions_section.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_reorder_list.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/dashboard/reorder_position_dialog.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/dashboard/view_tos_chip.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/pages/teacher/tos/tos_view_page.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 

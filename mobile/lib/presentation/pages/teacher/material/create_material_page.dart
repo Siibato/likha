@@ -8,9 +8,9 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/pages/teacher/material/material_detail_page.dart';
-import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/rich_text_field.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
+import 'package:likha/presentation/widgets/shared/forms/rich_text_field.dart';
 
 class CreateMaterialPage extends ConsumerStatefulWidget {
   final String classId;

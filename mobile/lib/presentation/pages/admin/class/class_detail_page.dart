@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/admin/class/class_edit_page.dart';
-import 'package:likha/presentation/pages/admin/account/widgets/student_action_card.dart';
-import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
-import 'package:likha/presentation/pages/shared/widgets/primitives/info_row.dart';
-import 'package:likha/presentation/pages/shared/widgets/tokens/app_text_styles.dart';
+import 'package:likha/presentation/widgets/mobile/admin/account/student_action_card.dart';
+import 'package:likha/presentation/widgets/shared/cards/info_panel.dart';
+import 'package:likha/presentation/widgets/shared/primitives/info_row.dart';
+import 'package:likha/presentation/widgets/shared/tokens/app_text_styles.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
 class AdminClassDetailPage extends ConsumerStatefulWidget {

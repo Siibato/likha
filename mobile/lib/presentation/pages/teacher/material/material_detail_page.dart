@@ -9,17 +9,17 @@ import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
-import 'package:likha/presentation/pages/shared/widgets/cards/markdown_display.dart';
-import 'package:likha/presentation/pages/shared/widgets/primitives/card_icon_slot.dart';
-import 'package:likha/presentation/pages/shared/widgets/primitives/status_badge.dart';
-import 'package:likha/presentation/pages/shared/widgets/primitives/info_chip.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/widgets/shared/cards/base_card.dart';
+import 'package:likha/presentation/widgets/shared/cards/markdown_display.dart';
+import 'package:likha/presentation/widgets/shared/primitives/card_icon_slot.dart';
+import 'package:likha/presentation/widgets/shared/primitives/status_badge.dart';
+import 'package:likha/presentation/widgets/shared/primitives/info_chip.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/utils/formatters.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/rich_text_field.dart';
+import 'package:likha/presentation/widgets/shared/forms/rich_text_field.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
-import 'package:likha/presentation/widgets/styled_dialog.dart';
-import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 import 'package:open_file/open_file.dart';
 
 class MaterialDetailPage extends ConsumerStatefulWidget {

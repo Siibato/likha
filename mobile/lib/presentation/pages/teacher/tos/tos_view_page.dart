@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/teacher/tos/widgets/tos_competency_row.dart';
-import 'package:likha/presentation/pages/teacher/tos/widgets/tos_grid_table.dart';
-import 'package:likha/presentation/pages/teacher/tos/widgets/tos_settings_card.dart';
-import 'package:likha/presentation/pages/teacher/tos/widgets/tos_summary_row.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_competency_row.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_grid_table.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_settings_card.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_summary_row.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 
 /// Read-only TOS reference page, navigated from assessment detail.

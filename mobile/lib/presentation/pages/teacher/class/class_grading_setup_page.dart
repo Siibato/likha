@@ -3,9 +3,9 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/domain/grading/usecases/setup_grading.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/styled_button.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/styled_dropdown.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_button.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_dropdown.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
 
 class ClassGradingSetupPage extends ConsumerStatefulWidget {

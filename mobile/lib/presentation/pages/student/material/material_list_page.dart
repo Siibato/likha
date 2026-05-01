@@ -6,8 +6,8 @@ import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/student/material/material_detail_page.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
-import 'package:likha/presentation/pages/shared/widgets/skeletons/skeleton_pulse.dart';
-import 'package:likha/presentation/pages/shared/widgets/skeletons/material_card_skeleton.dart';
+import 'package:likha/presentation/widgets/shared/skeletons/skeleton_pulse.dart';
+import 'package:likha/presentation/widgets/shared/skeletons/material_card_skeleton.dart';
 
 class StudentMaterialListPage extends ConsumerStatefulWidget {
   final String classId;

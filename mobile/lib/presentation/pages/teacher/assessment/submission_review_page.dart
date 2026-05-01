@@ -6,12 +6,12 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:likha/domain/assessments/usecases/grade_essay.dart';
 import 'package:likha/domain/assessments/usecases/override_answer.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
-import 'package:likha/presentation/pages/shared/widgets/cards/base_card.dart';
-import 'package:likha/presentation/pages/shared/widgets/primitives/status_badge.dart';
-import 'package:likha/presentation/pages/shared/widgets/tokens/app_text_styles.dart';
-import 'package:likha/presentation/widgets/styled_dialog.dart';
+import 'package:likha/presentation/widgets/shared/cards/base_card.dart';
+import 'package:likha/presentation/widgets/shared/primitives/status_badge.dart';
+import 'package:likha/presentation/widgets/shared/tokens/app_text_styles.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 
 class SubmissionReviewPage extends ConsumerStatefulWidget {
   final String submissionId;
