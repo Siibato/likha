@@ -12,7 +12,9 @@ import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_dr
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_details_section.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_draft_banner.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_questions_section.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_save_button.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/dashboard/reorder_position_dialog.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/utils/formatters.dart';
@@ -383,37 +385,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                   children: [
                     // Draft resume banner
                     if (_draftLoaded)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: AppColors.backgroundDisabled,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.restore_rounded, size: 16, color: AppColors.foregroundSecondary),
-                            const SizedBox(width: 8),
-                            const Expanded(
-                              child: Text(
-                                'Resuming draft',
-                                style: TextStyle(fontSize: 13, color: AppColors.foregroundSecondary),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: _discardDraft,
-                              style: TextButton.styleFrom(
-                                foregroundColor: AppColors.semanticError,
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              ),
-                              child: const Text(
-                                'Discard',
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      AssessmentDraftBanner(onDiscard: _discardDraft),
 
                     // Details section
                     const Text(
@@ -509,7 +481,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Bottom action bar (now inside scroll view)
+                    // Bottom action bar
                     Row(
                       children: [
                         OutlinedButton(
@@ -528,29 +500,10 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: ElevatedButton(
-                            onPressed: _isSaving || _isQuestionReorderMode ? null : _handleSave,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.accentCharcoal,
-                              foregroundColor: Colors.white,
-                              disabledBackgroundColor: AppColors.borderLight,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              elevation: 0,
-                            ),
-                            child: _isSaving
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                    ),
-                                  )
-                                : const Text(
-                                    'Save Assessment',
-                                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                                  ),
+                          child: AssessmentSaveButton(
+                            isSaving: _isSaving,
+                            isDisabled: _isQuestionReorderMode,
+                            onSave: _handleSave,
                           ),
                         ),
                       ],

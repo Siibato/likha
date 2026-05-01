@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
-import 'package:flutter/services.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_competency_data_row.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_table_cells.dart';
 
 class TosGridTable extends StatefulWidget {
   final List<TosCompetency> competencies;
@@ -11,7 +12,6 @@ class TosGridTable extends StatefulWidget {
   /// Called when a cognitive count cell is committed.
   /// [levelKey] is one of 'easy', 'medium', 'hard', 'remembering', 'understanding',
   /// 'applying', 'analyzing', 'evaluating', 'creating'.
-  /// [newValue] is the override (0 means 0 items; null not used — empty = 0).
   final void Function(String competencyId, String levelKey, int? newValue)?
       onCellChanged;
 
@@ -43,10 +43,9 @@ class TosGridTable extends StatefulWidget {
 }
 
 class _TosGridTableState extends State<TosGridTable> {
-  // Inline-editing state — only one cell editable at a time.
-  String? _editingCellKey; // "{fieldType}_{competencyId}"
+  String? _editingCellKey;
   String? _editingCompetencyId;
-  String? _editingFieldType; // 'competency' | 'days' | 'easy' | 'medium' | 'hard' | 'remembering' | 'understanding' | 'applying' | 'analyzing' | 'evaluating' | 'creating'
+  String? _editingFieldType;
   String _originalValue = '';
 
   final _editController = TextEditingController();
@@ -56,6 +55,17 @@ class _TosGridTableState extends State<TosGridTable> {
       widget.onCellChanged != null ||
       widget.onCompetencyTextChanged != null ||
       widget.onDaysTaughtChanged != null;
+
+  bool get _isBloomsMode => widget.tos.classificationMode == 'blooms';
+
+  List<String> get _cognitiveHeaders {
+    if (_isBloomsMode) {
+      return ['Remembering', 'Understanding', 'Applying', 'Analyzing', 'Evaluating', 'Creating'];
+    }
+    return ['Easy', 'Avg', 'Diff'];
+  }
+
+  String get _timeUnitLabel => widget.tos.timeUnit == 'hours' ? 'Hours' : 'Days';
 
   @override
   void initState() {
@@ -107,7 +117,6 @@ class _TosGridTableState extends State<TosGridTable> {
         widget.onDaysTaughtChanged?.call(id, days);
       }
     } else {
-      // Cognitive level: 'easy', 'medium', 'hard'
       if (val != _originalValue) {
         final count = val.isEmpty ? 0 : (int.tryParse(val) ?? 0);
         widget.onCellChanged?.call(id, type, count);
@@ -130,30 +139,13 @@ class _TosGridTableState extends State<TosGridTable> {
     });
   }
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
-
-  bool get _isBloomsMode => widget.tos.classificationMode == 'blooms';
-
-  List<String> get _cognitiveHeaders {
-    if (_isBloomsMode) return ['Remembering', 'Understanding', 'Applying', 'Analyzing', 'Evaluating', 'Creating'];
-    return ['Easy', 'Avg', 'Diff'];
-  }
-
-  String get _timeUnitLabel =>
-      widget.tos.timeUnit == 'hours' ? 'Hours' : 'Days';
-
-  // ── Build ──────────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
-    final totalDays = widget.competencies
-        .fold<int>(0, (sum, c) => sum + c.timeUnitsTaught);
+    final totalDays = widget.competencies.fold<int>(0, (sum, c) => sum + c.timeUnitsTaught);
 
-    const double fixedColWidth = 56 + 72 + 56; // Days + % + Total
-    // Bloom mode needs wider columns for full names (Remembering, Understanding, etc.)
+    const double fixedColWidth = 56 + 72 + 56;
     final double cogColWidth = _isBloomsMode ? 80 : 48;
-    final double totalFixed =
-        fixedColWidth + _cognitiveHeaders.length * cogColWidth;
+    final double totalFixed = fixedColWidth + _cognitiveHeaders.length * cogColWidth;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -183,34 +175,28 @@ class _TosGridTableState extends State<TosGridTable> {
                     ),
                     child: Row(
                       children: [
-                        _headerCell('Competency', competencyWidth),
-                        _headerCell(_timeUnitLabel, 56),
-                        _headerCell('%', 72),
-                        ..._cognitiveHeaders.map((h) => _headerCell(h, cogColWidth)),
-                        _headerCell('Total', 56),
+                        TosTableCells.headerCell('Competency', competencyWidth),
+                        TosTableCells.headerCell(_timeUnitLabel, 56),
+                        TosTableCells.headerCell('%', 72),
+                        ..._cognitiveHeaders.map((h) => TosTableCells.headerCell(h, cogColWidth)),
+                        TosTableCells.headerCell('Total', 56),
                       ],
                     ),
                   ),
                   const Divider(height: 1, color: AppColors.borderLight),
-                  // Pre-compute per-row totals so the TOTAL cell shows the
-                  // real sum of cognitive cells, not the configured totalItems.
+
+                  // Competency rows
                   ...() {
                     int gridActualTotal = 0;
                     final rowWidgets = <Widget>[];
+
                     for (int idx = 0; idx < widget.competencies.length; idx++) {
                       final c = widget.competencies[idx];
-                      final weight = totalDays > 0
-                          ? (c.timeUnitsTaught) / totalDays * 100
-                          : 0.0;
                       final targetItems = totalDays > 0
-                          ? (weight * widget.tos.totalItems / 100).round()
+                          ? ((c.timeUnitsTaught / totalDays * 100) * widget.tos.totalItems / 100).round()
                           : 0;
-                      final easyItems = c.easyCount ??
-                          (targetItems * widget.tos.easyPercentage / 100).round();
-                      final mediumItems = c.mediumCount ??
-                          (targetItems * widget.tos.mediumPercentage / 100).round();
-                      final hardItems = c.hardCount ??
-                          (targetItems * widget.tos.hardPercentage / 100).round();
+
+                      // Compute row total for the totals-row accumulator
                       final int rowTotal;
                       if (_isBloomsMode) {
                         final r = c.rememberingCount ?? (targetItems * widget.tos.rememberingPercentage / 100).round();
@@ -221,7 +207,10 @@ class _TosGridTableState extends State<TosGridTable> {
                         final bl = c.creatingCount ?? (targetItems * widget.tos.creatingPercentage / 100).round();
                         rowTotal = r + u + ap + an + e + bl;
                       } else {
-                        rowTotal = easyItems + mediumItems + hardItems;
+                        final easy = c.easyCount ?? (targetItems * widget.tos.easyPercentage / 100).round();
+                        final med = c.mediumCount ?? (targetItems * widget.tos.mediumPercentage / 100).round();
+                        final hard = c.hardCount ?? (targetItems * widget.tos.hardPercentage / 100).round();
+                        rowTotal = easy + med + hard;
                       }
                       gridActualTotal += rowTotal;
 
@@ -230,51 +219,36 @@ class _TosGridTableState extends State<TosGridTable> {
                           border: Border(
                             bottom: BorderSide(
                               color: AppColors.borderLight,
-                              width:
-                                  idx < widget.competencies.length - 1 ? 1 : 0,
+                              width: idx < widget.competencies.length - 1 ? 1 : 0,
                             ),
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            _competencyCell(c, competencyWidth),
-                            _daysCell(c, 56),
-                            _staticCell(
-                                '${weight.toStringAsFixed(1)}%', 72,
-                                align: TextAlign.center),
-                            ..._buildCognitiveCells(c, targetItems),
-                            // Total = sum of cognitive cells, not targetItems
-                            _staticCell('$rowTotal', 56,
-                                align: TextAlign.center, bold: true),
-                          ],
+                        child: TosCompetencyDataRow(
+                          competency: c,
+                          tos: widget.tos,
+                          targetItems: targetItems,
+                          competencyWidth: competencyWidth,
+                          totalDays: totalDays,
+                          editingCellKey: _editingCellKey,
+                          editController: _editController,
+                          focusNode: _focusNode,
+                          inlineMode: _inlineMode,
+                          onStartEdit: _startEdit,
+                          onCommitEdit: _commitEdit,
+                          onCancelEdit: _cancelEdit,
+                          onCellTap: widget.onCellTap,
                         ),
                       ));
                     }
+
                     // Totals row
-                    rowWidgets.add(Container(
-                      decoration: const BoxDecoration(
-                        color: AppColors.borderLight,
-                        borderRadius: BorderRadius.only(
-                          bottomLeft: Radius.circular(11),
-                          bottomRight: Radius.circular(11),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          _staticCell('TOTAL', competencyWidth, bold: true),
-                          _staticCell('$totalDays', 56,
-                              align: TextAlign.center, bold: true),
-                          _staticCell('100%', 72,
-                              align: TextAlign.center, bold: true),
-                          ..._cognitiveHeaders.map(
-                              (_) => _staticCell('-', cogColWidth,
-                                  align: TextAlign.center)),
-                          // Show actual sum of rows, not the configured totalItems
-                          _staticCell('$gridActualTotal', 56,
-                              align: TextAlign.center, bold: true),
-                        ],
-                      ),
+                    rowWidgets.add(_buildTotalsRow(
+                      competencyWidth: competencyWidth,
+                      cogColWidth: cogColWidth,
+                      totalDays: totalDays,
+                      gridActualTotal: gridActualTotal,
                     ));
+
                     return rowWidgets;
                   }(),
                 ],
@@ -286,326 +260,28 @@ class _TosGridTableState extends State<TosGridTable> {
     );
   }
 
-  // ── Cell builders ──────────────────────────────────────────────────────────
-
-  /// Competency text cell — inline-editable when onCompetencyTextChanged set.
-  Widget _competencyCell(TosCompetency c, double width) {
-    final label = c.competencyCode != null
-        ? '${c.competencyCode} - ${c.competencyText}'
-        : c.competencyText;
-    final cellKey = 'competency_${c.id}';
-
-    if (_inlineMode && widget.onCompetencyTextChanged != null) {
-      if (_editingCellKey == cellKey) {
-        return _inlineTextField(
-          width: width,
-          isNumeric: false,
-          onCommit: _commitEdit,
-          onCancel: _cancelEdit,
-        );
-      }
-      return MouseRegion(
-        cursor: SystemMouseCursors.text,
-        child: GestureDetector(
-          onTap: () => _startEdit(c.id, 'competency', c.competencyText),
-          child: _textCell(label, width,
-              align: TextAlign.left, maxLines: 2),
-        ),
-      );
-    }
-
-    return _staticCell(label, width, maxLines: 2);
-  }
-
-  /// Days/hours cell — inline-editable when onDaysTaughtChanged set.
-  Widget _daysCell(TosCompetency c, double width) {
-    final cellKey = 'days_${c.id}';
-
-    if (_inlineMode && widget.onDaysTaughtChanged != null) {
-      if (_editingCellKey == cellKey) {
-        return _inlineTextField(
-          width: width,
-          isNumeric: true,
-          onCommit: _commitEdit,
-          onCancel: _cancelEdit,
-        );
-      }
-      return MouseRegion(
-        cursor: SystemMouseCursors.text,
-        child: GestureDetector(
-          onTap: () =>
-              _startEdit(c.id, 'days', '${c.timeUnitsTaught}'),
-          child: _textCell('${c.timeUnitsTaught}', width,
-              align: TextAlign.center),
-        ),
-      );
-    }
-
-    return _staticCell('${c.timeUnitsTaught}', width, align: TextAlign.center);
-  }
-
-  List<Widget> _buildCognitiveCells(TosCompetency c, int targetItems) {
-    final easyItems = c.easyCount ??
-        (targetItems * widget.tos.easyPercentage / 100).round();
-    final mediumItems = c.mediumCount ??
-        (targetItems * widget.tos.mediumPercentage / 100).round();
-    final hardItems = c.hardCount ??
-        (targetItems * widget.tos.hardPercentage / 100).round();
-
-    if (!_isBloomsMode) {
-      // Difficulty mode: Easy | Avg | Diff
-      return [
-        _cognitiveCell(c, 'easy', '$easyItems', c.easyCount != null),
-        _cognitiveCell(c, 'medium', '$mediumItems', c.mediumCount != null),
-        _cognitiveCell(c, 'hard', '$hardItems', c.hardCount != null),
-      ];
-    }
-
-    // Bloom's mode: R U Ap An E C - using individual fields
-    final int r = c.rememberingCount ??
-        (targetItems * widget.tos.rememberingPercentage / 100).round();
-    final int u = c.understandingCount ??
-        (targetItems * widget.tos.understandingPercentage / 100).round();
-    final int ap = c.applyingCount ??
-        (targetItems * widget.tos.applyingPercentage / 100).round();
-    final int an = c.analyzingCount ??
-        (targetItems * widget.tos.analyzingPercentage / 100).round();
-    final int e = c.evaluatingCount ??
-        (targetItems * widget.tos.evaluatingPercentage / 100).round();
-    final int bl = c.creatingCount ??
-        (targetItems * widget.tos.creatingPercentage / 100).round();
-
-    return [
-      _cognitiveCell(c, 'remembering', '$r', c.rememberingCount != null),
-      _cognitiveCell(c, 'understanding', '$u', c.understandingCount != null),
-      _cognitiveCell(c, 'applying', '$ap', c.applyingCount != null),
-      _cognitiveCell(c, 'analyzing', '$an', c.analyzingCount != null),
-      _cognitiveCell(c, 'evaluating', '$e', c.evaluatingCount != null),
-      _cognitiveCell(c, 'creating', '$bl', c.creatingCount != null),
-    ];
-  }
-
-  /// A single cognitive-level cell.
-  Widget _cognitiveCell(
-    TosCompetency c,
-    String levelKey,
-    String displayValue,
-    bool isOverride,
-  ) {
-    // Bloom mode needs wider columns for full names
-    final double width = _isBloomsMode ? 80 : 48;
-
-    // Inline editing mode
-    if (_inlineMode && widget.onCellChanged != null) {
-      final cellKey = '${levelKey}_${c.id}';
-      if (_editingCellKey == cellKey) {
-        return _inlineTextField(
-          width: width,
-          isNumeric: true,
-          onCommit: _commitEdit,
-          onCancel: _cancelEdit,
-        );
-      }
-      final overrideForLevel = switch (levelKey) {
-        'easy' => c.easyCount,
-        'medium' => c.mediumCount,
-        'hard' => c.hardCount,
-        'remembering' => c.rememberingCount,
-        'understanding' => c.understandingCount,
-        'applying' => c.applyingCount,
-        'analyzing' => c.analyzingCount,
-        'evaluating' => c.evaluatingCount,
-        'creating' => c.creatingCount,
-        _ => null,
-      };
-      return MouseRegion(
-        cursor: SystemMouseCursors.text,
-        child: GestureDetector(
-          onTap: () => _startEdit(
-              c.id, levelKey, overrideForLevel?.toString() ?? displayValue),
-          child: SizedBox(
-            width: width,
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
-              child: Text(
-                displayValue,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight:
-                      isOverride ? FontWeight.w700 : FontWeight.w400,
-                  color: isOverride
-                      ? AppColors.accentCharcoal
-                      : AppColors.accentCharcoal,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    // Legacy dialog-tap mode (mobile)
-    return GestureDetector(
-      onTap: widget.onCellTap == null
-          ? null
-          : () {
-              final override = switch (levelKey) {
-                'easy' => c.easyCount,
-                'medium' => c.mediumCount,
-                'hard' => c.hardCount,
-                'remembering' => c.rememberingCount,
-                'understanding' => c.understandingCount,
-                'applying' => c.applyingCount,
-                'analyzing' => c.analyzingCount,
-                'evaluating' => c.evaluatingCount,
-                'creating' => c.creatingCount,
-                _ => null,
-              };
-              widget.onCellTap!(c.id, levelKey, override);
-            },
-      child: SizedBox(
-        width: width,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
-          child: Text(
-            displayValue,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: isOverride ? FontWeight.w700 : FontWeight.w400,
-              color: isOverride
-                  ? AppColors.accentCharcoal
-                  : AppColors.accentCharcoal,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ── Inline TextField ───────────────────────────────────────────────────────
-
-  Widget _inlineTextField({
-    required double width,
-    required bool isNumeric,
-    required VoidCallback onCommit,
-    required VoidCallback onCancel,
+  Widget _buildTotalsRow({
+    required double competencyWidth,
+    required double cogColWidth,
+    required int totalDays,
+    required int gridActualTotal,
   }) {
-    return SizedBox(
-      width: width,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-        child: CallbackShortcuts(
-          bindings: {
-            const SingleActivator(LogicalKeyboardKey.escape): onCancel,
-          },
-          child: TextField(
-            controller: _editController,
-            focusNode: _focusNode,
-            autofocus: true,
-            textAlign: TextAlign.center,
-            keyboardType: isNumeric
-                ? const TextInputType.numberWithOptions(decimal: false)
-                : TextInputType.text,
-            style: const TextStyle(fontSize: 12),
-            decoration: InputDecoration(
-              contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 4, vertical: 6),
-              isDense: true,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(4),
-                borderSide: const BorderSide(color: AppColors.accentCharcoal),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(4),
-                borderSide:
-                    const BorderSide(color: AppColors.accentCharcoal, width: 1.5),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(4),
-                borderSide: const BorderSide(color: AppColors.accentCharcoal),
-              ),
-            ),
-            onSubmitted: (_) => onCommit(),
-          ),
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.borderLight,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(11),
+          bottomRight: Radius.circular(11),
         ),
       ),
-    );
-  }
-
-  // ── Primitive cell widgets ─────────────────────────────────────────────────
-
-  Widget _headerCell(String text, double width) {
-    return SizedBox(
-      width: width,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: AppColors.foregroundSecondary,
-          ),
-          textAlign: TextAlign.center,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-    );
-  }
-
-  /// Read-only cell (no editing, no tap).
-  Widget _staticCell(
-    String text,
-    double width, {
-    TextAlign align = TextAlign.left,
-    bool bold = false,
-    int maxLines = 1,
-  }) {
-    return SizedBox(
-      width: width,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
-            color: AppColors.accentCharcoal,
-          ),
-          textAlign: align,
-          maxLines: maxLines,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-    );
-  }
-
-  /// Styled text for an editable cell's display state.
-  Widget _textCell(
-    String text,
-    double width, {
-    TextAlign align = TextAlign.left,
-    bool bold = false,
-    int maxLines = 1,
-  }) {
-    return SizedBox(
-      width: width,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
-            color: AppColors.accentCharcoal,
-          ),
-          textAlign: align,
-          maxLines: maxLines,
-          overflow: TextOverflow.ellipsis,
-        ),
+      child: Row(
+        children: [
+          TosTableCells.staticCell('TOTAL', competencyWidth, bold: true),
+          TosTableCells.staticCell('$totalDays', 56, align: TextAlign.center, bold: true),
+          TosTableCells.staticCell('100%', 72, align: TextAlign.center, bold: true),
+          ..._cognitiveHeaders.map((_) => TosTableCells.staticCell('-', cogColWidth, align: TextAlign.center)),
+          TosTableCells.staticCell('$gridActualTotal', 56, align: TextAlign.center, bold: true),
+        ],
       ),
     );
   }

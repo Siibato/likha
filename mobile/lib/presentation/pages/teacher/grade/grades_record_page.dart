@@ -5,6 +5,7 @@ import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/add_grade_item_dialog.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/grade/grade_export_dialog.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/quarter_selector.dart';
 import 'package:likha/presentation/pages/teacher/class/class_grading_setup_page.dart';
 import 'package:likha/presentation/pages/teacher/grade/grade_summary_page.dart';
@@ -12,7 +13,6 @@ import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
 import 'package:likha/presentation/widgets/shared/teacher/grade/grade_spreadsheet.dart';
 import 'package:likha/presentation/widgets/shared/teacher/grade/grade_spreadsheet_cells.dart';
-import 'package:likha/services/grade_export_service.dart';
 
 class ClassRecordPage extends ConsumerStatefulWidget {
   final String classId;
@@ -147,164 +147,13 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
   }
 
   void _showExportDialog(BuildContext context, {required bool isDownload}) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(isDownload ? 'Export Grades' : 'Print Grades'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Choose export format:'),
-              const SizedBox(height: 16),
-              ListTile(
-                title: const Text('PDF'),
-                subtitle: const Text('DepEd-style class record'),
-                leading: const Icon(Icons.picture_as_pdf),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  if (isDownload) {
-                    _exportToPdf();
-                  } else {
-                    _printGrades();
-                  }
-                },
-              ),
-              ListTile(
-                title: const Text('Excel'),
-                subtitle: const Text('Editable spreadsheet'),
-                leading: const Icon(Icons.table_chart),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  if (isDownload) {
-                    _exportToExcel();
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Excel export only available for download')),
-                    );
-                  }
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-          ],
-        );
-      },
+    showGradeExportDialog(
+      context,
+      ref,
+      classId: widget.classId,
+      quarter: _selectedQuarter,
+      isDownload: isDownload,
     );
-  }
-
-  void _exportToPdf() async {
-    try {
-      final configState = ref.read(gradingConfigProvider);
-      final itemsState = ref.read(gradeItemsProvider);
-      final scoresState = ref.read(gradeScoresProvider);
-      final gradesState = ref.read(quarterlyGradesProvider);
-      final classState = ref.read(classProvider);
-      
-      final students = classState.currentClassDetail?.students ?? [];
-      final config = configState.configs.isNotEmpty ? configState.configs.first : null;
-      
-      await ref.read(gradeExportServiceProvider).exportToPdf(
-        classId: widget.classId,
-        className: classState.currentClassDetail?.title ?? 'Unknown Class',
-        quarter: _selectedQuarter,
-        students: students,
-        gradeItems: itemsState.items,
-        scoresByItem: scoresState.scoresByItem,
-        config: config,
-        summary: gradesState.summary,
-      );
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('PDF exported successfully!')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to export PDF: $e')),
-        );
-      }
-    }
-  }
-
-  void _exportToExcel() async {
-    try {
-      final configState = ref.read(gradingConfigProvider);
-      final itemsState = ref.read(gradeItemsProvider);
-      final scoresState = ref.read(gradeScoresProvider);
-      final gradesState = ref.read(quarterlyGradesProvider);
-      final classState = ref.read(classProvider);
-      
-      final students = classState.currentClassDetail?.students ?? [];
-      final config = configState.configs.isNotEmpty ? configState.configs.first : null;
-      
-      await ref.read(gradeExportServiceProvider).exportToExcel(
-        classId: widget.classId,
-        className: classState.currentClassDetail?.title ?? 'Unknown Class',
-        quarter: _selectedQuarter,
-        students: students,
-        gradeItems: itemsState.items,
-        scoresByItem: scoresState.scoresByItem,
-        config: config,
-        summary: gradesState.summary,
-      );
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Excel exported successfully!')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to export Excel: $e')),
-        );
-      }
-    }
-  }
-
-  void _printGrades() async {
-    try {
-      final configState = ref.read(gradingConfigProvider);
-      final itemsState = ref.read(gradeItemsProvider);
-      final scoresState = ref.read(gradeScoresProvider);
-      final gradesState = ref.read(quarterlyGradesProvider);
-      final classState = ref.read(classProvider);
-      
-      final students = classState.currentClassDetail?.students ?? [];
-      final config = configState.configs.isNotEmpty ? configState.configs.first : null;
-      
-      await ref.read(gradeExportServiceProvider).printGrades(
-        classId: widget.classId,
-        className: classState.currentClassDetail?.title ?? 'Unknown Class',
-        quarter: _selectedQuarter,
-        students: students,
-        gradeItems: itemsState.items,
-        scoresByItem: scoresState.scoresByItem,
-        config: config,
-        summary: gradesState.summary,
-      );
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Print dialog opened!')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to print: $e')),
-        );
-      }
-    }
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────
