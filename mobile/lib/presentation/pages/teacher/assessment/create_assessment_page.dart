@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
@@ -368,17 +369,14 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundSecondary,
-      body: SafeArea(
-        child: Column(
-          children: [
-            const ClassSectionHeader(
-              title: 'Create Assessment',
-              showBackButton: true,
-            ),
-            Expanded(
-              child: SingleChildScrollView(
+    return MobilePageScaffold(
+      title: 'Create Assessment',
+      scrollable: true,
+      header: const ClassSectionHeader(
+        title: 'Create Assessment',
+        showBackButton: true,
+      ),
+      body: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -511,10 +509,6 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                   ],
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

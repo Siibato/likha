@@ -4,6 +4,7 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_draft.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_type_dropdown.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_editor_body.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 
 /// Inline edit form for a single [QuestionDraft].
 ///
@@ -114,28 +115,7 @@ class _QuestionEditPanelState extends State<QuestionEditPanel> {
     ));
   }
 
-  InputDecoration _fieldDecoration(String label) {
-    return InputDecoration(
-      labelText: label,
-      labelStyle: const TextStyle(fontSize: 14, color: AppColors.foregroundTertiary),
-      filled: true,
-      fillColor: AppColors.backgroundSecondary,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.borderLight, width: 1),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.borderLight, width: 1),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.accentCharcoal, width: 1.5),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-    );
-  }
-
+  
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -200,30 +180,22 @@ class _QuestionEditPanelState extends State<QuestionEditPanel> {
         const SizedBox(height: 16),
         QuestionTypeDropdown(value: _type, onChanged: _onTypeChanged),
         const SizedBox(height: 12),
-        TextFormField(
+        StyledTextField(
           controller: _questionTextCtrl,
+          label: 'Question Text',
+          icon: Icons.edit,
           maxLines: 3,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-            color: AppColors.foregroundPrimary,
-          ),
-          decoration: _fieldDecoration('Question Text'),
           onChanged: (_) {
             if (_validationError != null) setState(() => _validationError = null);
           },
         ),
         const SizedBox(height: 12),
-        TextFormField(
+        StyledTextField(
           controller: _pointsCtrl,
+          label: 'Points',
+          icon: Icons.grade,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-            color: AppColors.foregroundPrimary,
-          ),
-          decoration: _fieldDecoration('Points'),
         ),
         const SizedBox(height: 16),
         if (_type == 'multiple_choice')

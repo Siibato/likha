@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/student/material/material_detail_page.dart';
@@ -40,48 +41,44 @@ class _StudentMaterialListPageState extends ConsumerState<StudentMaterialListPag
       }
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundSecondary,
-      appBar: null,
-      body: SafeArea(
-        child: Column(
-          children: [
-            const ClassSectionHeader(
-              title: 'Learning Modules',
-              showBackButton: true,
-            ),
-            Expanded(
-              child: state.isLoading && state.materials.isEmpty
-                  ? SkeletonPulse(
-                      child: ListView.builder(
-                        physics: const NeverScrollableScrollPhysics(),
-                        padding: const EdgeInsets.all(24),
-                        itemCount: 5,
-                        itemBuilder: (_, __) => const MaterialCardSkeleton(),
+    return MobilePageScaffold(
+      title: 'Learning Modules',
+      scrollable: false,
+      header: const ClassSectionHeader(
+        title: 'Learning Modules',
+        showBackButton: true,
+      ),
+      body: state.isLoading && state.materials.isEmpty
+          ? SkeletonPulse(
+              child: ListView.builder(
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(24),
+                itemCount: 5,
+                itemBuilder: (_, __) => const MaterialCardSkeleton(),
+              ),
+            )
+          : state.materials.isEmpty
+              ? const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.library_books_outlined,
+                        size: 64,
+                        color: AppColors.foregroundLight,
                       ),
-                    )
-                  : state.materials.isEmpty
-                      ? const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.library_books_outlined,
-                                size: 64,
-                                color: AppColors.foregroundLight,
-                              ),
-                              SizedBox(height: 16),
-                              Text(
-                                'No modules yet',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: AppColors.foregroundTertiary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : RefreshIndicator(
+                      SizedBox(height: 16),
+                      Text(
+                        'No modules yet',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: AppColors.foregroundTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : RefreshIndicator(
                               onRefresh: () => ref
                                   .read(learningMaterialProvider.notifier)
                                   .loadMaterials(widget.classId),
@@ -163,10 +160,6 @@ class _StudentMaterialListPageState extends ConsumerState<StudentMaterialListPag
                                 },
                               ),
                             ),
-            ),
-          ],
-        ),
-      ),
-    );
+              );
   }
 }

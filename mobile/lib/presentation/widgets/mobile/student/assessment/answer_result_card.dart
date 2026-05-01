@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
-import 'package:likha/presentation/widgets/shared/cards/base_card.dart';
+import 'package:likha/presentation/widgets/shared/cards/base_info_card.dart';
 import 'package:likha/presentation/widgets/shared/primitives/status_badge.dart';
-import 'package:likha/presentation/widgets/shared/tokens/app_text_styles.dart';
 
 class AnswerResultCard extends StatelessWidget {
   final StudentAnswerResult answer;
@@ -52,48 +51,20 @@ class AnswerResultCard extends StatelessWidget {
       statusIcon = Icons.cancel;
     }
 
-    return BaseCard(
-      child: Column(
+    return BaseInfoCard(
+      title: 'Q$questionNumber. ${answer.questionText}',
+      subtitle: '${_questionTypeLabel(answer.questionType)} - ${answer.points} pt${answer.points != 1 ? 's' : ''}',
+      icon: Icon(statusIcon, color: statusColor),
+      trailing: StatusBadge(
+        label: isPending
+            ? 'Pending'
+            : '${answer.pointsAwarded % 1 == 0 ? answer.pointsAwarded.toInt() : answer.pointsAwarded.toStringAsFixed(1)} / ${answer.points}',
+        color: statusColor,
+        variant: BadgeVariant.filled,
+      ),
+      content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(statusIcon, color: statusColor, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Q$questionNumber. ${answer.questionText}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: AppColors.foregroundDark,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${_questionTypeLabel(answer.questionType)} - ${answer.points} pt${answer.points != 1 ? 's' : ''}',
-                      style: AppTextStyles.cardSubtitleSm,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              StatusBadge(
-                label: isPending
-                    ? 'Pending'
-                    : '${answer.pointsAwarded % 1 == 0 ? answer.pointsAwarded.toInt() : answer.pointsAwarded.toStringAsFixed(1)} / ${answer.points}',
-                color: statusColor,
-                variant: BadgeVariant.filled,
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Divider(height: 1, color: AppColors.borderLight),
-          const SizedBox(height: 12),
           _buildAnswerDetail(),
           if (isPending) ...[
             const SizedBox(height: 8),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/widgets/shared/cards/base_card.dart';
 import 'package:likha/presentation/widgets/shared/primitives/chevron_trailing.dart';
@@ -30,38 +31,17 @@ class _Sf9StudentListPageState extends ConsumerState<Sf9StudentListPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(sf9Provider);
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundSecondary,
-      body: SafeArea(
-        child: Column(
-          children: [
-            const ClassSectionHeader(
-              title: 'Student Records (SF9)',
-              showBackButton: true,
-            ),
-            Expanded(
-              child: state.isLoading && state.students.isEmpty
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.accentCharcoal,
-                        strokeWidth: 2.5,
-                      ),
-                    )
-                  : state.error != null
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Text(
-                              state.error!,
-                              style: const TextStyle(
-                                color: AppColors.semanticError,
-                                fontSize: 14,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        )
-                      : state.students.isEmpty
+    return MobilePageScaffold(
+      title: 'Student Records (SF9)',
+      scrollable: false,
+      isLoading: state.isLoading && state.students.isEmpty,
+      error: state.error,
+      onRetry: () => ref.read(sf9Provider.notifier).loadStudents(widget.classId),
+      header: const ClassSectionHeader(
+        title: 'Student Records (SF9)',
+        showBackButton: true,
+      ),
+      body: state.students.isEmpty
                           ? const Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -150,10 +130,6 @@ class _Sf9StudentListPageState extends ConsumerState<Sf9StudentListPage> {
                                 );
                               },
                             ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

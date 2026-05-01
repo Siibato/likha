@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
@@ -182,16 +183,33 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
       PageLogger.instance.log('Grade items state changed - loading: ${next.isLoading}, items count: ${next.items.length}');
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundSecondary,
-      body: SafeArea(
-        child: Column(
-          children: [
-            const ClassSectionHeader(
-                title: 'Class Record', showBackButton: true),
+    final isLoading = configState.isLoading ||
+        (configState.isConfigured &&
+            itemsState.isLoading &&
+            itemsState.items.isEmpty);
 
-            // Quarter chips + actions
-            QuarterSelector(
+    return MobilePageScaffold(
+      title: 'Class Record',
+      scrollable: false,
+      isLoading: isLoading,
+      header: const ClassSectionHeader(
+        title: 'Class Record',
+        showBackButton: true,
+      ),
+      floatingActionButton: configState.isConfigured
+          ? FloatingActionButton(
+              backgroundColor: AppColors.accentCharcoal,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              onPressed: _showAddGradeItemDialog,
+              child: const Icon(Icons.add),
+            )
+          : null,
+      body: Column(
+        children: [
+          // Quarter chips + actions
+          QuarterSelector(
               selectedQuarter: _selectedQuarter,
               onQuarterChanged: _onQuarterChanged,
               onComputeGrades: () async {
@@ -228,17 +246,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
             ),
 
             // Content
-            if (configState.isLoading ||
-                (configState.isConfigured &&
-                    itemsState.isLoading &&
-                    itemsState.items.isEmpty))
-              const Expanded(
-                child: Center(
-                  child: CircularProgressIndicator(
-                      color: AppColors.accentCharcoal, strokeWidth: 2.5),
-                ),
-              )
-            else if (!configState.isConfigured)
+            if (!configState.isConfigured)
               const Expanded(
                 child: Center(
                   child: Column(
@@ -313,19 +321,8 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
                   onAddColumn: (_) => _showAddGradeItemDialog(),
                 ),
               ),
-          ],
-        ),
+        ],
       ),
-      floatingActionButton: configState.isConfigured
-          ? FloatingActionButton(
-              backgroundColor: AppColors.accentCharcoal,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
-              onPressed: _showAddGradeItemDialog,
-              child: const Icon(Icons.add),
-            )
-          : null,
     );
   }
 }

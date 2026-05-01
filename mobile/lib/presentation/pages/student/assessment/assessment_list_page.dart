@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/services/server_clock_service.dart';
@@ -9,7 +10,6 @@ import 'package:likha/injection_container.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/presentation/pages/student/assessment/assessment_detail_page.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/widgets/mobile/student/assessment/assessment_card.dart';
 import 'package:likha/presentation/widgets/mobile/student/assessment/empty_assessment_state.dart';
 import 'package:likha/presentation/providers/student_assessment_provider.dart';
@@ -118,39 +118,23 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
       }
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundSecondary,
-      body: SafeArea(
-        child: state.isLoading && state.assessments.isEmpty
-            ? const Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.accentCharcoal,
-                  strokeWidth: 2.5,
-                ),
-              )
-            : RefreshIndicator(
-                onRefresh: () => ref
-                    .read(studentAssessmentProvider.notifier)
-                    .loadAssessments(widget.classId, publishedOnly: true),
-                color: AppColors.accentCharcoal,
-                child: CustomScrollView(
-                  slivers: [
-                    const SliverToBoxAdapter(
-                      child: ClassSectionHeader(
-                        title: 'Assessments',
-                        showBackButton: true,
-                      ),
-                    ),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: FormMessage(
-                          message: _formError,
-                          severity: MessageSeverity.error,
-                        ),
-                      ),
-                    ),
-                    if (_formError != null) const SliverToBoxAdapter(child: SizedBox(height: 12)),
+    return MobilePageScaffold(
+      title: 'Assessments',
+      scrollable: false,
+      isLoading: state.isLoading && state.assessments.isEmpty,
+      error: _formError,
+      onRetry: () => ref.read(studentAssessmentProvider.notifier).loadAssessments(widget.classId, publishedOnly: true),
+      header: const ClassSectionHeader(
+        title: 'Assessments',
+        showBackButton: true,
+      ),
+      body: RefreshIndicator(
+        onRefresh: () => ref
+            .read(studentAssessmentProvider.notifier)
+            .loadAssessments(widget.classId, publishedOnly: true),
+        color: AppColors.accentCharcoal,
+        child: CustomScrollView(
+          slivers: [
                     state.assessments.isEmpty
                         ? const SliverFillRemaining(
                             child: EmptyAssessmentState(),
@@ -180,8 +164,7 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
                     ),
                   ],
                 ),
-              ),
-      ),
+        ),
     );
   }
 }

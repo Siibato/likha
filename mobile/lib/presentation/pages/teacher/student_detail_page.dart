@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/dashboard/student_detail_info_card.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/dashboard/student_assessment_row.dart';
@@ -81,47 +82,23 @@ class _TeacherStudentDetailPageState extends ConsumerState<TeacherStudentDetailP
       ...detailState.assignments.map((a) => _StudentItem.assignment(a)),
     ]..sort((a, b) => b.dueDate.compareTo(a.dueDate));
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundSecondary,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.foregroundPrimary),
-        title: Text(
-          widget.student.fullName,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: AppColors.foregroundPrimary,
-            letterSpacing: -0.4,
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Student Info Card - with padding
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: StudentDetailInfoCard(
-                student: widget.student,
-                classTitle: widget.classTitle,
-              ),
+    return MobilePageScaffold(
+      title: widget.student.fullName,
+      isLoading: detailState.isLoading && items.isEmpty,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Student Info Card - with padding
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: StudentDetailInfoCard(
+              student: widget.student,
+              classTitle: widget.classTitle,
             ),
+          ),
 
-            // Unified Assessments & Assignments Section - full width
-            if (detailState.isLoading && items.isEmpty)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: CircularProgressIndicator(
-                    color: AppColors.accentCharcoal,
-                    strokeWidth: 2.5,
-                  ),
-                ),
-              )
-            else if (items.isEmpty)
+          // Unified Assessments & Assignments Section - full width
+          if (items.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: SizedBox(
@@ -154,8 +131,7 @@ class _TeacherStudentDetailPageState extends ConsumerState<TeacherStudentDetailP
                   children: items.map(_buildRow).toList(),
                 ),
               ),
-          ],
-        ),
+        ],
       ),
     );
   }

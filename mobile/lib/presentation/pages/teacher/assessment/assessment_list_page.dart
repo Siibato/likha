@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
@@ -211,17 +212,17 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
       }
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundSecondary,
-      appBar: null,
-      body: SafeArea(
-        child: Column(
-          children: [
-            const ClassSectionHeader(
-              title: 'Assessments',
-              showBackButton: true,
-            ),
-            Padding(
+    return MobilePageScaffold(
+      title: 'Assessments',
+      scrollable: false,
+      isLoading: assessmentState.isLoading && assessmentState.assessments.isEmpty,
+      header: const ClassSectionHeader(
+        title: 'Assessments',
+        showBackButton: true,
+      ),
+      body: Column(
+        children: [
+          Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -285,14 +286,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
               ),
             ),
             Expanded(
-              child: assessmentState.isLoading && assessmentState.assessments.isEmpty
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.accentCharcoal,
-                        strokeWidth: 2.5,
-                      ),
-                    )
-                  : assessmentState.assessments.isEmpty
+              child: assessmentState.assessments.isEmpty
                       ? const EmptyAssessmentListState()
                       : _isReorderMode
                           ? AnimatedBuilder(
@@ -354,7 +348,6 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
                             ),
             ),
           ],
-        ),
       ),
     );
   }

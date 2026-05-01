@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 
 class BulkPasteSheet extends ConsumerStatefulWidget {
   final String tosId;
@@ -124,25 +125,13 @@ class _BulkPasteSheetState extends ConsumerState<BulkPasteSheet> {
               ),
               const SizedBox(height: 16),
               Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.backgroundTertiary,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.borderLight),
-                  ),
-                  child: TextField(
-                    controller: _pasteController,
-                    maxLines: null,
-                    expands: true,
-                    textAlignVertical: TextAlignVertical.top,
-                    decoration: const InputDecoration(
-                      hintText: 'Paste competencies here...',
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.all(12),
-                      hintStyle: TextStyle(fontSize: 13, color: AppColors.foregroundLight),
-                    ),
-                    style: const TextStyle(fontSize: 13, color: AppColors.foregroundPrimary),
-                  ),
+                child: StyledTextField(
+                  controller: _pasteController,
+                  label: 'Competencies',
+                  icon: Icons.paste,
+                  hintText: 'Paste competencies here...',
+                  maxLines: null,
+                  minLines: 1,
                 ),
               ),
               const SizedBox(height: 16),

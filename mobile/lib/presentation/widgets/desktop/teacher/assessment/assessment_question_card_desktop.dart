@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_draft.dart';
+import 'package:likha/presentation/widgets/shared/cards/base_action_card.dart';
 
 /// Read-only view of one question in the desktop assessment builder.
 class AssessmentQuestionCardDesktop extends StatelessWidget {
@@ -29,125 +30,57 @@ class AssessmentQuestionCardDesktop extends StatelessWidget {
         _ => draft.type,
       };
 
-  Color _typeColor() => switch (draft.type) {
-        'multiple_choice' => AppColors.accentCharcoal,
-        'identification' => AppColors.semanticSuccessAlt,
-        'enumeration' => AppColors.accentAmber,
-        'essay' => AppColors.accentAmber,
-        _ => AppColors.foregroundSecondary,
-      };
-
+  
   @override
   Widget build(BuildContext context) {
-    final typeColor = _typeColor();
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.borderLight),
+    return BaseActionCard(
+      title: draft.questionText.isEmpty ? '(empty question)' : draft.questionText,
+      subtitle: '${_typeLabel()} • ${draft.points} pt${draft.points != 1 ? 's' : ''}',
+      icon: Container(
+        width: 28,
+        height: 28,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.borderLight,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          '${index + 1}',
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: AppColors.accentCharcoal,
+          ),
+        ),
       ),
+      margin: const EdgeInsets.only(bottom: 12),
+      actions: isReorderMode
+          ? [
+              IconButton(
+                icon: const Icon(Icons.swap_vert_rounded, size: 20),
+                onPressed: () => onMove(index),
+                tooltip: 'Move',
+                color: AppColors.foregroundSecondary,
+              ),
+            ]
+          : [
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                onPressed: () => onEdit(index),
+                tooltip: 'Edit',
+                color: AppColors.foregroundSecondary,
+              ),
+              IconButton(
+                icon: const Icon(Icons.close_rounded, size: 20),
+                onPressed: () => onDelete(index),
+                tooltip: 'Remove',
+                color: AppColors.semanticError,
+              ),
+            ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 28,
-                height: 28,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppColors.borderLight,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '${index + 1}',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.accentCharcoal,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: typeColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            _typeLabel(),
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: typeColor,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${draft.points} pt${draft.points != 1 ? 's' : ''}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.foregroundTertiary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      draft.questionText.isEmpty
-                          ? '(empty question)'
-                          : draft.questionText,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: draft.questionText.isEmpty
-                            ? AppColors.foregroundTertiary
-                            : AppColors.accentCharcoal,
-                      ),
-                    ),
-                    _buildAnswerPreview(),
-                  ],
-                ),
-              ),
-              if (isReorderMode)
-                IconButton(
-                  icon: const Icon(Icons.swap_vert_rounded, size: 20),
-                  onPressed: () => onMove(index),
-                  tooltip: 'Move',
-                  color: AppColors.foregroundSecondary,
-                )
-              else ...[
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  onPressed: () => onEdit(index),
-                  tooltip: 'Edit',
-                  color: AppColors.foregroundSecondary,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 20),
-                  onPressed: () => onDelete(index),
-                  tooltip: 'Remove',
-                  color: AppColors.semanticError,
-                ),
-              ],
-            ],
-          ),
+          _buildAnswerPreview(),
         ],
       ),
     );

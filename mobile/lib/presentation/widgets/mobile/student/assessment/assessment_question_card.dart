@@ -4,6 +4,7 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/presentation/utils/formatters.dart';
 import 'package:likha/presentation/widgets/mobile/student/assessment/assessment_question_input.dart';
+import 'package:likha/presentation/widgets/shared/cards/base_card.dart';
 
 class AssessmentQuestionCard extends StatelessWidget {
   final StudentQuestion question;
@@ -29,42 +30,30 @@ class AssessmentQuestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return BaseCard(
       margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: AppColors.borderLight,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(1, 1, 1, 3.5),
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 16),
-            Container(
-              height: 1,
-              color: AppColors.borderLight,
-            ),
-            const SizedBox(height: 16),
-            AssessmentQuestionInput(
-              question: question,
-              selectedChoices: selectedChoices,
-              textController: textControllers[question.id],
-              enumControllers: enumControllers[question.id],
-              onChoicesChanged: (choices) =>
-                  onChoicesChanged(question.id, choices),
-              onTextChanged: (text) => onTextChanged(question.id, text),
-              onEnumChanged: (index, text) =>
-                  onEnumChanged(question.id, index, text),
-            ),
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(),
+          const SizedBox(height: 16),
+          Container(
+            height: 1,
+            color: AppColors.borderLight,
+          ),
+          const SizedBox(height: 16),
+          AssessmentQuestionInput(
+            question: question,
+            selectedChoices: selectedChoices,
+            textController: textControllers[question.id],
+            enumControllers: enumControllers[question.id],
+            onChoicesChanged: (choices) =>
+                onChoicesChanged(question.id, choices),
+            onTextChanged: (text) => onTextChanged(question.id, text),
+            onEnumChanged: (index, text) =>
+                onEnumChanged(question.id, index, text),
+          ),
+        ],
       ),
     );
   }

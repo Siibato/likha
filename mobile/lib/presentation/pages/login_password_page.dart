@@ -3,7 +3,8 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
-import 'package:likha/presentation/pages/shared/widgets/auth_desktop_layout.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_auth_layout.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_auth_layout.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 
 class LoginPasswordPage extends ConsumerStatefulWidget {
@@ -493,11 +494,13 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
       authState.error,
     );
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: PlatformDetector.isDesktop
-          ? AuthDesktopLayout(formContent: formBody)
-          : SafeArea(child: Center(child: formBody)),
+    if (PlatformDetector.isDesktop) {
+      return DesktopAuthLayout(formContent: formBody);
+    }
+
+    return MobileAuthLayout(
+      showLogo: false,
+      formContent: formBody,
     );
   }
 }

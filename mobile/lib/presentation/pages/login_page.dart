@@ -5,7 +5,8 @@ import 'package:likha/core/services/school_setup_service.dart';
 import 'package:likha/injection_container.dart' as di;
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
 import 'package:likha/presentation/pages/setup/school_setup_page.dart';
-import 'package:likha/presentation/pages/shared/widgets/auth_desktop_layout.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_auth_layout.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_auth_layout.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
@@ -240,13 +241,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: PlatformDetector.isDesktop
-          ? AuthDesktopLayout(formContent: _buildFormBody(authState.isLoading))
-          : SafeArea(
-              child: Center(child: _buildFormBody(authState.isLoading)),
-            ),
+    if (PlatformDetector.isDesktop) {
+      return DesktopAuthLayout(
+        formContent: _buildFormBody(authState.isLoading),
+      );
+    }
+
+    return MobileAuthLayout(
+      showLogo: false,
+      formContent: _buildFormBody(authState.isLoading),
     );
   }
 }

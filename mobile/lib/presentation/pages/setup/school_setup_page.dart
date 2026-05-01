@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
 import 'package:likha/presentation/pages/setup/connection_method_page.dart';
-import 'package:likha/presentation/pages/shared/widgets/auth_desktop_layout.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_auth_layout.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_auth_layout.dart';
 
 /// First-launch welcome page.
 ///
-/// On desktop/web: uses [AuthDesktopLayout] (left branding + right form).
-/// On mobile: centered single-column layout.
+/// On desktop/web: uses [DesktopAuthLayout] (left branding + right form).
+/// On mobile: uses [MobileAuthLayout] centered single-column layout.
 class SchoolSetupPage extends StatelessWidget {
   const SchoolSetupPage({super.key});
 
@@ -87,11 +88,13 @@ class SchoolSetupPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: PlatformDetector.isDesktop
-          ? AuthDesktopLayout(formContent: _buildContent(context))
-          : SafeArea(child: Center(child: _buildContent(context))),
+    if (PlatformDetector.isDesktop) {
+      return DesktopAuthLayout(formContent: _buildContent(context));
+    }
+
+    return MobileAuthLayout(
+      showLogo: false,
+      formContent: _buildContent(context),
     );
   }
 }

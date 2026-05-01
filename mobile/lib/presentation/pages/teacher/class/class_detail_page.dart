@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/presentation/pages/teacher/class/class_student_list_page.dart';
 import 'package:likha/presentation/pages/teacher/assessment/assessment_list_page.dart';
@@ -43,28 +44,22 @@ class _ClassDetailPageState extends ConsumerState<ClassDetailPage> {
       }
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundSecondary,
-      appBar: null,
+    return MobilePageScaffold(
+      title: detail?.title ?? 'Class',
+      isLoading: detail == null,
+      scrollable: false,
+      header: detail == null
+          ? null
+          : ClassSectionHeader(
+              title: detail.title,
+              showBackButton: true,
+            ),
       body: detail == null
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.accentCharcoal,
-                strokeWidth: 2.5,
-              ),
-            )
-          : SafeArea(
+          ? const SizedBox.shrink()
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  ClassSectionHeader(
-                    title: detail.title,
-                    showBackButton: true,
-                  ),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        children: [
                           NavigationCard(
                             icon: Icons.quiz_outlined,
                             title: 'Assessments',
@@ -156,10 +151,6 @@ class _ClassDetailPageState extends ConsumerState<ClassDetailPage> {
                             ),
                           ],
                         ],
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ),
     );

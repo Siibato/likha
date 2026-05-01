@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/widgets/shared/cards/base_card.dart';
 import 'package:likha/presentation/widgets/shared/primitives/chevron_trailing.dart';
@@ -30,26 +31,27 @@ class _TosListPageState extends ConsumerState<TosListPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(tosProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundSecondary,
-      body: SafeArea(
-        child: Column(
-          children: [
-            const ClassSectionHeader(
-              title: 'Table of Specifications',
-              showBackButton: true,
-            ),
-            Expanded(
-              child: state.isLoading && state.tosList.isEmpty
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.accentCharcoal,
-                        strokeWidth: 2.5,
-                      ),
-                    )
-                  : state.tosList.isEmpty
-                      ? _buildEmptyState()
-                      : RefreshIndicator(
+    return MobilePageScaffold(
+      title: 'Table of Specifications',
+      scrollable: false,
+      isLoading: state.isLoading && state.tosList.isEmpty,
+      header: const ClassSectionHeader(
+        title: 'Table of Specifications',
+        showBackButton: true,
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CreateTosPage(classId: widget.classId),
+          ),
+        ),
+        backgroundColor: AppColors.accentCharcoal,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+      body: state.tosList.isEmpty
+          ? _buildEmptyState()
+          : RefreshIndicator(
                           onRefresh: () => ref
                               .read(tosProvider.notifier)
                               .loadTosList(widget.classId),
@@ -126,20 +128,6 @@ class _TosListPageState extends ConsumerState<TosListPage> {
                             },
                           ),
                         ),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => CreateTosPage(classId: widget.classId),
-          ),
-        ),
-        backgroundColor: AppColors.accentCharcoal,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
     );
   }
 

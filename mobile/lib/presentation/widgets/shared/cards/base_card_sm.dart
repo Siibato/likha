@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../tokens/app_decorations.dart';
 import '../tokens/app_dimensions.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'base_card.dart';
 
 /// A smaller reusable card shell with Pattern A-Small design.
 ///
@@ -13,6 +14,9 @@ class BaseCardSm extends StatelessWidget {
   final EdgeInsets margin;
   final EdgeInsets padding;
   final Color outerColor;
+  final BaseCardVariant variant;
+  final bool enabled;
+  final bool showShadow;
 
   const BaseCardSm({
     super.key,
@@ -23,10 +27,126 @@ class BaseCardSm extends StatelessWidget {
     ),
     this.padding = const EdgeInsets.all(AppDimensions.kCardPadSm),
     this.outerColor = AppColors.accentCharcoal,
+    this.variant = BaseCardVariant.standard,
+    this.enabled = true,
+    this.showShadow = false,
   });
+
+  /// Creates a subtle small card with reduced visual weight
+  factory BaseCardSm.subtle({
+    required Widget child,
+    VoidCallback? onTap,
+    EdgeInsets? margin,
+    EdgeInsets? padding,
+  }) {
+    return BaseCardSm(
+      child: child,
+      onTap: onTap,
+      margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardSmListSpacing),
+      padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadSm),
+      variant: BaseCardVariant.subtle,
+    );
+  }
+
+  /// Creates an accent small card with primary color styling
+  factory BaseCardSm.accent({
+    required Widget child,
+    VoidCallback? onTap,
+    EdgeInsets? margin,
+    EdgeInsets? padding,
+  }) {
+    return BaseCardSm(
+      child: child,
+      onTap: onTap,
+      margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardSmListSpacing),
+      padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadSm),
+      variant: BaseCardVariant.accent,
+    );
+  }
+
+  /// Creates a success small card with green styling
+  factory BaseCardSm.success({
+    required Widget child,
+    VoidCallback? onTap,
+    EdgeInsets? margin,
+    EdgeInsets? padding,
+  }) {
+    return BaseCardSm(
+      child: child,
+      onTap: onTap,
+      margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardSmListSpacing),
+      padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadSm),
+      variant: BaseCardVariant.success,
+    );
+  }
+
+  /// Creates a warning small card with amber styling
+  factory BaseCardSm.warning({
+    required Widget child,
+    VoidCallback? onTap,
+    EdgeInsets? margin,
+    EdgeInsets? padding,
+  }) {
+    return BaseCardSm(
+      child: child,
+      onTap: onTap,
+      margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardSmListSpacing),
+      padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadSm),
+      variant: BaseCardVariant.warning,
+    );
+  }
+
+  /// Creates an error small card with red styling
+  factory BaseCardSm.error({
+    required Widget child,
+    VoidCallback? onTap,
+    EdgeInsets? margin,
+    EdgeInsets? padding,
+  }) {
+    return BaseCardSm(
+      child: child,
+      onTap: onTap,
+      margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardSmListSpacing),
+      padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadSm),
+      variant: BaseCardVariant.error,
+    );
+  }
+
+  /// Creates a disabled small card
+  factory BaseCardSm.disabled({
+    required Widget child,
+    EdgeInsets? margin,
+    EdgeInsets? padding,
+  }) {
+    return BaseCardSm(
+      child: child,
+      margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardSmListSpacing),
+      padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadSm),
+      enabled: false,
+    );
+  }
+
+  Color _getVariantColor() {
+    switch (variant) {
+      case BaseCardVariant.standard:
+        return AppColors.accentCharcoal;
+      case BaseCardVariant.subtle:
+        return AppColors.borderLight;
+      case BaseCardVariant.accent:
+        return AppColors.accentAmber;
+      case BaseCardVariant.success:
+        return AppColors.semanticSuccessAlt;
+      case BaseCardVariant.warning:
+        return AppColors.accentAmber;
+      case BaseCardVariant.error:
+        return AppColors.semanticErrorDark;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final effectiveOuterColor = enabled ? _getVariantColor() : AppColors.borderLight;
+
     final inner = Container(
       decoration: AppDecorations.cardShellSmInner(),
       margin: const EdgeInsets.fromLTRB(
@@ -41,17 +161,28 @@ class BaseCardSm extends StatelessWidget {
 
     final outer = Container(
       decoration: BoxDecoration(
-        color: outerColor,
+        color: effectiveOuterColor,
         borderRadius: BorderRadius.circular(AppDimensions.kCardSmOuterRadius),
+        boxShadow: showShadow ? [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ] : null,
       ),
       margin: margin,
       child: inner,
     );
 
-    if (onTap != null) {
-      return GestureDetector(
-        onTap: onTap,
-        child: outer,
+    if (onTap != null && enabled) {
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppDimensions.kCardSmOuterRadius),
+          child: outer,
+        ),
       );
     }
 

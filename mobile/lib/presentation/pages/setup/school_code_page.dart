@@ -3,7 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
-import 'package:likha/presentation/pages/shared/widgets/auth_desktop_layout.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_auth_layout.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_auth_layout.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 import 'package:likha/presentation/providers/school_setup_provider.dart';
@@ -97,23 +98,13 @@ class _SchoolCodePageState extends ConsumerState<SchoolCodePage> {
 
     final state = ref.watch(schoolSetupProvider);
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Enter School Code',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: AppColors.foregroundDark,
-          ),
-        ),
-      ),
-      body: PlatformDetector.isDesktop
-          ? AuthDesktopLayout(formContent: _buildFormContent(state))
-          : _buildFormContent(state),
+    if (PlatformDetector.isDesktop) {
+      return DesktopAuthLayout(formContent: _buildFormContent(state));
+    }
+
+    return MobileAuthLayout(
+      showLogo: false,
+      formContent: _buildFormContent(state),
     );
   }
 }

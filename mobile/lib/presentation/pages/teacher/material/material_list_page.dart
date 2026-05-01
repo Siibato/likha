@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/domain/learning_materials/entities/learning_material.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
@@ -209,17 +210,17 @@ class _TeacherMaterialListPageState extends ConsumerState<TeacherMaterialListPag
       }
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundSecondary,
-      appBar: null,
-      body: SafeArea(
-        child: Column(
-          children: [
-            const ClassSectionHeader(
-              title: 'Learning Modules',
-              showBackButton: true,
-            ),
-            Padding(
+    return MobilePageScaffold(
+      title: 'Learning Modules',
+      scrollable: false,
+      isLoading: materialState.isLoading && materialState.materials.isEmpty,
+      header: const ClassSectionHeader(
+        title: 'Learning Modules',
+        showBackButton: true,
+      ),
+      body: Column(
+        children: [
+          Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -283,14 +284,7 @@ class _TeacherMaterialListPageState extends ConsumerState<TeacherMaterialListPag
               ),
             ),
             Expanded(
-              child: materialState.isLoading && materialState.materials.isEmpty
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.accentCharcoal,
-                        strokeWidth: 2.5,
-                      ),
-                    )
-                  : materialState.materials.isEmpty
+              child: materialState.materials.isEmpty
                       ? const Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -347,7 +341,6 @@ class _TeacherMaterialListPageState extends ConsumerState<TeacherMaterialListPag
                             ),
             ),
           ],
-        ),
       ),
     );
   }

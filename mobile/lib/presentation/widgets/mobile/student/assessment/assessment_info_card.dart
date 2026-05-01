@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/widgets/shared/cards/base_info_card.dart';
 
 /// Card showing assessment description, stat chips (points, time, questions),
 /// and open/close date rows.
@@ -48,94 +49,38 @@ class AssessmentInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return BaseInfoCard(
+      title: 'Assessment Details',
+      subtitle: '$totalPoints pts • $_formatTimeLimit(timeLimitMinutes) • $questionCount question${questionCount != 1 ? 's' : ''}',
+      icon: Icon(Icons.info_outline_rounded),
       margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: AppColors.borderLight,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(1, 1, 1, 3.5),
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (description != null && description!.isNotEmpty) ...[
-              Text(
-                description!,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: AppColors.accentCharcoal,
-                  height: 1.5,
-                ),
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (description != null && description!.isNotEmpty) ...[
+            Text(
+              description!,
+              style: const TextStyle(
+                fontSize: 15,
+                color: AppColors.accentCharcoal,
+                height: 1.5,
               ),
-              const SizedBox(height: 16),
-            ],
-            Row(
-              children: [
-                _InfoChip(
-                  icon: Icons.star_outline_rounded,
-                  label: '$totalPoints pts',
-                ),
-                const SizedBox(width: 14),
-                _InfoChip(
-                  icon: Icons.timer_outlined,
-                  label: _formatTimeLimit(timeLimitMinutes),
-                ),
-                const SizedBox(width: 14),
-                _InfoChip(
-                  icon: Icons.help_outline_rounded,
-                  label:
-                      '$questionCount question${questionCount != 1 ? 's' : ''}',
-                ),
-              ],
             ),
             const SizedBox(height: 16),
-            _DateRow(
-              icon: Icons.calendar_today_rounded,
-              label: 'Opens',
-              dateTime: _formatDateTime(openAt),
-            ),
-            const SizedBox(height: 6),
-            _DateRow(
-              icon: Icons.event_rounded,
-              label: 'Closes',
-              dateTime: _formatDateTime(closeAt),
-            ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _InfoChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _InfoChip({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 15, color: AppColors.foregroundSecondary),
-        const SizedBox(width: 5),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            color: AppColors.foregroundSecondary,
-            fontWeight: FontWeight.w500,
-            letterSpacing: -0.2,
+          _DateRow(
+            icon: Icons.calendar_today_rounded,
+            label: 'Opens',
+            dateTime: _formatDateTime(openAt),
           ),
-        ),
-      ],
+          const SizedBox(height: 6),
+          _DateRow(
+            icon: Icons.event_rounded,
+            label: 'Closes',
+            dateTime: _formatDateTime(closeAt),
+          ),
+        ],
+      ),
     );
   }
 }

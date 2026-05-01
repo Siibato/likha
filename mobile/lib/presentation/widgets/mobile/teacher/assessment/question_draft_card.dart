@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/widgets/shared/cards/base_card.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_answer_preview.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_draft.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_edit_panel.dart';
@@ -43,28 +44,17 @@ class _QuestionDraftCardState extends State<QuestionDraftCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return BaseCard(
       margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: AppColors.accentCharcoal,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(1, 1, 1, 3.5),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.all(Radius.circular(15)),
-        ),
-        padding: const EdgeInsets.all(16),
-        child: _isEditing
-            ? QuestionEditPanel(
-                draft: widget.question,
-                index: widget.index,
-                onCancel: () => setState(() => _isEditing = false),
-                onSave: _handleSave,
-              )
-            : _buildViewMode(),
-      ),
+      padding: const EdgeInsets.all(16),
+      child: _isEditing
+          ? QuestionEditPanel(
+              draft: widget.question,
+              index: widget.index,
+              onCancel: () => setState(() => _isEditing = false),
+              onSave: _handleSave,
+            )
+          : _buildViewMode(),
     );
   }
 

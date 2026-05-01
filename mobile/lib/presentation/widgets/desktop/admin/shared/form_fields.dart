@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/widgets/desktop/admin/shared/date_utils.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 
 /// Utility class for creating consistent form fields across desktop pages
+/// Now uses StyledTextField for consistent design
 class DesktopFormField {
   /// Creates a standard input decoration for desktop form fields
   static InputDecoration inputDecoration(String label, {
@@ -51,53 +53,43 @@ class DesktopFormField {
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: Colors.red, width: 1.5),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       filled: true,
-      fillColor: enabled ? Colors.white : AppColors.backgroundTertiary,
+      fillColor: enabled ? Colors.white : AppColors.backgroundDisabled,
     );
   }
 
-  /// Creates a text form field with standard styling
-  static Widget textFormField({
-    TextEditingController? controller,
-    String? labelText,
+  /// Creates a standard styled text field for desktop
+  static StyledTextField textFormField({
+    required TextEditingController controller,
+    required String label,
+    IconData? prefixIcon,
     String? hintText,
-    String? Function(String?)? validator,
-    void Function(String?)? onSaved,
-    void Function(String)? onChanged,
+    Widget? suffixIcon,
+    String? errorText,
     bool enabled = true,
     bool obscureText = false,
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
-    IconData? prefixIcon,
-    Widget? suffixIcon,
-    String? errorText,
-    int? maxLines = 1,
-    TextCapitalization textCapitalization = TextCapitalization.sentences,
+    String? Function(String?)? validator,
+    ValueChanged<String>? onChanged,
+    FocusNode? focusNode,
+    int? maxLines,
   }) {
-    return TextFormField(
+    return StyledTextField(
       controller: controller,
-      decoration: inputDecoration(
-        labelText ?? '',
-        hintText: hintText,
-        prefixIcon: prefixIcon,
-        suffixIcon: suffixIcon,
-        errorText: errorText,
-        enabled: enabled,
-      ),
-      validator: validator,
-      onSaved: onSaved,
-      onChanged: onChanged,
+      label: label,
+      icon: prefixIcon ?? Icons.text_fields,
+      hintText: hintText,
+      suffixIcon: suffixIcon,
+      errorText: errorText,
       enabled: enabled,
       obscureText: obscureText,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
-      maxLines: maxLines,
-      textCapitalization: textCapitalization,
-      style: const TextStyle(
-        fontSize: 14,
-        color: AppColors.foregroundPrimary,
-      ),
+      onChanged: onChanged,
+      focusNode: focusNode,
+      maxLines: maxLines ?? 1,
     );
   }
 
@@ -110,17 +102,35 @@ class DesktopFormField {
     String? hintText,
     IconData? prefixIcon,
     bool enabled = true,
-    String? Function(T?)? validator,
+    FormFieldValidator<T>? validator,
   }) {
     return DropdownButtonFormField<T>(
       value: value,
       items: items,
       onChanged: enabled ? onChanged : null,
-      decoration: inputDecoration(
-        labelText ?? '',
+      decoration: InputDecoration(
+        labelText: labelText,
         hintText: hintText,
-        prefixIcon: prefixIcon,
-        enabled: enabled,
+        prefixIcon: prefixIcon != null ? Icon(
+          prefixIcon,
+          color: AppColors.foregroundTertiary,
+          size: 20,
+        ) : null,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.borderLight),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.borderLight),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.foregroundPrimary, width: 1.5),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        filled: true,
+        fillColor: enabled ? Colors.white : AppColors.backgroundDisabled,
       ),
       validator: validator,
       style: const TextStyle(

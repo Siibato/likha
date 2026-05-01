@@ -28,6 +28,9 @@ class MobilePageScaffold extends StatelessWidget {
   /// When true, wraps [body] in a [SingleChildScrollView].
   final bool scrollable;
 
+  /// Optional custom header widget. When provided, replaces the default AppBar.
+  final Widget? header;
+
   /// Optional [TabBar] displayed at the bottom of the AppBar.
   final TabBar? tabBar;
 
@@ -55,6 +58,7 @@ class MobilePageScaffold extends StatelessWidget {
     required this.body,
     this.backgroundColor,
     this.scrollable = true,
+    this.header,
     this.tabBar,
     this.tabController,
     this.floatingActionButton,
@@ -130,20 +134,31 @@ class MobilePageScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appBar = AppBar(
-      backgroundColor: Colors.white,
-      elevation: 0,
-      surfaceTintColor: Colors.transparent,
-      leading: leading,
-      title: _buildAppBarTitle(),
-      actions: actions,
-      bottom: tabBar,
-    );
+    final effectiveAppBar = header == null
+        ? AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            surfaceTintColor: Colors.transparent,
+            leading: leading,
+            title: _buildAppBarTitle(),
+            actions: actions,
+            bottom: tabBar,
+          )
+        : null;
+
+    final effectiveBody = header != null
+        ? Column(
+            children: [
+              header!,
+              Expanded(child: _buildBody()),
+            ],
+          )
+        : _buildBody();
 
     return Scaffold(
       backgroundColor: backgroundColor ?? AppColors.backgroundSecondary,
-      appBar: appBar,
-      body: _buildBody(),
+      appBar: effectiveAppBar,
+      body: effectiveBody,
       floatingActionButton: floatingActionButton,
     );
   }

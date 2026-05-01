@@ -6,7 +6,8 @@ import 'package:likha/core/services/school_setup_service.dart';
 import 'package:likha/domain/setup/entities/school_config.dart';
 import 'package:likha/injection_container.dart' as di;
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
-import 'package:likha/presentation/pages/shared/widgets/auth_desktop_layout.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_auth_layout.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_auth_layout.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/widgets/shared/forms/school_settings_form.dart';
 import 'package:likha/presentation/widgets/auth_wrapper.dart';
@@ -176,11 +177,13 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: PlatformDetector.isDesktop
-          ? AuthDesktopLayout(formContent: _buildFormContent())
-          : SafeArea(child: Center(child: _buildFormContent())),
+    if (PlatformDetector.isDesktop) {
+      return DesktopAuthLayout(formContent: _buildFormContent());
+    }
+
+    return MobileAuthLayout(
+      showLogo: false,
+      formContent: _buildFormContent(),
     );
   }
 }

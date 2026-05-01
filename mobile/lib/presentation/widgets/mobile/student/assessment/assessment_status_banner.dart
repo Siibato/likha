@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/widgets/shared/banners/base_status_banner.dart';
 
 enum DetailStatus {
   notYetOpen,
@@ -87,60 +88,31 @@ class AssessmentStatusBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (bgColor, icon, title, subtitle) = _getStatusData();
+    final (bgColor, icon, title, message) = _getStatusData();
+    final variant = _getBannerVariant();
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: AppColors.borderLight,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(1, 1, 1, 3.5),
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: bgColor,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Icon(icon, size: 24, color: Colors.white),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: bgColor,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.foregroundSecondary,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+    return BaseStatusBanner(
+      title: title,
+      message: message,
+      icon: icon,
+      variant: variant,
     );
+  }
+
+  BaseStatusBannerVariant _getBannerVariant() {
+    switch (status) {
+      case DetailStatus.notYetOpen:
+        return BaseStatusBannerVariant.neutral;
+      case DetailStatus.available:
+        return BaseStatusBannerVariant.success;
+      case DetailStatus.resumable:
+        return BaseStatusBannerVariant.warning;
+      case DetailStatus.closed:
+        return BaseStatusBannerVariant.neutral;
+      case DetailStatus.pendingResults:
+        return BaseStatusBannerVariant.info;
+      case DetailStatus.resultsAvailable:
+        return BaseStatusBannerVariant.success;
+    }
   }
 }

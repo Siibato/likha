@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 
 class AssessmentQuestionInput extends StatelessWidget {
   final StudentQuestion question;
@@ -156,28 +157,11 @@ class _IdentificationInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
+    return StyledTextField(
       controller: controller,
-      decoration: InputDecoration(
-        hintText: 'Type your answer here',
-        hintStyle: const TextStyle(color: AppColors.foregroundLight),
-        filled: true,
-        fillColor: AppColors.backgroundSecondary,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.borderLight),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.borderLight),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.accentAmber, width: 2),
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      ),
+      label: 'Answer',
+      icon: Icons.edit,
+      hintText: 'Type your answer here',
       onChanged: onChanged,
     );
   }
@@ -202,30 +186,14 @@ class _EssayInput extends StatelessWidget {
           style: TextStyle(fontSize: 12, color: AppColors.foregroundTertiary),
         ),
         const SizedBox(height: 8),
-        TextField(
+        StyledTextField(
           controller: controller,
+          label: 'Essay',
+          icon: Icons.description,
+          hintText: 'Write your essay here...',
           minLines: 5,
           maxLines: null,
           keyboardType: TextInputType.multiline,
-          decoration: InputDecoration(
-            hintText: 'Write your essay here...',
-            hintStyle: const TextStyle(color: AppColors.foregroundLight),
-            filled: true,
-            fillColor: AppColors.backgroundSecondary,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.borderLight),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.borderLight),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.accentAmber, width: 2),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          ),
           onChanged: onChanged,
         ),
       ],
@@ -258,34 +226,11 @@ class _EnumerationInput extends StatelessWidget {
         ...List.generate(count, (i) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: TextField(
-              controller: controllers[i],
-              decoration: InputDecoration(
-                hintText: 'Answer ${i + 1}',
-                hintStyle: const TextStyle(color: AppColors.foregroundLight),
-                filled: true,
-                fillColor: AppColors.backgroundSecondary,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.borderLight),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.borderLight),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide:
-                      const BorderSide(color: AppColors.accentAmber, width: 2),
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                prefixText: '${i + 1}. ',
-                prefixStyle: const TextStyle(
-                  color: AppColors.foregroundSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+            child: StyledTextField(
+              controller: controllers[i] ?? TextEditingController(),
+              label: 'Answer ${i + 1}',
+              icon: Icons.format_list_numbered,
+              hintText: 'Answer ${i + 1}',
               onChanged: (value) => onChanged(i, value),
             ),
           );

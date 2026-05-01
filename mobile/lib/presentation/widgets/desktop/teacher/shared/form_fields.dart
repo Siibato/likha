@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 
 /// Utility class for creating consistent form fields across desktop pages
+/// Now uses StyledTextField for consistent design
 class DesktopFormField {
   /// Creates a standard input decoration for desktop form fields
   static InputDecoration inputDecoration(String label, {
@@ -50,53 +52,43 @@ class DesktopFormField {
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: Colors.red, width: 1.5),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       filled: true,
-      fillColor: enabled ? Colors.white : AppColors.backgroundTertiary,
+      fillColor: enabled ? Colors.white : AppColors.backgroundDisabled,
     );
   }
 
-  /// Creates a text form field with standard styling
-  static Widget textFormField({
-    TextEditingController? controller,
-    String? labelText,
+  /// Creates a standard styled text field for desktop
+  static StyledTextField textFormField({
+    required TextEditingController controller,
+    required String label,
+    IconData? prefixIcon,
     String? hintText,
-    String? Function(String?)? validator,
-    void Function(String?)? onSaved,
-    void Function(String)? onChanged,
+    Widget? suffixIcon,
+    String? errorText,
     bool enabled = true,
     bool obscureText = false,
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
-    IconData? prefixIcon,
-    Widget? suffixIcon,
-    String? errorText,
-    int? maxLines = 1,
-    TextCapitalization textCapitalization = TextCapitalization.sentences,
+    String? Function(String?)? validator,
+    ValueChanged<String>? onChanged,
+    FocusNode? focusNode,
+    int? maxLines,
   }) {
-    return TextFormField(
+    return StyledTextField(
       controller: controller,
-      decoration: inputDecoration(
-        labelText ?? '',
-        hintText: hintText,
-        prefixIcon: prefixIcon,
-        suffixIcon: suffixIcon,
-        errorText: errorText,
-        enabled: enabled,
-      ),
-      validator: validator,
-      onSaved: onSaved,
-      onChanged: onChanged,
+      label: label,
+      icon: prefixIcon ?? Icons.text_fields,
+      hintText: hintText,
+      suffixIcon: suffixIcon,
+      errorText: errorText,
       enabled: enabled,
       obscureText: obscureText,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
-      maxLines: maxLines,
-      textCapitalization: textCapitalization,
-      style: const TextStyle(
-        fontSize: 14,
-        color: AppColors.foregroundPrimary,
-      ),
+      onChanged: onChanged,
+      focusNode: focusNode,
+      maxLines: maxLines ?? 1,
     );
   }
 
@@ -112,12 +104,14 @@ class DesktopFormField {
     IconData? prefixIcon,
     String? errorText,
   }) {
+    if (controller == null || labelText == null) {
+      return const SizedBox.shrink();
+    }
     return textFormField(
       controller: controller,
-      labelText: labelText,
+      label: labelText,
       hintText: hintText,
       validator: validator,
-      onSaved: onSaved,
       onChanged: onChanged,
       enabled: enabled,
       keyboardType: TextInputType.number,
@@ -140,28 +134,30 @@ class DesktopFormField {
     Widget? suffixIcon,
     String? errorText,
   }) {
+    if (labelText == null) {
+      return const SizedBox.shrink();
+    }
     return DropdownButtonFormField<T>(
       value: value,
       items: items,
       onChanged: enabled ? onChanged : null,
-      validator: validator,
-      decoration: inputDecoration(
-        labelText ?? '',
+      decoration: inputDecoration(labelText).copyWith(
         hintText: hintText,
-        prefixIcon: prefixIcon,
-        suffixIcon: suffixIcon ?? (enabled ? const Icon(
-          Icons.arrow_drop_down_rounded,
-          color: AppColors.foregroundSecondary,
-        ) : null),
+        prefixIcon: prefixIcon != null ? Icon(
+          prefixIcon,
+          color: AppColors.foregroundTertiary,
+          size: 20,
+        ) : null,
+        suffixIcon: suffixIcon,
         errorText: errorText,
-        enabled: enabled,
       ),
+      validator: validator,
       style: const TextStyle(
         fontSize: 14,
         color: AppColors.foregroundPrimary,
       ),
       dropdownColor: Colors.white,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
       isExpanded: true,
     );
   }
@@ -428,15 +424,18 @@ extension DesktopFormFieldExtensions on DesktopFormField {
     IconData? prefixIcon,
     String? errorText,
   }) {
+    if (controller == null) {
+      return const SizedBox.shrink();
+    }
     return DesktopFormField.textFormField(
       controller: controller,
-      labelText: label,
+      label: label,
       hintText: hintText,
       prefixIcon: prefixIcon,
       errorText: errorText,
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
-          return '$label is required';
+          return 'This field is required';
         }
         return null;
       },
@@ -453,6 +452,9 @@ extension DesktopFormFieldExtensions on DesktopFormField {
     int? min,
     int? max,
   }) {
+    if (controller == null) {
+      return const SizedBox.shrink();
+    }
     return DesktopFormField.numberFormField(
       controller: controller,
       labelText: label,
@@ -461,17 +463,17 @@ extension DesktopFormFieldExtensions on DesktopFormField {
       errorText: errorText,
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
-          return '$label is required';
+          return 'This field is required';
         }
-        final number = int.tryParse(value.trim());
+        final number = int.tryParse(value);
         if (number == null) {
           return 'Please enter a valid number';
         }
         if (min != null && number < min) {
-          return 'Must be at least $min';
+          return 'Minimum value is $min';
         }
         if (max != null && number > max) {
-          return 'Must be at most $max';
+          return 'Maximum value is $max';
         }
         return null;
       },

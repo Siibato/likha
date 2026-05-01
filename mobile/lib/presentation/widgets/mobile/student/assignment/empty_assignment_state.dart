@@ -1,47 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/widgets/shared/feedback/app_empty_state.dart';
 
 class EmptyAssignmentState extends StatelessWidget {
   const EmptyAssignmentState({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppColors.backgroundTertiary,
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: const Icon(
-              Icons.assignment_outlined,
-              size: 64,
-              color: AppColors.foregroundLight,
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'No assignments yet',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppColors.foregroundSecondary,
-              letterSpacing: -0.3,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Assignments will appear here when available',
-            style: TextStyle(
-              color: AppColors.foregroundTertiary,
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
-    );
+    return const AppEmptyState.assignments();
   }
 }

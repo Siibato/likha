@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 import 'package:likha/services/grade_export_service.dart';
 
 void showGradeExportDialog(
@@ -14,8 +15,8 @@ void showGradeExportDialog(
   showDialog(
     context: context,
     builder: (dialogContext) {
-      return AlertDialog(
-        title: Text(isDownload ? 'Export Grades' : 'Print Grades'),
+      return StyledDialog(
+        title: isDownload ? 'Export Grades' : 'Print Grades',
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,10 +54,7 @@ void showGradeExportDialog(
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
-          ),
+          StyledDialogAction(label: 'Cancel', onPressed: () => Navigator.of(dialogContext).pop()),
         ],
       );
     },

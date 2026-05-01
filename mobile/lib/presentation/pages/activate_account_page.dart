@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
-import 'package:likha/presentation/pages/shared/widgets/auth_desktop_layout.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_auth_layout.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_auth_layout.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 
@@ -339,17 +340,15 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
     final authState = ref.watch(authProvider);
     final fullName = authState.pendingActivationFullName ?? 'User';
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: PlatformDetector.isDesktop
-          ? AuthDesktopLayout(
-              formContent: _buildFormBody(fullName, authState.isLoading),
-            )
-          : SafeArea(
-              child: Center(
-                child: _buildFormBody(fullName, authState.isLoading),
-              ),
-            ),
+    if (PlatformDetector.isDesktop) {
+      return DesktopAuthLayout(
+        formContent: _buildFormBody(fullName, authState.isLoading),
+      );
+    }
+
+    return MobileAuthLayout(
+      showLogo: false,
+      formContent: _buildFormBody(fullName, authState.isLoading),
     );
   }
 }

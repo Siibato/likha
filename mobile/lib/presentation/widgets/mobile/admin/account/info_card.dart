@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/auth/entities/user.dart';
+import 'package:likha/presentation/widgets/shared/cards/base_info_card.dart';
 
 class UserInfoCard extends StatelessWidget {
   final User user;
@@ -18,53 +19,42 @@ class UserInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.borderLight,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(1, 1, 1, 3.5),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _InfoRow(label: 'Username', value: user.username),
-            const Divider(height: 24, color: AppColors.borderLight),
+    return BaseInfoCard(
+      title: 'User Information',
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _InfoRow(label: 'Username', value: user.username),
+          const Divider(height: 24, color: AppColors.borderLight),
+          _EditableInfoRow(
+            label: 'Full Name',
+            value: user.fullName,
+            onEdit: isLoading ? null : onEditFullName,
+          ),
+          const Divider(height: 24, color: AppColors.borderLight),
+          if (onEditRole != null)
             _EditableInfoRow(
-              label: 'Full Name',
-              value: user.fullName,
-              onEdit: isLoading ? null : onEditFullName,
-            ),
-            const Divider(height: 24, color: AppColors.borderLight),
-            if (onEditRole != null)
-              _EditableInfoRow(
-                label: 'Role',
-                value: user.role,
-                onEdit: isLoading ? null : onEditRole,
-              )
-            else
-              _InfoRow(label: 'Role', value: user.role),
-            const Divider(height: 24, color: AppColors.borderLight),
-            _InfoRow(label: 'Status', value: user.accountStatus),
+              label: 'Role',
+              value: user.role,
+              onEdit: isLoading ? null : onEditRole,
+            )
+          else
+            _InfoRow(label: 'Role', value: user.role),
+          const Divider(height: 24, color: AppColors.borderLight),
+          _InfoRow(label: 'Status', value: user.accountStatus),
+          const Divider(height: 24, color: AppColors.borderLight),
+          _InfoRow(
+            label: 'Created',
+            value: _formatDate(user.createdAt),
+          ),
+          if (user.activatedAt != null) ...[
             const Divider(height: 24, color: AppColors.borderLight),
             _InfoRow(
-              label: 'Created',
-              value: _formatDate(user.createdAt),
+              label: 'Activated',
+              value: _formatDate(user.activatedAt!),
             ),
-            if (user.activatedAt != null) ...[
-              const Divider(height: 24, color: AppColors.borderLight),
-              _InfoRow(
-                label: 'Activated',
-                value: _formatDate(user.activatedAt!),
-              ),
-            ],
           ],
-        ),
+        ],
       ),
     );
   }

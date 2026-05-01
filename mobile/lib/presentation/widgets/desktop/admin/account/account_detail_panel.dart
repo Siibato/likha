@@ -3,6 +3,7 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'account_status_badge.dart';
 import 'package:likha/presentation/widgets/desktop/admin/shared/date_utils.dart';
+import 'package:likha/presentation/widgets/shared/cards/base_action_card.dart';
 
 class AccountDetailPanel extends StatelessWidget {
   final User user;
@@ -28,118 +29,73 @@ class AccountDetailPanel extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLight),
-      ),
+    return BaseActionCard(
+      title: 'Account Information',
+      subtitle: user.username,
+      icon: Icon(Icons.person_outline_rounded),
+      actions: [
+        if (user.accountStatus != 'locked')
+          _ActionChip(
+            icon: Icons.lock_outline_rounded,
+            label: 'Lock Account',
+            color: AppColors.semanticErrorDark,
+            onTap: isLoading ? null : onLock,
+          ),
+        if (user.accountStatus == 'locked')
+          _ActionChip(
+            icon: Icons.lock_open_rounded,
+            label: 'Unlock Account',
+            color: AppColors.semanticSuccessAlt,
+            onTap: isLoading ? null : onUnlock,
+          ),
+        _ActionChip(
+          icon: Icons.refresh_rounded,
+          label: 'Reset Password',
+          color: AppColors.accentAmber,
+          onTap: isLoading ? null : onResetPassword,
+        ),
+      ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // User info section
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Account Information',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.foregroundDark,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                _InfoRow(label: 'Username', value: user.username),
-                const Divider(height: 24, color: AppColors.borderLight),
-                _EditableRow(
-                  label: 'Full Name',
-                  value: user.fullName,
-                  onEdit: isLoading ? null : onEditFullName,
-                ),
-                const Divider(height: 24, color: AppColors.borderLight),
-                if (onEditRole != null)
-                  _EditableRow(
-                    label: 'Role',
-                    value: user.role[0].toUpperCase() + user.role.substring(1),
-                    onEdit: isLoading ? null : onEditRole,
-                  )
-                else
-                  _InfoRow(
-                    label: 'Role',
-                    value: user.role[0].toUpperCase() + user.role.substring(1),
-                  ),
-                const Divider(height: 24, color: AppColors.borderLight),
-                Row(
-                  children: [
-                    const SizedBox(
-                      width: 100,
-                      child: Text('Status', style: _labelStyle),
-                    ),
-                    const SizedBox(width: 12),
-                    AccountStatusBadge(status: user.accountStatus),
-                  ],
-                ),
-                const Divider(height: 24, color: AppColors.borderLight),
-                _InfoRow(label: 'Created', value: DesktopDateUtils.formatDate(user.createdAt)),
-                if (user.activatedAt != null) ...[
-                  const Divider(height: 24, color: AppColors.borderLight),
-                  _InfoRow(
-                    label: 'Activated',
-                    value: DesktopDateUtils.formatDate(user.activatedAt!),
-                  ),
-                ],
-              ],
-            ),
+          const SizedBox(height: 20),
+          _EditableRow(
+            label: 'Full Name',
+            value: user.fullName,
+            onEdit: isLoading ? null : onEditFullName,
           ),
-
-          // Actions section
-          const Divider(height: 1, color: AppColors.borderLight),
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Actions',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.foregroundDark,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    if (user.accountStatus != 'locked')
-                      _ActionChip(
-                        icon: Icons.lock_outline_rounded,
-                        label: 'Lock Account',
-                        color: AppColors.semanticErrorDark,
-                        onTap: isLoading ? null : onLock,
-                      ),
-                    if (user.accountStatus == 'locked')
-                      _ActionChip(
-                        icon: Icons.lock_open_rounded,
-                        label: 'Unlock Account',
-                        color: AppColors.semanticSuccessAlt,
-                        onTap: isLoading ? null : onUnlock,
-                      ),
-                    _ActionChip(
-                      icon: Icons.refresh_rounded,
-                      label: 'Reset Password',
-                      color: AppColors.accentAmber,
-                      onTap: isLoading ? null : onResetPassword,
-                    ),
-                  ],
-                ),
-              ],
+          const Divider(height: 24, color: AppColors.borderLight),
+          if (onEditRole != null)
+            _EditableRow(
+              label: 'Role',
+              value: user.role[0].toUpperCase() + user.role.substring(1),
+              onEdit: isLoading ? null : onEditRole,
+            )
+          else
+            _InfoRow(
+              label: 'Role',
+              value: user.role[0].toUpperCase() + user.role.substring(1),
             ),
+          const Divider(height: 24, color: AppColors.borderLight),
+          Row(
+            children: [
+              const SizedBox(
+                width: 100,
+                child: Text('Status', style: _labelStyle),
+              ),
+              const SizedBox(width: 12),
+              AccountStatusBadge(status: user.accountStatus),
+            ],
           ),
+          const Divider(height: 24, color: AppColors.borderLight),
+          _InfoRow(label: 'Created', value: DesktopDateUtils.formatDate(user.createdAt)),
+          if (user.activatedAt != null) ...[
+            const Divider(height: 24, color: AppColors.borderLight),
+            _InfoRow(
+              label: 'Activated',
+              value: DesktopDateUtils.formatDate(user.activatedAt!),
+            ),
+          ],
         ],
       ),
     );

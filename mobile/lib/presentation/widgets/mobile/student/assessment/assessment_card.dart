@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
+import 'package:likha/presentation/widgets/shared/cards/base_card.dart';
 
 enum AssessmentStatus {
   notYetOpen,
@@ -81,39 +82,26 @@ class AssessmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return BaseCard(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(18),
       onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 14),
-        decoration: BoxDecoration(
-          color: AppColors.borderLight,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(1, 1, 1, 3.5),
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(),
-              if (assessment.description != null &&
-                  assessment.description!.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                _buildDescription(),
-              ],
-              const SizedBox(height: 16),
-              _buildInfoRow(),
-              const SizedBox(height: 12),
-              _buildDateInfo(),
-              const SizedBox(height: 12),
-              _buildActionHint(),
-            ],
-          ),
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(),
+          if (assessment.description != null &&
+              assessment.description!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            _buildDescription(),
+          ],
+          const SizedBox(height: 16),
+          _buildInfoRow(),
+          const SizedBox(height: 12),
+          _buildDateInfo(),
+          const SizedBox(height: 12),
+          _buildActionHint(),
+        ],
       ),
     );
   }
