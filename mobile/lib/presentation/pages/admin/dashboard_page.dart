@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/admin/account/account_management_page.dart';
 import 'package:likha/presentation/pages/admin/class/classes_page.dart';
+import 'package:likha/presentation/pages/admin/design_system_page.dart';
 import 'package:likha/presentation/pages/admin/school_settings_page.dart';
 import 'package:likha/presentation/pages/admin/account/create_account_page.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
@@ -77,6 +78,18 @@ class AdminDashboardPage extends ConsumerWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => const AdminSchoolSettingsPage(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    NavigationCard(
+                      icon: Icons.palette_outlined,
+                      title: 'Design System',
+                      subtitle: 'Dev only — component library reference',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const DesignSystemPage(),
                         ),
                       ),
                     ),

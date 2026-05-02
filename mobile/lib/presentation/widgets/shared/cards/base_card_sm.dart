@@ -27,26 +27,10 @@ class BaseCardSm extends StatelessWidget {
     ),
     this.padding = const EdgeInsets.all(AppDimensions.kCardPadSm),
     this.outerColor = AppColors.accentCharcoal,
-    this.variant = BaseCardVariant.standard,
+    this.variant = BaseCardVariant.outline,
     this.enabled = true,
     this.showShadow = false,
   });
-
-  /// Creates a subtle small card with reduced visual weight
-  factory BaseCardSm.subtle({
-    required Widget child,
-    VoidCallback? onTap,
-    EdgeInsets? margin,
-    EdgeInsets? padding,
-  }) {
-    return BaseCardSm(
-      onTap: onTap,
-      margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardSmListSpacing),
-      padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadSm),
-      variant: BaseCardVariant.subtle,
-      child: child,
-    );
-  }
 
   /// Creates an accent small card with primary color styling
   factory BaseCardSm.accent({
@@ -128,10 +112,6 @@ class BaseCardSm extends StatelessWidget {
 
   Color _getVariantColor() {
     switch (variant) {
-      case BaseCardVariant.standard:
-        return AppColors.accentCharcoal;
-      case BaseCardVariant.subtle:
-        return AppColors.borderLight;
       case BaseCardVariant.accent:
         return AppColors.accentAmber;
       case BaseCardVariant.success:
@@ -140,6 +120,14 @@ class BaseCardSm extends StatelessWidget {
         return AppColors.accentAmber;
       case BaseCardVariant.error:
         return AppColors.semanticErrorDark;
+      case BaseCardVariant.base:
+        return AppColors.borderLight;
+      case BaseCardVariant.dark:
+        return AppColors.accentCharcoalDark;
+      case BaseCardVariant.accentFill:
+        return AppColors.accentAmberBorder;
+      case BaseCardVariant.outline:
+        return AppColors.borderPrimary;
     }
   }
 

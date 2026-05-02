@@ -6,6 +6,8 @@ enum StyledButtonVariant {
   primary,
   outlined,
   destructive,
+  dark,
+  accent,
 }
 
 /// A styled button widget that matches the app's design system.
@@ -94,6 +96,8 @@ class StyledButton extends StatelessWidget {
   (Color, Color) _getColors() {
     return switch (variant) {
       StyledButtonVariant.primary => (AppColors.accentCharcoal, Colors.white),
+      StyledButtonVariant.dark => (AppColors.accentCharcoal, Colors.white),
+      StyledButtonVariant.accent => (AppColors.accentAmber, Colors.white),
       StyledButtonVariant.destructive => (AppColors.semanticError, Colors.white),
       StyledButtonVariant.outlined => (Colors.transparent, AppColors.foregroundSecondary),
     };

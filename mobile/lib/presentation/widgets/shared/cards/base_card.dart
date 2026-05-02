@@ -3,14 +3,15 @@ import '../tokens/app_decorations.dart';
 import '../tokens/app_dimensions.dart';
 import 'package:likha/core/theme/app_colors.dart';
 
-/// Card variants for different styling needs
 enum BaseCardVariant {
-  standard,
-  subtle,
   accent,
   success,
   warning,
   error,
+  base,
+  dark,
+  accentFill,
+  outline,
 }
 
 /// A reusable card shell with the Pattern A design (raised bottom border effect).
@@ -37,29 +38,13 @@ class BaseCard extends StatelessWidget {
     ),
     this.padding = const EdgeInsets.all(AppDimensions.kCardPadMd),
     this.outerColor = AppColors.accentCharcoal,
-    this.variant = BaseCardVariant.standard,
+    this.variant = BaseCardVariant.outline,
     this.enabled = true,
     this.borderRadius,
     this.showShadow = false,
   });
 
-  /// Creates a subtle card with reduced visual weight
-  factory BaseCard.subtle({
-    required Widget child,
-    VoidCallback? onTap,
-    EdgeInsets? margin,
-    EdgeInsets? padding,
-  }) {
-    return BaseCard(
-      onTap: onTap,
-      margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardListSpacing),
-      padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadMd),
-      variant: BaseCardVariant.subtle,
-      child: child,
-    );
-  }
-
-  /// Creates an accent card with primary color styling
+  /// Creates an accent card with amber border styling
   factory BaseCard.accent({
     required Widget child,
     VoidCallback? onTap,
@@ -137,12 +122,72 @@ class BaseCard extends StatelessWidget {
     );
   }
 
+  /// White bg, light gray border — subtle neutral surface
+  factory BaseCard.base({
+    required Widget child,
+    VoidCallback? onTap,
+    EdgeInsets? margin,
+    EdgeInsets? padding,
+  }) {
+    return BaseCard(
+      onTap: onTap,
+      margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardListSpacing),
+      padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadMd),
+      variant: BaseCardVariant.base,
+      child: child,
+    );
+  }
+
+  /// Charcoal solid bg — use white text in child
+  factory BaseCard.dark({
+    required Widget child,
+    VoidCallback? onTap,
+    EdgeInsets? margin,
+    EdgeInsets? padding,
+  }) {
+    return BaseCard(
+      onTap: onTap,
+      margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardListSpacing),
+      padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadMd),
+      variant: BaseCardVariant.dark,
+      child: child,
+    );
+  }
+
+  /// Amber solid bg — use white text in child
+  factory BaseCard.accentFill({
+    required Widget child,
+    VoidCallback? onTap,
+    EdgeInsets? margin,
+    EdgeInsets? padding,
+  }) {
+    return BaseCard(
+      onTap: onTap,
+      margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardListSpacing),
+      padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadMd),
+      variant: BaseCardVariant.accentFill,
+      child: child,
+    );
+  }
+
+  /// White bg, dark charcoal border — structured emphasis
+  factory BaseCard.outline({
+    required Widget child,
+    VoidCallback? onTap,
+    EdgeInsets? margin,
+    EdgeInsets? padding,
+  }) {
+    return BaseCard(
+      onTap: onTap,
+      margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardListSpacing),
+      padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadMd),
+      variant: BaseCardVariant.outline,
+      child: child,
+    );
+  }
+
   Color _getVariantColor() {
     switch (variant) {
-      case BaseCardVariant.standard:
-        return AppColors.accentCharcoal;
-      case BaseCardVariant.subtle:
-        return AppColors.borderLight;
       case BaseCardVariant.accent:
         return AppColors.accentAmber;
       case BaseCardVariant.success:
@@ -151,6 +196,25 @@ class BaseCard extends StatelessWidget {
         return AppColors.accentAmber;
       case BaseCardVariant.error:
         return AppColors.semanticErrorDark;
+      case BaseCardVariant.base:
+        return AppColors.borderLight;
+      case BaseCardVariant.dark:
+        return AppColors.accentCharcoalDark;
+      case BaseCardVariant.accentFill:
+        return AppColors.accentAmberBorder;
+      case BaseCardVariant.outline:
+        return AppColors.borderPrimary;
+    }
+  }
+
+  BoxDecoration _getInnerDecoration() {
+    switch (variant) {
+      case BaseCardVariant.dark:
+        return AppDecorations.cardShellCharcoalInner();
+      case BaseCardVariant.accentFill:
+        return AppDecorations.cardShellAmberInner();
+      default:
+        return AppDecorations.cardShellInner();
     }
   }
 
@@ -160,7 +224,7 @@ class BaseCard extends StatelessWidget {
     final effectiveBorderRadius = borderRadius ?? AppDimensions.kCardOuterRadius;
 
     final inner = Container(
-      decoration: AppDecorations.cardShellInner(),
+      decoration: _getInnerDecoration(),
       margin: const EdgeInsets.fromLTRB(
         1,
         1,
