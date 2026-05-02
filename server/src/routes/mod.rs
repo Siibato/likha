@@ -13,6 +13,7 @@ pub mod tos_routes;
 use axum::Router;
 use std::sync::Arc;
 
+use crate::middleware::{RateLimitLayer, RateLimitStore};
 use crate::services::assessment::AssessmentService;
 use crate::services::assignment::AssignmentService;
 use crate::services::auth::AuthService;
@@ -40,6 +41,9 @@ pub fn api_routes(
     sync_full_service: Arc<SyncFullService>,
     sync_delta_service: Arc<SyncDeltaService>,
 ) -> Router {
+    let rate_limit_store = Arc::new(RateLimitStore::new());
+    let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+
     Router::new()
         .merge(health_routes::routes())
         .merge(auth_routes::routes(auth_service.clone()))
@@ -57,4 +61,5 @@ pub fn api_routes(
             sync_full_service,
             sync_delta_service,
         ))
+        .layer(RateLimitLayer::new(rate_limit_store, jwt_secret))
 }
