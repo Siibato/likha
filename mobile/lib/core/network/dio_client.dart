@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
+import 'package:likha/core/config/app_config.dart';
 import 'package:likha/core/constants/api_constants.dart';
 import 'package:likha/core/constants/api_endpoint.dart';
 import 'package:likha/core/constants/api_endpoints.dart';
@@ -28,6 +31,7 @@ class DioClient {
       ..options.connectTimeout = ApiConstants.connectTimeout
       ..options.receiveTimeout = ApiConstants.receiveTimeout
       ..options.responseType = ResponseType.json
+      ..httpClientAdapter = _buildHttpClientAdapter(AppConfig.isDev)
       ..interceptors.add(ServerReachabilityInterceptor(_serverReachabilityService))
       ..interceptors.add(LogInterceptor(
         request: true,
@@ -39,6 +43,18 @@ class DioClient {
       ))
       ..interceptors.add(_authInterceptor())
       ..interceptors.add(_errorInterceptor());
+  }
+
+  /// In dev mode, accepts self-signed certificates so the app works against
+  /// the local Raspberry Pi without installing the school CA on the device.
+  /// In production, the OS performs normal certificate validation — the school
+  /// CA must be installed on the device once via the setup instructions.
+  HttpClientAdapter _buildHttpClientAdapter(bool devMode) {
+    if (!devMode) return IOHttpClientAdapter();
+    return IOHttpClientAdapter(
+      createHttpClient: () => HttpClient()
+        ..badCertificateCallback = (cert, host, port) => true,
+    );
   }
 
   Dio get dio => _dio;

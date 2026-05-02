@@ -12,6 +12,8 @@ pub async fn establish_connection(
 
     // Issue PRAGMA key for SQLCipher whole-database encryption.
     // Must be the first statement after opening; ignored by plain SQLite.
+    // SQLCipher does not support parameterized PRAGMA statements.
+    // Key format is validated and guaranteed safe by ServerConfig::from_env().
     db.execute(Statement::from_string(
         sea_orm::DatabaseBackend::Sqlite,
         format!("PRAGMA key = '{}'", db_encryption_key),
