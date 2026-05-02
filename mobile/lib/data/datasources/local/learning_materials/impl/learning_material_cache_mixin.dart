@@ -296,11 +296,15 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
           CacheLogger.instance.log('Update completed, rowsAffected=$rowsAffected');
         }
       }
-      // Delete stale rows for this material that are no longer in the fresh list
+      // Remove stale rows for this material that are no longer in the fresh list.
+      // Use soft-delete when the server returns an empty list — an empty response may
+      // indicate a fetch error rather than a genuine "no files" state, so a hard delete
+      // here would be unrecoverable.
       if (files.isEmpty) {
-        await db.delete(
+        await db.update(
           'material_files',
-          where: 'material_id = ?',
+          {'deleted_at': DateTime.now().toIso8601String()},
+          where: 'material_id = ? AND deleted_at IS NULL',
           whereArgs: [materialId],
         );
       } else {

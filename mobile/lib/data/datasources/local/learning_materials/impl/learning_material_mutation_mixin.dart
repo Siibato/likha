@@ -210,7 +210,12 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
   Future<void> deleteMaterialFileLocally(String fileId) async {
     try {
       final db = await localDatabase.database;
-      await db.delete(DbTables.materialFiles, where: '${CommonCols.id} = ?', whereArgs: [fileId]);
+      await db.update(
+        DbTables.materialFiles,
+        {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+        where: '${CommonCols.id} = ?',
+        whereArgs: [fileId],
+      );
     } catch (e) {
       throw CacheException('Failed to delete material file locally: $e');
     }

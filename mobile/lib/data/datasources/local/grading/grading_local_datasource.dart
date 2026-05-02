@@ -16,7 +16,6 @@ abstract class GradingLocalDataSource {
   });
   Future<void> saveItems(List<GradeItemModel> items);
   Future<void> saveItem(GradeItemModel item);
-  Future<void> deleteItem(String id);
 
   // Grade Item mutations
   Future<void> updateItemFields(String id, Map<String, dynamic> data);
@@ -46,4 +45,6 @@ abstract class GradingLocalDataSource {
     int gradingPeriodNumber,
     int transmutedGrade,
   );
+
+  Future<void> clearAllCache();
 }

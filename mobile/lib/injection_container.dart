@@ -312,6 +312,7 @@ Future<void> init() async {
       assignmentLocalDataSource: sl<AssignmentLocalDataSource>(),
       assessmentLocalDataSource: sl<AssessmentLocalDataSource>(),
       learningMaterialLocalDataSource: sl<LearningMaterialLocalDataSource>(),
+      gradingLocalDataSource: sl<GradingLocalDataSource>(),
     ),
   );
   sl.registerLazySingleton<ClassRepository>(

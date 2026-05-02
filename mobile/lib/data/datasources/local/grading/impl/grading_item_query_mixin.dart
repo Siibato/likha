@@ -55,16 +55,6 @@ mixin GradingItemQueryMixin on GradingLocalDataSourceBase {
   }
 
   @override
-  Future<void> deleteItem(String id) async {
-    final db = await localDatabase.database;
-    await db.delete(
-      DbTables.gradeItems,
-      where: '${CommonCols.id} = ?',
-      whereArgs: [id],
-    );
-  }
-
-  @override
   Future<GradeItemModel?> getItemBySourceId(String sourceId) async {
     final db = await localDatabase.database;
     final results = await db.query(

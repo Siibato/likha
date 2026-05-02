@@ -279,17 +279,19 @@ class SyncUpsertHelpers {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
 
-      // Upsert nested question choices
+      // Upsert nested question choices, then remove any stale ones not in the fresh set.
+      // Upsert-first prevents data loss if the server response is ever incomplete.
       final choices = data['choices'];
       if (choices is List && choices.isNotEmpty) {
-        // Delete stale choices before inserting fresh ones
-        await db.delete(DbTables.questionChoices, where: '${QuestionChoicesCols.questionId} = ?', whereArgs: [data['id']]);
+        final freshChoiceIds = <String>[];
         for (final choice in choices) {
           if (choice is! Map<String, dynamic>) continue;
+          final choiceId = choice['id'] as String;
+          freshChoiceIds.add(choiceId);
           await db.insert(
             DbTables.questionChoices,
             {
-              CommonCols.id: choice['id'],
+              CommonCols.id: choiceId,
               QuestionChoicesCols.questionId: data['id'],
               QuestionChoicesCols.choiceText: choice['choice_text'],
               QuestionChoicesCols.isCorrect: (choice['is_correct'] == true) ? 1 : 0,
@@ -300,6 +302,12 @@ class SyncUpsertHelpers {
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
         }
+        // Remove choices that no longer exist on the server.
+        final placeholders = freshChoiceIds.map((_) => '?').join(', ');
+        await db.rawDelete(
+          'DELETE FROM ${DbTables.questionChoices} WHERE ${QuestionChoicesCols.questionId} = ? AND ${CommonCols.id} NOT IN ($placeholders)',
+          [data['id'], ...freshChoiceIds],
+        );
       }
 
       // Upsert nested answer keys

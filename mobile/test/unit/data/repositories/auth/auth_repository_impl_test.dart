@@ -36,6 +36,11 @@ AuthRepositoryImpl _buildRepo({
   required MockAuthRemoteDataSource remote,
   required MockServerReachabilityService reachability,
   required MockStorageService storage,
+  MockClassLocalDataSource? classLocal,
+  MockAssignmentLocalDataSource? assignmentLocal,
+  MockAssessmentLocalDataSource? assessmentLocal,
+  MockLearningMaterialLocalDataSource? materialLocal,
+  MockGradingLocalDataSource? gradingLocal,
   bool isServerReachable = true,
 }) {
   when(() => reachability.isServerReachable).thenReturn(isServerReachable);
@@ -46,10 +51,11 @@ AuthRepositoryImpl _buildRepo({
     storageService: storage,
     syncQueue: MockSyncQueue(),
     localDatabase: MockLocalDatabase(),
-    classLocalDataSource: MockClassLocalDataSource(),
-    assignmentLocalDataSource: MockAssignmentLocalDataSource(),
-    assessmentLocalDataSource: MockAssessmentLocalDataSource(),
-    learningMaterialLocalDataSource: MockLearningMaterialLocalDataSource(),
+    classLocalDataSource: classLocal ?? MockClassLocalDataSource(),
+    assignmentLocalDataSource: assignmentLocal ?? MockAssignmentLocalDataSource(),
+    assessmentLocalDataSource: assessmentLocal ?? MockAssessmentLocalDataSource(),
+    learningMaterialLocalDataSource: materialLocal ?? MockLearningMaterialLocalDataSource(),
+    gradingLocalDataSource: gradingLocal ?? MockGradingLocalDataSource(),
   );
 }
 
@@ -209,20 +215,39 @@ void main() {
 
     group('logout', () {
       test('calls remote logout and clears cache', () async {
+        final classLocal = MockClassLocalDataSource();
+        final assignmentLocal = MockAssignmentLocalDataSource();
+        final assessmentLocal = MockAssessmentLocalDataSource();
+        final materialLocal = MockLearningMaterialLocalDataSource();
+        final gradingLocal = MockGradingLocalDataSource();
+
         final repo = _buildRepo(
           local: local,
           remote: remote,
           reachability: reachability,
           storage: storage,
+          classLocal: classLocal,
+          assignmentLocal: assignmentLocal,
+          assessmentLocal: assessmentLocal,
+          materialLocal: materialLocal,
+          gradingLocal: gradingLocal,
         );
+
         when(() => storage.getRefreshToken()).thenAnswer((_) async => 'rt');
         when(() => remote.logout(any())).thenAnswer((_) async {});
         when(() => local.clearAllCache()).thenAnswer((_) async {});
+        when(() => classLocal.clearAllCache()).thenAnswer((_) async {});
+        when(() => assignmentLocal.clearAllCache()).thenAnswer((_) async {});
+        when(() => assessmentLocal.clearAllCache()).thenAnswer((_) async {});
+        when(() => materialLocal.clearAllCache()).thenAnswer((_) async {});
+        when(() => gradingLocal.clearAllCache()).thenAnswer((_) async {});
 
         final result = await repo.logout();
 
         expect(result, const Right(null));
         verify(() => remote.logout('rt')).called(1);
+        verify(() => local.clearAllCache()).called(1);
+        verify(() => gradingLocal.clearAllCache()).called(1);
       });
     });
   });

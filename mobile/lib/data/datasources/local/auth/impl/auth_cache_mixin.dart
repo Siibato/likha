@@ -105,7 +105,8 @@ mixin AuthCacheMixin on AuthLocalDataSourceBase {
       final db = await localDatabase.database;
       await db.delete('users');
       await db.delete('activity_logs');
-      await db.delete('sync_metadata');
+      // Preserve device_id so it persists across user sessions.
+      await db.delete('sync_metadata', where: 'key != ?', whereArgs: ['device_id']);
     } catch (e) {
       throw CacheException('Failed to clear auth cache: $e');
     }
