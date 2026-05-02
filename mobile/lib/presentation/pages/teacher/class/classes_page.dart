@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
-import 'package:likha/presentation/widgets/mobile/admin/account/search_bar.dart';
+import 'package:likha/presentation/widgets/shared/search/app_search_bar.dart';
 import 'package:likha/presentation/pages/teacher/class/class_detail_page.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/dashboard/empty_class_state.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/class/empty_search_result_state.dart';
@@ -18,6 +18,7 @@ class TeacherClassesPage extends ConsumerStatefulWidget {
 }
 
 class _TeacherClassesPageState extends ConsumerState<TeacherClassesPage> {
+  final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
   @override
@@ -26,6 +27,12 @@ class _TeacherClassesPageState extends ConsumerState<TeacherClassesPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(classProvider.notifier).loadClasses();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   List<ClassEntity> _getFilteredAndSortedClasses(List<ClassEntity> classes) {
@@ -66,9 +73,14 @@ class _TeacherClassesPageState extends ConsumerState<TeacherClassesPage> {
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: AdminSearchBar(
-                        hintText: 'Search classes...',
+                      child: AppSearchBar(
+                        controller: _searchController,
+                        hint: 'Search classes...',
                         onChanged: (q) => setState(() => _searchQuery = q),
+                        onClear: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
                       ),
                     ),
                   ),

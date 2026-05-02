@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
+import 'package:likha/presentation/widgets/shared/feedback/content_state_builder.dart';
 import 'package:likha/presentation/pages/teacher/assessment/submission_review_page.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_submission_card.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/empty_assessment_submissions_state.dart';
@@ -70,47 +71,44 @@ class _AssessmentSubmissionsPageState
               ),
             ),
           Expanded(
-            child: state.isLoading && state.submissions.isEmpty
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.foregroundPrimary,
-                      strokeWidth: 2.5,
-                    ),
-                  )
-                : state.submissions.isEmpty
-                    ? const EmptyAssessmentSubmissionsState()
-                    : RefreshIndicator(
-                  onRefresh: () => ref
-                      .read(teacherAssessmentProvider.notifier)
-                      .loadSubmissions(widget.assessmentId),
-                  color: AppColors.foregroundPrimary,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(24),
-                    itemCount: state.submissions.length,
-                    itemBuilder: (context, index) {
-                      final submission = state.submissions[index];
-                      return AssessmentSubmissionCard(
-                        studentName: submission.studentName,
-                        studentUsername: submission.studentUsername,
-                        isSubmitted: submission.isSubmitted,
-                        submittedAt: submission.submittedAt,
-                        startedAt: submission.startedAt,
-                        finalScore: submission.finalScore,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => SubmissionReviewPage(
-                              submissionId: submission.id,
-                            ),
-                          ),
-                        ).then((_) => ref
-                            .read(teacherAssessmentProvider.notifier)
-                            .loadSubmissions(widget.assessmentId)),
-                      );
-                    },
-                  ),
-                ),
+            child: ContentStateBuilder(
+              isLoading: state.isLoading && state.submissions.isEmpty,
+              error: state.error,
+              isEmpty: state.submissions.isEmpty,
+              onRetry: () => ref
+                  .read(teacherAssessmentProvider.notifier)
+                  .loadSubmissions(widget.assessmentId),
+              onRefresh: () => ref
+                  .read(teacherAssessmentProvider.notifier)
+                  .loadSubmissions(widget.assessmentId),
+              emptyState: const EmptyAssessmentSubmissionsState(),
+              child: ListView.builder(
+                padding: const EdgeInsets.all(24),
+                itemCount: state.submissions.length,
+                itemBuilder: (context, index) {
+                  final submission = state.submissions[index];
+                  return AssessmentSubmissionCard(
+                    studentName: submission.studentName,
+                    studentUsername: submission.studentUsername,
+                    isSubmitted: submission.isSubmitted,
+                    submittedAt: submission.submittedAt,
+                    startedAt: submission.startedAt,
+                    finalScore: submission.finalScore,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SubmissionReviewPage(
+                          submissionId: submission.id,
+                        ),
+                      ),
+                    ).then((_) => ref
+                        .read(teacherAssessmentProvider.notifier)
+                        .loadSubmissions(widget.assessmentId)),
+                  );
+                },
+              ),
             ),
+          ),
         ],
       ),
     );

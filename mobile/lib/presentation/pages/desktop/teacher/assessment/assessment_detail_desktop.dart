@@ -10,6 +10,7 @@ import 'package:likha/presentation/pages/desktop/teacher/assessment/assessment_s
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 import 'package:likha/presentation/utils/formatters.dart';
+import 'package:likha/presentation/widgets/shared/feedback/content_state_builder.dart';
 
 class AssessmentDetailDesktop extends ConsumerStatefulWidget {
   final String assessmentId;
@@ -96,7 +97,7 @@ class _AssessmentDetailDesktopState
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => EditAssessmentDesktop(
-                      assessment: assessment!,
+                      assessment: assessment,
                     ),
                   ),
                 );
@@ -170,16 +171,20 @@ class _AssessmentDetailDesktopState
             ),
           ],
         ],
-        body: state.isLoading && assessment == null
-            ? const Center(child: CircularProgressIndicator())
-            : assessment == null
-                ? const Center(
-                    child: Text(
-                      'Assessment not found',
-                      style: TextStyle(color: AppColors.foregroundTertiary),
-                    ),
-                  )
-                : Row(
+        body: ContentStateBuilder(
+              isLoading: state.isLoading && assessment == null,
+              error: state.error,
+              isEmpty: assessment == null,
+              onRetry: () => ref.read(teacherAssessmentProvider.notifier).loadAssessmentDetail(widget.assessmentId),
+              emptyState: const Center(
+                child: Text(
+                  'Assessment not found',
+                  style: TextStyle(color: AppColors.foregroundTertiary),
+                ),
+              ),
+              child: Builder(
+                builder: (context) {
+                  return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Left column
@@ -188,7 +193,7 @@ class _AssessmentDetailDesktopState
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildStatusBadge(assessment),
+                            _buildStatusBadge(assessment!),
                             const SizedBox(height: 24),
                             _buildInfoSection(assessment),
                             const SizedBox(height: 24),
@@ -201,17 +206,20 @@ class _AssessmentDetailDesktopState
                       Expanded(
                         flex: 1,
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildQuickStats(assessment, questions),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 24),
                             _buildActionButtons(),
                           ],
                         ),
                       ),
                     ],
-                  ),
-      ),
-    );
+                  );
+                },
+              ),
+            ),
+    ));
   }
 
   Widget _buildStatusBadge(Assessment assessment) {

@@ -8,6 +8,7 @@ import 'package:likha/presentation/widgets/shared/primitives/chevron_trailing.da
 import 'package:likha/presentation/pages/teacher/tos/create_tos_page.dart';
 import 'package:likha/presentation/pages/teacher/tos/tos_detail_page.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
+import 'package:likha/presentation/widgets/shared/layout/refreshable_list.dart';
 
 class TosListPage extends ConsumerStatefulWidget {
   final String classId;
@@ -51,107 +52,99 @@ class _TosListPageState extends ConsumerState<TosListPage> {
       ),
       body: state.tosList.isEmpty
           ? _buildEmptyState()
-          : RefreshIndicator(
-                          onRefresh: () => ref
-                              .read(tosProvider.notifier)
-                              .loadTosList(widget.classId),
-                          color: AppColors.accentCharcoal,
-                          child: ListView.builder(
-                            padding: const EdgeInsets.all(24),
-                            itemCount: state.tosList.length,
-                            itemBuilder: (context, index) {
-                              final tos = state.tosList[index];
-                              final modeLabel = tos.classificationMode == 'blooms'
-                                  ? "Bloom's"
-                                  : 'Difficulty';
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: BaseCard(
-                                  onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          TosDetailPage(tosId: tos.id, classId: widget.classId),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 44,
-                                        height: 44,
-                                        decoration: BoxDecoration(
-                                          color: AppColors.borderLight,
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            'Q${tos.gradingPeriodNumber}',
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w700,
-                                              color: AppColors.accentCharcoal,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 14),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              tos.title,
-                                              style: const TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w600,
-                                                color: AppColors.accentCharcoal,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              '$modeLabel | ${tos.totalItems} items',
-                                              style: const TextStyle(
-                                                fontSize: 12,
-                                                color: AppColors.foregroundTertiary,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const ChevronTrailing(),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
+          : RefreshableList(
+              onRefresh: () => ref.read(tosProvider.notifier).loadTosList(widget.classId),
+              padding: const EdgeInsets.all(24),
+              itemCount: state.tosList.length,
+              itemBuilder: (context, index) {
+                final tos = state.tosList[index];
+                final modeLabel = tos.classificationMode == 'blooms' ? "Bloom's" : 'Difficulty';
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: BaseCard(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TosDetailPage(tosId: tos.id, classId: widget.classId),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: AppColors.borderLight,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'Q${tos.gradingPeriodNumber}',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.accentCharcoal,
+                              ),
+                            ),
                           ),
                         ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                tos.title,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.accentCharcoal,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '$modeLabel | ${tos.totalItems} items',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.foregroundTertiary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const ChevronTrailing(),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 
   Widget _buildEmptyState() {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.table_chart_outlined,
             size: 64,
             color: AppColors.foregroundLight,
           ),
-          const SizedBox(height: 16),
-          const Text(
+          SizedBox(height: 16),
+          Text(
             'No TOS created yet',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.accentCharcoal,
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
+          SizedBox(height: 8),
+          Text(
             'Create your first Table of Specifications',
             style: TextStyle(
               fontSize: 14,

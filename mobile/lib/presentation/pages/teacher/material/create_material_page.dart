@@ -11,6 +11,7 @@ import 'package:likha/presentation/pages/teacher/material/material_detail_page.d
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/widgets/shared/forms/rich_text_field.dart';
+import 'package:likha/presentation/widgets/shared/layout/page_padding.dart';
 
 class CreateMaterialPage extends ConsumerStatefulWidget {
   final String classId;
@@ -158,9 +159,9 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
       ),
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
+        child: PagePadding(
+          child: ListView(
+            children: [
             FormMessage(
               message: _formError,
               severity: MessageSeverity.error,
@@ -384,6 +385,7 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
                     ),
             ),
           ],
+          ),
         ),
       ),
     );

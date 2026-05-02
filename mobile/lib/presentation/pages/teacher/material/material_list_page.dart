@@ -10,6 +10,7 @@ import 'package:likha/presentation/pages/teacher/material/material_detail_page.d
 import 'package:likha/presentation/widgets/mobile/teacher/dashboard/reorder_position_dialog.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
+import 'package:likha/presentation/widgets/shared/layout/refreshable_list.dart';
 
 class TeacherMaterialListPage extends ConsumerStatefulWidget {
   final String classId;
@@ -327,17 +328,14 @@ class _TeacherMaterialListPageState extends ConsumerState<TeacherMaterialListPag
                                 );
                               },
                             )
-                          : RefreshIndicator(
+                          : RefreshableList(
                               onRefresh: () => ref.read(learningMaterialProvider.notifier).loadMaterials(widget.classId),
-                              color: AppColors.accentCharcoal,
-                              child: ListView.builder(
-                                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                                itemCount: materialState.materials.length,
-                                itemBuilder: (context, index) {
-                                  final material = materialState.materials[index];
-                                  return _buildMaterialCard(material, index);
-                                },
-                              ),
+                              padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                              itemCount: materialState.materials.length,
+                              itemBuilder: (context, index) {
+                                final material = materialState.materials[index];
+                                return _buildMaterialCard(material, index);
+                              },
                             ),
             ),
           ],

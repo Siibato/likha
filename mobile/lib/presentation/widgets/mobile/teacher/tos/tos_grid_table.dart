@@ -3,6 +3,7 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_competency_data_row.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_table_cells.dart';
+import 'package:likha/presentation/widgets/shared/primitives/app_divider.dart';
 
 class TosGridTable extends StatefulWidget {
   final List<TosCompetency> competencies;
@@ -183,7 +184,7 @@ class _TosGridTableState extends State<TosGridTable> {
                       ],
                     ),
                   ),
-                  const Divider(height: 1, color: AppColors.borderLight),
+                  const AppDivider(),
 
                   // Competency rows
                   ...() {

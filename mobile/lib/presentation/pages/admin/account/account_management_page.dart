@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/admin/account/account_detail_page.dart';
 import 'package:likha/presentation/widgets/mobile/admin/account/account_tile.dart';
-import 'package:likha/presentation/widgets/mobile/admin/account/search_bar.dart';
+import 'package:likha/presentation/widgets/shared/search/app_search_bar.dart';
+import 'package:likha/presentation/widgets/shared/feedback/content_state_builder.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
 
 class AccountManagementPage extends ConsumerStatefulWidget {
@@ -16,6 +17,7 @@ class AccountManagementPage extends ConsumerStatefulWidget {
 
 class _AccountManagementPageState
     extends ConsumerState<AccountManagementPage> {
+  final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
   @override
@@ -24,6 +26,12 @@ class _AccountManagementPageState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(adminProvider.notifier).loadAccounts();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -63,54 +71,54 @@ class _AccountManagementPageState
       ),
       body: Column(
         children: [
-          AdminSearchBar(
+          AppSearchBar(
+            controller: _searchController,
+            hint: 'Search accounts...',
             onChanged: (value) => setState(() => _searchQuery = value),
+            onClear: () {
+              _searchController.clear();
+              setState(() => _searchQuery = '');
+            },
           ),
           Expanded(
-            child: adminState.isLoading && adminState.accounts.isEmpty
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.accentCharcoal,
-                      strokeWidth: 2.5,
-                    ),
-                  )
-                : filteredAccounts.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'No accounts found',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.foregroundTertiary,
-                          ),
-                        ),
-                      )
-                    : RefreshIndicator(
-                        color: AppColors.accentCharcoal,
-                        onRefresh: () =>
-                            ref.read(adminProvider.notifier).loadAccounts(),
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 8,
-                          ),
-                          itemCount: filteredAccounts.length,
-                          itemBuilder: (context, index) {
-                            final user = filteredAccounts[index];
-                            return AccountTile(
-                              user: user,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => AccountDetailPage(user: user),
-                                ),
-                              ).then((_) => ref
-                                  .read(adminProvider.notifier)
-                                  .loadAccounts()),
-                            );
-                          },
-                        ),
+            child: ContentStateBuilder(
+              isLoading: adminState.isLoading && adminState.accounts.isEmpty,
+              error: adminState.error,
+              isEmpty: filteredAccounts.isEmpty,
+              onRetry: () => ref.read(adminProvider.notifier).loadAccounts(),
+              onRefresh: () => ref.read(adminProvider.notifier).loadAccounts(),
+              emptyState: const Center(
+                child: Text(
+                  'No accounts found',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.foregroundTertiary,
+                  ),
+                ),
+              ),
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 8,
+                ),
+                itemCount: filteredAccounts.length,
+                itemBuilder: (context, index) {
+                  final user = filteredAccounts[index];
+                  return AccountTile(
+                    user: user,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AccountDetailPage(user: user),
                       ),
+                    ).then((_) => ref
+                        .read(adminProvider.notifier)
+                        .loadAccounts()),
+                  );
+                },
+              ),
+            ),
           ),
         ],
       ),

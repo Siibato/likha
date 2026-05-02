@@ -13,6 +13,7 @@ import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:flutter/foundation.dart';
 import 'package:likha/core/utils/file_opener.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
+import 'package:likha/presentation/widgets/shared/feedback/content_state_builder.dart';
 
 class StudentMaterialDetailPage extends ConsumerStatefulWidget {
   final String materialId;
@@ -130,27 +131,12 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
-        child: state.isLoading && material == null
-            ? const Center(
-                child: CircularProgressIndicator(color: AppColors.accentCharcoal, strokeWidth: 2.5),
-              )
-            : state.error != null && material == null
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline_rounded, size: 64, color: AppColors.foregroundLight,),
-                        const SizedBox(height: 16),
-                        const Text('Failed to load module', style: TextStyle(fontSize: 16, color: AppColors.foregroundDark)),
-                        const SizedBox(height: 24),
-                        OutlinedButton(
-                          onPressed: () => ref.read(learningMaterialProvider.notifier).loadMaterialDetail(widget.materialId),
-                          child: const Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  )
-                : CustomScrollView(
+        child: ContentStateBuilder(
+          isLoading: state.isLoading && material == null,
+          error: state.error,
+          isEmpty: false,
+          onRetry: () => ref.read(learningMaterialProvider.notifier).loadMaterialDetail(widget.materialId),
+          child: CustomScrollView(
                     slivers: [
                       const SliverToBoxAdapter(
                         child: ClassSectionHeader(
@@ -197,7 +183,7 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
                     ],
                   ),
       ),
-    );
+    ));
   }
 
   Widget _buildInfoCard(dynamic material) {

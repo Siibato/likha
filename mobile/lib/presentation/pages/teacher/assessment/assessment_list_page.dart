@@ -12,6 +12,7 @@ import 'package:likha/presentation/widgets/mobile/teacher/dashboard/reorder_posi
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/teacher_assessment_card.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
+import 'package:likha/presentation/widgets/shared/layout/refreshable_list.dart';
 
 class TeacherAssessmentListPage extends ConsumerStatefulWidget {
   final String classId;
@@ -320,31 +321,28 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
                                 );
                               },
                             )
-                          : RefreshIndicator(
+                          : RefreshableList(
                               onRefresh: () => ref
                                   .read(teacherAssessmentProvider.notifier)
                                   .loadAssessments(widget.classId),
-                              color: AppColors.accentCharcoal,
-                              child: ListView.builder(
-                                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                                itemCount: assessmentState.assessments.length,
-                                itemBuilder: (context, index) {
-                                  final assessment = assessmentState.assessments[index];
-                                  return TeacherAssessmentCard(
-                                    assessment: assessment,
-                                    onTap: () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => AssessmentDetailPage(
-                                          assessmentId: assessment.id,
-                                        ),
+                              padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                              itemCount: assessmentState.assessments.length,
+                              itemBuilder: (context, index) {
+                                final assessment = assessmentState.assessments[index];
+                                return TeacherAssessmentCard(
+                                  assessment: assessment,
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => AssessmentDetailPage(
+                                        assessmentId: assessment.id,
                                       ),
-                                    ).then((_) => ref
-                                        .read(teacherAssessmentProvider.notifier)
-                                        .loadAssessments(widget.classId)),
-                                  );
-                                },
-                              ),
+                                    ),
+                                  ).then((_) => ref
+                                      .read(teacherAssessmentProvider.notifier)
+                                      .loadAssessments(widget.classId)),
+                                );
+                              },
                             ),
             ),
           ],

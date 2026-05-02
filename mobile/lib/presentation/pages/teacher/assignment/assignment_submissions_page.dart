@@ -7,6 +7,7 @@ import 'package:likha/presentation/pages/teacher/assignment/assignment_submissio
 import 'package:likha/presentation/widgets/mobile/teacher/assignment/empty_submissions_state.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/dashboard/submission_card.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/widgets/shared/feedback/content_state_builder.dart';
 
 class AssignmentSubmissionsPage extends ConsumerStatefulWidget {
   final String assignmentId;
@@ -98,48 +99,43 @@ class _AssignmentSubmissionsPageState
         ),
         actions: const [],
       ),
-      body: state.isLoading && state.submissions.isEmpty
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.foregroundPrimary,
-                strokeWidth: 2.5,
-              ),
-            )
-          : state.submissions.isEmpty
-              ? const EmptySubmissionsState()
-              : RefreshIndicator(
-                  onRefresh: () => ref
-                      .read(assignmentProvider.notifier)
-                      .loadSubmissions(widget.assignmentId),
-                  color: AppColors.foregroundPrimary,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(24),
-                    itemCount: state.submissions.length,
-                    itemBuilder: (context, index) {
-                      final submission = state.submissions[index];
-
-                      return SubmissionCard(
-                        studentName: submission.studentName,
-                        studentUsername: submission.studentUsername,
-                        status: submission.status,
-                        score: submission.score,
-                        totalPoints: widget.totalPoints,
-                        submittedAt: submission.submittedAt,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => AssignmentSubmissionGradingPage(
-                              submissionId: submission.id,
-                              totalPoints: widget.totalPoints,
-                            ),
-                          ),
-                        ).then((_) => ref
-                            .read(assignmentProvider.notifier)
-                            .loadSubmissions(widget.assignmentId)),
-                      );
-                    },
+      body: ContentStateBuilder(
+        isLoading: state.isLoading && state.submissions.isEmpty,
+        isEmpty: state.submissions.isEmpty,
+        onRefresh: () => ref
+            .read(assignmentProvider.notifier)
+            .loadSubmissions(widget.assignmentId),
+        onRetry: () => ref
+            .read(assignmentProvider.notifier)
+            .loadSubmissions(widget.assignmentId),
+        emptyState: const EmptySubmissionsState(),
+        child: ListView.builder(
+          padding: const EdgeInsets.all(24),
+          itemCount: state.submissions.length,
+          itemBuilder: (context, index) {
+            final submission = state.submissions[index];
+            return SubmissionCard(
+              studentName: submission.studentName,
+              studentUsername: submission.studentUsername,
+              status: submission.status,
+              score: submission.score,
+              totalPoints: widget.totalPoints,
+              submittedAt: submission.submittedAt,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AssignmentSubmissionGradingPage(
+                    submissionId: submission.id,
+                    totalPoints: widget.totalPoints,
                   ),
                 ),
+              ).then((_) => ref
+                  .read(assignmentProvider.notifier)
+                  .loadSubmissions(widget.assignmentId)),
+            );
+          },
+        ),
+      ),
       bottomNavigationBar: state.submissions.isEmpty
           ? null
           : Container(

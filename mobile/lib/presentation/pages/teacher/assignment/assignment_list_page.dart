@@ -12,6 +12,7 @@ import 'package:likha/presentation/widgets/mobile/teacher/dashboard/reorder_posi
 import 'package:likha/presentation/widgets/mobile/teacher/assignment/teacher_assignment_card.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
+import 'package:likha/presentation/widgets/shared/layout/refreshable_list.dart';
 
 class TeacherAssignmentListPage extends ConsumerStatefulWidget {
   final String classId;
@@ -320,31 +321,28 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
                                 );
                               },
                             )
-                          : RefreshIndicator(
+                          : RefreshableList(
                               onRefresh: () => ref
                                   .read(assignmentProvider.notifier)
                                   .loadAssignments(widget.classId),
-                              color: AppColors.accentCharcoal,
-                              child: ListView.builder(
-                                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                                itemCount: assignmentState.assignments.length,
-                                itemBuilder: (context, index) {
-                                  final assignment = assignmentState.assignments[index];
-                                  return TeacherAssignmentCard(
-                                    assignment: assignment,
-                                    onTap: () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => AssignmentDetailPage(
-                                          assignmentId: assignment.id,
-                                        ),
+                              padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                              itemCount: assignmentState.assignments.length,
+                              itemBuilder: (context, index) {
+                                final assignment = assignmentState.assignments[index];
+                                return TeacherAssignmentCard(
+                                  assignment: assignment,
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => AssignmentDetailPage(
+                                        assignmentId: assignment.id,
                                       ),
-                                    ).then((_) => ref
-                                        .read(assignmentProvider.notifier)
-                                        .loadAssignments(widget.classId)),
-                                  );
-                                },
-                              ),
+                                    ),
+                                  ).then((_) => ref
+                                      .read(assignmentProvider.notifier)
+                                      .loadAssignments(widget.classId)),
+                                );
+                              },
                             ),
             ),
           ],

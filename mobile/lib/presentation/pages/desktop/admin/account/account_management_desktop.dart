@@ -8,6 +8,7 @@ import 'package:likha/presentation/widgets/desktop/admin/account/account_data_ta
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
+import 'package:likha/presentation/widgets/shared/search/search_filter_bar.dart';
 
 class AccountManagementDesktop extends ConsumerStatefulWidget {
   const AccountManagementDesktop({super.key});
@@ -19,6 +20,7 @@ class AccountManagementDesktop extends ConsumerStatefulWidget {
 
 class _AccountManagementDesktopState
     extends ConsumerState<AccountManagementDesktop> {
+  final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String? _selectedRole;
 
@@ -28,6 +30,12 @@ class _AccountManagementDesktopState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(adminProvider.notifier).loadAccounts();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _handleLock(User user, bool locked) {
@@ -130,62 +138,15 @@ class _AccountManagementDesktopState
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Search + filters
-          Row(
-            children: [
-              // Search field
-              Expanded(
-                flex: 2,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.borderLight),
-                  ),
-                  child: TextField(
-                    onChanged: (v) => setState(() => _searchQuery = v),
-                    decoration: const InputDecoration(
-                      hintText: 'Search accounts...',
-                      hintStyle: TextStyle(
-                        color: AppColors.foregroundTertiary,
-                        fontSize: 14,
-                      ),
-                      prefixIcon: Icon(
-                        Icons.search_rounded,
-                        color: AppColors.foregroundTertiary,
-                        size: 20,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.foregroundPrimary,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-
-              // Role filter chips
-              _FilterChip(
-                label: 'All',
-                isSelected: _selectedRole == null,
-                onTap: () => setState(() => _selectedRole = null),
-              ),
-              const SizedBox(width: 8),
-              _FilterChip(
-                label: 'Teachers',
-                isSelected: _selectedRole == 'teacher',
-                onTap: () => setState(() => _selectedRole = 'teacher'),
-              ),
-              const SizedBox(width: 8),
-              _FilterChip(
-                label: 'Students',
-                isSelected: _selectedRole == 'student',
-                onTap: () => setState(() => _selectedRole = 'student'),
-              ),
-            ],
+          SearchFilterBar.accounts(
+            controller: _searchController,
+            onSearchChanged: (v) => setState(() => _searchQuery = v),
+            onClear: () {
+              _searchController.clear();
+              setState(() => _searchQuery = '');
+            },
+            selectedRole: _selectedRole,
+            onRoleChanged: (role) => setState(() => _selectedRole = role),
           ),
           const SizedBox(height: 20),
 
@@ -214,48 +175,6 @@ class _AccountManagementDesktopState
               onDelete: _handleDelete,
             ),
         ],
-      ),
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _FilterChip({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: isSelected ? AppColors.foregroundDark : Colors.white,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color:
-                  isSelected ? AppColors.foregroundDark : AppColors.borderLight,
-            ),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: isSelected ? Colors.white : AppColors.foregroundSecondary,
-            ),
-          ),
-        ),
       ),
     );
   }

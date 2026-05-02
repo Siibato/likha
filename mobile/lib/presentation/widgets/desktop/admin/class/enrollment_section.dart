@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
-import 'package:likha/presentation/widgets/desktop/admin/shared/search_filter_bar.dart';
+import 'package:likha/presentation/widgets/shared/search/app_search_bar.dart';
 import 'package:likha/presentation/widgets/desktop/admin/shared/empty_state.dart';
-import 'package:likha/presentation/widgets/desktop/admin/shared/date_utils.dart';
 
 /// A reusable enrollment management section widget
 /// that handles student search, display, and enrollment actions.
@@ -107,17 +106,18 @@ class _EnrollmentSectionState extends ConsumerState<EnrollmentSection> {
         const SizedBox(height: 20),
 
         // Search bar
-        CompactSearchBar(
-          controller: _searchController,
-          hint: 'Search students...',
-          onChanged: (value) {
-            // Handled by listener
-          },
-          onClear: () {
-            _searchController.clear();
-            setState(() => _searchQuery = '');
-            ref.read(classProvider.notifier).searchStudents(query: null);
-          },
+        SizedBox(
+          width: 300,
+          child: AppSearchBar(
+            controller: _searchController,
+            hint: 'Search students...',
+            padding: EdgeInsets.zero,
+            onClear: () {
+              _searchController.clear();
+              setState(() => _searchQuery = '');
+              ref.read(classProvider.notifier).searchStudents(query: null);
+            },
+          ),
         ),
         const SizedBox(height: 12),
 

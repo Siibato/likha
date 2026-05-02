@@ -6,6 +6,7 @@ import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
+import 'package:likha/presentation/widgets/shared/feedback/content_state_builder.dart';
 
 class GradeItemScoresDesktop extends ConsumerStatefulWidget {
   final String classId;
@@ -194,9 +195,12 @@ class _GradeItemScoresDesktopState
                 : const Text('Save All Changes'),
           ),
         ],
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
+        body: ContentStateBuilder(
+              isLoading: _isLoading,
+              error: null,
+              isEmpty: false,
+              onRetry: () {},
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Header card
@@ -398,6 +402,7 @@ class _GradeItemScoresDesktopState
                   }),
                 ],
               ),
+            ),
       ),
     );
   }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/core/sync/sync_manager.dart';
@@ -13,6 +12,7 @@ import 'package:likha/presentation/providers/assignment_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
 import 'package:likha/presentation/widgets/shared/skeletons/skeleton_pulse.dart';
 import 'package:likha/presentation/widgets/shared/skeletons/assignment_card_skeleton.dart';
+import 'package:likha/presentation/widgets/shared/layout/refreshable_list.dart';
 
 class StudentAssignmentListPage extends ConsumerStatefulWidget {
   final String classId;
@@ -63,51 +63,46 @@ class _StudentAssignmentListPageState extends ConsumerState<StudentAssignmentLis
             )
           : state.assignments.isEmpty
               ? const EmptyAssignmentState()
-              : RefreshIndicator(
-                          onRefresh: () => ref
-                              .read(assignmentProvider.notifier)
-                              .loadAssignments(widget.classId, publishedOnly: true),
-                          color: AppColors.accentCharcoal,
-                          child: ListView.builder(
-                            padding: const EdgeInsets.all(24),
-                            itemCount: state.assignments.length,
-                            itemBuilder: (context, index) {
-                              final assignment = state.assignments[index];
-                              final isPastDue =
-                                  sl<ServerClockService>().now().isAfter(assignment.dueAt);
-
-                            return AssignmentCard(
-                              title: assignment.title,
-                              totalPoints: assignment.totalPoints,
-                              dueAt: assignment.dueAt,
-                              isPastDue: isPastDue,
-                              submissionStatus: assignment.submissionStatus,
-                              score: assignment.score,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => AssignmentDetailPage(
-                                    assignmentId: assignment.id,
-                                    assignmentTitle: assignment.title,
-                                    instructions: assignment.instructions,
-                                    allowsTextSubmission: assignment.allowsTextSubmission,
-                                    allowsFileSubmission: assignment.allowsFileSubmission,
-                                    totalPoints: assignment.totalPoints,
-                                    allowedFileTypes: assignment.allowedFileTypes,
-                                    maxFileSizeMb: assignment.maxFileSizeMb,
-                                    submissionId: assignment.submissionId,
-                                    score: assignment.score,
-                                    submissionStatus: assignment.submissionStatus,
-                                    dueAt: assignment.dueAt,
-                                  ),
-                                ),
-                              ).then((_) => ref
-                                  .read(assignmentProvider.notifier)
-                                  .loadAssignments(widget.classId, publishedOnly: true)),
-                            );
-                          },
+              : RefreshableList(
+                  onRefresh: () => ref
+                      .read(assignmentProvider.notifier)
+                      .loadAssignments(widget.classId, publishedOnly: true),
+                  padding: const EdgeInsets.all(24),
+                  itemCount: state.assignments.length,
+                  itemBuilder: (context, index) {
+                    final assignment = state.assignments[index];
+                    final isPastDue = sl<ServerClockService>().now().isAfter(assignment.dueAt);
+                    return AssignmentCard(
+                      title: assignment.title,
+                      totalPoints: assignment.totalPoints,
+                      dueAt: assignment.dueAt,
+                      isPastDue: isPastDue,
+                      submissionStatus: assignment.submissionStatus,
+                      score: assignment.score,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AssignmentDetailPage(
+                            assignmentId: assignment.id,
+                            assignmentTitle: assignment.title,
+                            instructions: assignment.instructions,
+                            allowsTextSubmission: assignment.allowsTextSubmission,
+                            allowsFileSubmission: assignment.allowsFileSubmission,
+                            totalPoints: assignment.totalPoints,
+                            allowedFileTypes: assignment.allowedFileTypes,
+                            maxFileSizeMb: assignment.maxFileSizeMb,
+                            submissionId: assignment.submissionId,
+                            score: assignment.score,
+                            submissionStatus: assignment.submissionStatus,
+                            dueAt: assignment.dueAt,
+                          ),
                         ),
-              ),
+                      ).then((_) => ref
+                          .read(assignmentProvider.notifier)
+                          .loadAssignments(widget.classId, publishedOnly: true)),
+                    );
+                  },
+                ),
     );
   }
 }

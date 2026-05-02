@@ -7,6 +7,7 @@ import 'package:likha/presentation/widgets/mobile/student/class/class_grade_card
 import 'package:likha/presentation/widgets/mobile/student/grade/empty_grades_state.dart';
 import 'package:likha/presentation/widgets/mobile/student/grade/general_average_banner.dart';
 import 'package:likha/presentation/providers/student_class_grades_provider.dart';
+import 'package:likha/presentation/widgets/shared/feedback/content_state_builder.dart';
 
 class StudentGradesPage extends ConsumerStatefulWidget {
   const StudentGradesPage({super.key});
@@ -39,61 +40,45 @@ class _StudentGradesPageState extends ConsumerState<StudentGradesPage> {
               showBackButton: true,
             ),
             Expanded(
-              child: gradesState.isLoading && gradesState.classGrades.isEmpty
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.accentCharcoal,
-                        strokeWidth: 2.5,
-                      ),
-                    )
-                  : gradesState.classGrades.isEmpty
-                      ? const EmptyGradesState()
-                      : RefreshIndicator(
-                          onRefresh: () => ref
-                              .read(studentClassGradesProvider.notifier)
-                              .loadAllClassGrades(),
-                          color: AppColors.accentCharcoal,
-                          child: ListView.builder(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 16),
-                            itemCount: gradesState.classGrades.length +
-                                (gradesState.generalAverage != null ? 1 : 0),
-                            itemBuilder: (context, index) {
-                              // General Average banner at the top
-                              if (gradesState.generalAverage != null &&
-                                  index == 0) {
-                                return GeneralAverageBanner(
-                                  average: gradesState.generalAverage!,
-                                  descriptor:
-                                      gradesState.generalAverageDescriptor ??
-                                          '--',
-                                );
-                              }
-
-                              final adjustedIndex =
-                                  gradesState.generalAverage != null
-                                      ? index - 1
-                                      : index;
-                              final classGrade =
-                                  gradesState.classGrades[adjustedIndex];
-                              return ClassGradeCard(
-                                classGrade: classGrade,
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          StudentClassGradeDetailPage(
-                                        classId: classGrade.classId,
-                                        className: classGrade.className,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
+              child: ContentStateBuilder(
+                isLoading: gradesState.isLoading && gradesState.classGrades.isEmpty,
+                isEmpty: gradesState.classGrades.isEmpty,
+                onRefresh: () => ref
+                    .read(studentClassGradesProvider.notifier)
+                    .loadAllClassGrades(),
+                onRetry: () => ref
+                    .read(studentClassGradesProvider.notifier)
+                    .loadAllClassGrades(),
+                emptyState: const EmptyGradesState(),
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  itemCount: gradesState.classGrades.length +
+                      (gradesState.generalAverage != null ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (gradesState.generalAverage != null && index == 0) {
+                      return GeneralAverageBanner(
+                        average: gradesState.generalAverage!,
+                        descriptor: gradesState.generalAverageDescriptor ?? '--',
+                      );
+                    }
+                    final adjustedIndex =
+                        gradesState.generalAverage != null ? index - 1 : index;
+                    final classGrade = gradesState.classGrades[adjustedIndex];
+                    return ClassGradeCard(
+                      classGrade: classGrade,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => StudentClassGradeDetailPage(
+                            classId: classGrade.classId,
+                            className: classGrade.className,
                           ),
                         ),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ),
           ],
         ),

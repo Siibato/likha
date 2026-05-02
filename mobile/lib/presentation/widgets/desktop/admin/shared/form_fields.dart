@@ -249,7 +249,7 @@ class DesktopFormField {
               if (subtitle != null) ...[
                 const SizedBox(height: 2),
                 Text(
-                  subtitle!,
+                  subtitle,
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.foregroundTertiary,
@@ -300,7 +300,7 @@ class DesktopFormField {
               if (subtitle != null) ...[
                 const SizedBox(height: 2),
                 Text(
-                  subtitle!,
+                  subtitle,
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.foregroundTertiary,

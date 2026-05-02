@@ -10,6 +10,7 @@ import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
+import 'package:likha/presentation/widgets/shared/feedback/content_state_builder.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/material/edit_material_dialog.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/material/material_attachments_card.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/material/material_body_card.dart';
@@ -201,27 +202,12 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
-        child: state.isLoading && material == null
-            ? const Center(
-                child: CircularProgressIndicator(color: AppColors.accentCharcoal, strokeWidth: 2.5),
-              )
-            : state.error != null && material == null
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline_rounded, size: 64, color: AppColors.foregroundLight),
-                        const SizedBox(height: 16),
-                        const Text('Failed to load module', style: TextStyle(fontSize: 16, color: AppColors.foregroundSecondary)),
-                        const SizedBox(height: 24),
-                        OutlinedButton(
-                          onPressed: () => ref.read(learningMaterialProvider.notifier).loadMaterialDetail(widget.materialId),
-                          child: const Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  )
-                : CustomScrollView(
+        child: ContentStateBuilder(
+          isLoading: state.isLoading && material == null,
+          error: state.error,
+          isEmpty: false,
+          onRetry: () => ref.read(learningMaterialProvider.notifier).loadMaterialDetail(widget.materialId),
+          child: CustomScrollView(
                     slivers: [
                       SliverToBoxAdapter(
                         child: Stack(
@@ -307,7 +293,8 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                       ),
                     ],
                   ),
-      ),
+          ),
+        ),
     );
   }
 

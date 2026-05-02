@@ -9,6 +9,7 @@ import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
 import 'package:likha/presentation/widgets/shared/skeletons/skeleton_pulse.dart';
 import 'package:likha/presentation/widgets/shared/skeletons/material_card_skeleton.dart';
+import 'package:likha/presentation/widgets/shared/layout/refreshable_list.dart';
 
 class StudentMaterialListPage extends ConsumerStatefulWidget {
   final String classId;
@@ -78,88 +79,85 @@ class _StudentMaterialListPageState extends ConsumerState<StudentMaterialListPag
                     ],
                   ),
                 )
-              : RefreshIndicator(
-                              onRefresh: () => ref
-                                  .read(learningMaterialProvider.notifier)
-                                  .loadMaterials(widget.classId),
-                              color: AppColors.accentCharcoal,
-                              child: ListView.builder(
-                                padding: const EdgeInsets.all(24),
-                                itemCount: state.materials.length,
-                                itemBuilder: (context, index) {
-                                  final material = state.materials[index];
-                                  return GestureDetector(
-                                    onTap: () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => StudentMaterialDetailPage(
-                                          materialId: material.id,
-                                        ),
-                                      ),
-                                    ).then((_) {
-                                      ref.read(learningMaterialProvider.notifier).loadMaterials(widget.classId);
-                                    }),
-                                    child: Container(
-                                      margin: const EdgeInsets.only(bottom: 12),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.borderLight,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Container(
-                                        margin: const EdgeInsets.fromLTRB(1, 1, 1, 2.5),
-                                        padding: const EdgeInsets.all(14),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(11),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              material.fileCount > 0
-                                                  ? Icons.attach_file_rounded
-                                                  : Icons.article_outlined,
-                                              color: AppColors.accentCharcoal,
-                                              size: 20,
-                                            ),
-                                            const SizedBox(width: 14),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    material.title,
-                                                    style: const TextStyle(
-                                                      fontSize: 15,
-                                                      fontWeight: FontWeight.w700,
-                                                      color: AppColors.foregroundDark,
-                                                      letterSpacing: -0.3,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    '${material.fileCount} file(s)',
-                                                    style: const TextStyle(
-                                                      fontSize: 12,
-                                                      color: AppColors.foregroundTertiary,
-                                                      fontWeight: FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            const Icon(
-                                              Icons.chevron_right_rounded,
-                                              color: AppColors.foregroundLight,
-                                              size: 22,
-                                            ),
-                                          ],
-                                        ),
+              : RefreshableList(
+                  onRefresh: () => ref
+                      .read(learningMaterialProvider.notifier)
+                      .loadMaterials(widget.classId),
+                  padding: const EdgeInsets.all(24),
+                  itemCount: state.materials.length,
+                  itemBuilder: (context, index) {
+                    final material = state.materials[index];
+                    return GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => StudentMaterialDetailPage(
+                            materialId: material.id,
+                          ),
+                        ),
+                      ).then((_) {
+                        ref.read(learningMaterialProvider.notifier).loadMaterials(widget.classId);
+                      }),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.borderLight,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Container(
+                          margin: const EdgeInsets.fromLTRB(1, 1, 1, 2.5),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                material.fileCount > 0
+                                    ? Icons.attach_file_rounded
+                                    : Icons.article_outlined,
+                                color: AppColors.accentCharcoal,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      material.title,
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.foregroundDark,
+                                        letterSpacing: -0.3,
                                       ),
                                     ),
-                                  );
-                                },
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${material.fileCount} file(s)',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.foregroundTertiary,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
+                              const Icon(
+                                Icons.chevron_right_rounded,
+                                color: AppColors.foregroundLight,
+                                size: 22,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               );
   }
 }
