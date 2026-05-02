@@ -163,6 +163,7 @@ import 'package:likha/domain/tos/usecases/update_competency.dart';
 import 'package:likha/domain/tos/usecases/delete_competency.dart';
 import 'package:likha/domain/tos/usecases/bulk_add_competencies.dart';
 import 'package:likha/domain/tos/usecases/search_melcs.dart';
+import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/services/storage_service.dart';
 final sl = GetIt.instance;
 
@@ -210,6 +211,10 @@ Future<void> init() async {
       ? StorageService(sl<FlutterSecureStorage>(), sl<SharedPreferences>())
       : StorageService(sl<FlutterSecureStorage>()));
 
+  // Core - Encryption (key stored in secure storage, created once at startup)
+  final encryptionService = await AesEncryptionService.create(secureStorage);
+  sl.registerSingleton<EncryptionService>(encryptionService);
+
   // Core - Server Reachability (must be before DioClient to avoid circular dependency)
   // Standalone Dio for health checks — does NOT go through DioClient.
   // Used only by ServerReachabilityService; not registered in the service locator.
@@ -251,21 +256,22 @@ Future<void> init() async {
 
   // Local Data sources
   sl.registerLazySingleton<AuthLocalDataSource>(
-    () => AuthLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
+    () => AuthLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>(), sl<EncryptionService>()),
   );
   sl.registerLazySingleton<ClassLocalDataSource>(
     () => ClassLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
   );
   sl.registerLazySingleton<AssessmentLocalDataSource>(
-    () => AssessmentLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
+    () => AssessmentLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>(), sl<EncryptionService>()),
   );
   sl.registerLazySingleton<AssignmentLocalDataSource>(
-    () => AssignmentLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
+    () => AssignmentLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>(), sl<EncryptionService>()),
   );
   sl.registerLazySingleton<LearningMaterialLocalDataSource>(
     () => LearningMaterialLocalDataSourceImpl(
       sl<LocalDatabase>(),
       sl<SyncQueue>(),
+      sl<EncryptionService>(),
     ),
   );
 

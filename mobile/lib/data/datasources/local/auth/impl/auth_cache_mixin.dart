@@ -14,6 +14,8 @@ mixin AuthCacheMixin on AuthLocalDataSourceBase {
       final map = user.toMap();
       map['cached_at'] = DateTime.now().toIso8601String();
       map['needs_sync'] = 0;
+      map['full_name'] = enc.encryptField(map['full_name'] as String?);
+      map['username'] = enc.encryptField(map['username'] as String?);
       await db.insert('users', map, conflictAlgorithm: ConflictAlgorithm.replace);
     } catch (e) {
       throw CacheException('Failed to cache user: $e');
@@ -29,6 +31,8 @@ mixin AuthCacheMixin on AuthLocalDataSourceBase {
           final map = account.toMap();
           map['cached_at'] = DateTime.now().toIso8601String();
           map['needs_sync'] = 0;
+          map['full_name'] = enc.encryptField(map['full_name'] as String?);
+          map['username'] = enc.encryptField(map['username'] as String?);
           await txn.insert('users', map, conflictAlgorithm: ConflictAlgorithm.replace);
         }
       });
@@ -45,6 +49,8 @@ mixin AuthCacheMixin on AuthLocalDataSourceBase {
       final map = account.toMap();
       map['cached_at'] = now.toIso8601String();
       map['needs_sync'] = 1;
+      map['full_name'] = enc.encryptField(map['full_name'] as String?);
+      map['username'] = enc.encryptField(map['username'] as String?);
       await db.transaction((txn) async {
         await txn.insert('users', map, conflictAlgorithm: ConflictAlgorithm.replace);
         await syncQueue.enqueue(SyncQueueEntry(
@@ -75,7 +81,7 @@ mixin AuthCacheMixin on AuthLocalDataSourceBase {
               'id': log.id,
               'user_id': log.userId,
               'action': log.action,
-              'details': log.details,
+              'details': enc.encryptField(log.details),
               'created_at': log.createdAt.toIso8601String(),
               'cached_at': DateTime.now().toIso8601String(),
               'needs_sync': 0,

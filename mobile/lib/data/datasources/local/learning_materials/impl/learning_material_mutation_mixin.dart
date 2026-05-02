@@ -37,6 +37,8 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
         final map = material.toMap();
         map[CommonCols.cachedAt] = now.toIso8601String();
         map[CommonCols.needsSync] = 1;
+        map['title'] = enc.encryptField(map['title'] as String?);
+        map['content_text'] = enc.encryptField(map['content_text'] as String?);
         await txn.insert(DbTables.learningMaterials, map);
 
         await syncQueue.enqueue(SyncQueueEntry(
@@ -78,9 +80,9 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
         await txn.update(
           DbTables.learningMaterials,
           {
-            LearningMaterialsCols.title: title,
+            LearningMaterialsCols.title: enc.encryptField(title),
             LearningMaterialsCols.description: description,
-            LearningMaterialsCols.contentText: contentText,
+            LearningMaterialsCols.contentText: enc.encryptField(contentText),
             CommonCols.updatedAt: now.toIso8601String(),
             CommonCols.needsSync: 1,
             CommonCols.cachedAt: now.toIso8601String(),

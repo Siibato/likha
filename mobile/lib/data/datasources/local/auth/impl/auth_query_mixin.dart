@@ -5,6 +5,13 @@ import 'package:likha/data/models/auth/user_model.dart';
 import '../auth_local_datasource_base.dart';
 
 mixin AuthQueryMixin on AuthLocalDataSourceBase {
+  Map<String, dynamic> _decryptUserRow(Map<String, dynamic> row) {
+    final m = Map<String, dynamic>.from(row);
+    m['full_name'] = enc.decryptField(row['full_name'] as String?);
+    m['username'] = enc.decryptField(row['username'] as String?);
+    return m;
+ }
+
   @override
   Future<UserModel> getCachedCurrentUser([String? userId]) async {
     try {
@@ -30,7 +37,7 @@ mixin AuthQueryMixin on AuthLocalDataSourceBase {
       }
 
       if (result.isEmpty) throw CacheException('No cached current user found');
-      return UserModel.fromMap(result.first);
+      return UserModel.fromMap(_decryptUserRow(result.first));
     } catch (e) {
       if (e is CacheException) rethrow;
       throw CacheException(e.toString());
@@ -47,7 +54,7 @@ mixin AuthQueryMixin on AuthLocalDataSourceBase {
         orderBy: '${UsersCols.username} ASC',
       );
       if (results.isEmpty) return [];
-      return results.map(UserModel.fromMap).toList();
+      return results.map((r) => UserModel.fromMap(_decryptUserRow(r))).toList();
     } catch (e) {
       if (e is CacheException) rethrow;
       throw CacheException(e.toString());
@@ -65,7 +72,7 @@ mixin AuthQueryMixin on AuthLocalDataSourceBase {
         limit: 1,
       );
       if (result.isEmpty) throw CacheException('User not found in cache: $userId');
-      return UserModel.fromMap(result.first);
+      return UserModel.fromMap(_decryptUserRow(result.first));
     } catch (e) {
       if (e is CacheException) rethrow;
       throw CacheException('Failed to get cached user: $e');
@@ -83,7 +90,11 @@ mixin AuthQueryMixin on AuthLocalDataSourceBase {
         orderBy: '${CommonCols.createdAt} DESC',
       );
       if (results.isEmpty) throw CacheException('No cached activity logs found for user: $userId');
-      return results.map((row) => ActivityLogModel.fromMap(row)).toList();
+      return results.map((row) {
+        final decryptedRow = Map<String, dynamic>.from(row);
+        decryptedRow['details'] = enc.decryptField(row['details'] as String?);
+        return ActivityLogModel.fromMap(decryptedRow);
+      }).toList();
     } catch (e) {
       if (e is CacheException) rethrow;
       throw CacheException(e.toString());

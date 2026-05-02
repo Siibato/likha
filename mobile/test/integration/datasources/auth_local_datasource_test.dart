@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:likha/core/database/local_database.dart';
+import 'package:likha/core/security/noop_encryption_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/datasources/local/auth/impl/auth_local_datasource_impl.dart';
 import 'package:likha/data/models/auth/user_model.dart';
@@ -27,7 +28,7 @@ void main() {
   setUp(() async {
     await openFreshTestDatabase();
     syncQueue = SyncQueueImpl(LocalDatabase());
-    datasource = AuthLocalDataSourceImpl(LocalDatabase(), syncQueue);
+    datasource = AuthLocalDataSourceImpl(LocalDatabase(), syncQueue, const NoOpEncryptionService());
   });
 
   tearDown(() => closeTestDatabase());

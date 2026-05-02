@@ -16,6 +16,8 @@ mixin AssignmentCacheMixin on AssignmentLocalDataSourceBase {
           final map = assignment.toMap();
           map[CommonCols.cachedAt] = DateTime.now().toIso8601String();
           map[CommonCols.needsSync] = 0;
+          map[AssignmentsCols.title] = enc.encryptField(map[AssignmentsCols.title] as String?);
+          map[AssignmentsCols.instructions] = enc.encryptField(map[AssignmentsCols.instructions] as String?);
           // Use update-first pattern to avoid CASCADE DELETE on assignment_submissions
           final updated = await txn.update(DbTables.assignments, map, where: '${CommonCols.id} = ?', whereArgs: [map[CommonCols.id]]);
           if (updated == 0) {
@@ -35,6 +37,8 @@ mixin AssignmentCacheMixin on AssignmentLocalDataSourceBase {
       final map = assignment.toMap();
       map['cached_at'] = DateTime.now().toIso8601String();
       map['needs_sync'] = 0;
+      map[AssignmentsCols.title] = enc.encryptField(map[AssignmentsCols.title] as String?);
+      map[AssignmentsCols.instructions] = enc.encryptField(map[AssignmentsCols.instructions] as String?);
       // Use update-first pattern to avoid CASCADE DELETE on assignment_submissions
       final updated = await db.update(DbTables.assignments, map, where: '${CommonCols.id} = ?', whereArgs: [map[CommonCols.id]]);
       if (updated == 0) {
@@ -90,11 +94,11 @@ mixin AssignmentCacheMixin on AssignmentLocalDataSourceBase {
             AssignmentSubmissionsCols.assignmentId: submission.assignmentId,
             AssignmentSubmissionsCols.studentId: submission.studentId,
             AssignmentSubmissionsCols.status: submission.status,
-            AssignmentSubmissionsCols.textContent: submission.textContent,
+            AssignmentSubmissionsCols.textContent: enc.encryptField(submission.textContent),
             AssignmentSubmissionsCols.submittedAt: submission.submittedAt?.toIso8601String(),
             // AssignmentSubmissionsCols.isLate field removed - no longer needed
             AssignmentSubmissionsCols.points: submission.score,
-            AssignmentSubmissionsCols.feedback: submission.feedback,
+            AssignmentSubmissionsCols.feedback: enc.encryptField(submission.feedback),
             AssignmentSubmissionsCols.gradedAt: submission.gradedAt?.toIso8601String(),
             CommonCols.createdAt: submission.createdAt.toIso8601String(),
             CommonCols.updatedAt: submission.updatedAt.toIso8601String(),

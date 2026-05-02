@@ -10,6 +10,22 @@ import 'package:path_provider/path_provider.dart';
 import '../assignment_local_datasource_base.dart';
 
 mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
+  Map<String, dynamic> _decryptAssignmentRow(Map<String, dynamic> row) {
+    final m = Map<String, dynamic>.from(row);
+    m[AssignmentsCols.title] = enc.decryptField(row[AssignmentsCols.title] as String?);
+    m[AssignmentsCols.instructions] = enc.decryptField(row[AssignmentsCols.instructions] as String?);
+    return m;
+  }
+
+  Map<String, dynamic> _decryptSubmissionRow(Map<String, dynamic> row) {
+    final m = Map<String, dynamic>.from(row);
+    m[AssignmentSubmissionsCols.textContent] = enc.decryptField(row[AssignmentSubmissionsCols.textContent] as String?);
+    m[AssignmentSubmissionsCols.feedback] = enc.decryptField(row[AssignmentSubmissionsCols.feedback] as String?);
+    if (m.containsKey('student_name')) m['student_name'] = enc.decryptField(row['student_name'] as String?);
+    if (m.containsKey('student_username')) m['student_username'] = enc.decryptField(row['student_username'] as String?);
+    return m;
+  }
+
   @override
   Future<List<AssignmentModel>> getCachedAssignments(String classId, {bool publishedOnly = false, String? studentId}) async {
     try {
@@ -29,7 +45,7 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
       if (studentId == null) {
         final enriched = <AssignmentModel>[];
         for (final row in results) {
-          final base = AssignmentModel.fromMap(row);
+          final base = AssignmentModel.fromMap(_decryptAssignmentRow(row));
           // Compute dynamic submissionCount and gradedCount
           final countRow = await db.rawQuery(
             'SELECT COUNT(*) as total, SUM(CASE WHEN status IN (\'graded\',\'returned\') THEN 1 ELSE 0 END) as graded FROM ${DbTables.assignmentSubmissions} WHERE assignment_id = ? AND deleted_at IS NULL',
@@ -74,7 +90,7 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
       // Enrich each assignment with per-student submission data and dynamic counts (E8, E2)
       final enriched = <AssignmentModel>[];
       for (final row in results) {
-        final base = AssignmentModel.fromMap(row);
+        final base = AssignmentModel.fromMap(_decryptAssignmentRow(row));
         final sub = await getStudentSubmissionForAssignment(base.id, studentId);
 
         // Compute dynamic submissionCount and gradedCount (E8: fixes always-0 from cache)
@@ -132,7 +148,7 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
         whereArgs: [assignmentId],
       );
       if (results.isEmpty) throw CacheException('Assignment $assignmentId not cached');
-      final base = AssignmentModel.fromMap(results.first);
+      final base = AssignmentModel.fromMap(_decryptAssignmentRow(results.first));
 
       // Enrich with submission counts
       final countRow = await db.rawQuery(
@@ -188,25 +204,25 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
         WHERE s.id = ?
       ''', [submissionId]);
       if (results.isEmpty) return null;
-      final sub = results.first;
 
       // NEW: Query files from submission_files table
       final files = await getCachedSubmissionFiles(submissionId);
 
+      final decryptedSub = _decryptSubmissionRow(results.first);
       return AssignmentSubmissionModel(
-        id: sub['id'] as String,
-        assignmentId: sub['assignment_id'] as String,
-        studentId: sub['student_id'] as String,
-        studentName: sub['student_name'] as String? ?? '',
-        status: sub['status'] as String,
-        textContent: sub['text_content'] as String?,
-        submittedAt: sub['submitted_at'] != null ? DateTime.parse(sub['submitted_at'] as String) : null,
-        score: sub['points'] as int?,
-        feedback: sub['feedback'] as String?,
-        gradedAt: sub['graded_at'] != null ? DateTime.parse(sub['graded_at'] as String) : null,
+        id: decryptedSub['id'] as String,
+        assignmentId: decryptedSub['assignment_id'] as String,
+        studentId: decryptedSub['student_id'] as String,
+        studentName: decryptedSub['student_name'] as String? ?? '',
+        status: decryptedSub['status'] as String,
+        textContent: decryptedSub['text_content'] as String?,
+        submittedAt: decryptedSub['submitted_at'] != null ? DateTime.parse(decryptedSub['submitted_at'] as String) : null,
+        score: decryptedSub['points'] as int?,
+        feedback: decryptedSub['feedback'] as String?,
+        gradedAt: decryptedSub['graded_at'] != null ? DateTime.parse(decryptedSub['graded_at'] as String) : null,
         files: files,
-        createdAt: DateTime.parse(sub['created_at'] as String),
-        updatedAt: DateTime.parse(sub['updated_at'] as String),
+        createdAt: DateTime.parse(decryptedSub['created_at'] as String),
+        updatedAt: DateTime.parse(decryptedSub['updated_at'] as String),
       );
     } catch (e) {
       throw CacheException('Failed to get cached submission: $e');
@@ -272,15 +288,18 @@ mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
         ORDER BY CASE WHEN s.submitted_at IS NULL THEN 1 ELSE 0 END ASC, s.submitted_at ASC
       ''', [assignmentId]);
       if (results.isEmpty) return [];
-      return results.map((row) => SubmissionListItemModel(
-        id: row['id'] as String,
-        studentId: row['student_id'] as String,
-        studentName: row['student_name'] as String? ?? '',
-        studentUsername: row['student_username'] as String? ?? '',
-        status: row['status'] as String,
-        submittedAt: row['submitted_at'] != null ? DateTime.parse(row['submitted_at'] as String) : null,
-        score: row['points'] as int?,
-      )).toList();
+      return results.map((row) {
+        final d = _decryptSubmissionRow(row);
+        return SubmissionListItemModel(
+          id: d['id'] as String,
+          studentId: d['student_id'] as String,
+          studentName: d['student_name'] as String? ?? '',
+          studentUsername: d['student_username'] as String? ?? '',
+          status: d['status'] as String,
+          submittedAt: d['submitted_at'] != null ? DateTime.parse(d['submitted_at'] as String) : null,
+          score: d['points'] as int?,
+        );
+      }).toList();
     } catch (e) {
       if (e is CacheException) rethrow;
       throw CacheException(e.toString());

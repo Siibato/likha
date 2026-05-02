@@ -1,4 +1,5 @@
 import 'package:likha/core/database/local_database.dart';
+import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import '../assessment_local_datasource_base.dart';
 import 'assessment_cache_mixin.dart';
@@ -22,5 +23,8 @@ class AssessmentLocalDataSourceImpl extends AssessmentLocalDataSourceBase
   @override
   final SyncQueue syncQueue;
 
-  AssessmentLocalDataSourceImpl(this.localDatabase, this.syncQueue);
+  @override
+  final EncryptionService enc;
+
+  AssessmentLocalDataSourceImpl(this.localDatabase, this.syncQueue, this.enc);
 }

@@ -214,8 +214,8 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
         id: rawRow['id'] as String,
         assessmentId: rawRow['assessment_id'] as String? ?? '',
         studentId: rawRow['user_id'] as String? ?? '',
-        studentName: rawRow['student_name'] as String? ?? '',
-        studentUsername: rawRow['student_username'] as String? ?? '',
+        studentName: enc.decryptField(rawRow['student_name'] as String?) ?? '',
+        studentUsername: enc.decryptField(rawRow['student_username'] as String?) ?? '',
         startedAt: DateTime.parse(rawRow['started_at'] as String),
         submittedAt: rawRow['submitted_at'] != null ? DateTime.parse(rawRow['submitted_at'] as String) : null,
         autoScore: (rawRow['earned_points'] as num?)?.toDouble() ?? 0.0,
@@ -297,6 +297,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
       for (final row in answerRows) {
         final answerId = row['answer_id'] as String;
         final questionType = row['question_type'] as String;
+        final questionText = enc.decryptField(row['question_text'] as String?) ?? '';
 
         final itemRows = await db.rawQuery('''
           SELECT sai.id, sai.choice_id, sai.answer_text, sai.is_correct, qc.choice_text
@@ -313,7 +314,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
           selectedChoices = itemRows
               .map((item) => SelectedChoiceModel(
                     choiceId: item['choice_id'] as String? ?? '',
-                    choiceText: item['choice_text'] as String? ?? '',
+                    choiceText: enc.decryptField(item['choice_text'] as String?) ?? '',
                     isCorrect: (item['is_correct'] as int?) == 1,
                   ))
               .toList();
@@ -321,7 +322,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
           enumerationAnswers = itemRows
               .map((item) => EnumerationAnswerModel(
                     id: item['id'] as String,
-                    answerText: item['answer_text'] as String? ?? '',
+                    answerText: enc.decryptField(item['answer_text'] as String?) ?? '',
                     isCorrect: (item['is_correct'] as int?) == 1,
                   ))
               .toList();
@@ -334,7 +335,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
         answers.add(SubmissionAnswerModel(
           id: answerId,
           questionId: row['question_id'] as String,
-          questionText: row['question_text'] as String,
+          questionText: questionText,
           questionType: questionType,
           points: (row['question_points'] as num?)?.toInt() ?? 0,
           answerText: answerText,
@@ -352,7 +353,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
         id: sub['id'] as String,
         assessmentId: sub['assessment_id'] as String? ?? '',
         studentId: sub['user_id'] as String? ?? '',
-        studentName: sub['student_name'] as String? ?? '',
+        studentName: enc.decryptField(sub['student_name'] as String?) ?? '',
         startedAt: DateTime.parse(sub['started_at'] as String),
         submittedAt: sub['submitted_at'] != null ? DateTime.parse(sub['submitted_at'] as String) : null,
         autoScore: (sub['earned_points'] as num?)?.toDouble() ?? 0.0,
@@ -506,8 +507,8 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
         id: row['id'] as String,
         assessmentId: row['assessment_id'] as String? ?? '',
         studentId: row['user_id'] as String? ?? '',
-        studentName: row['student_name'] as String? ?? '',
-        studentUsername: row['student_username'] as String? ?? '',
+        studentName: enc.decryptField(row['student_name'] as String?) ?? '',
+        studentUsername: enc.decryptField(row['student_username'] as String?) ?? '',
         startedAt: DateTime.parse(row['started_at'] as String),
         submittedAt: row['submitted_at'] != null ? DateTime.parse(row['submitted_at'] as String) : null,
         autoScore: (row['earned_points'] as num?)?.toDouble() ?? 0.0,

@@ -32,7 +32,7 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
           await txn.update(
             DbTables.assignmentSubmissions,
             {
-              AssignmentSubmissionsCols.textContent: textContent ?? '',
+              AssignmentSubmissionsCols.textContent: enc.encryptField(textContent ?? ''),
               AssignmentSubmissionsCols.status: DbValues.statusDraft,
               CommonCols.updatedAt: now.toIso8601String(),
               CommonCols.cachedAt: now.toIso8601String(),
@@ -65,7 +65,7 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
             AssignmentSubmissionsCols.assignmentId: assignmentId,
             AssignmentSubmissionsCols.studentId: studentId,
             AssignmentSubmissionsCols.status: DbValues.statusDraft,
-            AssignmentSubmissionsCols.textContent: textContent ?? '',
+            AssignmentSubmissionsCols.textContent: enc.encryptField(textContent ?? ''),
             CommonCols.createdAt: now.toIso8601String(),
             CommonCols.updatedAt: now.toIso8601String(),
             CommonCols.cachedAt: now.toIso8601String(),
@@ -101,7 +101,7 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
         await txn.update(
           DbTables.assignmentSubmissions,
           {
-            AssignmentSubmissionsCols.textContent: textContent,
+            AssignmentSubmissionsCols.textContent: enc.encryptField(textContent),
             CommonCols.updatedAt: now.toIso8601String(),
             CommonCols.needsSync: 1,
             CommonCols.cachedAt: now.toIso8601String(),
@@ -190,7 +190,7 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
           DbTables.assignmentSubmissions,
           {
             AssignmentSubmissionsCols.points: score,
-            AssignmentSubmissionsCols.feedback: feedback,
+            AssignmentSubmissionsCols.feedback: enc.encryptField(feedback),
             AssignmentSubmissionsCols.gradedAt: now.toIso8601String(),
             AssignmentSubmissionsCols.status: DbValues.statusGraded,
             CommonCols.needsSync: 1,

@@ -21,6 +21,7 @@ dependencies:
   sqflite_common_ffi_web: ^0.4.5+2
   flutter_secure_storage: ^9.0.0
   shared_preferences: ^2.0.0
+  encrypt: ^5.0.3
 
   # Functional programming
   dartz: ^0.10.1

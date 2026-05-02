@@ -33,6 +33,8 @@ pub const TEST_JWT_SECRET: &str = "default_secret";
 pub const TEST_FILE_STORAGE: &str = "/tmp/likha_test_files";
 
 pub async fn build_test_app(db: DatabaseConnection) -> Router {
+    // Ensure JWT_SECRET is set so auth middleware does not panic.
+    std::env::set_var("JWT_SECRET", TEST_JWT_SECRET);
     let auth_service = Arc::new(AuthService::new(
         db.clone(),
         TEST_JWT_SECRET.to_string(),

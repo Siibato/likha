@@ -60,9 +60,9 @@ where
                     .into_response()
             })?;
 
-            // Get JWT secret from environment
+            // Get JWT secret from environment — no fallback to prevent weak-key vulnerability
             let jwt_secret =
-                std::env::var("JWT_SECRET").unwrap_or_else(|_| "default_secret".to_string());
+                std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
             let jwt_service = JwtService::new(jwt_secret, 3600);
 
             let claims = jwt_service.verify_token(token).map_err(|_| {

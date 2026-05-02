@@ -113,7 +113,7 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
         final choices = choicesResults.map((c) {
           return {
             'id': c['id'],
-            'choice_text': c['choice_text'],
+            'choice_text': enc.decryptField(c['choice_text'] as String?),
             'is_correct': (c['is_correct'] as int?) == 1,
             'order_index': c['order_index'],
           };
@@ -147,7 +147,7 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
               'acceptable_answers': acceptableAnswersResults.map((aa) {
                 return {
                   'id': aa['id'],
-                  'answer_text': aa['answer_text'],
+                  'answer_text': enc.decryptField(aa['answer_text'] as String?),
                 };
               }).toList(),
             });
@@ -156,7 +156,7 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
             for (final answer in acceptableAnswersResults) {
               correctAnswers.add({
                 'id': answer['id'],
-                'answer_text': answer['answer_text'],
+                'answer_text': enc.decryptField(answer['answer_text'] as String?),
               });
             }
           }
@@ -167,7 +167,7 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
           'id': q['id'],
           'assessment_id': q['assessment_id'],
           'question_type': q['question_type'],
-          'question_text': q['question_text'],
+          'question_text': enc.decryptField(q['question_text'] as String?),
           'points': q['points'],
           'order_index': q['order_index'],
           'is_multi_select': (q['is_multi_select'] as int?) == 1,

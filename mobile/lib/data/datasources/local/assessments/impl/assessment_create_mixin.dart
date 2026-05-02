@@ -146,7 +146,7 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
               CommonCols.id: question.id,
               AssessmentQuestionsCols.assessmentId: assessmentId,
               AssessmentQuestionsCols.questionType: question.questionType,
-              AssessmentQuestionsCols.questionText: question.questionText,
+              AssessmentQuestionsCols.questionText: enc.encryptField(question.questionText),
               AssessmentQuestionsCols.points: question.points,
               AssessmentQuestionsCols.orderIndex: question.orderIndex,
               AssessmentQuestionsCols.isMultiSelect: question.isMultiSelect ? 1 : 0,
@@ -165,7 +165,7 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
                 {
                   CommonCols.id: choice.id,
                   QuestionChoicesCols.questionId: question.id,
-                  QuestionChoicesCols.choiceText: choice.choiceText,
+                  QuestionChoicesCols.choiceText: enc.encryptField(choice.choiceText),
                   QuestionChoicesCols.isCorrect: choice.isCorrect ? 1 : 0,
                   QuestionChoicesCols.orderIndex: choice.orderIndex,
                   CommonCols.cachedAt: now.toIso8601String(),
@@ -195,7 +195,7 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
                 {
                   CommonCols.id: answer.id,
                   AnswerKeyAcceptableAnswersCols.answerKeyId: answerKeyId,
-                  AnswerKeyAcceptableAnswersCols.answerText: answer.answerText,
+                  AnswerKeyAcceptableAnswersCols.answerText: enc.encryptField(answer.answerText),
                   CommonCols.cachedAt: now.toIso8601String(),
                   CommonCols.needsSync: 0,
                 },
@@ -224,7 +224,7 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
                   {
                     CommonCols.id: acceptableAnswer.id,
                     AnswerKeyAcceptableAnswersCols.answerKeyId: answerKeyId,
-                    AnswerKeyAcceptableAnswersCols.answerText: acceptableAnswer.answerText,
+                    AnswerKeyAcceptableAnswersCols.answerText: enc.encryptField(acceptableAnswer.answerText),
                     CommonCols.cachedAt: now.toIso8601String(),
                     CommonCols.needsSync: 0,
                   },

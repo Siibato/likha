@@ -36,9 +36,9 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
         materials.add(LearningMaterialModel(
           id: materialId,
           classId: result['class_id'] as String,
-          title: result['title'] as String,
+          title: enc.decryptField(result['title'] as String?) ?? '',
           description: result['description'] as String?,
-          contentText: result['content_text'] as String?,
+          contentText: enc.decryptField(result['content_text'] as String?),
           orderIndex: result['order_index'] as int,
           fileCount: actualCount,
           createdAt: DateTime.parse(result['created_at'] as String),
@@ -79,9 +79,9 @@ mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
       return LearningMaterialModel(
         id: r['id'] as String,
         classId: r['class_id'] as String,
-        title: r['title'] as String,
+        title: enc.decryptField(r['title'] as String?) ?? '',
         description: r['description'] as String?,
-        contentText: r['content_text'] as String?,
+        contentText: enc.decryptField(r['content_text'] as String?),
         orderIndex: r['order_index'] as int,
         fileCount: actualCount,
         createdAt: DateTime.parse(r['created_at'] as String),

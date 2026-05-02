@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:likha/core/logging/cache_logger.dart';
+import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
@@ -19,6 +20,8 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
           final map = material.toMap();
           map['cached_at'] = DateTime.now().toIso8601String();
           map['needs_sync'] = 0;
+          map[LearningMaterialsCols.title] = enc.encryptField(map[LearningMaterialsCols.title] as String?);
+          map[LearningMaterialsCols.contentText] = enc.encryptField(map[LearningMaterialsCols.contentText] as String?);
           // Manual UPSERT: UPDATE first, INSERT if rowsUpdated == 0
           final rowsUpdated = await txn.update(
             'learning_materials',
@@ -47,6 +50,8 @@ mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
       final map = material.toMap();
       map['cached_at'] = DateTime.now().toIso8601String();
       map['needs_sync'] = 0;
+      map[LearningMaterialsCols.title] = enc.encryptField(map[LearningMaterialsCols.title] as String?);
+      map[LearningMaterialsCols.contentText] = enc.encryptField(map[LearningMaterialsCols.contentText] as String?);
       // Manual UPSERT: UPDATE first, INSERT if rowsUpdated == 0
       final rowsUpdated = await db.update(
         'learning_materials',

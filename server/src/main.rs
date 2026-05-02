@@ -76,7 +76,7 @@ async fn main() {
             }
             "create-db" => {
                 println!("Creating database and running migrations...");
-                let db = db::establish_connection(&config.database_url)
+                let db = db::establish_connection(&config.database_url, &config.db_encryption_key)
                     .await
                     .expect("Failed to connect to database");
                 run_migrations(&db).await.expect("Failed to run migrations");
@@ -99,7 +99,7 @@ async fn main() {
                 }
 
                 println!("Creating fresh database and running migrations...");
-                let db = db::establish_connection(&config.database_url)
+                let db = db::establish_connection(&config.database_url, &config.db_encryption_key)
                     .await
                     .expect("Failed to connect to database");
                 run_migrations(&db).await.expect("Failed to run migrations");
@@ -108,7 +108,7 @@ async fn main() {
                 return;
             }
             "clear-invalid-attempts" => {
-                let db = db::establish_connection(&config.database_url)
+                let db = db::establish_connection(&config.database_url, &config.db_encryption_key)
                     .await
                     .expect("Failed to connect to database");
                 let repo = crate::db::repositories::login_attempt_repository::LoginAttemptRepository::new(db);
@@ -133,7 +133,7 @@ async fn main() {
     tracing::info!("Port: {}", config.port);
 
     // Connect to database
-    let db = db::establish_connection(&config.database_url)
+    let db = db::establish_connection(&config.database_url, &config.db_encryption_key)
         .await
         .expect("Failed to connect to database");
 

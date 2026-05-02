@@ -9,6 +9,7 @@ pub struct ServerConfig {
     pub jwt_expiration: i64,
     pub file_storage_path: String,
     pub school_code: String,
+    pub db_encryption_key: String,
 }
 
 impl ServerConfig {
@@ -30,6 +31,8 @@ impl ServerConfig {
                 .unwrap_or_else(|_| "./uploads".to_string()),
             school_code: env::var("SCHOOL_CODE")
                 .unwrap_or_else(|_| "CHANGE_ME".to_string()),
+            db_encryption_key: env::var("DB_ENCRYPTION_KEY")
+                .expect("DB_ENCRYPTION_KEY must be set in .env file"),
         }
     }
 }
