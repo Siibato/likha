@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/widgets/shared/cards/info_panel.dart';
 import 'package:likha/presentation/widgets/shared/forms/school_settings_form.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 import 'package:likha/presentation/widgets/desktop/admin/shared/form_fields.dart';
-import 'package:likha/presentation/widgets/desktop/admin/settings/qr_code_dialog.dart';
 
 /// A comprehensive school settings section widget
 /// that includes the form, save functionality, and QR code generation.
@@ -71,7 +69,7 @@ class _SchoolSettingsSectionState extends State<SchoolSettingsSection> {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Info panel
-            InfoPanel(
+            const InfoPanel(
               child: Text(
                 'These settings are used in printed reports (TOS, Item Analysis) for DepEd-formatted headers.',
                 style: TextStyle(
@@ -119,7 +117,7 @@ class _SchoolSettingsSectionState extends State<SchoolSettingsSection> {
                 SizedBox(
                   height: 48,
                   child: DesktopFormField.button(
-                    onPressed: widget.isSaving ? () {} : widget.onShowQrCode ?? () {},
+                    onPressed: widget.isSaving ? () {} : widget.onShowQrCode,
                     text: 'View QR Code',
                     isPrimary: false,
                     icon: Icons.qr_code,
@@ -179,9 +177,9 @@ class _SchoolSettingsSectionState extends State<SchoolSettingsSection> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
+          const Text(
             'School Information',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: AppColors.foregroundPrimary,
@@ -314,7 +312,7 @@ class SchoolSettingsCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.accentCharcoal.withOpacity(0.1),
+                      color: AppColors.accentCharcoal.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(
@@ -325,7 +323,7 @@ class SchoolSettingsCard extends StatelessWidget {
                   ),
                   const Spacer(),
                   if (onTap != null)
-                    Icon(
+                    const Icon(
                       Icons.chevron_right_rounded,
                       size: 20,
                       color: AppColors.foregroundTertiary,
@@ -359,7 +357,7 @@ class SchoolSettingsCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.accentAmber.withOpacity(0.1),
+                    color: AppColors.accentAmber.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(

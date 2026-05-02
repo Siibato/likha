@@ -109,12 +109,12 @@ class GradePdfGenerator {
         pw.SizedBox(height: 5),
         pw.Text(
           'Quarter ${data.quarter}',
-          style: pw.TextStyle(fontSize: 14),
+          style: const pw.TextStyle(fontSize: 14),
         ),
         pw.SizedBox(height: 5),
         pw.Text(
           'Generated: ${DateTime.now().toString().split('.')[0]}',
-          style: pw.TextStyle(fontSize: 10, color: PdfColors.grey),
+          style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey),
         ),
       ],
     );
@@ -124,7 +124,7 @@ class GradePdfGenerator {
     return pw.Table(
       border: pw.TableBorder.all(color: PdfColors.black),
       columnWidths: {
-        0: pw.FixedColumnWidth(_nameColWidth),
+        0: const pw.FixedColumnWidth(_nameColWidth),
         ..._buildColumnWidths(data),
       },
       children: [
@@ -142,41 +142,41 @@ class GradePdfGenerator {
 
     // Written Works columns
     for (int i = 0; i < data.wwItems.length; i++) {
-      widths[colIndex++] = pw.FixedColumnWidth(_cellWidth);
+      widths[colIndex++] = const pw.FixedColumnWidth(_cellWidth);
     }
     if (data.wwItems.isNotEmpty) {
-      widths[colIndex++] = pw.FixedColumnWidth(_cellWidth); // Total
-      widths[colIndex++] = pw.FixedColumnWidth(_cellWidth); // HS
-      widths[colIndex++] = pw.FixedColumnWidth(_cellWidth); // %
-      widths[colIndex++] = pw.FixedColumnWidth(_cellWidth); // WS
+      widths[colIndex++] = const pw.FixedColumnWidth(_cellWidth); // Total
+      widths[colIndex++] = const pw.FixedColumnWidth(_cellWidth); // HS
+      widths[colIndex++] = const pw.FixedColumnWidth(_cellWidth); // %
+      widths[colIndex++] = const pw.FixedColumnWidth(_cellWidth); // WS
     }
 
     // Performance Tasks columns
     for (int i = 0; i < data.ptItems.length; i++) {
-      widths[colIndex++] = pw.FixedColumnWidth(_cellWidth);
+      widths[colIndex++] = const pw.FixedColumnWidth(_cellWidth);
     }
     if (data.ptItems.isNotEmpty) {
-      widths[colIndex++] = pw.FixedColumnWidth(_cellWidth); // Total
-      widths[colIndex++] = pw.FixedColumnWidth(_cellWidth); // HS
-      widths[colIndex++] = pw.FixedColumnWidth(_cellWidth); // %
-      widths[colIndex++] = pw.FixedColumnWidth(_cellWidth); // WS
+      widths[colIndex++] = const pw.FixedColumnWidth(_cellWidth); // Total
+      widths[colIndex++] = const pw.FixedColumnWidth(_cellWidth); // HS
+      widths[colIndex++] = const pw.FixedColumnWidth(_cellWidth); // %
+      widths[colIndex++] = const pw.FixedColumnWidth(_cellWidth); // WS
     }
 
     // Quarterly Assessment columns
     for (int i = 0; i < data.qaItems.length; i++) {
-      widths[colIndex++] = pw.FixedColumnWidth(_cellWidth);
+      widths[colIndex++] = const pw.FixedColumnWidth(_cellWidth);
     }
     if (data.qaItems.isNotEmpty) {
-      widths[colIndex++] = pw.FixedColumnWidth(_cellWidth); // Total
-      widths[colIndex++] = pw.FixedColumnWidth(_cellWidth); // HS
-      widths[colIndex++] = pw.FixedColumnWidth(_cellWidth); // %
-      widths[colIndex++] = pw.FixedColumnWidth(_cellWidth); // WS
+      widths[colIndex++] = const pw.FixedColumnWidth(_cellWidth); // Total
+      widths[colIndex++] = const pw.FixedColumnWidth(_cellWidth); // HS
+      widths[colIndex++] = const pw.FixedColumnWidth(_cellWidth); // %
+      widths[colIndex++] = const pw.FixedColumnWidth(_cellWidth); // WS
     }
 
     // Summary columns
-    widths[colIndex++] = pw.FixedColumnWidth(_cellWidth); // Initial
-    widths[colIndex++] = pw.FixedColumnWidth(_cellWidth); // QG
-    widths[colIndex++] = pw.FixedColumnWidth(_cellWidth); // Remarks
+    widths[colIndex++] = const pw.FixedColumnWidth(_cellWidth); // Initial
+    widths[colIndex++] = const pw.FixedColumnWidth(_cellWidth); // QG
+    widths[colIndex++] = const pw.FixedColumnWidth(_cellWidth); // Remarks
 
     return widths;
   }
@@ -278,7 +278,7 @@ class GradePdfGenerator {
         _buildDataCell(totalHs.toStringAsFixed(0), bold: true),
         _buildDataCell(totalHs.toStringAsFixed(0), bold: true),
         _buildDataCell('100%', bold: true),
-        _buildDataCell('${weight}%', bold: true),
+        _buildDataCell('$weight%', bold: true),
       ]);
     }
     

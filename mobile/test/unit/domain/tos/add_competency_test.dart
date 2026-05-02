@@ -46,7 +46,7 @@ void main() {
       when(() => mockRepository.addCompetency(
         tosId: any(named: 'tosId'),
         data: any(named: 'data'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Competency text cannot be empty')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Competency text cannot be empty')));
 
       final result = await useCase(tosId: tTosId, data: {'competencyText': ''});
 
@@ -61,7 +61,7 @@ void main() {
       when(() => mockRepository.addCompetency(
         tosId: any(named: 'tosId'),
         data: any(named: 'data'),
-      )).thenAnswer((_) async => Left(ServerFailure('TOS not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('TOS not found')));
 
       final result = await useCase(tosId: 'nonexistent-id', data: tData);
 
@@ -76,7 +76,7 @@ void main() {
       when(() => mockRepository.addCompetency(
         tosId: any(named: 'tosId'),
         data: any(named: 'data'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tosId: tTosId, data: tData);
 

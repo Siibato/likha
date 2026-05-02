@@ -113,7 +113,6 @@ class _ClassDetailPageState extends ConsumerState<ClassDetailPage> {
                             title: 'Grades',
                             subtitle: 'Manage grades and scores',
                             onTap: () {
-                              print('*** CLASS DETAIL PAGE: User clicked Grades card, navigating to ClassRecordPage for class: ${widget.classId}');
                               PageLogger.instance.log('User clicked Grades card, navigating to ClassRecordPage for class: ${widget.classId}');
                               Navigator.push(
                                 context,

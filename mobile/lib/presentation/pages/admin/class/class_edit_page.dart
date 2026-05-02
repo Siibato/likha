@@ -205,7 +205,7 @@ class _AdminEditClassPageState extends ConsumerState<AdminEditClassPage> {
                         color: AppColors.foregroundTertiary,
                       ),
                     ),
-                    activeColor: AppColors.accentCharcoal,
+                    activeThumbColor: AppColors.accentCharcoal,
                     contentPadding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     shape: RoundedRectangleBorder(

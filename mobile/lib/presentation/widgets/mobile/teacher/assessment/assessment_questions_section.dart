@@ -153,7 +153,7 @@ class AssessmentQuestionsSection extends StatelessWidget {
                       ),
                     ),
                   );
-                }).toList(),
+                }),
               ],
             ),
           ),

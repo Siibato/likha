@@ -52,7 +52,7 @@ class AssessmentInfoCard extends StatelessWidget {
     return BaseInfoCard(
       title: 'Assessment Details',
       subtitle: '$totalPoints pts • $_formatTimeLimit(timeLimitMinutes) • $questionCount question${questionCount != 1 ? 's' : ''}',
-      icon: Icon(Icons.info_outline_rounded),
+      icon: const Icon(Icons.info_outline_rounded),
       margin: const EdgeInsets.only(bottom: 14),
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -11,9 +11,8 @@ abstract class AppLogger {
   final String tag;
   final bool _enabled;
 
-  AppLogger({required String tag, required String envKey})
-      : tag = tag,
-        _enabled = _resolveFlag(envKey);
+  AppLogger({required this.tag, required String envKey})
+      : _enabled = _resolveFlag(envKey);
 
   static bool _resolveFlag(String envKey) {
     final raw = dotenv.env[envKey]?.toLowerCase().trim();

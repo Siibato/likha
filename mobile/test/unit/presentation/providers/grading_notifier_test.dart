@@ -89,7 +89,7 @@ void main() {
         final notifier = _buildItemsNotifier(getGradeItems: mockGet);
 
         when(() => mockGet(any()))
-            .thenAnswer((_) async => Left(ServerFailure('Error')));
+            .thenAnswer((_) async => const Left(ServerFailure('Error')));
 
         await notifier.loadItems('c-1');
 
@@ -128,7 +128,7 @@ void main() {
         final notifier = _buildItemsNotifier(createGradeItem: mockCreate);
 
         when(() => mockCreate(classId: any(named: 'classId'), data: any(named: 'data')))
-            .thenAnswer((_) async => Left(ServerFailure('Create failed')));
+            .thenAnswer((_) async => const Left(ServerFailure('Create failed')));
 
         await notifier.createItem('c-1', {
           'title': 'LQ 1',
@@ -195,7 +195,7 @@ void main() {
         final notifier = _buildConfigNotifier(getConfig: mockGet);
 
         when(() => mockGet(any()))
-            .thenAnswer((_) async => Left(ServerFailure('Config error')));
+            .thenAnswer((_) async => const Left(ServerFailure('Config error')));
 
         await notifier.loadConfig('c-1');
 
@@ -234,7 +234,7 @@ void main() {
         final notifier = _buildConfigNotifier(setupGrading: mockSetup);
 
         when(() => mockSetup(any()))
-            .thenAnswer((_) async => Left(ServerFailure('Setup failed')));
+            .thenAnswer((_) async => const Left(ServerFailure('Setup failed')));
 
         await notifier.setupGrading(SetupGradingParams(
           classId: 'c-1',

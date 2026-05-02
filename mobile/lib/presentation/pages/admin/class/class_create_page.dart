@@ -238,7 +238,7 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
                         color: AppColors.foregroundTertiary,
                       ),
                     ),
-                    activeColor: AppColors.accentCharcoal,
+                    activeThumbColor: AppColors.accentCharcoal,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

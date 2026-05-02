@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:likha/core/logging/core_logger.dart';
 
 /// Local SQLite Database for offline-first functionality
 ///
@@ -61,7 +62,7 @@ class LocalDatabase {
           await db.execute('PRAGMA cache_size = 10000');
           await db.execute('PRAGMA temp_store = MEMORY');
         } catch (e) {
-          print('Warning: Failed to set database PRAGMA settings: $e');
+          CoreLogger.instance.warn('Failed to set database PRAGMA settings: $e');
         }
         // MigrationRunner disabled - all migrations consolidated into _createTables
         // Future migrations will be handled via onUpgrade with version increments

@@ -64,7 +64,7 @@ void main() {
       when(() => mockRepository.bulkAddCompetencies(
         tosId: any(named: 'tosId'),
         competencies: any(named: 'competencies'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Competencies list cannot be empty')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Competencies list cannot be empty')));
 
       final result = await useCase(tosId: tTosId, competencies: []);
 
@@ -79,7 +79,7 @@ void main() {
       when(() => mockRepository.bulkAddCompetencies(
         tosId: any(named: 'tosId'),
         competencies: any(named: 'competencies'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tosId: tTosId, competencies: tCompetenciesData);
 

@@ -144,7 +144,7 @@ class GradeDataRow extends StatelessWidget {
       for (final item in items)
         _buildScoreCell(sid, item, studentScores, bgColor),
       isLoadingScores
-          ? GradeSkeletonCell(
+          ? const GradeSkeletonCell(
               width: GradeSpreadsheetDimensions.sumColW,
               height: GradeSpreadsheetDimensions.rowH,
             )
@@ -153,7 +153,7 @@ class GradeDataRow extends StatelessWidget {
               width: GradeSpreadsheetDimensions.sumColW,
             ),
       isLoadingScores
-          ? GradeSkeletonCell(
+          ? const GradeSkeletonCell(
               width: GradeSpreadsheetDimensions.sumColW,
               height: GradeSpreadsheetDimensions.rowH,
             )
@@ -162,7 +162,7 @@ class GradeDataRow extends StatelessWidget {
               width: GradeSpreadsheetDimensions.sumColW,
             ),
       isLoadingScores
-          ? GradeSkeletonCell(
+          ? const GradeSkeletonCell(
               width: GradeSpreadsheetDimensions.pctColW,
               height: GradeSpreadsheetDimensions.rowH,
             )
@@ -173,7 +173,7 @@ class GradeDataRow extends StatelessWidget {
               width: GradeSpreadsheetDimensions.pctColW,
             ),
       isLoadingScores
-          ? GradeSkeletonCell(
+          ? const GradeSkeletonCell(
               width: GradeSpreadsheetDimensions.pctColW,
               height: GradeSpreadsheetDimensions.rowH,
             )
@@ -192,7 +192,7 @@ class GradeDataRow extends StatelessWidget {
     Color bgColor,
   ) {
     if (isLoadingScores) {
-      return GradeSkeletonCell(
+      return const GradeSkeletonCell(
         width: GradeSpreadsheetDimensions.scoreColW,
         height: GradeSpreadsheetDimensions.rowH,
       );

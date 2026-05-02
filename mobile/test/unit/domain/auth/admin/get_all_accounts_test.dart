@@ -68,7 +68,7 @@ void main() {
     });
 
     test('should return CacheFailure when cache is corrupted', () async {
-      when(() => mockRepository.getAllAccounts()).thenAnswer((_) async => Left(CacheFailure('Cache error')));
+      when(() => mockRepository.getAllAccounts()).thenAnswer((_) async => const Left(CacheFailure('Cache error')));
 
       final result = await useCase();
 
@@ -80,7 +80,7 @@ void main() {
     });
 
     test('should return ServerFailure when server error occurs', () async {
-      when(() => mockRepository.getAllAccounts()).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      when(() => mockRepository.getAllAccounts()).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase();
 
@@ -92,7 +92,7 @@ void main() {
     });
 
     test('should return NetworkFailure when offline', () async {
-      when(() => mockRepository.getAllAccounts()).thenAnswer((_) async => Left(NetworkFailure('Network error')));
+      when(() => mockRepository.getAllAccounts()).thenAnswer((_) async => const Left(NetworkFailure('Network error')));
 
       final result = await useCase();
 

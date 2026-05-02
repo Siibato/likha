@@ -48,7 +48,7 @@ void main() {
       when(() => mockRepository.createTos(
         classId: any(named: 'classId'),
         data: any(named: 'data'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Title cannot be empty')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Title cannot be empty')));
 
       final result = await useCase(classId: tClassId, data: {'title': ''});
 
@@ -63,7 +63,7 @@ void main() {
       when(() => mockRepository.createTos(
         classId: any(named: 'classId'),
         data: any(named: 'data'),
-      )).thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+      )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(classId: tClassId, data: tData);
 
@@ -78,7 +78,7 @@ void main() {
       when(() => mockRepository.createTos(
         classId: any(named: 'classId'),
         data: any(named: 'data'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(classId: tClassId, data: tData);
 

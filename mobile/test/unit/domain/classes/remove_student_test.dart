@@ -38,7 +38,7 @@ void main() {
       when(() => mockRepository.removeStudent(
         classId: any(named: 'classId'),
         studentId: any(named: 'studentId'),
-      )).thenAnswer((_) async => Left(ServerFailure('Student not found in class')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Student not found in class')));
 
       final result = await useCase(tParams);
 
@@ -53,7 +53,7 @@ void main() {
       when(() => mockRepository.removeStudent(
         classId: any(named: 'classId'),
         studentId: any(named: 'studentId'),
-      )).thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+      )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(tParams);
 
@@ -68,7 +68,7 @@ void main() {
       when(() => mockRepository.removeStudent(
         classId: any(named: 'classId'),
         studentId: any(named: 'studentId'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tParams);
 

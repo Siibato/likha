@@ -10,7 +10,6 @@ import 'package:likha/data/datasources/remote/learning_material_remote_datasourc
 
 class ValidationService {
   final DataValidator _validator;
-  final ClassLocalDataSource _classLocal;
   final AssessmentLocalDataSource _assessmentLocal;
   final AssignmentLocalDataSource _assignmentLocal;
   final LearningMaterialLocalDataSource _materialLocal;
@@ -28,7 +27,6 @@ class ValidationService {
     required AssignmentRemoteDataSource assignmentRemote,
     required LearningMaterialRemoteDataSource materialRemote,
   })  : _validator = validator,
-        _classLocal = classLocal,
         _assessmentLocal = assessmentLocal,
         _assignmentLocal = assignmentLocal,
         _materialLocal = materialLocal,

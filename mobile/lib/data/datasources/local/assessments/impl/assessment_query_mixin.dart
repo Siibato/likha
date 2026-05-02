@@ -1,5 +1,6 @@
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
+import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/data/models/assessments/assessment_model.dart';
 import 'package:likha/data/models/assessments/question_model.dart';
 import '../assessment_local_datasource_base.dart';
@@ -41,7 +42,7 @@ mixin AssessmentQueryMixin on AssessmentLocalDataSourceBase {
 
         final effectiveTotalPoints = computedTotalPoints > 0 ? computedTotalPoints : assessment.totalPoints;
 
-        print('*** DS ASSESS: ${assessment.title} | dbTotalPoints=${assessment.totalPoints} | computedFromQuestions=$computedTotalPoints | effectiveTotalPoints=$effectiveTotalPoints | gradingPeriod=${assessment.gradingPeriodNumber} | component=${assessment.component}');
+        RepoLogger.instance.log('${assessment.title} | dbTotalPoints=${assessment.totalPoints} | computedFromQuestions=$computedTotalPoints | effectiveTotalPoints=$effectiveTotalPoints | gradingPeriod=${assessment.gradingPeriodNumber} | component=${assessment.component}');
 
         final updatedAssessment = AssessmentModel(
           id: assessment.id,

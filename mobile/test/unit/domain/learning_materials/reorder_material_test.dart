@@ -51,7 +51,7 @@ void main() {
       when(() => mockRepository.reorderMaterial(
         materialId: any(named: 'materialId'),
         newOrderIndex: any(named: 'newOrderIndex'),
-      )).thenAnswer((_) async => Left(ServerFailure('Material not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Material not found')));
 
       final result = await useCase(materialId: 'nonexistent-id', newOrderIndex: 3);
 
@@ -66,7 +66,7 @@ void main() {
       when(() => mockRepository.reorderMaterial(
         materialId: any(named: 'materialId'),
         newOrderIndex: any(named: 'newOrderIndex'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(materialId: tMaterialId, newOrderIndex: 3);
 
@@ -101,7 +101,7 @@ void main() {
       when(() => mockRepository.reorderAllMaterials(
         classId: any(named: 'classId'),
         materialIds: any(named: 'materialIds'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await reorderAllUseCase(classId: tClassId, materialIds: tMaterialIds);
 

@@ -39,7 +39,7 @@ class StatusBadge extends StatelessWidget {
        activeColor = AppColors.accentCharcoal,
        inactiveColor = AppColors.foregroundTertiary,
        activeBackgroundColor = AppColors.accentCharcoal,
-       inactiveBackgroundColor = AppColors.foregroundTertiary.withOpacity(0.12);
+       inactiveBackgroundColor = AppColors.foregroundTertiary.withValues(alpha: 0.12);
 
   /// Creates an active/inactive status badge
   StatusBadge.active({
@@ -55,10 +55,10 @@ class StatusBadge extends StatelessWidget {
        activeColor = AppColors.accentCharcoal,
        inactiveColor = AppColors.foregroundTertiary,
        activeBackgroundColor = AppColors.accentCharcoal,
-       inactiveBackgroundColor = AppColors.foregroundTertiary.withOpacity(0.12);
+       inactiveBackgroundColor = AppColors.foregroundTertiary.withValues(alpha: 0.12);
 
   /// Creates a custom status badge with specified colors
-  StatusBadge.custom({
+  const StatusBadge.custom({
     super.key,
     required this.isActive,
     required this.activeText,

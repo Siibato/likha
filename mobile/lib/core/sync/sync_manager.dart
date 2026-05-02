@@ -76,28 +76,28 @@ class SyncManager {
 
   /// Start sync manager - listen for server reachability changes
   void start() {
-    print('*** SYNC MANAGER: start() - START');
+    _log.log('start() - START');
     stop(); // cancel any existing subscription to prevent duplicates
     
-    print('*** SYNC MANAGER: start() - Setting up reachability listener');
+    _log.log('start() - Setting up reachability listener');
     _reachabilitySubscription =
         _serverReachabilityService.onServerReachabilityChanged.listen((isReachable) {
-      print('*** SYNC MANAGER: start() - Reachability changed to: $isReachable, isSyncing: $_isSyncing');
+      _log.log('start() - Reachability changed to: $isReachable, isSyncing: $_isSyncing');
       if (isReachable && !_isSyncing) {
-        print('*** SYNC MANAGER: start() - Triggering sync due to reachability change');
+        _log.log('start() - Triggering sync due to reachability change');
         _runSync();
       }
     });
 
-    print('*** SYNC MANAGER: start() - Initial reachability check: ${_serverReachabilityService.isServerReachable}');
+    _log.log('start() - Initial reachability check: ${_serverReachabilityService.isServerReachable}');
     if (_serverReachabilityService.isServerReachable && !_isSyncing) {
-      print('*** SYNC MANAGER: start() - Triggering initial sync');
+      _log.log('start() - Triggering initial sync');
       _runSync();
     } else {
-      print('*** SYNC MANAGER: start() - Not triggering sync (reachable: ${_serverReachabilityService.isServerReachable}, syncing: $_isSyncing)');
+      _log.log('start() - Not triggering sync (reachable: ${_serverReachabilityService.isServerReachable}, syncing: $_isSyncing)');
     }
     
-    print('*** SYNC MANAGER: start() - END');
+    _log.log('start() - END');
   }
 
   /// Stop sync manager
@@ -120,31 +120,31 @@ class SyncManager {
 
   /// Main sync orchestration: outbound then inbound
   Future<void> _runSync() async {
-    print('*** SYNC MANAGER: _runSync() - START');
+    _log.log('_runSync() - START');
     
     if (!await _storageService.isAuthenticated()) {
-      print('*** SYNC MANAGER: _runSync() - Not authenticated, skipping');
+      _log.log('_runSync() - Not authenticated, skipping');
       return;
     }
     if (_isSyncing) {
-      print('*** SYNC MANAGER: _runSync() - Already syncing, skipping');
+      _log.log('_runSync() - Already syncing, skipping');
       return;
     }
     _isSyncing = true;
 
-    print('*** SYNC MANAGER: _runSync() - Starting sync phase');
+    _log.log('_runSync() - Starting sync phase');
     _updateState(phase: SyncPhase.syncing);
 
     try {
       // STEP 1: Push local mutations to server
-      print('*** SYNC MANAGER: _runSync() - Starting outbound sync');
+      _log.log('_runSync() - Starting outbound sync');
       await _outboundHandler.outboundSync();
-      print('*** SYNC MANAGER: _runSync() - Outbound sync completed');
+      _log.log('_runSync() - Outbound sync completed');
 
       // STEP 2: Fetch and merge server changes
-      print('*** SYNC MANAGER: _runSync() - Starting inbound sync');
+      _log.log('_runSync() - Starting inbound sync');
       final serverTime = await _inboundHandler.inboundSync();
-      print('*** SYNC MANAGER: _runSync() - Inbound sync completed, serverTime: $serverTime');
+      _log.log('_runSync() - Inbound sync completed, serverTime: $serverTime');
 
       // Update server-aligned clock offset for UI time comparisons
       if (serverTime != null) {
@@ -173,23 +173,15 @@ class SyncManager {
         );
       }
 
-      print('*** SYNC MANAGER: _runSync() - SUCCESS: Sync completed');
+      _log.log('_runSync() - SUCCESS: Sync completed');
       _updateState(phase: SyncPhase.idle);
     } catch (e) {
-      print('*** SYNC MANAGER: _runSync() - ERROR: ${e.toString()}');
+      _log.log('_runSync() - ERROR: ${e.toString()}');
       _updateState(phase: SyncPhase.failed, lastError: e.toString());
     } finally {
       _isSyncing = false;
-      print('*** SYNC MANAGER: _runSync() - END');
+      _log.log('_runSync() - END');
     }
-  }
-
-  /// Format error with stack trace for better debugging
-  String _formatError(Object error, StackTrace stackTrace) {
-    if (error is Exception) {
-      return error.toString();
-    }
-    return 'Unexpected error: ${error.toString()}\n${stackTrace.toString()}';
   }
 
   /// Update sync state and notify listeners

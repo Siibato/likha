@@ -46,7 +46,7 @@ void main() {
       when(() => mockRepository.updateCompetency(
         competencyId: any(named: 'competencyId'),
         data: any(named: 'data'),
-      )).thenAnswer((_) async => Left(ServerFailure('Competency not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Competency not found')));
 
       final result = await useCase(competencyId: 'nonexistent-id', data: tData);
 
@@ -61,7 +61,7 @@ void main() {
       when(() => mockRepository.updateCompetency(
         competencyId: any(named: 'competencyId'),
         data: any(named: 'data'),
-      )).thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+      )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(competencyId: tCompetencyId, data: tData);
 
@@ -76,7 +76,7 @@ void main() {
       when(() => mockRepository.updateCompetency(
         competencyId: any(named: 'competencyId'),
         data: any(named: 'data'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(competencyId: tCompetencyId, data: tData);
 

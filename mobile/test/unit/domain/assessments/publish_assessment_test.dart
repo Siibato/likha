@@ -18,7 +18,7 @@ void main() {
   });
 
   group('PublishAssessment', () {
-    final tAssessmentId = 'assessment-1';
+    const tAssessmentId = 'assessment-1';
     final tPublishedAssessment = Assessment(
       id: tAssessmentId,
       classId: 'class-1',
@@ -51,7 +51,7 @@ void main() {
 
     test('should return ServerFailure when assessment not found', () async {
       when(() => mockRepository.publishAssessment(assessmentId: any(named: 'assessmentId')))
-          .thenAnswer((_) async => Left(ServerFailure('Assessment not found')));
+          .thenAnswer((_) async => const Left(ServerFailure('Assessment not found')));
 
       final result = await useCase('nonexistent-id');
 
@@ -64,7 +64,7 @@ void main() {
 
     test('should return ValidationFailure when no questions', () async {
       when(() => mockRepository.publishAssessment(assessmentId: any(named: 'assessmentId')))
-          .thenAnswer((_) async => Left(ValidationFailure('Cannot publish assessment without questions')));
+          .thenAnswer((_) async => const Left(ValidationFailure('Cannot publish assessment without questions')));
 
       final result = await useCase(tAssessmentId);
 
@@ -77,7 +77,7 @@ void main() {
 
     test('should return UnauthorizedFailure when not authorized', () async {
       when(() => mockRepository.publishAssessment(assessmentId: any(named: 'assessmentId')))
-          .thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+          .thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(tAssessmentId);
 
@@ -90,7 +90,7 @@ void main() {
 
     test('should return ServerFailure when server error occurs', () async {
       when(() => mockRepository.publishAssessment(assessmentId: any(named: 'assessmentId')))
-          .thenAnswer((_) async => Left(ServerFailure('Server error')));
+          .thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tAssessmentId);
 

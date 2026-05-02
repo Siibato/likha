@@ -16,11 +16,11 @@ class TaskCard extends StatelessWidget {
   final DateTime? closeAt;
 
   // 5-color palette
-  static final _kBlack = AppColors.accentCharcoal;
+  static const _kBlack = AppColors.accentCharcoal;
   static const _kWhite = Colors.white;
-  static final _kBlue = AppColors.accentAmber;
-  static final _kGreen = AppColors.semanticSuccessAlt;
-  static final _kRed = AppColors.semanticError;
+  static const _kBlue = AppColors.accentAmber;
+  static const _kGreen = AppColors.semanticSuccessAlt;
+  static const _kRed = AppColors.semanticError;
 
   const TaskCard({
     super.key,
@@ -132,7 +132,7 @@ class TaskCard extends StatelessWidget {
                       ),
                       child: Text(
                         type == TaskType.assignment ? 'Assignment' : 'Quiz',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
                           color: _kBlue,

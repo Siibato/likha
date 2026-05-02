@@ -40,11 +40,11 @@ class BaseCardSm extends StatelessWidget {
     EdgeInsets? padding,
   }) {
     return BaseCardSm(
-      child: child,
       onTap: onTap,
       margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardSmListSpacing),
       padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadSm),
       variant: BaseCardVariant.subtle,
+      child: child,
     );
   }
 
@@ -56,11 +56,11 @@ class BaseCardSm extends StatelessWidget {
     EdgeInsets? padding,
   }) {
     return BaseCardSm(
-      child: child,
       onTap: onTap,
       margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardSmListSpacing),
       padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadSm),
       variant: BaseCardVariant.accent,
+      child: child,
     );
   }
 
@@ -72,11 +72,11 @@ class BaseCardSm extends StatelessWidget {
     EdgeInsets? padding,
   }) {
     return BaseCardSm(
-      child: child,
       onTap: onTap,
       margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardSmListSpacing),
       padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadSm),
       variant: BaseCardVariant.success,
+      child: child,
     );
   }
 
@@ -88,11 +88,11 @@ class BaseCardSm extends StatelessWidget {
     EdgeInsets? padding,
   }) {
     return BaseCardSm(
-      child: child,
       onTap: onTap,
       margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardSmListSpacing),
       padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadSm),
       variant: BaseCardVariant.warning,
+      child: child,
     );
   }
 
@@ -104,11 +104,11 @@ class BaseCardSm extends StatelessWidget {
     EdgeInsets? padding,
   }) {
     return BaseCardSm(
-      child: child,
       onTap: onTap,
       margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardSmListSpacing),
       padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadSm),
       variant: BaseCardVariant.error,
+      child: child,
     );
   }
 
@@ -119,10 +119,10 @@ class BaseCardSm extends StatelessWidget {
     EdgeInsets? padding,
   }) {
     return BaseCardSm(
-      child: child,
       margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardSmListSpacing),
       padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadSm),
       enabled: false,
+      child: child,
     );
   }
 

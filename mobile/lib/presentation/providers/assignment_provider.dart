@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/events/data_event_bus.dart';
+import 'package:likha/core/logging/provider_logger.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
@@ -378,7 +379,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   }
 
   Future<void> loadSubmissionDetail(String submissionId) async {
-    print('DEBUG: Loading submission detail for ID: $submissionId');
+    ProviderLogger.instance.log('Loading submission detail for ID: $submissionId');
     state = state.copyWith(isLoading: true, clearError: true);
     final result = await _getSubmissionDetail(submissionId);
     result.fold(
@@ -402,7 +403,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
         state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure));
       },
       (submission) {
-        print('DEBUG: Successfully loaded submission: ${submission.studentName}');
+        ProviderLogger.instance.log('Successfully loaded submission: ${submission.studentName}');
         state = state.copyWith(isLoading: false, currentSubmission: submission);
       },
     );

@@ -44,7 +44,7 @@ void main() {
       when(() => mockRepository.getGradeSummary(
         classId: any(named: 'classId'),
         gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
-      )).thenAnswer((_) async => Left(ServerFailure('Class not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Class not found')));
 
       final result = await useCase(classId: 'nonexistent-id', gradingPeriodNumber: tPeriod);
 
@@ -59,7 +59,7 @@ void main() {
       when(() => mockRepository.getGradeSummary(
         classId: any(named: 'classId'),
         gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(classId: tClassId, gradingPeriodNumber: tPeriod);
 

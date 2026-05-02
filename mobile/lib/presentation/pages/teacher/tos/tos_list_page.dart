@@ -144,7 +144,7 @@ class _TosListPageState extends ConsumerState<TosListPage> {
           const SizedBox(height: 16),
           const Text(
             'No TOS created yet',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.accentCharcoal,

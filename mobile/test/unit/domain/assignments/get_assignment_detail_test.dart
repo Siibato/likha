@@ -18,7 +18,7 @@ void main() {
   });
 
   group('GetAssignmentDetail', () {
-    final tAssignmentId = 'assignment-1';
+    const tAssignmentId = 'assignment-1';
     final tAssignment = Assignment(
       id: tAssignmentId,
       classId: 'class-1',
@@ -48,7 +48,7 @@ void main() {
 
     test('should return ServerFailure when assignment does not exist', () async {
       when(() => mockRepository.getAssignmentDetail(assignmentId: any(named: 'assignmentId')))
-          .thenAnswer((_) async => Left(ServerFailure('Assignment not found')));
+          .thenAnswer((_) async => const Left(ServerFailure('Assignment not found')));
 
       final result = await useCase('nonexistent-id');
 
@@ -61,7 +61,7 @@ void main() {
 
     test('should return ServerFailure when server error occurs', () async {
       when(() => mockRepository.getAssignmentDetail(assignmentId: any(named: 'assignmentId')))
-          .thenAnswer((_) async => Left(ServerFailure('Server error')));
+          .thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tAssignmentId);
 
@@ -74,7 +74,7 @@ void main() {
 
     test('should return NetworkFailure when offline', () async {
       when(() => mockRepository.getAssignmentDetail(assignmentId: any(named: 'assignmentId')))
-          .thenAnswer((_) async => Left(NetworkFailure('Network error')));
+          .thenAnswer((_) async => const Left(NetworkFailure('Network error')));
 
       final result = await useCase(tAssignmentId);
 

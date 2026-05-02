@@ -213,7 +213,7 @@ class GradeRemarksCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (remarks == null) {
-      return GradeComputedCell(text: '--', width: GradeSpreadsheetDimensions.remarksW);
+      return const GradeComputedCell(text: '--', width: GradeSpreadsheetDimensions.remarksW);
     }
     final passed = remarks == 'Passed';
     return Container(

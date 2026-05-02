@@ -24,7 +24,7 @@ class StudentActionCard extends StatelessWidget {
     return BaseActionCard(
       title: student.fullName,
       subtitle: '@${student.username}',
-      icon: Icon(Icons.person_outline_rounded),
+      icon: const Icon(Icons.person_outline_rounded),
       actions: [_buildActionButton()],
       child: Row(
         children: [

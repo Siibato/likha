@@ -32,7 +32,7 @@ class DistractorTable extends StatelessWidget {
           // Header
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               border: Border(
                 bottom: BorderSide(color: AppColors.borderLight),
               ),
@@ -41,23 +41,23 @@ class DistractorTable extends StatelessWidget {
               children: [
                 Expanded(
                   flex: 4,
-                  child: Text('Choice', style: _headerStyle),
+                child: const Text('Choice', style: _headerStyle),
                 ),
                 SizedBox(
                   width: 44,
-                  child: Text('Up', style: _headerStyle, textAlign: TextAlign.center),
+                  child: const Text('Up', style: _headerStyle, textAlign: TextAlign.center),
                 ),
                 SizedBox(
                   width: 44,
-                  child: Text('Low', style: _headerStyle, textAlign: TextAlign.center),
+                  child: const Text('Low', style: _headerStyle, textAlign: TextAlign.center),
                 ),
                 SizedBox(
                   width: 44,
-                  child: Text('%', style: _headerStyle, textAlign: TextAlign.center),
+                  child: const Text('%', style: _headerStyle, textAlign: TextAlign.center),
                 ),
                 SizedBox(
                   width: 32,
-                  child: Text('', style: _headerStyle),
+                  child: const Text('', style: _headerStyle),
                 ),
               ],
             ),

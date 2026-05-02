@@ -116,7 +116,7 @@ class _BulkPasteSheetState extends ConsumerState<BulkPasteSheet> {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
+              const Text(
                 'Paste one competency per line.\nOptional format: CODE | Text | Days',
                 style: TextStyle(
                   fontSize: 12,
@@ -158,7 +158,7 @@ class _BulkPasteSheetState extends ConsumerState<BulkPasteSheet> {
                         )
                       : const Text(
                           'Import',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                           ),

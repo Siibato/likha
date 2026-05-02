@@ -39,26 +39,25 @@ class StatusBadge extends StatelessWidget {
        activeColor = AppColors.accentCharcoal,
        inactiveColor = AppColors.foregroundTertiary,
        activeBackgroundColor = AppColors.accentCharcoal,
-       inactiveBackgroundColor = AppColors.foregroundTertiary.withOpacity(0.12);
+       inactiveBackgroundColor = AppColors.foregroundTertiary.withValues(alpha: 0.12);
 
   /// Creates an active/inactive status badge
   StatusBadge.active({
     super.key,
-    required bool isActive,
+    required this.isActive,
     String? activeText,
     String? inactiveText,
     this.padding,
     this.borderRadius,
-  }) : isActive = isActive,
-       activeText = activeText ?? 'Active',
+  }) : activeText = activeText ?? 'Active',
        inactiveText = inactiveText ?? 'Inactive',
        activeColor = AppColors.accentCharcoal,
        inactiveColor = AppColors.foregroundTertiary,
        activeBackgroundColor = AppColors.accentCharcoal,
-       inactiveBackgroundColor = AppColors.foregroundTertiary.withOpacity(0.12);
+       inactiveBackgroundColor = AppColors.foregroundTertiary.withValues(alpha: 0.12);
 
   /// Creates a custom status badge with specified colors
-  StatusBadge.custom({
+  const StatusBadge.custom({
     super.key,
     required this.isActive,
     required this.activeText,
@@ -78,7 +77,7 @@ class StatusBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: isActive 
             ? (activeBackgroundColor ?? AppColors.accentCharcoal).withValues(alpha: 0.12)
-            : (inactiveBackgroundColor ?? AppColors.foregroundTertiary.withOpacity(0.12)),
+            : (inactiveBackgroundColor ?? AppColors.foregroundTertiary.withValues(alpha: 0.12)),
         borderRadius: BorderRadius.circular(borderRadius ?? 8),
       ),
       child: Text(
@@ -124,7 +123,7 @@ extension StatusBadgeExtensions on StatusBadge {
       activeColor: AppColors.accentCharcoal,
       inactiveColor: AppColors.foregroundTertiary,
       activeBackgroundColor: AppColors.accentCharcoal.withValues(alpha: 0.12),
-      inactiveBackgroundColor: AppColors.foregroundTertiary.withOpacity(0.12),
+      inactiveBackgroundColor: AppColors.foregroundTertiary.withValues(alpha: 0.12),
       padding: padding,
     );
   }
@@ -138,7 +137,7 @@ extension StatusBadgeExtensions on StatusBadge {
       activeColor: AppColors.accentCharcoal,
       inactiveColor: AppColors.foregroundTertiary,
       activeBackgroundColor: AppColors.accentCharcoal.withValues(alpha: 0.12),
-      inactiveBackgroundColor: AppColors.foregroundTertiary.withOpacity(0.12),
+      inactiveBackgroundColor: AppColors.foregroundTertiary.withValues(alpha: 0.12),
       padding: padding,
     );
   }
@@ -152,7 +151,7 @@ extension StatusBadgeExtensions on StatusBadge {
       activeColor: AppColors.onAmber,
       inactiveColor: AppColors.foregroundTertiary,
       activeBackgroundColor: AppColors.accentAmber.withValues(alpha: 0.25),
-      inactiveBackgroundColor: AppColors.foregroundTertiary.withOpacity(0.12),
+      inactiveBackgroundColor: AppColors.foregroundTertiary.withValues(alpha: 0.12),
       padding: padding,
     );
   }

@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/presentation/pages/teacher/class/class_detail_page.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
@@ -12,7 +10,7 @@ ClassDetail _fakeDetail() => ClassDetail(
       title: 'Grade 10 Science',
       teacherId: 't1',
       isArchived: false,
-      students: [],
+      students: const [],
       createdAt: DateTime(2024),
       updatedAt: DateTime(2024),
     );

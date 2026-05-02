@@ -18,7 +18,7 @@ void main() {
   });
 
   group('SubmitAssessment', () {
-    final tSubmissionId = 'submission-1';
+    const tSubmissionId = 'submission-1';
     final tSubmissionSummary = SubmissionSummary(
       id: tSubmissionId,
       assessmentId: 'assessment-1',
@@ -50,7 +50,7 @@ void main() {
 
     test('should return ServerFailure when submission not found', () async {
       when(() => mockRepository.submitAssessment(submissionId: any(named: 'submissionId')))
-          .thenAnswer((_) async => Left(ServerFailure('Submission not found')));
+          .thenAnswer((_) async => const Left(ServerFailure('Submission not found')));
 
       final result = await useCase('nonexistent-id');
 
@@ -63,7 +63,7 @@ void main() {
 
     test('should return ValidationFailure when already submitted', () async {
       when(() => mockRepository.submitAssessment(submissionId: any(named: 'submissionId')))
-          .thenAnswer((_) async => Left(ValidationFailure('Assessment already submitted')));
+          .thenAnswer((_) async => const Left(ValidationFailure('Assessment already submitted')));
 
       final result = await useCase(tSubmissionId);
 
@@ -76,7 +76,7 @@ void main() {
 
     test('should return ValidationFailure when time expired', () async {
       when(() => mockRepository.submitAssessment(submissionId: any(named: 'submissionId')))
-          .thenAnswer((_) async => Left(ValidationFailure('Time limit exceeded')));
+          .thenAnswer((_) async => const Left(ValidationFailure('Time limit exceeded')));
 
       final result = await useCase(tSubmissionId);
 
@@ -89,7 +89,7 @@ void main() {
 
     test('should return ServerFailure when server error occurs', () async {
       when(() => mockRepository.submitAssessment(submissionId: any(named: 'submissionId')))
-          .thenAnswer((_) async => Left(ServerFailure('Server error')));
+          .thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tSubmissionId);
 

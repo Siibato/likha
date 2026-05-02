@@ -70,9 +70,9 @@ class ItemAnalysisPrintService {
             style: const pw.TextStyle(fontSize: 9),
           ),
         if (region.isNotEmpty)
-          pw.Text(region, style: pw.TextStyle(fontSize: 9)),
+          pw.Text(region, style: const pw.TextStyle(fontSize: 9)),
         if (division.isNotEmpty)
-          pw.Text(division, style: pw.TextStyle(fontSize: 9)),
+          pw.Text(division, style: const pw.TextStyle(fontSize: 9)),
         if (schoolName.isNotEmpty)
           pw.Text(
             schoolName,

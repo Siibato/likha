@@ -54,7 +54,6 @@ class BaseActionCard extends StatelessWidget {
       title: title,
       icon: icon,
       onTap: onTap,
-      child: child,
       actions: [
         StyledButton(
           text: primaryActionText,
@@ -64,6 +63,7 @@ class BaseActionCard extends StatelessWidget {
           fullWidth: false,
         ),
       ],
+      child: child,
     );
   }
 
@@ -81,7 +81,6 @@ class BaseActionCard extends StatelessWidget {
     return BaseActionCard(
       title: title,
       icon: icon,
-      child: child,
       actions: [
         if (onCancel != null)
           StyledButton(
@@ -100,6 +99,7 @@ class BaseActionCard extends StatelessWidget {
           fullWidth: false,
         ),
       ],
+      child: child,
     );
   }
 
@@ -116,7 +116,6 @@ class BaseActionCard extends StatelessWidget {
     return BaseActionCard(
       title: title,
       icon: icon,
-      child: child,
       actions: [
         if (onCancel != null)
           StyledButton(
@@ -135,6 +134,7 @@ class BaseActionCard extends StatelessWidget {
           fullWidth: false,
         ),
       ],
+      child: child,
     );
   }
 

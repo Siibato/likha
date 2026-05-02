@@ -47,7 +47,7 @@ void main() {
       when(() => mockRepository.updateTos(
         tosId: any(named: 'tosId'),
         data: any(named: 'data'),
-      )).thenAnswer((_) async => Left(ServerFailure('TOS not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('TOS not found')));
 
       final result = await useCase(tosId: 'nonexistent-id', data: tData);
 
@@ -62,7 +62,7 @@ void main() {
       when(() => mockRepository.updateTos(
         tosId: any(named: 'tosId'),
         data: any(named: 'data'),
-      )).thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+      )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(tosId: tTosId, data: tData);
 
@@ -77,7 +77,7 @@ void main() {
       when(() => mockRepository.updateTos(
         tosId: any(named: 'tosId'),
         data: any(named: 'data'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tosId: tTosId, data: tData);
 

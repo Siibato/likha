@@ -120,7 +120,7 @@ class GradingSettingsCard extends StatelessWidget {
             ),
           ] else ...[
             DropdownButtonFormField<int?>(
-              value: editingGradingPeriod,
+              initialValue: editingGradingPeriod,
               decoration: const InputDecoration(
                 labelText: 'Quarter (for grading)',
                 labelStyle: TextStyle(
@@ -140,7 +140,7 @@ class GradingSettingsCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String?>(
-              value: editingComponent,
+              initialValue: editingComponent,
               decoration: const InputDecoration(
                 labelText: 'Grade Component',
                 labelStyle: TextStyle(

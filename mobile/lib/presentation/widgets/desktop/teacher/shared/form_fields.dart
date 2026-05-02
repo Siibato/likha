@@ -138,7 +138,7 @@ class DesktopFormField {
       return const SizedBox.shrink();
     }
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       items: items,
       onChanged: enabled ? onChanged : null,
       decoration: inputDecoration(labelText).copyWith(
@@ -284,7 +284,7 @@ class DesktopFormField {
         ),
       ) : null,
       contentPadding: contentPadding ?? EdgeInsets.zero,
-      activeColor: AppColors.foregroundPrimary,
+      activeThumbColor: AppColors.foregroundPrimary,
     );
   }
 

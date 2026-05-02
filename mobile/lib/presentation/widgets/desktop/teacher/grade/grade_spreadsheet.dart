@@ -233,12 +233,12 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
                   height: GradeSpreadsheetDimensions.hdrH1,
                   color: AppColors.backgroundTertiary,
                 ),
-                GradeColumnHeaderCell(
+                const GradeColumnHeaderCell(
                   text: "Learner's Name",
                   width: GradeSpreadsheetDimensions.nameColW,
                   height: GradeSpreadsheetDimensions.hdrH2,
                   align: Alignment.centerLeft,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: EdgeInsets.symmetric(horizontal: 12),
                 ),
                 const Divider(height: 1, color: AppColors.borderLight),
                 Container(
@@ -335,17 +335,17 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
                           ..._sectionHdrs(wwItems),
                           ..._sectionHdrs(ptItems),
                           ..._sectionHdrs(qaItems),
-                          GradeColumnHeaderCell(
+                          const GradeColumnHeaderCell(
                             text: 'Initial Grade',
                             width: GradeSpreadsheetDimensions.initGradeW,
                             height: GradeSpreadsheetDimensions.hdrH2,
                           ),
-                          GradeColumnHeaderCell(
+                          const GradeColumnHeaderCell(
                             text: 'QG',
                             width: GradeSpreadsheetDimensions.qgColW,
                             height: GradeSpreadsheetDimensions.hdrH2,
                           ),
-                          GradeColumnHeaderCell(
+                          const GradeColumnHeaderCell(
                             text: 'Remarks',
                             width: GradeSpreadsheetDimensions.remarksW,
                             height: GradeSpreadsheetDimensions.hdrH2,
@@ -362,9 +362,9 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
                           ..._buildHpsCells(wwItems, wwW),
                           ..._buildHpsCells(ptItems, ptW),
                           ..._buildHpsCells(qaItems, qaW),
-                          GradeComputedCell(text: '--', width: GradeSpreadsheetDimensions.initGradeW),
-                          GradeComputedCell(text: '--', width: GradeSpreadsheetDimensions.qgColW),
-                          GradeComputedCell(text: '--', width: GradeSpreadsheetDimensions.remarksW),
+                          const GradeComputedCell(text: '--', width: GradeSpreadsheetDimensions.initGradeW),
+                          const GradeComputedCell(text: '--', width: GradeSpreadsheetDimensions.qgColW),
+                          const GradeComputedCell(text: '--', width: GradeSpreadsheetDimensions.remarksW),
                         ],
                       ),
                     ),
@@ -419,22 +419,22 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
               height: GradeSpreadsheetDimensions.hdrH2,
             ),
           ),
-        GradeColumnHeaderCell(
+        const GradeColumnHeaderCell(
           text: 'Total',
           width: GradeSpreadsheetDimensions.sumColW,
           height: GradeSpreadsheetDimensions.hdrH2,
         ),
-        GradeColumnHeaderCell(
+        const GradeColumnHeaderCell(
           text: 'HS',
           width: GradeSpreadsheetDimensions.sumColW,
           height: GradeSpreadsheetDimensions.hdrH2,
         ),
-        GradeColumnHeaderCell(
+        const GradeColumnHeaderCell(
           text: '%',
           width: GradeSpreadsheetDimensions.pctColW,
           height: GradeSpreadsheetDimensions.hdrH2,
         ),
-        GradeColumnHeaderCell(
+        const GradeColumnHeaderCell(
           text: 'WS',
           width: GradeSpreadsheetDimensions.pctColW,
           height: GradeSpreadsheetDimensions.hdrH2,

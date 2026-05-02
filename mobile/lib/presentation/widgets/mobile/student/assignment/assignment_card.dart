@@ -40,7 +40,7 @@ class AssignmentCard extends StatelessWidget {
     return BaseInfoCard(
       title: title,
       subtitle: '$totalPoints pts • Due ${_formatDateTime(dueAt)}',
-      icon: Icon(Icons.assignment_outlined, color: AppColors.accentCharcoal),
+      icon: const Icon(Icons.assignment_outlined, color: AppColors.accentCharcoal),
       onTap: onTap,
       margin: const EdgeInsets.only(bottom: 14),
       trailing: Column(

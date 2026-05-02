@@ -398,7 +398,7 @@ class _StudentRow extends StatelessWidget {
                 ? Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.semanticSuccessAlt.withOpacity(0.12),
+                      color: AppColors.semanticSuccessAlt.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: const Text(
@@ -413,7 +413,7 @@ class _StudentRow extends StatelessWidget {
                 : Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.foregroundTertiary.withOpacity(0.12),
+                      color: AppColors.foregroundTertiary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: const Text(

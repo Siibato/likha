@@ -32,9 +32,9 @@ class UploadProgressDialog extends StatelessWidget {
             color: AppColors.accentCharcoal,
           ),
           const SizedBox(height: 16),
-          Text(
+          const Text(
             'Uploading File',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: AppColors.accentCharcoal,

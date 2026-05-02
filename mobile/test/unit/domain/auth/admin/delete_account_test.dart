@@ -29,7 +29,7 @@ void main() {
 
     test('should return ServerFailure when user not found', () async {
       when(() => mockRepository.deleteAccount(userId: any(named: 'userId')))
-          .thenAnswer((_) async => Left(ServerFailure('User not found')));
+          .thenAnswer((_) async => const Left(ServerFailure('User not found')));
 
       final result = await useCase(userId: 'nonexistent');
 
@@ -42,7 +42,7 @@ void main() {
 
     test('should return UnauthorizedFailure when not authorized', () async {
       when(() => mockRepository.deleteAccount(userId: any(named: 'userId')))
-          .thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+          .thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(userId: 'user-1');
 
@@ -55,7 +55,7 @@ void main() {
 
     test('should return ServerFailure when server error occurs', () async {
       when(() => mockRepository.deleteAccount(userId: any(named: 'userId')))
-          .thenAnswer((_) async => Left(ServerFailure('Server error')));
+          .thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(userId: 'user-1');
 

@@ -53,8 +53,8 @@ class AccountDataTable extends StatelessWidget {
       inactiveText: statusLabel,
       activeColor: statusColor,
       inactiveColor: statusColor,
-      activeBackgroundColor: statusColor.withOpacity(0.12),
-      inactiveBackgroundColor: statusColor.withOpacity(0.12),
+      activeBackgroundColor: statusColor.withValues(alpha: 0.12),
+      inactiveBackgroundColor: statusColor.withValues(alpha: 0.12),
     );
   }
 

@@ -210,7 +210,7 @@ class BaseContentCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppDimensions.kCardPadMd),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         border: Border(
           top: BorderSide(
             color: AppColors.borderLight,

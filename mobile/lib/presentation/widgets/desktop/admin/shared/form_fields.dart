@@ -105,7 +105,7 @@ class DesktopFormField {
     FormFieldValidator<T>? validator,
   }) {
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       items: items,
       onChanged: enabled ? onChanged : null,
       decoration: InputDecoration(
@@ -263,7 +263,7 @@ class DesktopFormField {
         Switch(
           value: value,
           onChanged: enabled ? onChanged : null,
-          activeColor: AppColors.foregroundPrimary,
+          activeThumbColor: AppColors.foregroundPrimary,
         ),
       ],
     );
@@ -282,7 +282,6 @@ class DesktopFormField {
         Checkbox(
           value: value,
           onChanged: enabled ? onChanged : null,
-          activeColor: AppColors.foregroundPrimary,
         ),
         const SizedBox(width: 8),
         Expanded(

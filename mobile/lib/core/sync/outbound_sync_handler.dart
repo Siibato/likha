@@ -23,19 +23,19 @@ class OutboundSyncHandler {
   );
 
   Future<void> outboundSync() async {
-    print('*** OUTBOUND SYNC: outboundSync() - START');
+    _log.log('outboundSync() - START');
     
     final pending = await _syncQueue.getAllRetriable();
-    print('*** OUTBOUND SYNC: Found ${pending.length} pending operations');
+    _log.log('Found ${pending.length} pending operations');
     
     if (pending.isEmpty) {
-      print('*** OUTBOUND SYNC: No pending operations, returning');
+      _log.log('No pending operations, returning');
       return;
     }
     
     // Log all pending operations for debugging
     for (final op in pending) {
-      print('*** OUTBOUND SYNC: Pending op: ${op.entityType}.${op.operation} (${op.id}) - status: ${op.status}');
+      _log.log('Pending op: ${op.entityType}.${op.operation} (${op.id}) - status: ${op.status}');
     }
 
     // PASS 0: Process assessmentSubmission creates FIRST so dependent ops
@@ -85,17 +85,17 @@ class OutboundSyncHandler {
         .where((e) => e.operation != SyncOperation.upload)
         .toList();
 
-    print('*** OUTBOUND SYNC: Found ${regularOps.length} regular operations');
+    _log.log('Found ${regularOps.length} regular operations');
     
     final opsByType = <String, int>{};
     for (final op in regularOps) {
       opsByType[op.entityType.serverValue] = (opsByType[op.entityType.serverValue] ?? 0) + 1;
       if (op.entityType == SyncEntityType.gradeScore) {
-        print('*** OUTBOUND SYNC: Grade score operation: ${op.operation} (${op.id})');
+        _log.log('Grade score operation: ${op.operation} (${op.id})');
       }
     }
 
-    print('*** OUTBOUND SYNC: Operations by type: $opsByType');
+    _log.log('Operations by type: $opsByType');
 
     _log.pushStarting(
       uploadOpsCount: nonMaterialFileUploads.length + materialFileUploads.length,

@@ -101,8 +101,8 @@ class ClassDataTable extends StatelessWidget {
             inactiveText: 'Archived',
             activeColor: AppColors.semanticSuccessAlt,
             inactiveColor: AppColors.foregroundTertiary,
-            activeBackgroundColor: AppColors.semanticSuccessAlt.withOpacity(0.12),
-            inactiveBackgroundColor: AppColors.foregroundTertiary.withOpacity(0.12),
+            activeBackgroundColor: AppColors.semanticSuccessAlt.withValues(alpha: 0.12),
+            inactiveBackgroundColor: AppColors.foregroundTertiary.withValues(alpha: 0.12),
           ),
           // Created date
           Text(
@@ -127,7 +127,7 @@ class ClassDataTable extends StatelessWidget {
       },
       onTap: onTap,
       rowsPerPage: rowsPerPage,
-      emptyState: EmptyState.generic(
+      emptyState: const EmptyState.generic(
         title: 'No classes found',
         subtitle: 'No classes match your search criteria',
         icon: Icons.school_outlined,

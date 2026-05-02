@@ -125,7 +125,7 @@ void main() {
         final notifier = _buildNotifier(getAssignments: mockGet);
 
         when(() => mockGet(any(), publishedOnly: any(named: 'publishedOnly'), skipBackgroundRefresh: any(named: 'skipBackgroundRefresh')))
-            .thenAnswer((_) async => Left(ServerFailure('Network error')));
+            .thenAnswer((_) async => const Left(ServerFailure('Network error')));
 
         await notifier.loadAssignments('c-1');
 
@@ -166,7 +166,7 @@ void main() {
         final notifier = _buildNotifier(createAssignment: mockCreate);
 
         when(() => mockCreate(any()))
-            .thenAnswer((_) async => Left(ServerFailure('Create failed')));
+            .thenAnswer((_) async => const Left(ServerFailure('Create failed')));
 
         await notifier.createAssignment(CreateAssignmentParams(
           classId: 'c-1',
@@ -210,7 +210,7 @@ void main() {
         final notifier = _buildNotifier(deleteAssignment: mockDelete);
 
         when(() => mockDelete(any()))
-            .thenAnswer((_) async => Left(ServerFailure('Delete failed')));
+            .thenAnswer((_) async => const Left(ServerFailure('Delete failed')));
 
         await notifier.deleteAssignment('a-1');
 

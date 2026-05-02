@@ -38,7 +38,7 @@ void main() {
     });
 
     test('should return CacheFailure when no cached user', () async {
-      when(() => mockRepository.getCurrentUser()).thenAnswer((_) async => Left(CacheFailure('No cached user')));
+      when(() => mockRepository.getCurrentUser()).thenAnswer((_) async => const Left(CacheFailure('No cached user')));
 
       final result = await useCase();
 
@@ -50,7 +50,7 @@ void main() {
     });
 
     test('should return NetworkFailure when offline and cache miss', () async {
-      when(() => mockRepository.getCurrentUser()).thenAnswer((_) async => Left(NetworkFailure('Network error')));
+      when(() => mockRepository.getCurrentUser()).thenAnswer((_) async => const Left(NetworkFailure('Network error')));
 
       final result = await useCase();
 

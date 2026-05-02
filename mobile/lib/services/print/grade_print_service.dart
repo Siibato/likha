@@ -148,13 +148,13 @@ class GradePrintService {
               ),
               pw.SizedBox(height: 5),
               pw.Text(
-                'Quarter ${quarter}',
-                style: pw.TextStyle(fontSize: 14),
+                'Quarter $quarter',
+                style: const pw.TextStyle(fontSize: 14),
               ),
               pw.SizedBox(height: 5),
               pw.Text(
                 'Generated: ${DateTime.now().toString().split('.')[0]}',
-                style: pw.TextStyle(fontSize: 10, color: PdfColors.grey),
+                style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey),
               ),
               pw.SizedBox(height: 20),
 
@@ -162,12 +162,12 @@ class GradePrintService {
               pw.Table(
                 border: pw.TableBorder.all(color: PdfColors.black),
                 columnWidths: {
-                  0: pw.FixedColumnWidth(150), // Name
-                  1: pw.FixedColumnWidth(60),  // WW
-                  2: pw.FixedColumnWidth(60),  // PT
-                  3: pw.FixedColumnWidth(60),  // QA
-                  4: pw.FixedColumnWidth(60),  // QG
-                  5: pw.FixedColumnWidth(80),  // Remarks
+                  0: const pw.FixedColumnWidth(150), // Name
+                  1: const pw.FixedColumnWidth(60),  // WW
+                  2: const pw.FixedColumnWidth(60),  // PT
+                  3: const pw.FixedColumnWidth(60),  // QA
+                  4: const pw.FixedColumnWidth(60),  // QG
+                  5: const pw.FixedColumnWidth(80),  // Remarks
                 },
                 children: [
                   // Header row

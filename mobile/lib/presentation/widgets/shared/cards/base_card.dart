@@ -51,11 +51,11 @@ class BaseCard extends StatelessWidget {
     EdgeInsets? padding,
   }) {
     return BaseCard(
-      child: child,
       onTap: onTap,
       margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardListSpacing),
       padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadMd),
       variant: BaseCardVariant.subtle,
+      child: child,
     );
   }
 
@@ -67,11 +67,11 @@ class BaseCard extends StatelessWidget {
     EdgeInsets? padding,
   }) {
     return BaseCard(
-      child: child,
       onTap: onTap,
       margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardListSpacing),
       padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadMd),
       variant: BaseCardVariant.accent,
+      child: child,
     );
   }
 
@@ -83,11 +83,11 @@ class BaseCard extends StatelessWidget {
     EdgeInsets? padding,
   }) {
     return BaseCard(
-      child: child,
       onTap: onTap,
       margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardListSpacing),
       padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadMd),
       variant: BaseCardVariant.success,
+      child: child,
     );
   }
 
@@ -99,11 +99,11 @@ class BaseCard extends StatelessWidget {
     EdgeInsets? padding,
   }) {
     return BaseCard(
-      child: child,
       onTap: onTap,
       margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardListSpacing),
       padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadMd),
       variant: BaseCardVariant.warning,
+      child: child,
     );
   }
 
@@ -115,11 +115,11 @@ class BaseCard extends StatelessWidget {
     EdgeInsets? padding,
   }) {
     return BaseCard(
-      child: child,
       onTap: onTap,
       margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardListSpacing),
       padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadMd),
       variant: BaseCardVariant.error,
+      child: child,
     );
   }
 
@@ -130,10 +130,10 @@ class BaseCard extends StatelessWidget {
     EdgeInsets? padding,
   }) {
     return BaseCard(
-      child: child,
       margin: margin ?? const EdgeInsets.only(bottom: AppDimensions.kCardListSpacing),
       padding: padding ?? const EdgeInsets.all(AppDimensions.kCardPadMd),
       enabled: false,
+      child: child,
     );
   }
 

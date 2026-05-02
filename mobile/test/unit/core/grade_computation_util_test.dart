@@ -256,14 +256,14 @@ void main() {
         ];
         final scoresByItem = {
           'ww1': [
-            GradeScore(
+            const GradeScore(
               id: 'score-1',
               gradeItemId: 'ww1',
               studentId: 'other-student',
               score: 95,
               isAutoPopulated: false,
             ),
-            GradeScore(
+            const GradeScore(
               id: 'score-2',
               gradeItemId: 'ww1',
               studentId: 'student-1',

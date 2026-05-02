@@ -97,7 +97,7 @@ void main() {
         userId: any(named: 'userId'),
         fullName: any(named: 'fullName'),
         role: any(named: 'role'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Invalid role')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Invalid role')));
 
       final result = await useCase(updateParams);
 
@@ -118,7 +118,7 @@ void main() {
         userId: any(named: 'userId'),
         fullName: any(named: 'fullName'),
         role: any(named: 'role'),
-      )).thenAnswer((_) async => Left(ServerFailure('User not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('User not found')));
 
       final result = await useCase(updateParams);
 
@@ -139,7 +139,7 @@ void main() {
         userId: any(named: 'userId'),
         fullName: any(named: 'fullName'),
         role: any(named: 'role'),
-      )).thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+      )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(updateParams);
 

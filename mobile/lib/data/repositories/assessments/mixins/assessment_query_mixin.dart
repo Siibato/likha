@@ -112,7 +112,7 @@ mixin AssessmentQueryMixin on AssessmentRepositoryBase {
 
         // STEP 3: Return cache immediately (don't wait for remote)
         for (final a in assessmentsWithDynamicCounts) {
-          print('*** REPO ASSESS RETURN: ${a.title} | totalPoints=${a.totalPoints} | gradingPeriod=${a.gradingPeriodNumber} | component=${a.component}');
+          RepoLogger.instance.log('${a.title} | totalPoints=${a.totalPoints} | gradingPeriod=${a.gradingPeriodNumber} | component=${a.component}');
         }
         return Right(assessmentsWithDynamicCounts);
       } on CacheException {

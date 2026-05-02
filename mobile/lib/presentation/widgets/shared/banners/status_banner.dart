@@ -60,28 +60,28 @@ class StatusBanner extends StatelessWidget {
   });
 
   _BannerTheme get _theme => switch (severity) {
-        BannerSeverity.warning => _BannerTheme(
+        BannerSeverity.warning => const _BannerTheme(
             background: AppColors.accentAmberSurface,
             border: AppColors.accentAmber,
             iconColor: AppColors.accentAmberBorder,
             textColor: AppColors.accentAmberBorder,
             defaultIcon: Icons.warning_amber_rounded,
           ),
-        BannerSeverity.info => _BannerTheme(
+        BannerSeverity.info => const _BannerTheme(
             background: AppColors.backgroundTertiary,
             border: AppColors.borderLight,
             iconColor: AppColors.foregroundSecondary,
             textColor: AppColors.foregroundSecondary,
             defaultIcon: Icons.info_outline_rounded,
           ),
-        BannerSeverity.success => _BannerTheme(
+        BannerSeverity.success => const _BannerTheme(
             background: AppColors.semanticSuccessBackground,
             border: AppColors.semanticSuccess,
             iconColor: AppColors.semanticSuccess,
             textColor: AppColors.semanticSuccess,
             defaultIcon: Icons.check_circle_outline_rounded,
           ),
-        BannerSeverity.error => _BannerTheme(
+        BannerSeverity.error => const _BannerTheme(
             background: AppColors.semanticErrorBackground,
             border: AppColors.semanticError,
             iconColor: AppColors.semanticErrorDark,

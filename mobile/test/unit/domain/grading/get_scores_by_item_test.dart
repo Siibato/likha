@@ -59,7 +59,7 @@ void main() {
 
     test('should return ServerFailure when grade item not found', () async {
       when(() => mockRepository.getScoresByItem(gradeItemId: any(named: 'gradeItemId')))
-          .thenAnswer((_) async => Left(ServerFailure('Grade item not found')));
+          .thenAnswer((_) async => const Left(ServerFailure('Grade item not found')));
 
       final result = await useCase('nonexistent-id');
 
@@ -72,7 +72,7 @@ void main() {
 
     test('should return ServerFailure when server error occurs', () async {
       when(() => mockRepository.getScoresByItem(gradeItemId: any(named: 'gradeItemId')))
-          .thenAnswer((_) async => Left(ServerFailure('Server error')));
+          .thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tGradeItemId);
 

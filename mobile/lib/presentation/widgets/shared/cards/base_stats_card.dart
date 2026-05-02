@@ -49,7 +49,7 @@ class BaseStatsCard extends StatelessWidget {
       subtitle: subtitle,
       icon: icon,
       iconColor: AppColors.accentCharcoal,
-      backgroundColor: AppColors.accentCharcoal.withOpacity(0.1),
+      backgroundColor: AppColors.accentCharcoal.withValues(alpha: 0.1),
       onTap: onTap,
       width: width,
       isLoading: isLoading,
@@ -72,7 +72,7 @@ class BaseStatsCard extends StatelessWidget {
       subtitle: subtitle,
       icon: icon,
       iconColor: AppColors.semanticSuccessAlt,
-      backgroundColor: AppColors.semanticSuccessAlt.withOpacity(0.1),
+      backgroundColor: AppColors.semanticSuccessAlt.withValues(alpha: 0.1),
       onTap: onTap,
       width: width,
       isLoading: isLoading,
@@ -95,7 +95,7 @@ class BaseStatsCard extends StatelessWidget {
       subtitle: subtitle,
       icon: icon,
       iconColor: AppColors.accentAmber,
-      backgroundColor: AppColors.accentAmber.withOpacity(0.1),
+      backgroundColor: AppColors.accentAmber.withValues(alpha: 0.1),
       onTap: onTap,
       width: width,
       isLoading: isLoading,
@@ -118,7 +118,7 @@ class BaseStatsCard extends StatelessWidget {
       subtitle: subtitle,
       icon: icon,
       iconColor: AppColors.semanticErrorDark,
-      backgroundColor: AppColors.semanticErrorDark.withOpacity(0.1),
+      backgroundColor: AppColors.semanticErrorDark.withValues(alpha: 0.1),
       onTap: onTap,
       width: width,
       isLoading: isLoading,
@@ -148,7 +148,7 @@ class BaseStatsCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: (iconColor ?? AppColors.foregroundPrimary).withOpacity(0.1),
+                  color: (iconColor ?? AppColors.foregroundPrimary).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: isLoading
@@ -168,7 +168,7 @@ class BaseStatsCard extends StatelessWidget {
               ),
               const Spacer(),
               if (onTap != null)
-                Icon(
+                const Icon(
                   Icons.chevron_right_rounded,
                   size: 20,
                   color: AppColors.foregroundTertiary,

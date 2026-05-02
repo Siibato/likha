@@ -85,7 +85,7 @@ void main() {
         username: any(named: 'username'),
         fullName: any(named: 'fullName'),
         role: any(named: 'role'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Username already exists')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Username already exists')));
 
       final result = await useCase(tParams);
 
@@ -107,7 +107,7 @@ void main() {
         username: any(named: 'username'),
         fullName: any(named: 'fullName'),
         role: any(named: 'role'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Invalid role')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Invalid role')));
 
       final result = await useCase(invalidParams);
 
@@ -123,7 +123,7 @@ void main() {
         username: any(named: 'username'),
         fullName: any(named: 'fullName'),
         role: any(named: 'role'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tParams);
 

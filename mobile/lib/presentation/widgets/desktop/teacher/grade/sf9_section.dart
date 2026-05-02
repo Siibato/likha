@@ -119,7 +119,7 @@ class Sf9Section extends ConsumerWidget {
                               decoration: BoxDecoration(
                                 color: student.generalAverage != null
                                     ? AppColors.semanticSuccessAlt.withValues(alpha: 0.12)
-                                    : AppColors.foregroundTertiary.withOpacity(0.12),
+                                    : AppColors.foregroundTertiary.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(

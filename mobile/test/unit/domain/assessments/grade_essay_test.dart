@@ -18,8 +18,8 @@ void main() {
   });
 
   group('GradeEssay', () {
-    final tAnswerId = 'answer-1';
-    final tGradedAnswer = SubmissionAnswer(
+    const tAnswerId = 'answer-1';
+    const tGradedAnswer = SubmissionAnswer(
       id: tAnswerId,
       questionId: 'q-1',
       questionText: 'What is 2+2?',
@@ -39,11 +39,11 @@ void main() {
       when(() => mockRepository.gradeEssayAnswer(
         answerId: any(named: 'answerId'),
         points: any(named: 'points'),
-      )).thenAnswer((_) async => Right(tGradedAnswer));
+      )).thenAnswer((_) async => const Right(tGradedAnswer));
 
       final result = await useCase(params);
 
-      expect(result, Right(tGradedAnswer));
+      expect(result, const Right(tGradedAnswer));
       expect(result.getOrElse(() => throw Exception()).pointsAwarded, 4.5);
       verify(() => mockRepository.gradeEssayAnswer(
         answerId: tAnswerId,
@@ -60,7 +60,7 @@ void main() {
       when(() => mockRepository.gradeEssayAnswer(
         answerId: any(named: 'answerId'),
         points: any(named: 'points'),
-      )).thenAnswer((_) async => Left(ServerFailure('Answer not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Answer not found')));
 
       final result = await useCase(params);
 
@@ -80,7 +80,7 @@ void main() {
       when(() => mockRepository.gradeEssayAnswer(
         answerId: any(named: 'answerId'),
         points: any(named: 'points'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Points exceed maximum')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Points exceed maximum')));
 
       final result = await useCase(params);
 
@@ -100,7 +100,7 @@ void main() {
       when(() => mockRepository.gradeEssayAnswer(
         answerId: any(named: 'answerId'),
         points: any(named: 'points'),
-      )).thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+      )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(params);
 
@@ -120,7 +120,7 @@ void main() {
       when(() => mockRepository.gradeEssayAnswer(
         answerId: any(named: 'answerId'),
         points: any(named: 'points'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(params);
 

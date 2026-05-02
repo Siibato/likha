@@ -276,10 +276,10 @@ class _AdminSchoolSettingsDesktopState
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    InfoPanel(
+                    const InfoPanel(
                       child: Text(
                         'These settings are used in printed reports (TOS, Item Analysis) for DepEd-formatted headers.',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                           color: AppColors.foregroundSecondary,
@@ -322,7 +322,7 @@ class _AdminSchoolSettingsDesktopState
                               )
                             : const Text(
                                 'Save Settings',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
                                 ),

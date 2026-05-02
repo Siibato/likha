@@ -47,7 +47,7 @@ void main() {
       when(() => mockRepository.getSf10(
         classId: any(named: 'classId'),
         studentId: any(named: 'studentId'),
-      )).thenAnswer((_) async => Left(ServerFailure('Student not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Student not found')));
 
       final result = await useCase(GetSf10Params(classId: 'class-1', studentId: 'nonexistent'));
 
@@ -62,7 +62,7 @@ void main() {
       when(() => mockRepository.getSf10(
         classId: any(named: 'classId'),
         studentId: any(named: 'studentId'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tParams);
 

@@ -58,13 +58,13 @@ void main() {
     });
 
     test('should handle ISO string with Z suffix', () {
-      final timeStr = '2024-01-15T10:30:00.000Z';
+      const timeStr = '2024-01-15T10:30:00.000Z';
       expect(() => service.updateOffset(timeStr), returnsNormally);
       expect(service.hasBeenSynced, true);
     });
 
     test('should handle ISO string without Z suffix', () {
-      final timeStr = '2024-01-15T10:30:00.000';
+      const timeStr = '2024-01-15T10:30:00.000';
       expect(() => service.updateOffset(timeStr), returnsNormally);
     });
   });

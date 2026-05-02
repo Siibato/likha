@@ -152,9 +152,9 @@ class QuestionsSection extends StatelessWidget {
                   width: 1,
                 ),
               ),
-              child: Row(
+              child: const Row(
                 children: [
-                  Icon(
+                   Icon(
                     Icons.lock_rounded,
                     color: AppColors.foregroundDark,
                     size: 20,

@@ -81,7 +81,7 @@ void main() {
         final notifier = _buildNotifier(login: mockLogin);
 
         when(() => mockLogin(any())).thenAnswer((_) async =>
-            Left(InvalidCredentialsFailure('Invalid credentials', attemptsRemaining: 2)));
+            const Left(InvalidCredentialsFailure('Invalid credentials', attemptsRemaining: 2)));
 
         await notifier.login(username: 'user1', password: 'wrong');
 
@@ -95,7 +95,7 @@ void main() {
         final notifier = _buildNotifier(login: mockLogin);
 
         when(() => mockLogin(any())).thenAnswer((_) async =>
-            Left(TooManyRequestsFailure('Too many attempts', remainingSeconds: 30)));
+            const Left(TooManyRequestsFailure('Too many attempts', remainingSeconds: 30)));
 
         await notifier.login(username: 'user1', password: 'wrong');
 
@@ -109,7 +109,7 @@ void main() {
         final notifier = _buildNotifier(login: mockLogin);
 
         when(() => mockLogin(any()))
-            .thenAnswer((_) async => Left(ServerFailure('Network error')));
+            .thenAnswer((_) async => const Left(ServerFailure('Network error')));
 
         await notifier.login(username: 'user1', password: 'secret');
 
@@ -176,7 +176,7 @@ void main() {
         final notifier = _buildNotifier(checkUsername: mockCheck);
 
         when(() => mockCheck(any())).thenAnswer((_) async =>
-            Left(ServerFailure('Username does not exist', statusCode: 404)));
+            const Left(ServerFailure('Username does not exist', statusCode: 404)));
 
         await notifier.checkUsernameForLogin('unknown');
 

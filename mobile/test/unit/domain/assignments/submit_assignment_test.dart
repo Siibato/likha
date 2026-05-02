@@ -18,7 +18,7 @@ void main() {
   });
 
   group('SubmitAssignment', () {
-    final tSubmissionId = 'submission-1';
+    const tSubmissionId = 'submission-1';
     final tSubmittedSubmission = AssignmentSubmission(
       id: tSubmissionId,
       assignmentId: 'assignment-1',
@@ -46,7 +46,7 @@ void main() {
 
     test('should return ValidationFailure when already submitted', () async {
       when(() => mockRepository.submitAssignment(submissionId: any(named: 'submissionId')))
-          .thenAnswer((_) async => Left(ValidationFailure('Already submitted')));
+          .thenAnswer((_) async => const Left(ValidationFailure('Already submitted')));
 
       final result = await useCase(tSubmissionId);
 
@@ -59,7 +59,7 @@ void main() {
 
     test('should return ValidationFailure when past due date', () async {
       when(() => mockRepository.submitAssignment(submissionId: any(named: 'submissionId')))
-          .thenAnswer((_) async => Left(ValidationFailure('Past due date')));
+          .thenAnswer((_) async => const Left(ValidationFailure('Past due date')));
 
       final result = await useCase(tSubmissionId);
 
@@ -72,7 +72,7 @@ void main() {
 
     test('should return ServerFailure when submission not found', () async {
       when(() => mockRepository.submitAssignment(submissionId: any(named: 'submissionId')))
-          .thenAnswer((_) async => Left(ServerFailure('Submission not found')));
+          .thenAnswer((_) async => const Left(ServerFailure('Submission not found')));
 
       final result = await useCase('nonexistent');
 

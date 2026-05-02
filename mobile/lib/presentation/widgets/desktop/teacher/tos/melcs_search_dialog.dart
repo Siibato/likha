@@ -143,11 +143,11 @@ class _MelcsSearchDialogState extends ConsumerState<MelcsSearchDialog> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
+                  const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Import from MELCs',
                           style: TextStyle(
                             fontSize: 20,
@@ -156,8 +156,8 @@ class _MelcsSearchDialogState extends ConsumerState<MelcsSearchDialog> {
                             letterSpacing: -0.4,
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        const Text(
+                        SizedBox(height: 2),
+                        Text(
                           'Filter by grade and subject, then select competencies to import',
                           style: TextStyle(
                             fontSize: 13,

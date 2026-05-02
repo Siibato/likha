@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
@@ -55,7 +57,6 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
   }
 
   Future<void> _loadItemsAndSummary() async {
-    print('*** CLASS RECORD PAGE: Loading items and summary for class: ${widget.classId}, quarter: $_selectedQuarter');
     PageLogger.instance.log('Loading items and summary for class: ${widget.classId}, quarter: $_selectedQuarter');
 
     final itemsNotifier = ref.read(gradeItemsProvider.notifier);
@@ -63,11 +64,9 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
     itemsNotifier.setComponent(''); // load all components
 
     try {
-      print('*** CLASS RECORD PAGE: Loading grade items for class: ${widget.classId}');
       PageLogger.instance.log('Loading grade items for class: ${widget.classId}');
       await itemsNotifier.loadItems(widget.classId);
 
-      print('*** CLASS RECORD PAGE: Starting backfill from activities for quarter: $_selectedQuarter');
       PageLogger.instance.log('Starting backfill from activities for quarter: $_selectedQuarter');
       await itemsNotifier.backfillFromActivities(widget.classId, _selectedQuarter);
 
@@ -79,19 +78,16 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
         final itemIds = itemsState.items.map((i) => i.id).toList();
 
         // Load any scores already in the DB so the sheet is not blank while generating
-        print('*** CLASS RECORD PAGE: Loading scores for ${itemIds.length} grade items');
         PageLogger.instance.log('Loading scores for ${itemIds.length} grade items');
         await ref.read(gradeScoresProvider.notifier).loadScoresForItems(itemIds);
 
         // Show skeleton cells during score generation
         ref.read(gradeScoresProvider.notifier).setGenerating(true);
         // Auto-populate scores from assessment/assignment submissions
-        print('*** CLASS RECORD PAGE: Generating scores for grade items');
         PageLogger.instance.log('Generating scores for grade items');
         await itemsNotifier.generateScoresForItems(widget.classId);
 
         // Reload scores to surface newly generated values
-        print('*** CLASS RECORD PAGE: Refreshing scores after generation');
         PageLogger.instance.log('Refreshing scores after generation');
         final refreshedIds = ref.read(gradeItemsProvider).items.map((i) => i.id).toList();
         if (refreshedIds.isNotEmpty) {
@@ -99,15 +95,12 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
         }
         ref.read(gradeScoresProvider.notifier).setGenerating(false);
       } else {
-        print('*** CLASS RECORD PAGE: No grade items found for class: ${widget.classId}, quarter: $_selectedQuarter');
         PageLogger.instance.warn('No grade items found for class: ${widget.classId}, quarter: $_selectedQuarter');
       }
     } catch (e) {
-      print('*** CLASS RECORD PAGE: Error loading grade data: $e');
       PageLogger.instance.error('Error loading grade data', e);
     }
 
-    print('*** CLASS RECORD PAGE: Loading quarterly grades summary for class: ${widget.classId}, quarter: $_selectedQuarter');
     PageLogger.instance.log('Loading quarterly grades summary for class: ${widget.classId}, quarter: $_selectedQuarter');
     ref
         .read(quarterlyGradesProvider.notifier)

@@ -18,8 +18,8 @@ void main() {
   });
 
   group('CreateGradeItem', () {
-    final tClassId = 'class-1';
-    final tData = const {
+    const tClassId = 'class-1';
+    const tData = {
       'title': 'New Quiz',
       'component': 'written_work',
       'gradingPeriodNumber': 1,
@@ -58,7 +58,7 @@ void main() {
       when(() => mockRepository.createGradeItem(
         classId: any(named: 'classId'),
         data: any(named: 'data'),
-      )).thenAnswer((_) async => Left(ServerFailure('Class not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Class not found')));
 
       final result = await useCase(classId: 'nonexistent-id', data: tData);
 
@@ -78,7 +78,7 @@ void main() {
       when(() => mockRepository.createGradeItem(
         classId: any(named: 'classId'),
         data: any(named: 'data'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Title cannot be empty')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Title cannot be empty')));
 
       final result = await useCase(classId: tClassId, data: invalidData);
 
@@ -93,7 +93,7 @@ void main() {
       when(() => mockRepository.createGradeItem(
         classId: any(named: 'classId'),
         data: any(named: 'data'),
-      )).thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+      )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(classId: tClassId, data: tData);
 
@@ -108,7 +108,7 @@ void main() {
       when(() => mockRepository.createGradeItem(
         classId: any(named: 'classId'),
         data: any(named: 'data'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(classId: tClassId, data: tData);
 

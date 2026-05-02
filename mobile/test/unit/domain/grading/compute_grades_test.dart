@@ -39,7 +39,7 @@ void main() {
       when(() => mockRepository.computeGrades(
         classId: any(named: 'classId'),
         gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
-      )).thenAnswer((_) async => Left(ServerFailure('Class not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Class not found')));
 
       final result = await useCase(classId: 'nonexistent-id', gradingPeriodNumber: tPeriod);
 
@@ -54,7 +54,7 @@ void main() {
       when(() => mockRepository.computeGrades(
         classId: any(named: 'classId'),
         gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
-      )).thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+      )).thenAnswer((_) async => const  Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(classId: tClassId, gradingPeriodNumber: tPeriod);
 
@@ -69,7 +69,7 @@ void main() {
       when(() => mockRepository.computeGrades(
         classId: any(named: 'classId'),
         gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const  Left(ServerFailure('Server error')));
 
       final result = await useCase(classId: tClassId, gradingPeriodNumber: tPeriod);
 

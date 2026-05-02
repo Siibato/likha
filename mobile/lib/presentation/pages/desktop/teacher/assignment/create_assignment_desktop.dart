@@ -238,7 +238,7 @@ class _CreateAssignmentDesktopState
 
                     // Submission Type
                     DropdownButtonFormField<String>(
-                      value: _submissionType,
+                      initialValue: _submissionType,
                       decoration: _inputDecoration('Submission Type'),
                       items: const [
                         DropdownMenuItem(value: 'text_or_file', child: Text('Text or File')),
@@ -261,7 +261,7 @@ class _CreateAssignmentDesktopState
 
                     // Quarter
                     DropdownButtonFormField<int?>(
-                      value: _quarter,
+                      initialValue: _quarter,
                       decoration: _inputDecoration('Quarter (optional)'),
                       items: const [
                         DropdownMenuItem(value: null, child: Text('None')),
@@ -276,7 +276,7 @@ class _CreateAssignmentDesktopState
 
                     // Grade Component
                     DropdownButtonFormField<String?>(
-                      value: _component,
+                      initialValue: _component,
                       decoration: _inputDecoration('Grade Component (optional)'),
                       items: [
                         const DropdownMenuItem(value: null, child: Text('None')),
@@ -313,7 +313,7 @@ class _CreateAssignmentDesktopState
                         ),
                       ),
                       contentPadding: EdgeInsets.zero,
-                      activeColor: AppColors.foregroundPrimary,
+                      activeThumbColor: AppColors.foregroundPrimary,
                     ),
                     const SizedBox(height: 24),
 

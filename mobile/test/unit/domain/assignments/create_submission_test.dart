@@ -18,7 +18,7 @@ void main() {
   });
 
   group('CreateSubmission', () {
-    final tAssignmentId = 'assignment-1';
+    const tAssignmentId = 'assignment-1';
     final tSubmission = AssignmentSubmission(
       id: 'submission-1',
       assignmentId: tAssignmentId,
@@ -79,7 +79,7 @@ void main() {
       when(() => mockRepository.createSubmission(
         assignmentId: any(named: 'assignmentId'),
         textContent: any(named: 'textContent'),
-      )).thenAnswer((_) async => Left(ServerFailure('Assignment not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Assignment not found')));
 
       final result = await useCase(params);
 
@@ -99,7 +99,7 @@ void main() {
       when(() => mockRepository.createSubmission(
         assignmentId: any(named: 'assignmentId'),
         textContent: any(named: 'textContent'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Submission already exists')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Submission already exists')));
 
       final result = await useCase(params);
 
@@ -119,7 +119,7 @@ void main() {
       when(() => mockRepository.createSubmission(
         assignmentId: any(named: 'assignmentId'),
         textContent: any(named: 'textContent'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(params);
 

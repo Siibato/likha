@@ -60,7 +60,7 @@ void main() {
         subjectGroup: any(named: 'subjectGroup'),
         schoolYear: any(named: 'schoolYear'),
         semester: any(named: 'semester'),
-      )).thenAnswer((_) async => Left(ServerFailure('Class not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Class not found')));
 
       final result = await useCase(params);
 
@@ -85,7 +85,7 @@ void main() {
         subjectGroup: any(named: 'subjectGroup'),
         schoolYear: any(named: 'schoolYear'),
         semester: any(named: 'semester'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Invalid grade level')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Invalid grade level')));
 
       final result = await useCase(params);
 
@@ -103,7 +103,7 @@ void main() {
         subjectGroup: any(named: 'subjectGroup'),
         schoolYear: any(named: 'schoolYear'),
         semester: any(named: 'semester'),
-      )).thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+      )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(tParams);
 
@@ -121,7 +121,7 @@ void main() {
         subjectGroup: any(named: 'subjectGroup'),
         schoolYear: any(named: 'schoolYear'),
         semester: any(named: 'semester'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tParams);
 

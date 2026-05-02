@@ -107,7 +107,7 @@ void main() {
         userId: any(named: 'userId'),
         locked: any(named: 'locked'),
         reason: any(named: 'reason'),
-      )).thenAnswer((_) async => Left(ServerFailure('User not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('User not found')));
 
       final result = await useCase(lockParams);
 
@@ -128,7 +128,7 @@ void main() {
         userId: any(named: 'userId'),
         locked: any(named: 'locked'),
         reason: any(named: 'reason'),
-      )).thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+      )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(lockParams);
 

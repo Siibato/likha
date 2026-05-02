@@ -215,10 +215,10 @@ class _AdminClassDetailDesktopState
                   children: [
                     Expanded(
                         child: Text('Student', style: _headerStyle)),
-                    SizedBox(
+                    const SizedBox(
                         width: 150,
                         child: Text('Username', style: _headerStyle)),
-                    SizedBox(
+                    const SizedBox(
                         width: 120,
                         child: Text('Joined', style: _headerStyle)),
                   ],

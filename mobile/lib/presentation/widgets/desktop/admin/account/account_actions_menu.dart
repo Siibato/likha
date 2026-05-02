@@ -64,10 +64,10 @@ class AccountActionsMenu extends StatelessWidget {
               ),
             ),
           if (onResetPassword != null)
-            PopupMenuItem(
+            const PopupMenuItem(
               value: 'reset',
               height: 40,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
               child: _MenuItem(
                 icon: Icons.refresh_rounded,
                 label: 'Reset Password',
@@ -76,10 +76,10 @@ class AccountActionsMenu extends StatelessWidget {
             ),
           if (onDelete != null) ...[
             const PopupMenuDivider(height: 8),
-            PopupMenuItem(
+            const PopupMenuItem(
               value: 'delete',
               height: 40,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
               child: _MenuItem(
                 icon: Icons.delete_outline_rounded,
                 label: 'Delete',

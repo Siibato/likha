@@ -18,11 +18,11 @@ void main() {
   });
 
   group('GetStudentAssignmentSubmission', () {
-    final tParams = GetStudentAssignmentSubmissionParams(
+    const tParams = GetStudentAssignmentSubmissionParams(
       assignmentId: 'assignment-1',
       studentId: 'student-1',
     );
-    final tStatus = StudentAssignmentStatus(
+    const tStatus = StudentAssignmentStatus(
       submissionId: 'submission-1',
       status: 'submitted',
       score: null,
@@ -32,11 +32,11 @@ void main() {
       when(() => mockRepository.getStudentAssignmentSubmission(
         assignmentId: any(named: 'assignmentId'),
         studentId: any(named: 'studentId'),
-      )).thenAnswer((_) async => Right(tStatus));
+      )).thenAnswer((_) async => const Right(tStatus));
 
       final result = await useCase(tParams);
 
-      expect(result, Right(tStatus));
+      expect(result, const Right(tStatus));
       expect(result.getOrElse(() => null)?.status, 'submitted');
       verify(() => mockRepository.getStudentAssignmentSubmission(
         assignmentId: 'assignment-1',
@@ -57,7 +57,7 @@ void main() {
     });
 
     test('should return ServerFailure when assignment not found', () async {
-      final params = GetStudentAssignmentSubmissionParams(
+      const params = GetStudentAssignmentSubmissionParams(
         assignmentId: 'nonexistent-id',
         studentId: 'student-1',
       );
@@ -65,7 +65,7 @@ void main() {
       when(() => mockRepository.getStudentAssignmentSubmission(
         assignmentId: any(named: 'assignmentId'),
         studentId: any(named: 'studentId'),
-      )).thenAnswer((_) async => Left(ServerFailure('Assignment not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Assignment not found')));
 
       final result = await useCase(params);
 
@@ -80,7 +80,7 @@ void main() {
       when(() => mockRepository.getStudentAssignmentSubmission(
         assignmentId: any(named: 'assignmentId'),
         studentId: any(named: 'studentId'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tParams);
 

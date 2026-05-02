@@ -18,7 +18,7 @@ void main() {
   });
 
   group('UpdateAssignment', () {
-    final tAssignmentId = 'assignment-1';
+    const tAssignmentId = 'assignment-1';
     final tUpdatedAssignment = Assignment(
       id: tAssignmentId,
       classId: 'class-1',
@@ -124,7 +124,7 @@ void main() {
         allowedFileTypes: any(named: 'allowedFileTypes'),
         maxFileSizeMb: any(named: 'maxFileSizeMb'),
         dueAt: any(named: 'dueAt'),
-      )).thenAnswer((_) async => Left(ServerFailure('Assignment not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Assignment not found')));
 
       final result = await useCase(params);
 
@@ -151,7 +151,7 @@ void main() {
         allowedFileTypes: any(named: 'allowedFileTypes'),
         maxFileSizeMb: any(named: 'maxFileSizeMb'),
         dueAt: any(named: 'dueAt'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Title cannot be empty')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Title cannot be empty')));
 
       final result = await useCase(params);
 
@@ -178,7 +178,7 @@ void main() {
         allowedFileTypes: any(named: 'allowedFileTypes'),
         maxFileSizeMb: any(named: 'maxFileSizeMb'),
         dueAt: any(named: 'dueAt'),
-      )).thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+      )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(params);
 

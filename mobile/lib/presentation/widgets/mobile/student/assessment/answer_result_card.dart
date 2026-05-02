@@ -137,7 +137,7 @@ class _MCAnswerDetail extends StatelessWidget {
               ],
             ),
           );
-        }).toList(),
+        }),
         if (answer.isCorrect != true && correctAnswers.isNotEmpty) ...[
           const SizedBox(height: 12),
           const Text(
@@ -319,16 +319,16 @@ class _EnumerationAnswerDetail extends StatelessWidget {
             spacing: 6,
             runSpacing: 6,
             children: answer.correctAnswers!.map((ans) => Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.backgroundTertiary,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: AppColors.accentAmber.withValues(alpha: 0.3),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.backgroundTertiary,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: AppColors.accentAmber.withValues(alpha: 0.3),
+                  ),
                 ),
-              ),
-              child: Text(
-                ans,
+                child: Text(
+                  ans,
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,

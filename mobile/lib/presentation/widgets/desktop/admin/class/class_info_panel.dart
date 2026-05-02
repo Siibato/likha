@@ -78,11 +78,11 @@ class ClassInfoPanel extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         InfoRow(label: 'Teacher', value: teacherName),
-                        if (classInfo?.teacherUsername?.isNotEmpty == true) ...[
+                        if (classInfo?.teacherUsername.isNotEmpty == true) ...[
                           const SizedBox(height: 12),
                           InfoRow(
                             label: 'Username',
-                            value: classInfo!.teacherUsername!,
+                            value: classInfo!.teacherUsername,
                           ),
                         ],
                         const SizedBox(height: 12),
@@ -129,11 +129,11 @@ class ClassInfoPanel extends StatelessWidget {
                           label: 'Created',
                           value: DesktopDateUtils.formatDate(detail.createdAt),
                         ),
-                        if (detail.updatedAt != null) ...[
+                        ...[
                           const SizedBox(height: 12),
                           InfoRow(
                             label: 'Last Updated',
-                            value: DesktopDateUtils.formatDate(detail.updatedAt!),
+                            value: DesktopDateUtils.formatDate(detail.updatedAt),
                           ),
                         ],
                       ],
@@ -179,10 +179,10 @@ class _AdvisoryBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.semanticSuccessAlt.withOpacity(0.1),
+        color: AppColors.semanticSuccessAlt.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: AppColors.semanticSuccessAlt.withOpacity(0.3),
+          color: AppColors.semanticSuccessAlt.withValues(alpha: 0.3),
         ),
       ),
       child: const Row(
@@ -220,8 +220,8 @@ class _ClassStatusBadge extends StatelessWidget {
       inactiveText: 'Archived',
       activeColor: AppColors.semanticSuccessAlt,
       inactiveColor: AppColors.foregroundTertiary,
-      activeBackgroundColor: AppColors.semanticSuccessAlt.withOpacity(0.12),
-      inactiveBackgroundColor: AppColors.foregroundTertiary.withOpacity(0.12),
+      activeBackgroundColor: AppColors.semanticSuccessAlt.withValues(alpha: 0.12),
+      inactiveBackgroundColor: AppColors.foregroundTertiary.withValues(alpha: 0.12),
     );
   }
 }
@@ -337,7 +337,7 @@ class ClassOverviewGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (classes.isEmpty) {
-      return EmptyState.generic(
+      return const EmptyState.generic(
         title: 'No classes found',
         subtitle: 'No classes are available',
         icon: Icons.school_outlined,

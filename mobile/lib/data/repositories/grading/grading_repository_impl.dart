@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:uuid/uuid.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -271,62 +272,51 @@ class GradingRepositoryImpl implements GradingRepository {
     required int gradingPeriodNumber,
     String? component,
   }) async {
+    RepoLogger.instance.log('getGradeItems() - classId: $classId, quarter: $gradingPeriodNumber, component: $component');
     try {
-      print('*** GRADING REPO: getGradeItems() - classId: $classId, quarter: $gradingPeriodNumber, component: $component');
-      print('*** GRADING REPO: server reachable: ${_serverReachabilityService.isServerReachable}');
       
       if (_serverReachabilityService.isServerReachable) {
-        print('*** GRADING REPO: fetching from remote datasource');
+        RepoLogger.instance.log('getGradeItems() - fetching from remote datasource');
         try {
           final models = await _remoteDataSource.getGradeItems(
             classId: classId,
             gradingPeriodNumber: gradingPeriodNumber,
             component: component,
           );
-          print('*** GRADING REPO: got ${models.length} models from remote');
           for (final model in models) {
-            print('*** GRADING REPO: remote model: ${model.title} (${model.component}) - source: ${model.sourceType}, sourceId: ${model.sourceId}');
           }
           await _localDataSource.saveItems(models);
           final entities = models.map(_itemToEntity).toList();
-          print('*** GRADING REPO: converted to ${entities.length} entities, returning');
           return Right(entities);
         } catch (e) {
-          print('*** GRADING REPO: Error during remote fetch: $e');
-          print('*** GRADING REPO: Stack trace: ${StackTrace.current}');
+          RepoLogger.instance.error('getGradeItems() - Error during remote fetch', e);
           rethrow;
         }
       }
       
-      print('*** GRADING REPO: server not reachable, using cache');
+      RepoLogger.instance.log('getGradeItems() - server not reachable, using cache');
       final cached = await _localDataSource.getItemsByClassQuarter(
         classId,
         gradingPeriodNumber,
         component: component,
       );
-      print('*** GRADING REPO: got ${cached.length} items from cache');
       for (final model in cached) {
-        print('*** GRADING REPO: cached model: ${model.title} (${model.component}) - source: ${model.sourceType}, sourceId: ${model.sourceId}');
       }
       final entities = cached.map(_itemToEntity).toList();
-      print('*** GRADING REPO: converted cached to ${entities.length} entities, returning');
       return Right(entities);
     } on ServerFailure catch (e) {
-      print('*** GRADING REPO: ServerFailure: ${e.message}');
       return Left(e);
     } catch (e) {
-      print('*** GRADING REPO: Exception: $e, trying cache fallback');
+      RepoLogger.instance.error('getGradeItems() - Exception, trying cache fallback', e);
       try {
         final cached = await _localDataSource.getItemsByClassQuarter(
           classId,
           gradingPeriodNumber,
           component: component,
         );
-        print('*** GRADING REPO: cache fallback got ${cached.length} items');
         final entities = cached.map(_itemToEntity).toList();
         return Right(entities);
       } catch (_) {
-        print('*** GRADING REPO: cache fallback failed');
         return Left(CacheFailure(e.toString()));
       }
     }
@@ -450,23 +440,19 @@ class GradingRepositoryImpl implements GradingRepository {
   ResultFuture<List<GradeScore>> getScoresByItem({
     required String gradeItemId,
   }) async {
-    print('*** REPO: getScoresByItem() - START: gradeItemId=$gradeItemId');
-    print('*** REPO: getScoresByItem() - Server reachable: ${_serverReachabilityService.isServerReachable}');
-    
+    RepoLogger.instance.log('getScoresByItem() - gradeItemId=$gradeItemId');
     try {
-      // CACHE-FIRST STRATEGY: Always check cache first
-      print('*** REPO: getScoresByItem() - Checking local cache first...');
+      RepoLogger.instance.log('getScoresByItem() - Checking local cache first...');
       final cached = await _localDataSource.getScoresByItem(gradeItemId);
-      print('*** REPO: getScoresByItem() - Cache returned ${cached.length} scores');
       
       // If cache has data, return it immediately (offline-first)
       if (cached.isNotEmpty) {
         final entities = cached.map(_scoreToEntity).toList();
-        print('*** REPO: getScoresByItem() - SUCCESS: Returning ${entities.length} scores from cache (cache-first)');
+        RepoLogger.instance.log('getScoresByItem() - Returning ${entities.length} scores from cache (cache-first)');
         
         // Background sync if server is reachable, but don't wait for it
         if (_serverReachabilityService.isServerReachable) {
-          print('*** REPO: getScoresByItem() - Background sync: fetching from remote to update cache...');
+          RepoLogger.instance.log('getScoresByItem() - Background sync: fetching from remote to update cache...');
           _backgroundSyncScores(gradeItemId, cached.length);
         }
         
@@ -475,38 +461,32 @@ class GradingRepositoryImpl implements GradingRepository {
       
       // Cache is empty, try remote
       if (_serverReachabilityService.isServerReachable) {
-        print('*** REPO: getScoresByItem() - Cache empty, fetching from remote server...');
+        RepoLogger.instance.log('getScoresByItem() - Cache empty, fetching from remote server...');
         final models = await _remoteDataSource.getScoresByItem(
           gradeItemId: gradeItemId,
         );
-        print('*** REPO: getScoresByItem() - Remote returned ${models.length} scores');
         
-        print('*** REPO: getScoresByItem() - Saving ${models.length} scores to local cache');
         await _localDataSource.saveScores(models);
         
         final entities = models.map(_scoreToEntity).toList();
-        print('*** REPO: getScoresByItem() - SUCCESS: Returning ${entities.length} scores from remote');
         return Right(entities);
       } else {
-        print('*** REPO: getScoresByItem() - Cache empty and server not reachable');
+        RepoLogger.instance.log('getScoresByItem() - Cache empty and server not reachable');
         final entities = cached.map(_scoreToEntity).toList();
-        print('*** REPO: getScoresByItem() - SUCCESS: Returning ${entities.length} empty scores from cache');
         return Right(entities);
       }
     } on ServerFailure catch (e) {
-      print('*** REPO: getScoresByItem() - Server failure: ${e.toString()}, trying cache...');
+      RepoLogger.instance.error('getScoresByItem() - Server failure', e);
       return Left(e);
     } on Failure catch (e) {
-      print('*** REPO: getScoresByItem() - General failure: ${e.toString()}, trying cache...');
+      RepoLogger.instance.error('getScoresByItem() - General failure', e);
       return Left(e);
     } catch (e) {
-      print('*** REPO: getScoresByItem() - Unexpected exception: ${e.toString()}, trying cache...');
+      RepoLogger.instance.error('getScoresByItem() - Unexpected exception', e);
       try {
         final cached = await _localDataSource.getScoresByItem(gradeItemId);
-        print('*** REPO: getScoresByItem() - Fallback cache returned ${cached.length} scores');
         return Right(cached.map(_scoreToEntity).toList());
       } catch (_) {
-        print('*** REPO: getScoresByItem() - ERROR: Cache fallback failed: ${e.toString()}');
         return Left(CacheFailure(e.toString()));
       }
     }
@@ -516,17 +496,17 @@ class GradingRepositoryImpl implements GradingRepository {
   Future<void> _backgroundSyncScores(String gradeItemId, int currentCacheCount) async {
     try {
       final models = await _remoteDataSource.getScoresByItem(gradeItemId: gradeItemId);
-      print('*** REPO: _backgroundSyncScores() - Background sync got ${models.length} scores');
+      RepoLogger.instance.log('_backgroundSyncScores() - Background sync got ${models.length} scores');
       
       // Only update cache if remote has more data than current cache
       if (models.length > currentCacheCount) {
-        print('*** REPO: _backgroundSyncScores() - Updating cache with ${models.length} remote scores');
+        RepoLogger.instance.log('_backgroundSyncScores() - Updating cache with ${models.length} remote scores');
         await _localDataSource.saveScores(models);
       } else {
-        print('*** REPO: _backgroundSyncScores() - Remote has same or fewer scores, keeping cache data');
+        RepoLogger.instance.log('_backgroundSyncScores() - Remote has same or fewer scores, keeping cache data');
       }
     } catch (e) {
-      print('*** REPO: _backgroundSyncScores() - Background sync failed: ${e.toString()}');
+      RepoLogger.instance.error('_backgroundSyncScores() - Background sync failed', e);
     }
   }
 
@@ -535,25 +515,22 @@ class GradingRepositoryImpl implements GradingRepository {
     required String gradeItemId,
     required List<Map<String, dynamic>> scores,
   }) async {
-    print('*** REPO: saveScores() - START: gradeItemId=$gradeItemId, scoresCount=${scores.length}');
-    
+    RepoLogger.instance.log('saveScores() - gradeItemId=$gradeItemId, scoresCount=${scores.length}');
     try {
       // Basic validation of grade item ID format
       if (gradeItemId.isEmpty) {
-        print('*** REPO: saveScores() - WARNING: Empty grade item ID, skipping sync enqueue');
+        RepoLogger.instance.warn('saveScores() - Empty grade item ID, skipping sync enqueue');
         return const Right(null);
       }
 
       final now = DateTime.now().toIso8601String();
 
       // Save each score locally (optimistic)
-      print('*** REPO: saveScores() - Creating ${scores.length} score models');
       final models = scores.map((s) {
         final scoreId = s['id'] as String? ?? const Uuid().v4();
         final studentId = s['student_id'] as String;
         final scoreValue = (s['score'] as num).toDouble();
         final isAutoPopulated = s['is_auto_populated'] == true || s['is_auto_populated'] == 1;
-        print('*** REPO: saveScores() - Score model: id=$scoreId, studentId=$studentId, score=$scoreValue, isAutoPopulated=$isAutoPopulated');
         
         return GradeScoreModel(
           id: scoreId,
@@ -567,14 +544,11 @@ class GradingRepositoryImpl implements GradingRepository {
         );
       }).toList();
       
-      print('*** REPO: saveScores() - Upserting ${models.length} scores to local database');
       // upsertScoresByItem enqueues the sync operation transactionally — no second enqueue needed.
       await _localDataSource.upsertScoresByItem(gradeItemId, models);
-      print('*** REPO: saveScores() - SUCCESS: Saved ${models.length} scores (sync enqueued by upsert)');
 
       return const Right(null);
     } catch (e) {
-      print('*** REPO: saveScores() - ERROR: ${e.toString()}');
       return Left(CacheFailure(e.toString()));
     }
   }
