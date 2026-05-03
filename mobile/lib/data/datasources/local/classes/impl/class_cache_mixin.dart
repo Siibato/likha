@@ -69,8 +69,8 @@ mixin ClassCacheMixin on ClassLocalDataSourceBase {
             limit: 1,
           );
           if (teacherRows.isNotEmpty) {
-            teacherUsername = teacherRows.first['username'] as String? ?? '';
-            teacherFullName = teacherRows.first['full_name'] as String? ?? '';
+            teacherUsername = enc.decryptField(teacherRows.first['username'] as String?) ?? '';
+            teacherFullName = enc.decryptField(teacherRows.first['full_name'] as String?) ?? '';
           }
         }
 

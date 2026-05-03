@@ -259,7 +259,7 @@ Future<void> init() async {
     () => AuthLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>(), sl<EncryptionService>()),
   );
   sl.registerLazySingleton<ClassLocalDataSource>(
-    () => ClassLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
+    () => ClassLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>(), sl<EncryptionService>()),
   );
   sl.registerLazySingleton<AssessmentLocalDataSource>(
     () => AssessmentLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>(), sl<EncryptionService>()),

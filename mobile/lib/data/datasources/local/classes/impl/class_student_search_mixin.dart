@@ -5,6 +5,12 @@ import 'package:sqflite/sqflite.dart';
 import '../class_local_datasource_base.dart';
 
 mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
+  Map<String, dynamic> _decryptUserRow(Map<String, dynamic> row) {
+    final m = Map<String, dynamic>.from(row);
+    m['username'] = enc.decryptField(row['username'] as String?);
+    m['full_name'] = enc.decryptField(row['full_name'] as String?);
+    return m;
+  }
   @override
   Future<UserModel?> getStudentById(String studentId) async {
     try {
@@ -64,7 +70,7 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
         whereArgs: ['%$query%', '%$query%', 'student'],
         orderBy: '${UsersCols.fullName} ASC',
       );
-      return results.map(UserModel.fromMap).toList();
+      return results.map((r) => UserModel.fromMap(_decryptUserRow(r))).toList();
     } catch (e) {
       throw CacheException('Failed to search cached students: $e');
     }
@@ -85,24 +91,25 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
       ''', [classId]);
 
       return rows.map((row) {
-        final accountStatus = row['account_status'] as String?;
+        final decryptedRow = _decryptUserRow(row);
+        final accountStatus = decryptedRow['account_status'] as String?;
         final isActive = accountStatus != null &&
             accountStatus != 'locked' &&
             accountStatus != 'deactivated';
 
         return UserModel(
-          id: row['user_id'] as String,
-          username: row['username'] as String? ?? '',
-          fullName: row['full_name'] as String? ?? '',
-          role: row['role'] as String? ?? '',
+          id: decryptedRow['user_id'] as String,
+          username: decryptedRow['username'] as String? ?? '',
+          fullName: decryptedRow['full_name'] as String? ?? '',
+          role: decryptedRow['role'] as String? ?? '',
           accountStatus: accountStatus ?? 'active',
           isActive: isActive,
-          activatedAt: row['activated_at'] != null
-              ? DateTime.parse(row['activated_at'] as String)
+          activatedAt: decryptedRow['activated_at'] != null
+              ? DateTime.parse(decryptedRow['activated_at'] as String)
               : null,
-          createdAt: row['created_at'] != null
-              ? DateTime.parse(row['created_at'] as String)
-              : DateTime.parse(row['joined_at'] as String),
+          createdAt: decryptedRow['created_at'] != null
+              ? DateTime.parse(decryptedRow['created_at'] as String)
+              : DateTime.parse(decryptedRow['joined_at'] as String),
         );
       }).toList();
     } catch (e) {

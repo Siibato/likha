@@ -39,7 +39,7 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
   List<ClassEntity> _getFilteredAndSortedClasses(List<ClassEntity> classes) {
     final query = _searchQuery.trim().toLowerCase();
     final filtered = query.isEmpty
-        ? classes
+        ? classes.toList()
         : classes
             .where((c) =>
                 c.title.toLowerCase().contains(query) ||

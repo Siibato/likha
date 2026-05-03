@@ -322,7 +322,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
           enumerationAnswers = itemRows
               .map((item) => EnumerationAnswerModel(
                     id: item['id'] as String,
-                    answerText: enc.decryptField(item['answer_text'] as String?) ?? '',
+                    answerText: item['answer_text'] as String? ?? '',
                     isCorrect: (item['is_correct'] as int?) == 1,
                   ))
               .toList();

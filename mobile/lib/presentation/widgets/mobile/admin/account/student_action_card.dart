@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/presentation/widgets/shared/cards/base_action_card.dart';
+import 'package:likha/presentation/widgets/shared/primitives/status_badge.dart';
 
 class StudentActionCard extends StatelessWidget {
   final User student;
@@ -22,10 +23,7 @@ class StudentActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BaseActionCard(
-      title: student.fullName,
-      subtitle: '@${student.username}',
-      icon: const Icon(Icons.person_outline_rounded),
-      actions: [_buildActionButton()],
+      actions: const [],
       child: Row(
         children: [
           // Avatar with initial
@@ -52,13 +50,25 @@ class StudentActionCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  student.fullName,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.foregroundDark,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      student.fullName,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.foregroundDark,
+                      ),
+                    ),
+                    if (isParticipant) ...[
+                      const SizedBox(width: 8),
+                      const StatusBadge(
+                        label: 'Enrolled',
+                        color: AppColors.semanticSuccessAlt,
+                        variant: BadgeVariant.filled,
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Text(

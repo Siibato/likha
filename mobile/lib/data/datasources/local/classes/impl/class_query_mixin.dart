@@ -6,6 +6,19 @@ import 'package:likha/data/models/classes/class_model.dart';
 import '../class_local_datasource_base.dart';
 
 mixin ClassQueryMixin on ClassLocalDataSourceBase {
+  Map<String, dynamic> _decryptClassRow(Map<String, dynamic> row) {
+    final m = Map<String, dynamic>.from(row);
+    m['teacher_full_name'] = enc.decryptField(row['teacher_full_name'] as String?);
+    m['teacher_username'] = enc.decryptField(row['teacher_username'] as String?);
+    return m;
+  }
+
+  Map<String, dynamic> _decryptUserRow(Map<String, dynamic> row) {
+    final m = Map<String, dynamic>.from(row);
+    m['username'] = enc.decryptField(row['username'] as String?);
+    m['full_name'] = enc.decryptField(row['full_name'] as String?);
+    return m;
+  }
   @override
   Future<List<ClassModel>> getCachedClasses({String? teacherId}) async {
     try {
@@ -27,7 +40,7 @@ mixin ClassQueryMixin on ClassLocalDataSourceBase {
         return [];
       }
 
-      final models = results.map(ClassModel.fromMap).toList();
+      final models = results.map((r) => ClassModel.fromMap(_decryptClassRow(r))).toList();
       return models;
     } catch (e) {
       if (e is CacheException) rethrow;
@@ -54,7 +67,7 @@ mixin ClassQueryMixin on ClassLocalDataSourceBase {
       if (results.isEmpty) {
         return [];
       }
-      return results.map(ClassModel.fromMap).toList();
+      return results.map((r) => ClassModel.fromMap(_decryptClassRow(r))).toList();
     } catch (e) {
       if (e is CacheException) rethrow;
       throw CacheException(e.toString());
@@ -142,20 +155,21 @@ mixin ClassQueryMixin on ClassLocalDataSourceBase {
           accountStatus != 'locked' &&
           accountStatus != 'deactivated';
 
+      final decryptedRow = _decryptUserRow(e);
       return ParticipantModel(
-        id: e['id'] as String,
+        id: decryptedRow['id'] as String,
         student: UserModel(
-          id: e['user_id'] as String,
-          username: e['username'] as String? ?? '',
-          fullName: e['full_name'] as String? ?? '',
-          role: e['role'] as String? ?? '',
+          id: decryptedRow['user_id'] as String,
+          username: decryptedRow['username'] as String? ?? '',
+          fullName: decryptedRow['full_name'] as String? ?? '',
+          role: decryptedRow['role'] as String? ?? '',
           accountStatus: accountStatus ?? 'active',
           isActive: isActive,
-          createdAt: e['created_at'] != null
-              ? DateTime.parse(e['created_at'] as String)
-              : DateTime.parse(e['joined_at'] as String),
+          createdAt: decryptedRow['created_at'] != null
+              ? DateTime.parse(decryptedRow['created_at'] as String)
+              : DateTime.parse(decryptedRow['joined_at'] as String),
         ),
-        joinedAt: DateTime.parse(e['joined_at'] as String),
+        joinedAt: DateTime.parse(decryptedRow['joined_at'] as String),
       );
     }).toList();
   }
