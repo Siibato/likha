@@ -1,0 +1,34 @@
+use uuid::Uuid;
+use crate::schema::grading_schema::{GradeItemResponse, CreateGradeItemRequest};
+use crate::utils::AppResult;
+
+impl crate::services::grade_computation::GradeComputationService {
+    pub async fn create_grade_item(
+        &self,
+        class_id: Uuid,
+        request: CreateGradeItemRequest,
+    ) -> AppResult<GradeItemResponse> {
+        let grading_period_number = request.grading_period_number.unwrap_or(1);
+        let existing = self
+            .repo
+            .get_items_by_component(class_id, grading_period_number, &request.component)
+            .await?;
+        let order_index = existing.len() as i32;
+        let source_type = request.source_type.unwrap_or_else(|| "manual".to_string());
+        let source_id = request.source_id;
+        let item = self
+            .repo
+            .create_item(
+                class_id,
+                request.title,
+                request.component,
+                request.grading_period_number,
+                request.total_points,
+                source_type,
+                source_id,
+                order_index,
+            )
+            .await?;
+        Ok(GradeItemResponse::from(item))
+    }
+}
