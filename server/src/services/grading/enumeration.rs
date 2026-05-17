@@ -1,7 +1,6 @@
 use uuid::Uuid;
 use std::collections::HashSet;
 use crate::db::repositories::assessment_repository::AssessmentRepository;
-use crate::db::repositories::submission_repository::SubmissionRepository;
 use crate::utils::AppResult;
 
 pub async fn grade_enumeration(
@@ -9,7 +8,7 @@ pub async fn grade_enumeration(
     question_id: Uuid,
     points: i32,
     assessment_repo: &AssessmentRepository,
-    submission_repo: &SubmissionRepository,
+    submission_repo: &AssessmentRepository,
 ) -> AppResult<(bool, f64)> {
     // Fetch the enumeration slots (answer_keys with their acceptable_answers)
     let slots = assessment_repo.find_enumeration_items_for_question(question_id).await?;

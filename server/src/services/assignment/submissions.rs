@@ -197,8 +197,8 @@ impl super::AssignmentService {
         disk_path.push("submission_files");
         disk_path.push(&disk_filename);
 
-        // Write file to disk
-        if let Err(e) = file_service::write_file(&disk_path, &file_data).await {
+        // Write file to disk (encrypted)
+        if let Err(e) = file_service::write_file(&disk_path, &file_data, Some(&self.file_encryption_key)).await {
             return Err(AppError::InternalServerError(format!("Failed to write file to disk: {}", e)));
         }
 
@@ -423,7 +423,7 @@ impl super::AssignmentService {
             .file_path
             .ok_or_else(|| AppError::NotFound("File data not available".to_string()))?;
 
-        let file_bytes = file_service::read_file(&PathBuf::from(&file_path))
+        let file_bytes = file_service::read_file(&PathBuf::from(&file_path), Some(&self.file_encryption_key))
             .await
             .map_err(|e| AppError::InternalServerError(format!("Failed to read file from disk: {}", e)))?;
 

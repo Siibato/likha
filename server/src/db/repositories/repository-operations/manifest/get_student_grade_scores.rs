@@ -1,0 +1,21 @@
+use sea_orm::*;
+use serde_json::Value;
+use uuid::Uuid;
+
+use ::entity::grade_scores;
+use crate::utils::{AppError, AppResult};
+use super::helpers;
+
+pub async fn get_student_grade_scores(
+    db: &DatabaseConnection,
+    student_id: Uuid,
+    grade_item_ids: Vec<Uuid>,
+) -> AppResult<Vec<Value>> {
+    if grade_item_ids.is_empty() { return Ok(vec![]); }
+    let records = grade_scores::Entity::find()
+        .filter(grade_scores::Column::GradeItemId.is_in(grade_item_ids))
+        .filter(grade_scores::Column::StudentId.eq(student_id))
+        .all(db).await
+        .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+    Ok(records.into_iter().map(helpers::grade_score_to_json).collect())
+}

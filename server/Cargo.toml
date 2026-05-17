@@ -23,6 +23,7 @@ sha2 = "0.10"
 hex = "0.4"
 md5 = "0.7"
 base64 = "0.22"
+ring = "0.17"
 qrcode = "0.14"
 image = { version = "0.25", default-features = false, features = ["png"] }
 entity = { path = "entity" }

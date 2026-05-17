@@ -1,6 +1,5 @@
 use uuid::Uuid;
 use crate::db::repositories::assessment_repository::AssessmentRepository;
-use crate::db::repositories::submission_repository::SubmissionRepository;
 use crate::utils::AppResult;
 
 pub async fn grade_multiple_choice(
@@ -9,10 +8,10 @@ pub async fn grade_multiple_choice(
     points: i32,
     is_multi_select: bool,
     assessment_repo: &AssessmentRepository,
-    submission_repo: &SubmissionRepository,
+    _submission_repo: &AssessmentRepository,
 ) -> AppResult<(bool, f64)> {
     let choices = assessment_repo.find_choices_by_question_id(question_id).await?;
-    let selected = submission_repo.find_answer_choices(submission_answer_id).await?;
+    let selected = assessment_repo.find_answer_choices(submission_answer_id).await?;
 
     let correct_ids: std::collections::HashSet<Uuid> = choices
         .iter()

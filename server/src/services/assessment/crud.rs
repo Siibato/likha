@@ -104,8 +104,8 @@ impl super::AssessmentService {
         for a in assessments {
             let question_count = self.assessment_repo
                 .find_questions_by_assessment_id(a.id).await?.len();
-            let submission_count = self.submission_repo
-                .count_by_assessment_id(a.id).await?;
+            let submission_count = self.assessment_repo
+                .count_submissions_by_assessment_id(a.id).await?;
 
             responses.push(AssessmentResponse {
                 id: a.id,
@@ -197,7 +197,7 @@ impl super::AssessmentService {
         let mut items = Vec::new();
         for a in assessments {
             let submission = self
-                .submission_repo
+                .assessment_repo
                 .find_by_student_and_assessment(student_id, a.id)
                 .await?;
 
@@ -261,8 +261,8 @@ impl super::AssessmentService {
 
         let question_count = self.assessment_repo
             .find_questions_by_assessment_id(assessment_id).await?.len();
-        let submission_count = self.submission_repo
-            .count_by_assessment_id(assessment_id).await?;
+        let submission_count = self.assessment_repo
+                .count_submissions_by_assessment_id(assessment_id).await?;
 
 
         Ok(AssessmentResponse {
@@ -303,7 +303,7 @@ impl super::AssessmentService {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
-        self.submission_repo.soft_delete_by_assessment(assessment_id).await?;
+        self.assessment_repo.soft_delete_submissions_by_assessment(assessment_id).await?;
         self.assessment_repo.soft_delete(assessment_id).await?;
 
         Ok(())
@@ -369,7 +369,7 @@ impl super::AssessmentService {
         }
 
         let question_count = questions.len();
-        let submission_count = self.submission_repo.count_by_assessment_id(assessment_id).await?;
+        let submission_count = self.assessment_repo.count_submissions_by_assessment_id(assessment_id).await?;
 
 
         Ok(AssessmentResponse {
@@ -422,7 +422,7 @@ impl super::AssessmentService {
 
         let question_count = self.assessment_repo
             .find_questions_by_assessment_id(assessment_id).await?.len();
-        let submission_count = self.submission_repo.count_by_assessment_id(assessment_id).await?;
+        let submission_count = self.assessment_repo.count_submissions_by_assessment_id(assessment_id).await?;
 
         Ok(AssessmentResponse {
             id: unpublished.id,
@@ -470,8 +470,8 @@ impl super::AssessmentService {
 
         let question_count = self.assessment_repo
             .find_questions_by_assessment_id(assessment_id).await?.len();
-        let submission_count = self.submission_repo
-            .count_by_assessment_id(assessment_id).await?;
+        let submission_count = self.assessment_repo
+                .count_submissions_by_assessment_id(assessment_id).await?;
 
 
         Ok(AssessmentResponse {

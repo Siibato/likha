@@ -36,7 +36,7 @@ impl super::AssessmentService {
             return Err(AppError::Forbidden("You are not enrolled in this class".to_string()));
         }
 
-        let existing = self.submission_repo
+        let existing = self.assessment_repo
             .find_by_student_and_assessment(student_id, assessment_id).await?;
         if existing.is_some() {
             println!("🚀 [SERVICE] start_assessment() ERROR - already has submission: {:?}", existing);
@@ -44,7 +44,7 @@ impl super::AssessmentService {
         }
 
         println!("🚀 [SERVICE] start_assessment() - creating new submission...");
-        let submission = self.submission_repo
+        let submission = self.assessment_repo
             .create_submission(assessment_id, student_id, submission_id).await?;
         println!("🚀 [SERVICE] start_assessment() - submission created: id={}, submitted={}", submission.id, submission.submitted_at.is_some());
 
@@ -115,7 +115,7 @@ impl super::AssessmentService {
     ) -> AppResult<()> {
         println!("💾 [SERVICE] save_answers() START - submission_id: {}, student_id: {}, answer_count: {}", submission_id, student_id, request.answers.len());
 
-        let submission = self.submission_repo.find_by_id(submission_id).await?
+        let submission = self.assessment_repo.find_submission_by_id(submission_id).await?
             .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?;
 
         if submission.user_id != student_id {
@@ -129,12 +129,12 @@ impl super::AssessmentService {
         }
 
         for answer_input in &request.answers {
-            let answer = self.submission_repo
+            let answer = self.assessment_repo
                 .upsert_answer(submission_id, answer_input.question_id, answer_input.answer_text.clone())
                 .await?;
 
             if let Some(choice_ids) = &answer_input.selected_choice_ids {
-                self.submission_repo
+                self.assessment_repo
                     .save_answer_choices(answer.id, choice_ids.clone())
                     .await?;
             }
@@ -157,14 +157,14 @@ impl super::AssessmentService {
                     })
                     .collect();
 
-                self.submission_repo
+                self.assessment_repo
                     .save_enumeration_answers_linked(answer.id, items)
                     .await?;
             }
 
             if let Some(answer_text) = &answer_input.answer_text {
                 // Identification: save text to answer items
-                self.submission_repo
+                self.assessment_repo
                     .save_answer_text(answer.id, answer_text.clone())
                     .await?;
             }
@@ -185,7 +185,7 @@ impl super::AssessmentService {
     ) -> AppResult<SubmissionSummaryResponse> {
         println!("📤 [SERVICE] submit_assessment() START - submission_id: {}, student_id: {}", submission_id, student_id);
 
-        let submission = self.submission_repo.find_by_id(submission_id).await?
+        let submission = self.assessment_repo.find_submission_by_id(submission_id).await?
             .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?;
 
         println!("📤 [SERVICE] submit_assessment() - submission found: submitted_at={:?}, assessment_id={}",
@@ -206,7 +206,7 @@ impl super::AssessmentService {
         println!("📤 [SERVICE] submit_assessment() - grading complete: auto_score={}, final_score={}", auto_score, final_score);
 
         println!("📤 [SERVICE] submit_assessment() - marking as submitted...");
-        let submitted = self.submission_repo.mark_submitted(submission_id).await?;
+        let submitted = self.assessment_repo.mark_submitted(submission_id).await?;
 
         println!("📤 [SERVICE] submit_assessment() - mark_submitted() returned: submitted_at={:?}",
             submitted.submitted_at);

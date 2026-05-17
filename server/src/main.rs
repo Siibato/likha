@@ -34,6 +34,7 @@ use crate::services::sync_conflict_service::SyncConflictService;
 use crate::services::sync_full::SyncFullService;
 use crate::services::sync_delta::SyncDeltaService;
 use crate::services::tos::TosService;
+use crate::utils::file_encryption::parse_key;
 use crate::db::repositories::{
     manifest_repository::ManifestRepository,
     processed_operations_repository::ProcessedOperationsRepository,
@@ -157,8 +158,21 @@ async fn main() {
     let class_service = Arc::new(ClassService::new(db.clone()));
 
     let assessment_service = Arc::new(AssessmentService::new(db.clone()));
-    let assignment_service = Arc::new(AssignmentService::new(db.clone(), config.file_storage_path.clone()));
-    let material_service = Arc::new(LearningMaterialService::new(db.clone(), config.file_storage_path.clone()));
+
+    // Parse file encryption key from hex string
+    let file_encryption_key = parse_key(&config.file_encryption_key)
+        .expect("Invalid FILE_ENCRYPTION_KEY format");
+
+    let assignment_service = Arc::new(AssignmentService::new(
+        db.clone(),
+        config.file_storage_path.clone(),
+        file_encryption_key,
+    ));
+    let material_service = Arc::new(LearningMaterialService::new(
+        db.clone(),
+        config.file_storage_path.clone(),
+        file_encryption_key,
+    ));
 
     // Initialize new offline-first sync services
     let _entitlement_repo = crate::db::repositories::entitlement_repository::EntitlementRepository::new(db.clone());

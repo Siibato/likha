@@ -1,12 +1,10 @@
 use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 use crate::db::repositories::assessment_repository::AssessmentRepository;
-use crate::db::repositories::submission_repository::SubmissionRepository;
 use crate::utils::AppResult;
 
 pub struct GradingService {
     pub assessment_repo: AssessmentRepository,
-    pub submission_repo: SubmissionRepository,
     pub db: DatabaseConnection,
 }
 
@@ -15,7 +13,6 @@ impl GradingService {
         let db_clone = db.clone();
         Self {
             assessment_repo: AssessmentRepository::new(db.clone()),
-            submission_repo: SubmissionRepository::new(db),
             db: db_clone,
         }
     }
@@ -24,7 +21,7 @@ impl GradingService {
         &self,
         submission_id: Uuid,
     ) -> AppResult<(f64, f64)> {
-        let answers = self.submission_repo.find_answers_by_submission_id(submission_id).await?;
+        let answers = self.assessment_repo.find_answers_by_submission_id(submission_id).await?;
         let mut auto_score = 0.0_f64;
 
         for answer in &answers {
@@ -51,12 +48,12 @@ impl GradingService {
                         question.points,
                         question.is_multi_select,
                         &self.assessment_repo,
-                        &self.submission_repo,
+                        &self.assessment_repo,
                     )
                     .await?
                 }
                 "identification" => {
-                    let items = self.submission_repo.find_enumeration_answers(answer.id).await?;
+                    let items = self.assessment_repo.find_enumeration_answers(answer.id).await?;
                     let answer_text = items.into_iter().next();
                     super::identification::grade_identification(
                         &answer_text,
@@ -72,7 +69,7 @@ impl GradingService {
                         question.id,
                         question.points,
                         &self.assessment_repo,
-                        &self.submission_repo,
+                        &self.assessment_repo,
                     )
                     .await?
                 }
@@ -81,14 +78,14 @@ impl GradingService {
                 _ => (false, 0.0),
             };
 
-            self.submission_repo
+            self.assessment_repo
                 .update_answer_grade(answer.id, Some(is_correct), points_awarded)
                 .await?;
 
             auto_score += points_awarded;
         }
 
-        self.submission_repo
+        self.assessment_repo
             .update_submission_scores(submission_id, auto_score)
             .await?;
 
@@ -99,10 +96,10 @@ impl GradingService {
         &self,
         submission_id: Uuid,
     ) -> AppResult<f64> {
-        let answers = self.submission_repo.find_answers_by_submission_id(submission_id).await?;
+        let answers = self.assessment_repo.find_answers_by_submission_id(submission_id).await?;
         let final_score: f64 = answers.iter().map(|a| a.points).sum();
 
-        self.submission_repo
+        self.assessment_repo
             .update_submission_scores(submission_id, final_score)
             .await?;
 

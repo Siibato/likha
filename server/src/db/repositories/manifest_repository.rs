@@ -1,31 +1,10 @@
 use chrono::NaiveDateTime;
-use sea_orm::*;
-use serde_json::{json, Value};
+use sea_orm::DatabaseConnection;
+use serde_json::Value;
 use uuid::Uuid;
 
-use crate::utils::{AppError, AppResult};
-use ::entity::{
-    classes, class_participants, assessments, assessment_questions, assessment_submissions,
-    assignments, assignment_submissions, learning_materials, activity_logs, users,
-    material_files, submission_files,
-    grade_record, grade_items, grade_scores, period_grades,
-    table_of_specifications, tos_competencies,
-};
-
-/// Record entry in the manifest (id + updated_at + deleted flag)
-#[derive(Debug, Clone)]
-#[allow(dead_code)]
-pub struct ManifestEntry {
-    pub id: Uuid,
-    pub updated_at: NaiveDateTime,
-    pub deleted: bool,
-}
-
-/// Get records with pagination
-#[derive(Debug, Clone)]
-pub struct PaginatedRecords {
-    pub records: Vec<Value>,
-}
+use crate::db::repositories::repository_operations::manifest as ops;
+pub use ops::{ManifestEntry, PaginatedRecords};
 
 /// Repository for building and querying manifests
 #[derive(Clone)]
@@ -38,1382 +17,215 @@ impl ManifestRepository {
         Self { db }
     }
 
-    /// Build a map of class_id -> (teacher_id, teacher_username, teacher_full_name)
-    async fn build_teacher_map(
-        &self,
-        class_ids: &[Uuid],
-    ) -> AppResult<std::collections::HashMap<Uuid, (Uuid, String, String)>> {
-        // Fetch all teacher participants for these classes
-        let participants = class_participants::Entity::find()
-            .filter(class_participants::Column::ClassId.is_in(class_ids.to_vec()))
-            .filter(class_participants::Column::RemovedAt.is_null())
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+    // ─── Section A: Manifest Queries ──────────────────────────────────────────
 
-        let mut map = std::collections::HashMap::new();
-
-        for participant in participants {
-            // Fetch the user details for this participant
-            if let Ok(Some(user)) = users::Entity::find_by_id(participant.user_id)
-                .one(&self.db)
-                .await
-            {
-                // Only add if user is a teacher
-                if user.role == "teacher" {
-                    map.insert(
-                        participant.class_id,
-                        (user.id, user.username.clone(), user.full_name.clone()),
-                    );
-                }
-            }
-        }
-
-        Ok(map)
+    pub async fn get_classes_manifest(&self, class_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<ManifestEntry>> {
+        ops::get_classes_manifest(&self.db, class_ids).await
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    // SECTION A: Manifest Queries
-    // Used by: EntitlementService::get_user_manifest()
-    // Returns lightweight ManifestEntry (id + updated_at + deleted flag only)
-    // ─────────────────────────────────────────────────────────────────────────────
-
-    /// Get manifest entries for classes (with timestamps for delta sync)
-    pub async fn get_classes_manifest(
-        &self,
-        class_ids: Vec<Uuid>,
-    ) -> AppResult<Vec<ManifestEntry>> {
-        let records = classes::Entity::find()
-            .filter(classes::Column::Id.is_in(class_ids))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        Ok(records
-            .into_iter()
-            .map(|r| ManifestEntry {
-                id: r.id,
-                updated_at: r.updated_at,
-                deleted: false, // Classes don't have soft delete column yet
-            })
-            .collect())
+    pub async fn get_all_assessment_submissions_manifest(&self, assessment_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<ManifestEntry>> {
+        ops::get_all_assessment_submissions_manifest(&self.db, assessment_ids).await
     }
 
-    /// Get manifest entries for all assessment submissions under given assessments (teacher/admin)
-    pub async fn get_all_assessment_submissions_manifest(
-        &self,
-        assessment_ids: Vec<Uuid>,
-    ) -> AppResult<Vec<ManifestEntry>> {
-        let records = assessment_submissions::Entity::find()
-            .filter(assessment_submissions::Column::AssessmentId.is_in(assessment_ids))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        Ok(records
-            .into_iter()
-            .map(|r| ManifestEntry {
-                id: r.id,
-                updated_at: r.updated_at,
-                deleted: false,
-            })
-            .collect())
+    pub async fn get_enrollments_manifest(&self, class_ids: Vec<Uuid>, user_id: Uuid, user_role: &str) -> crate::utils::AppResult<Vec<ManifestEntry>> {
+        ops::get_enrollments_manifest(&self.db, class_ids, user_id, user_role).await
     }
 
-    /// Get manifest entries for enrollments (class participants with student role)
-    /// For students, only returns their own enrollment records.
-    /// For teachers/admins, returns all student enrollments in their classes.
-    pub async fn get_enrollments_manifest(
-        &self,
-        class_ids: Vec<Uuid>,
-        user_id: Uuid,
-        user_role: &str,
-    ) -> AppResult<Vec<ManifestEntry>> {
-        let mut query = class_participants::Entity::find()
-            .filter(class_participants::Column::ClassId.is_in(class_ids))
-            .filter(class_participants::Column::RemovedAt.is_null());
-
-        if user_role == "student" {
-            query = query.filter(class_participants::Column::UserId.eq(user_id));
-        }
-
-        let participants = query
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        // Filter to only include students based on users.role
-        let mut result = Vec::new();
-        for p in participants {
-            if let Ok(Some(user)) = users::Entity::find_by_id(p.user_id)
-                .one(&self.db)
-                .await
-            {
-                if user.role == "student" {
-                    result.push(ManifestEntry {
-                        id: p.id,
-                        updated_at: p.joined_at,
-                        deleted: p.removed_at.is_some(),
-                    });
-                }
-            }
-        }
-
-        Ok(result)
+    pub async fn get_assessments_manifest(&self, class_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<ManifestEntry>> {
+        ops::get_assessments_manifest(&self.db, class_ids).await
     }
 
-    /// Get manifest entries for assessments in classes
-    pub async fn get_assessments_manifest(
-        &self,
-        class_ids: Vec<Uuid>,
-    ) -> AppResult<Vec<ManifestEntry>> {
-        let records = assessments::Entity::find()
-            .filter(assessments::Column::ClassId.is_in(class_ids))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        Ok(records
-            .into_iter()
-            .map(|r| ManifestEntry {
-                id: r.id,
-                updated_at: r.updated_at,
-                deleted: r.deleted_at.is_some(),
-            })
-            .collect())
+    pub async fn get_questions_manifest(&self, assessment_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<ManifestEntry>> {
+        ops::get_questions_manifest(&self.db, assessment_ids).await
     }
 
-    /// Get manifest entries for assessment questions
-    pub async fn get_questions_manifest(
-        &self,
-        assessment_ids: Vec<Uuid>,
-    ) -> AppResult<Vec<ManifestEntry>> {
-        let records = assessment_questions::Entity::find()
-            .filter(assessment_questions::Column::AssessmentId.is_in(assessment_ids))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        Ok(records
-            .into_iter()
-            .map(|r| ManifestEntry {
-                id: r.id,
-                updated_at: r.updated_at,
-                deleted: r.deleted_at.is_some(),
-            })
-            .collect())
+    pub async fn get_assessment_submissions_manifest(&self, user_id: Uuid, assessment_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<ManifestEntry>> {
+        ops::get_assessment_submissions_manifest(&self.db, user_id, assessment_ids).await
     }
 
-    /// Get manifest entries for assessment submissions (user-specific)
-    pub async fn get_assessment_submissions_manifest(
-        &self,
-        user_id: Uuid,
-        assessment_ids: Vec<Uuid>,
-    ) -> AppResult<Vec<ManifestEntry>> {
-        let records = assessment_submissions::Entity::find()
-            .filter(assessment_submissions::Column::UserId.eq(user_id))
-            .filter(assessment_submissions::Column::AssessmentId.is_in(assessment_ids))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        Ok(records
-            .into_iter()
-            .map(|r| ManifestEntry {
-                id: r.id,
-                updated_at: r.updated_at,
-                deleted: false,
-            })
-            .collect())
+    pub async fn get_published_assessments_manifest(&self, class_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<ManifestEntry>> {
+        ops::get_published_assessments_manifest(&self.db, class_ids).await
     }
 
-    /// Get manifest entries for assessments (published only)
-    pub async fn get_published_assessments_manifest(
-        &self,
-        class_ids: Vec<Uuid>,
-    ) -> AppResult<Vec<ManifestEntry>> {
-        let records = assessments::Entity::find()
-            .filter(assessments::Column::ClassId.is_in(class_ids))
-            .filter(assessments::Column::IsPublished.eq(true))
-            .filter(assessments::Column::DeletedAt.is_null())
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        Ok(records
-            .into_iter()
-            .map(|r| ManifestEntry {
-                id: r.id,
-                updated_at: r.updated_at,
-                deleted: false,
-            })
-            .collect())
+    pub async fn get_assignments_manifest(&self, class_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<ManifestEntry>> {
+        ops::get_assignments_manifest(&self.db, class_ids).await
     }
 
-    /// Get manifest entries for assignments
-    pub async fn get_assignments_manifest(
-        &self,
-        class_ids: Vec<Uuid>,
-    ) -> AppResult<Vec<ManifestEntry>> {
-        let records = assignments::Entity::find()
-            .filter(assignments::Column::ClassId.is_in(class_ids))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        Ok(records
-            .into_iter()
-            .map(|r| ManifestEntry {
-                id: r.id,
-                updated_at: r.updated_at,
-                deleted: r.deleted_at.is_some(),
-            })
-            .collect())
+    pub async fn get_published_assignments_manifest(&self, class_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<ManifestEntry>> {
+        ops::get_published_assignments_manifest(&self.db, class_ids).await
     }
 
-    /// Get manifest entries for assignments (published only)
-    pub async fn get_published_assignments_manifest(
-        &self,
-        class_ids: Vec<Uuid>,
-    ) -> AppResult<Vec<ManifestEntry>> {
-        let records = assignments::Entity::find()
-            .filter(assignments::Column::ClassId.is_in(class_ids))
-            .filter(assignments::Column::IsPublished.eq(true))
-            .filter(assignments::Column::DeletedAt.is_null())
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        Ok(records
-            .into_iter()
-            .map(|r| ManifestEntry {
-                id: r.id,
-                updated_at: r.updated_at,
-                deleted: false,
-            })
-            .collect())
+    pub async fn get_assignment_submissions_manifest(&self, user_id: Uuid, assignment_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<ManifestEntry>> {
+        ops::get_assignment_submissions_manifest(&self.db, user_id, assignment_ids).await
     }
 
-    /// Get manifest entries for assignment submissions (student's own submissions)
-    pub async fn get_assignment_submissions_manifest(
-        &self,
-        user_id: Uuid,
-        assignment_ids: Vec<Uuid>,
-    ) -> AppResult<Vec<ManifestEntry>> {
-        let records = assignment_submissions::Entity::find()
-            .filter(assignment_submissions::Column::StudentId.eq(user_id))
-            .filter(assignment_submissions::Column::AssignmentId.is_in(assignment_ids))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        Ok(records
-            .into_iter()
-            .map(|r| ManifestEntry {
-                id: r.id,
-                updated_at: r.updated_at,
-                deleted: false,
-            })
-            .collect())
+    pub async fn get_all_assignment_submissions_manifest(&self, assignment_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<ManifestEntry>> {
+        ops::get_all_assignment_submissions_manifest(&self.db, assignment_ids).await
     }
 
-    /// Get manifest entries for all assignment submissions for given assignments (teacher/admin view)
-    pub async fn get_all_assignment_submissions_manifest(
-        &self,
-        assignment_ids: Vec<Uuid>,
-    ) -> AppResult<Vec<ManifestEntry>> {
-        let records = assignment_submissions::Entity::find()
-            .filter(assignment_submissions::Column::AssignmentId.is_in(assignment_ids))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        Ok(records
-            .into_iter()
-            .map(|r| ManifestEntry {
-                id: r.id,
-                updated_at: r.updated_at,
-                deleted: false,
-            })
-            .collect())
+    pub async fn get_materials_manifest(&self, class_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<ManifestEntry>> {
+        ops::get_materials_manifest(&self.db, class_ids).await
     }
 
-    /// Get manifest entries for learning materials
-    pub async fn get_materials_manifest(
-        &self,
-        class_ids: Vec<Uuid>,
-    ) -> AppResult<Vec<ManifestEntry>> {
-        let records = learning_materials::Entity::find()
-            .filter(learning_materials::Column::ClassId.is_in(class_ids))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        Ok(records
-            .into_iter()
-            .map(|r| ManifestEntry {
-                id: r.id,
-                updated_at: r.updated_at,
-                deleted: r.deleted_at.is_some(),
-            })
-            .collect())
+    pub async fn get_activity_logs_manifest(&self, user_id: Uuid, user_role: &str) -> crate::utils::AppResult<Vec<ManifestEntry>> {
+        ops::get_activity_logs_manifest(&self.db, user_id, user_role).await
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    // SECTION B: Paginated Full-Data Queries
-    // Used by: SyncFullService (batch request branch)
-    // Returns full JSON records with all fields
-    // ─────────────────────────────────────────────────────────────────────────────
+    // ─── Section B: Paginated Full-Data Queries ───────────────────────────────
 
-    /// Get full paginated records for a set of IDs
-    /// limit: max records per page (capped at 500)
-    pub async fn get_classes_paginated(
-        &self,
-        class_ids: Vec<Uuid>,
-        limit: i64,
-    ) -> AppResult<PaginatedRecords> {
-        if class_ids.is_empty() {
-            // No classes, return empty result
-            return Ok(PaginatedRecords {
-                records: vec![],
-            });
-        }
-
-        let teacher_map = self.build_teacher_map(&class_ids).await?;
-
-        let query = classes::Entity::find()
-            .filter(classes::Column::Id.is_in(class_ids));
-        Self::paginate_query(&self.db, query, limit, move |r| {
-            let (teacher_id, teacher_username, teacher_full_name) = teacher_map
-                .get(&r.id)
-                .map(|t| (t.0.to_string(), t.1.clone(), t.2.clone()))
-                .unwrap_or_else(|| ("".to_string(), "".to_string(), "".to_string()));
-
-            json!({
-                "id": r.id.to_string(),
-                "title": r.title,
-                "description": r.description,
-                "is_archived": r.is_archived,
-                "is_advisory": r.is_advisory,
-                "grading_period_type": r.grading_period_type,
-                "grade_level": r.grade_level,
-                "school_year": r.school_year,
-                "teacher_id": teacher_id,
-                "teacher_username": teacher_username,
-                "teacher_full_name": teacher_full_name,
-                "created_at": r.created_at.to_string(),
-                "updated_at": r.updated_at.to_string(),
-                "deleted_at": r.deleted_at.map(|d| d.to_string()),
-                "student_count": 0,
-            })
-        })
-        .await
+    pub async fn get_classes_paginated(&self, class_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
+        ops::get_classes_paginated(&self.db, class_ids, limit).await
     }
 
-    /// Get full paginated records for assessments
-    pub async fn get_assessments_paginated(
-        &self,
-        assessment_ids: Vec<Uuid>,
-        limit: i64,
-    ) -> AppResult<PaginatedRecords> {
-        let query = assessments::Entity::find()
-            .filter(assessments::Column::Id.is_in(assessment_ids));
-        Self::paginate_query(&self.db, query, limit, |r| {
-            json!({
-                "id": r.id.to_string(),
-                "class_id": r.class_id.to_string(),
-                "title": r.title,
-                "description": r.description,
-                "time_limit_minutes": r.time_limit_minutes,
-                "open_at": r.open_at.to_string(),
-                "close_at": r.close_at.to_string(),
-                "show_results_immediately": r.show_results_immediately,
-                "is_published": r.is_published,
-                "results_released": r.results_released,
-                "order_index": r.order_index,
-                "total_points": r.total_points,
-                "grading_period_number": r.grading_period_number,
-                "component": r.component,
-                "tos_id": r.tos_id,
-                "created_at": r.created_at.to_string(),
-                "updated_at": r.updated_at.to_string(),
-                "deleted_at": r.deleted_at.map(|d| d.to_string()),
-            })
-        })
-        .await
+    pub async fn get_assessments_paginated(&self, assessment_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
+        ops::get_assessments_paginated(&self.db, assessment_ids, limit).await
     }
 
-    /// Get full paginated records for assignments
-    pub async fn get_assignments_paginated(
-        &self,
-        assignment_ids: Vec<Uuid>,
-        limit: i64,
-    ) -> AppResult<PaginatedRecords> {
-        let query = assignments::Entity::find()
-            .filter(assignments::Column::Id.is_in(assignment_ids));
-        Self::paginate_query(&self.db, query, limit, |r| {
-            json!({
-                "id": r.id.to_string(),
-                "class_id": r.class_id.to_string(),
-                "title": r.title,
-                "instructions": r.instructions,
-                "total_points": r.total_points,
-                "allows_text_submission": r.allows_text_submission,
-                "allows_file_submission": r.allows_file_submission,
-                "allowed_file_types": r.allowed_file_types,
-                "max_file_size_mb": r.max_file_size_mb,
-                "due_at": r.due_at.to_string(),
-                "is_published": r.is_published,
-                "order_index": r.order_index,
-                "grading_period_number": r.grading_period_number,
-                "component": r.component,
-                "created_at": r.created_at.to_string(),
-                "updated_at": r.updated_at.to_string(),
-                "deleted_at": r.deleted_at.map(|d| d.to_string()),
-            })
-        })
-        .await
+    pub async fn get_assignments_paginated(&self, assignment_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
+        ops::get_assignments_paginated(&self.db, assignment_ids, limit).await
     }
 
-    /// Get full paginated records for learning materials
-    pub async fn get_materials_paginated(
-        &self,
-        material_ids: Vec<Uuid>,
-        limit: i64,
-    ) -> AppResult<PaginatedRecords> {
-        let query = learning_materials::Entity::find()
-            .filter(learning_materials::Column::Id.is_in(material_ids));
-        Self::paginate_query(&self.db, query, limit, |r| {
-            json!({
-                "id": r.id.to_string(),
-                "class_id": r.class_id.to_string(),
-                "title": r.title,
-                "description": r.description,
-                "content_text": r.content_text,
-                "order_index": r.order_index,
-                "created_at": r.created_at.to_string(),
-                "updated_at": r.updated_at.to_string(),
-            })
-        })
-        .await
+    pub async fn get_materials_paginated(&self, material_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
+        ops::get_materials_paginated(&self.db, material_ids, limit).await
     }
 
-    /// Get full paginated records for class enrollments (class participants with student role)
-    pub async fn get_enrollments_paginated(
-        &self,
-        enrollment_ids: Vec<Uuid>,
-        limit: i64,
-    ) -> AppResult<PaginatedRecords> {
-        let query = class_participants::Entity::find()
-            .filter(class_participants::Column::Id.is_in(enrollment_ids));
-
-        let all_records = query.all(&self.db).await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        // Filter to only students and build response
-        let mut result = Vec::new();
-        for r in all_records {
-            if let Ok(Some(user)) = users::Entity::find_by_id(r.user_id)
-                .one(&self.db)
-                .await
-            {
-                if user.role == "student" {
-                    result.push(json!({
-                        "id": r.id.to_string(),
-                        "class_id": r.class_id.to_string(),
-                        "user_id": r.user_id.to_string(),
-                        "student_id": r.user_id.to_string(),
-                        "joined_at": r.joined_at.to_string(),
-                        "enrolled_at": r.joined_at.to_string(),
-                    }));
-                    if result.len() >= limit as usize {
-                        break;
-                    }
-                }
-            }
-        }
-
-        Ok(PaginatedRecords {
-            records: result,
-        })
+    pub async fn get_enrollments_paginated(&self, enrollment_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
+        ops::get_enrollments_paginated(&self.db, enrollment_ids, limit).await
     }
 
-    /// Get full paginated records for assessment questions
-    pub async fn get_questions_paginated(
-        &self,
-        question_ids: Vec<Uuid>,
-        limit: i64,
-    ) -> AppResult<PaginatedRecords> {
-        let query = assessment_questions::Entity::find()
-            .filter(assessment_questions::Column::Id.is_in(question_ids));
-        Self::paginate_query(&self.db, query, limit, |r| {
-            json!({
-                "id": r.id.to_string(),
-                "assessment_id": r.assessment_id.to_string(),
-                "question_type": r.question_type,
-                "question_text": r.question_text,
-                "points": r.points,
-                "order_index": r.order_index,
-                "is_multi_select": r.is_multi_select,
-                "updated_at": r.updated_at.to_string(),
-                "deleted_at": r.deleted_at.map(|d| d.to_string()),
-            })
-        })
-        .await
+    pub async fn get_questions_paginated(&self, question_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
+        ops::get_questions_paginated(&self.db, question_ids, limit).await
     }
 
-    /// Get manifest for activity logs - admin can see all, users see their own
-    pub async fn get_activity_logs_manifest(
-        &self,
-        user_id: Uuid,
-        user_role: &str,
-    ) -> AppResult<Vec<ManifestEntry>> {
-        let records = if user_role == "admin" {
-            // Admins see all activity logs
-            activity_logs::Entity::find()
-                .all(&self.db)
-                .await
-                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
-        } else {
-            // Regular users see only their own activity logs
-            activity_logs::Entity::find()
-                .filter(activity_logs::Column::UserId.eq(user_id))
-                .all(&self.db)
-                .await
-                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
-        };
-
-        Ok(records
-            .into_iter()
-            .map(|r| ManifestEntry {
-                id: r.id,
-                updated_at: r.created_at,
-                deleted: false, // Activity logs are never soft-deleted
-            })
-            .collect())
+    pub async fn get_users_paginated(&self, user_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
+        ops::get_users_paginated(&self.db, user_ids, limit).await
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    // SECTION C: Delta / "Since" Queries
-    // Used by: SyncDeltaService::get_deltas()
-    // Returns records modified after a given timestamp (for incremental sync)
-    // ─────────────────────────────────────────────────────────────────────────────
-
-    /// Get classes that have been updated since a given time
-    pub async fn get_classes_since(
-        &self,
-        class_ids: Vec<Uuid>,
-        since: NaiveDateTime,
-    ) -> AppResult<Vec<Value>> {
-        if class_ids.is_empty() {
-            return Ok(vec![]);
-        }
-
-        let records = classes::Entity::find()
-            .filter(classes::Column::Id.is_in(class_ids.clone()))
-            .filter(classes::Column::UpdatedAt.gt(since))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        let teacher_map = self.build_teacher_map(&class_ids).await?;
-
-        let records: Vec<Value> = records
-            .into_iter()
-            .map(move |r| {
-                let (teacher_id, teacher_username, teacher_full_name) = teacher_map
-                    .get(&r.id)
-                    .map(|t| (t.0.to_string(), t.1.clone(), t.2.clone()))
-                    .unwrap_or_else(|| ("".to_string(), "".to_string(), "".to_string()));
-
-                json!({
-                    "id": r.id.to_string(),
-                    "title": r.title,
-                    "description": r.description,
-                    "is_archived": r.is_archived,
-                    "is_advisory": r.is_advisory,
-                    "grading_period_type": r.grading_period_type,
-                    "grade_level": r.grade_level,
-                    "school_year": r.school_year,
-                    "teacher_id": teacher_id,
-                    "teacher_username": teacher_username,
-                    "teacher_full_name": teacher_full_name,
-                    "created_at": r.created_at.to_string(),
-                    "updated_at": r.updated_at.to_string(),
-                    "deleted_at": r.deleted_at.map(|d| d.to_string()),
-                    "student_count": 0,
-                })
-            })
-            .collect();
-
-        Ok(records)
+    pub async fn get_student_submissions_for_assessments(&self, user_id: Uuid, assessment_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
+        ops::get_student_submissions_for_assessments(&self.db, user_id, assessment_ids, limit).await
     }
 
-    /// Get assessments that have been updated since a given time
-    pub async fn get_assessments_since(
-        &self,
-        assessment_ids: Vec<Uuid>,
-        since: NaiveDateTime,
-    ) -> AppResult<Vec<Value>> {
-        let records = assessments::Entity::find()
-            .filter(assessments::Column::Id.is_in(assessment_ids))
-            .filter(assessments::Column::UpdatedAt.gt(since))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        let records: Vec<Value> = records
-            .into_iter()
-            .map(|r| {
-                json!({
-                    "id": r.id.to_string(),
-                    "class_id": r.class_id.to_string(),
-                    "title": r.title,
-                    "description": r.description,
-                    "time_limit_minutes": r.time_limit_minutes,
-                    "open_at": r.open_at.to_string(),
-                    "close_at": r.close_at.to_string(),
-                    "show_results_immediately": r.show_results_immediately,
-                    "is_published": r.is_published,
-                    "results_released": r.results_released,
-                    "order_index": r.order_index,
-                    "total_points": r.total_points,
-                    "created_at": r.created_at.to_string(),
-                    "updated_at": r.updated_at.to_string(),
-                    "deleted_at": r.deleted_at.map(|d| d.to_string()),
-                })
-            })
-            .collect();
-
-        Ok(records)
+    pub async fn get_student_assignment_submissions_for_assignments(&self, user_id: Uuid, assignment_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
+        ops::get_student_assignment_submissions_for_assignments(&self.db, user_id, assignment_ids, limit).await
     }
 
-    /// Get assignments that have been updated since a given time
-    pub async fn get_assignments_since(
-        &self,
-        assignment_ids: Vec<Uuid>,
-        since: NaiveDateTime,
-    ) -> AppResult<Vec<Value>> {
-        let records = assignments::Entity::find()
-            .filter(assignments::Column::Id.is_in(assignment_ids))
-            .filter(assignments::Column::UpdatedAt.gt(since))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        let records: Vec<Value> = records
-            .into_iter()
-            .map(|r| {
-                json!({
-                    "id": r.id.to_string(),
-                    "class_id": r.class_id.to_string(),
-                    "title": r.title,
-                    "instructions": r.instructions,
-                    "total_points": r.total_points,
-                    "allows_text_submission": r.allows_text_submission,
-                    "allows_file_submission": r.allows_file_submission,
-                    "allowed_file_types": r.allowed_file_types,
-                    "max_file_size_mb": r.max_file_size_mb,
-                    "due_at": r.due_at.to_string(),
-                    "is_published": r.is_published,
-                    "order_index": r.order_index,
-                    "grading_period_number": r.grading_period_number,
-                    "component": r.component,
-                    "created_at": r.created_at.to_string(),
-                    "updated_at": r.updated_at.to_string(),
-                    "deleted_at": r.deleted_at.map(|d| d.to_string()),
-                })
-            })
-            .collect();
-
-        Ok(records)
+    pub async fn get_all_assessment_submissions_for_assessments(&self, assessment_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
+        ops::get_all_assessment_submissions_for_assessments(&self.db, assessment_ids, limit).await
     }
 
-    /// Get learning materials that have been updated since a given time
-    pub async fn get_materials_since(
-        &self,
-        material_ids: Vec<Uuid>,
-        since: NaiveDateTime,
-    ) -> AppResult<Vec<Value>> {
-        let records = learning_materials::Entity::find()
-            .filter(learning_materials::Column::Id.is_in(material_ids))
-            .filter(learning_materials::Column::UpdatedAt.gt(since))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        let records: Vec<Value> = records
-            .into_iter()
-            .map(|r| {
-                json!({
-                    "id": r.id.to_string(),
-                    "class_id": r.class_id.to_string(),
-                    "title": r.title,
-                    "description": r.description,
-                    "content_text": r.content_text,
-                    "order_index": r.order_index,
-                    "created_at": r.created_at.to_string(),
-                    "updated_at": r.updated_at.to_string(),
-                    "deleted_at": r.deleted_at.map(|d| d.to_string()),
-                })
-            })
-            .collect();
-
-        Ok(records)
+    pub async fn get_all_assignment_submissions_for_assignments(&self, assignment_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
+        ops::get_all_assignment_submissions_for_assignments(&self.db, assignment_ids, limit).await
     }
 
-    /// Get class enrollments that have been updated since a given time
-    pub async fn get_enrollments_since(
-        &self,
-        enrollment_ids: Vec<Uuid>,
-        since: NaiveDateTime,
-    ) -> AppResult<Vec<Value>> {
-        let participants = class_participants::Entity::find()
-            .filter(class_participants::Column::Id.is_in(enrollment_ids))
-            .filter(class_participants::Column::JoinedAt.gt(since))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        // Filter to only students based on users.role
-        let mut records: Vec<Value> = Vec::new();
-        for r in participants {
-            if let Ok(Some(user)) = users::Entity::find_by_id(r.user_id)
-                .one(&self.db)
-                .await
-            {
-                if user.role == "student" {
-                    records.push(json!({
-                        "id": r.id.to_string(),
-                        "class_id": r.class_id.to_string(),
-                        "user_id": r.user_id.to_string(),
-                        "student_id": r.user_id.to_string(),
-                        "joined_at": r.joined_at.to_string(),
-                        "enrolled_at": r.joined_at.to_string(),
-                        "removed_at": r.removed_at.map(|d| d.to_string()),
-                    }));
-                }
-            }
-        }
-
-        Ok(records)
+    pub async fn get_material_files_for_materials(&self, material_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_material_files_for_materials(&self.db, material_ids).await
     }
 
-    /// Get assessment questions that have been updated since a given time
-    pub async fn get_questions_since(
-        &self,
-        question_ids: Vec<Uuid>,
-        since: NaiveDateTime,
-    ) -> AppResult<Vec<Value>> {
-        let records = assessment_questions::Entity::find()
-            .filter(assessment_questions::Column::Id.is_in(question_ids))
-            .filter(assessment_questions::Column::UpdatedAt.gt(since))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        let records: Vec<Value> = records
-            .into_iter()
-            .map(|r| {
-                json!({
-                    "id": r.id.to_string(),
-                    "assessment_id": r.assessment_id.to_string(),
-                    "question_type": r.question_type,
-                    "question_text": r.question_text,
-                    "points": r.points,
-                    "order_index": r.order_index,
-                    "is_multi_select": r.is_multi_select,
-                    "updated_at": r.updated_at.to_string(),
-                    "deleted_at": r.deleted_at.map(|d| d.to_string()),
-                })
-            })
-            .collect();
-
-        Ok(records)
+    pub async fn get_submission_files_for_submissions(&self, submission_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_submission_files_for_submissions(&self.db, submission_ids).await
     }
 
-    /// Get assessment submissions that have been updated since a given time
-    pub async fn get_assessment_submissions_since(
-        &self,
-        _user_id: Uuid,
-        submission_ids: Vec<Uuid>,
-        since: NaiveDateTime,
-    ) -> AppResult<Vec<Value>> {
-        let records = assessment_submissions::Entity::find()
-            .filter(assessment_submissions::Column::Id.is_in(submission_ids))
-            .filter(assessment_submissions::Column::UpdatedAt.gt(since))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
+    // ─── Section C: Delta / Since Queries ────────────────────────────────────
 
-        let records: Vec<Value> = records
-            .into_iter()
-            .map(|r| {
-                json!({
-                    "id": r.id.to_string(),
-                    "assessment_id": r.assessment_id.to_string(),
-                    "user_id": r.user_id.to_string(),
-                    "started_at": r.started_at.to_string(),
-                    "submitted_at": r.submitted_at.map(|d| d.to_string()),
-                    "total_points": r.total_points,
-                    "created_at": r.created_at.to_string(),
-                    "updated_at": r.updated_at.to_string(),
-                    "deleted_at": r.deleted_at.map(|d| d.to_string()),
-                })
-            })
-            .collect();
-
-        Ok(records)
+    pub async fn get_classes_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_classes_since(&self.db, class_ids, since).await
     }
 
-    /// Get assignment submissions that have been updated since a given time
-    pub async fn get_assignment_submissions_since(
-        &self,
-        _user_id: Uuid,
-        submission_ids: Vec<Uuid>,
-        since: NaiveDateTime,
-    ) -> AppResult<Vec<Value>> {
-        // Note: user_id parameter is kept for signature compatibility but not used here
-        // because submission_ids are already pre-filtered by the manifest (which is role-aware)
-        let records = assignment_submissions::Entity::find()
-            .filter(assignment_submissions::Column::Id.is_in(submission_ids))
-            .filter(assignment_submissions::Column::UpdatedAt.gt(since))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        let records: Vec<Value> = records
-            .into_iter()
-            .map(|r| {
-                json!({
-                    "id": r.id.to_string(),
-                    "assignment_id": r.assignment_id.to_string(),
-                    "student_id": r.student_id.to_string(),
-                    "status": r.status,
-                    "text_content": r.text_content,
-                    "submitted_at": r.submitted_at.map(|d| d.to_string()),
-                    "points": r.points,
-                    "feedback": r.feedback,
-                    "graded_at": r.graded_at.map(|d| d.to_string()),
-                    "graded_by": r.graded_by.map(|id| id.to_string()),
-                    "created_at": r.created_at.to_string(),
-                    "updated_at": r.updated_at.to_string(),
-                    "deleted_at": r.deleted_at.map(|d| d.to_string()),
-                })
-            })
-            .collect();
-
-        Ok(records)
+    pub async fn get_assessments_since(&self, assessment_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_assessments_since(&self.db, assessment_ids, since).await
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    // SECTION D: Role-Aware Submission Queries
-    // Used by: SyncFullService (submission fetch, role-based branching)
-    // ─────────────────────────────────────────────────────────────────────────────
-
-    /// Get assessment submissions for a student filtered by assessment IDs (for batch full sync)
-    /// Used when a student requests full sync for specific classes (assessments)
-    pub async fn get_student_submissions_for_assessments(
-        &self,
-        user_id: Uuid,
-        assessment_ids: Vec<Uuid>,
-        limit: i64,
-    ) -> AppResult<PaginatedRecords> {
-        let query = assessment_submissions::Entity::find()
-            .filter(assessment_submissions::Column::UserId.eq(user_id))
-            .filter(assessment_submissions::Column::AssessmentId.is_in(assessment_ids));
-        Self::paginate_query(&self.db, query, limit, |r| {
-            json!({
-                "id": r.id.to_string(),
-                "assessment_id": r.assessment_id.to_string(),
-                "user_id": r.user_id.to_string(),
-                "started_at": r.started_at.to_string(),
-                "submitted_at": r.submitted_at.map(|d| d.to_string()),
-                "total_points": r.total_points,
-                "is_submitted": if r.submitted_at.is_some() { 1u64 } else { 0u64 },
-                "auto_score": r.total_points,
-                "final_score": r.total_points,
-                "created_at": r.created_at.to_string(),
-                "updated_at": r.updated_at.to_string(),
-                "deleted_at": r.deleted_at.map(|d| d.to_string()),
-            })
-        })
-        .await
+    pub async fn get_assignments_since(&self, assignment_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_assignments_since(&self.db, assignment_ids, since).await
     }
 
-    /// Get assignment submissions for a student filtered by assignment IDs (for batch full sync)
-    /// Used when a student requests full sync for specific classes (assignments)
-    pub async fn get_student_assignment_submissions_for_assignments(
-        &self,
-        user_id: Uuid,
-        assignment_ids: Vec<Uuid>,
-        limit: i64,
-    ) -> AppResult<PaginatedRecords> {
-        let query = assignment_submissions::Entity::find()
-            .filter(assignment_submissions::Column::StudentId.eq(user_id))
-            .filter(assignment_submissions::Column::AssignmentId.is_in(assignment_ids));
-        Self::paginate_query(&self.db, query, limit, |r| {
-            json!({
-                "id": r.id.to_string(),
-                "assignment_id": r.assignment_id.to_string(),
-                "student_id": r.student_id.to_string(),
-                "status": r.status,
-                "text_content": r.text_content,
-                "submitted_at": r.submitted_at.map(|d| d.to_string()),
-                "points": r.points,
-                "feedback": r.feedback,
-                "graded_at": r.graded_at.map(|d| d.to_string()),
-                "graded_by": r.graded_by.map(|id| id.to_string()),
-                "created_at": r.created_at.to_string(),
-                "updated_at": r.updated_at.to_string(),
-                "deleted_at": r.deleted_at.map(|d| d.to_string()),
-            })
-        })
-        .await
+    pub async fn get_materials_since(&self, material_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_materials_since(&self.db, material_ids, since).await
     }
 
-    /// Get ALL assessment submissions for given assessments (not filtered by student_id)
-    /// Used by teachers/admins to fetch submissions for all students
-    pub async fn get_all_assessment_submissions_for_assessments(
-        &self,
-        assessment_ids: Vec<Uuid>,
-        limit: i64,
-    ) -> AppResult<PaginatedRecords> {
-        let query = assessment_submissions::Entity::find()
-            .filter(assessment_submissions::Column::AssessmentId.is_in(assessment_ids));
-        Self::paginate_query(&self.db, query, limit, |r| {
-            json!({
-                "id": r.id.to_string(),
-                "assessment_id": r.assessment_id.to_string(),
-                "user_id": r.user_id.to_string(),
-                "started_at": r.started_at.to_string(),
-                "submitted_at": r.submitted_at.map(|d| d.to_string()),
-                "total_points": r.total_points,
-                "created_at": r.created_at.to_string(),
-                "updated_at": r.updated_at.to_string(),
-                "deleted_at": r.deleted_at.map(|d| d.to_string()),
-            })
-        })
-        .await
+    pub async fn get_enrollments_since(&self, enrollment_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_enrollments_since(&self.db, enrollment_ids, since).await
     }
 
-    /// Get ALL assignment submissions for given assignments (not filtered by student_id)
-    /// Used by teachers/admins to fetch submissions for all students
-    pub async fn get_all_assignment_submissions_for_assignments(
-        &self,
-        assignment_ids: Vec<Uuid>,
-        limit: i64,
-    ) -> AppResult<PaginatedRecords> {
-        let query = assignment_submissions::Entity::find()
-            .filter(assignment_submissions::Column::AssignmentId.is_in(assignment_ids));
-        Self::paginate_query(&self.db, query, limit, |r| {
-            json!({
-                "id": r.id.to_string(),
-                "assignment_id": r.assignment_id.to_string(),
-                "student_id": r.student_id.to_string(),
-                "status": r.status,
-                "text_content": r.text_content,
-                "submitted_at": r.submitted_at.map(|d| d.to_string()),
-                "points": r.points,
-                "feedback": r.feedback,
-                "graded_at": r.graded_at.map(|d| d.to_string()),
-                "created_at": r.created_at.to_string(),
-                "updated_at": r.updated_at.to_string(),
-                "deleted_at": r.deleted_at.map(|d| d.to_string()),
-            })
-        })
-        .await
+    pub async fn get_questions_since(&self, question_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_questions_since(&self.db, question_ids, since).await
     }
 
-    /// Get users by IDs with full profile data
-    pub async fn get_users_paginated(
-        &self,
-        user_ids: Vec<Uuid>,
-        limit: i64,
-    ) -> AppResult<PaginatedRecords> {
-        let query = users::Entity::find()
-            .filter(users::Column::Id.is_in(user_ids));
-        Self::paginate_query(&self.db, query, limit, |r| {
-            let is_active = r.account_status != "locked" && r.account_status != "deactivated";
-            json!({
-                "id": r.id.to_string(),
-                "username": r.username,
-                "full_name": r.full_name,
-                "role": r.role,
-                "account_status": r.account_status,
-                "is_active": is_active,
-                "activated_at": r.activated_at.map(|d| d.to_string()),
-                "created_at": r.created_at.to_string(),
-                "updated_at": r.updated_at.to_string(),
-            })
-        })
-        .await
+    pub async fn get_assessment_submissions_since(&self, user_id: Uuid, submission_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_assessment_submissions_since(&self.db, user_id, submission_ids, since).await
     }
 
-    /// Fetch all material files for the given material IDs.
-    /// Used by full sync to include file metadata with learning materials.
-    pub async fn get_material_files_for_materials(
-        &self,
-        material_ids: Vec<Uuid>,
-    ) -> AppResult<Vec<Value>> {
-        let files = material_files::Entity::find()
-            .filter(material_files::Column::MaterialId.is_in(material_ids))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to fetch material files: {}", e)))?;
-        Ok(files
-            .into_iter()
-            .map(|f| json!({
-                "id": f.id.to_string(),
-                "material_id": f.material_id.to_string(),
-                "file_name": f.file_name,
-                "file_type": f.file_type,
-                "file_size": f.file_size,
-                "uploaded_at": f.uploaded_at.to_string(),
-            }))
-            .collect())
+    pub async fn get_assignment_submissions_since(&self, user_id: Uuid, submission_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_assignment_submissions_since(&self.db, user_id, submission_ids, since).await
     }
 
-    /// Fetch all submission files for the given submission IDs.
-    /// Used by full sync to include file metadata with assessment submissions.
-    pub async fn get_submission_files_for_submissions(
-        &self,
-        submission_ids: Vec<Uuid>,
-    ) -> AppResult<Vec<Value>> {
-        let files = submission_files::Entity::find()
-            .filter(submission_files::Column::SubmissionId.is_in(submission_ids))
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to fetch submission files: {}", e)))?;
-        Ok(files
-            .into_iter()
-            .map(|f| json!({
-                "id": f.id.to_string(),
-                "submission_id": f.submission_id.to_string(),
-                "file_name": f.file_name,
-                "file_type": f.file_type,
-                "file_size": f.file_size,
-                "uploaded_at": f.uploaded_at.to_string(),
-            }))
-            .collect())
+    // ─── Section E: Grading Sync Queries ─────────────────────────────────────
+
+    pub async fn get_grade_configs_for_classes(&self, class_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_grade_configs_for_classes(&self.db, class_ids).await
     }
 
-    /// Generic pagination helper — handles limit capping, has_more detection, and record collection
-    async fn paginate_query<E, F>(
-        db: &DatabaseConnection,
-        query: Select<E>,
-        limit: i64,
-        mapper: F,
-    ) -> AppResult<PaginatedRecords>
-    where
-        E: EntityTrait,
-        E::Model: Send + Sync,
-        F: Fn(E::Model) -> Value,
-    {
-        let effective_limit = std::cmp::min(limit, 500) as u64;
-        let records = query
-            .limit(effective_limit + 1)
-            .all(db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        let records: Vec<Value> = records
-            .into_iter()
-            .take(effective_limit as usize)
-            .map(mapper)
-            .collect();
-        Ok(PaginatedRecords { records })
+    pub async fn get_grade_items_for_classes(&self, class_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_grade_items_for_classes(&self.db, class_ids).await
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    // SECTION E: Grading Sync Queries
-    // ─────────────────────────────────────────────────────────────────────────────
-
-    fn grade_config_to_json(r: grade_record::Model) -> Value {
-        json!({
-            "id": r.id.to_string(),
-            "class_id": r.class_id.to_string(),
-            "grading_period_number": r.grading_period_number,
-            "ww_weight": r.ww_weight,
-            "pt_weight": r.pt_weight,
-            "qa_weight": r.qa_weight,
-            "created_at": r.created_at.to_string(),
-            "updated_at": r.updated_at.to_string(),
-            "deleted_at": r.deleted_at.map(|d| d.to_string()),
-        })
+    pub async fn get_all_grade_scores(&self, grade_item_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_all_grade_scores(&self.db, grade_item_ids).await
     }
 
-    fn tos_to_json(r: table_of_specifications::Model) -> Value {
-        json!({
-            "id": r.id.to_string(),
-            "class_id": r.class_id.to_string(),
-            "grading_period_number": r.grading_period_number,
-            "title": r.title,
-            "classification_mode": r.classification_mode,
-            "total_items": r.total_items,
-            "time_unit": r.time_unit,
-            "easy_percentage": r.easy_percentage,
-            "medium_percentage": r.medium_percentage,
-            "hard_percentage": r.hard_percentage,
-            "remembering_percentage": r.remembering_percentage,
-            "understanding_percentage": r.understanding_percentage,
-            "applying_percentage": r.applying_percentage,
-            "analyzing_percentage": r.analyzing_percentage,
-            "evaluating_percentage": r.evaluating_percentage,
-            "creating_percentage": r.creating_percentage,
-            "created_at": r.created_at.to_string(),
-            "updated_at": r.updated_at.to_string(),
-            "deleted_at": r.deleted_at.map(|d| d.to_string()),
-        })
+    pub async fn get_student_grade_scores(&self, student_id: Uuid, grade_item_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_student_grade_scores(&self.db, student_id, grade_item_ids).await
     }
 
-    fn tos_competency_to_json(r: tos_competencies::Model) -> Value {
-        json!({
-            "id": r.id.to_string(),
-            "tos_id": r.tos_id.to_string(),
-            "competency_code": r.competency_code,
-            "competency_text": r.competency_text,
-            "time_units_taught": r.time_units_taught,
-            "order_index": r.order_index,
-            "easy_count": r.easy_count,
-            "medium_count": r.medium_count,
-            "hard_count": r.hard_count,
-            "remembering_count": r.remembering_count,
-            "understanding_count": r.understanding_count,
-            "applying_count": r.applying_count,
-            "analyzing_count": r.analyzing_count,
-            "evaluating_count": r.evaluating_count,
-            "creating_count": r.creating_count,
-            "created_at": r.created_at.to_string(),
-            "updated_at": r.updated_at.to_string(),
-            "deleted_at": r.deleted_at.map(|d| d.to_string()),
-        })
+    pub async fn get_all_quarterly_grades(&self, class_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_all_quarterly_grades(&self.db, class_ids).await
     }
 
-    fn grade_item_to_json(r: grade_items::Model) -> Value {
-        json!({
-            "id": r.id.to_string(),
-            "class_id": r.class_id.to_string(),
-            "title": r.title,
-            "component": r.component,
-            "grading_period_number": r.grading_period_number,
-            "total_points": r.total_points,
-            "source_type": r.source_type,
-            "source_id": r.source_id,
-            "order_index": r.order_index,
-            "created_at": r.created_at.to_string(),
-            "updated_at": r.updated_at.to_string(),
-            "deleted_at": r.deleted_at.map(|d| d.to_string()),
-        })
+    pub async fn get_table_of_specifications_for_classes(&self, class_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_table_of_specifications_for_classes(&self.db, class_ids).await
     }
 
-    fn grade_score_to_json(r: grade_scores::Model) -> Value {
-        json!({
-            "id": r.id.to_string(),
-            "grade_item_id": r.grade_item_id.to_string(),
-            "student_id": r.student_id.to_string(),
-            "score": r.score,
-            "is_auto_populated": r.is_auto_populated,
-            "override_score": r.override_score,
-            "created_at": r.created_at.to_string(),
-            "updated_at": r.updated_at.to_string(),
-            "deleted_at": r.deleted_at.map(|d| d.to_string()),
-        })
+    pub async fn get_tos_competencies_for_tos_ids(&self, tos_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_tos_competencies_for_tos_ids(&self.db, tos_ids).await
     }
 
-    fn quarterly_grade_to_json(r: period_grades::Model) -> Value {
-        json!({
-            "id": r.id.to_string(),
-            "class_id": r.class_id.to_string(),
-            "student_id": r.student_id.to_string(),
-            "grading_period_number": r.grading_period_number,
-            "initial_grade": r.initial_grade,
-            "transmuted_grade": r.transmuted_grade,
-            "is_locked": r.is_locked,
-            "computed_at": r.computed_at.map(|d| d.to_string()),
-            "created_at": r.created_at.to_string(),
-            "updated_at": r.updated_at.to_string(),
-            "deleted_at": r.deleted_at.map(|d| d.to_string()),
-        })
+    pub async fn get_student_quarterly_grades(&self, student_id: Uuid, class_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_student_quarterly_grades(&self.db, student_id, class_ids).await
     }
 
-    // --- Full sync (paginated) ---
-
-    pub async fn get_grade_configs_for_classes(&self, class_ids: Vec<Uuid>) -> AppResult<Vec<Value>> {
-        if class_ids.is_empty() { return Ok(vec![]); }
-        let records = grade_record::Entity::find()
-            .filter(grade_record::Column::ClassId.is_in(class_ids))
-            .all(&self.db).await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        Ok(records.into_iter().map(Self::grade_config_to_json).collect())
+    pub async fn get_grade_configs_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_grade_configs_since(&self.db, class_ids, since).await
     }
 
-    pub async fn get_grade_items_for_classes(&self, class_ids: Vec<Uuid>) -> AppResult<Vec<Value>> {
-        if class_ids.is_empty() { return Ok(vec![]); }
-        let records = grade_items::Entity::find()
-            .filter(grade_items::Column::ClassId.is_in(class_ids))
-            .all(&self.db).await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        Ok(records.into_iter().map(Self::grade_item_to_json).collect())
+    pub async fn get_grade_items_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_grade_items_since(&self.db, class_ids, since).await
     }
 
-    pub async fn get_all_grade_scores(&self, grade_item_ids: Vec<Uuid>) -> AppResult<Vec<Value>> {
-        if grade_item_ids.is_empty() { return Ok(vec![]); }
-        let records = grade_scores::Entity::find()
-            .filter(grade_scores::Column::GradeItemId.is_in(grade_item_ids))
-            .all(&self.db).await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        Ok(records.into_iter().map(Self::grade_score_to_json).collect())
+    pub async fn get_all_grade_scores_since(&self, grade_item_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_all_grade_scores_since(&self.db, grade_item_ids, since).await
     }
 
-    pub async fn get_student_grade_scores(&self, student_id: Uuid, grade_item_ids: Vec<Uuid>) -> AppResult<Vec<Value>> {
-        if grade_item_ids.is_empty() { return Ok(vec![]); }
-        let records = grade_scores::Entity::find()
-            .filter(grade_scores::Column::GradeItemId.is_in(grade_item_ids))
-            .filter(grade_scores::Column::StudentId.eq(student_id))
-            .all(&self.db).await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        Ok(records.into_iter().map(Self::grade_score_to_json).collect())
+    pub async fn get_student_grade_scores_since(&self, student_id: Uuid, grade_item_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_student_grade_scores_since(&self.db, student_id, grade_item_ids, since).await
     }
 
-    pub async fn get_all_quarterly_grades(&self, class_ids: Vec<Uuid>) -> AppResult<Vec<Value>> {
-        if class_ids.is_empty() { return Ok(vec![]); }
-        let records = period_grades::Entity::find()
-            .filter(period_grades::Column::ClassId.is_in(class_ids))
-            .all(&self.db).await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        Ok(records.into_iter().map(Self::quarterly_grade_to_json).collect())
+    pub async fn get_all_quarterly_grades_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_all_quarterly_grades_since(&self.db, class_ids, since).await
     }
 
-    pub async fn get_table_of_specifications_for_classes(&self, class_ids: Vec<Uuid>) -> AppResult<Vec<Value>> {
-        if class_ids.is_empty() { return Ok(vec![]); }
-        let records = table_of_specifications::Entity::find()
-            .filter(table_of_specifications::Column::ClassId.is_in(class_ids))
-            .all(&self.db).await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        Ok(records.into_iter().map(Self::tos_to_json).collect())
+    pub async fn get_student_quarterly_grades_since(&self, student_id: Uuid, class_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_student_quarterly_grades_since(&self.db, student_id, class_ids, since).await
     }
 
-    pub async fn get_tos_competencies_for_tos_ids(&self, tos_ids: Vec<Uuid>) -> AppResult<Vec<Value>> {
-        if tos_ids.is_empty() { return Ok(vec![]); }
-        let records = tos_competencies::Entity::find()
-            .filter(tos_competencies::Column::TosId.is_in(tos_ids))
-            .all(&self.db).await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        Ok(records.into_iter().map(Self::tos_competency_to_json).collect())
+    pub async fn get_table_of_specifications_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_table_of_specifications_since(&self.db, class_ids, since).await
     }
 
-    pub async fn get_student_quarterly_grades(&self, student_id: Uuid, class_ids: Vec<Uuid>) -> AppResult<Vec<Value>> {
-        if class_ids.is_empty() { return Ok(vec![]); }
-        let records = period_grades::Entity::find()
-            .filter(period_grades::Column::ClassId.is_in(class_ids))
-            .filter(period_grades::Column::StudentId.eq(student_id))
-            .all(&self.db).await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        Ok(records.into_iter().map(Self::quarterly_grade_to_json).collect())
+    pub async fn get_tos_competencies_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_tos_competencies_since(&self.db, class_ids, since).await
     }
 
-    // --- Delta sync (since) ---
-
-    pub async fn get_grade_configs_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> AppResult<Vec<Value>> {
-        if class_ids.is_empty() { return Ok(vec![]); }
-        let records = grade_record::Entity::find()
-            .filter(grade_record::Column::ClassId.is_in(class_ids))
-            .filter(grade_record::Column::UpdatedAt.gt(since))
-            .all(&self.db).await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        Ok(records.into_iter().map(Self::grade_config_to_json).collect())
-    }
-
-    pub async fn get_grade_items_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> AppResult<Vec<Value>> {
-        if class_ids.is_empty() { return Ok(vec![]); }
-        let records = grade_items::Entity::find()
-            .filter(grade_items::Column::ClassId.is_in(class_ids))
-            .filter(grade_items::Column::UpdatedAt.gt(since))
-            .all(&self.db).await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        Ok(records.into_iter().map(Self::grade_item_to_json).collect())
-    }
-
-    pub async fn get_all_grade_scores_since(&self, grade_item_ids: Vec<Uuid>, since: NaiveDateTime) -> AppResult<Vec<Value>> {
-        if grade_item_ids.is_empty() { return Ok(vec![]); }
-        let records = grade_scores::Entity::find()
-            .filter(grade_scores::Column::GradeItemId.is_in(grade_item_ids))
-            .filter(grade_scores::Column::UpdatedAt.gt(since))
-            .all(&self.db).await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        Ok(records.into_iter().map(Self::grade_score_to_json).collect())
-    }
-
-    pub async fn get_student_grade_scores_since(&self, student_id: Uuid, grade_item_ids: Vec<Uuid>, since: NaiveDateTime) -> AppResult<Vec<Value>> {
-        if grade_item_ids.is_empty() { return Ok(vec![]); }
-        let records = grade_scores::Entity::find()
-            .filter(grade_scores::Column::GradeItemId.is_in(grade_item_ids))
-            .filter(grade_scores::Column::StudentId.eq(student_id))
-            .filter(grade_scores::Column::UpdatedAt.gt(since))
-            .all(&self.db).await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        Ok(records.into_iter().map(Self::grade_score_to_json).collect())
-    }
-
-    pub async fn get_all_quarterly_grades_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> AppResult<Vec<Value>> {
-        if class_ids.is_empty() { return Ok(vec![]); }
-        let records = period_grades::Entity::find()
-            .filter(period_grades::Column::ClassId.is_in(class_ids))
-            .filter(period_grades::Column::UpdatedAt.gt(since))
-            .all(&self.db).await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        Ok(records.into_iter().map(Self::quarterly_grade_to_json).collect())
-    }
-
-    pub async fn get_student_quarterly_grades_since(&self, student_id: Uuid, class_ids: Vec<Uuid>, since: NaiveDateTime) -> AppResult<Vec<Value>> {
-        if class_ids.is_empty() { return Ok(vec![]); }
-        let records = period_grades::Entity::find()
-            .filter(period_grades::Column::ClassId.is_in(class_ids))
-            .filter(period_grades::Column::StudentId.eq(student_id))
-            .filter(period_grades::Column::UpdatedAt.gt(since))
-            .all(&self.db).await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        Ok(records.into_iter().map(Self::quarterly_grade_to_json).collect())
-    }
-
-    pub async fn get_table_of_specifications_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> AppResult<Vec<Value>> {
-        if class_ids.is_empty() { return Ok(vec![]); }
-        let records = table_of_specifications::Entity::find()
-            .filter(table_of_specifications::Column::ClassId.is_in(class_ids))
-            .filter(table_of_specifications::Column::UpdatedAt.gt(since))
-            .all(&self.db).await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        Ok(records.into_iter().map(Self::tos_to_json).collect())
-    }
-
-    pub async fn get_tos_competencies_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> AppResult<Vec<Value>> {
-        if class_ids.is_empty() { return Ok(vec![]); }
-
-        let tos_ids = table_of_specifications::Entity::find()
-            .filter(table_of_specifications::Column::ClassId.is_in(class_ids))
-            .all(&self.db).await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
-            .into_iter()
-            .map(|r| r.id)
-            .collect::<Vec<Uuid>>();
-
-        if tos_ids.is_empty() { return Ok(vec![]); }
-
-        let records = tos_competencies::Entity::find()
-            .filter(tos_competencies::Column::TosId.is_in(tos_ids))
-            .filter(tos_competencies::Column::UpdatedAt.gt(since))
-            .all(&self.db).await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        Ok(records.into_iter().map(Self::tos_competency_to_json).collect())
-    }
-
-    /// Get all grade_item IDs for given classes (used by delta sync to scope score queries)
-    pub async fn get_grade_item_ids_for_classes(&self, class_ids: Vec<Uuid>) -> AppResult<Vec<Uuid>> {
-        if class_ids.is_empty() { return Ok(vec![]); }
-        let records = grade_items::Entity::find()
-            .filter(grade_items::Column::ClassId.is_in(class_ids))
-            .all(&self.db).await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        Ok(records.into_iter().map(|r| r.id).collect())
+    pub async fn get_grade_item_ids_for_classes(&self, class_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<Uuid>> {
+        ops::get_grade_item_ids_for_classes(&self.db, class_ids).await
     }
 }

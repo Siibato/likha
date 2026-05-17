@@ -31,6 +31,8 @@ use crate::services::{
 /// We match it here so tokens generated in tests are accepted by the middleware.
 pub const TEST_JWT_SECRET: &str = "default_secret";
 pub const TEST_FILE_STORAGE: &str = "/tmp/likha_test_files";
+/// Test encryption key - 32 bytes of zeros for testing
+pub const TEST_FILE_ENCRYPTION_KEY: [u8; 32] = [0u8; 32];
 
 pub async fn build_test_app(db: DatabaseConnection) -> Router {
     // Ensure JWT_SECRET is set so auth middleware does not panic.
@@ -45,10 +47,12 @@ pub async fn build_test_app(db: DatabaseConnection) -> Router {
     let assignment_service = Arc::new(AssignmentService::new(
         db.clone(),
         TEST_FILE_STORAGE.to_string(),
+        TEST_FILE_ENCRYPTION_KEY,
     ));
     let material_service = Arc::new(LearningMaterialService::new(
         db.clone(),
         TEST_FILE_STORAGE.to_string(),
+        TEST_FILE_ENCRYPTION_KEY,
     ));
     let grade_computation_service = Arc::new(GradeComputationService::new(db.clone()));
     let tos_service = Arc::new(TosService::new(db.clone()));

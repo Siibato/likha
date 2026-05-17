@@ -12,6 +12,7 @@ pub struct ServerConfig {
     pub file_storage_path: String,
     pub school_code: String,
     pub db_encryption_key: String,
+    pub file_encryption_key: String,
     pub allowed_origins: Vec<String>,
     pub max_body_size_bytes: u64,
 }
@@ -23,6 +24,12 @@ impl ServerConfig {
 
         Validator::validate_encryption_key(&db_encryption_key)
             .unwrap_or_else(|e| panic!("Invalid DB_ENCRYPTION_KEY: {}", e));
+
+        let file_encryption_key = env::var("FILE_ENCRYPTION_KEY")
+            .expect("FILE_ENCRYPTION_KEY must be set in .env file");
+
+        Validator::validate_encryption_key(&file_encryption_key)
+            .unwrap_or_else(|e| panic!("Invalid FILE_ENCRYPTION_KEY: {}", e));
 
         let max_body_size_bytes = env::var("MAX_BODY_SIZE_MB")
             .unwrap_or_else(|_| "55".to_string())
@@ -57,6 +64,7 @@ impl ServerConfig {
             school_code: env::var("SCHOOL_CODE")
                 .unwrap_or_else(|_| "CHANGE_ME".to_string()),
             db_encryption_key,
+            file_encryption_key,
             allowed_origins,
             max_body_size_bytes,
         }

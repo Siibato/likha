@@ -1,6 +1,7 @@
 pub mod auth_guards;
 pub mod datetime;
 pub mod error;
+pub mod file_encryption;
 pub mod jwt;
 pub mod password;
 pub mod validators;

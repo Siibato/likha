@@ -11,7 +11,7 @@ impl super::SyncPushService {
             "create" => {
                 let assessment_id = extract_field!(self, op, parse_uuid_field, "assessment_id");
                 // Idempotency: return existing server_id so downstream saveAnswers/submit can proceed
-                if let Ok(Some(existing)) = self.assessment_service.submission_repo
+                if let Ok(Some(existing)) = self.assessment_service.assessment_repo
                     .find_by_student_and_assessment(user_id, assessment_id).await
                 {
                     return self.success_result(op, Some(existing.id.to_string()), None);

@@ -19,8 +19,8 @@ impl super::AssessmentService {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
-        let submissions = self.submission_repo
-            .find_by_assessment_id(assessment_id).await?;
+        let submissions = self.assessment_repo
+                .find_submissions_by_assessment_id(assessment_id).await?;
 
         let mut responses = Vec::new();
         for s in submissions {
@@ -50,7 +50,7 @@ impl super::AssessmentService {
         submission_id: Uuid,
         teacher_id: Uuid,
     ) -> AppResult<SubmissionDetailResponse> {
-        let submission = self.submission_repo.find_by_id(submission_id).await?
+        let submission = self.assessment_repo.find_submission_by_id(submission_id).await?
             .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?;
 
         let assessment = self.assessment_repo.find_by_id(submission.assessment_id).await?
@@ -66,7 +66,7 @@ impl super::AssessmentService {
         let student = self.user_repo.find_by_id(submission.user_id).await?
             .ok_or_else(|| AppError::NotFound("Student not found".to_string()))?;
 
-        let answers = self.submission_repo
+        let answers = self.assessment_repo
             .find_answers_by_submission_id(submission_id).await?;
 
         let mut answer_responses = Vec::new();
@@ -78,7 +78,7 @@ impl super::AssessmentService {
             };
 
             let selected_choices = if question.question_type == "multiple_choice" {
-                let selection_ids = self.submission_repo.find_answer_choices(a.id).await?;
+                let selection_ids = self.assessment_repo.find_answer_choices(a.id).await?;
                 let mut choice_responses = Vec::new();
                 let choices = self.assessment_repo.find_choices_by_question_id(question.id).await?;
                 for choice_id in selection_ids {
@@ -96,7 +96,7 @@ impl super::AssessmentService {
             };
 
             let enumeration_answers = if question.question_type == "enumeration" {
-                let enum_items = self.submission_repo.find_enumeration_answer_items(a.id).await?;
+                let enum_items = self.assessment_repo.find_enumeration_answer_items(a.id).await?;
                 Some(
                     enum_items.into_iter().map(|item| EnumerationAnswerResponse {
                         answer_text: item.answer_text.unwrap_or_default(),
@@ -108,7 +108,7 @@ impl super::AssessmentService {
             };
 
             let answer_text = if question.question_type == "identification" || question.question_type == "essay" {
-                let texts = self.submission_repo.find_enumeration_answers(a.id).await?;
+                let texts = self.assessment_repo.find_enumeration_answers(a.id).await?;
                 texts.into_iter().next()
             } else {
                 None
@@ -154,10 +154,10 @@ impl super::AssessmentService {
         request: OverrideAnswerRequest,
         teacher_id: Uuid,
     ) -> AppResult<SubmissionAnswerResponse> {
-        let answer = self.submission_repo.find_answer_by_id(answer_id).await?
+        let answer = self.assessment_repo.find_answer_by_id(answer_id).await?
             .ok_or_else(|| AppError::NotFound("Answer not found".to_string()))?;
 
-        let submission = self.submission_repo.find_by_id(answer.submission_id).await?
+        let submission = self.assessment_repo.find_submission_by_id(answer.submission_id).await?
             .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?;
 
         let assessment = self.assessment_repo.find_by_id(submission.assessment_id).await?
@@ -177,7 +177,7 @@ impl super::AssessmentService {
             if request.is_correct { question.points as f64 } else { 0.0 }
         });
 
-        let updated = self.submission_repo
+        let updated = self.assessment_repo
             .override_answer(answer_id, request.is_correct, points)
             .await?;
 
@@ -210,10 +210,10 @@ impl super::AssessmentService {
         request: GradeEssayRequest,
         teacher_id: Uuid,
     ) -> AppResult<SubmissionAnswerResponse> {
-        let answer = self.submission_repo.find_answer_by_id(answer_id).await?
+        let answer = self.assessment_repo.find_answer_by_id(answer_id).await?
             .ok_or_else(|| AppError::NotFound("Answer not found".to_string()))?;
 
-        let submission = self.submission_repo.find_by_id(answer.submission_id).await?
+        let submission = self.assessment_repo.find_submission_by_id(answer.submission_id).await?
             .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?;
 
         let assessment = self.assessment_repo.find_by_id(submission.assessment_id).await?
@@ -243,7 +243,7 @@ impl super::AssessmentService {
 
         let is_correct = request.points >= max_points;
 
-        let updated = self.submission_repo
+        let updated = self.assessment_repo
             .override_answer(answer_id, is_correct, request.points)
             .await?;
 
@@ -287,7 +287,7 @@ impl super::AssessmentService {
         // 3. For each assessment, look up the student's submission (may be None)
         let mut items = Vec::new();
         for assessment in assessments {
-            if let Some(sub) = self.submission_repo
+            if let Some(sub) = self.assessment_repo
                 .find_by_student_and_assessment(student_id, assessment.id).await? {
                 let student = self.user_repo.find_by_id(sub.user_id).await?
                     .ok_or_else(|| AppError::NotFound("Student not found".to_string()))?;

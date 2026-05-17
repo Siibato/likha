@@ -1,9 +1,9 @@
-use chrono::Utc;
-use sea_orm::*;
+use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
 use ::entity::{assignment_submissions, assignments, submission_files, users};
-use crate::utils::{AppError, AppResult};
+use crate::db::repositories::repository_operations::assignment as ops;
+use crate::utils::AppResult;
 
 pub struct AssignmentRepository {
     db: DatabaseConnection,
@@ -13,8 +13,6 @@ impl AssignmentRepository {
     pub fn new(db: DatabaseConnection) -> Self {
         Self { db }
     }
-
-    // ===== ASSIGNMENTS =====
 
     pub async fn create_assignment(
         &self,
@@ -33,58 +31,19 @@ impl AssignmentRepository {
         grading_period_number: Option<i32>,
         component: Option<String>,
     ) -> AppResult<assignments::Model> {
-        let assignment = assignments::ActiveModel {
-            id: Set(client_id.unwrap_or_else(Uuid::new_v4)),
-            class_id: Set(class_id),
-            title: Set(title),
-            instructions: Set(instructions),
-            total_points: Set(total_points),
-            allows_text_submission: Set(allows_text_submission),
-            allows_file_submission: Set(allows_file_submission),
-            allowed_file_types: Set(allowed_file_types),
-            max_file_size_mb: Set(max_file_size_mb),
-            due_at: Set(due_at),
-            is_published: Set(is_published),
-            order_index: Set(order_index),
-            created_at: Set(Utc::now().naive_utc()),
-            updated_at: Set(Utc::now().naive_utc()),
-            deleted_at: Set(None),
-            grading_period_number: Set(grading_period_number),
-            component: Set(component),
-        };
-
-        assignment
-            .insert(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to create assignment: {}", e)))
+        ops::create_assignment(&self.db, class_id, title, instructions, total_points, allows_text_submission, allows_file_submission, allowed_file_types, max_file_size_mb, due_at, order_index, client_id, is_published, grading_period_number, component).await
     }
 
     pub async fn find_by_id(&self, id: Uuid) -> AppResult<Option<assignments::Model>> {
-        assignments::Entity::find_by_id(id)
-            .one(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+        ops::find_by_id(&self.db, id).await
     }
 
     pub async fn find_by_class_id(&self, class_id: Uuid) -> AppResult<Vec<assignments::Model>> {
-        assignments::Entity::find()
-            .filter(assignments::Column::ClassId.eq(class_id))
-            .filter(assignments::Column::DeletedAt.is_null())
-            .order_by_asc(assignments::Column::OrderIndex)
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+        ops::find_by_class_id(&self.db, class_id).await
     }
 
     pub async fn find_published_by_class_id(&self, class_id: Uuid) -> AppResult<Vec<assignments::Model>> {
-        assignments::Entity::find()
-            .filter(assignments::Column::ClassId.eq(class_id))
-            .filter(assignments::Column::IsPublished.eq(true))
-            .filter(assignments::Column::DeletedAt.is_null())
-            .order_by_asc(assignments::Column::OrderIndex)
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+        ops::find_published_by_class_id(&self.db, class_id).await
     }
 
     pub async fn update_assignment(
@@ -101,86 +60,16 @@ impl AssignmentRepository {
         grading_period_number: Option<Option<i32>>,
         component: Option<Option<String>>,
     ) -> AppResult<assignments::Model> {
-        let mut assignment: assignments::ActiveModel = assignments::Entity::find_by_id(id)
-            .one(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
-            .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?
-            .into();
-
-        if let Some(title) = title {
-            assignment.title = Set(title);
-        }
-        if let Some(instructions) = instructions {
-            assignment.instructions = Set(instructions);
-        }
-        if let Some(total_points) = total_points {
-            assignment.total_points = Set(total_points);
-        }
-        if let Some(text) = allows_text_submission {
-            assignment.allows_text_submission = Set(text);
-        }
-        if let Some(file) = allows_file_submission {
-            assignment.allows_file_submission = Set(file);
-        }
-        if let Some(allowed) = allowed_file_types {
-            assignment.allowed_file_types = Set(allowed);
-        }
-        if let Some(max_size) = max_file_size_mb {
-            assignment.max_file_size_mb = Set(max_size);
-        }
-        if let Some(due) = due_at {
-            assignment.due_at = Set(due);
-        }
-        if let Some(q) = grading_period_number {
-            assignment.grading_period_number = Set(q);
-        }
-        if let Some(c) = component {
-            assignment.component = Set(c);
-        }
-        assignment.updated_at = Set(Utc::now().naive_utc());
-
-        assignment
-            .update(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to update assignment: {}", e)))
+        ops::update_assignment(&self.db, id, title, instructions, total_points, allows_text_submission, allows_file_submission, allowed_file_types, max_file_size_mb, due_at, grading_period_number, component).await
     }
 
     pub async fn publish_assignment(&self, id: Uuid) -> AppResult<assignments::Model> {
-        let mut assignment: assignments::ActiveModel = assignments::Entity::find_by_id(id)
-            .one(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
-            .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?
-            .into();
-
-        assignment.is_published = Set(true);
-        assignment.updated_at = Set(Utc::now().naive_utc());
-
-        assignment
-            .update(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to publish assignment: {}", e)))
+        ops::publish_assignment(&self.db, id).await
     }
 
     pub async fn unpublish_assignment(&self, id: Uuid) -> AppResult<assignments::Model> {
-        let mut assignment: assignments::ActiveModel = assignments::Entity::find_by_id(id)
-            .one(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
-            .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?
-            .into();
-
-        assignment.is_published = Set(false);
-        assignment.updated_at = Set(Utc::now().naive_utc());
-
-        assignment
-            .update(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to unpublish assignment: {}", e)))
+        ops::unpublish_assignment(&self.db, id).await
     }
-
-    // ===== SUBMISSIONS =====
 
     pub async fn create_submission(
         &self,
@@ -188,46 +77,18 @@ impl AssignmentRepository {
         student_id: Uuid,
         submission_id: Option<Uuid>,
     ) -> AppResult<assignment_submissions::Model> {
-        let submission = assignment_submissions::ActiveModel {
-            id: Set(submission_id.unwrap_or_else(Uuid::new_v4)),
-            assignment_id: Set(assignment_id),
-            student_id: Set(student_id),
-            status: Set("draft".to_string()),
-            text_content: Set(None),
-            submitted_at: Set(None),
-            points: Set(None),
-            graded_by: Set(None),
-            feedback: Set(None),
-            graded_at: Set(None),
-            created_at: Set(Utc::now().naive_utc()),
-            updated_at: Set(Utc::now().naive_utc()),
-            deleted_at: Set(None),
-        };
-
-        submission
-            .insert(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to create submission: {}", e)))
+        ops::create_submission(&self.db, assignment_id, student_id, submission_id).await
     }
 
     pub async fn find_submission_by_id(&self, id: Uuid) -> AppResult<Option<assignment_submissions::Model>> {
-        assignment_submissions::Entity::find_by_id(id)
-            .one(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+        ops::find_submission_by_id(&self.db, id).await
     }
 
     pub async fn find_submissions_by_assignment(
         &self,
         assignment_id: Uuid,
     ) -> AppResult<Vec<(assignment_submissions::Model, Option<users::Model>)>> {
-        assignment_submissions::Entity::find()
-            .filter(assignment_submissions::Column::AssignmentId.eq(assignment_id))
-            .find_also_related(users::Entity)
-            .order_by_asc(assignment_submissions::Column::CreatedAt)
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+        ops::find_submissions_by_assignment(&self.db, assignment_id).await
     }
 
     pub async fn find_student_submission(
@@ -235,12 +96,7 @@ impl AssignmentRepository {
         assignment_id: Uuid,
         student_id: Uuid,
     ) -> AppResult<Option<assignment_submissions::Model>> {
-        assignment_submissions::Entity::find()
-            .filter(assignment_submissions::Column::AssignmentId.eq(assignment_id))
-            .filter(assignment_submissions::Column::StudentId.eq(student_id))
-            .one(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+        ops::find_student_submission(&self.db, assignment_id, student_id).await
     }
 
     pub async fn update_submission_text(
@@ -248,21 +104,7 @@ impl AssignmentRepository {
         id: Uuid,
         text_content: Option<String>,
     ) -> AppResult<assignment_submissions::Model> {
-        let mut submission: assignment_submissions::ActiveModel =
-            assignment_submissions::Entity::find_by_id(id)
-                .one(&self.db)
-                .await
-                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
-                .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?
-                .into();
-
-        submission.text_content = Set(text_content);
-        submission.updated_at = Set(Utc::now().naive_utc());
-
-        submission
-            .update(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to update submission: {}", e)))
+        ops::update_submission_text(&self.db, id, text_content).await
     }
 
     pub async fn update_submission_status(
@@ -270,24 +112,7 @@ impl AssignmentRepository {
         id: Uuid,
         status: &str,
     ) -> AppResult<assignment_submissions::Model> {
-        let mut submission: assignment_submissions::ActiveModel =
-            assignment_submissions::Entity::find_by_id(id)
-                .one(&self.db)
-                .await
-                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
-                .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?
-                .into();
-
-        submission.status = Set(status.to_string());
-        if status == "submitted" {
-            submission.submitted_at = Set(Some(Utc::now().naive_utc()));
-        }
-        submission.updated_at = Set(Utc::now().naive_utc());
-
-        submission
-            .update(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to update submission status: {}", e)))
+        ops::update_submission_status(&self.db, id, status).await
     }
 
     pub async fn grade_submission(
@@ -297,66 +122,20 @@ impl AssignmentRepository {
         feedback: Option<String>,
         graded_by: Option<Uuid>,
     ) -> AppResult<assignment_submissions::Model> {
-        let mut submission: assignment_submissions::ActiveModel =
-            assignment_submissions::Entity::find_by_id(id)
-                .one(&self.db)
-                .await
-                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
-                .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?
-                .into();
-
-        submission.status = Set("graded".to_string());
-        submission.points = Set(Some(points));
-        submission.graded_by = Set(graded_by);
-        submission.feedback = Set(feedback);
-        submission.graded_at = Set(Some(Utc::now().naive_utc()));
-        submission.updated_at = Set(Utc::now().naive_utc());
-
-        submission
-            .update(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to grade submission: {}", e)))
+        ops::grade_submission(&self.db, id, points, feedback, graded_by).await
     }
 
     pub async fn return_submission(&self, id: Uuid) -> AppResult<assignment_submissions::Model> {
-        let mut submission: assignment_submissions::ActiveModel =
-            assignment_submissions::Entity::find_by_id(id)
-                .one(&self.db)
-                .await
-                .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
-                .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?
-                .into();
-
-        submission.status = Set("returned".to_string());
-        submission.updated_at = Set(Utc::now().naive_utc());
-
-        submission
-            .update(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to return submission: {}", e)))
+        ops::return_submission(&self.db, id).await
     }
 
     pub async fn count_submissions_by_assignment(&self, assignment_id: Uuid) -> AppResult<usize> {
-        let count = assignment_submissions::Entity::find()
-            .filter(assignment_submissions::Column::AssignmentId.eq(assignment_id))
-            .filter(assignment_submissions::Column::Status.ne("draft"))
-            .count(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        Ok(count as usize)
+        ops::count_submissions_by_assignment(&self.db, assignment_id).await
     }
 
     pub async fn count_graded_by_assignment(&self, assignment_id: Uuid) -> AppResult<usize> {
-        let count = assignment_submissions::Entity::find()
-            .filter(assignment_submissions::Column::AssignmentId.eq(assignment_id))
-            .filter(assignment_submissions::Column::Status.eq("graded"))
-            .count(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-        Ok(count as usize)
+        ops::count_graded_by_assignment(&self.db, assignment_id).await
     }
-
-    // ===== FILES =====
 
     pub async fn save_file(
         &self,
@@ -367,144 +146,49 @@ impl AssignmentRepository {
         file_path: String,
         file_hash: String,
     ) -> AppResult<submission_files::Model> {
-        let file = submission_files::ActiveModel {
-            id: Set(Uuid::new_v4()),
-            submission_id: Set(submission_id),
-            file_name: Set(file_name),
-            file_type: Set(file_type),
-            file_size: Set(file_size),
-            file_path: Set(Some(file_path)),
-            file_hash: Set(Some(file_hash)),
-            uploaded_at: Set(Utc::now().naive_utc()),
-            deleted_at: Set(None),
-        };
-
-        file.insert(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to save file: {}", e)))
+        ops::save_file(&self.db, submission_id, file_name, file_type, file_size, file_path, file_hash).await
     }
 
     pub async fn find_active_file_path_by_hash(&self, hash: &str) -> AppResult<Option<String>> {
-        let result = submission_files::Entity::find()
-            .filter(submission_files::Column::FileHash.eq(hash))
-            .filter(submission_files::Column::DeletedAt.is_null())
-            .one(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        Ok(result.and_then(|f| f.file_path))
+        ops::find_active_file_path_by_hash(&self.db, hash).await
     }
 
     pub async fn count_active_by_hash(&self, hash: &str, exclude_id: Uuid) -> AppResult<i64> {
-        let count = submission_files::Entity::find()
-            .filter(submission_files::Column::FileHash.eq(hash))
-            .filter(submission_files::Column::DeletedAt.is_null())
-            .filter(submission_files::Column::Id.ne(exclude_id))
-            .count(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        Ok(count as i64)
+        ops::count_active_by_hash(&self.db, hash, exclude_id).await
     }
 
     pub async fn soft_delete_file(&self, id: Uuid) -> AppResult<()> {
-        let file = submission_files::ActiveModel {
-            id: Set(id),
-            deleted_at: Set(Some(Utc::now().naive_utc())),
-            file_path: Set(None),
-            file_hash: Set(None),
-            ..Default::default()
-        };
-
-        submission_files::Entity::update(file)
-            .exec(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to delete file: {}", e)))?;
-
-        Ok(())
+        ops::soft_delete_file(&self.db, id).await
     }
 
     pub async fn find_file_by_id(&self, id: Uuid) -> AppResult<Option<submission_files::Model>> {
-        submission_files::Entity::find_by_id(id)
-            .one(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+        ops::find_file_by_id(&self.db, id).await
     }
 
     pub async fn find_files_by_submission(
         &self,
         submission_id: Uuid,
     ) -> AppResult<Vec<submission_files::Model>> {
-        submission_files::Entity::find()
-            .filter(submission_files::Column::SubmissionId.eq(submission_id))
-            .filter(submission_files::Column::DeletedAt.is_null())
-            .order_by_asc(submission_files::Column::UploadedAt)
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+        ops::find_files_by_submission(&self.db, submission_id).await
     }
 
     pub async fn find_student_name(&self, student_id: Uuid) -> AppResult<String> {
-        let user = users::Entity::find_by_id(student_id)
-            .one(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
-            .ok_or_else(|| AppError::NotFound("User not found".to_string()))?;
-        Ok(user.full_name)
+        ops::find_student_name(&self.db, student_id).await
     }
 
     pub async fn find_all(&self) -> AppResult<Vec<assignments::Model>> {
-        assignments::Entity::find()
-            .all(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))
+        ops::find_all(&self.db).await
     }
 
     pub async fn soft_delete(&self, id: Uuid) -> AppResult<()> {
-        let assignment = assignments::ActiveModel {
-            id: Set(id),
-            deleted_at: Set(Some(Utc::now().naive_utc())),
-            updated_at: Set(Utc::now().naive_utc()),
-            ..Default::default()
-        };
-
-        assignments::Entity::update(assignment)
-            .exec(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to delete assignment: {}", e)))?;
-
-        Ok(())
+        ops::soft_delete(&self.db, id).await
     }
 
     pub async fn get_max_order_index(&self, class_id: Uuid) -> AppResult<i32> {
-        let result = assignments::Entity::find()
-            .select_only()
-            .column_as(assignments::Column::OrderIndex.max(), "max_order")
-            .filter(assignments::Column::ClassId.eq(class_id))
-            .filter(assignments::Column::DeletedAt.is_null())
-            .into_tuple::<Option<i32>>()
-            .one(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        Ok(result.flatten().unwrap_or(-1))
+        ops::get_max_order_index(&self.db, class_id).await
     }
 
     pub async fn reorder_assignments(&self, _class_id: Uuid, assignment_ids: Vec<Uuid>) -> AppResult<()> {
-        for (index, id) in assignment_ids.iter().enumerate() {
-            let assignment = assignments::ActiveModel {
-                id: Set(*id),
-                order_index: Set(index as i32),
-                updated_at: Set(Utc::now().naive_utc()),
-                ..Default::default()
-            };
-
-            assignments::Entity::update(assignment)
-                .exec(&self.db)
-                .await
-                .map_err(|e| AppError::InternalServerError(format!("Failed to reorder assignment: {}", e)))?;
-        }
-
-        Ok(())
+        ops::reorder_assignments(&self.db, _class_id, assignment_ids).await
     }
 }

@@ -2,7 +2,6 @@ use chrono::Utc;
 use uuid::Uuid;
 use crate::db::repositories::assessment_repository::AssessmentRepository;
 use crate::db::repositories::class_repository::ClassRepository;
-use crate::db::repositories::submission_repository::SubmissionRepository;
 use crate::tests::common::test_db::test_db;
 
 async fn setup(db: &sea_orm::DatabaseConnection) -> (Uuid, Uuid, Uuid) {
@@ -30,7 +29,7 @@ async fn setup(db: &sea_orm::DatabaseConnection) -> (Uuid, Uuid, Uuid) {
 async fn test_create_and_find_submission() {
     let db = test_db().await;
     let (_, assessment_id, student_id) = setup(&db).await;
-    let repo = SubmissionRepository::new(db);
+    let repo = AssessmentRepository::new(db);
 
     let sub = repo
         .create_submission(assessment_id, student_id, None)
@@ -40,7 +39,7 @@ async fn test_create_and_find_submission() {
     assert_eq!(sub.assessment_id, assessment_id);
     assert_eq!(sub.user_id, student_id);
 
-    let found = repo.find_by_id(sub.id).await.expect("find_by_id failed");
+    let found = repo.find_submission_by_id(sub.id).await.expect("find_submission_by_id failed");
     assert!(found.is_some());
 }
 
@@ -48,7 +47,7 @@ async fn test_create_and_find_submission() {
 async fn test_find_by_student_and_assessment() {
     let db = test_db().await;
     let (_, assessment_id, student_id) = setup(&db).await;
-    let repo = SubmissionRepository::new(db);
+    let repo = AssessmentRepository::new(db);
 
     repo.create_submission(assessment_id, student_id, None)
         .await
@@ -70,10 +69,10 @@ async fn test_count_by_assessment_id() {
         .create_account("student_sub2".to_string(), "S2".to_string(), "student".to_string(), None)
         .await
         .expect("s2").id;
-    let repo = SubmissionRepository::new(db);
+    let repo = AssessmentRepository::new(db);
 
-    assert_eq!(repo.count_by_assessment_id(assessment_id).await.expect("count failed"), 0);
+    assert_eq!(repo.count_submissions_by_assessment_id(assessment_id).await.expect("count failed"), 0);
     repo.create_submission(assessment_id, student1, None).await.expect("s1");
     repo.create_submission(assessment_id, student2, None).await.expect("s2");
-    assert_eq!(repo.count_by_assessment_id(assessment_id).await.expect("count failed"), 2);
+    assert_eq!(repo.count_submissions_by_assessment_id(assessment_id).await.expect("count failed"), 2);
 }

@@ -19,8 +19,8 @@ impl super::AssessmentService {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
-        let submissions = self.submission_repo
-            .find_by_assessment_id(assessment_id).await?;
+        let submissions = self.assessment_repo
+                .find_submissions_by_assessment_id(assessment_id).await?;
 
         let submitted: Vec<_> = submissions.iter().filter(|s| s.submitted_at.is_some()).collect();
         let submission_count = submitted.len();
@@ -40,7 +40,7 @@ impl super::AssessmentService {
         };
 
         // Fetch all answer details in a single batch query
-        let all_details = self.submission_repo
+        let all_details = self.assessment_repo
             .get_all_answer_details_for_assessment(assessment_id)
             .await?;
 

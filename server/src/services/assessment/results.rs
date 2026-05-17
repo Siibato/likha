@@ -8,7 +8,7 @@ impl super::AssessmentService {
         submission_id: Uuid,
         student_id: Uuid,
     ) -> AppResult<StudentResultResponse> {
-        let submission = self.submission_repo.find_by_id(submission_id).await?
+        let submission = self.assessment_repo.find_submission_by_id(submission_id).await?
             .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?;
 
         if submission.user_id != student_id {
@@ -26,7 +26,7 @@ impl super::AssessmentService {
             return Err(AppError::Forbidden("Results have not been released yet".to_string()));
         }
 
-        let answers = self.submission_repo
+        let answers = self.assessment_repo
             .find_answers_by_submission_id(submission_id).await?;
 
         let mut answer_results = Vec::new();
@@ -41,7 +41,7 @@ impl super::AssessmentService {
             let is_correct = if is_pending_essay { None } else { Some(a.points > 0.0) };
 
             let selected_choices = if question.question_type == "multiple_choice" {
-                let choice_ids = self.submission_repo.find_answer_choices(a.id).await?;
+                let choice_ids = self.assessment_repo.find_answer_choices(a.id).await?;
                 let choices = self.assessment_repo.find_choices_by_question_id(question.id).await?;
                 let texts: Vec<String> = choice_ids.iter().filter_map(|choice_id| {
                     choices.iter().find(|c| c.id == *choice_id).map(|c| c.choice_text.clone())
@@ -52,7 +52,7 @@ impl super::AssessmentService {
             };
 
             let enumeration_answers = if question.question_type == "enumeration" {
-                let enum_items = self.submission_repo.find_enumeration_answer_items(a.id).await?;
+                let enum_items = self.assessment_repo.find_enumeration_answer_items(a.id).await?;
                 Some(enum_items.into_iter().map(|item| {
                     StudentEnumAnswerResult {
                         answer_text: item.answer_text.unwrap_or_default(),
@@ -86,7 +86,7 @@ impl super::AssessmentService {
 
             // Fetch identification/essay answer text from submission_answer_items
             let answer_text = if question.question_type == "identification" || question.question_type == "essay" {
-                let texts = self.submission_repo.find_enumeration_answers(a.id).await?;
+                let texts = self.assessment_repo.find_enumeration_answers(a.id).await?;
                 texts.into_iter().next()
             } else {
                 None
