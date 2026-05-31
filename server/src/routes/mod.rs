@@ -1,7 +1,6 @@
 pub mod assessment_routes;
 pub mod assignment_routes;
 pub mod auth_routes;
-pub mod class_routes;
 pub mod grading_routes;
 pub mod health_routes;
 pub mod learning_material_routes;
@@ -17,7 +16,7 @@ use crate::middleware::{RateLimitLayer, RateLimitStore};
 use crate::services::assessment::AssessmentService;
 use crate::services::assignment::AssignmentService;
 use crate::services::auth::AuthService;
-use crate::services::class::ClassService;
+use crate::modules::class::routes as new_class_routes;
 use crate::services::grade_computation::GradeComputationService;
 use crate::services::learning_material::LearningMaterialService;
 use crate::services::setup_service::SetupService;
@@ -29,7 +28,7 @@ use crate::services::tos::TosService;
 
 pub fn api_routes(
     auth_service: Arc<AuthService>,
-    class_service: Arc<ClassService>,
+    class_service: Arc<crate::modules::class::service::ClassService>,
     assessment_service: Arc<AssessmentService>,
     assignment_service: Arc<AssignmentService>,
     material_service: Arc<LearningMaterialService>,
@@ -47,7 +46,7 @@ pub fn api_routes(
     Router::new()
         .merge(health_routes::routes())
         .merge(auth_routes::routes(auth_service.clone()))
-        .merge(class_routes::routes(class_service, auth_service))
+        .merge(new_class_routes::routes(class_service))
         .merge(assessment_routes::routes(assessment_service.clone()))
         .merge(assignment_routes::routes(assignment_service.clone()))
         .merge(learning_material_routes::routes(material_service))

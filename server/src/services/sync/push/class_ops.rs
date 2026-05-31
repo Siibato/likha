@@ -2,7 +2,7 @@ use uuid::Uuid;
 use chrono::Utc;
 use super::sync_push_service::{OperationResult, SyncQueueEntry};
 use super::extract_field;
-use crate::schema::class_schema::{CreateClassRequest, UpdateClassRequest};
+use crate::modules::class::schema::{CreateClassRequest, UpdateClassRequest};
 
 impl super::SyncPushService {
     pub(super) async fn handle_class_operation(&self, user_id: Uuid, user_role: &str, op: &SyncQueueEntry) -> OperationResult {

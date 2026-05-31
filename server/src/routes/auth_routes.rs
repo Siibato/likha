@@ -34,5 +34,6 @@ pub fn routes(auth_service: Arc<AuthService>) -> Router {
             "/auth/accounts/{id}/logs",
             get(admin_handler::get_activity_logs),
         )
+        .route("/students/search", get(auth_handler::search_students))
         .with_state(auth_service)
 }

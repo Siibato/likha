@@ -53,6 +53,11 @@ pub struct UpdateAccountRequest {
     pub role: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct SearchStudentsQuery {
+    pub q: Option<String>,
+}
+
 // ===== RESPONSE SCHEMAS =====
 
 #[derive(Debug, Serialize)]

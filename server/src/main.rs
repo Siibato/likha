@@ -2,6 +2,7 @@ mod config;
 mod db;
 mod handlers;
 mod middleware;
+mod modules;
 mod routes;
 mod schema;
 mod services;
@@ -24,7 +25,7 @@ use uuid::Uuid;
 use crate::services::assessment::AssessmentService;
 use crate::services::assignment::AssignmentService;
 use crate::services::auth::AuthService;
-use crate::services::class::ClassService;
+use crate::modules::class::service::ClassService;
 use crate::services::grade_computation::GradeComputationService;
 use crate::services::learning_material::LearningMaterialService;
 use crate::services::entitlement::EntitlementService;
@@ -246,7 +247,7 @@ async fn main() {
 fn create_app(
     config: &config::ServerConfig,
     auth_service: Arc<AuthService>,
-    class_service: Arc<ClassService>,
+    class_service: Arc<crate::modules::class::service::ClassService>,
     assessment_service: Arc<AssessmentService>,
     assignment_service: Arc<AssignmentService>,
     material_service: Arc<LearningMaterialService>,

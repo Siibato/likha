@@ -15,7 +15,6 @@ use crate::services::{
     assessment::AssessmentService,
     assignment::AssignmentService,
     auth::AuthService,
-    class::ClassService,
     entitlement::EntitlementService,
     grade_computation::GradeComputationService,
     learning_material::LearningMaterialService,
@@ -26,6 +25,7 @@ use crate::services::{
     sync_push::SyncPushService,
     tos::TosService,
 };
+use crate::modules::class::service::ClassService;
 
 /// The auth middleware reads JWT_SECRET from the env, falling back to this constant.
 /// We match it here so tokens generated in tests are accepted by the middleware.

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use crate::services::entitlement::EntitlementService;
-use crate::services::class::ClassService;
+use crate::modules::class::service::ClassService;
 use crate::services::assessment::AssessmentService;
 use crate::services::assignment::AssignmentService;
 use crate::services::learning_material::LearningMaterialService;

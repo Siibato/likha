@@ -1,7 +1,6 @@
 pub mod assignment;
 pub mod assessment;
 pub mod auth;
-pub mod class;
 pub mod entitlement;
 pub mod grade_computation;
 pub mod sync;
