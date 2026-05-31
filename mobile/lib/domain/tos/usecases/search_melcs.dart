@@ -13,6 +13,8 @@ class SearchMelcs {
       gradeLevel: params.gradeLevel,
       gradingPeriodNumber: params.quarter,
       query: params.query,
+      limit: params.limit,
+      offset: params.offset,
     );
   }
 }
@@ -22,6 +24,33 @@ class SearchMelcsParams {
   final String? gradeLevel;
   final int? quarter;
   final String? query;
+  final int limit;
+  final int offset;
 
-  SearchMelcsParams({this.subject, this.gradeLevel, this.quarter, this.query});
+  SearchMelcsParams({
+    this.subject,
+    this.gradeLevel,
+    this.quarter,
+    this.query,
+    this.limit = 30,
+    this.offset = 0,
+  });
+
+  SearchMelcsParams copyWith({
+    String? subject,
+    String? gradeLevel,
+    int? quarter,
+    String? query,
+    int? limit,
+    int? offset,
+  }) {
+    return SearchMelcsParams(
+      subject: subject ?? this.subject,
+      gradeLevel: gradeLevel ?? this.gradeLevel,
+      quarter: quarter ?? this.quarter,
+      query: query ?? this.query,
+      limit: limit ?? this.limit,
+      offset: offset ?? this.offset,
+    );
+  }
 }

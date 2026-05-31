@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/events/data_event_bus.dart';
+import 'package:likha/core/logging/provider_logger.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
@@ -378,6 +379,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   }
 
   Future<void> loadSubmissionDetail(String submissionId) async {
+    ProviderLogger.instance.log('Loading submission detail for ID: $submissionId');
     state = state.copyWith(isLoading: true, clearError: true);
     final result = await _getSubmissionDetail(submissionId);
     result.fold(
@@ -390,15 +392,20 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
         
         if (isNetworkFailure) {
           // Try to load from cache as fallback for offline scenarios
-          state = state.copyWith(isLoading: false);
-          // Don't set error state for expected network issues in offline-first app
+          // For now, set a user-friendly error message instead of silent failure
+          state = state.copyWith(
+            isLoading: false, 
+            error: 'Unable to load submission details. Check your connection and try again.'
+          );
           return;
         }
         
         state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure));
       },
-      (submission) => state =
-          state.copyWith(isLoading: false, currentSubmission: submission),
+      (submission) {
+        ProviderLogger.instance.log('Successfully loaded submission: ${submission.studentName}');
+        state = state.copyWith(isLoading: false, currentSubmission: submission);
+      },
     );
   }
 

@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
-use sea_orm::{ConnectionTrait, Statement, DbBackend};
 
+use crate::db::repositories::repository_operations::processed_operations as ops;
 use crate::services::sync_push::OperationResult;
 
 /// Repository for tracking processed sync operations
@@ -29,39 +29,7 @@ impl ProcessedOperationsRepository {
         &self,
         operation_id: &str,
     ) -> Result<Option<OperationResult>, String> {
-        // Fast path: check RAM cache first
-        {
-            let cache = self.cache.read().await;
-            if let Some((_, result)) = cache.get(operation_id) {
-                return Ok(Some(result.clone()));
-            }
-        }
-
-        // Slow path: check persistent DB
-        let sql = "SELECT response FROM processed_operations WHERE operation_id = ? LIMIT 1";
-        let statement = Statement::from_sql_and_values(
-            DbBackend::Sqlite,
-            sql,
-            [operation_id.to_string().into()],
-        );
-
-        match self.db.query_one(statement).await {
-            Ok(Some(row)) => {
-                let response_json = row.try_get::<String>("", "response")
-                    .map_err(|e| format!("Failed to parse response: {}", e))?;
-                match serde_json::from_str::<OperationResult>(&response_json) {
-                    Ok(result) => {
-                        // Warm the RAM cache for future checks
-                        let mut cache = self.cache.write().await;
-                        cache.insert(operation_id.to_string(), (Uuid::nil(), result.clone()));
-                        Ok(Some(result))
-                    }
-                    Err(e) => Err(format!("Failed to deserialize operation result: {}", e)),
-                }
-            }
-            Ok(None) => Ok(None),
-            Err(e) => Err(format!("Database query failed: {}", e)),
-        }
+        ops::check_processed(&self.db, &self.cache, operation_id).await
     }
 
     /// Save operation result after processing
@@ -74,45 +42,6 @@ impl ProcessedOperationsRepository {
         operation: &str,
         result: &OperationResult,
     ) -> Result<(), String> {
-        let response_json = serde_json::to_string(result)
-            .map_err(|e| format!("Failed to serialize operation result: {}", e))?;
-
-        let id = Uuid::new_v4().to_string();
-
-        // Save to persistent DB
-        let sql = r#"
-            INSERT OR IGNORE INTO processed_operations
-            (id, operation_id, user_id, entity_type, operation, response, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
-        "#;
-
-        let statement = Statement::from_sql_and_values(
-            DbBackend::Sqlite,
-            sql,
-            [
-                id.into(),
-                operation_id.to_string().into(),
-                user_id.to_string().into(),
-                entity_type.to_string().into(),
-                operation.to_string().into(),
-                response_json.clone().into(),
-            ],
-        );
-
-        if let Err(e) = self.db.execute(statement).await {
-            return Err(format!("Failed to insert processed operation: {}", e));
-        }
-
-        // Update RAM cache
-        let mut cache = self.cache.write().await;
-        cache.insert(operation_id.to_string(), (user_id, result.clone()));
-
-        // Run cleanup: remove old entries (older than 30 days)
-        let cleanup_sql = "DELETE FROM processed_operations WHERE created_at < datetime('now', '-30 days')";
-        let cleanup_statement = Statement::from_sql_and_values(DbBackend::Sqlite, cleanup_sql, []);
-        let _ = self.db.execute(cleanup_statement).await;
-
-        Ok(())
+        ops::save_processed(&self.db, &self.cache, operation_id, user_id, entity_type, operation, result).await
     }
-
 }

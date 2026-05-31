@@ -8,8 +8,8 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assignments/usecases/create_assignment.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/rich_text_field.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
+import 'package:likha/presentation/widgets/shared/forms/rich_text_field.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 
 class CreateAssignmentDesktop extends ConsumerStatefulWidget {
@@ -83,10 +83,10 @@ class _CreateAssignmentDesktopState
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
           colorScheme: const ColorScheme.light(
-            primary: Color(0xFF2B2B2B),
+            primary: AppColors.accentCharcoal,
             onPrimary: Colors.white,
             surface: Colors.white,
-            onSurface: Color(0xFF2B2B2B),
+            onSurface: AppColors.accentCharcoal,
           ),
         ),
         child: child!,
@@ -101,12 +101,12 @@ class _CreateAssignmentDesktopState
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
           colorScheme: const ColorScheme.light(
-            primary: Color(0xFF2B2B2B),
+            primary: AppColors.accentCharcoal,
             onPrimary: Colors.white,
             surface: Colors.white,
-            onSurface: Color(0xFF2B2B2B),
-            secondary: Color(0xFF2B2B2B),
-            tertiary: Color(0xFF2B2B2B),
+            onSurface: AppColors.accentCharcoal,
+            secondary: AppColors.accentCharcoal,
+            tertiary: AppColors.accentCharcoal,
             onTertiary: Colors.white,
           ),
         ),
@@ -238,7 +238,7 @@ class _CreateAssignmentDesktopState
 
                     // Submission Type
                     DropdownButtonFormField<String>(
-                      value: _submissionType,
+                      initialValue: _submissionType,
                       decoration: _inputDecoration('Submission Type'),
                       items: const [
                         DropdownMenuItem(value: 'text_or_file', child: Text('Text or File')),
@@ -261,7 +261,7 @@ class _CreateAssignmentDesktopState
 
                     // Quarter
                     DropdownButtonFormField<int?>(
-                      value: _quarter,
+                      initialValue: _quarter,
                       decoration: _inputDecoration('Quarter (optional)'),
                       items: const [
                         DropdownMenuItem(value: null, child: Text('None')),
@@ -276,7 +276,7 @@ class _CreateAssignmentDesktopState
 
                     // Grade Component
                     DropdownButtonFormField<String?>(
-                      value: _component,
+                      initialValue: _component,
                       decoration: _inputDecoration('Grade Component (optional)'),
                       items: [
                         const DropdownMenuItem(value: null, child: Text('None')),
@@ -313,7 +313,7 @@ class _CreateAssignmentDesktopState
                         ),
                       ),
                       contentPadding: EdgeInsets.zero,
-                      activeColor: AppColors.foregroundPrimary,
+                      activeThumbColor: AppColors.foregroundPrimary,
                     ),
                     const SizedBox(height: 24),
 
@@ -370,7 +370,7 @@ class _CreateAssignmentDesktopState
         decoration: _inputDecoration(label).copyWith(
           suffixIcon: const Icon(
             Icons.arrow_drop_down_rounded,
-            color: Color(0xFF666666),
+            color: AppColors.foregroundSecondary,
           ),
         ),
         child: Text(

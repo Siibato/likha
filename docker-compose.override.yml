@@ -1,0 +1,11 @@
+# Development override — HTTP only, server port exposed directly, no nginx.
+# Used automatically by `docker compose up` in development.
+# In production on the Raspberry Pi, use `docker compose -f docker-compose.yml up`.
+services:
+  server:
+    ports:
+      - "8080:8080"   # expose directly for local dev / testing
+
+  nginx:
+    profiles:
+      - production    # excluded from default `docker compose up`

@@ -120,6 +120,29 @@ impl Validator {
     }
 
     
+    /// Validate the DB encryption key at startup.
+    /// Panics if invalid — this is intentional (misconfiguration must not start the server).
+    /// Allows hex, base64, alphanumeric, +, /, =, -, _ characters; rejects SQL-unsafe chars.
+    pub fn validate_encryption_key(key: &str) -> Result<(), String> {
+        if key.len() < 32 {
+            return Err(format!(
+                "DB_ENCRYPTION_KEY must be at least 32 characters (got {})",
+                key.len()
+            ));
+        }
+
+        for ch in key.chars() {
+            if matches!(ch, '\'' | '"' | '\\' | ';' | '\n' | '\r' | '\0') {
+                return Err(format!(
+                    "DB_ENCRYPTION_KEY contains unsafe character '{}'. Use hex or base64 encoding.",
+                    ch
+                ));
+            }
+        }
+
+        Ok(())
+    }
+
     /// Validate max file size in MB (range 1-50).
     pub fn validate_max_file_size(size_mb: i32) -> AppResult<()> {
         if size_mb < 1 || size_mb > 50 {

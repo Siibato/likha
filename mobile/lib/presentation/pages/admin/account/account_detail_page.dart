@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/auth/entities/user.dart';
-import 'package:likha/presentation/pages/admin/account/widgets/info_card.dart';
-import 'package:likha/presentation/pages/admin/account/widgets/action_buttons.dart';
-import 'package:likha/presentation/pages/admin/account/widgets/activity_log_list.dart';
-import 'package:likha/presentation/pages/admin/account/widgets/edit_dialog.dart';
+import 'package:likha/presentation/widgets/mobile/admin/account/info_card.dart';
+import 'package:likha/presentation/widgets/mobile/admin/account/action_buttons.dart';
+import 'package:likha/presentation/widgets/mobile/admin/account/activity_log_list.dart';
+import 'package:likha/presentation/widgets/mobile/admin/account/edit_dialog.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
-import 'package:likha/presentation/widgets/styled_dialog.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/styled_dropdown.dart';
-import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_dropdown.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 
 class AccountDetailPage extends ConsumerStatefulWidget {
   final User user;
@@ -58,14 +59,14 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_rounded,
-            color: Color(0xFF404040),
+            color: AppColors.foregroundDark,
           ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           user.fullName,
           style: const TextStyle(
-            color: Color(0xFF202020),
+            color: AppColors.foregroundDark,
             fontWeight: FontWeight.w700,
             fontSize: 20,
             letterSpacing: -0.4,
@@ -99,7 +100,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF202020),
+                color: AppColors.foregroundDark,
                 letterSpacing: -0.4,
               ),
             ),
@@ -115,11 +116,26 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
             ),
             const SizedBox(height: 32),
             const Text(
+              'Account Information',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.foregroundDark,
+                letterSpacing: -0.4,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ActivityLogList(
+              logs: adminState.activityLogs,
+              isLoading: adminState.isLoading,
+            ),
+            const SizedBox(height: 32),
+            const Text(
               'Activity Log',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF202020),
+                color: AppColors.foregroundDark,
                 letterSpacing: -0.4,
               ),
             ),
@@ -173,7 +189,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
             children: [
               const Text(
                 "Changing a user's role affects their access to features. This change will sync when connected.",
-                style: TextStyle(fontSize: 14, color: Color(0xFF666666)),
+                style: TextStyle(fontSize: 14, color: AppColors.foregroundSecondary),
               ),
               const SizedBox(height: 16),
               StyledDropdown<String>(

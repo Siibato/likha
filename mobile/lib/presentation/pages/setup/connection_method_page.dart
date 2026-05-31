@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
 import 'package:likha/presentation/pages/setup/school_code_page.dart';
 import 'package:likha/presentation/pages/setup/qr_scan_page.dart';
-import 'package:likha/presentation/pages/shared/widgets/auth_desktop_layout.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_auth_layout.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_auth_layout.dart';
 
 /// Second step: user picks how to connect (code or QR).
 class ConnectionMethodPage extends StatelessWidget {
@@ -20,7 +22,7 @@ class ConnectionMethodPage extends StatelessWidget {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
               letterSpacing: -0.3,
             ),
             textAlign: TextAlign.center,
@@ -31,7 +33,7 @@ class ConnectionMethodPage extends StatelessWidget {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
             ),
             textAlign: TextAlign.center,
           ),
@@ -58,15 +60,13 @@ class ConnectionMethodPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: PlatformDetector.isDesktop
-          ? AuthDesktopLayout(formContent: _buildContent(context))
-          : SafeArea(child: Center(child: _buildContent(context))),
+    if (PlatformDetector.isDesktop) {
+      return DesktopAuthLayout(formContent: _buildContent(context));
+    }
+
+    return MobileAuthLayout(
+      showLogo: false,
+      formContent: _buildContent(context),
     );
   }
 }
@@ -87,8 +87,8 @@ class _OptionButton extends StatelessWidget {
     return OutlinedButton(
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
-        foregroundColor: const Color(0xFF2B2B2B),
-        side: const BorderSide(color: Color(0xFFE0E0E0), width: 1.5),
+        foregroundColor: AppColors.accentCharcoal,
+        side: const BorderSide(color: AppColors.borderLight, width: 1.5),
         padding: const EdgeInsets.symmetric(vertical: 18),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
@@ -97,7 +97,7 @@ class _OptionButton extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 20, color: const Color(0xFF7A7A7A)),
+          Icon(icon, size: 20, color: AppColors.foregroundSecondary),
           const SizedBox(width: 10),
           Text(
             label,

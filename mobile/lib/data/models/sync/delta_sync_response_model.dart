@@ -38,6 +38,24 @@ class DeltaPayload {
   @JsonKey(name: 'learning_materials')
   final EntityDeltas learningMaterials;
 
+  @JsonKey(name: 'grade_configs')
+  final EntityDeltas gradeConfigs;
+
+  @JsonKey(name: 'grade_items')
+  final EntityDeltas gradeItems;
+
+  @JsonKey(name: 'grade_scores')
+  final EntityDeltas gradeScores;
+
+  @JsonKey(name: 'period_grades')
+  final EntityDeltas periodGrades;
+
+  @JsonKey(name: 'table_of_specifications')
+  final EntityDeltas tableOfSpecifications;
+
+  @JsonKey(name: 'tos_competencies')
+  final EntityDeltas tosCompetencies;
+
   DeltaPayload({
     required this.classes,
     required this.enrollments,
@@ -47,6 +65,12 @@ class DeltaPayload {
     required this.assignments,
     required this.assignmentSubmissions,
     required this.learningMaterials,
+    required this.gradeConfigs,
+    required this.gradeItems,
+    required this.gradeScores,
+    required this.periodGrades,
+    required this.tableOfSpecifications,
+    required this.tosCompetencies,
   });
 
   factory DeltaPayload.fromJson(Map<String, dynamic> json) =>

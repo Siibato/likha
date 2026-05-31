@@ -19,5 +19,6 @@ class AuthRepositoryImpl extends AuthRepositoryBase
     required super.assignmentLocalDataSource,
     required super.assessmentLocalDataSource,
     required super.learningMaterialLocalDataSource,
+    required super.gradingLocalDataSource,
   });
 }

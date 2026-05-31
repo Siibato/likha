@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/presentation/pages/teacher/assignment/assignment_submissions_page.dart';
-import 'package:likha/presentation/pages/teacher/assignment/widgets/assignment_info_card.dart';
-import 'package:likha/presentation/pages/teacher/assignment/widgets/assignment_instructions_card.dart';
-import 'package:likha/presentation/pages/teacher/assignment/widgets/assignment_status_card.dart';
-import 'package:likha/presentation/pages/teacher/assignment/widgets/assignment_submissions_card.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_info_card.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_instructions_card.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_status_card.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_submissions_card.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
-import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 
 class AssignmentDetailPage extends ConsumerStatefulWidget {
   final String assignmentId;
@@ -84,23 +86,11 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       }
     });
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF2B2B2B)),
-        title: Text(
-          assignment?.title ?? 'Assignment Detail',
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
-            letterSpacing: -0.4,
-          ),
-        ),
-        actions: [
-          if (assignment != null)
+    return MobilePageScaffold(
+      title: assignment?.title ?? 'Assignment Detail',
+      isLoading: state.isLoading && assignment == null,
+      actions: assignment != null
+          ? [
             PopupMenuButton<String>(
               onSelected: (value) {
                 switch (value) {
@@ -170,43 +160,36 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                     children: [
                       Icon(
                         Icons.delete_rounded,
-                        color: Color(0xFFEF5350),
+                        color: AppColors.semanticError,
                         size: 20,
                       ),
                       SizedBox(width: 12),
                       Text(
                         'Delete',
-                        style: TextStyle(color: Color(0xFFEF5350)),
+                        style: TextStyle(color: AppColors.semanticError),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-        ],
-      ),
-      body: state.isLoading && assignment == null
+          ]
+          : [],
+      body: assignment == null
           ? const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF2B2B2B),
-                strokeWidth: 2.5,
+              child: Text(
+                'Assignment not found',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppColors.foregroundTertiary,
+                ),
               ),
             )
-          : assignment == null
-              ? const Center(
-                  child: Text(
-                    'Assignment not found',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF999999),
-                    ),
-                  ),
-                )
-              : RefreshIndicator(
+          : RefreshIndicator(
                   onRefresh: () => ref
                       .read(assignmentProvider.notifier)
                       .loadAssignmentDetail(widget.assignmentId),
-                  color: const Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(24),
@@ -262,7 +245,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                       ],
                     ),
                   ),
-                ),
+            ),
     );
   }
 }

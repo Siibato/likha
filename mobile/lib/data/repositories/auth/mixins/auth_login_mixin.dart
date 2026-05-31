@@ -155,16 +155,16 @@ mixin AuthLoginMixin on AuthRepositoryBase {
       if (token != null) {
         await remoteDataSource.logout(token);
       }
-      unawaited(clearAllUserData());
+      await clearAllUserData();
       return const Right(null);
     } on ServerException catch (e) {
-      unawaited(clearAllUserData());
+      await clearAllUserData();
       return Left(ServerFailure(e.message));
     } on NetworkException catch (e) {
-      unawaited(clearAllUserData());
+      await clearAllUserData();
       return Left(NetworkFailure(e.message));
     } catch (e) {
-      unawaited(clearAllUserData());
+      await clearAllUserData();
       return Left(ServerFailure(e.toString()));
     }
   }

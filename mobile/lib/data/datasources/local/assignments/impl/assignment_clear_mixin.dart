@@ -1,27 +1,9 @@
-import 'dart:io';
-import 'package:likha/core/database/db_schema.dart';
-import 'package:likha/core/errors/exceptions.dart';
-import 'package:path_provider/path_provider.dart';
 import '../assignment_local_datasource_base.dart';
+import 'operations/clear/clear_all_cache.dart';
 
 mixin AssignmentClearMixin on AssignmentLocalDataSourceBase {
   @override
   Future<void> clearAllCache() async {
-    try {
-      final db = await localDatabase.database;
-      await db.delete(DbTables.assignments);
-      await db.delete(DbTables.assignmentSubmissions);
-      await db.delete(DbTables.submissionFiles);
-
-      try {
-        final dir = await getApplicationDocumentsDirectory();
-        final cacheDir = Directory('${dir.path}/submission_file_cache');
-        if (await cacheDir.exists()) await cacheDir.delete(recursive: true);
-      } catch (_) {
-        // Ignore file system errors
-      }
-    } catch (e) {
-      throw CacheException('Failed to clear assignment cache: $e');
-    }
+    return clearAllCacheOp(localDatabase);
   }
 }

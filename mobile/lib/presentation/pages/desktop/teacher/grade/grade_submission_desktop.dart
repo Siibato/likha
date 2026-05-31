@@ -8,7 +8,7 @@ import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assignments/entities/submission_file.dart';
 import 'package:likha/domain/assignments/usecases/grade_submission.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 
 class GradeSubmissionDesktop extends ConsumerStatefulWidget {
@@ -241,10 +241,10 @@ class _GradeSubmissionDesktopState
         statusColor = AppColors.foregroundSecondary;
         break;
       case 'graded':
-        statusColor = const Color(0xFF28A745);
+        statusColor = AppColors.semanticSuccessAlt;
         break;
       case 'returned':
-        statusColor = const Color(0xFFFFA726);
+        statusColor = AppColors.accentAmber;
         break;
       default:
         statusColor = AppColors.foregroundTertiary;

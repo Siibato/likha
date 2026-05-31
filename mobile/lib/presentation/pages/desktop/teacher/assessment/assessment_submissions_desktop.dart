@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/assessment/submission_review_desktop.dart';
-import 'package:likha/presentation/pages/desktop/teacher/widgets/submission_data_table.dart';
+import 'package:likha/presentation/widgets/desktop/teacher/shared/submission_data_table.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 
 class AssessmentSubmissionsDesktop extends ConsumerStatefulWidget {

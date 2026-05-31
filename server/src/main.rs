@@ -14,8 +14,10 @@ use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter, ColumnTrait, ActiveM
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
-use axum::http::header::{AUTHORIZATION, CONTENT_TYPE, ACCEPT};
-use tower_http::cors::{Any, CorsLayer};
+use axum::http::header::{AUTHORIZATION, CONTENT_TYPE, ACCEPT, HeaderName, HeaderValue};
+use axum::http::Method;
+use tower_http::cors::CorsLayer;
+use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::timeout::TimeoutLayer;
 use uuid::Uuid;
 
@@ -32,6 +34,7 @@ use crate::services::sync_conflict_service::SyncConflictService;
 use crate::services::sync_full::SyncFullService;
 use crate::services::sync_delta::SyncDeltaService;
 use crate::services::tos::TosService;
+use crate::utils::file_encryption::parse_key;
 use crate::db::repositories::{
     manifest_repository::ManifestRepository,
     processed_operations_repository::ProcessedOperationsRepository,
@@ -76,7 +79,7 @@ async fn main() {
             }
             "create-db" => {
                 println!("Creating database and running migrations...");
-                let db = db::establish_connection(&config.database_url)
+                let db = db::establish_connection(&config.database_url, &config.db_encryption_key)
                     .await
                     .expect("Failed to connect to database");
                 run_migrations(&db).await.expect("Failed to run migrations");
@@ -99,7 +102,7 @@ async fn main() {
                 }
 
                 println!("Creating fresh database and running migrations...");
-                let db = db::establish_connection(&config.database_url)
+                let db = db::establish_connection(&config.database_url, &config.db_encryption_key)
                     .await
                     .expect("Failed to connect to database");
                 run_migrations(&db).await.expect("Failed to run migrations");
@@ -108,7 +111,7 @@ async fn main() {
                 return;
             }
             "clear-invalid-attempts" => {
-                let db = db::establish_connection(&config.database_url)
+                let db = db::establish_connection(&config.database_url, &config.db_encryption_key)
                     .await
                     .expect("Failed to connect to database");
                 let repo = crate::db::repositories::login_attempt_repository::LoginAttemptRepository::new(db);
@@ -133,7 +136,7 @@ async fn main() {
     tracing::info!("Port: {}", config.port);
 
     // Connect to database
-    let db = db::establish_connection(&config.database_url)
+    let db = db::establish_connection(&config.database_url, &config.db_encryption_key)
         .await
         .expect("Failed to connect to database");
 
@@ -155,8 +158,21 @@ async fn main() {
     let class_service = Arc::new(ClassService::new(db.clone()));
 
     let assessment_service = Arc::new(AssessmentService::new(db.clone()));
-    let assignment_service = Arc::new(AssignmentService::new(db.clone(), config.file_storage_path.clone()));
-    let material_service = Arc::new(LearningMaterialService::new(db.clone(), config.file_storage_path.clone()));
+
+    // Parse file encryption key from hex string
+    let file_encryption_key = parse_key(&config.file_encryption_key)
+        .expect("Invalid FILE_ENCRYPTION_KEY format");
+
+    let assignment_service = Arc::new(AssignmentService::new(
+        db.clone(),
+        config.file_storage_path.clone(),
+        file_encryption_key,
+    ));
+    let material_service = Arc::new(LearningMaterialService::new(
+        db.clone(),
+        config.file_storage_path.clone(),
+        file_encryption_key,
+    ));
 
     // Initialize new offline-first sync services
     let _entitlement_repo = crate::db::repositories::entitlement_repository::EntitlementRepository::new(db.clone());
@@ -199,6 +215,7 @@ async fn main() {
     ));
 
     let app = create_app(
+        &config,
         auth_service,
         class_service,
         assessment_service,
@@ -227,6 +244,7 @@ async fn main() {
 }
 
 fn create_app(
+    config: &config::ServerConfig,
     auth_service: Arc<AuthService>,
     class_service: Arc<ClassService>,
     assessment_service: Arc<AssessmentService>,
@@ -240,11 +258,6 @@ fn create_app(
     sync_full_service: Arc<SyncFullService>,
     sync_delta_service: Arc<SyncDeltaService>,
 ) -> Router {
-    let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers([AUTHORIZATION, CONTENT_TYPE, ACCEPT]);
-
     Router::new()
         .nest(
             "/api/v1",
@@ -263,9 +276,44 @@ fn create_app(
                 sync_delta_service,
             ),
         )
+        .layer(RequestBodyLimitLayer::new(config.max_body_size_bytes as usize))
         .layer(TimeoutLayer::with_status_code(axum::http::StatusCode::REQUEST_TIMEOUT, Duration::from_secs(60)))
-        .layer(cors)
+        .layer(build_cors_layer(config))
+        .layer(axum::middleware::from_fn(middleware::add_security_headers))
         .layer(middleware::logging_middleware())
+}
+
+fn build_cors_layer(config: &config::ServerConfig) -> CorsLayer {
+    let x_device_id: HeaderName = "x-device-id".parse().expect("valid header name");
+
+    let allowed_methods = [
+        Method::GET,
+        Method::POST,
+        Method::PUT,
+        Method::DELETE,
+        Method::OPTIONS,
+    ];
+
+    let allowed_headers = [AUTHORIZATION, CONTENT_TYPE, ACCEPT, x_device_id];
+
+    if config.allowed_origins.is_empty() {
+        return CorsLayer::new()
+            .allow_methods(allowed_methods)
+            .allow_headers(allowed_headers)
+            .max_age(Duration::from_secs(3600));
+    }
+
+    let origins: Vec<HeaderValue> = config
+        .allowed_origins
+        .iter()
+        .filter_map(|o| o.parse().ok())
+        .collect();
+
+    CorsLayer::new()
+        .allow_origin(origins)
+        .allow_methods(allowed_methods)
+        .allow_headers(allowed_headers)
+        .max_age(Duration::from_secs(3600))
 }
 
 async fn run_migrations(db: &DatabaseConnection) -> Result<(), sea_orm::DbErr> {

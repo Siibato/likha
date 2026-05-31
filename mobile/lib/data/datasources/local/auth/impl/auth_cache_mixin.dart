@@ -1,113 +1,41 @@
-import 'package:likha/core/errors/exceptions.dart';
-import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/auth/activity_log_model.dart';
 import 'package:likha/data/models/auth/user_model.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:uuid/uuid.dart';
 import '../auth_local_datasource_base.dart';
+import 'operations/cache/cache_current_user.dart';
+import 'operations/cache/cache_accounts.dart';
+import 'operations/cache/cache_created_account.dart';
+import 'operations/cache/cache_activity_logs.dart';
+import 'operations/cache/clear_activity_logs_for_user.dart';
+import 'operations/cache/clear_all_cache.dart';
 
 mixin AuthCacheMixin on AuthLocalDataSourceBase {
   @override
   Future<void> cacheCurrentUser(UserModel user) async {
-    try {
-      final db = await localDatabase.database;
-      final map = user.toMap();
-      map['cached_at'] = DateTime.now().toIso8601String();
-      map['needs_sync'] = 0;
-      await db.insert('users', map, conflictAlgorithm: ConflictAlgorithm.replace);
-    } catch (e) {
-      throw CacheException('Failed to cache user: $e');
-    }
+    return cacheCurrentUserOp(localDatabase, enc, user);
   }
 
   @override
   Future<void> cacheAccounts(List<UserModel> accounts) async {
-    try {
-      final db = await localDatabase.database;
-      await db.transaction((txn) async {
-        for (final account in accounts) {
-          final map = account.toMap();
-          map['cached_at'] = DateTime.now().toIso8601String();
-          map['needs_sync'] = 0;
-          await txn.insert('users', map, conflictAlgorithm: ConflictAlgorithm.replace);
-        }
-      });
-    } catch (e) {
-      throw CacheException('Failed to cache accounts: $e');
-    }
+    return cacheAccountsOp(localDatabase, enc, accounts);
   }
 
   @override
   Future<void> cacheCreatedAccount(UserModel account) async {
-    try {
-      final db = await localDatabase.database;
-      final now = DateTime.now();
-      final map = account.toMap();
-      map['cached_at'] = now.toIso8601String();
-      map['needs_sync'] = 1;
-      await db.transaction((txn) async {
-        await txn.insert('users', map, conflictAlgorithm: ConflictAlgorithm.replace);
-        await syncQueue.enqueue(SyncQueueEntry(
-          id: const Uuid().v4(),
-          entityType: SyncEntityType.user,
-          operation: SyncOperation.create,
-          payload: map,
-          status: SyncStatus.pending,
-          retryCount: 0,
-          maxRetries: 3,
-          createdAt: now,
-        ), txn: txn);
-      });
-    } catch (e) {
-      throw CacheException('Failed to cache created account: $e');
-    }
+    return cacheCreatedAccountOp(localDatabase, enc, syncQueue, account);
   }
 
   @override
   Future<void> cacheActivityLogs(List<ActivityLogModel> logs, String userId) async {
-    try {
-      final db = await localDatabase.database;
-      await db.transaction((txn) async {
-        for (final log in logs) {
-          await txn.insert(
-            'activity_logs',
-            {
-              'id': log.id,
-              'user_id': log.userId,
-              'action': log.action,
-              'details': log.details,
-              'created_at': log.createdAt.toIso8601String(),
-              'cached_at': DateTime.now().toIso8601String(),
-              'needs_sync': 0,
-            },
-            conflictAlgorithm: ConflictAlgorithm.replace,
-          );
-        }
-      });
-    } catch (e) {
-      throw CacheException('Failed to cache activity logs: $e');
-    }
+    return cacheActivityLogsOp(localDatabase, enc, logs, userId);
   }
 
   @override
   Future<void> clearActivityLogsForUser(String userId) async {
-    try {
-      final db = await localDatabase.database;
-      await db.delete('activity_logs', where: 'user_id = ?', whereArgs: [userId]);
-    } catch (e) {
-      throw CacheException('Failed to clear activity logs: $e');
-    }
+    return clearActivityLogsForUserOp(localDatabase, userId);
   }
 
   @override
   Future<void> clearAllCache() async {
-    try {
-      final db = await localDatabase.database;
-      await db.delete('users');
-      await db.delete('activity_logs');
-      await db.delete('sync_metadata');
-    } catch (e) {
-      throw CacheException('Failed to clear auth cache: $e');
-    }
+    return clearAllCacheOp(localDatabase);
   }
 }

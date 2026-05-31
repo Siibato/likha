@@ -1,7 +1,3 @@
-import 'package:dio/dio.dart';
-
-import 'package:likha/core/constants/api_endpoints.dart';
-import 'package:likha/core/logging/provider_logger.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/models/grading/grade_config_model.dart';
 import 'package:likha/data/models/grading/grade_item_model.dart';
@@ -9,6 +5,7 @@ import 'package:likha/data/models/grading/grade_score_model.dart';
 import 'package:likha/data/models/grading/period_grade_model.dart';
 import 'package:likha/data/models/grading/general_average_model.dart';
 import 'package:likha/data/models/grading/sf9_model.dart';
+import 'package:likha/data/datasources/remote/operations/grading/grading.dart' as ops;
 
 abstract class GradingRemoteDataSource {
   // Config
@@ -101,56 +98,33 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
   @override
   Future<List<GradeConfigModel>> getGradingConfig({
     required String classId,
-  }) async {
-    try {
-      ProviderLogger.instance.debug('getGradingConfig called for classId: $classId');
-      final response = await _dioClient.dio.get(
-        ApiEndpoints.gradingConfig(classId).path,
+  }) =>
+      ops.getGradingConfig(
+        _dioClient,
+        classId: classId,
       );
-      ProviderLogger.instance.debug('API response: ${response.data}');
-      final raw = response.data['data'] ?? response.data;
-      ProviderLogger.instance.debug('raw data: $raw');
-      ProviderLogger.instance.debug('raw is List? ${raw is List}');
-      ProviderLogger.instance.debug('raw runtime type: ${raw.runtimeType}');
-      final configs = raw is List ? raw : (raw['configs'] as List<dynamic>? ?? []);
-      ProviderLogger.instance.debug('final configs count: ${configs.length}');
-      return configs
-          .map((e) => GradeConfigModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<void> setupGrading({
     required String classId,
     required Map<String, dynamic> data,
-  }) async {
-    try {
-      await _dioClient.dio.post(
-        ApiEndpoints.gradingConfigSetup(classId).path,
+  }) =>
+      ops.setupGrading(
+        _dioClient,
+        classId: classId,
         data: data,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<void> updateGradingConfig({
     required String classId,
     required List<Map<String, dynamic>> configs,
-  }) async {
-    try {
-      await _dioClient.dio.put(
-        ApiEndpoints.gradingConfig(classId).path,
-        data: {'configs': configs},
+  }) =>
+      ops.updateGradingConfig(
+        _dioClient,
+        classId: classId,
+        configs: configs,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   // ===== Grade Items =====
 
@@ -159,149 +133,82 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
     required String classId,
     required int gradingPeriodNumber,
     String? component,
-  }) async {
-    try {
-      final queryParams = <String, dynamic>{'grading_period_number': gradingPeriodNumber};
-      if (component != null) queryParams['component'] = component;
-
-      final response = await _dioClient.dio.get(
-        ApiEndpoints.gradeItems(classId).path,
-        queryParameters: queryParams,
+  }) =>
+      ops.getGradeItems(
+        _dioClient,
+        classId: classId,
+        gradingPeriodNumber: gradingPeriodNumber,
+        component: component,
       );
-      final data = response.data['data'] ?? response.data;
-      
-      List<dynamic> items;
-      if (data is List) {
-        items = data;
-      } else if (data is Map<String, dynamic>) {
-        items = data['items'] as List<dynamic>? ?? [];
-      } else {
-        items = [];
-      }
-      
-      return items
-          .map((e) => GradeItemModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<GradeItemModel> createGradeItem({
     required String classId,
     required Map<String, dynamic> data,
-  }) async {
-    try {
-      final response = await _dioClient.dio.post(
-        ApiEndpoints.gradeItems(classId).path,
+  }) =>
+      ops.createGradeItem(
+        _dioClient,
+        classId: classId,
         data: data,
       );
-      final responseData = response.data['data'] ?? response.data;
-      return GradeItemModel.fromJson(responseData as Map<String, dynamic>);
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<void> updateGradeItem({
     required String id,
     required Map<String, dynamic> data,
-  }) async {
-    try {
-      await _dioClient.dio.put(
-        ApiEndpoints.gradeItemDetail(id).path,
+  }) =>
+      ops.updateGradeItem(
+        _dioClient,
+        id: id,
         data: data,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
-  Future<void> deleteGradeItem({required String id}) async {
-    try {
-      await _dioClient.dio.delete(
-        ApiEndpoints.gradeItemDetail(id).path,
+  Future<void> deleteGradeItem({required String id}) =>
+      ops.deleteGradeItem(
+        _dioClient,
+        id: id,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   // ===== Scores =====
 
   @override
   Future<List<GradeScoreModel>> getScoresByItem({
     required String gradeItemId,
-  }) async {
-    try {
-      final response = await _dioClient.dio.get(
-        ApiEndpoints.gradeItemScores(gradeItemId).path,
+  }) =>
+      ops.getScoresByItem(
+        _dioClient,
+        gradeItemId: gradeItemId,
       );
-      final data = response.data['data'] ?? response.data;
-      
-      // Handle both response structures:
-      // 1. {"data": [...]} where data is directly an array of scores
-      // 2. {"data": {"scores": [...]}} where data contains a scores array
-      List<dynamic> scores;
-      if (data is List) {
-        scores = data;
-      } else if (data is Map<String, dynamic>) {
-        scores = data['scores'] as List<dynamic>? ?? [];
-      } else {
-        scores = [];
-      }
-      
-      return scores
-          .map((e) => GradeScoreModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<void> saveScores({
     required String gradeItemId,
     required List<Map<String, dynamic>> scores,
-  }) async {
-    try {
-      await _dioClient.dio.put(
-        ApiEndpoints.gradeItemScores(gradeItemId).path,
-        data: {'scores': scores},
+  }) =>
+      ops.saveScores(
+        _dioClient,
+        gradeItemId: gradeItemId,
+        scores: scores,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<void> setScoreOverride({
     required String scoreId,
     required double overrideScore,
-  }) async {
-    try {
-      await _dioClient.dio.put(
-        ApiEndpoints.gradeScoreOverride(scoreId).path,
-        data: {'override_score': overrideScore},
+  }) =>
+      ops.setScoreOverride(
+        _dioClient,
+        scoreId: scoreId,
+        overrideScore: overrideScore,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
-  Future<void> clearScoreOverride({required String scoreId}) async {
-    try {
-      await _dioClient.dio.delete(
-        ApiEndpoints.gradeScoreOverride(scoreId).path,
+  Future<void> clearScoreOverride({required String scoreId}) =>
+      ops.clearScoreOverride(
+        _dioClient,
+        scoreId: scoreId,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   // ===== Computed Grades =====
 
@@ -309,140 +216,84 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
   Future<List<PeriodGradeModel>> getPeriodGrades({
     required String classId,
     required int gradingPeriodNumber,
-  }) async {
-    try {
-      final response = await _dioClient.dio.get(
-        ApiEndpoints.classGrades(classId).path,
-        queryParameters: {'grading_period_number': gradingPeriodNumber},
+  }) =>
+      ops.getPeriodGrades(
+        _dioClient,
+        classId: classId,
+        gradingPeriodNumber: gradingPeriodNumber,
       );
-      final data = response.data['data'] ?? response.data;
-      final grades = data['grades'] as List<dynamic>? ?? [];
-      return grades
-          .map(
-              (e) => PeriodGradeModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<void> computeGrades({
     required String classId,
     required int gradingPeriodNumber,
-  }) async {
-    try {
-      await _dioClient.dio.post(
-        ApiEndpoints.classGradesCompute(classId).path,
-        queryParameters: {'grading_period_number': gradingPeriodNumber},
+  }) =>
+      ops.computeGrades(
+        _dioClient,
+        classId: classId,
+        gradingPeriodNumber: gradingPeriodNumber,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<List<Map<String, dynamic>>> getGradeSummary({
     required String classId,
     required int gradingPeriodNumber,
-  }) async {
-    try {
-      final response = await _dioClient.dio.get(
-        ApiEndpoints.classGradesSummary(classId).path,
-        queryParameters: {'grading_period_number': gradingPeriodNumber},
+  }) =>
+      ops.getGradeSummary(
+        _dioClient,
+        classId: classId,
+        gradingPeriodNumber: gradingPeriodNumber,
       );
-      final data = response.data['data'] ?? response.data;
-      final summary = data['summary'] as List<dynamic>? ?? [];
-      return summary.cast<Map<String, dynamic>>();
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<List<Map<String, dynamic>>> getFinalGrades({
     required String classId,
-  }) async {
-    try {
-      final response = await _dioClient.dio.get(
-        ApiEndpoints.classGradesFinal(classId).path,
+  }) =>
+      ops.getFinalGrades(
+        _dioClient,
+        classId: classId,
       );
-      final data = response.data['data'] ?? response.data;
-      final grades = data['grades'] as List<dynamic>? ?? [];
-      return grades.cast<Map<String, dynamic>>();
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   // ===== Student =====
 
   @override
   Future<List<PeriodGradeModel>> getMyGrades({
     required String classId,
-  }) async {
-    try {
-      final response = await _dioClient.dio.get(
-        ApiEndpoints.myGrades(classId).path,
+  }) =>
+      ops.getMyGrades(
+        _dioClient,
+        classId: classId,
       );
-      final data = response.data['data'] ?? response.data;
-      final grades = data['grades'] as List<dynamic>? ?? [];
-      return grades
-          .map(
-              (e) => PeriodGradeModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<Map<String, dynamic>> getMyGradeDetail({
     required String classId,
     required int gradingPeriodNumber,
-  }) async {
-    try {
-      final response = await _dioClient.dio.get(
-        ApiEndpoints.myGradeDetail(classId, gradingPeriodNumber).path,
+  }) =>
+      ops.getMyGradeDetail(
+        _dioClient,
+        classId: classId,
+        gradingPeriodNumber: gradingPeriodNumber,
       );
-      return (response.data['data'] ?? response.data) as Map<String, dynamic>;
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   // ===== Presets =====
 
   @override
-  Future<Map<String, dynamic>> getDepEdPresets() async {
-    try {
-      final response = await _dioClient.dio.get(
-        ApiEndpoints.depEdPresets.path,
+  Future<Map<String, dynamic>> getDepEdPresets() =>
+      ops.getDepEdPresets(
+        _dioClient,
       );
-      return (response.data['data'] ?? response.data) as Map<String, dynamic>;
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   // ===== General Average =====
 
   @override
   Future<GeneralAverageResponseModel> getGeneralAverages({
     required String classId,
-  }) async {
-    try {
-      final response = await _dioClient.dio.get(
-        ApiEndpoints.generalAverage(classId).path,
+  }) =>
+      ops.getGeneralAverages(
+        _dioClient,
+        classId: classId,
       );
-      final data = response.data['data'] ?? response.data;
-      return GeneralAverageResponseModel.fromJson(
-        data as Map<String, dynamic>,
-      );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   // ===== SF9/SF10 =====
 
@@ -450,31 +301,21 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
   Future<Sf9ResponseModel> getSf9({
     required String classId,
     required String studentId,
-  }) async {
-    try {
-      final response = await _dioClient.dio.get(
-        ApiEndpoints.sf9(classId, studentId).path,
+  }) =>
+      ops.getSf9(
+        _dioClient,
+        classId: classId,
+        studentId: studentId,
       );
-      final data = response.data['data'] ?? response.data;
-      return Sf9ResponseModel.fromJson(data as Map<String, dynamic>);
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<Sf9ResponseModel> getSf10({
     required String classId,
     required String studentId,
-  }) async {
-    try {
-      final response = await _dioClient.dio.get(
-        ApiEndpoints.sf10(classId, studentId).path,
+  }) =>
+      ops.getSf10(
+        _dioClient,
+        classId: classId,
+        studentId: studentId,
       );
-      final data = response.data['data'] ?? response.data;
-      return Sf9ResponseModel.fromJson(data as Map<String, dynamic>);
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 }

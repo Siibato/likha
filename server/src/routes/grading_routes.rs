@@ -32,6 +32,10 @@ pub fn routes(grade_service: Arc<GradeComputationService>) -> Router {
             post(grading_handler::create_grade_item),
         )
         .route(
+            "/classes/{class_id}/grade-items/batch",
+            post(grading_handler::create_grade_items_batch),
+        )
+        .route(
             "/grade-items/{id}",
             put(grading_handler::update_grade_item),
         )
@@ -47,6 +51,10 @@ pub fn routes(grade_service: Arc<GradeComputationService>) -> Router {
         .route(
             "/grade-items/{id}/scores",
             put(grading_handler::update_item_scores),
+        )
+        .route(
+            "/grade-scores/batch",
+            put(grading_handler::update_scores_batch),
         )
         .route(
             "/grade-scores/{id}/override",
@@ -72,6 +80,10 @@ pub fn routes(grade_service: Arc<GradeComputationService>) -> Router {
         .route(
             "/classes/{class_id}/grades/summary",
             get(grading_handler::get_grade_summary),
+        )
+        .route(
+            "/classes/{class_id}/grade-data",
+            get(grading_handler::get_all_grade_data),
         )
         // Student
         .route(

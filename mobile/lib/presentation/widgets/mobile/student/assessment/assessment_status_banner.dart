@@ -1,0 +1,118 @@
+import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/widgets/shared/banners/base_status_banner.dart';
+
+enum DetailStatus {
+  notYetOpen,
+  available,
+  resumable,
+  closed,
+  pendingResults,
+  resultsAvailable,
+}
+
+class AssessmentStatusBanner extends StatelessWidget {
+  final DetailStatus status;
+  final DateTime? openAt;
+  final DateTime? closeAt;
+
+  const AssessmentStatusBanner({
+    super.key,
+    required this.status,
+    this.openAt,
+    this.closeAt,
+  });
+
+  String _formatDateTime(DateTime dt) {
+    // Convert UTC to device local time before formatting
+    final local = dt.toLocal();
+    final month = local.month.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    final year = local.year;
+    final hour = local.hour > 12
+        ? local.hour - 12
+        : local.hour == 0
+            ? 12
+            : local.hour;
+    final minute = local.minute.toString().padLeft(2, '0');
+    final period = local.hour >= 12 ? 'PM' : 'AM';
+    return '$month/$day/$year $hour:$minute $period';
+  }
+
+  (Color, IconData, String, String) _getStatusData() {
+    switch (status) {
+      case DetailStatus.notYetOpen:
+        return (
+          AppColors.foregroundSecondary,
+          Icons.schedule_rounded,
+          'Not Yet Open',
+          openAt != null ? 'Opens on ${_formatDateTime(openAt!)}' : 'Opening soon',
+        );
+      case DetailStatus.available:
+        return (
+          AppColors.semanticSuccessAlt,
+          Icons.play_circle_outline_rounded,
+          'Available',
+          'Start before the deadline',
+        );
+      case DetailStatus.resumable:
+        return (
+          AppColors.accentAmber,
+          Icons.play_arrow_rounded,
+          'In Progress',
+          'You\'ve already started this assessment',
+        );
+      case DetailStatus.closed:
+        return (
+          AppColors.foregroundTertiary,
+          Icons.lock_outline_rounded,
+          'Assessment Closed',
+          'The deadline has passed',
+        );
+      case DetailStatus.pendingResults:
+        return (
+          AppColors.foregroundSecondary,
+          Icons.hourglass_empty_rounded,
+          'Results Pending',
+          'Your submission is being reviewed',
+        );
+      case DetailStatus.resultsAvailable:
+        return (
+          AppColors.semanticSuccessAlt,
+          Icons.check_circle_outline_rounded,
+          'Results Available',
+          'View your score below',
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final (bgColor, icon, title, message) = _getStatusData();
+    final variant = _getBannerVariant();
+
+    return BaseStatusBanner(
+      title: title,
+      message: message,
+      icon: icon,
+      variant: variant,
+    );
+  }
+
+  BaseStatusBannerVariant _getBannerVariant() {
+    switch (status) {
+      case DetailStatus.notYetOpen:
+        return BaseStatusBannerVariant.neutral;
+      case DetailStatus.available:
+        return BaseStatusBannerVariant.success;
+      case DetailStatus.resumable:
+        return BaseStatusBannerVariant.warning;
+      case DetailStatus.closed:
+        return BaseStatusBannerVariant.neutral;
+      case DetailStatus.pendingResults:
+        return BaseStatusBannerVariant.info;
+      case DetailStatus.resultsAvailable:
+        return BaseStatusBannerVariant.success;
+    }
+  }
+}

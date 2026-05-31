@@ -26,6 +26,36 @@ class FullSyncResponseModel {
   @JsonKey(name: 'learning_materials')
   final List<Map<String, dynamic>> learningMaterials;
 
+  @JsonKey(name: 'material_files', defaultValue: <Map<String, dynamic>>[])
+  final List<Map<String, dynamic>> materialFiles;
+
+  @JsonKey(name: 'submission_files', defaultValue: <Map<String, dynamic>>[])
+  final List<Map<String, dynamic>> submissionFiles;
+
+  @JsonKey(name: 'assessment_statistics', defaultValue: <Map<String, dynamic>>[])
+  final List<Map<String, dynamic>> assessmentStatistics;
+
+  @JsonKey(name: 'student_results', defaultValue: <Map<String, dynamic>>[])
+  final List<Map<String, dynamic>> studentResults;
+
+  @JsonKey(name: 'grade_configs', defaultValue: <Map<String, dynamic>>[])
+  final List<Map<String, dynamic>> gradeConfigs;
+
+  @JsonKey(name: 'grade_items', defaultValue: <Map<String, dynamic>>[])
+  final List<Map<String, dynamic>> gradeItems;
+
+  @JsonKey(name: 'grade_scores', defaultValue: <Map<String, dynamic>>[])
+  final List<Map<String, dynamic>> gradeScores;
+
+  @JsonKey(name: 'period_grades', defaultValue: <Map<String, dynamic>>[])
+  final List<Map<String, dynamic>> periodGrades;
+
+  @JsonKey(name: 'table_of_specifications', defaultValue: <Map<String, dynamic>>[])
+  final List<Map<String, dynamic>> tableOfSpecifications;
+
+  @JsonKey(name: 'tos_competencies', defaultValue: <Map<String, dynamic>>[])
+  final List<Map<String, dynamic>> tosCompetencies;
+
   final Map<String, dynamic>? user;
 
   @JsonKey(name: 'enrolled_students')
@@ -42,6 +72,16 @@ class FullSyncResponseModel {
     required this.assignments,
     required this.assignmentSubmissions,
     required this.learningMaterials,
+    this.materialFiles = const [],
+    this.submissionFiles = const [],
+    this.assessmentStatistics = const [],
+    this.studentResults = const [],
+    this.gradeConfigs = const [],
+    this.gradeItems = const [],
+    this.gradeScores = const [],
+    this.periodGrades = const [],
+    this.tableOfSpecifications = const [],
+    this.tosCompetencies = const [],
     this.user,
     this.enrolledStudents,
   });

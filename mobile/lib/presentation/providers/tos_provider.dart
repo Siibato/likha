@@ -13,6 +13,8 @@ import 'package:likha/domain/tos/usecases/update_competency.dart';
 import 'package:likha/domain/tos/usecases/update_tos.dart';
 import 'package:likha/injection_container.dart';
 
+const _kMelcPageSize = 30;
+
 class TosState {
   final List<TableOfSpecifications> tosList;
   final TableOfSpecifications? currentTos;
@@ -20,8 +22,13 @@ class TosState {
   final List<MelcEntryModel> melcResults;
   final bool isLoading;
   final bool isMelcSearching;
+  final bool isLoadingMore;
+  final bool melcHasMore;
+  final int melcPage;
   final String? error;
   final String? successMessage;
+  final String? selectedGrade;
+  final String? selectedSubject;
 
   TosState({
     this.tosList = const [],
@@ -30,8 +37,13 @@ class TosState {
     this.melcResults = const [],
     this.isLoading = false,
     this.isMelcSearching = false,
+    this.isLoadingMore = false,
+    this.melcHasMore = true,
+    this.melcPage = 0,
     this.error,
     this.successMessage,
+    this.selectedGrade,
+    this.selectedSubject,
   });
 
   TosState copyWith({
@@ -41,11 +53,18 @@ class TosState {
     List<MelcEntryModel>? melcResults,
     bool? isLoading,
     bool? isMelcSearching,
+    bool? isLoadingMore,
+    bool? melcHasMore,
+    int? melcPage,
     String? error,
     String? successMessage,
+    String? selectedGrade,
+    String? selectedSubject,
     bool clearError = false,
     bool clearSuccess = false,
     bool clearTos = false,
+    bool clearGrade = false,
+    bool clearSubject = false,
   }) {
     return TosState(
       tosList: tosList ?? this.tosList,
@@ -54,8 +73,13 @@ class TosState {
       melcResults: melcResults ?? this.melcResults,
       isLoading: isLoading ?? this.isLoading,
       isMelcSearching: isMelcSearching ?? this.isMelcSearching,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      melcHasMore: melcHasMore ?? this.melcHasMore,
+      melcPage: melcPage ?? this.melcPage,
       error: clearError ? null : (error ?? this.error),
       successMessage: clearSuccess ? null : (successMessage ?? this.successMessage),
+      selectedGrade: clearGrade ? null : (selectedGrade ?? this.selectedGrade),
+      selectedSubject: clearSubject ? null : (selectedSubject ?? this.selectedSubject),
     );
   }
 }
@@ -195,12 +219,47 @@ class TosNotifier extends StateNotifier<TosState> {
     );
   }
 
+  // Stored so loadMoreMelcs can re-use the same filters/query.
+  SearchMelcsParams? _lastMelcParams;
+
   Future<void> searchMelcs(SearchMelcsParams params) async {
-    state = state.copyWith(isMelcSearching: true, clearError: true);
-    final result = await sl<SearchMelcs>().call(params);
+    _lastMelcParams = params.copyWith(limit: _kMelcPageSize, offset: 0);
+    state = state.copyWith(
+      isMelcSearching: true,
+      clearError: true,
+      melcPage: 0,
+      melcHasMore: true,
+      melcResults: [],
+    );
+    final result = await sl<SearchMelcs>().call(_lastMelcParams!);
     result.fold(
       (failure) => state = state.copyWith(isMelcSearching: false, error: failure.message),
-      (results) => state = state.copyWith(isMelcSearching: false, melcResults: results),
+      (results) => state = state.copyWith(
+        isMelcSearching: false,
+        melcResults: results,
+        melcPage: 1,
+        melcHasMore: results.length >= _kMelcPageSize,
+      ),
+    );
+  }
+
+  Future<void> loadMoreMelcs() async {
+    if (!state.melcHasMore || state.isLoadingMore || state.isMelcSearching) return;
+    if (_lastMelcParams == null) return;
+    final nextParams = _lastMelcParams!.copyWith(
+      limit: _kMelcPageSize,
+      offset: state.melcPage * _kMelcPageSize,
+    );
+    state = state.copyWith(isLoadingMore: true);
+    final result = await sl<SearchMelcs>().call(nextParams);
+    result.fold(
+      (failure) => state = state.copyWith(isLoadingMore: false, error: failure.message),
+      (results) => state = state.copyWith(
+        isLoadingMore: false,
+        melcResults: [...state.melcResults, ...results],
+        melcPage: state.melcPage + 1,
+        melcHasMore: results.length >= _kMelcPageSize,
+      ),
     );
   }
 
@@ -210,6 +269,15 @@ class TosNotifier extends StateNotifier<TosState> {
 
   void clearMelcResults() {
     state = state.copyWith(melcResults: []);
+  }
+
+  void setMelcFilters({String? grade, String? subject, bool clearGrade = false, bool clearSubject = false}) {
+    state = state.copyWith(
+      selectedGrade: grade,
+      selectedSubject: subject,
+      clearGrade: clearGrade,
+      clearSubject: clearSubject,
+    );
   }
 }
 

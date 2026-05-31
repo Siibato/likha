@@ -76,17 +76,28 @@ class SyncManager {
 
   /// Start sync manager - listen for server reachability changes
   void start() {
+    _log.log('start() - START');
     stop(); // cancel any existing subscription to prevent duplicates
+    
+    _log.log('start() - Setting up reachability listener');
     _reachabilitySubscription =
         _serverReachabilityService.onServerReachabilityChanged.listen((isReachable) {
+      _log.log('start() - Reachability changed to: $isReachable, isSyncing: $_isSyncing');
       if (isReachable && !_isSyncing) {
+        _log.log('start() - Triggering sync due to reachability change');
         _runSync();
       }
     });
 
+    _log.log('start() - Initial reachability check: ${_serverReachabilityService.isServerReachable}');
     if (_serverReachabilityService.isServerReachable && !_isSyncing) {
+      _log.log('start() - Triggering initial sync');
       _runSync();
+    } else {
+      _log.log('start() - Not triggering sync (reachable: ${_serverReachabilityService.isServerReachable}, syncing: $_isSyncing)');
     }
+    
+    _log.log('start() - END');
   }
 
   /// Stop sync manager
@@ -109,18 +120,31 @@ class SyncManager {
 
   /// Main sync orchestration: outbound then inbound
   Future<void> _runSync() async {
-    if (!await _storageService.isAuthenticated()) return;
-    if (_isSyncing) return;
+    _log.log('_runSync() - START');
+    
+    if (!await _storageService.isAuthenticated()) {
+      _log.log('_runSync() - Not authenticated, skipping');
+      return;
+    }
+    if (_isSyncing) {
+      _log.log('_runSync() - Already syncing, skipping');
+      return;
+    }
     _isSyncing = true;
 
+    _log.log('_runSync() - Starting sync phase');
     _updateState(phase: SyncPhase.syncing);
 
     try {
       // STEP 1: Push local mutations to server
+      _log.log('_runSync() - Starting outbound sync');
       await _outboundHandler.outboundSync();
+      _log.log('_runSync() - Outbound sync completed');
 
       // STEP 2: Fetch and merge server changes
+      _log.log('_runSync() - Starting inbound sync');
       final serverTime = await _inboundHandler.inboundSync();
+      _log.log('_runSync() - Inbound sync completed, serverTime: $serverTime');
 
       // Update server-aligned clock offset for UI time comparisons
       if (serverTime != null) {
@@ -149,31 +173,15 @@ class SyncManager {
         );
       }
 
-      // Refresh pending count after sync completes (should be 0 now)
-      final finalPendingCount = await _syncQueue.getPendingCount();
-      _updateState(
-        phase: SyncPhase.succeeded,
-        lastSyncAt: DateTime.now(),
-        pendingCount: finalPendingCount,
-      );
-    } catch (e, st) {
-      final errorMsg = _formatError(e, st);
-      _log.syncError(errorMsg);
-      _updateState(
-        phase: SyncPhase.failed,
-        lastError: errorMsg,
-      );
+      _log.log('_runSync() - SUCCESS: Sync completed');
+      _updateState(phase: SyncPhase.idle);
+    } catch (e) {
+      _log.log('_runSync() - ERROR: ${e.toString()}');
+      _updateState(phase: SyncPhase.failed, lastError: e.toString());
     } finally {
       _isSyncing = false;
+      _log.log('_runSync() - END');
     }
-  }
-
-  /// Format error with stack trace for better debugging
-  String _formatError(Object error, StackTrace stackTrace) {
-    if (error is Exception) {
-      return error.toString();
-    }
-    return 'Unexpected error: ${error.toString()}\n${stackTrace.toString()}';
   }
 
   /// Update sync state and notify listeners

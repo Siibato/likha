@@ -27,6 +27,8 @@ pub struct CreateGradeItemRequest {
     pub component: String,
     pub grading_period_number: Option<i32>,
     pub total_points: f64,
+    pub source_type: Option<String>,
+    pub source_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -35,6 +37,8 @@ pub struct UpdateGradeItemRequest {
     pub component: Option<String>,
     pub total_points: Option<f64>,
     pub order_index: Option<i32>,
+    pub source_type: Option<String>,
+    pub source_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -45,6 +49,7 @@ pub struct StudentScore {
 
 #[derive(Debug, Deserialize)]
 pub struct BulkUpdateScoresRequest {
+    pub grade_item_id: String,
     pub scores: Vec<StudentScore>,
 }
 
@@ -278,4 +283,13 @@ impl From<::entity::period_grades::Model> for PeriodGradeResponse {
             is_locked: m.is_locked,
         }
     }
+}
+
+// ===== BATCH RESPONSE SCHEMAS =====
+
+#[derive(Debug, Serialize)]
+pub struct AllGradeDataResponse {
+    pub grade_items: Vec<GradeItemResponse>,
+    pub grade_summary: GradeSummaryResponse,
+    pub quarter: i32,
 }

@@ -5,8 +5,8 @@ import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/assignment/assignment_submissions_desktop.dart';
-import 'package:likha/presentation/pages/shared/widgets/cards/markdown_display.dart';
-import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/widgets/shared/cards/markdown_display.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 
 class AssignmentDetailDesktop extends ConsumerStatefulWidget {
@@ -244,7 +244,7 @@ class _AssignmentDetailDesktopState
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: isPublished
-            ? const Color(0xFF28A745).withValues(alpha: 0.12)
+            ? AppColors.semanticSuccessAlt.withValues(alpha: 0.12)
             : AppColors.foregroundTertiary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
       ),
@@ -254,7 +254,7 @@ class _AssignmentDetailDesktopState
           fontSize: 13,
           fontWeight: FontWeight.w600,
           color: isPublished
-              ? const Color(0xFF28A745)
+              ? AppColors.semanticSuccessAlt
               : AppColors.foregroundTertiary,
         ),
       ),

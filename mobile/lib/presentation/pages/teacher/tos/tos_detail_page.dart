@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.dart';
-import 'package:likha/presentation/widgets/styled_dialog.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 import 'package:likha/presentation/pages/teacher/tos/edit_tos_page.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/bulk_paste_sheet.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/melcs_search_sheet.dart';
-import 'package:likha/presentation/pages/teacher/tos/widgets/tos_competency_row.dart';
-import 'package:likha/presentation/pages/teacher/tos/widgets/tos_grid_table.dart';
-import 'package:likha/presentation/pages/teacher/tos/widgets/tos_print_preview.dart';
-import 'package:likha/presentation/pages/teacher/tos/widgets/tos_settings_card.dart';
-import 'package:likha/presentation/pages/teacher/tos/widgets/tos_summary_row.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/bulk_paste_sheet.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/melcs_search_sheet.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_competency_row.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_grid_table.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_print_preview.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_settings_card.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_summary_row.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 
@@ -219,7 +220,7 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.error!),
-            backgroundColor: const Color(0xFFE57373),
+            backgroundColor: AppColors.semanticError,
           ),
         );
         ref.read(tosProvider.notifier).clearMessages();
@@ -227,7 +228,7 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
         child: Column(
           children: [
@@ -239,7 +240,7 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
               child: state.isLoading && tos == null
                   ? const Center(
                       child: CircularProgressIndicator(
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                         strokeWidth: 2.5,
                       ),
                     )
@@ -249,7 +250,7 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
                           onRefresh: () => ref
                               .read(tosProvider.notifier)
                               .loadTosDetail(widget.tosId),
-                          color: const Color(0xFF2B2B2B),
+                          color: AppColors.accentCharcoal,
                           child: SingleChildScrollView(
                             physics: const AlwaysScrollableScrollPhysics(),
                             padding: const EdgeInsets.all(24),
@@ -284,7 +285,7 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
                                     _ActionChip(
                                       icon: Icons.delete_outline_rounded,
                                       label: 'Delete',
-                                      color: const Color(0xFFE57373),
+                                      color: AppColors.semanticError,
                                       onTap: _handleDelete,
                                     ),
                                   ],
@@ -304,7 +305,7 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
                                   style: TextStyle(
                                     fontSize: 17,
                                     fontWeight: FontWeight.w700,
-                                    color: Color(0xFF202020),
+                                    color: AppColors.foregroundDark,
                                     letterSpacing: -0.3,
                                   ),
                                 ),
@@ -316,13 +317,13 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
-                                          color: const Color(0xFFE0E0E0)),
+                                          color: AppColors.borderLight),
                                     ),
                                     child: const Center(
                                       child: Text(
                                         'No competencies yet. Add competencies to see the grid.',
                                         style: TextStyle(
-                                          color: Color(0xFF999999),
+                                          color: AppColors.foregroundTertiary,
                                           fontSize: 13,
                                         ),
                                         textAlign: TextAlign.center,
@@ -349,7 +350,7 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
                                   style: TextStyle(
                                     fontSize: 17,
                                     fontWeight: FontWeight.w700,
-                                    color: Color(0xFF202020),
+                                    color: AppColors.foregroundDark,
                                     letterSpacing: -0.3,
                                   ),
                                 ),
@@ -424,7 +425,7 @@ class _ActionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = color ?? const Color(0xFF2B2B2B);
+    final c = color ?? AppColors.accentCharcoal;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -475,8 +476,8 @@ class _OutlinedButton extends StatelessWidget {
         icon: Icon(icon, size: 18),
         label: Text(label),
         style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFF2B2B2B),
-          side: const BorderSide(color: Color(0xFFE0E0E0)),
+          foregroundColor: AppColors.accentCharcoal,
+          side: const BorderSide(color: AppColors.borderLight),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),

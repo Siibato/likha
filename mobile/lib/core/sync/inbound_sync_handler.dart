@@ -78,10 +78,6 @@ class InboundSyncHandler {
     final syncToken = baseResponse.syncToken;
     final serverTime = baseResponse.serverTime;
 
-    if (syncToken == null) {
-      throw Exception('No sync_token in full sync response');
-    }
-
     // Upsert base response data (user, classes, enrollments, enrolled_students)
     var participantUsers = <Map<String, dynamic>>[];
     final userData = baseResponse.user ?? <String, dynamic>{};
@@ -199,7 +195,6 @@ class InboundSyncHandler {
     // Build student map for submission enrichment
     final studentMap = <String, dynamic>{};
     for (final s in participantUsers) {
-      if (s is! Map<String, dynamic>) continue;
       final id = s['id']?.toString();
       if (id != null && id.isNotEmpty) {
         studentMap[id] = s;
@@ -234,17 +229,20 @@ class InboundSyncHandler {
         final assessmentSubmissions = batchResponse.assessmentSubmissions;
         final assignments = batchResponse.assignments;
         final assignmentSubmissions = batchResponse.assignmentSubmissions;
-        // Note: submission_files, material_files, assessment_statistics, student_results
-        // are not directly available in FullSyncResponseModel - may need to be added
-        final submissionFiles = <Map<String, dynamic>>[];
+        final submissionFiles = batchResponse.submissionFiles;
         final learningMaterials = batchResponse.learningMaterials;
-        final materialFiles = <Map<String, dynamic>>[];
-        final assessmentStatistics = <Map<String, dynamic>>[];
-        final studentResults = <Map<String, dynamic>>[];
+        final materialFiles = batchResponse.materialFiles;
+        final assessmentStatistics = batchResponse.assessmentStatistics;
+        final studentResults = batchResponse.studentResults;
+        final gradeConfigs = batchResponse.gradeConfigs;
+        final gradeItems = batchResponse.gradeItems;
+        final gradeScores = batchResponse.gradeScores;
+        final periodGrades = batchResponse.periodGrades;
+        final tableOfSpecifications = batchResponse.tableOfSpecifications;
+        final tosCompetencies = batchResponse.tosCompetencies;
 
-        // NEW: Extract enrolled_students and enrollments from batch (for full offline support)
-        // Note: These are not directly available in FullSyncResponseModel
-        final batchParticipantUsers = <Map<String, dynamic>>[];
+        // Extract enrolled_students and enrollments from batch (for full offline support)
+        final batchParticipantUsers = batchResponse.enrolledStudents ?? <Map<String, dynamic>>[];
         final batchParticipants = batchResponse.enrollments;
 
         _log.batchReceived(batchIndex, classBatches.length, {
@@ -258,27 +256,41 @@ class InboundSyncHandler {
           'submission_files': submissionFiles.length,
           'assessment_statistics': assessmentStatistics.length,
           'student_results': studentResults.length,
+          'grade_configs': gradeConfigs.length,
+          'grade_items': gradeItems.length,
+          'grade_scores': gradeScores.length,
+          'period_grades': periodGrades.length,
+          'table_of_specifications': tableOfSpecifications.length,
+          'tos_competencies': tosCompetencies.length,
           'enrolled_students': batchParticipantUsers.length,  // NEW: for offline support
           'enrollments': batchParticipants.length,              // NEW: for offline support
         });
 
+        // Log assessment submission details for debugging
+        if (assessmentSubmissions.isNotEmpty) {
+          final byAssessment = <String, int>{};
+          for (final s in assessmentSubmissions) {
+            final aid = s['assessment_id']?.toString();
+            if (aid != null) {
+              byAssessment[aid] = (byAssessment[aid] ?? 0) + 1;
+            }
+          }
+          _log.log('Assessment submissions by assessment: $byAssessment');
+        }
+
         // Log questions per assessment
         final questionsByAssessment = <String, int>{};
         for (final q in questions) {
-          if (q is Map<String, dynamic>) {
-            final assessmentId = q['assessment_id'] as String?;
-            if (assessmentId != null) {
-              questionsByAssessment[assessmentId] = (questionsByAssessment[assessmentId] ?? 0) + 1;
-            }
+          final assessmentId = q['assessment_id'] as String?;
+          if (assessmentId != null) {
+            questionsByAssessment[assessmentId] = (questionsByAssessment[assessmentId] ?? 0) + 1;
           }
         }
         for (final assessment in assessments) {
-          if (assessment is Map<String, dynamic>) {
-            final assessmentId = assessment['id'] as String?;
-            final title = assessment['title'] as String? ?? 'unknown';
-            final qCount = questionsByAssessment[assessmentId] ?? 0;
-            _log.questionsPerAssessment(title, assessmentId ?? '?', qCount);
-          }
+          final assessmentId = assessment['id'] as String?;
+          final title = assessment['title'] as String? ?? 'unknown';
+          final qCount = questionsByAssessment[assessmentId] ?? 0;
+          _log.questionsPerAssessment(title, assessmentId ?? '?', qCount);
         }
 
         // NEW: Upsert batch enrolled_students and enrollments (for full offline support)
@@ -287,7 +299,6 @@ class InboundSyncHandler {
 
         // Update in-memory studentMap with batch students so submissions can reference them
         for (final s in batchParticipantUsers) {
-          if (s is! Map<String, dynamic>) continue;
           final id = s['id']?.toString();
           if (id != null && id.isNotEmpty) {
             studentMap[id] = s;
@@ -311,16 +322,13 @@ class InboundSyncHandler {
         // Write student_results to cache
         await _upsertHelpers.upsertStudentResults(db, studentResults);
 
-        // Grading data - Note: These fields are not directly available in FullSyncResponseModel
-        // May need to be added to the model or fetched separately
-        await _upsertHelpers.upsertGradeConfigs(db, <Map<String, dynamic>>[]);
-        await _upsertHelpers.upsertGradeItems(db, <Map<String, dynamic>>[]);
-        await _upsertHelpers.upsertGradeScores(db, <Map<String, dynamic>>[]);
-        await _upsertHelpers.upsertQuarterlyGrades(db, <Map<String, dynamic>>[]);
+        await _upsertHelpers.upsertGradeConfigs(db, gradeConfigs);
+        await _upsertHelpers.upsertGradeItems(db, gradeItems);
+        await _upsertHelpers.upsertGradeScores(db, gradeScores);
+        await _upsertHelpers.upsertQuarterlyGrades(db, periodGrades);
 
-        // TOS data - Note: These fields are not directly available in FullSyncResponseModel
-        await _upsertHelpers.upsertTableOfSpecifications(db, <Map<String, dynamic>>[]);
-        await _upsertHelpers.upsertTosCompetencies(db, <Map<String, dynamic>>[]);
+        await _upsertHelpers.upsertTableOfSpecifications(db, tableOfSpecifications);
+        await _upsertHelpers.upsertTosCompetencies(db, tosCompetencies);
       }
     }
 
@@ -344,7 +352,7 @@ class InboundSyncHandler {
     await _upsertHelpers.saveSyncToken(db, syncToken);
     await _upsertHelpers.saveSyncExpiry(db, expiryAt);
 
-    return serverTime ?? syncToken;
+    return serverTime;
   }
 
   /// Run delta sync on app restart

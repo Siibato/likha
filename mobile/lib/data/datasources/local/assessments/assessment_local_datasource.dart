@@ -99,6 +99,10 @@ abstract class AssessmentLocalDataSource {
     required bool isCorrect,
     double? points,
   });
+  Future<void> gradeEssayLocally({
+    required String answerId,
+    required double points,
+  });
   Future<void> markAssessmentPublishedLocally({required String assessmentId});
   Future<void> markAssessmentUnpublishedLocally({required String assessmentId});
   Future<void> clearAllCache();

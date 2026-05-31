@@ -159,7 +159,7 @@ class _ClassGradingSetupDesktopState
 
               // Grade Level
               DropdownButtonFormField<String>(
-                value: _selectedGradeLevel,
+                initialValue: _selectedGradeLevel,
                 decoration: const InputDecoration(
                   labelText: 'Grade Level',
                   prefixIcon: Icon(Icons.school_outlined),
@@ -183,7 +183,7 @@ class _ClassGradingSetupDesktopState
 
               // Subject Group
               DropdownButtonFormField<String>(
-                value: _selectedSubjectGroup,
+                initialValue: _selectedSubjectGroup,
                 decoration: const InputDecoration(
                   labelText: 'Subject Group',
                   prefixIcon: Icon(Icons.category_outlined),
@@ -214,7 +214,7 @@ class _ClassGradingSetupDesktopState
               // Semester (SHS only)
               if (_isShs) ...[
                 DropdownButtonFormField<int>(
-                  value: _selectedSemester,
+                  initialValue: _selectedSemester,
                   decoration: const InputDecoration(
                     labelText: 'Semester',
                     prefixIcon: Icon(Icons.view_timeline_outlined),

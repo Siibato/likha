@@ -1,11 +1,8 @@
-import 'package:dio/dio.dart';
-import 'package:http_parser/http_parser.dart';
-import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
-import 'package:likha/core/utils/upload_timeout_util.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/data/models/learning_materials/material_detail_model.dart';
 import 'package:likha/data/models/learning_materials/material_file_model.dart';
+import 'package:likha/data/datasources/remote/operations/learning_materials/learning_materials.dart' as ops;
 
 abstract class LearningMaterialRemoteDataSource {
   Future<LearningMaterialModel> createMaterial({
@@ -55,66 +52,66 @@ class LearningMaterialRemoteDataSourceImpl implements LearningMaterialRemoteData
   Future<LearningMaterialModel> createMaterial({
     required String classId,
     required Map<String, dynamic> data,
-  }) async {
-    return await _dioClient.postTyped(
-      ApiEndpoints.classMaterials(classId),
-      data: data,
-    );
-  }
+  }) =>
+      ops.createMaterial(
+        _dioClient,
+        classId: classId,
+        data: data,
+      );
 
   @override
-  Future<List<LearningMaterialModel>> getMaterials({required String classId}) async {
-    return await _dioClient.getTyped(
-      ApiEndpoints.classMaterialsList(classId),
-    );
-  }
+  Future<List<LearningMaterialModel>> getMaterials({required String classId}) =>
+      ops.getMaterials(
+        _dioClient,
+        classId: classId,
+      );
 
   @override
-  Future<MaterialDetailModel> getMaterialDetail({required String materialId}) async {
-    return await _dioClient.getTyped(
-      ApiEndpoints.materialDetail(materialId),
-    );
-  }
+  Future<MaterialDetailModel> getMaterialDetail({required String materialId}) =>
+      ops.getMaterialDetail(
+        _dioClient,
+        materialId: materialId,
+      );
 
   @override
   Future<LearningMaterialModel> updateMaterial({
     required String materialId,
     required Map<String, dynamic> data,
-  }) async {
-    return await _dioClient.putTyped(
-      ApiEndpoints.materialUpdate(materialId),
-      data: data,
-    );
-  }
+  }) =>
+      ops.updateMaterial(
+        _dioClient,
+        materialId: materialId,
+        data: data,
+      );
 
   @override
-  Future<void> deleteMaterial({required String materialId}) async {
-    await _dioClient.deleteTyped(
-      ApiEndpoints.materialDetail(materialId),
-    );
-  }
+  Future<void> deleteMaterial({required String materialId}) =>
+      ops.deleteMaterial(
+        _dioClient,
+        materialId: materialId,
+      );
 
   @override
   Future<LearningMaterialModel> reorderMaterial({
     required String materialId,
     required int newOrderIndex,
-  }) async {
-    return await _dioClient.postTyped(
-      ApiEndpoints.materialReorder(materialId),
-      data: {'new_order_index': newOrderIndex},
-    );
-  }
+  }) =>
+      ops.reorderMaterial(
+        _dioClient,
+        materialId: materialId,
+        newOrderIndex: newOrderIndex,
+      );
 
   @override
   Future<void> reorderAllMaterials({
     required String classId,
     required List<String> materialIds,
-  }) async {
-    await _dioClient.postVoid(
-      ApiEndpoints.classMaterialsReorder(classId),
-      data: {'material_ids': materialIds},
-    );
-  }
+  }) =>
+      ops.reorderAllMaterials(
+        _dioClient,
+        classId: classId,
+        materialIds: materialIds,
+      );
 
   @override
   Future<MaterialFileModel> uploadFile({
@@ -122,43 +119,26 @@ class LearningMaterialRemoteDataSourceImpl implements LearningMaterialRemoteData
     required String filePath,
     required String fileName,
     void Function(int sent, int total)? onSendProgress,
-  }) async {
-    final formData = FormData.fromMap({
-      'file': await MultipartFile.fromFile(
-        filePath,
-        filename: fileName,
-        contentType: MediaType('application', 'octet-stream'),
-      ),
-    });
-
-    // Calculate dynamic timeout based on file size
-    final timeoutSeconds = UploadTimeoutUtil.calculateTimeout(filePath);
-
-    final response = await _dioClient.dio.post(
-      ApiEndpoints.materialUploadFile(materialId).path,
-      data: formData,
-      onSendProgress: onSendProgress,
-      options: Options(
-        sendTimeout: Duration(seconds: timeoutSeconds),
-        receiveTimeout: const Duration(seconds: 60),
-      ),
-    );
-    return MaterialFileModel.fromJson(response.data['data']);
-  }
+  }) =>
+      ops.uploadFile(
+        _dioClient,
+        materialId: materialId,
+        filePath: filePath,
+        fileName: fileName,
+        onSendProgress: onSendProgress,
+      );
 
   @override
-  Future<void> deleteFile({required String fileId}) async {
-    await _dioClient.deleteTyped(
-      ApiEndpoints.materialFileDelete(fileId),
-    );
-  }
+  Future<void> deleteFile({required String fileId}) =>
+      ops.deleteFile(
+        _dioClient,
+        fileId: fileId,
+      );
 
   @override
-  Future<List<int>> downloadFile({required String fileId}) async {
-    final response = await _dioClient.dio.get(
-      ApiEndpoints.materialFileDownload(fileId).path,
-      options: Options(responseType: ResponseType.bytes),
-    );
-    return response.data as List<int>;
-  }
+  Future<List<int>> downloadFile({required String fileId}) =>
+      ops.downloadFile(
+        _dioClient,
+        fileId: fileId,
+      );
 }

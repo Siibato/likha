@@ -4,15 +4,15 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/tos/edit_tos_desktop.dart';
-import 'package:likha/presentation/pages/shared/widgets/cards/info_panel.dart';
-import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.dart';
-import 'package:likha/presentation/widgets/styled_dialog.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/bulk_paste_sheet.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/melcs_search_sheet.dart';
-import 'package:likha/presentation/pages/teacher/tos/widgets/tos_grid_table.dart';
-import 'package:likha/presentation/pages/teacher/tos/widgets/tos_print_preview.dart';
-import 'package:likha/presentation/pages/teacher/tos/widgets/tos_summary_row.dart';
+import 'package:likha/presentation/widgets/shared/cards/info_panel.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/bulk_paste_sheet.dart';
+import 'package:likha/presentation/widgets/desktop/teacher/tos/melcs_search_dialog.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_grid_table.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_print_preview.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_summary_row.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 
 class TosDetailDesktop extends ConsumerStatefulWidget {
@@ -270,7 +270,7 @@ class _TosDetailDesktopState extends ConsumerState<TosDetailDesktop> {
                                   ),
                                 ),
                                 OutlinedButton.icon(
-                                  onPressed: () => MelcsSearchSheet.show(
+                                  onPressed: () => MelcsSearchDialog.show(
                                       context, widget.tosId),
                                   icon: const Icon(Icons.search, size: 18),
                                   label: const Text('Import from MELCs'),
@@ -551,16 +551,23 @@ Widget _buildCompetencyTile(TosCompetency competency, String timeUnit) {
 
     // Use the SAME formula as the grid: sum of actual cognitive cells per row.
     // This respects per-competency overrides so banner and grid always agree.
+    final isBloomsMode = tos.classificationMode == 'blooms';
     final assigned = competencies.fold<int>(0, (sum, c) {
       if (totalDays == 0) return sum;
       final targetItems =
           (c.timeUnitsTaught / totalDays * tos.totalItems).round();
-      final easy = c.easyCount ??
-          (targetItems * tos.easyPercentage / 100).round();
-      final medium = c.mediumCount ??
-          (targetItems * tos.mediumPercentage / 100).round();
-      final hard = c.hardCount ??
-          (targetItems * tos.hardPercentage / 100).round();
+      if (isBloomsMode) {
+        final r = c.rememberingCount ?? (targetItems * tos.rememberingPercentage / 100).round();
+        final u = c.understandingCount ?? (targetItems * tos.understandingPercentage / 100).round();
+        final ap = c.applyingCount ?? (targetItems * tos.applyingPercentage / 100).round();
+        final an = c.analyzingCount ?? (targetItems * tos.analyzingPercentage / 100).round();
+        final e = c.evaluatingCount ?? (targetItems * tos.evaluatingPercentage / 100).round();
+        final bl = c.creatingCount ?? (targetItems * tos.creatingPercentage / 100).round();
+        return sum + r + u + ap + an + e + bl;
+      }
+      final easy = c.easyCount ?? (targetItems * tos.easyPercentage / 100).round();
+      final medium = c.mediumCount ?? (targetItems * tos.mediumPercentage / 100).round();
+      final hard = c.hardCount ?? (targetItems * tos.hardPercentage / 100).round();
       return sum + easy + medium + hard;
     });
 
@@ -578,21 +585,21 @@ Widget _buildCompetencyTile(TosCompetency competency, String timeUnit) {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFF3E0),
+          color: AppColors.accentAmber.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFFF9800)),
+          border: Border.all(color: AppColors.accentAmber),
         ),
         child: Row(
           children: [
             const Icon(Icons.warning_amber_outlined,
-                size: 16, color: Color(0xFFE65100)),
+                size: 16, color: AppColors.accentAmber),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 message,
                 style: const TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF6D4C41),
+                  color: AppColors.accentAmber,
                 ),
               ),
             ),

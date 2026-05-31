@@ -2,6 +2,8 @@ use sha2::{Digest, Sha256};
 use std::path::Path;
 use uuid::Uuid;
 
+use crate::utils::file_encryption::{decrypt_file, encrypt_file};
+
 /// Compute SHA-256 hash of file bytes
 pub fn compute_hash(data: &[u8]) -> String {
     let mut hasher = Sha256::new();
@@ -30,16 +32,40 @@ pub async fn ensure_dir(path: &Path) -> Result<(), std::io::Error> {
 }
 
 /// Write file bytes to disk
-pub async fn write_file(path: &Path, data: &[u8]) -> Result<(), std::io::Error> {
+/// If encryption_key is provided, data will be encrypted before writing
+pub async fn write_file(
+    path: &Path,
+    data: &[u8],
+    encryption_key: Option<&[u8; 32]>,
+) -> Result<(), std::io::Error> {
     if let Some(parent) = path.parent() {
         ensure_dir(parent).await?;
     }
-    tokio::fs::write(path, data).await
+
+    let data_to_write = if let Some(key) = encryption_key {
+        encrypt_file(data, key)
+    } else {
+        data.to_vec()
+    };
+
+    tokio::fs::write(path, data_to_write).await
 }
 
 /// Read file bytes from disk
-pub async fn read_file(path: &Path) -> Result<Vec<u8>, std::io::Error> {
-    tokio::fs::read(path).await
+/// If encryption_key is provided, data will be decrypted after reading
+pub async fn read_file(
+    path: &Path,
+    encryption_key: Option<&[u8; 32]>,
+) -> Result<Vec<u8>, std::io::Error> {
+    let data = tokio::fs::read(path).await?;
+
+    if let Some(key) = encryption_key {
+        decrypt_file(&data, key).map_err(|e| {
+            std::io::Error::new(std::io::ErrorKind::InvalidData, format!("Decryption failed: {}", e))
+        })
+    } else {
+        Ok(data)
+    }
 }
 
 /// Delete file from disk (best-effort, logs errors but doesn't fail)

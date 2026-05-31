@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
@@ -9,14 +10,16 @@ import 'package:likha/presentation/pages/teacher/assessment/assessment_statistic
 import 'package:likha/presentation/pages/teacher/assessment/edit_assessment_page.dart';
 import 'package:likha/presentation/pages/teacher/assessment/add_question_page.dart';
 import 'package:likha/presentation/pages/teacher/assessment/edit_question_page.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/assessment_info_card.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/assessment_status_card.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/questions_section.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/question_reorder_list.dart';
-import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
-import 'package:likha/presentation/pages/teacher/widgets/view_tos_chip.dart';
-import 'package:likha/presentation/pages/shared/widgets/dialogs/app_dialogs.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_info_card.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_status_card.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/questions_section.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_reorder_list.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/dashboard/reorder_position_dialog.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/dashboard/view_tos_chip.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_action_buttons.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/grading_settings_card.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/pages/teacher/tos/tos_view_page.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 
@@ -80,20 +83,20 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
         ? Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFEBEE),
+              color: AppColors.semanticErrorBackground,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFFFCDD2)),
+              border: Border.all(color: AppColors.semanticError.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.warning_rounded, color: Color(0xFFEF5350), size: 18),
+                const Icon(Icons.warning_rounded, color: AppColors.semanticError, size: 18),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     assessment.isPublished
                         ? 'This assessment is published and has ${assessment.submissionCount} submission(s). All data will be lost.'
                         : 'This assessment has ${assessment.submissionCount} submission(s). All data will be lost.',
-                    style: const TextStyle(fontSize: 13, color: Color(0xFFC62828)),
+                    style: const TextStyle(fontSize: 13, color: AppColors.semanticErrorDark),
                   ),
                 ),
               ],
@@ -127,18 +130,18 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
         ? Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF3E0),
+              color: AppColors.accentAmberSurface,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFFFE0B2)),
+              border: Border.all(color: AppColors.accentAmberBorder.withValues(alpha: 0.4)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.info_outline_rounded, color: Color(0xFFFFA726), size: 18),
+                const Icon(Icons.info_outline_rounded, color: AppColors.accentAmber, size: 18),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'This assessment has ${assessment.submissionCount} submission(s). Deleting a question may affect existing scores.',
-                    style: const TextStyle(fontSize: 13, color: Color(0xFFE65100)),
+                    style: const TextStyle(fontSize: 13, color: AppColors.accentAmberBorder),
                   ),
                 ),
               ],
@@ -273,19 +276,6 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
     }
   }
 
-  String _getComponentDisplayName(String component) {
-    switch (component) {
-      case 'written_work':
-        return 'Written Work';
-      case 'performance_task':
-        return 'Performance Task';
-      case 'quarterly_assessment':
-        return 'Quarterly Assessment';
-      default:
-        return component;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final assessmentState = ref.watch(teacherAssessmentProvider);
@@ -314,17 +304,17 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF2B2B2B)),
+        iconTheme: const IconThemeData(color: AppColors.foregroundPrimary),
         title: Text(
           assessment?.title ?? 'Assessment Detail',
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.foregroundPrimary,
             letterSpacing: -0.4,
           ),
         ),
@@ -333,7 +323,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
       body: assessmentState.isLoading && assessment == null
           ? const Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
                 strokeWidth: 2.5,
               ),
             )
@@ -343,7 +333,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                     'Assessment not found',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Color(0xFF999999),
+                      color: AppColors.foregroundTertiary,
                     ),
                   ),
                 )
@@ -351,7 +341,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                   onRefresh: () => ref
                       .read(teacherAssessmentProvider.notifier)
                       .loadAssessmentDetail(widget.assessmentId),
-                  color: const Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(24),
@@ -418,243 +408,39 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                         ],
                         const SizedBox(height: 16),
                         if (assessment.isPublished) ...[
-                          Row(
-                            children: [
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => AssessmentSubmissionsPage(
-                                        assessmentId: widget.assessmentId,
-                                      ),
-                                    ),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: const Color(0xFF2B2B2B),
-                                    elevation: 0,
-                                    side: const BorderSide(
-                                      color: Color(0xFFE0E0E0),
-                                      width: 1,
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                  ),
-                                  icon: const Icon(
-                                    Icons.assignment_turned_in_rounded,
-                                    size: 18,
-                                  ),
-                                  label: const Text(
-                                    'Submissions',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                    ),
-                                  ),
+                          AssessmentActionButtons(
+                            onViewSubmissions: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => AssessmentSubmissionsPage(
+                                  assessmentId: widget.assessmentId,
                                 ),
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => AssessmentStatisticsPage(
-                                        assessmentId: widget.assessmentId,
-                                      ),
-                                    ),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: const Color(0xFF2B2B2B),
-                                    elevation: 0,
-                                    side: const BorderSide(
-                                      color: Color(0xFFE0E0E0),
-                                      width: 1,
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                  ),
-                                  icon: const Icon(
-                                    Icons.bar_chart_rounded,
-                                    size: 18,
-                                  ),
-                                  label: const Text(
-                                    'Statistics',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                    ),
-                                  ),
+                            ),
+                            onViewStatistics: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => AssessmentStatisticsPage(
+                                  assessmentId: widget.assessmentId,
                                 ),
                               ),
-                            ],
+                            ),
                           ),
                           const SizedBox(height: 16),
                         ],
-                        // Grading Settings Card
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFE0E0E0)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text(
-                                    'Grading Settings',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFF2B2B2B),
-                                    ),
-                                  ),
-                                  if (!_isEditingGrading)
-                                    TextButton.icon(
-                                      onPressed: () => _startEditingGrading(assessment),
-                                      icon: const Icon(Icons.edit_outlined, size: 16),
-                                      label: const Text('Edit'),
-                                      style: TextButton.styleFrom(
-                                        foregroundColor: const Color(0xFF2B2B2B),
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              if (!_isEditingGrading) ...[
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.grain_rounded,
-                                      size: 16,
-                                      color: assessment.gradingPeriodNumber != null 
-                                          ? const Color(0xFF2B2B2B) 
-                                          : const Color(0xFF999999),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      assessment.gradingPeriodNumber != null 
-                                          ? 'Quarter ${assessment.gradingPeriodNumber}'
-                                          : 'No quarter assigned',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: assessment.gradingPeriodNumber != null 
-                                            ? const Color(0xFF2B2B2B) 
-                                            : const Color(0xFF999999),
-                                      ),
-                                    ),
-                                    if (assessment.component != null) ...[
-                                      const SizedBox(width: 16),
-                                      Icon(
-                                        Icons.category_rounded,
-                                        size: 16,
-                                        color: const Color(0xFF2B2B2B),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        _getComponentDisplayName(assessment.component!),
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          color: Color(0xFF2B2B2B),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ] else ...[
-                                // Quarter dropdown
-                                DropdownButtonFormField<int?>(
-                                  value: _editingGradingPeriod,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Quarter (for grading)',
-                                    labelStyle: TextStyle(
-                                      fontSize: 14,
-                                      color: Color(0xFF999999),
-                                    ),
-                                    border: OutlineInputBorder(),
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  ),
-                                  items: const [
-                                    DropdownMenuItem(value: null, child: Text('None')),
-                                    DropdownMenuItem(value: 1, child: Text('Quarter 1')),
-                                    DropdownMenuItem(value: 2, child: Text('Quarter 2')),
-                                    DropdownMenuItem(value: 3, child: Text('Quarter 3')),
-                                    DropdownMenuItem(value: 4, child: Text('Quarter 4')),
-                                  ],
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _editingGradingPeriod = value;
-                                    });
-                                  },
-                                ),
-                                const SizedBox(height: 12),
-                                // Component dropdown
-                                DropdownButtonFormField<String?>(
-                                  value: _editingComponent,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Grade Component',
-                                    labelStyle: TextStyle(
-                                      fontSize: 14,
-                                      color: Color(0xFF999999),
-                                    ),
-                                    border: OutlineInputBorder(),
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  ),
-                                  items: const [
-                                    DropdownMenuItem(value: null, child: Text('None')),
-                                    DropdownMenuItem(value: 'written_work', child: Text('Written Work')),
-                                    DropdownMenuItem(value: 'performance_task', child: Text('Performance Task')),
-                                    DropdownMenuItem(value: 'quarterly_assessment', child: Text('Quarterly Assessment')),
-                                  ],
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _editingComponent = value;
-                                    });
-                                  },
-                                ),
-                                const SizedBox(height: 16),
-                                Row(
-                                  children: [
-                                    TextButton(
-                                      onPressed: _cancelEditingGrading,
-                                      child: const Text('Cancel'),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: ElevatedButton(
-                                        onPressed: _saveGradingSettings,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFF2B2B2B),
-                                          foregroundColor: Colors.white,
-                                          elevation: 0,
-                                          padding: const EdgeInsets.symmetric(vertical: 12),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                        ),
-                                        child: const Text('Save Settings'),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ],
-                          ),
+                        GradingSettingsCard(
+                          gradingPeriodNumber: assessment.gradingPeriodNumber,
+                          component: assessment.component,
+                          isEditing: _isEditingGrading,
+                          editingGradingPeriod: _editingGradingPeriod,
+                          editingComponent: _editingComponent,
+                          onEdit: () => _startEditingGrading(assessment),
+                          onSave: (period, component) => _saveGradingSettings(),
+                          onCancel: _cancelEditingGrading,
+                          onPeriodChanged: (value) =>
+                              setState(() => _editingGradingPeriod = value),
+                          onComponentChanged: (value) =>
+                              setState(() => _editingComponent = value),
                         ),
                         const SizedBox(height: 16),
                         if (_isQuestionReorderMode)
@@ -711,9 +497,9 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                           child: OutlinedButton.icon(
                             onPressed: () => _confirmDelete(assessment),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFFEF5350),
+                              foregroundColor: AppColors.semanticError,
                               side: const BorderSide(
-                                color: Color(0xFFEF5350),
+                                color: AppColors.semanticError,
                                 width: 1.5,
                               ),
                               padding: const EdgeInsets.symmetric(vertical: 14),
