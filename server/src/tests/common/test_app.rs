@@ -13,7 +13,6 @@ use crate::db::repositories::{
 use crate::routes::api_routes;
 use crate::services::{
     assessment::AssessmentService,
-    assignment::AssignmentService,
     auth::AuthService,
     entitlement::EntitlementService,
     grade_computation::GradeComputationService,
@@ -25,6 +24,7 @@ use crate::services::{
     sync_push::SyncPushService,
     tos::TosService,
 };
+use crate::modules::assignment::service::AssignmentService;
 use crate::modules::class::service::ClassService;
 
 /// The auth middleware reads JWT_SECRET from the env, falling back to this constant.
@@ -44,11 +44,7 @@ pub async fn build_test_app(db: DatabaseConnection) -> Router {
     ));
     let class_service = Arc::new(ClassService::new(db.clone()));
     let assessment_service = Arc::new(AssessmentService::new(db.clone()));
-    let assignment_service = Arc::new(AssignmentService::new(
-        db.clone(),
-        TEST_FILE_STORAGE.to_string(),
-        TEST_FILE_ENCRYPTION_KEY,
-    ));
+    let assignment_service = Arc::new(AssignmentService::new(db.clone()));
     let material_service = Arc::new(LearningMaterialService::new(
         db.clone(),
         TEST_FILE_STORAGE.to_string(),

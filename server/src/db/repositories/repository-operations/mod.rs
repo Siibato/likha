@@ -1,6 +1,5 @@
 pub mod activity_log;
 pub mod assessment;
-pub mod assignment;
 pub mod class;
 pub mod entitlement;
 pub mod grade_computation;

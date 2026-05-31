@@ -23,7 +23,7 @@ use tower_http::timeout::TimeoutLayer;
 use uuid::Uuid;
 
 use crate::services::assessment::AssessmentService;
-use crate::services::assignment::AssignmentService;
+use crate::modules::assignment::service::AssignmentService;
 use crate::services::auth::AuthService;
 use crate::modules::class::service::ClassService;
 use crate::services::grade_computation::GradeComputationService;
@@ -164,11 +164,7 @@ async fn main() {
     let file_encryption_key = parse_key(&config.file_encryption_key)
         .expect("Invalid FILE_ENCRYPTION_KEY format");
 
-    let assignment_service = Arc::new(AssignmentService::new(
-        db.clone(),
-        config.file_storage_path.clone(),
-        file_encryption_key,
-    ));
+    let assignment_service = Arc::new(AssignmentService::new(db.clone()));
     let material_service = Arc::new(LearningMaterialService::new(
         db.clone(),
         config.file_storage_path.clone(),

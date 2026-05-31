@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use crate::handlers::tasks_handler;
 use crate::services::assessment::AssessmentService;
-use crate::services::assignment::AssignmentService;
+use crate::modules::assignment::service::AssignmentService;
 
 #[derive(Clone)]
 pub struct TasksState {

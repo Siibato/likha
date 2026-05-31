@@ -1,6 +1,6 @@
 use chrono::Utc;
 use uuid::Uuid;
-use crate::db::repositories::assignment_repository::AssignmentRepository;
+use crate::modules::assignment::repository::AssignmentRepository;
 use crate::db::repositories::class_repository::ClassRepository;
 use crate::db::repositories::user_repository::UserRepository;
 use crate::tests::common::test_db::test_db;

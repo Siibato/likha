@@ -22,7 +22,7 @@ pub async fn get_student_tasks(
     // Fetch published assignments with student submission data
     let assignments = match state
         .assignment_service
-        .get_student_assignments(class_id, auth_user.user_id)
+        .get_student_assignments(auth_user.user_id)
         .await
     {
         Ok(r) => r.assignments,

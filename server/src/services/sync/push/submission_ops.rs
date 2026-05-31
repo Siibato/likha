@@ -1,7 +1,7 @@
 use uuid::Uuid;
 use chrono::Utc;
 use crate::schema::assessment_schema::{SaveAnswersRequest, OverrideAnswerRequest};
-use crate::schema::assignment_schema::GradeSubmissionRequest;
+use crate::modules::assignment::schema::GradeSubmissionRequest;
 use super::sync_push_service::{OperationResult, SyncQueueEntry};
 use super::extract_field;
 
@@ -76,7 +76,7 @@ impl super::SyncPushService {
                 // Extract optional submission_id from payload (client-provided UUID)
                 let submission_id = self.parse_uuid_field(&op.payload, "id").ok();
 
-                match self.assignment_service.create_or_get_submission(assignment_id, user_id, None, submission_id).await {
+                match self.assignment_service.create_or_get_submission(assignment_id, user_id).await {
                     Ok(r) => self.success_result(op, Some(r.id.to_string()), Some(r.updated_at)),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }
