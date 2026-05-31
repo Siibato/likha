@@ -1,7 +1,7 @@
 use uuid::Uuid;
 use crate::utils::{AppError, AppResult, parse_datetime, validators::Validator};
 use crate::modules::assignment::schema::*;
-use crate::db::repositories::class_repository::ClassRepository;
+use crate::modules::class::repository::ClassRepository;
 use crate::modules::assignment::repository::AssignmentRepository;
 
 pub async fn update_assignment(

@@ -3,7 +3,6 @@ pub mod repository_operations;
 
 pub mod activity_log_repository;
 pub mod assessment_repository;
-pub mod class_repository;
 pub mod entitlement_repository;
 pub mod grade_computation_repository;
 pub mod learning_material_repository;

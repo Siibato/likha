@@ -1,6 +1,6 @@
 use sea_orm::DatabaseConnection;
 use crate::db::repositories::assessment_repository::AssessmentRepository;
-use crate::db::repositories::class_repository::ClassRepository;
+use crate::modules::class::repository::ClassRepository;
 use crate::db::repositories::grade_computation_repository::GradeComputationRepository;
 use crate::db::repositories::user_repository::UserRepository;
 

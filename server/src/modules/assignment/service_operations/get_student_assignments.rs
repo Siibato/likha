@@ -1,7 +1,7 @@
 use uuid::Uuid;
 use crate::utils::AppResult;
 use crate::modules::assignment::schema::*;
-use crate::db::repositories::class_repository::ClassRepository;
+use crate::modules::class::repository::ClassRepository;
 use crate::modules::assignment::repository::AssignmentRepository;
 
 pub async fn get_student_assignments(

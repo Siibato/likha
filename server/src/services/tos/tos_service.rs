@@ -1,6 +1,6 @@
 use sea_orm::DatabaseConnection;
 
-use crate::db::repositories::class_repository::ClassRepository;
+use crate::modules::class::repository::ClassRepository;
 use crate::db::repositories::tos_repository::TosRepository;
 
 pub struct TosService {

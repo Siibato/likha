@@ -2,7 +2,7 @@ use uuid::Uuid;
 use crate::utils::{AppError, AppResult};
 use crate::modules::assignment::schema::*;
 use crate::db::repositories::activity_log_repository::ActivityLogRepository;
-use crate::db::repositories::class_repository::ClassRepository;
+use crate::modules::class::repository::ClassRepository;
 use crate::db::repositories::grade_computation_repository::GradeComputationRepository;
 use crate::modules::assignment::repository::AssignmentRepository;
 use crate::services::grade_computation::auto_populate;

@@ -1,7 +1,7 @@
 use chrono::Utc;
 use uuid::Uuid;
 use crate::db::repositories::assessment_repository::AssessmentRepository;
-use crate::db::repositories::class_repository::ClassRepository;
+use crate::modules::class::repository::ClassRepository;
 use crate::tests::common::test_db::test_db;
 
 async fn setup(db: &sea_orm::DatabaseConnection) -> (Uuid, Uuid, Uuid) {

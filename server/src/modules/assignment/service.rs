@@ -3,7 +3,7 @@ use std::env;
 
 use crate::modules::assignment::repository::AssignmentRepository;
 use crate::db::repositories::activity_log_repository::ActivityLogRepository;
-use crate::db::repositories::class_repository::ClassRepository;
+use crate::modules::class::repository::ClassRepository;
 use crate::db::repositories::grade_computation_repository::GradeComputationRepository;
 use crate::modules::assignment::service_operations as ops;
 use crate::utils::AppResult;

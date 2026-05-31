@@ -1,4 +1,4 @@
-use crate::db::repositories::class_repository::ClassRepository;
+use crate::modules::class::repository::ClassRepository;
 use crate::db::repositories::learning_material_repository::LearningMaterialRepository;
 use crate::tests::common::test_db::test_db;
 

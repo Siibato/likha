@@ -1,5 +1,5 @@
 use uuid::Uuid;
-use crate::db::repositories::class_repository::ClassRepository;
+use crate::modules::class::repository::ClassRepository;
 use crate::db::repositories::grade_computation_repository::GradeComputationRepository;
 use crate::tests::common::test_db::test_db;
 

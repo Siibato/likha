@@ -1,6 +1,6 @@
 use sea_orm::DatabaseConnection;
 use crate::db::repositories::activity_log_repository::ActivityLogRepository;
-use crate::db::repositories::class_repository::ClassRepository;
+use crate::modules::class::repository::ClassRepository;
 use crate::db::repositories::learning_material_repository::LearningMaterialRepository;
 
 pub const MAX_FILE_SIZE_MB: i64 = 50;
