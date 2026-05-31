@@ -1,8 +1,8 @@
 use uuid::Uuid;
 use crate::utils::AppResult;
-use crate::services::grading::utils::graders::{multiple_choice, identification, enumeration};
+use crate::services::assessment::utils::graders::{multiple_choice, identification, enumeration};
 
-impl crate::services::grading::GradingService {
+impl crate::services::assessment::AssessmentService {
     pub async fn grade_submission(
         &self,
         submission_id: Uuid,

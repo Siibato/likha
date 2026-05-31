@@ -27,7 +27,7 @@ impl crate::services::assignment::AssignmentService {
 
         if let (Some(grading_period_number), Some(ref component)) = (published.grading_period_number, &published.component) {
             let _ = auto_populate::create_linked_grade_item(
-                &self.db, "assignment", published.id, published.class_id,
+                &self.grade_computation_repo, "assignment", published.id, published.class_id,
                 &published.title, component, grading_period_number,
                 published.total_points as f64,
             ).await;

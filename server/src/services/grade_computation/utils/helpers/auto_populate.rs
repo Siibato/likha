@@ -1,12 +1,11 @@
 use uuid::Uuid;
-use sea_orm::DatabaseConnection;
 use crate::utils::AppResult;
 use crate::db::repositories::grade_computation_repository::GradeComputationRepository;
 
 /// Auto-create a linked grade item when an assessment/assignment is published with grading metadata.
 /// Idempotent — if a linked item already exists, does nothing.
 pub async fn create_linked_grade_item(
-    db: &DatabaseConnection,
+    repo: &GradeComputationRepository,
     source_type: &str,
     source_id: Uuid,
     class_id: Uuid,
@@ -15,8 +14,6 @@ pub async fn create_linked_grade_item(
     quarter: i32,
     total_points: f64,
 ) -> AppResult<()> {
-    let repo = GradeComputationRepository::new(db.clone());
-
     if repo.find_by_source(source_type, &source_id.to_string()).await?.is_some() {
         return Ok(());
     }
@@ -42,14 +39,12 @@ pub async fn create_linked_grade_item(
 /// Only updates the `score` field with `is_auto_populated=true`.
 /// Does NOT overwrite if `override_score` is already set (handled by SQL UPSERT).
 pub async fn auto_populate_score(
-    db: &DatabaseConnection,
+    repo: &GradeComputationRepository,
     source_type: &str,
     source_id: Uuid,
     student_id: Uuid,
     score: f64,
 ) -> AppResult<()> {
-    let repo = GradeComputationRepository::new(db.clone());
-
     let grade_item = repo.find_by_source(source_type, &source_id.to_string()).await?;
     if let Some(item) = grade_item {
         repo.upsert_score(item.id, student_id, Some(score), true).await?;

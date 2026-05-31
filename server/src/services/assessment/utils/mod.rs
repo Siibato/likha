@@ -5,3 +5,4 @@ pub mod grading;
 pub mod results;
 pub mod statistics;
 pub mod helpers;
+pub mod graders;

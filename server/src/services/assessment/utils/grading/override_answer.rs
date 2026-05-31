@@ -37,10 +37,10 @@ impl crate::services::assessment::AssessmentService {
             .override_answer(answer_id, request.is_correct, points)
             .await?;
 
-        let final_score = self.grading_service.recalculate_final_score(submission.id).await?;
+        let final_score = self.recalculate_final_score(submission.id).await?;
 
         let _ = auto_populate::auto_populate_score(
-            &self.db, "assessment", submission.assessment_id, submission.user_id, final_score,
+            &self.grade_computation_repo, "assessment", submission.assessment_id, submission.user_id, final_score,
         ).await;
 
         Ok(SubmissionAnswerResponse {

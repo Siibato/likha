@@ -27,7 +27,7 @@ impl crate::services::assessment::AssessmentService {
         }
 
         println!("? [SERVICE] submit_assessment() - grading submission...");
-        let (auto_score, final_score) = self.grading_service.grade_submission(submission_id).await?;
+        let (auto_score, final_score) = self.grade_submission(submission_id).await?;
         println!("📤 [SERVICE] submit_assessment() - grading complete: auto_score={}, final_score={}", auto_score, final_score);
 
         println!("📤 [SERVICE] submit_assessment() - marking as submitted...");

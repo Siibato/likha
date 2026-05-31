@@ -1,7 +1,7 @@
 use uuid::Uuid;
 use crate::utils::AppResult;
 
-impl crate::services::grading::GradingService {
+impl crate::services::assessment::AssessmentService {
     pub async fn recalculate_final_score(
         &self,
         submission_id: Uuid,

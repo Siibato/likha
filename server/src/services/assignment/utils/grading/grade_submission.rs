@@ -50,7 +50,7 @@ impl crate::services::assignment::AssignmentService {
         ).await?;
 
         let _ = auto_populate::auto_populate_score(
-            &self.db, "assignment", submission.assignment_id, submission.student_id, request.score as f64,
+            &self.grade_computation_repo, "assignment", submission.assignment_id, submission.student_id, request.score as f64,
         ).await;
 
         let _ = self.activity_log_repo.create_log(

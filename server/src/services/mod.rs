@@ -4,7 +4,6 @@ pub mod auth;
 pub mod class;
 pub mod entitlement;
 pub mod grade_computation;
-pub mod grading;
 pub mod sync;
 pub mod learning_material;
 pub mod tos;

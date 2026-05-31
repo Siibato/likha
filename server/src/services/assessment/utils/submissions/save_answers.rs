@@ -64,7 +64,7 @@ impl crate::services::assessment::AssessmentService {
 
         println!("💾 [SERVICE] save_answers() SUCCESS - saved {} answers", request.answers.len());
 
-        self.grading_service.grade_submission(submission_id).await?;
+        self.grade_submission(submission_id).await?;
 
         Ok(())
     }
