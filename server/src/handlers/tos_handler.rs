@@ -8,7 +8,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::middleware::auth_middleware::AuthUser;
-use crate::schema::auth_schema::MessageResponse;
+use crate::modules::auth::schema::MessageResponse;
 use crate::schema::common::success_response;
 use crate::schema::tos_schema::*;
 use crate::services::tos::TosService;

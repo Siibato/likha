@@ -1,5 +1,5 @@
 use uuid::Uuid;
-use crate::services::auth::AuthService;
+use crate::modules::auth::service_operations::helpers::user_to_response;
 
 fn make_user(account_status: &str) -> ::entity::users::Model {
     ::entity::users::Model {
@@ -19,28 +19,28 @@ fn make_user(account_status: &str) -> ::entity::users::Model {
 #[test]
 fn test_user_to_response_active_status_is_active_true() {
     let user = make_user("active");
-    let response = AuthService::user_to_response(&user);
+    let response = user_to_response(&user);
     assert!(response.is_active);
 }
 
 #[test]
 fn test_user_to_response_locked_status_is_active_false() {
     let user = make_user("locked");
-    let response = AuthService::user_to_response(&user);
+    let response = user_to_response(&user);
     assert!(!response.is_active);
 }
 
 #[test]
 fn test_user_to_response_deactivated_status_is_active_false() {
     let user = make_user("deactivated");
-    let response = AuthService::user_to_response(&user);
+    let response = user_to_response(&user);
     assert!(!response.is_active);
 }
 
 #[test]
 fn test_user_to_response_pending_activation_is_active_true() {
     let user = make_user("pending_activation");
-    let response = AuthService::user_to_response(&user);
+    let response = user_to_response(&user);
     assert!(response.is_active);
 }
 
@@ -54,7 +54,7 @@ fn test_user_to_response_fields_mapped_correctly() {
     user.role = "student".to_string();
     user.account_status = "active".to_string();
 
-    let response = AuthService::user_to_response(&user);
+    let response = user_to_response(&user);
     assert_eq!(response.id, id);
     assert_eq!(response.username, "john_doe");
     assert_eq!(response.full_name, "John Doe");
@@ -66,7 +66,7 @@ fn test_user_to_response_fields_mapped_correctly() {
 fn test_user_to_response_activated_at_none_maps_to_none() {
     let mut user = make_user("active");
     user.activated_at = None;
-    let response = AuthService::user_to_response(&user);
+    let response = user_to_response(&user);
     assert!(response.activated_at.is_none());
 }
 
@@ -74,6 +74,6 @@ fn test_user_to_response_activated_at_none_maps_to_none() {
 fn test_user_to_response_activated_at_some_maps_to_some_string() {
     let mut user = make_user("active");
     user.activated_at = Some(chrono::Utc::now().naive_utc());
-    let response = AuthService::user_to_response(&user);
+    let response = user_to_response(&user);
     assert!(response.activated_at.is_some());
 }

@@ -1,6 +1,6 @@
 use uuid::Uuid;
 use chrono::Utc;
-use crate::schema::auth_schema::{CreateAccountRequest, UpdateAccountRequest, ResetAccountRequest, LockAccountRequest};
+use crate::modules::auth::schema::{CreateAccountRequest, UpdateAccountRequest, ResetAccountRequest, LockAccountRequest};
 use super::sync_push_service::{OperationResult, SyncQueueEntry};
 use super::extract_field;
 

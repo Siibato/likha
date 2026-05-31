@@ -4,7 +4,7 @@ use crate::modules::class::service::ClassService;
 use crate::services::assessment::AssessmentService;
 use crate::modules::assignment::service::AssignmentService;
 use crate::services::learning_material::LearningMaterialService;
-use crate::services::auth::AuthService;
+use crate::modules::auth::service::AuthService;
 use crate::services::grade_computation::GradeComputationService;
 use crate::services::tos::TosService;
 

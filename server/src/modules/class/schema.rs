@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::schema::auth_schema::UserResponse;
+use crate::modules::auth::schema::UserResponse;
 
 // ===== REQUEST SCHEMAS =====
 

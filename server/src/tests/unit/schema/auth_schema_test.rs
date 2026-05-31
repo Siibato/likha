@@ -1,4 +1,4 @@
-use crate::schema::auth_schema::{
+use crate::modules::auth::schema::{
     ActivateAccountRequest, CheckUsernameRequest, CreateAccountRequest, LoginRequest,
     UserResponse,
 };

@@ -24,7 +24,7 @@ use uuid::Uuid;
 
 use crate::services::assessment::AssessmentService;
 use crate::modules::assignment::service::AssignmentService;
-use crate::services::auth::AuthService;
+use crate::modules::auth::service::AuthService;
 use crate::modules::class::service::ClassService;
 use crate::services::grade_computation::GradeComputationService;
 use crate::services::learning_material::LearningMaterialService;
@@ -150,7 +150,7 @@ async fn main() {
     seed_admin(&db).await.expect("Failed to seed admin account");
 
     // Initialize services
-    let auth_service = Arc::new(AuthService::new(
+    let auth_service = Arc::new(crate::modules::auth::service::AuthService::new(
         db.clone(),
         config.jwt_secret.clone(),
         config.jwt_expiration,

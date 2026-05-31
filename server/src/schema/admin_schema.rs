@@ -1,7 +1,7 @@
 use serde::Serialize;
 use uuid::Uuid;
 
-use super::auth_schema::UserResponse;
+use crate::modules::auth::schema::UserResponse;
 
 #[derive(Debug, Serialize)]
 pub struct AccountListResponse {

@@ -9,7 +9,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::middleware::auth_middleware::AuthUser;
-use crate::schema::auth_schema::MessageResponse;
+use crate::modules::auth::schema::MessageResponse;
 use crate::schema::common::success_response;
 use crate::schema::learning_material_schema::*;
 use crate::services::learning_material::LearningMaterialService;

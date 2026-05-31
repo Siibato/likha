@@ -7,7 +7,7 @@ use axum::{
 use std::sync::Arc;
 use uuid::Uuid;
 
-use crate::schema::auth_schema::MessageResponse;
+use crate::modules::auth::schema::MessageResponse;
 use crate::modules::class::schema::{AddStudentRequest, CreateClassRequest, UpdateClassRequest};
 use crate::schema::common::success_response;
 use crate::modules::class::service::ClassService;

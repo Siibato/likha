@@ -7,11 +7,11 @@ use axum::{
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use crate::schema::auth_schema::{
+use crate::modules::auth::schema::{
     ActivateAccountRequest, CheckUsernameRequest, LoginRequest, MessageResponse, RefreshTokenRequest, SearchStudentsQuery,
 };
 use crate::schema::common::success_response;
-use crate::services::auth::AuthService;
+use crate::modules::auth::service::AuthService;
 use crate::middleware::auth_middleware::AuthUser;
 
 pub async fn check_username(

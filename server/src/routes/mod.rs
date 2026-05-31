@@ -14,8 +14,10 @@ use std::sync::Arc;
 use crate::middleware::{RateLimitLayer, RateLimitStore};
 use crate::services::assessment::AssessmentService;
 use crate::modules::assignment::service::AssignmentService;
-use crate::services::auth::AuthService;
+use crate::modules::auth::service::AuthService;
 use crate::modules::class::routes as new_class_routes;
+use crate::modules::auth::routes as new_auth_routes;
+use crate::modules::admin::routes as new_admin_routes;
 use crate::services::grade_computation::GradeComputationService;
 use crate::services::learning_material::LearningMaterialService;
 use crate::services::setup_service::SetupService;
@@ -44,7 +46,8 @@ pub fn api_routes(
 
     Router::new()
         .merge(health_routes::routes())
-        .merge(auth_routes::routes(auth_service.clone()))
+        .merge(new_auth_routes::routes(auth_service.clone()))
+        .merge(new_admin_routes::routes(auth_service.clone()))
         .merge(new_class_routes::routes(class_service))
         .merge(assessment_routes::routes(assessment_service.clone()))
         .merge(crate::modules::assignment::routes::routes(assignment_service.clone()))

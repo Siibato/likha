@@ -13,7 +13,6 @@ use crate::db::repositories::{
 use crate::routes::api_routes;
 use crate::services::{
     assessment::AssessmentService,
-    auth::AuthService,
     entitlement::EntitlementService,
     grade_computation::GradeComputationService,
     learning_material::LearningMaterialService,
@@ -24,6 +23,7 @@ use crate::services::{
     sync_push::SyncPushService,
     tos::TosService,
 };
+use crate::modules::auth::service::AuthService;
 use crate::modules::assignment::service::AssignmentService;
 use crate::modules::class::service::ClassService;
 
@@ -37,7 +37,7 @@ pub const TEST_FILE_ENCRYPTION_KEY: [u8; 32] = [0u8; 32];
 pub async fn build_test_app(db: DatabaseConnection) -> Router {
     // Ensure JWT_SECRET is set so auth middleware does not panic.
     std::env::set_var("JWT_SECRET", TEST_JWT_SECRET);
-    let auth_service = Arc::new(AuthService::new(
+    let auth_service = Arc::new(crate::modules::auth::service::AuthService::new(
         db.clone(),
         TEST_JWT_SECRET.to_string(),
         3600,

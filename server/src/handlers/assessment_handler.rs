@@ -9,7 +9,7 @@ use uuid::Uuid;
 
 use crate::middleware::auth_middleware::AuthUser;
 use crate::schema::assessment_schema::*;
-use crate::schema::auth_schema::MessageResponse;
+use crate::modules::auth::schema::MessageResponse;
 use crate::schema::common::success_response;
 use crate::services::assessment::AssessmentService;
 use crate::utils::auth_guards::{require_teacher, require_student};

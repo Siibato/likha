@@ -1,7 +1,7 @@
 use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
 use crate::modules::class::schema::EnrollmentResponse;
-use crate::schema::auth_schema::UserResponse;
+use crate::modules::auth::schema::UserResponse;
 use crate::modules::class::repository::ClassRepository;
 use crate::db::repositories::user_repository::UserRepository;
 
