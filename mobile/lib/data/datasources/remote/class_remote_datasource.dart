@@ -1,9 +1,8 @@
-import 'package:dio/dio.dart';
-import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/data/models/classes/class_detail_model.dart';
 import 'package:likha/data/models/classes/class_model.dart';
+import 'package:likha/data/datasources/remote/operations/classes/classes.dart' as ops;
 
 abstract class ClassRemoteDataSource {
   Future<ClassModel> createClass({
@@ -53,48 +52,33 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
     String? description,
     String? teacherId,
     bool isAdvisory = false,
-  }) async {
-    try {
-      return await _dioClient.postTyped(
-        ApiEndpoints.classCreate,
-        data: {
-          'title': title,
-          if (description != null) 'description': description,
-          if (teacherId != null) 'teacher_id': teacherId,
-          'is_advisory': isAdvisory,
-        },
+  }) =>
+      ops.createClass(
+        _dioClient,
+        title: title,
+        description: description,
+        teacherId: teacherId,
+        isAdvisory: isAdvisory,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
-  Future<List<ClassModel>> getMyClasses() async {
-    try {
-      return await _dioClient.getTyped(ApiEndpoints.classes);
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
+  Future<List<ClassModel>> getMyClasses() =>
+      ops.getMyClasses(
+        _dioClient,
+      );
 
   @override
-  Future<List<ClassModel>> getAllClasses() async {
-    try {
-      return await _dioClient.getTyped(ApiEndpoints.classes);
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
+  Future<List<ClassModel>> getAllClasses() =>
+      ops.getAllClasses(
+        _dioClient,
+      );
 
   @override
-  Future<ClassDetailModel> getClassDetail({required String classId}) async {
-    try {
-      return await _dioClient.getTyped(ApiEndpoints.classDetail(classId));
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
+  Future<ClassDetailModel> getClassDetail({required String classId}) =>
+      ops.getClassDetail(
+        _dioClient,
+        classId: classId,
+      );
 
   @override
   Future<ClassModel> updateClass({
@@ -103,73 +87,49 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
     String? description,
     String? teacherId,
     bool? isAdvisory,
-  }) async {
-    try {
-      return await _dioClient.putTyped(
-        ApiEndpoints.classUpdate(classId),
-        data: {
-          if (title != null) 'title': title,
-          if (description != null) 'description': description,
-          if (teacherId != null) 'teacher_id': teacherId,
-          if (isAdvisory != null) 'is_advisory': isAdvisory,
-        },
+  }) =>
+      ops.updateClass(
+        _dioClient,
+        classId: classId,
+        title: title,
+        description: description,
+        teacherId: teacherId,
+        isAdvisory: isAdvisory,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<ParticipantModel> addStudent({
     required String classId,
     required String studentId,
-  }) async {
-    try {
-      return await _dioClient.postTyped(
-        ApiEndpoints.classStudents(classId),
-        data: {'student_id': studentId},
+  }) =>
+      ops.addStudent(
+        _dioClient,
+        classId: classId,
+        studentId: studentId,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<void> removeStudent({
     required String classId,
     required String studentId,
-  }) async {
-    try {
-      await _dioClient.deleteTyped(
-        ApiEndpoints.classStudent(classId, studentId),
+  }) =>
+      ops.removeStudent(
+        _dioClient,
+        classId: classId,
+        studentId: studentId,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
-  Future<void> deleteClass({required String classId}) async {
-    try {
-      await _dioClient.deleteTyped(
-        ApiEndpoints.classDelete(classId),
+  Future<void> deleteClass({required String classId}) =>
+      ops.deleteClass(
+        _dioClient,
+        classId: classId,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
-  Future<List<UserModel>> searchStudents({String? query}) async {
-    try {
-      return await _dioClient.getTyped(
-        ApiEndpoints.searchStudents,
-        queryParameters: {
-          if (query != null && query.isNotEmpty) 'q': query,
-        },
+  Future<List<UserModel>> searchStudents({String? query}) =>
+      ops.searchStudents(
+        _dioClient,
+        query: query,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 }

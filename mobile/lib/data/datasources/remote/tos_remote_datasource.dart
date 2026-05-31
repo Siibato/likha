@@ -1,10 +1,7 @@
-import 'package:dio/dio.dart';
-
-import 'package:likha/core/constants/api_endpoint.dart';
-import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/models/tos/tos_model.dart';
 import 'package:likha/data/models/tos/melcs_model.dart';
+import 'package:likha/data/datasources/remote/operations/tos/tos.dart' as ops;
 
 abstract class TosRemoteDataSource {
   Future<List<TosModel>> getTosByClass({required String classId});
@@ -25,141 +22,87 @@ class TosRemoteDataSourceImpl implements TosRemoteDataSource {
   TosRemoteDataSourceImpl(this._dioClient);
 
   @override
-  Future<List<TosModel>> getTosByClass({required String classId}) async {
-    try {
-      return await _dioClient.getTyped(
-        ApiEndpoints.tosList(classId),
+  Future<List<TosModel>> getTosByClass({required String classId}) =>
+      ops.getTosByClass(
+        _dioClient,
+        classId: classId,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
-  Future<(TosModel, List<CompetencyModel>)> getTosDetail({required String tosId}) async {
-    try {
-      final response = await _dioClient.dio.get(
-        ApiEndpoints.tosDetail(tosId).path,
+  Future<(TosModel, List<CompetencyModel>)> getTosDetail({required String tosId}) =>
+      ops.getTosDetail(
+        _dioClient,
+        tosId: tosId,
       );
-      final data = response.data['data'] ?? response.data;
-      final tos = TosModel.fromJson(data as Map<String, dynamic>);
-      final competencies = (data['competencies'] as List<dynamic>? ?? [])
-          .map((e) => CompetencyModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-      return (tos, competencies);
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<TosModel> createTos({
     required String classId,
     required Map<String, dynamic> data,
-  }) async {
-    try {
-      final response = await _dioClient.dio.post(
-        ApiEndpoints.tosList(classId).path,
+  }) =>
+      ops.createTos(
+        _dioClient,
+        classId: classId,
         data: data,
       );
-      final responseData = response.data['data'] ?? response.data;
-      return TosModel.fromJson(responseData as Map<String, dynamic>);
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<TosModel> updateTos({
     required String tosId,
     required Map<String, dynamic> data,
-  }) async {
-    try {
-      final response = await _dioClient.dio.put(
-        ApiEndpoints.tosDetail(tosId).path,
+  }) =>
+      ops.updateTos(
+        _dioClient,
+        tosId: tosId,
         data: data,
       );
-      final responseData = response.data['data'] ?? response.data;
-      return TosModel.fromJson(responseData as Map<String, dynamic>);
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
-  Future<void> deleteTos({required String tosId}) async {
-    try {
-      await _dioClient.deleteTyped(
-        ApiEndpoint<void>(
-          ApiEndpoints.tosDetail(tosId).path,
-          (_) {},
-        ),
+  Future<void> deleteTos({required String tosId}) =>
+      ops.deleteTos(
+        _dioClient,
+        tosId: tosId,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<CompetencyModel> addCompetency({
     required String tosId,
     required Map<String, dynamic> data,
-  }) async {
-    try {
-      final response = await _dioClient.dio.post(
-        ApiEndpoints.tosCompetencies(tosId).path,
+  }) =>
+      ops.addCompetency(
+        _dioClient,
+        tosId: tosId,
         data: data,
       );
-      final responseData = response.data['data'] ?? response.data;
-      return CompetencyModel.fromJson(responseData as Map<String, dynamic>);
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<CompetencyModel> updateCompetency({
     required String competencyId,
     required Map<String, dynamic> data,
-  }) async {
-    try {
-      return await _dioClient.putTyped(
-        ApiEndpoints.tosCompetencyDetail(competencyId),
+  }) =>
+      ops.updateCompetency(
+        _dioClient,
+        competencyId: competencyId,
         data: data,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
-  Future<void> deleteCompetency({required String competencyId}) async {
-    try {
-      await _dioClient.deleteTyped(
-        ApiEndpoint<void>(
-          ApiEndpoints.tosCompetencyDetail(competencyId).path,
-          (_) {},
-        ),
+  Future<void> deleteCompetency({required String competencyId}) =>
+      ops.deleteCompetency(
+        _dioClient,
+        competencyId: competencyId,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<List<CompetencyModel>> bulkAddCompetencies({
     required String tosId,
     required List<Map<String, dynamic>> competencies,
-  }) async {
-    try {
-      return await _dioClient.postTyped(
-        ApiEndpoints.tosBulkCompetencies(tosId),
-        data: {'competencies': competencies},
+  }) =>
+      ops.bulkAddCompetencies(
+        _dioClient,
+        tosId: tosId,
+        competencies: competencies,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<List<MelcEntryModel>> searchMelcs({
@@ -169,25 +112,14 @@ class TosRemoteDataSourceImpl implements TosRemoteDataSource {
     String? query,
     int limit = 30,
     int offset = 0,
-  }) async {
-    try {
-      final queryParams = <String, dynamic>{'limit': limit, 'offset': offset};
-      if (subject != null) queryParams['subject'] = subject;
-      if (gradeLevel != null) queryParams['grade_level'] = gradeLevel;
-      if (quarter != null) queryParams['quarter'] = quarter;
-      if (query != null) queryParams['q'] = query;
-
-      final response = await _dioClient.dio.get(
-        ApiEndpoints.melcsSearch().path,
-        queryParameters: queryParams,
+  }) =>
+      ops.searchMelcs(
+        _dioClient,
+        subject: subject,
+        gradeLevel: gradeLevel,
+        quarter: quarter,
+        query: query,
+        limit: limit,
+        offset: offset,
       );
-      final data = response.data['data'] ?? response.data;
-      final items = data['melcs'] as List<dynamic>? ?? data as List<dynamic>? ?? [];
-      return items
-          .map((e) => MelcEntryModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 }

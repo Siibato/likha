@@ -1,11 +1,9 @@
-import 'package:dio/dio.dart';
-import 'package:likha/core/constants/api_endpoints.dart';
-import 'package:likha/core/network/api_response.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/models/sync/conflict_model.dart';
 import 'package:likha/data/models/sync/push_response_model.dart';
 import 'package:likha/data/models/sync/full_sync_response_model.dart';
 import 'package:likha/data/models/sync/delta_sync_response_model.dart';
+import 'package:likha/data/datasources/remote/operations/sync/sync.dart' as ops;
 
 /// Remote datasource for offline sync operations
 abstract class SyncRemoteDataSource {
@@ -61,128 +59,73 @@ class SyncRemoteDataSourceImpl implements SyncRemoteDataSource {
 
   SyncRemoteDataSourceImpl({required this.dioClient});
 
-  Dio get _dio => dioClient.dio;
-
   @override
   Future<PushResponseModel> pushOperations({
     required List<Map<String, dynamic>> operations,
-  }) async {
-    try {
-      return await dioClient.postTyped(
-        ApiEndpoints.syncPush,
-        data: {'operations': operations},
+  }) =>
+      ops.pushOperations(
+        dioClient,
+        operations: operations,
       );
-    } on DioException catch (e) {
-      throw dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<ConflictResolutionResponse> resolveConflict({
     required ConflictResolutionRequest request,
-  }) async {
-    try {
-      return await dioClient.postTyped(
-        ApiEndpoints.syncResolveConflict,
-        data: request.toJson(),
+  }) =>
+      ops.resolveConflict(
+        dioClient,
+        request: request,
       );
-    } on DioException catch (e) {
-      throw dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<Map<String, dynamic>?> uploadSubmissionFile({
     required String submissionId,
     required String localPath,
     required String fileName,
-  }) async {
-    try {
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(localPath, filename: fileName),
-      });
-      final response = await _dio.post(
-        ApiEndpoints.assignmentSubmissionUpload(submissionId).path,
-        data: formData,
+  }) =>
+      ops.uploadSubmissionFile(
+        dioClient,
+        submissionId: submissionId,
+        localPath: localPath,
+        fileName: fileName,
       );
-      // Parse and return server response for file ID reconciliation
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        final data = response.data as Map<String, dynamic>?;
-        return data?['data'] as Map<String, dynamic>?;
-      }
-      return null;
-    } on DioException catch (e) {
-      throw dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<void> uploadMaterialFile({
     required String materialId,
     required String localPath,
     required String fileName,
-  }) async {
-    try {
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(localPath, filename: fileName),
-      });
-      await _dio.post(
-        ApiEndpoints.materialUploadFile(materialId).path,
-        data: formData,
+  }) =>
+      ops.uploadMaterialFile(
+        dioClient,
+        materialId: materialId,
+        localPath: localPath,
+        fileName: fileName,
       );
-    } on DioException catch (e) {
-      throw dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<FullSyncResponseModel> fullSync({
     required String deviceId,
     List<String> classIds = const [],
     Duration? receiveTimeout,
-  }) async {
-    try {
-      final data = {
-        'device_id': deviceId,
-        if (classIds.isNotEmpty) 'class_ids': classIds,
-      };
-
-      if (receiveTimeout != null) {
-        final response = await _dio.post(
-          ApiEndpoints.syncFull.path,
-          data: data,
-          options: Options(receiveTimeout: receiveTimeout),
-        );
-        final apiResponse = ApiResponse.fromJson(response.data, (json) => FullSyncResponseModel.fromJson(json as Map<String, dynamic>));
-        return apiResponse.unwrap();
-      } else {
-        return await dioClient.postTyped(
-          ApiEndpoints.syncFull,
-          data: data,
-        );
-      }
-    } on DioException catch (e) {
-      throw dioClient.handleError(e);
-    }
-  }
+  }) =>
+      ops.fullSync(
+        dioClient,
+        deviceId: deviceId,
+        classIds: classIds,
+        receiveTimeout: receiveTimeout,
+      );
 
   @override
   Future<DeltaSyncResponseModel> deltaSync({
     required String deviceId,
     required String lastSyncAt,
     String? dataExpiryAt,
-  }) async {
-    try {
-      return await dioClient.postTyped(
-        ApiEndpoints.syncDeltas,
-        data: {
-          'device_id': deviceId,
-          'last_sync_at': lastSyncAt,
-          if (dataExpiryAt != null) 'data_expiry_at': dataExpiryAt,
-        },
+  }) =>
+      ops.deltaSync(
+        dioClient,
+        deviceId: deviceId,
+        lastSyncAt: lastSyncAt,
+        dataExpiryAt: dataExpiryAt,
       );
-    } on DioException catch (e) {
-      throw dioClient.handleError(e);
-    }
-  }
 }
