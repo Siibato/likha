@@ -1,8 +1,9 @@
 use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
-use crate::modules::auth::schema::{UpdateAccountRequest, UserResponse};
+use crate::modules::auth::schema::UserResponse;
+use crate::modules::admin::schema::UpdateAccountRequest;
 use crate::db::repositories::user_repository::UserRepository;
-use crate::modules::auth::service_operations::helpers::user_to_response;
+use crate::modules::auth::helpers::user_to_response;
 
 pub async fn update_account(
     user_repo: &UserRepository,

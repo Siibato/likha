@@ -4,7 +4,7 @@ use crate::modules::auth::schema::AuthResponse;
 use crate::utils::password::PasswordService;
 use crate::db::repositories::user_repository::UserRepository;
 use crate::utils::jwt::JwtService;
-use crate::modules::auth::service_operations::helpers::user_to_response;
+use crate::modules::auth::helpers::user_to_response;
 
 pub async fn refresh_token(
     user_repo: &UserRepository,

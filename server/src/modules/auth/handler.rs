@@ -1,5 +1,5 @@
 use axum::{
-    extract::{ConnectInfo, Query, State},
+    extract::{ConnectInfo, State},
     http::StatusCode,
     response::IntoResponse,
     Json,
@@ -8,7 +8,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use crate::modules::auth::schema::{
-    ActivateAccountRequest, CheckUsernameRequest, LoginRequest, MessageResponse, RefreshTokenRequest, SearchStudentsQuery,
+    ActivateAccountRequest, CheckUsernameRequest, LoginRequest, MessageResponse, RefreshTokenRequest,
 };
 use crate::schema::common::success_response;
 use crate::modules::auth::service::AuthService;
@@ -74,18 +74,6 @@ pub async fn logout(
         Ok(_) => success_response(MessageResponse {
             message: "Logged out successfully".to_string(),
         }, StatusCode::OK).into_response(),
-        Err(e) => e.into_response(),
-    }
-}
-
-pub async fn search_students(
-    State(auth_service): State<Arc<AuthService>>,
-    _auth_user: AuthUser,
-    Query(query): Query<SearchStudentsQuery>,
-) -> impl IntoResponse {
-    let search_query = query.q.unwrap_or_default();
-    match auth_service.search_students(&search_query).await {
-        Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }

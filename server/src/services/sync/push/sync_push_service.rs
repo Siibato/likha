@@ -5,6 +5,7 @@ use crate::services::assessment::AssessmentService;
 use crate::modules::assignment::service::AssignmentService;
 use crate::services::learning_material::LearningMaterialService;
 use crate::modules::auth::service::AuthService;
+use crate::modules::admin::service::AdminService;
 use crate::services::grade_computation::GradeComputationService;
 use crate::services::tos::TosService;
 
@@ -41,6 +42,7 @@ pub struct SyncPushService {
     pub assignment_service: Arc<AssignmentService>,
     pub material_service: Arc<LearningMaterialService>,
     pub auth_service: Arc<AuthService>,
+    pub admin_service: Arc<AdminService>,
     pub grade_computation_service: Arc<GradeComputationService>,
     pub tos_service: Arc<TosService>,
     pub processed_ops_repo: Arc<crate::db::repositories::processed_operations_repository::ProcessedOperationsRepository>,
@@ -54,6 +56,7 @@ impl SyncPushService {
         assignment_service: Arc<AssignmentService>,
         material_service: Arc<LearningMaterialService>,
         auth_service: Arc<AuthService>,
+        admin_service: Arc<AdminService>,
         grade_computation_service: Arc<GradeComputationService>,
         tos_service: Arc<TosService>,
         processed_ops_repo: Arc<crate::db::repositories::processed_operations_repository::ProcessedOperationsRepository>,
@@ -65,6 +68,7 @@ impl SyncPushService {
             assignment_service,
             material_service,
             auth_service,
+            admin_service,
             grade_computation_service,
             tos_service,
             processed_ops_repo,

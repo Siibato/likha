@@ -6,7 +6,7 @@ use crate::db::repositories::user_repository::UserRepository;
 use crate::db::repositories::login_attempt_repository::LoginAttemptRepository;
 use crate::db::repositories::activity_log_repository::ActivityLogRepository;
 use crate::utils::jwt::JwtService;
-use crate::modules::auth::service_operations::helpers::user_to_response;
+use crate::modules::auth::helpers::user_to_response;
 
 pub async fn login(
     user_repo: &UserRepository,

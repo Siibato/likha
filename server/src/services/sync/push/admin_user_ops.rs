@@ -1,6 +1,6 @@
 use uuid::Uuid;
 use chrono::Utc;
-use crate::modules::auth::schema::{CreateAccountRequest, UpdateAccountRequest, ResetAccountRequest, LockAccountRequest};
+use crate::modules::admin::schema::{CreateAccountRequest, UpdateAccountRequest, ResetAccountRequest, LockAccountRequest};
 use super::sync_push_service::{OperationResult, SyncQueueEntry};
 use super::extract_field;
 
@@ -13,7 +13,7 @@ impl super::SyncPushService {
                 let role = extract_field!(self, op, parse_str_field, "role");
                 let client_id = self.parse_uuid_field(&op.payload, "id").ok();
                 let request = CreateAccountRequest { username, full_name, role };
-                match self.auth_service.create_account(request, user_id, client_id).await {
+                match self.admin_service.create_account(request, user_id, client_id).await {
                     Ok(u) => self.success_result(op, Some(u.id.to_string()), Some(Utc::now().to_rfc3339())),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }
@@ -28,13 +28,13 @@ impl super::SyncPushService {
                             full_name: op.payload.get("full_name").and_then(|v| v.as_str()).map(|s| s.to_string()),
                             role: op.payload.get("role").and_then(|v| v.as_str()).map(|s| s.to_string()),
                         };
-                        match self.auth_service.update_account(target_user_id, request, user_id).await {
+                        match self.admin_service.update_account(target_user_id, request, user_id).await {
                             Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
                             Err(e) => self.error_result(op, &e.to_string()),
                         }
                     }
                     "reset" => {
-                        match self.auth_service.reset_account(ResetAccountRequest { user_id: target_user_id }, user_id).await {
+                        match self.admin_service.reset_account(ResetAccountRequest { user_id: target_user_id }, user_id).await {
                             Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
                             Err(e) => self.error_result(op, &e.to_string()),
                         }
@@ -42,7 +42,7 @@ impl super::SyncPushService {
                     "lock" => {
                         let locked = op.payload.get("locked").and_then(|v| v.as_bool()).unwrap_or(true);
                         let reason = op.payload.get("reason").and_then(|v| v.as_str()).map(|s| s.to_string());
-                        match self.auth_service.lock_account(LockAccountRequest { user_id: target_user_id, locked, reason }, user_id).await {
+                        match self.admin_service.lock_account(LockAccountRequest { user_id: target_user_id, locked, reason }, user_id).await {
                             Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
                             Err(e) => self.error_result(op, &e.to_string()),
                         }

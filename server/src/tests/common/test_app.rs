@@ -24,6 +24,7 @@ use crate::services::{
     tos::TosService,
 };
 use crate::modules::auth::service::AuthService;
+use crate::modules::admin::service::AdminService;
 use crate::modules::assignment::service::AssignmentService;
 use crate::modules::class::service::ClassService;
 
@@ -42,6 +43,7 @@ pub async fn build_test_app(db: DatabaseConnection) -> Router {
         TEST_JWT_SECRET.to_string(),
         3600,
     ));
+    let admin_service = Arc::new(AdminService::new(db.clone()));
     let class_service = Arc::new(ClassService::new(db.clone()));
     let assessment_service = Arc::new(AssessmentService::new(db.clone()));
     let assignment_service = Arc::new(AssignmentService::new(db.clone()));
@@ -65,6 +67,7 @@ pub async fn build_test_app(db: DatabaseConnection) -> Router {
         assignment_service.clone(),
         material_service.clone(),
         auth_service.clone(),
+        admin_service.clone(),
         grade_computation_service.clone(),
         tos_service.clone(),
         processed_ops_repo,
@@ -91,6 +94,7 @@ pub async fn build_test_app(db: DatabaseConnection) -> Router {
             "/api/v1",
             api_routes(
                 auth_service,
+                admin_service,
                 class_service,
                 assessment_service,
                 assignment_service,

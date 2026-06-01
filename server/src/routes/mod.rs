@@ -15,6 +15,7 @@ use crate::middleware::{RateLimitLayer, RateLimitStore};
 use crate::services::assessment::AssessmentService;
 use crate::modules::assignment::service::AssignmentService;
 use crate::modules::auth::service::AuthService;
+use crate::modules::admin::service::AdminService;
 use crate::modules::class::routes as new_class_routes;
 use crate::modules::auth::routes as new_auth_routes;
 use crate::modules::admin::routes as new_admin_routes;
@@ -29,6 +30,7 @@ use crate::services::tos::TosService;
 
 pub fn api_routes(
     auth_service: Arc<AuthService>,
+    admin_service: Arc<AdminService>,
     class_service: Arc<crate::modules::class::service::ClassService>,
     assessment_service: Arc<AssessmentService>,
     assignment_service: Arc<AssignmentService>,
@@ -47,7 +49,7 @@ pub fn api_routes(
     Router::new()
         .merge(health_routes::routes())
         .merge(new_auth_routes::routes(auth_service.clone()))
-        .merge(new_admin_routes::routes(auth_service.clone()))
+        .merge(new_admin_routes::routes(admin_service))
         .merge(new_class_routes::routes(class_service))
         .merge(assessment_routes::routes(assessment_service.clone()))
         .merge(crate::modules::assignment::routes::routes(assignment_service.clone()))

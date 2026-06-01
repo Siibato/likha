@@ -156,6 +156,8 @@ async fn main() {
         config.jwt_expiration,
     ));
 
+    let admin_service = Arc::new(crate::modules::admin::service::AdminService::new(db.clone()));
+
     let class_service = Arc::new(ClassService::new(db.clone()));
 
     let assessment_service = Arc::new(AssessmentService::new(db.clone()));
@@ -192,6 +194,7 @@ async fn main() {
         assignment_service.clone(),
         material_service.clone(),
         auth_service.clone(),
+        admin_service.clone(),
         grade_computation_service.clone(),
         tos_service.clone(),
         processed_ops_repo,
@@ -214,6 +217,7 @@ async fn main() {
     let app = create_app(
         &config,
         auth_service,
+        admin_service,
         class_service,
         assessment_service,
         assignment_service,
@@ -243,6 +247,7 @@ async fn main() {
 fn create_app(
     config: &config::ServerConfig,
     auth_service: Arc<AuthService>,
+    admin_service: Arc<crate::modules::admin::service::AdminService>,
     class_service: Arc<crate::modules::class::service::ClassService>,
     assessment_service: Arc<AssessmentService>,
     assignment_service: Arc<AssignmentService>,
@@ -260,6 +265,7 @@ fn create_app(
             "/api/v1",
             routes::api_routes(
                 auth_service,
+                admin_service,
                 class_service,
                 assessment_service,
                 assignment_service,
