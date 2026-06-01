@@ -4,7 +4,7 @@ use tokio::sync::RwLock;
 use uuid::Uuid;
 use sea_orm::{ConnectionTrait, Statement, DbBackend, DatabaseConnection};
 
-use crate::services::sync_push::OperationResult;
+use crate::modules::sync::service_operations::push::OperationResult;
 
 pub async fn check_processed(
     db: &DatabaseConnection,

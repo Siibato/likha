@@ -1,7 +1,7 @@
 use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
 use crate::modules::assessment::schema::*;
-use crate::services::grade_computation::auto_populate;
+use crate::modules::grading::helpers::auto_populate;
 
 impl crate::modules::assessment::service::AssessmentService {
     pub async fn grade_essay_answer(

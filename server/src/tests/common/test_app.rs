@@ -13,13 +13,10 @@ use crate::db::repositories::{
 use crate::routes::api_routes;
 use crate::services::{
     entitlement::EntitlementService,
-    grade_computation::GradeComputationService,
     setup_service::SetupService,
-    sync_conflict_service::SyncConflictService,
-    sync_delta::SyncDeltaService,
-    sync_full::SyncFullService,
-    sync_push::SyncPushService,
 };
+use crate::modules::sync::service::{SyncPushService, SyncConflictService, SyncFullService, SyncDeltaService};
+use crate::modules::grading::service::GradeComputationService;
 
 use crate::modules::assessment::service::AssessmentService;
 use crate::modules::admin::service::AdminService;

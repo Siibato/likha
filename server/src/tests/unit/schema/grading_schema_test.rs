@@ -1,4 +1,4 @@
-use crate::schema::grading_schema::{
+use crate::modules::grading::schema::{
     BulkUpdateScoresRequest, CreateGradeItemRequest, OverrideScoreRequest,
     SetupGradingConfigRequest, StudentScore, UpdateGradingConfigRequest,
 };

@@ -1,7 +1,7 @@
 use sea_orm::DatabaseConnection;
 use crate::modules::assessment::repository::AssessmentRepository;
 use crate::modules::class::repository::ClassRepository;
-use crate::db::repositories::grade_computation_repository::GradeComputationRepository;
+use crate::modules::grading::repository::GradeComputationRepository;
 use crate::db::repositories::user_repository::UserRepository;
 
 pub struct AssessmentService {

@@ -1,8 +1,6 @@
 pub mod auth_routes;
-pub mod grading_routes;
 pub mod health_routes;
 pub mod setup_routes;
-pub mod sync_routes_new;
 pub mod tasks_routes;
 
 use axum::Router;
@@ -20,12 +18,9 @@ use crate::modules::tos::routes as new_tos_routes;
 use crate::modules::learning_material::routes as new_learning_material_routes;
 use crate::modules::learning_material::service::LearningMaterialService;
 use crate::modules::tos::service::TosService;
-use crate::services::grade_computation::GradeComputationService;
+use crate::modules::grading::service::GradeComputationService;
 use crate::services::setup_service::SetupService;
-use crate::services::sync_push::SyncPushService;
-use crate::services::sync_conflict_service::SyncConflictService;
-use crate::services::sync_full::SyncFullService;
-use crate::services::sync_delta::SyncDeltaService;
+use crate::modules::sync::service::{SyncPushService, SyncConflictService, SyncFullService, SyncDeltaService};
 
 pub fn api_routes(
     auth_service: Arc<AuthService>,
@@ -53,11 +48,11 @@ pub fn api_routes(
         .merge(crate::modules::assessment::routes::routes(assessment_service.clone()))
         .merge(crate::modules::assignment::routes::routes(assignment_service.clone()))
         .merge(new_learning_material_routes::routes(material_service))
-        .merge(grading_routes::routes(grade_computation_service))
+        .merge(crate::modules::grading::routes::routes(grade_computation_service))
         .merge(new_tos_routes::routes(tos_service))
         .merge(setup_routes::routes(setup_service))
         .merge(tasks_routes::routes(assignment_service, assessment_service))
-        .merge(sync_routes_new::routes(
+        .merge(crate::modules::sync::routes::routes(
             sync_push_service,
             sync_conflict_service,
             sync_full_service,

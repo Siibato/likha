@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::services::grade_computation::deped_weights::get_descriptor;
+use crate::modules::grading::helpers::deped_weights::get_descriptor;
 
 // ===== REQUEST SCHEMAS =====
 

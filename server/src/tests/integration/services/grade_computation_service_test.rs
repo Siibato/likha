@@ -1,5 +1,5 @@
 use crate::modules::class::repository::ClassRepository;
-use crate::services::grade_computation::grade_computation_service::GradeComputationService;
+use crate::modules::grading::service::GradeComputationService;
 use crate::tests::common::test_db::test_db;
 
 #[tokio::test]

@@ -2,7 +2,7 @@ use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
 use crate::utils::fmt_utc;
 use crate::modules::assessment::schema::*;
-use crate::services::grade_computation::auto_populate;
+use crate::modules::grading::helpers::auto_populate;
 
 impl crate::modules::assessment::service::AssessmentService {
     pub async fn publish_assessment(

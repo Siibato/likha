@@ -4,7 +4,7 @@ use tokio::sync::RwLock;
 use uuid::Uuid;
 
 use crate::db::repositories::repository_operations::processed_operations as ops;
-use crate::services::sync_push::OperationResult;
+use crate::modules::sync::service_operations::push::OperationResult;
 
 /// Repository for tracking processed sync operations
 /// Enables deduplication - prevents processing same operation twice
