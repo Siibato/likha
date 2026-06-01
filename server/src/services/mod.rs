@@ -1,4 +1,3 @@
-pub mod assessment;
 pub mod entitlement;
 pub mod grade_computation;
 pub mod sync;

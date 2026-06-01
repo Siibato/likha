@@ -1,6 +1,6 @@
 use uuid::Uuid;
 use chrono::Utc;
-use crate::schema::assessment_schema::{SaveAnswersRequest, OverrideAnswerRequest};
+use crate::modules::assessment::schema::{SaveAnswersRequest, OverrideAnswerRequest};
 use crate::modules::assignment::schema::GradeSubmissionRequest;
 use super::sync_push_service::{OperationResult, SyncQueueEntry};
 use super::extract_field;

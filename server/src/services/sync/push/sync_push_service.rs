@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use crate::services::entitlement::EntitlementService;
 use crate::modules::class::service::ClassService;
-use crate::services::assessment::AssessmentService;
+use crate::modules::assessment::service::AssessmentService;
 use crate::modules::assignment::service::AssignmentService;
 use crate::services::learning_material::LearningMaterialService;
 use crate::modules::auth::service::AuthService;

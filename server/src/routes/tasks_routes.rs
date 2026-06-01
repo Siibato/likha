@@ -2,7 +2,7 @@ use axum::{routing::get, Router};
 use std::sync::Arc;
 
 use crate::handlers::tasks_handler;
-use crate::services::assessment::AssessmentService;
+use crate::modules::assessment::service::AssessmentService;
 use crate::modules::assignment::service::AssignmentService;
 
 #[derive(Clone)]

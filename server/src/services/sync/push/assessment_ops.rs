@@ -1,6 +1,6 @@
 use uuid::Uuid;
 use chrono::Utc;
-use crate::schema::assessment_schema::{CreateAssessmentRequest, UpdateAssessmentRequest};
+use crate::modules::assessment::schema::{CreateAssessmentRequest, UpdateAssessmentRequest};
 use super::sync_push_service::{OperationResult, SyncQueueEntry};
 use super::extract_field;
 

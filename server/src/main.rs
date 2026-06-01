@@ -22,7 +22,7 @@ use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::timeout::TimeoutLayer;
 use uuid::Uuid;
 
-use crate::services::assessment::AssessmentService;
+use crate::modules::assessment::service::AssessmentService;
 use crate::modules::assignment::service::AssignmentService;
 use crate::modules::auth::service::AuthService;
 use crate::modules::class::service::ClassService;

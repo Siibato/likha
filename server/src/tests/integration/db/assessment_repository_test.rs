@@ -1,5 +1,5 @@
 use chrono::Utc;
-use crate::db::repositories::assessment_repository::AssessmentRepository;
+use crate::modules::assessment::repository::AssessmentRepository;
 use crate::modules::class::repository::ClassRepository;
 use crate::tests::common::test_db::test_db;
 

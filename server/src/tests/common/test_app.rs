@@ -12,7 +12,6 @@ use crate::db::repositories::{
 };
 use crate::routes::api_routes;
 use crate::services::{
-    assessment::AssessmentService,
     entitlement::EntitlementService,
     grade_computation::GradeComputationService,
     learning_material::LearningMaterialService,
@@ -23,7 +22,8 @@ use crate::services::{
     sync_push::SyncPushService,
     tos::TosService,
 };
-use crate::modules::auth::service::AuthService;
+
+use crate::modules::assessment::service::AssessmentService;
 use crate::modules::admin::service::AdminService;
 use crate::modules::assignment::service::AssignmentService;
 use crate::modules::class::service::ClassService;

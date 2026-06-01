@@ -1,4 +1,3 @@
-pub mod assessment_routes;
 pub mod auth_routes;
 pub mod grading_routes;
 pub mod health_routes;
@@ -12,7 +11,7 @@ use axum::Router;
 use std::sync::Arc;
 
 use crate::middleware::{RateLimitLayer, RateLimitStore};
-use crate::services::assessment::AssessmentService;
+use crate::modules::assessment::service::AssessmentService;
 use crate::modules::assignment::service::AssignmentService;
 use crate::modules::auth::service::AuthService;
 use crate::modules::admin::service::AdminService;
@@ -51,7 +50,7 @@ pub fn api_routes(
         .merge(new_auth_routes::routes(auth_service.clone()))
         .merge(new_admin_routes::routes(admin_service))
         .merge(new_class_routes::routes(class_service))
-        .merge(assessment_routes::routes(assessment_service.clone()))
+        .merge(crate::modules::assessment::routes::routes(assessment_service.clone()))
         .merge(crate::modules::assignment::routes::routes(assignment_service.clone()))
         .merge(learning_material_routes::routes(material_service))
         .merge(grading_routes::routes(grade_computation_service))
