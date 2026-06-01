@@ -1,4 +1,4 @@
-use crate::schema::learning_material_schema::{
+use crate::modules::learning_material::schema::{
     CreateMaterialRequest, ReorderMaterialRequest, ReorderMaterialsRequest, UpdateMaterialRequest,
 };
 

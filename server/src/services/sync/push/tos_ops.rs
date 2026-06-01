@@ -2,7 +2,7 @@ use uuid::Uuid;
 use chrono::Utc;
 use super::sync_push_service::{OperationResult, SyncQueueEntry};
 use super::extract_field;
-use crate::schema::tos_schema::{
+use crate::modules::tos::schema::{
     CreateTosRequest, UpdateTosRequest, CreateCompetencyRequest, UpdateCompetencyRequest,
 };
 

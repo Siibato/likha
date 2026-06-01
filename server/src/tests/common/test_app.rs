@@ -14,19 +14,19 @@ use crate::routes::api_routes;
 use crate::services::{
     entitlement::EntitlementService,
     grade_computation::GradeComputationService,
-    learning_material::LearningMaterialService,
     setup_service::SetupService,
     sync_conflict_service::SyncConflictService,
     sync_delta::SyncDeltaService,
     sync_full::SyncFullService,
     sync_push::SyncPushService,
-    tos::TosService,
 };
 
 use crate::modules::assessment::service::AssessmentService;
 use crate::modules::admin::service::AdminService;
 use crate::modules::assignment::service::AssignmentService;
 use crate::modules::class::service::ClassService;
+use crate::modules::learning_material::service::LearningMaterialService;
+use crate::modules::tos::service::TosService;
 
 /// The auth middleware reads JWT_SECRET from the env, falling back to this constant.
 /// We match it here so tokens generated in tests are accepted by the middleware.

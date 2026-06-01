@@ -1,6 +1,6 @@
 use uuid::Uuid;
 use chrono::Utc;
-use crate::schema::learning_material_schema::{CreateMaterialRequest, UpdateMaterialRequest};
+use crate::modules::learning_material::schema::{CreateMaterialRequest, UpdateMaterialRequest};
 use super::sync_push_service::{OperationResult, SyncQueueEntry};
 use super::extract_field;
 

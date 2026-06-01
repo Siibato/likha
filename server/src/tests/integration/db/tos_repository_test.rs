@@ -1,6 +1,6 @@
 use uuid::Uuid;
 use crate::modules::class::repository::ClassRepository;
-use crate::db::repositories::tos_repository::TosRepository;
+use crate::modules::tos::repository::TosRepository;
 use crate::tests::common::test_db::test_db;
 
 #[tokio::test]

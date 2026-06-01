@@ -6,7 +6,7 @@
 //! Note: Mock-based tests for TosService CRUD operations require
 //! `mockall = "0.13"` to be vendored. Those tests are pending.
 
-use crate::schema::tos_schema::{
+use crate::modules::tos::schema::{
     CreateTosRequest, CreateCompetencyRequest, BulkAddCompetenciesRequest,
     MelcSearchResponse, MelcEntry,
 };

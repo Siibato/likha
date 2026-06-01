@@ -26,15 +26,15 @@ use crate::modules::assessment::service::AssessmentService;
 use crate::modules::assignment::service::AssignmentService;
 use crate::modules::auth::service::AuthService;
 use crate::modules::class::service::ClassService;
+use crate::modules::learning_material::service::LearningMaterialService;
+use crate::modules::tos::service::TosService;
 use crate::services::grade_computation::GradeComputationService;
-use crate::services::learning_material::LearningMaterialService;
 use crate::services::entitlement::EntitlementService;
 use crate::services::setup_service::SetupService;
 use crate::services::sync_push::SyncPushService;
 use crate::services::sync_conflict_service::SyncConflictService;
 use crate::services::sync_full::SyncFullService;
 use crate::services::sync_delta::SyncDeltaService;
-use crate::services::tos::TosService;
 use crate::utils::file_encryption::parse_key;
 use crate::db::repositories::{
     manifest_repository::ManifestRepository,

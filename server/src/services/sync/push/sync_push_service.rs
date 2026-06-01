@@ -3,11 +3,11 @@ use crate::services::entitlement::EntitlementService;
 use crate::modules::class::service::ClassService;
 use crate::modules::assessment::service::AssessmentService;
 use crate::modules::assignment::service::AssignmentService;
-use crate::services::learning_material::LearningMaterialService;
+use crate::modules::learning_material::service::LearningMaterialService;
+use crate::modules::tos::service::TosService;
 use crate::modules::auth::service::AuthService;
 use crate::modules::admin::service::AdminService;
 use crate::services::grade_computation::GradeComputationService;
-use crate::services::tos::TosService;
 
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct SyncQueueEntry {

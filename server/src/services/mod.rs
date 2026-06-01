@@ -1,8 +1,6 @@
 pub mod entitlement;
 pub mod grade_computation;
 pub mod sync;
-pub mod learning_material;
-pub mod tos;
 pub mod file_service;
 pub mod setup_service;
 
