@@ -11,10 +11,8 @@ use crate::db::repositories::{
     processed_operations_repository::ProcessedOperationsRepository,
 };
 use crate::routes::api_routes;
-use crate::services::{
-    entitlement::EntitlementService,
-    setup_service::SetupService,
-};
+use crate::services::entitlement::EntitlementService;
+use crate::modules::setup::service::SetupService;
 use crate::modules::sync::service::{SyncPushService, SyncConflictService, SyncFullService, SyncDeltaService};
 use crate::modules::grading::service::GradeComputationService;
 

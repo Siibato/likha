@@ -29,8 +29,8 @@ use crate::modules::class::service::ClassService;
 use crate::modules::learning_material::service::LearningMaterialService;
 use crate::modules::tos::service::TosService;
 use crate::modules::grading::service::GradeComputationService;
+use crate::modules::setup::service::SetupService;
 use crate::services::entitlement::EntitlementService;
-use crate::services::setup_service::SetupService;
 use crate::modules::sync::service::{SyncPushService, SyncConflictService, SyncFullService, SyncDeltaService};
 use crate::utils::file_encryption::parse_key;
 use crate::db::repositories::{
@@ -251,7 +251,7 @@ fn create_app(
     material_service: Arc<LearningMaterialService>,
     grade_computation_service: Arc<GradeComputationService>,
     tos_service: Arc<TosService>,
-    setup_service: Arc<SetupService>,
+    setup_service: Arc<crate::modules::setup::service::SetupService>,
     sync_push_service: Arc<SyncPushService>,
     sync_conflict_service: Arc<SyncConflictService>,
     sync_full_service: Arc<SyncFullService>,
