@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
-import 'package:likha/domain/grading/entities/grade_score.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
+import 'package:likha/presentation/widgets/shared/feedback/content_state_builder.dart';
 
 class GradeItemScoresDesktop extends ConsumerStatefulWidget {
   final String classId;
@@ -31,9 +31,9 @@ class _GradeItemScoresDesktopState
   bool _isSaving = false;
 
   static const _componentColors = {
-    'ww': Color(0xFF2196F3),
-    'pt': Color(0xFF4CAF50),
-    'qa': Color(0xFFFF9800),
+    'ww': AppColors.accentCharcoal,
+    'pt': AppColors.accentAmber,
+    'qa': AppColors.accentCharcoal,
   };
 
   static const _componentLabels = {
@@ -162,7 +162,7 @@ class _GradeItemScoresDesktopState
     }).length;
 
     final componentColor =
-        _componentColors[widget.gradeItem.component] ?? AppColors.accentPrimary;
+        _componentColors[widget.gradeItem.component] ?? AppColors.accentCharcoal;
     final componentLabel =
         _componentLabels[widget.gradeItem.component] ?? widget.gradeItem.component.toUpperCase();
 
@@ -195,9 +195,12 @@ class _GradeItemScoresDesktopState
                 : const Text('Save All Changes'),
           ),
         ],
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
+        body: ContentStateBuilder(
+              isLoading: _isLoading,
+              error: null,
+              isEmpty: false,
+              onRetry: () {},
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Header card
@@ -231,7 +234,7 @@ class _GradeItemScoresDesktopState
                                       vertical: 4,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: componentColor.withOpacity(0.1),
+                                      color: componentColor.withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
@@ -317,7 +320,7 @@ class _GradeItemScoresDesktopState
                         vertical: 14,
                       ),
                       margin: const EdgeInsets.only(bottom: 1),
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: Colors.white,
                         border: Border(
                           bottom: BorderSide(
@@ -399,6 +402,7 @@ class _GradeItemScoresDesktopState
                   }),
                 ],
               ),
+            ),
       ),
     );
   }

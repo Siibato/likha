@@ -1,4 +1,4 @@
-use crate::schema::assignment_schema::{
+use crate::modules::assignment::schema::{
     CreateAssignmentRequest, GradeSubmissionRequest, SubmitTextRequest, UpdateAssignmentRequest,
 };
 

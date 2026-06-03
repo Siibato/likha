@@ -27,7 +27,7 @@ void main() {
     final tResult = StartSubmissionResult(
       submissionId: 'submission-1',
       startedAt: DateTime(2024, 1, 15),
-      questions: [],
+      questions: const [],
     );
 
     test('should start assessment successfully', () async {
@@ -63,7 +63,7 @@ void main() {
         studentId: any(named: 'studentId'),
         studentName: any(named: 'studentName'),
         studentUsername: any(named: 'studentUsername'),
-      )).thenAnswer((_) async => Left(ServerFailure('Assessment not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Assessment not found')));
 
       final result = await useCase(params);
 
@@ -80,7 +80,7 @@ void main() {
         studentId: any(named: 'studentId'),
         studentName: any(named: 'studentName'),
         studentUsername: any(named: 'studentUsername'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Assessment is not open yet')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Assessment is not open yet')));
 
       final result = await useCase(tParams);
 
@@ -97,7 +97,7 @@ void main() {
         studentId: any(named: 'studentId'),
         studentName: any(named: 'studentName'),
         studentUsername: any(named: 'studentUsername'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Assessment already submitted')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Assessment already submitted')));
 
       final result = await useCase(tParams);
 
@@ -114,7 +114,7 @@ void main() {
         studentId: any(named: 'studentId'),
         studentName: any(named: 'studentName'),
         studentUsername: any(named: 'studentUsername'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tParams);
 

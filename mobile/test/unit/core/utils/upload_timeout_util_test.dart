@@ -18,7 +18,7 @@ void main() {
       });
 
       test('returns base timeout for small 1MB file', () {
-        final oneMB = 1 * 1024 * 1024;
+        const oneMB = 1 * 1024 * 1024;
         // 30 + (1 / 0.5) = 32 — still above base but well within range
         final result = UploadTimeoutUtil.calculateTimeoutFromBytes(oneMB);
         expect(result, greaterThanOrEqualTo(baseTimeout));
@@ -26,26 +26,26 @@ void main() {
       });
 
       test('result matches formula for 10MB: 30 + (10 / 0.5) = 50', () {
-        final tenMB = 10 * 1024 * 1024;
+        const tenMB = 10 * 1024 * 1024;
         final result = UploadTimeoutUtil.calculateTimeoutFromBytes(tenMB);
         expect(result, equals(50));
       });
 
       test('result matches formula for 50MB: 30 + (50 / 0.5) = 130', () {
-        final fiftyMB = 50 * 1024 * 1024;
+        const fiftyMB = 50 * 1024 * 1024;
         final result = UploadTimeoutUtil.calculateTimeoutFromBytes(fiftyMB);
         expect(result, equals(130));
       });
 
       test('result is clamped to max timeout (300s) for very large files', () {
-        final oneGB = 1024 * 1024 * 1024;
+        const oneGB = 1024 * 1024 * 1024;
         final result = UploadTimeoutUtil.calculateTimeoutFromBytes(oneGB);
         expect(result, equals(maxTimeout));
       });
 
       test('result is clamped to max timeout for exact threshold size', () {
         // Threshold: (300 - 30) * 0.5 = 135MB triggers exactly max
-        final thresholdBytes = (135 * 1024 * 1024);
+        const thresholdBytes = (135 * 1024 * 1024);
         final result = UploadTimeoutUtil.calculateTimeoutFromBytes(thresholdBytes);
         expect(result, equals(maxTimeout));
       });

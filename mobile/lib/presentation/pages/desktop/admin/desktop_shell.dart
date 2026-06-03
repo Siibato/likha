@@ -6,6 +6,7 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/admin/account/account_management_desktop.dart';
 import 'package:likha/presentation/pages/desktop/admin/class/classes_desktop.dart';
 import 'package:likha/presentation/pages/desktop/admin/dashboard_desktop.dart';
+import 'package:likha/presentation/pages/desktop/admin/design_system_desktop.dart';
 import 'package:likha/presentation/pages/desktop/admin/school_settings_desktop.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_navigation_rail.dart';
 import 'package:likha/presentation/utils/logout_helper.dart';
@@ -41,6 +42,8 @@ class _AdminDesktopShellState extends ConsumerState<AdminDesktopShell> {
             () => _navigateToIndex(2),
         SingleActivator(LogicalKeyboardKey.digit4, meta: _isMacOS, control: !_isMacOS):
             () => _navigateToIndex(3),
+        SingleActivator(LogicalKeyboardKey.digit5, meta: _isMacOS, control: !_isMacOS):
+            () => _navigateToIndex(4),
       },
       child: Focus(
         autofocus: true,
@@ -71,6 +74,11 @@ class _AdminDesktopShellState extends ConsumerState<AdminDesktopShell> {
                 selectedIcon: Icons.settings_rounded,
                 label: 'Settings',
               ),
+              DesktopNavDestination(
+                icon: Icons.palette_outlined,
+                selectedIcon: Icons.palette_rounded,
+                label: 'Design System',
+              ),
             ],
             onDestinationSelected: _navigateToIndex,
             onLogout: () => handleLogoutTap(context, ref),
@@ -88,6 +96,7 @@ class _AdminDesktopShellState extends ConsumerState<AdminDesktopShell> {
                 const AccountManagementDesktop(),
                 const AdminClassesDesktop(),
                 const AdminSchoolSettingsDesktop(),
+                const DesignSystemDesktop(),
               ],
             ),
           ),

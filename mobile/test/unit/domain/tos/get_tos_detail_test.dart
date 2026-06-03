@@ -54,7 +54,7 @@ void main() {
 
     test('should return ServerFailure when TOS not found', () async {
       when(() => mockRepository.getTosDetail(tosId: any(named: 'tosId')))
-          .thenAnswer((_) async => Left(ServerFailure('TOS not found')));
+          .thenAnswer((_) async => const Left(ServerFailure('TOS not found')));
 
       final result = await useCase('nonexistent-id');
 
@@ -67,7 +67,7 @@ void main() {
 
     test('should return ServerFailure when server error occurs', () async {
       when(() => mockRepository.getTosDetail(tosId: any(named: 'tosId')))
-          .thenAnswer((_) async => Left(ServerFailure('Server error')));
+          .thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tTosId);
 

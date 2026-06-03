@@ -42,7 +42,7 @@ void main() {
       when(() => mockRepository.saveScores(
         gradeItemId: any(named: 'gradeItemId'),
         scores: any(named: 'scores'),
-      )).thenAnswer((_) async => Left(ServerFailure('Grade item not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Grade item not found')));
 
       final result = await useCase(gradeItemId: 'nonexistent-id', scores: tScores);
 
@@ -57,7 +57,7 @@ void main() {
       when(() => mockRepository.saveScores(
         gradeItemId: any(named: 'gradeItemId'),
         scores: any(named: 'scores'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Scores list cannot be empty')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Scores list cannot be empty')));
 
       final result = await useCase(gradeItemId: tGradeItemId, scores: []);
 
@@ -72,7 +72,7 @@ void main() {
       when(() => mockRepository.saveScores(
         gradeItemId: any(named: 'gradeItemId'),
         scores: any(named: 'scores'),
-      )).thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+      )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(gradeItemId: tGradeItemId, scores: tScores);
 
@@ -87,7 +87,7 @@ void main() {
       when(() => mockRepository.saveScores(
         gradeItemId: any(named: 'gradeItemId'),
         scores: any(named: 'scores'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(gradeItemId: tGradeItemId, scores: tScores);
 

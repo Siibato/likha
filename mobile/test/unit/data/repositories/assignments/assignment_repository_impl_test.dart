@@ -248,7 +248,7 @@ void main() {
         );
 
         when(() => remote.getAssignments(classId: any(named: 'classId')))
-            .thenThrow(ServerFailure('Network error'));
+            .thenThrow(const ServerFailure('Network error'));
         when(() => local.getCachedAssignments(any(), publishedOnly: any(named: 'publishedOnly'), studentId: any(named: 'studentId')))
             .thenThrow(Exception('cache failure'));
 

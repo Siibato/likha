@@ -5,7 +5,7 @@
 //! Note: Mock-based tests for service-level push_operations require
 //! `mockall = "0.13"` to be vendored. Those tests are pending.
 
-use crate::services::sync_push::sync_push_service::{SyncQueueEntry, OperationResult, PushResponse};
+use crate::modules::sync::service_operations::push::sync_push_service::{SyncQueueEntry, OperationResult, PushResponse};
 
 #[test]
 fn test_sync_queue_entry_deserializes_from_json() {

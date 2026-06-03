@@ -64,7 +64,7 @@ void main() {
         username: any(named: 'username'),
         password: any(named: 'password'),
         confirmPassword: any(named: 'confirmPassword'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Passwords do not match')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Passwords do not match')));
 
       final result = await useCase(paramsMismatch);
 
@@ -86,7 +86,7 @@ void main() {
         username: any(named: 'username'),
         password: any(named: 'password'),
         confirmPassword: any(named: 'confirmPassword'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Password too weak')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Password too weak')));
 
       final result = await useCase(paramsWeak);
 
@@ -102,7 +102,7 @@ void main() {
         username: any(named: 'username'),
         password: any(named: 'password'),
         confirmPassword: any(named: 'confirmPassword'),
-      )).thenAnswer((_) async => Left(ServerFailure('User not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('User not found')));
 
       final result = await useCase(tParams);
 

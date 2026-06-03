@@ -147,6 +147,7 @@ import 'package:likha/domain/grading/usecases/get_sf10.dart';
 import 'package:likha/domain/grading/usecases/update_period_grade.dart';
 import 'package:likha/domain/grading/services/score_generation_service.dart';
 import 'package:likha/domain/grading/usecases/generate_scores.dart';
+import 'package:likha/domain/grading/usecases/get_grade_data_batch.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/data/datasources/local/tos/impl/tos_local_datasource_impl.dart';
 import 'package:likha/data/datasources/remote/tos_remote_datasource.dart';
@@ -162,6 +163,7 @@ import 'package:likha/domain/tos/usecases/update_competency.dart';
 import 'package:likha/domain/tos/usecases/delete_competency.dart';
 import 'package:likha/domain/tos/usecases/bulk_add_competencies.dart';
 import 'package:likha/domain/tos/usecases/search_melcs.dart';
+import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/services/storage_service.dart';
 final sl = GetIt.instance;
 
@@ -209,6 +211,10 @@ Future<void> init() async {
       ? StorageService(sl<FlutterSecureStorage>(), sl<SharedPreferences>())
       : StorageService(sl<FlutterSecureStorage>()));
 
+  // Core - Encryption (key stored in secure storage, created once at startup)
+  final encryptionService = await AesEncryptionService.create(secureStorage);
+  sl.registerSingleton<EncryptionService>(encryptionService);
+
   // Core - Server Reachability (must be before DioClient to avoid circular dependency)
   // Standalone Dio for health checks — does NOT go through DioClient.
   // Used only by ServerReachabilityService; not registered in the service locator.
@@ -250,21 +256,22 @@ Future<void> init() async {
 
   // Local Data sources
   sl.registerLazySingleton<AuthLocalDataSource>(
-    () => AuthLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
+    () => AuthLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>(), sl<EncryptionService>()),
   );
   sl.registerLazySingleton<ClassLocalDataSource>(
-    () => ClassLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
+    () => ClassLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>(), sl<EncryptionService>()),
   );
   sl.registerLazySingleton<AssessmentLocalDataSource>(
-    () => AssessmentLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
+    () => AssessmentLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>(), sl<EncryptionService>()),
   );
   sl.registerLazySingleton<AssignmentLocalDataSource>(
-    () => AssignmentLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
+    () => AssignmentLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>(), sl<EncryptionService>()),
   );
   sl.registerLazySingleton<LearningMaterialLocalDataSource>(
     () => LearningMaterialLocalDataSourceImpl(
       sl<LocalDatabase>(),
       sl<SyncQueue>(),
+      sl<EncryptionService>(),
     ),
   );
 
@@ -311,6 +318,7 @@ Future<void> init() async {
       assignmentLocalDataSource: sl<AssignmentLocalDataSource>(),
       assessmentLocalDataSource: sl<AssessmentLocalDataSource>(),
       learningMaterialLocalDataSource: sl<LearningMaterialLocalDataSource>(),
+      gradingLocalDataSource: sl<GradingLocalDataSource>(),
     ),
   );
   sl.registerLazySingleton<ClassRepository>(
@@ -516,6 +524,7 @@ Future<void> init() async {
     () => ScoreGenerationService(
       gradingRepository: sl<GradingRepository>(),
       assessmentRepository: sl<AssessmentRepository>(),
+      assignmentRepository: sl<AssignmentRepository>(),
     ),
   );
 
@@ -523,6 +532,9 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GenerateScores(sl<ScoreGenerationService>()));
   sl.registerLazySingleton(() => HasScoresForGradeItem(sl<ScoreGenerationService>()));
   sl.registerLazySingleton(() => GetScoreSummary(sl<ScoreGenerationService>()));
+  
+  // Batch Operations
+  sl.registerLazySingleton(() => GetGradeDataBatch(sl<GradingRepository>()));
 
   // TOS - Remote Data Source
   sl.registerLazySingleton<TosRemoteDataSource>(

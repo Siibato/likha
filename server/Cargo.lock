@@ -2487,6 +2487,7 @@ dependencies = [
  "migration",
  "qrcode",
  "regex",
+ "ring",
  "sea-orm",
  "serde",
  "serde_json",

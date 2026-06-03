@@ -39,7 +39,7 @@ void main() {
       when(() => mockRepository.setScoreOverride(
         scoreId: any(named: 'scoreId'),
         overrideScore: any(named: 'overrideScore'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Score cannot be negative')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Score cannot be negative')));
 
       final result = await useCase(scoreId: tScoreId, overrideScore: -5.0);
 
@@ -54,7 +54,7 @@ void main() {
       when(() => mockRepository.setScoreOverride(
         scoreId: any(named: 'scoreId'),
         overrideScore: any(named: 'overrideScore'),
-      )).thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+      )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(scoreId: tScoreId, overrideScore: tOverrideScore);
 
@@ -69,7 +69,7 @@ void main() {
       when(() => mockRepository.setScoreOverride(
         scoreId: any(named: 'scoreId'),
         overrideScore: any(named: 'overrideScore'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(scoreId: tScoreId, overrideScore: tOverrideScore);
 

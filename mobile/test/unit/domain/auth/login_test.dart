@@ -56,7 +56,7 @@ void main() {
         username: any(named: 'username'),
         password: any(named: 'password'),
         deviceId: any(named: 'deviceId'),
-      )).thenAnswer((_) async => Left(InvalidCredentialsFailure('Invalid credentials', attemptsRemaining: 3)));
+      )).thenAnswer((_) async => const Left(InvalidCredentialsFailure('Invalid credentials', attemptsRemaining: 3)));
 
       final result = await useCase(tParams);
 
@@ -72,7 +72,7 @@ void main() {
         username: any(named: 'username'),
         password: any(named: 'password'),
         deviceId: any(named: 'deviceId'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tParams);
 
@@ -88,7 +88,7 @@ void main() {
         username: any(named: 'username'),
         password: any(named: 'password'),
         deviceId: any(named: 'deviceId'),
-      )).thenAnswer((_) async => Left(NetworkFailure('Network unavailable')));
+      )).thenAnswer((_) async => const Left(NetworkFailure('Network unavailable')));
 
       final result = await useCase(tParams);
 

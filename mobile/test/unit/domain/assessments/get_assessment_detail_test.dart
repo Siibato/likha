@@ -19,7 +19,7 @@ void main() {
   });
 
   group('GetAssessmentDetail', () {
-    final tAssessmentId = 'assessment-1';
+    const tAssessmentId = 'assessment-1';
     final tAssessment = Assessment(
       id: tAssessmentId,
       classId: 'class-1',
@@ -47,9 +47,9 @@ void main() {
         orderIndex: 0,
         points: 1,
         isMultiSelect: false,
-        choices: [
-          const Choice(id: 'c1', choiceText: '3', isCorrect: false, orderIndex: 0),
-          const Choice(id: 'c2', choiceText: '4', isCorrect: true, orderIndex: 1),
+        choices: const [
+          Choice(id: 'c1', choiceText: '3', isCorrect: false, orderIndex: 0),
+          Choice(id: 'c2', choiceText: '4', isCorrect: true, orderIndex: 1),
         ],
         correctAnswers: const [CorrectAnswer(id: 'a1', answerText: '4')],
         createdAt: DateTime(2024, 1, 1),
@@ -85,7 +85,7 @@ void main() {
 
     test('should return ServerFailure when assessment not found', () async {
       when(() => mockRepository.getAssessmentDetail(assessmentId: any(named: 'assessmentId')))
-          .thenAnswer((_) async => Left(ServerFailure('Assessment not found')));
+          .thenAnswer((_) async => const Left(ServerFailure('Assessment not found')));
 
       final result = await useCase('nonexistent-id');
 
@@ -98,7 +98,7 @@ void main() {
 
     test('should return ServerFailure when server error occurs', () async {
       when(() => mockRepository.getAssessmentDetail(assessmentId: any(named: 'assessmentId')))
-          .thenAnswer((_) async => Left(ServerFailure('Server error')));
+          .thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tAssessmentId);
 

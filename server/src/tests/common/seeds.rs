@@ -1,11 +1,8 @@
 use chrono::Utc;
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
 use uuid::Uuid;
-
-use crate::db::repositories::{
-    class_repository::ClassRepository,
-    user_repository::UserRepository,
-};
+use crate::modules::class::repository::ClassRepository;
+use crate::modules::auth::UserRepository;
 
 use super::jwt_helper::{make_admin_token, make_student_token, make_teacher_token};
 

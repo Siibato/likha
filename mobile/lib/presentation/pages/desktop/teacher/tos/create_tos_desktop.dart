@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/tos/tos_detail_desktop.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
-import 'package:likha/presentation/pages/teacher/tos/widgets/blooms_ratio_section.dart';
-import 'package:likha/presentation/pages/teacher/tos/widgets/classification_mode_toggle.dart';
-import 'package:likha/presentation/pages/teacher/tos/widgets/difficulty_ratio_section.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/time_unit_toggle.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/blooms_ratio_section.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/classification_mode_toggle.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/tos/difficulty_ratio_section.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/time_unit_toggle.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 
 class CreateTosDesktop extends ConsumerStatefulWidget {
@@ -93,7 +93,7 @@ class _CreateTosDesktopState extends ConsumerState<CreateTosDesktop> {
       widget.classId,
       {
         'title': _titleController.text.trim(),
-        'quarter': _selectedQuarter!,
+        'grading_period_number': _selectedQuarter!,
         'classification_mode': _classificationMode,
         'total_items': int.tryParse(_totalItemsController.text.trim()) ?? 50,
         'time_unit': _timeUnit,

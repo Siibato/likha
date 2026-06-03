@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
 import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
-import 'package:likha/presentation/pages/desktop/teacher/assessment/widgets/statistics_charts.dart';
+import 'package:likha/presentation/widgets/desktop/teacher/assessment/statistics_charts.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 
 class AssessmentStatisticsDesktop extends ConsumerStatefulWidget {
@@ -293,8 +293,8 @@ class _AssessmentStatisticsDesktopState
         textColor = AppColors.semanticSuccess;
         break;
       case 'revise':
-        backgroundColor = const Color(0xFFFFF8E1);
-        textColor = const Color(0xFFF9A825);
+        backgroundColor = AppColors.accentAmber.withValues(alpha: 0.08);
+        textColor = AppColors.accentAmber;
         break;
       case 'discard':
         backgroundColor = AppColors.semanticErrorBackground;

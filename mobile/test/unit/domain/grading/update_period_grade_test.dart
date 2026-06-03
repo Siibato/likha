@@ -52,7 +52,7 @@ void main() {
         studentId: any(named: 'studentId'),
         gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
         transmutedGrade: any(named: 'transmutedGrade'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Grade must be between 60 and 100')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Grade must be between 60 and 100')));
 
       final result = await useCase(
         classId: tClassId,
@@ -74,7 +74,7 @@ void main() {
         studentId: any(named: 'studentId'),
         gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
         transmutedGrade: any(named: 'transmutedGrade'),
-      )).thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+      )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(
         classId: tClassId,
@@ -96,7 +96,7 @@ void main() {
         studentId: any(named: 'studentId'),
         gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
         transmutedGrade: any(named: 'transmutedGrade'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(
         classId: tClassId,

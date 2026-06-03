@@ -100,7 +100,7 @@ void main() {
         classId: any(named: 'classId'),
         gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
         component: any(named: 'component'),
-      )).thenAnswer((_) async => Left(ServerFailure('Class not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Class not found')));
 
       final result = await useCase(params);
 
@@ -116,7 +116,7 @@ void main() {
         classId: any(named: 'classId'),
         gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
         component: any(named: 'component'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tParams);
 

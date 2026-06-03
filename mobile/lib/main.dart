@@ -5,6 +5,7 @@ import 'package:get_it/get_it.dart';
 import 'package:likha/core/db/sqflite_initializer.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/core/logging/core_logger.dart';
+import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/injection_container.dart' as di;
 import 'package:likha/presentation/pages/home_page.dart';
 import 'package:likha/presentation/pages/login_page.dart';
@@ -22,6 +23,9 @@ void main() async {
     CoreLogger.instance.warn('.env file not loaded: $e');
   }
   await di.init();
+
+  // Seed MELCs local data if the table is empty
+  await GetIt.instance<TosLocalDataSource>().seedMelcsIfEmpty();
 
   // Start offline sync manager
   final syncManager = GetIt.instance<SyncManager>();

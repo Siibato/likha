@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/pages/teacher/assignment/assignment_detail_page.dart';
 import 'package:likha/presentation/pages/teacher/assignment/create_assignment_page.dart';
-import 'package:likha/presentation/pages/teacher/assignment/widgets/empty_assignment_list_state.dart';
-import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
-import 'package:likha/presentation/pages/teacher/assignment/widgets/teacher_assignment_card.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assignment/empty_assignment_list_state.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/dashboard/reorder_position_dialog.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assignment/teacher_assignment_card.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
+import 'package:likha/presentation/widgets/shared/layout/refreshable_list.dart';
 
 class TeacherAssignmentListPage extends ConsumerStatefulWidget {
   final String classId;
@@ -111,7 +114,7 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFE0E0E0),
+          color: AppColors.borderLight,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Container(
@@ -129,7 +132,7 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
                   height: 40,
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: const Color(0xFF2B2B2B),
+                      color: AppColors.accentCharcoal,
                       width: 2,
                     ),
                     borderRadius: BorderRadius.circular(6),
@@ -138,7 +141,7 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
                     child: Text(
                       '${index + 1}',
                       style: const TextStyle(
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.accentCharcoal,
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
                       ),
@@ -148,7 +151,7 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
               else
                 const Icon(
                   Icons.assignment_outlined,
-                  color: Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                   size: 20,
                 ),
               const SizedBox(width: 14),
@@ -161,7 +164,7 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF202020),
+                        color: AppColors.foregroundDark,
                         letterSpacing: -0.3,
                       ),
                     ),
@@ -170,7 +173,7 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
                       '${assignment.submissionCount} submission(s)',
                       style: const TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF999999),
+                        color: AppColors.foregroundTertiary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -179,7 +182,7 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
               ),
               const Icon(
                 Icons.chevron_right_rounded,
-                color: Color(0xFFCCCCCC),
+                color: AppColors.foregroundLight,
                 size: 22,
               ),
             ],
@@ -210,17 +213,17 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
       }
     });
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
-      appBar: null,
-      body: SafeArea(
-        child: Column(
-          children: [
-            const ClassSectionHeader(
-              title: 'Assignments',
-              showBackButton: true,
-            ),
-            Padding(
+    return MobilePageScaffold(
+      title: 'Assignments',
+      scrollable: false,
+      isLoading: assignmentState.isLoading && assignmentState.assignments.isEmpty,
+      header: const ClassSectionHeader(
+        title: 'Assignments',
+        showBackButton: true,
+      ),
+      body: Column(
+        children: [
+          Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -234,7 +237,7 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
                     ElevatedButton(
                       onPressed: _exitReorderMode,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2B2B2B),
+                        backgroundColor: AppColors.accentCharcoal,
                         foregroundColor: Colors.white,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -246,8 +249,8 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
                     OutlinedButton.icon(
                       onPressed: () => _enterReorderMode(assignmentState.assignments),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF2B2B2B),
-                        side: const BorderSide(color: Color(0xFF2B2B2B)),
+                        foregroundColor: AppColors.accentCharcoal,
+                        side: const BorderSide(color: AppColors.accentCharcoal),
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
@@ -267,7 +270,7 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
                         }
                       }),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2B2B2B),
+                        backgroundColor: AppColors.accentCharcoal,
                         foregroundColor: Colors.white,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -284,14 +287,7 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
               ),
             ),
             Expanded(
-              child: assignmentState.isLoading && assignmentState.assignments.isEmpty
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF2B2B2B),
-                        strokeWidth: 2.5,
-                      ),
-                    )
-                  : assignmentState.assignments.isEmpty
+              child: assignmentState.assignments.isEmpty
                       ? const EmptyAssignmentListState()
                       : _isReorderMode
                           ? AnimatedBuilder(
@@ -325,35 +321,31 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
                                 );
                               },
                             )
-                          : RefreshIndicator(
+                          : RefreshableList(
                               onRefresh: () => ref
                                   .read(assignmentProvider.notifier)
                                   .loadAssignments(widget.classId),
-                              color: const Color(0xFF2B2B2B),
-                              child: ListView.builder(
-                                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                                itemCount: assignmentState.assignments.length,
-                                itemBuilder: (context, index) {
-                                  final assignment = assignmentState.assignments[index];
-                                  return TeacherAssignmentCard(
-                                    assignment: assignment,
-                                    onTap: () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => AssignmentDetailPage(
-                                          assignmentId: assignment.id,
-                                        ),
+                              padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                              itemCount: assignmentState.assignments.length,
+                              itemBuilder: (context, index) {
+                                final assignment = assignmentState.assignments[index];
+                                return TeacherAssignmentCard(
+                                  assignment: assignment,
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => AssignmentDetailPage(
+                                        assignmentId: assignment.id,
                                       ),
-                                    ).then((_) => ref
-                                        .read(assignmentProvider.notifier)
-                                        .loadAssignments(widget.classId)),
-                                  );
-                                },
-                              ),
+                                    ),
+                                  ).then((_) => ref
+                                      .read(assignmentProvider.notifier)
+                                      .loadAssignments(widget.classId)),
+                                );
+                              },
                             ),
             ),
           ],
-        ),
       ),
     );
   }

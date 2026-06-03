@@ -1,4 +1,4 @@
-use crate::schema::tos_schema::{
+use crate::modules::tos::schema::{
     BulkAddCompetenciesRequest, CreateCompetencyRequest, CreateTosRequest, UpdateTosRequest,
 };
 

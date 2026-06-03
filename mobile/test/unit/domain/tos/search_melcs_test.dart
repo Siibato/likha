@@ -69,7 +69,7 @@ void main() {
         gradeLevel: any(named: 'gradeLevel'),
         gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
         query: any(named: 'query'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tParams);
 

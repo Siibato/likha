@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/domain/auth/entities/user.dart';
-import 'package:likha/presentation/pages/teacher/widgets/student_detail_info_card.dart';
-import 'package:likha/presentation/pages/teacher/widgets/student_assessment_row.dart';
-import 'package:likha/presentation/pages/teacher/widgets/student_assignment_row.dart';
-import 'package:likha/presentation/pages/teacher/submission_review_page.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/dashboard/student_detail_info_card.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/dashboard/student_assessment_row.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/dashboard/student_assignment_row.dart';
+import 'package:likha/presentation/pages/teacher/assessment/submission_review_page.dart';
 import 'package:likha/presentation/pages/teacher/assessment/assessment_detail_page.dart';
-import 'package:likha/presentation/pages/teacher/grade/grade_submission_page.dart';
+import 'package:likha/presentation/pages/teacher/assignment/assignment_submission_grading_page.dart';
 import 'package:likha/presentation/pages/teacher/assignment/assignment_detail_page.dart';
 import 'package:likha/presentation/providers/teacher_student_detail_provider.dart';
 
@@ -80,47 +82,23 @@ class _TeacherStudentDetailPageState extends ConsumerState<TeacherStudentDetailP
       ...detailState.assignments.map((a) => _StudentItem.assignment(a)),
     ]..sort((a, b) => b.dueDate.compareTo(a.dueDate));
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF2B2B2B)),
-        title: Text(
-          widget.student.fullName,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
-            letterSpacing: -0.4,
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Student Info Card - with padding
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: StudentDetailInfoCard(
-                student: widget.student,
-                classTitle: widget.classTitle,
-              ),
+    return MobilePageScaffold(
+      title: widget.student.fullName,
+      isLoading: detailState.isLoading && items.isEmpty,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Student Info Card - with padding
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: StudentDetailInfoCard(
+              student: widget.student,
+              classTitle: widget.classTitle,
             ),
+          ),
 
-            // Unified Assessments & Assignments Section - full width
-            if (detailState.isLoading && items.isEmpty)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: CircularProgressIndicator(
-                    color: Color(0xFF2B2B2B),
-                    strokeWidth: 2.5,
-                  ),
-                ),
-              )
-            else if (items.isEmpty)
+          // Unified Assessments & Assignments Section - full width
+          if (items.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: SizedBox(
@@ -131,7 +109,7 @@ class _TeacherStudentDetailPageState extends ConsumerState<TeacherStudentDetailP
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: const Color(0xFFE0E0E0),
+                        color: AppColors.borderLight,
                         width: 1,
                       ),
                     ),
@@ -140,7 +118,7 @@ class _TeacherStudentDetailPageState extends ConsumerState<TeacherStudentDetailP
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Color(0xFF999999),
+                        color: AppColors.foregroundTertiary,
                       ),
                     ),
                   ),
@@ -153,8 +131,7 @@ class _TeacherStudentDetailPageState extends ConsumerState<TeacherStudentDetailP
                   children: items.map(_buildRow).toList(),
                 ),
               ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -198,7 +175,7 @@ class _TeacherStudentDetailPageState extends ConsumerState<TeacherStudentDetailP
             await Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => GradeSubmissionPage(
+                builder: (_) => AssignmentSubmissionGradingPage(
                   submissionId: a.status!.submissionId,
                   totalPoints: a.assignment.totalPoints,
                 ),

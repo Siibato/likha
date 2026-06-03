@@ -17,7 +17,7 @@ void main() {
   });
 
   group('ReorderAllAssignments', () {
-    final tClassId = 'class-1';
+    const tClassId = 'class-1';
     final tAssignmentIds = [
       'assignment-3',
       'assignment-1',
@@ -46,7 +46,7 @@ void main() {
       when(() => mockRepository.reorderAllAssignments(
         classId: any(named: 'classId'),
         assignmentIds: any(named: 'assignmentIds'),
-      )).thenAnswer((_) async => Left(ServerFailure('Class not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Class not found')));
 
       final result = await useCase(
         classId: 'nonexistent-class',
@@ -64,7 +64,7 @@ void main() {
       when(() => mockRepository.reorderAllAssignments(
         classId: any(named: 'classId'),
         assignmentIds: any(named: 'assignmentIds'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Assignment IDs list cannot be empty')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Assignment IDs list cannot be empty')));
 
       final result = await useCase(
         classId: tClassId,
@@ -82,7 +82,7 @@ void main() {
       when(() => mockRepository.reorderAllAssignments(
         classId: any(named: 'classId'),
         assignmentIds: any(named: 'assignmentIds'),
-      )).thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+      )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(
         classId: tClassId,
@@ -100,7 +100,7 @@ void main() {
       when(() => mockRepository.reorderAllAssignments(
         classId: any(named: 'classId'),
         assignmentIds: any(named: 'assignmentIds'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(
         classId: tClassId,

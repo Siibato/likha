@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/presentation/pages/teacher/class/class_student_list_page.dart';
 import 'package:likha/presentation/pages/teacher/assessment/assessment_list_page.dart';
 import 'package:likha/presentation/pages/teacher/assignment/assignment_list_page.dart';
 import 'package:likha/presentation/pages/teacher/material/material_list_page.dart';
-import 'package:likha/presentation/pages/teacher/class/class_record_page.dart';
+import 'package:likha/presentation/pages/teacher/grade/grades_record_page.dart';
 import 'package:likha/presentation/pages/teacher/grade/sf9_student_list_page.dart';
 import 'package:likha/presentation/pages/teacher/tos/tos_list_page.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/shared/widgets/cards/navigation_card.dart';
+import 'package:likha/presentation/widgets/shared/cards/navigation_card.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
 class ClassDetailPage extends ConsumerStatefulWidget {
@@ -42,28 +44,22 @@ class _ClassDetailPageState extends ConsumerState<ClassDetailPage> {
       }
     });
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
-      appBar: null,
+    return MobilePageScaffold(
+      title: detail?.title ?? 'Class',
+      isLoading: detail == null,
+      scrollable: false,
+      header: detail == null
+          ? null
+          : ClassSectionHeader(
+              title: detail.title,
+              showBackButton: true,
+            ),
       body: detail == null
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF2B2B2B),
-                strokeWidth: 2.5,
-              ),
-            )
-          : SafeArea(
+          ? const SizedBox.shrink()
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  ClassSectionHeader(
-                    title: detail.title,
-                    showBackButton: true,
-                  ),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        children: [
                           NavigationCard(
                             icon: Icons.quiz_outlined,
                             title: 'Assessments',
@@ -117,7 +113,6 @@ class _ClassDetailPageState extends ConsumerState<ClassDetailPage> {
                             title: 'Grades',
                             subtitle: 'Manage grades and scores',
                             onTap: () {
-                              print('*** CLASS DETAIL PAGE: User clicked Grades card, navigating to ClassRecordPage for class: ${widget.classId}');
                               PageLogger.instance.log('User clicked Grades card, navigating to ClassRecordPage for class: ${widget.classId}');
                               Navigator.push(
                                 context,
@@ -155,10 +150,6 @@ class _ClassDetailPageState extends ConsumerState<ClassDetailPage> {
                             ),
                           ],
                         ],
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ),
     );

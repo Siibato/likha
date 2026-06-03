@@ -7,7 +7,7 @@
 //! `mockall = "0.13"` to be vendored. Those tests are pending.
 
 use uuid::Uuid;
-use crate::schema::grading_schema::{
+use crate::modules::grading::schema::{
     GradingConfigResponse, GradeItemResponse, GradeScoreResponse, PeriodGradeResponse,
 };
 

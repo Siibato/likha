@@ -18,7 +18,7 @@ void main() {
   });
 
   group('GetAssessments', () {
-    final tClassId = 'class-1';
+    const tClassId = 'class-1';
     final tAssessments = [
       Assessment(
         id: 'assessment-1',
@@ -114,7 +114,7 @@ void main() {
         classId: any(named: 'classId'),
         publishedOnly: any(named: 'publishedOnly'),
         skipBackgroundRefresh: any(named: 'skipBackgroundRefresh'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tClassId);
 
@@ -130,7 +130,7 @@ void main() {
         classId: any(named: 'classId'),
         publishedOnly: any(named: 'publishedOnly'),
         skipBackgroundRefresh: any(named: 'skipBackgroundRefresh'),
-      )).thenAnswer((_) async => Left(NetworkFailure('Network error')));
+      )).thenAnswer((_) async => const Left(NetworkFailure('Network error')));
 
       final result = await useCase(tClassId);
 

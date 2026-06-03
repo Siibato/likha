@@ -1,11 +1,9 @@
-import 'package:dio/dio.dart';
-import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
-import 'package:likha/core/utils/upload_timeout_util.dart';
 import 'package:likha/data/datasources/remote/models/student_assignment_submission_item_model.dart';
 import 'package:likha/data/models/assignments/assignment_model.dart';
 import 'package:likha/data/models/assignments/assignment_submission_model.dart';
 import 'package:likha/data/models/assignments/submission_file_model.dart';
+import 'package:likha/data/datasources/remote/operations/assignments/assignments.dart' as ops;
 
 abstract class AssignmentRemoteDataSource {
   Future<AssignmentModel> createAssignment({
@@ -86,178 +84,126 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
   Future<AssignmentModel> createAssignment({
     required String classId,
     required Map<String, dynamic> data,
-  }) async {
-    try {
-      return await _dioClient.postTyped(
-        ApiEndpoints.classAssignments(classId),
+  }) =>
+      ops.createAssignment(
+        _dioClient,
+        classId: classId,
         data: data,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<List<AssignmentModel>> getAssignments({
     required String classId,
-  }) async {
-    try {
-      return await _dioClient.getTyped(
-        ApiEndpoints.classAssignmentsList(classId),
+  }) =>
+      ops.getAssignments(
+        _dioClient,
+        classId: classId,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<AssignmentModel> getAssignmentDetail({
     required String assignmentId,
-  }) async {
-    try {
-      return await _dioClient.getTyped(
-        ApiEndpoints.assignmentDetail(assignmentId),
+  }) =>
+      ops.getAssignmentDetail(
+        _dioClient,
+        assignmentId: assignmentId,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<AssignmentModel> updateAssignment({
     required String assignmentId,
     required Map<String, dynamic> data,
-  }) async {
-    try {
-      return await _dioClient.putTyped(
-        ApiEndpoints.assignmentDetail(assignmentId),
+  }) =>
+      ops.updateAssignment(
+        _dioClient,
+        assignmentId: assignmentId,
         data: data,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
-  Future<void> deleteAssignment({required String assignmentId}) async {
-    try {
-      await _dioClient.deleteTyped(
-        ApiEndpoints.assignmentDetail(assignmentId),
+  Future<void> deleteAssignment({required String assignmentId}) =>
+      ops.deleteAssignment(
+        _dioClient,
+        assignmentId: assignmentId,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<AssignmentModel> publishAssignment({
     required String assignmentId,
-  }) async {
-    try {
-      return await _dioClient.postTyped(
-        ApiEndpoints.assignmentPublish(assignmentId),
+  }) =>
+      ops.publishAssignment(
+        _dioClient,
+        assignmentId: assignmentId,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<AssignmentModel> unpublishAssignment({
     required String assignmentId,
-  }) async {
-    try {
-      return await _dioClient.postTyped(
-        ApiEndpoints.assignmentUnpublish(assignmentId),
+  }) =>
+      ops.unpublishAssignment(
+        _dioClient,
+        assignmentId: assignmentId,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<void> reorderAllAssignments({
     required String classId,
     required List<String> assignmentIds,
-  }) async {
-    try {
-      await _dioClient.postVoid(
-        ApiEndpoints.classAssignmentsReorder(classId),
-        data: {'assignment_ids': assignmentIds},
+  }) =>
+      ops.reorderAllAssignments(
+        _dioClient,
+        classId: classId,
+        assignmentIds: assignmentIds,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<List<SubmissionListItemModel>> getSubmissions({
     required String assignmentId,
-  }) async {
-    try {
-      return await _dioClient.getTyped(
-        ApiEndpoints.assignmentSubmissions(assignmentId),
+  }) =>
+      ops.getSubmissions(
+        _dioClient,
+        assignmentId: assignmentId,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<AssignmentSubmissionModel> getSubmissionDetail({
     required String submissionId,
-  }) async {
-    try {
-      return await _dioClient.getTyped(
-        ApiEndpoints.assignmentSubmissionDetail(submissionId),
+  }) =>
+      ops.getSubmissionDetail(
+        _dioClient,
+        submissionId: submissionId,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<AssignmentSubmissionModel> gradeSubmission({
     required String submissionId,
     required Map<String, dynamic> data,
-  }) async {
-    try {
-      return await _dioClient.postTyped(
-        ApiEndpoints.assignmentSubmissionGrade(submissionId),
+  }) =>
+      ops.gradeSubmission(
+        _dioClient,
+        submissionId: submissionId,
         data: data,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<AssignmentSubmissionModel> returnSubmission({
     required String submissionId,
-  }) async {
-    try {
-      return await _dioClient.postTyped(
-        ApiEndpoints.assignmentSubmissionReturn(submissionId),
+  }) =>
+      ops.returnSubmission(
+        _dioClient,
+        submissionId: submissionId,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<AssignmentSubmissionModel> createSubmission({
     required String assignmentId,
     String? textContent,
-  }) async {
-    try {
-      return await _dioClient.postTyped(
-        ApiEndpoints.assignmentSubmit(assignmentId),
-        data: {'text_content': textContent},
+  }) =>
+      ops.createSubmission(
+        _dioClient,
+        assignmentId: assignmentId,
+        textContent: textContent,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<SubmissionFileModel> uploadFile({
@@ -265,84 +211,46 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
     required String filePath,
     required String fileName,
     void Function(int sent, int total)? onSendProgress,
-  }) async {
-    try {
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(filePath, filename: fileName),
-      });
-
-      // Calculate dynamic timeout based on file size
-      final timeoutSeconds = UploadTimeoutUtil.calculateTimeout(filePath);
-
-      final response = await _dioClient.dio.post(
-        ApiEndpoints.assignmentSubmissionUpload(submissionId).path,
-        data: formData,
+  }) =>
+      ops.uploadFile(
+        _dioClient,
+        submissionId: submissionId,
+        filePath: filePath,
+        fileName: fileName,
         onSendProgress: onSendProgress,
-        options: Options(
-          sendTimeout: Duration(seconds: timeoutSeconds),
-          receiveTimeout: const Duration(seconds: 60),
-        ),
       );
-      final responseData = response.data['data'] ?? response.data;
-      return SubmissionFileModel.fromJson(responseData);
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
-  Future<void> deleteFile({required String fileId}) async {
-    try {
-      await _dioClient.deleteTyped(
-        ApiEndpoints.submissionFileDelete(fileId),
+  Future<void> deleteFile({required String fileId}) =>
+      ops.deleteFile(
+        _dioClient,
+        fileId: fileId,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<AssignmentSubmissionModel> submitAssignment({
     required String submissionId,
-  }) async {
-    try {
-      return await _dioClient.postTyped(
-        ApiEndpoints.assignmentSubmissionSubmit(submissionId),
+  }) =>
+      ops.submitAssignment(
+        _dioClient,
+        submissionId: submissionId,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
-  Future<List<int>> downloadFile({required String fileId}) async {
-    try {
-      final response = await _dioClient.dio.get(
-        ApiEndpoints.submissionFileDownload(fileId).path,
-        options: Options(responseType: ResponseType.bytes),
+  Future<List<int>> downloadFile({required String fileId}) =>
+      ops.downloadFile(
+        _dioClient,
+        fileId: fileId,
       );
-      return response.data;
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<List<StudentAssignmentSubmissionItemModel>> getStudentAssignmentSubmissions({
     required String classId,
     required String studentId,
-  }) async {
-    try {
-      final response = await _dioClient.dio.get(
-        '/api/v1/classes/$classId/students/$studentId/assignment-submissions',
+  }) =>
+      ops.getStudentAssignmentSubmissions(
+        _dioClient,
+        classId: classId,
+        studentId: studentId,
       );
-      final items = (response.data['data']['submissions'] as List)
-          .cast<Map<String, dynamic>>();
-      return items
-          .map((item) => StudentAssignmentSubmissionItemModel.fromMap(item))
-          .toList();
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 }

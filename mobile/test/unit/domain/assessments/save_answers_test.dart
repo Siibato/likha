@@ -17,7 +17,7 @@ void main() {
   });
 
   group('SaveAnswers', () {
-    final tSubmissionId = 'submission-1';
+    const tSubmissionId = 'submission-1';
     final tAnswers = [
       {'questionId': 'q-1', 'answer': 'option-a'},
       {'questionId': 'q-2', 'answer': 'my essay answer'},
@@ -72,7 +72,7 @@ void main() {
       when(() => mockRepository.saveAnswers(
         submissionId: any(named: 'submissionId'),
         answers: any(named: 'answers'),
-      )).thenAnswer((_) async => Left(ServerFailure('Submission not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Submission not found')));
 
       final result = await useCase(params);
 
@@ -92,7 +92,7 @@ void main() {
       when(() => mockRepository.saveAnswers(
         submissionId: any(named: 'submissionId'),
         answers: any(named: 'answers'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Cannot save answers - assessment already submitted')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Cannot save answers - assessment already submitted')));
 
       final result = await useCase(params);
 
@@ -112,7 +112,7 @@ void main() {
       when(() => mockRepository.saveAnswers(
         submissionId: any(named: 'submissionId'),
         answers: any(named: 'answers'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(params);
 

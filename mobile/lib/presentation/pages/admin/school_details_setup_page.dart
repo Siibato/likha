@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/constants/api_constants.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/core/services/school_setup_service.dart';
 import 'package:likha/domain/setup/entities/school_config.dart';
 import 'package:likha/injection_container.dart' as di;
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
-import 'package:likha/presentation/pages/shared/widgets/auth_desktop_layout.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/school_settings_form.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_auth_layout.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_auth_layout.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
+import 'package:likha/presentation/widgets/shared/forms/school_settings_form.dart';
 import 'package:likha/presentation/widgets/auth_wrapper.dart';
 
 /// Shown after admin's first login when school_name is null.
@@ -102,7 +104,7 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF202020),
+              color: AppColors.foregroundDark,
               letterSpacing: -0.3,
             ),
             textAlign: TextAlign.center,
@@ -113,7 +115,7 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
             ),
             textAlign: TextAlign.center,
           ),
@@ -131,7 +133,7 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
           const SizedBox(height: 32),
           Container(
             decoration: BoxDecoration(
-              color: _isSaving ? const Color(0xFFE0E0E0) : const Color(0xFF2B2B2B),
+              color: _isSaving ? AppColors.borderLight : AppColors.accentCharcoal,
               borderRadius: BorderRadius.circular(14),
             ),
             child: Container(
@@ -140,7 +142,7 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
                 onPressed: _isSaving ? null : _handleSave,
                 style: ElevatedButton.styleFrom(
                   backgroundColor:
-                      _isSaving ? const Color(0xFFF5F5F5) : const Color(0xFF2B2B2B),
+                      _isSaving ? AppColors.backgroundDisabled : AppColors.accentCharcoal,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -154,7 +156,7 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.5,
-                          color: Color(0xFF999999),
+                          color: AppColors.foregroundTertiary,
                         ),
                       )
                     : const Text(
@@ -175,11 +177,13 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: PlatformDetector.isDesktop
-          ? AuthDesktopLayout(formContent: _buildFormContent())
-          : SafeArea(child: Center(child: _buildFormContent())),
+    if (PlatformDetector.isDesktop) {
+      return DesktopAuthLayout(formContent: _buildFormContent());
+    }
+
+    return MobileAuthLayout(
+      showLogo: false,
+      formContent: _buildFormContent(),
     );
   }
 }

@@ -57,7 +57,7 @@ void main() {
         description: any(named: 'description'),
         teacherId: any(named: 'teacherId'),
         isAdvisory: any(named: 'isAdvisory'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Title cannot be empty')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Title cannot be empty')));
 
       final result = await useCase(params);
 
@@ -77,7 +77,7 @@ void main() {
         description: any(named: 'description'),
         teacherId: any(named: 'teacherId'),
         isAdvisory: any(named: 'isAdvisory'),
-      )).thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+      )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(params);
 
@@ -97,7 +97,7 @@ void main() {
         description: any(named: 'description'),
         teacherId: any(named: 'teacherId'),
         isAdvisory: any(named: 'isAdvisory'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(params);
 

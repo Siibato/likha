@@ -101,7 +101,7 @@ void main() {
         submissionId: any(named: 'submissionId'),
         score: any(named: 'score'),
         feedback: any(named: 'feedback'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Score out of range')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Score out of range')));
 
       final result = await useCase(invalidParams);
 
@@ -117,7 +117,7 @@ void main() {
         submissionId: any(named: 'submissionId'),
         score: any(named: 'score'),
         feedback: any(named: 'feedback'),
-      )).thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+      )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(tParams);
 

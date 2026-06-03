@@ -53,7 +53,7 @@ void main() {
 
     test('should return ServerFailure when class not found', () async {
       when(() => mockRepository.getMaterials(classId: any(named: 'classId')))
-          .thenAnswer((_) async => Left(ServerFailure('Class not found')));
+          .thenAnswer((_) async => const Left(ServerFailure('Class not found')));
 
       final result = await useCase('nonexistent-id');
 
@@ -66,7 +66,7 @@ void main() {
 
     test('should return NetworkFailure when offline', () async {
       when(() => mockRepository.getMaterials(classId: any(named: 'classId')))
-          .thenAnswer((_) async => Left(NetworkFailure('No internet connection')));
+          .thenAnswer((_) async => const Left(NetworkFailure('No internet connection')));
 
       final result = await useCase(tClassId);
 

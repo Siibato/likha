@@ -18,8 +18,8 @@ void main() {
   });
 
   group('AddQuestions', () {
-    final tAssessmentId = 'assessment-1';
-    final tQuestionsData = [
+    const tAssessmentId = 'assessment-1';
+    const tQuestionsData = [
       {'text': 'What is 2+2?', 'type': 'multiple_choice', 'points': 1},
       {'text': 'Explain your answer', 'type': 'essay', 'points': 5},
     ];
@@ -32,8 +32,8 @@ void main() {
         orderIndex: 0,
         points: 1,
         isMultiSelect: false,
-        choices: [],
-        correctAnswers: [],
+        choices: const [],
+        correctAnswers: const [],
         createdAt: DateTime(2024, 1, 1),
         updatedAt: DateTime(2024, 1, 1),
       ),
@@ -82,7 +82,7 @@ void main() {
       when(() => mockRepository.addQuestions(
         assessmentId: any(named: 'assessmentId'),
         questions: any(named: 'questions'),
-      )).thenAnswer((_) async => Left(ServerFailure('Assessment not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Assessment not found')));
 
       final result = await useCase(params);
 
@@ -102,7 +102,7 @@ void main() {
       when(() => mockRepository.addQuestions(
         assessmentId: any(named: 'assessmentId'),
         questions: any(named: 'questions'),
-      )).thenAnswer((_) async => Left(ValidationFailure('At least one question required')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('At least one question required')));
 
       final result = await useCase(params);
 
@@ -122,7 +122,7 @@ void main() {
       when(() => mockRepository.addQuestions(
         assessmentId: any(named: 'assessmentId'),
         questions: any(named: 'questions'),
-      )).thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+      )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(params);
 
@@ -142,7 +142,7 @@ void main() {
       when(() => mockRepository.addQuestions(
         assessmentId: any(named: 'assessmentId'),
         questions: any(named: 'questions'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(params);
 

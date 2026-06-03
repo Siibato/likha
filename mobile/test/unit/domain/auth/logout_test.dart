@@ -27,7 +27,7 @@ void main() {
     });
 
     test('should return failure when logout fails', () async {
-      when(() => mockRepository.logout()).thenAnswer((_) async => Left(CacheFailure('Cache clear failed')));
+      when(() => mockRepository.logout()).thenAnswer((_) async => const Left(CacheFailure('Cache clear failed')));
 
       final result = await useCase();
 

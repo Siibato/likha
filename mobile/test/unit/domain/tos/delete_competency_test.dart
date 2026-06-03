@@ -31,7 +31,7 @@ void main() {
 
     test('should return ServerFailure when competency not found', () async {
       when(() => mockRepository.deleteCompetency(competencyId: any(named: 'competencyId')))
-          .thenAnswer((_) async => Left(ServerFailure('Competency not found')));
+          .thenAnswer((_) async => const Left(ServerFailure('Competency not found')));
 
       final result = await useCase('nonexistent-id');
 
@@ -44,7 +44,7 @@ void main() {
 
     test('should return UnauthorizedFailure when not authorized', () async {
       when(() => mockRepository.deleteCompetency(competencyId: any(named: 'competencyId')))
-          .thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+          .thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(tCompetencyId);
 
@@ -57,7 +57,7 @@ void main() {
 
     test('should return ServerFailure when server error occurs', () async {
       when(() => mockRepository.deleteCompetency(competencyId: any(named: 'competencyId')))
-          .thenAnswer((_) async => Left(ServerFailure('Server error')));
+          .thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tCompetencyId);
 

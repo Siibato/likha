@@ -1,4 +1,4 @@
-use crate::schema::assessment_schema::{
+use crate::modules::assessment::schema::{
     AddQuestionRequest, AddQuestionsRequest, ChoiceInput, CreateAssessmentRequest,
     UpdateAssessmentRequest,
 };

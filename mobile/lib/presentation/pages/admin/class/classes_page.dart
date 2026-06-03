@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
 import 'package:likha/presentation/pages/admin/class/class_detail_page.dart';
 import 'package:likha/presentation/pages/admin/class/class_create_page.dart';
-import 'package:likha/presentation/pages/admin/class/widgets/empty_classes_state.dart';
-import 'package:likha/presentation/pages/admin/class/widgets/empty_search_classes_state.dart';
-import 'package:likha/presentation/pages/admin/account/widgets/search_bar.dart';
-import 'package:likha/presentation/pages/shared/widgets/cards/class_card.dart';
+import 'package:likha/presentation/widgets/mobile/admin/class/empty_classes_state.dart';
+import 'package:likha/presentation/widgets/mobile/admin/class/empty_search_classes_state.dart';
+import 'package:likha/presentation/widgets/shared/search/app_search_bar.dart';
+import 'package:likha/presentation/widgets/shared/cards/class_card.dart';
+import 'package:likha/presentation/widgets/shared/feedback/content_state_builder.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
 class AdminClassesPage extends ConsumerStatefulWidget {
@@ -17,6 +19,7 @@ class AdminClassesPage extends ConsumerStatefulWidget {
 }
 
 class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
+  final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
   @override
@@ -27,10 +30,16 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
     });
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   List<ClassEntity> _getFilteredAndSortedClasses(List<ClassEntity> classes) {
     final query = _searchQuery.trim().toLowerCase();
     final filtered = query.isEmpty
-        ? classes
+        ? classes.toList()
         : classes
             .where((c) =>
                 c.title.toLowerCase().contains(query) ||
@@ -51,8 +60,10 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
   Widget build(BuildContext context) {
     final classState = ref.watch(classProvider);
 
+    final filteredClasses = _getFilteredAndSortedClasses(classState.classes);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -61,70 +72,63 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2B2B2B),
+            color: AppColors.accentCharcoal,
             letterSpacing: -0.4,
           ),
         ),
-        iconTheme: const IconThemeData(color: Color(0xFF2B2B2B)),
+        iconTheme: const IconThemeData(color: AppColors.accentCharcoal),
       ),
-      body: classState.isLoading && classState.classes.isEmpty
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF2B2B2B),
-                strokeWidth: 2.5,
-              ),
-            )
-          : classState.classes.isEmpty
-              ? const EmptyClassesState()
-              : Column(
-                  children: [
-                    AdminSearchBar(
-                      hintText: 'Search classes...',
-                      onChanged: (q) => setState(() => _searchQuery = q),
-                    ),
-                    Expanded(
-                      child: Builder(
-                        builder: (context) {
-                          final filteredClasses = _getFilteredAndSortedClasses(classState.classes);
-                          if (filteredClasses.isEmpty) {
-                            return EmptySearchClassesState(searchQuery: _searchQuery);
-                          }
-                          return RefreshIndicator(
-                            onRefresh: () => ref.read(classProvider.notifier).loadAllClasses(),
-                            color: const Color(0xFF2B2B2B),
-                            child: ListView.builder(
-                              padding: const EdgeInsets.all(24),
-                              itemCount: filteredClasses.length,
-                              itemBuilder: (context, index) {
-                                final cls = filteredClasses[index];
-                                final teacherLabel = cls.teacherFullName.isEmpty
-                                    ? cls.teacherUsername
-                                    : cls.teacherFullName;
-                                return ClassCard(
-                                  title: cls.title,
-                                  subtitle: cls.isArchived ? '$teacherLabel · Archived' : teacherLabel,
-                                  isAdvisory: cls.isAdvisory,
-                                  onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => AdminClassDetailPage(classId: cls.id),
-                                    ),
-                                  ).then((_) => ref.read(classProvider.notifier).loadAllClasses()),
-                                );
-                              },
-                            ),
-                          );
-                        },
+      body: Column(
+        children: [
+          AppSearchBar(
+            controller: _searchController,
+            hint: 'Search classes...',
+            onChanged: (q) => setState(() => _searchQuery = q),
+            onClear: () {
+              _searchController.clear();
+              setState(() => _searchQuery = '');
+            },
+          ),
+          Expanded(
+            child: ContentStateBuilder(
+              isLoading: classState.isLoading && classState.classes.isEmpty,
+              isEmpty: filteredClasses.isEmpty,
+              onRefresh: () => ref.read(classProvider.notifier).loadAllClasses(),
+              onRetry: () => ref.read(classProvider.notifier).loadAllClasses(),
+              emptyState: _searchQuery.isEmpty
+                  ? const EmptyClassesState()
+                  : EmptySearchClassesState(searchQuery: _searchQuery),
+              child: ListView.builder(
+                padding: const EdgeInsets.all(24),
+                itemCount: filteredClasses.length,
+                itemBuilder: (context, index) {
+                  final cls = filteredClasses[index];
+                  final teacherLabel = cls.teacherFullName.isEmpty
+                      ? cls.teacherUsername
+                      : cls.teacherFullName;
+                  return ClassCard(
+                    title: cls.title,
+                    subtitle: cls.isArchived ? '$teacherLabel · Archived' : teacherLabel,
+                    isAdvisory: cls.isAdvisory,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AdminClassDetailPage(classId: cls.id),
                       ),
-                    ),
-                  ],
-                ),
+                    ).then((_) => ref.read(classProvider.notifier).loadAllClasses()),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const AdminCreateClassPage()),
         ),
-        backgroundColor: const Color(0xFF2B2B2B),
+        backgroundColor: AppColors.accentCharcoal,
         child: const Icon(Icons.add_rounded, color: Colors.white),
       ),
     );

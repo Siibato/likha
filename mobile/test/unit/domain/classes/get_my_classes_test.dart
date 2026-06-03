@@ -54,7 +54,7 @@ void main() {
 
     test('should return NetworkFailure when offline', () async {
       when(() => mockRepository.getMyClasses(skipBackgroundRefresh: any(named: 'skipBackgroundRefresh')))
-          .thenAnswer((_) async => Left(NetworkFailure('No internet connection')));
+          .thenAnswer((_) async => const Left(NetworkFailure('No internet connection')));
 
       final result = await useCase();
 
@@ -67,7 +67,7 @@ void main() {
 
     test('should return ServerFailure when server error occurs', () async {
       when(() => mockRepository.getMyClasses(skipBackgroundRefresh: any(named: 'skipBackgroundRefresh')))
-          .thenAnswer((_) async => Left(ServerFailure('Server error')));
+          .thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase();
 

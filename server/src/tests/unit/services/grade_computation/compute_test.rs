@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use uuid::Uuid;
 
-use crate::services::grade_computation::compute::compute_component;
+use crate::modules::grading::helpers::compute_component::compute_component;
 
 fn make_item(id: Uuid, total_points: f64) -> ::entity::grade_items::Model {
     ::entity::grade_items::Model {

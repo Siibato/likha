@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/presentation/pages/student/assessment/assessment_list_page.dart';
 import 'package:likha/presentation/pages/student/assignment/assignment_list_page.dart';
 import 'package:likha/presentation/pages/student/material/material_list_page.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
-import 'package:likha/presentation/pages/shared/widgets/cards/navigation_card.dart';
+import 'package:likha/presentation/widgets/shared/cards/navigation_card.dart';
 
 class StudentClassDetailPage extends ConsumerWidget {
   final String classId;
@@ -18,18 +19,17 @@ class StudentClassDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
-      appBar: null,
-      body: SafeArea(
+    return MobilePageScaffold(
+      title: classTitle,
+      scrollable: false,
+      header: ClassSectionHeader(
+        title: classTitle,
+        showBackButton: true,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            ClassSectionHeader(title: classTitle, showBackButton: true),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
                     NavigationCard(
                       icon: Icons.quiz_outlined,
                       title: 'Assessments',
@@ -72,10 +72,6 @@ class StudentClassDetailPage extends ConsumerWidget {
                           ),
                     ),
                   ],
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );

@@ -2,20 +2,24 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
 import 'package:likha/domain/assessments/usecases/create_assessment.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/question_draft.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_draft.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/assessment_details_section.dart';
-import 'package:likha/presentation/pages/teacher/assessment/widgets/assessment_questions_section.dart';
-import 'package:likha/presentation/pages/teacher/widgets/reorder_position_dialog.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_details_section.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_draft_banner.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_questions_section.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_save_button.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/dashboard/reorder_position_dialog.dart';
 import 'package:likha/presentation/pages/shared/class_section_header.dart';
 import 'package:likha/presentation/utils/formatters.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/form_message.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CreateAssessmentPage extends ConsumerStatefulWidget {
@@ -365,54 +369,21 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
-      body: SafeArea(
-        child: Column(
-          children: [
-            const ClassSectionHeader(
-              title: 'Create Assessment',
-              showBackButton: true,
-            ),
-            Expanded(
-              child: SingleChildScrollView(
+    return MobilePageScaffold(
+      title: 'Create Assessment',
+      scrollable: true,
+      header: const ClassSectionHeader(
+        title: 'Create Assessment',
+        showBackButton: true,
+      ),
+      body: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Draft resume banner
                     if (_draftLoaded)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF0F0F0),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.restore_rounded, size: 16, color: Color(0xFF666666)),
-                            const SizedBox(width: 8),
-                            const Expanded(
-                              child: Text(
-                                'Resuming draft',
-                                style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: _discardDraft,
-                              style: TextButton.styleFrom(
-                                foregroundColor: const Color(0xFFE57373),
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              ),
-                              child: const Text(
-                                'Discard',
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      AssessmentDraftBanner(onDiscard: _discardDraft),
 
                     // Details section
                     const Text(
@@ -420,7 +391,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.foregroundPrimary,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -433,7 +404,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFE0E0E0)),
+                        border: Border.all(color: AppColors.borderLight),
                       ),
                       padding: const EdgeInsets.all(16),
                       child: AssessmentDetailsSection(
@@ -490,7 +461,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF2B2B2B),
+                        color: AppColors.foregroundPrimary,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -508,17 +479,17 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Bottom action bar (now inside scroll view)
+                    // Bottom action bar
                     Row(
                       children: [
                         OutlinedButton(
                           onPressed: _isSaving ? null : _saveDraftWithFeedback,
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF2B2B2B),
-                            side: const BorderSide(color: Color(0xFFE0E0E0)),
+                            foregroundColor: AppColors.accentCharcoal,
+                            side: const BorderSide(color: AppColors.borderLight),
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            disabledForegroundColor: const Color(0xFFCCCCCC),
+                            disabledForegroundColor: AppColors.foregroundLight,
                           ),
                           child: const Text(
                             'Save Draft',
@@ -527,29 +498,10 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: ElevatedButton(
-                            onPressed: _isSaving || _isQuestionReorderMode ? null : _handleSave,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2B2B2B),
-                              foregroundColor: Colors.white,
-                              disabledBackgroundColor: const Color(0xFFE0E0E0),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              elevation: 0,
-                            ),
-                            child: _isSaving
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                    ),
-                                  )
-                                : const Text(
-                                    'Save Assessment',
-                                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                                  ),
+                          child: AssessmentSaveButton(
+                            isSaving: _isSaving,
+                            isDisabled: _isQuestionReorderMode,
+                            onSave: _handleSave,
                           ),
                         ),
                       ],
@@ -557,10 +509,6 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                   ],
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

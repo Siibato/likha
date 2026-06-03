@@ -41,4 +41,20 @@ class GradeItem extends Equatable {
         createdAt,
         updatedAt,
       ];
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'class_id': classId,
+      'title': title,
+      'component': component,
+      'grading_period_number': gradingPeriodNumber,
+      'total_points': totalPoints,
+      'source_type': sourceType,
+      'source_id': sourceId,
+      'order_index': orderIndex,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
 }

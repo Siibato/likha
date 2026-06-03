@@ -1,13 +1,10 @@
-import 'package:dio/dio.dart';
-import 'package:likha/core/constants/api_endpoints.dart';
-import 'package:likha/core/errors/exceptions.dart';
-import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/models/auth/activity_log_model.dart';
 import 'package:likha/data/models/auth/auth_response_model.dart';
 import 'package:likha/data/models/auth/check_username_result_model.dart';
 import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/services/storage_service.dart';
+import 'package:likha/data/datasources/remote/operations/auth/auth.dart' as ops;
 
 abstract class AuthRemoteDataSource {
   Future<CheckUsernameResultModel> checkUsername({required String username});
@@ -62,150 +59,61 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<CheckUsernameResultModel> checkUsername(
-      {required String username}) async {
-    try {
-      return await _dioClient.postTyped(
-        ApiEndpoints.checkUsername,
-        data: {'username': username},
+      {required String username}) =>
+      ops.checkUsername(
+        _dioClient,
+        username: username,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<AuthResponseModel> activateAccount({
     required String username,
     required String password,
     required String confirmPassword,
-  }) async {
-    try {
-      final authResponse = await _dioClient.postTyped(
-        ApiEndpoints.activate,
-        data: {
-          'username': username,
-          'password': password,
-          'confirm_password': confirmPassword,
-        },
+  }) =>
+      ops.activateAccount(
+        _dioClient,
+        _storageService,
+        username: username,
+        password: password,
+        confirmPassword: confirmPassword,
       );
-
-      await _storageService.saveAuthData(
-        accessToken: authResponse.accessToken,
-        refreshToken: authResponse.refreshToken,
-        userId: authResponse.user.id,
-      );
-
-      return authResponse;
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<AuthResponseModel> login({
     required String username,
     required String password,
     String? deviceId,
-  }) async {
-    try {
-      RepoLogger.instance.log('Login request for username: $username');
-      final authResponse = await _dioClient.postTyped(
-        ApiEndpoints.login,
-        data: {
-          'username': username,
-          'password': password,
-          if (deviceId != null) 'device_id': deviceId,
-        },
+  }) =>
+      ops.login(
+        _dioClient,
+        _storageService,
+        username: username,
+        password: password,
+        deviceId: deviceId,
       );
-
-      await _storageService.saveAuthData(
-        accessToken: authResponse.accessToken,
-        refreshToken: authResponse.refreshToken,
-        userId: authResponse.user.id,
-      );
-
-      RepoLogger.instance.log('Login successful for username: $username');
-      return authResponse;
-    } on DioException catch (e) {
-      RepoLogger.instance.log('DioException in login: ${e.response?.statusCode}, path: ${e.requestOptions.path}');
-      // Handle 429 Too Many Requests (lockout)
-      if (e.response?.statusCode == 429) {
-        final data = e.response?.data;
-        final secs = data?['remaining_seconds'] as int? ?? 300;
-        RepoLogger.instance.log('429 Too Many Requests - remaining_seconds: $secs');
-        throw TooManyRequestsException(
-          data?['message'] ?? 'Too many failed attempts',
-          remainingSeconds: secs,
-        );
-      }
-      // Handle 409 Conflict (activation required)
-      if (e.response?.statusCode == 409) {
-        RepoLogger.instance.log('409 Conflict - activation required');
-        throw ActivationRequiredException(
-          e.response?.data['message'] ?? 'Account requires activation',
-          username: username,
-        );
-      }
-      // Handle 401 Unauthorized with attempts_remaining (invalid password)
-      if (e.response?.statusCode == 401) {
-        final data = e.response?.data;
-        final remaining = data?['attempts_remaining'] as int?;
-        RepoLogger.instance.log('401 Unauthorized - attempts_remaining: $remaining');
-        if (remaining != null) {
-          RepoLogger.instance.log('Throwing InvalidCredentialsException with attemptsRemaining: $remaining');
-          throw InvalidCredentialsException(
-            data?['message'] ?? 'Invalid password',
-            attemptsRemaining: remaining,
-          );
-        }
-      }
-      RepoLogger.instance.log('Falling back to handleError for status code: ${e.response?.statusCode}');
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
-  Future<AuthResponseModel> refreshToken(String refreshToken) async {
-    try {
-      final authResponse = await _dioClient.postTyped(
-        ApiEndpoints.refresh,
-        data: {'refresh_token': refreshToken},
+  Future<AuthResponseModel> refreshToken(String refreshToken) =>
+      ops.refreshToken(
+        _dioClient,
+        _storageService,
+        refreshToken,
       );
-
-      await _storageService.saveAuthData(
-        accessToken: authResponse.accessToken,
-        refreshToken: authResponse.refreshToken,
-        userId: authResponse.user.id,
-      );
-
-      return authResponse;
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
-  Future<UserModel> getCurrentUser() async {
-    try {
-      return await _dioClient.getTyped(ApiEndpoints.me);
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
-
-  @override
-  Future<void> logout(String refreshToken) async {
-    try {
-      await _dioClient.postVoid(
-        ApiEndpoints.logout,
-        data: {'refresh_token': refreshToken},
+  Future<UserModel> getCurrentUser() =>
+      ops.getCurrentUser(
+        _dioClient,
       );
 
-      await _storageService.clearAuthData();
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
+  @override
+  Future<void> logout(String refreshToken) =>
+      ops.logout(
+        _dioClient,
+        _storageService,
+        refreshToken,
+      );
 
   // ===== Admin methods =====
 
@@ -214,100 +122,65 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String username,
     required String fullName,
     required String role,
-  }) async {
-    try {
-      return await _dioClient.postTyped(
-        ApiEndpoints.accountsCreate,
-        data: {
-          'username': username,
-          'full_name': fullName,
-          'role': role,
-        },
+  }) =>
+      ops.createAccount(
+        _dioClient,
+        username: username,
+        fullName: fullName,
+        role: role,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
-  Future<List<UserModel>> getAllAccounts() async {
-    RepoLogger.instance.log('getAllAccounts: Calling remote API');
-    try {
-      final result = await _dioClient.getTyped(ApiEndpoints.accountsList);
-      RepoLogger.instance.log('getAllAccounts: Remote API returned ${result.length} accounts');
-      return result;
-    } on DioException catch (e) {
-      RepoLogger.instance.error('getAllAccounts: DioException - ${e.message}', e);
-      throw _dioClient.handleError(e);
-    }
-  }
+  Future<List<UserModel>> getAllAccounts() =>
+      ops.getAllAccounts(
+        _dioClient,
+      );
 
   @override
-  Future<UserModel> resetAccount({required String userId}) async {
-    try {
-      return await _dioClient.postTyped(
-        ApiEndpoints.accountsReset,
-        data: {'user_id': userId},
+  Future<UserModel> resetAccount({required String userId}) =>
+      ops.resetAccount(
+        _dioClient,
+        userId: userId,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<UserModel> lockAccount({
     required String userId,
     required bool locked,
     String? reason,
-  }) async {
-    try {
-      final data = <String, dynamic>{'user_id': userId, 'locked': locked};
-      if (reason != null) data['reason'] = reason;
-      return await _dioClient.postTyped(
-        ApiEndpoints.accountsLock,
-        data: data,
+  }) =>
+      ops.lockAccount(
+        _dioClient,
+        userId: userId,
+        locked: locked,
+        reason: reason,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
   Future<List<ActivityLogModel>> getActivityLogs(
-      {required String userId}) async {
-    try {
-      return await _dioClient.getTyped(ApiEndpoints.accountLogs(userId));
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
+      {required String userId}) =>
+      ops.getActivityLogs(
+        _dioClient,
+        userId: userId,
+      );
 
   @override
   Future<UserModel> updateAccount({
     required String userId,
     String? fullName,
     String? role,
-  }) async {
-    try {
-      final data = <String, dynamic>{};
-      if (fullName != null) data['full_name'] = fullName;
-      if (role != null) data['role'] = role;
-
-      return await _dioClient.putTyped(
-        ApiEndpoints.accountUpdate(userId),
-        data: data,
+  }) =>
+      ops.updateAccount(
+        _dioClient,
+        userId: userId,
+        fullName: fullName,
+        role: role,
       );
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
 
   @override
-  Future<void> deleteAccount({required String userId}) async {
-    try {
-      await _dioClient.deleteTyped(ApiEndpoints.accountDelete(userId));
-    } on DioException catch (e) {
-      throw _dioClient.handleError(e);
-    }
-  }
+  Future<void> deleteAccount({required String userId}) =>
+      ops.deleteAccount(
+        _dioClient,
+        userId: userId,
+      );
 }

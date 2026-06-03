@@ -46,7 +46,7 @@ void main() {
       when(() => mockRepository.updateGradingConfig(
         classId: any(named: 'classId'),
         configs: any(named: 'configs'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Weights must add up to 100')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Weights must add up to 100')));
 
       final result = await useCase(classId: tClassId, configs: invalidConfigs);
 
@@ -61,7 +61,7 @@ void main() {
       when(() => mockRepository.updateGradingConfig(
         classId: any(named: 'classId'),
         configs: any(named: 'configs'),
-      )).thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+      )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(classId: tClassId, configs: tConfigs);
 
@@ -76,7 +76,7 @@ void main() {
       when(() => mockRepository.updateGradingConfig(
         classId: any(named: 'classId'),
         configs: any(named: 'configs'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(classId: tClassId, configs: tConfigs);
 

@@ -1,4 +1,5 @@
 import 'package:likha/core/database/local_database.dart';
+import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import '../auth_local_datasource_base.dart';
 import 'auth_cache_mixin.dart';
@@ -12,5 +13,8 @@ class AuthLocalDataSourceImpl extends AuthLocalDataSourceBase
   @override
   final SyncQueue syncQueue;
 
-  AuthLocalDataSourceImpl(this.localDatabase, this.syncQueue);
+  @override
+  final EncryptionService enc;
+
+  AuthLocalDataSourceImpl(this.localDatabase, this.syncQueue, this.enc);
 }

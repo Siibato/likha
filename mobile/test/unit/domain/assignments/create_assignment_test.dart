@@ -150,7 +150,7 @@ void main() {
         gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
         component: any(named: 'component'),
         noSubmissionRequired: any(named: 'noSubmissionRequired'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Invalid title')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Invalid title')));
 
       final result = await useCase(tParams);
 
@@ -176,7 +176,7 @@ void main() {
         gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
         component: any(named: 'component'),
         noSubmissionRequired: any(named: 'noSubmissionRequired'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tParams);
 

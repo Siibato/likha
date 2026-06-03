@@ -1,4 +1,4 @@
-use crate::services::grade_computation::deped_weights::*;
+use crate::modules::grading::helpers::deped_weights::*;
 
 #[test]
 fn test_get_preset_language() {

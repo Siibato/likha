@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
@@ -26,7 +27,7 @@ class SyncLoadingPage extends ConsumerWidget {
                 'Likha',
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF2B2B2B),
+                  color: AppColors.accentCharcoal,
                 ),
               ),
               const SizedBox(height: 8),
@@ -66,7 +67,7 @@ class SyncLoadingPage extends ConsumerWidget {
                     minHeight: 8,
                     backgroundColor: Colors.grey[300],
                     valueColor: const AlwaysStoppedAnimation<Color>(
-                      Color(0xFF2B2B2B),
+                      AppColors.accentCharcoal,
                     ),
                   ),
                 ),
@@ -74,7 +75,7 @@ class SyncLoadingPage extends ConsumerWidget {
                 Text(
                   syncState.currentStep ?? 'Connecting…',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[700],
+                    color: Colors.grey[600],
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -86,7 +87,7 @@ class SyncLoadingPage extends ConsumerWidget {
                   child: ElevatedButton(
                     onPressed: onContinueOffline,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2B2B2B),
+                      backgroundColor: AppColors.accentCharcoal,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),

@@ -5,6 +5,7 @@ import 'package:likha/data/datasources/local/assessments/assessment_local_dataso
 import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
 import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
+import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
 import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
 import 'package:likha/data/datasources/remote/auth_remote_datasource.dart';
 import 'package:likha/domain/auth/repositories/auth_repository.dart';
@@ -21,6 +22,7 @@ abstract class AuthRepositoryBase extends AuthRepository {
   final AssignmentLocalDataSource assignmentLocalDataSource;
   final AssessmentLocalDataSource assessmentLocalDataSource;
   final LearningMaterialLocalDataSource learningMaterialLocalDataSource;
+  final GradingLocalDataSource gradingLocalDataSource;
 
   AuthRepositoryBase({
     required this.remoteDataSource,
@@ -33,10 +35,10 @@ abstract class AuthRepositoryBase extends AuthRepository {
     required this.assignmentLocalDataSource,
     required this.assessmentLocalDataSource,
     required this.learningMaterialLocalDataSource,
+    required this.gradingLocalDataSource,
   });
 
   /// Clear all user-specific cached data when switching users or logging out.
-
   Future<void> clearAllUserData({bool clearSyncQueue = false}) async {
     try {
       final futures = <Future>[
@@ -44,23 +46,11 @@ abstract class AuthRepositoryBase extends AuthRepository {
         assignmentLocalDataSource.clearAllCache(),
         assessmentLocalDataSource.clearAllCache(),
         learningMaterialLocalDataSource.clearAllCache(),
+        gradingLocalDataSource.clearAllCache(),
         localDataSource.clearAllCache(),
       ];
       if (clearSyncQueue) futures.add(syncQueue.clear());
       await Future.wait(futures);
-
-      // Clear sync metadata (last_sync_at and data_expiry_at) to prevent user B from inheriting
-      // user A's delta sync cursor. Preserve device_id as it should persist across user sessions.
-      try {
-        final db = await localDatabase.database;
-        await db.delete(
-          'sync_metadata',
-          where: 'key IN (?, ?)',
-          whereArgs: ['last_sync_at', 'data_expiry_at'],
-        );
-      } catch (e) {
-        // Best-effort sync metadata clearing
-      }
     } catch (e) {
       // Best-effort cache clearing — don't fail login/logout if cache clearing fails
     }

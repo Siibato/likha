@@ -36,7 +36,7 @@ void main() {
       when(() => mockRepository.updateGradeItem(
         id: any(named: 'id'),
         data: any(named: 'data'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Title cannot be empty')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Title cannot be empty')));
 
       final result = await useCase(id: tId, data: {'title': ''});
 
@@ -51,7 +51,7 @@ void main() {
       when(() => mockRepository.updateGradeItem(
         id: any(named: 'id'),
         data: any(named: 'data'),
-      )).thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+      )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(id: tId, data: tData);
 
@@ -66,7 +66,7 @@ void main() {
       when(() => mockRepository.updateGradeItem(
         id: any(named: 'id'),
         data: any(named: 'data'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(id: tId, data: tData);
 

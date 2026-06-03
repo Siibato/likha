@@ -59,7 +59,7 @@ void main() {
         filePath: any(named: 'filePath'),
         fileName: any(named: 'fileName'),
         onSendProgress: any(named: 'onSendProgress'),
-      )).thenAnswer((_) async => Left(ServerFailure('Material not found')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Material not found')));
 
       final result = await useCase(
         materialId: 'nonexistent-id',
@@ -80,7 +80,7 @@ void main() {
         filePath: any(named: 'filePath'),
         fileName: any(named: 'fileName'),
         onSendProgress: any(named: 'onSendProgress'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(
         materialId: tMaterialId,

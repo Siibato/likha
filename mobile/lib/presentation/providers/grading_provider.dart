@@ -19,6 +19,7 @@ import 'package:likha/domain/grading/usecases/set_score_override.dart';
 import 'package:likha/domain/grading/usecases/setup_grading.dart';
 import 'package:likha/domain/grading/usecases/update_grading_config.dart';
 import 'package:likha/domain/grading/usecases/update_period_grade.dart';
+import 'package:likha/domain/grading/usecases/update_grade_item.dart';
 import 'package:likha/domain/grading/usecases/generate_scores.dart';
 import 'package:likha/domain/assessments/usecases/get_assessments.dart';
 import 'package:likha/domain/assignments/usecases/get_assignments.dart';
@@ -202,32 +203,25 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
   ) : super(GradeItemsState());
 
   Future<void> loadItems(String classId) async {
-    print('*** GRADE PROVIDER: loadItems() - starting for classId: $classId, quarter: ${state.currentQuarter}, component: ${state.currentComponent}');
     ProviderLogger.instance.log('loadItems() - starting for classId: $classId, quarter: ${state.currentQuarter}, component: ${state.currentComponent}');
     state = state.copyWith(isLoading: true, error: null);
-    print('*** GRADE PROVIDER: state set to loading');
     final result = await _getGradeItems(GetGradeItemsParams(
       classId: classId,
       gradingPeriodNumber: state.currentQuarter,
       component: state.currentComponent.isEmpty ? null : state.currentComponent,
     ));
-    print('*** GRADE PROVIDER: _getGradeItems completed');
-    result.fold(
+        result.fold(
       (failure) {
-        print('*** GRADE PROVIDER: loadItems failed: ${AppErrorMapper.fromFailure(failure)}');
-        ProviderLogger.instance.error('loadItems() - failed: ${AppErrorMapper.fromFailure(failure)}');
+                ProviderLogger.instance.error('loadItems() - failed: ${AppErrorMapper.fromFailure(failure)}');
         state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure));
       },
       (items) {
-        print('*** GRADE PROVIDER: loadItems success: loaded ${items.length} items');
-        ProviderLogger.instance.log('loadItems() - success: loaded ${items.length} items');
+                ProviderLogger.instance.log('loadItems() - success: loaded ${items.length} items');
         for (final item in items) {
-          print('*** GRADE PROVIDER: item: ${item.title} (${item.component}) - source: ${item.sourceType}, sourceId: ${item.sourceId}');
-          ProviderLogger.instance.log('loadItems() - item: ${item.title} (${item.component}) - source: ${item.sourceType}, sourceId: ${item.sourceId}');
+                    ProviderLogger.instance.log('loadItems() - item: ${item.title} (${item.component}) - totalPoints=${item.totalPoints} - source: ${item.sourceType}, sourceId: ${item.sourceId}');
         }
         state = state.copyWith(isLoading: false, items: items);
-        print('*** GRADE PROVIDER: state updated with ${state.items.length} items');
-        ProviderLogger.instance.log('loadItems() - state updated with ${state.items.length} items');
+                ProviderLogger.instance.log('loadItems() - state updated with ${state.items.length} items');
       },
     );
   }
@@ -268,15 +262,10 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
   }
 
   Future<void> backfillFromActivities(String classId, int gradingPeriodNumber) async {
-    print('*** DEBUG: backfillFromActivities called with classId: $classId, quarter: $gradingPeriodNumber');
-    print('*** GRADE PROVIDER: backfillFromActivities() - starting for classId: $classId, quarter: $gradingPeriodNumber');
     ProviderLogger.instance.log('backfillFromActivities() - starting for classId: $classId, quarter: $gradingPeriodNumber');
-    print('*** GRADE PROVIDER: current state has ${state.items.length} items');
     ProviderLogger.instance.log('backfillFromActivities() - current state has ${state.items.length} items');
     
-    print('*** DEBUG: existing grade items count: ${state.items.length}');
     for (final item in state.items) {
-      print('*** DEBUG: existing grade item: ${item.title} (${item.component}) - source: ${item.sourceType}, sourceId: ${item.sourceId}');
     }
     
     final existingSourceIds = state.items
@@ -284,65 +273,82 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
         .map((i) => i.sourceId!)
         .toSet();
     
-    print('*** GRADE PROVIDER: existing source IDs: $existingSourceIds');
     ProviderLogger.instance.log('backfillFromActivities() - existing source IDs: $existingSourceIds');
 
     final List<GradeItem> newItems = [];
 
-    // Process assessments
-    print('*** GRADE PROVIDER: fetching assessments for backfill');
-    ProviderLogger.instance.log('backfillFromActivities() - fetching assessments');
-    
-    // Wait a moment for background assessment fetch to complete
-    await Future.delayed(Duration(milliseconds: 500));
-    
-    final assessmentResult = await sl<GetAssessments>()(classId);
+    // Process assessments — forceRemote ensures we get fresh data even on cold cache
+    ProviderLogger.instance.log('backfillFromActivities() - fetching assessments (forceRemote)');
+
+    final assessmentResult = await sl<GetAssessments>()(classId, forceRemote: true);
     await assessmentResult.fold(
       (failure) {
-        print('*** GRADE PROVIDER: Failed to get assessments for backfill: $failure');
         ProviderLogger.instance.error('Failed to get assessments for backfill', failure);
       },
       (assessments) async {
-        print('*** DEBUG: got ${assessments.length} assessments for backfill');
-        print('*** GRADE PROVIDER: got ${assessments.length} assessments for backfill');
         ProviderLogger.instance.log('backfillFromActivities() - got ${assessments.length} assessments');
         for (final a in assessments) {
-          print('*** DEBUG: assessment details - title: ${a.title}, component: ${a.component}, quarter: ${a.gradingPeriodNumber}, id: ${a.id}');
-          print('*** DEBUG: checking conditions - targetQuarter: $gradingPeriodNumber, assessmentQuarter: ${a.gradingPeriodNumber}');
-          print('*** DEBUG: checking conditions - componentNotNull: ${a.component != null}, existingSourceIdsContains: ${existingSourceIds.contains(a.id)}');
-          print('*** GRADE PROVIDER: checking assessment: ${a.title} (${a.component}) - quarter: ${a.gradingPeriodNumber}, id: ${a.id}');
           ProviderLogger.instance.log('backfillFromActivities() - checking assessment: ${a.title} (${a.component}) - quarter: ${a.gradingPeriodNumber}, id: ${a.id}');
           if (a.gradingPeriodNumber == gradingPeriodNumber && a.component != null && !existingSourceIds.contains(a.id)) {
-            print('*** GRADE PROVIDER: assessment qualifies for backfill, creating grade item');
-            ProviderLogger.instance.log('backfillFromActivities() - assessment qualifies for backfill, creating grade item');
-            try {
-              final result = await sl<GradingRepository>().createGradeItem(
-                classId: classId,
-                data: {
-                  'title': a.title,
-                  'component': _toGradeComponent(a.component!),
-                  'grading_period_number': gradingPeriodNumber,
-                  'total_points': a.totalPoints.toDouble(),
-                  'is_departmental_exam': false,
-                  'source_type': 'assessment',
-                  'source_id': a.id,
-                  'order_index': 0,
-                },
-              );
-              result.fold(
-                (failure) {
-                  print('*** GRADE PROVIDER: Failed to create grade item from assessment: ${a.title} - $failure');
-                  ProviderLogger.instance.error('Failed to create grade item from assessment: ${a.title}', failure);
-                },
-                (item) {
-                  print('*** GRADE PROVIDER: Created grade item from assessment: ${a.title} with ID: ${item.id}');
-                  newItems.add(item);
-                  ProviderLogger.instance.log('Created grade item from assessment: ${a.title} with ID: ${item.id}');
-                },
-              );
-            } catch (e) {
-              print('*** GRADE PROVIDER: Exception creating grade item from assessment: ${a.title} - $e');
-              ProviderLogger.instance.error('Exception creating grade item from assessment: ${a.title}', e);
+            final component = _toGradeComponent(a.component!);
+            // Check if a manually-created item with the same title+component exists (link it instead of creating a duplicate)
+            final GradeItem? manualMatch = state.items.cast<GradeItem?>().firstWhere(
+              (item) => item?.sourceId == null
+                  && item?.component == component
+                  && item?.title.toLowerCase() == a.title.toLowerCase(),
+              orElse: () => null,
+            );
+
+            if (manualMatch != null) {
+              ProviderLogger.instance.log('backfillFromActivities() - linking manual item to assessment: ${a.title}');
+              try {
+                final updateResult = await sl<UpdateGradeItem>()(
+                  id: manualMatch.id,
+                  data: {
+                    'source_type': 'assessment',
+                    'source_id': a.id,
+                    'total_points': a.totalPoints.toDouble(),
+                  },
+                );
+                updateResult.fold(
+                  (failure) {
+                    ProviderLogger.instance.error('Failed to link manual item: ${a.title}', failure);
+                  },
+                  (_) {
+                    ProviderLogger.instance.log('Linked manual item to assessment: ${a.title}');
+                  },
+                );
+              } catch (e) {
+                ProviderLogger.instance.error('Exception linking manual item: ${a.title}', e);
+              }
+            } else {
+              ProviderLogger.instance.log('backfillFromActivities() - assessment qualifies for backfill, creating grade item');
+              try {
+                final result = await sl<GradingRepository>().createGradeItem(
+                  classId: classId,
+                  data: {
+                    'title': a.title,
+                    'component': component,
+                    'grading_period_number': gradingPeriodNumber,
+                    'total_points': a.totalPoints.toDouble(),
+                    'is_departmental_exam': false,
+                    'source_type': 'assessment',
+                    'source_id': a.id,
+                    'order_index': 0,
+                  },
+                );
+                result.fold(
+                  (failure) {
+                    ProviderLogger.instance.error('Failed to create grade item from assessment: ${a.title}', failure);
+                  },
+                  (item) {
+                    newItems.add(item);
+                    ProviderLogger.instance.log('Created grade item from assessment: ${a.title} with ID: ${item.id}');
+                  },
+                );
+              } catch (e) {
+                ProviderLogger.instance.error('Exception creating grade item from assessment: ${a.title}', e);
+              }
             }
           } else {
             String reason = "";
@@ -352,9 +358,51 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
               reason = "component is null";
             } else if (existingSourceIds.contains(a.id)) {
               reason = "source ID already exists";
+              // Check if totalPoints needs updating for existing grade item
+              final GradeItem? existingItem = state.items.cast<GradeItem?>().firstWhere(
+                (item) => item?.sourceId == a.id,
+                orElse: () => null,
+              );
+              if (existingItem != null && existingItem.totalPoints != a.totalPoints.toDouble()) {
+                ProviderLogger.instance.log('backfillFromActivities() - updating totalPoints for ${a.title}: ${existingItem.totalPoints} -> ${a.totalPoints}');
+                try {
+                  final updateResult = await sl<UpdateGradeItem>()(
+                    id: existingItem.id,
+                    data: {'total_points': a.totalPoints.toDouble()},
+                  );
+                  updateResult.fold(
+                    (failure) {
+                      ProviderLogger.instance.error('Failed to update totalPoints for ${a.title}', failure);
+                    },
+                    (_) {
+                      // Update local state
+                      final updatedItems = state.items.map((item) {
+                        if (item.id == existingItem.id) {
+                          return GradeItem(
+                            id: item.id,
+                            classId: item.classId,
+                            title: item.title,
+                            component: item.component,
+                            gradingPeriodNumber: item.gradingPeriodNumber,
+                            totalPoints: a.totalPoints.toDouble(),
+                            sourceType: item.sourceType,
+                            sourceId: item.sourceId,
+                            orderIndex: item.orderIndex,
+                            createdAt: item.createdAt,
+                            updatedAt: DateTime.now(),
+                          );
+                        }
+                        return item;
+                      }).toList();
+                      state = state.copyWith(items: updatedItems);
+                      ProviderLogger.instance.log('Updated totalPoints for ${a.title} to ${a.totalPoints}');
+                    },
+                  );
+                } catch (e) {
+                  ProviderLogger.instance.error('Exception updating totalPoints for ${a.title}', e);
+                }
+              }
             }
-            print('*** DEBUG: assessment ${a.title} does not qualify: $reason');
-            print('*** GRADE PROVIDER: assessment ${a.title} does not qualify: $reason');
             ProviderLogger.instance.log('backfillFromActivities() - assessment ${a.title} does not qualify: $reason');
           }
         }
@@ -416,16 +464,12 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
     );
 
     // Update state with new items if any were created
-    print('*** GRADE PROVIDER: backfill processing complete, new items count: ${newItems.length}');
     ProviderLogger.instance.log('backfillFromActivities() - processing complete, new items count: ${newItems.length}');
     if (newItems.isNotEmpty) {
-      print('*** GRADE PROVIDER: updating state with ${newItems.length} new items');
       ProviderLogger.instance.log('backfillFromActivities() - updating state with ${newItems.length} new items');
       state = state.copyWith(items: [...state.items, ...newItems]);
-      print('*** GRADE PROVIDER: Backfill completed: added ${newItems.length} grade items, total items now: ${state.items.length}');
       ProviderLogger.instance.log('Backfill completed: added ${newItems.length} grade items, total items now: ${state.items.length}');
     } else {
-      print('*** GRADE PROVIDER: Backfill completed: no new items to add, total items remain: ${state.items.length}');
       ProviderLogger.instance.log('Backfill completed: no new items to add, total items remain: ${state.items.length}');
     }
   }
@@ -444,22 +488,24 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
 
   /// Generate scores for grade items that don't have scores yet
   Future<void> generateScoresForItems(String classId) async {
-    print('*** GRADE PROVIDER: generateScoresForItems() - starting for classId: $classId, quarter: ${state.currentQuarter}');
     ProviderLogger.instance.log('generateScoresForItems() - starting for classId: $classId, quarter: ${state.currentQuarter}');
     
     final result = await _generateScores.generateScoresForClass(GenerateScoresParams(
       classId: classId,
       gradingPeriodNumber: state.currentQuarter,
+      items: state.items.isNotEmpty ? state.items : null,
     ));
     
     result.fold(
       (failure) {
-        print('*** GRADE PROVIDER: generateScoresForItems failed: ${AppErrorMapper.fromFailure(failure)}');
         ProviderLogger.instance.error('generateScoresForItems() - failed: ${AppErrorMapper.fromFailure(failure)}');
+        // Don't refresh scores if generation failed
       },
       (_) {
-        print('*** GRADE PROVIDER: generateScoresForItems completed successfully');
         ProviderLogger.instance.log('generateScoresForItems() - completed successfully');
+        
+        // Set a flag to indicate scores need refreshing
+        // The UI layer will handle the actual score refresh
       },
     );
   }
@@ -470,12 +516,14 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
 class GradeScoresState {
   final Map<String, List<GradeScore>> scoresByItem;
   final bool isLoading;
+  final bool isGeneratingScores;
   final String? error;
   final String? successMessage;
 
   GradeScoresState({
     this.scoresByItem = const {},
     this.isLoading = false,
+    this.isGeneratingScores = false,
     this.error,
     this.successMessage,
   });
@@ -483,12 +531,14 @@ class GradeScoresState {
   GradeScoresState copyWith({
     Map<String, List<GradeScore>>? scoresByItem,
     bool? isLoading,
+    bool? isGeneratingScores,
     Object? error = _unset,
     Object? successMessage = _unset,
   }) {
     return GradeScoresState(
       scoresByItem: scoresByItem ?? this.scoresByItem,
       isLoading: isLoading ?? this.isLoading,
+      isGeneratingScores: isGeneratingScores ?? this.isGeneratingScores,
       error: identical(error, _unset) ? this.error : error as String?,
       successMessage: identical(successMessage, _unset) ? this.successMessage : successMessage as String?,
     );
@@ -508,6 +558,10 @@ class GradeScoresNotifier extends StateNotifier<GradeScoresState> {
     this._clearScoreOverride,
   ) : super(GradeScoresState());
 
+  void setGenerating(bool value) {
+    state = state.copyWith(isGeneratingScores: value);
+  }
+
   Future<void> loadScoresForItems(List<String> gradeItemIds) async {
     state = state.copyWith(isLoading: true, error: null);
     final Map<String, List<GradeScore>> allScores = {};
@@ -519,11 +573,16 @@ class GradeScoresNotifier extends StateNotifier<GradeScoresState> {
           state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure));
           return;
         },
-        (scores) => allScores[itemId] = scores,
+        (scores) {
+          allScores[itemId] = scores;
+        },
       );
       if (state.error != null) return;
     }
 
+    for (final entry in allScores.entries) {
+    }
+    
     state = state.copyWith(isLoading: false, scoresByItem: allScores);
   }
 
@@ -531,7 +590,7 @@ class GradeScoresNotifier extends StateNotifier<GradeScoresState> {
     String gradeItemId,
     List<Map<String, dynamic>> scores,
   ) async {
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    state = state.copyWith(error: null, successMessage: null);
     final result = await _saveScores(gradeItemId: gradeItemId, scores: scores);
     String? errorMsg;
     result.fold(
@@ -542,11 +601,38 @@ class GradeScoresNotifier extends StateNotifier<GradeScoresState> {
       state = state.copyWith(isLoading: false, error: errorMsg);
       return;
     }
-    // Reload fresh scores for just this item so the grid cell reflects the
-    // saved value immediately (without a full reload).
-    final fresh = await _getScoresByItem(gradeItemId);
+    // Optimistically update the in-memory map so the cell shows the new value
+    // immediately. The save is sync-queued and will reach the server later;
+    // re-fetching from remote right now would return the stale (pre-save) value.
     final updated = Map<String, List<GradeScore>>.from(state.scoresByItem);
-    fresh.fold((_) {}, (newScores) => updated[gradeItemId] = newScores);
+    final existing = List<GradeScore>.from(updated[gradeItemId] ?? []);
+    for (final s in scores) {
+      final studentId = s['student_id'] as String;
+      final scoreVal = (s['score'] as num).toDouble();
+      final existingId = s['id'] as String?;
+      final idx = existing.indexWhere((e) => e.studentId == studentId);
+      if (idx >= 0) {
+        final old = existing[idx];
+        existing[idx] = GradeScore(
+          id: existingId ?? old.id,
+          gradeItemId: gradeItemId,
+          studentId: studentId,
+          score: scoreVal,
+          isAutoPopulated: false,
+          overrideScore: null,
+        );
+      } else {
+        existing.add(GradeScore(
+          id: existingId ?? 'optimistic_${studentId}_$gradeItemId',
+          gradeItemId: gradeItemId,
+          studentId: studentId,
+          score: scoreVal,
+          isAutoPopulated: false,
+          overrideScore: null,
+        ));
+      }
+    }
+    updated[gradeItemId] = existing;
     state = state.copyWith(
       isLoading: false,
       scoresByItem: updated,
@@ -603,6 +689,32 @@ class GradeScoresNotifier extends StateNotifier<GradeScoresState> {
 
   void clearMessages() {
     state = state.copyWith(error: null, successMessage: null);
+  }
+
+  /// Force refresh scores from remote server (bypass cache)
+  Future<void> refreshScoresFromRemote(List<String> gradeItemIds) async {
+    state = state.copyWith(isLoading: true, error: null);
+    final Map<String, List<GradeScore>> allScores = {};
+
+    for (final itemId in gradeItemIds) {
+      // Force remote fetch by calling repository directly
+      final result = await _getScoresByItem(itemId);
+      result.fold(
+        (failure) {
+          state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure));
+          return;
+        },
+        (scores) {
+          allScores[itemId] = scores;
+        },
+      );
+      if (state.error != null) return;
+    }
+
+    for (final entry in allScores.entries) {
+    }
+    
+    state = state.copyWith(isLoading: false, scoresByItem: allScores);
   }
 }
 

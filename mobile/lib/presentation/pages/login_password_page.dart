@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
-import 'package:likha/presentation/pages/shared/widgets/auth_desktop_layout.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_auth_layout.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_auth_layout.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 
 class LoginPasswordPage extends ConsumerStatefulWidget {
@@ -69,13 +71,13 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
               height: 96,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFEDED),
+                color: AppColors.semanticErrorBackground,
                 borderRadius: BorderRadius.circular(24),
               ),
               child: const Icon(
                 Icons.lock_rounded,
                 size: 56,
-                color: Color(0xFFDC3545),
+                color: AppColors.semanticErrorDark,
               ),
             ),
             const SizedBox(height: 32),
@@ -84,7 +86,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF202020),
+                color: AppColors.foregroundDark,
                 letterSpacing: -0.5,
               ),
               textAlign: TextAlign.center,
@@ -95,7 +97,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
               style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF999999),
+                color: AppColors.foregroundTertiary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -105,7 +107,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                 ref.read(authProvider.notifier).clearLoginUsername();
               },
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF2B2B2B),
+                foregroundColor: AppColors.accentCharcoal,
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
               child: const Text(
@@ -136,7 +138,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF202020),
+                      color: AppColors.foregroundDark,
                       letterSpacing: -0.5,
                     ),
                     textAlign: TextAlign.center,
@@ -147,7 +149,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF999999),
+                      color: AppColors.foregroundTertiary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -156,10 +158,10 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFEDED),
+                      color: AppColors.semanticErrorBackground,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: const Color(0xFFDC3545),
+                        color: AppColors.semanticErrorDark,
                         width: 1,
                       ),
                     ),
@@ -168,7 +170,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFFDC3545),
+                        color: AppColors.semanticErrorDark,
                       ),
                     ),
                   ),
@@ -201,7 +203,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF202020),
+                      color: AppColors.foregroundDark,
                       letterSpacing: -0.5,
                     ),
                     textAlign: TextAlign.center,
@@ -212,7 +214,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF999999),
+                      color: AppColors.foregroundTertiary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -221,10 +223,10 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFEDED),
+                      color: AppColors.semanticErrorBackground,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: const Color(0xFFDC3545),
+                        color: AppColors.semanticErrorDark,
                         width: 1,
                       ),
                     ),
@@ -235,7 +237,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFFDC3545),
+                            color: AppColors.semanticErrorDark,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -244,7 +246,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFFDC3545),
+                            color: AppColors.semanticErrorDark,
                           ),
                         ),
                       ],
@@ -279,7 +281,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF202020),
+                      color: AppColors.foregroundDark,
                       letterSpacing: -0.5,
                     ),
                     textAlign: TextAlign.center,
@@ -290,7 +292,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF999999),
+                      color: AppColors.foregroundTertiary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -299,16 +301,16 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFEDED),
+                        color: AppColors.semanticErrorBackground,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFDC3545), width: 1),
+                        border: Border.all(color: AppColors.semanticErrorDark, width: 1),
                       ),
                       child: Text(
                         error,
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFFDC3545),
+                          color: AppColors.semanticErrorDark,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -332,7 +334,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
   Widget _buildPasswordField(bool isLoading) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
+        color: AppColors.accentCharcoal,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Container(
@@ -347,18 +349,18 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF202020),
+            color: AppColors.foregroundDark,
           ),
           decoration: InputDecoration(
             labelText: 'Password',
             labelStyle: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
             ),
             prefixIcon: const Icon(
               Icons.lock_outline_rounded,
-              color: Color(0xFF999999),
+              color: AppColors.foregroundTertiary,
               size: 22,
             ),
             suffixIcon: IconButton(
@@ -366,7 +368,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                 _obscurePassword
                     ? Icons.visibility_off_outlined
                     : Icons.visibility_outlined,
-                color: const Color(0xFF999999),
+                color: AppColors.foregroundTertiary,
                 size: 22,
               ),
               onPressed: () {
@@ -386,7 +388,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
               borderSide: const BorderSide(
-                color: Color(0xFF2B2B2B),
+                color: AppColors.accentCharcoal,
                 width: 1.5,
               ),
             ),
@@ -412,7 +414,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
   Widget _buildLoginButton(bool isLoading) {
     return Container(
       decoration: BoxDecoration(
-        color: isLoading ? const Color(0xFFE0E0E0) : const Color(0xFF2B2B2B),
+        color: isLoading ? AppColors.borderLight : AppColors.accentCharcoal,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Container(
@@ -421,7 +423,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
           onPressed: isLoading ? null : _handleLogin,
           style: ElevatedButton.styleFrom(
             backgroundColor:
-                isLoading ? const Color(0xFFF5F5F5) : const Color(0xFF2B2B2B),
+                isLoading ? AppColors.backgroundDisabled : AppColors.accentCharcoal,
             foregroundColor: Colors.white,
             elevation: 0,
             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -435,7 +437,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                   width: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2.5,
-                    color: Color(0xFF999999),
+                    color: AppColors.foregroundTertiary,
                   ),
                 )
               : const Text(
@@ -459,7 +461,7 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
               ref.read(authProvider.notifier).clearLoginUsername();
             },
       style: TextButton.styleFrom(
-        foregroundColor: const Color(0xFF2B2B2B),
+        foregroundColor: AppColors.accentCharcoal,
         padding: const EdgeInsets.symmetric(vertical: 12),
       ),
       child: const Text(
@@ -492,11 +494,13 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
       authState.error,
     );
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: PlatformDetector.isDesktop
-          ? AuthDesktopLayout(formContent: formBody)
-          : SafeArea(child: Center(child: formBody)),
+    if (PlatformDetector.isDesktop) {
+      return DesktopAuthLayout(formContent: formBody);
+    }
+
+    return MobileAuthLayout(
+      showLogo: false,
+      formContent: formBody,
     );
   }
 }

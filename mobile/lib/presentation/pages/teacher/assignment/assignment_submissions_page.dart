@@ -3,10 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
-import 'package:likha/presentation/pages/teacher/grade/grade_submission_page.dart';
-import 'package:likha/presentation/pages/teacher/assignment/widgets/empty_submissions_state.dart';
-import 'package:likha/presentation/pages/teacher/widgets/submission_card.dart';
+import 'package:likha/presentation/pages/teacher/assignment/assignment_submission_grading_page.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/assignment/empty_submissions_state.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/dashboard/submission_card.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/widgets/shared/feedback/content_state_builder.dart';
 
 class AssignmentSubmissionsPage extends ConsumerStatefulWidget {
   final String assignmentId;
@@ -98,48 +99,43 @@ class _AssignmentSubmissionsPageState
         ),
         actions: const [],
       ),
-      body: state.isLoading && state.submissions.isEmpty
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.foregroundPrimary,
-                strokeWidth: 2.5,
-              ),
-            )
-          : state.submissions.isEmpty
-              ? const EmptySubmissionsState()
-              : RefreshIndicator(
-                  onRefresh: () => ref
-                      .read(assignmentProvider.notifier)
-                      .loadSubmissions(widget.assignmentId),
-                  color: AppColors.foregroundPrimary,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(24),
-                    itemCount: state.submissions.length,
-                    itemBuilder: (context, index) {
-                      final submission = state.submissions[index];
-
-                      return SubmissionCard(
-                        studentName: submission.studentName,
-                        studentUsername: submission.studentUsername,
-                        status: submission.status,
-                        score: submission.score,
-                        totalPoints: widget.totalPoints,
-                        submittedAt: submission.submittedAt,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => GradeSubmissionPage(
-                              submissionId: submission.id,
-                              totalPoints: widget.totalPoints,
-                            ),
-                          ),
-                        ).then((_) => ref
-                            .read(assignmentProvider.notifier)
-                            .loadSubmissions(widget.assignmentId)),
-                      );
-                    },
+      body: ContentStateBuilder(
+        isLoading: state.isLoading && state.submissions.isEmpty,
+        isEmpty: state.submissions.isEmpty,
+        onRefresh: () => ref
+            .read(assignmentProvider.notifier)
+            .loadSubmissions(widget.assignmentId),
+        onRetry: () => ref
+            .read(assignmentProvider.notifier)
+            .loadSubmissions(widget.assignmentId),
+        emptyState: const EmptySubmissionsState(),
+        child: ListView.builder(
+          padding: const EdgeInsets.all(24),
+          itemCount: state.submissions.length,
+          itemBuilder: (context, index) {
+            final submission = state.submissions[index];
+            return SubmissionCard(
+              studentName: submission.studentName,
+              studentUsername: submission.studentUsername,
+              status: submission.status,
+              score: submission.score,
+              totalPoints: widget.totalPoints,
+              submittedAt: submission.submittedAt,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AssignmentSubmissionGradingPage(
+                    submissionId: submission.id,
+                    totalPoints: widget.totalPoints,
                   ),
                 ),
+              ).then((_) => ref
+                  .read(assignmentProvider.notifier)
+                  .loadSubmissions(widget.assignmentId)),
+            );
+          },
+        ),
+      ),
       bottomNavigationBar: state.submissions.isEmpty
           ? null
           : Container(
@@ -148,7 +144,7 @@ class _AssignmentSubmissionsPageState
                 color: Colors.white,
                 border: Border(
                   top: BorderSide(
-                    color: Color(0xFFE0E0E0),
+                    color: AppColors.borderLight,
                     width: 1,
                   ),
                 ),
@@ -157,8 +153,8 @@ class _AssignmentSubmissionsPageState
                 onPressed: _isDownloadingAll ? null : _downloadAll,
                 style: FilledButton.styleFrom(
                   backgroundColor: _isDownloadingAll
-                      ? const Color(0xFFCCCCCC)
-                      : const Color(0xFF2B2B2B),
+                      ? AppColors.foregroundLight
+                      : AppColors.accentCharcoal,
                   padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),

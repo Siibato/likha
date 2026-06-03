@@ -45,5 +45,7 @@ abstract class TosRepository {
     String? gradeLevel,
     int? gradingPeriodNumber,
     String? query,
+    int limit = 30,
+    int offset = 0,
   });
 }

@@ -31,7 +31,7 @@ void main() {
 
     test('should return ServerFailure when file not found', () async {
       when(() => mockRepository.deleteFile(fileId: any(named: 'fileId')))
-          .thenAnswer((_) async => Left(ServerFailure('File not found')));
+          .thenAnswer((_) async => const Left(ServerFailure('File not found')));
 
       final result = await useCase('nonexistent-id');
 
@@ -44,7 +44,7 @@ void main() {
 
     test('should return UnauthorizedFailure when not authorized', () async {
       when(() => mockRepository.deleteFile(fileId: any(named: 'fileId')))
-          .thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+          .thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(tFileId);
 
@@ -57,7 +57,7 @@ void main() {
 
     test('should return ServerFailure when server error occurs', () async {
       when(() => mockRepository.deleteFile(fileId: any(named: 'fileId')))
-          .thenAnswer((_) async => Left(ServerFailure('Server error')));
+          .thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tFileId);
 

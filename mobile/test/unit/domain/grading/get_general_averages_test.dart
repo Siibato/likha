@@ -36,7 +36,7 @@ void main() {
 
     test('should return ServerFailure when class not found', () async {
       when(() => mockRepository.getGeneralAverages(classId: any(named: 'classId')))
-          .thenAnswer((_) async => Left(ServerFailure('Class not found')));
+          .thenAnswer((_) async => const Left(ServerFailure('Class not found')));
 
       final result = await useCase('nonexistent-id');
 
@@ -49,7 +49,7 @@ void main() {
 
     test('should return ServerFailure when server error occurs', () async {
       when(() => mockRepository.getGeneralAverages(classId: any(named: 'classId')))
-          .thenAnswer((_) async => Left(ServerFailure('Server error')));
+          .thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tClassId);
 

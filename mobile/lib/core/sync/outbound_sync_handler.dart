@@ -23,8 +23,20 @@ class OutboundSyncHandler {
   );
 
   Future<void> outboundSync() async {
+    _log.log('outboundSync() - START');
+    
     final pending = await _syncQueue.getAllRetriable();
-    if (pending.isEmpty) return;
+    _log.log('Found ${pending.length} pending operations');
+    
+    if (pending.isEmpty) {
+      _log.log('No pending operations, returning');
+      return;
+    }
+    
+    // Log all pending operations for debugging
+    for (final op in pending) {
+      _log.log('Pending op: ${op.entityType}.${op.operation} (${op.id}) - status: ${op.status}');
+    }
 
     // PASS 0: Process assessmentSubmission creates FIRST so dependent ops
     // (submit) can reference the real server-assigned ID.
@@ -73,10 +85,17 @@ class OutboundSyncHandler {
         .where((e) => e.operation != SyncOperation.upload)
         .toList();
 
+    _log.log('Found ${regularOps.length} regular operations');
+    
     final opsByType = <String, int>{};
     for (final op in regularOps) {
       opsByType[op.entityType.serverValue] = (opsByType[op.entityType.serverValue] ?? 0) + 1;
+      if (op.entityType == SyncEntityType.gradeScore) {
+        _log.log('Grade score operation: ${op.operation} (${op.id})');
+      }
     }
+
+    _log.log('Operations by type: $opsByType');
 
     _log.pushStarting(
       uploadOpsCount: nonMaterialFileUploads.length + materialFileUploads.length,

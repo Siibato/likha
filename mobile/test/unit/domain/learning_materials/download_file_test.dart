@@ -33,7 +33,7 @@ void main() {
 
     test('should return ServerFailure when file not found', () async {
       when(() => mockRepository.downloadFile(fileId: any(named: 'fileId')))
-          .thenAnswer((_) async => Left(ServerFailure('File not found')));
+          .thenAnswer((_) async => const Left(ServerFailure('File not found')));
 
       final result = await useCase('nonexistent-id');
 
@@ -46,7 +46,7 @@ void main() {
 
     test('should return NetworkFailure when offline', () async {
       when(() => mockRepository.downloadFile(fileId: any(named: 'fileId')))
-          .thenAnswer((_) async => Left(NetworkFailure('No internet connection')));
+          .thenAnswer((_) async => const Left(NetworkFailure('No internet connection')));
 
       final result = await useCase(tFileId);
 
@@ -59,7 +59,7 @@ void main() {
 
     test('should return ServerFailure when server error occurs', () async {
       when(() => mockRepository.downloadFile(fileId: any(named: 'fileId')))
-          .thenAnswer((_) async => Left(ServerFailure('Server error')));
+          .thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tFileId);
 

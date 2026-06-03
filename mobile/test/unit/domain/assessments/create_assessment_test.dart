@@ -18,7 +18,7 @@ void main() {
   });
 
   group('CreateAssessment', () {
-    final tClassId = 'class-1';
+    const tClassId = 'class-1';
     final tCreatedAssessment = Assessment(
       id: 'new-assessment-1',
       classId: tClassId,
@@ -155,7 +155,7 @@ void main() {
         gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
         component: any(named: 'component'),
         tosId: any(named: 'tosId'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Title cannot be empty')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Title cannot be empty')));
 
       final result = await useCase(params);
 
@@ -188,7 +188,7 @@ void main() {
         gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
         component: any(named: 'component'),
         tosId: any(named: 'tosId'),
-      )).thenAnswer((_) async => Left(ValidationFailure('Close date must be after open date')));
+      )).thenAnswer((_) async => const Left(ValidationFailure('Close date must be after open date')));
 
       final result = await useCase(params);
 
@@ -221,7 +221,7 @@ void main() {
         gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
         component: any(named: 'component'),
         tosId: any(named: 'tosId'),
-      )).thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+      )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(params);
 
@@ -254,7 +254,7 @@ void main() {
         gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
         component: any(named: 'component'),
         tosId: any(named: 'tosId'),
-      )).thenAnswer((_) async => Left(ServerFailure('Server error')));
+      )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(params);
 

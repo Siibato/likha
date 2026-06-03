@@ -18,7 +18,7 @@ void main() {
   });
 
   group('ReturnSubmission', () {
-    final tSubmissionId = 'submission-1';
+    const tSubmissionId = 'submission-1';
     final tReturnedSubmission = AssignmentSubmission(
       id: tSubmissionId,
       assignmentId: 'assignment-1',
@@ -47,7 +47,7 @@ void main() {
 
     test('should return ServerFailure when submission not found', () async {
       when(() => mockRepository.returnSubmission(submissionId: any(named: 'submissionId')))
-          .thenAnswer((_) async => Left(ServerFailure('Submission not found')));
+          .thenAnswer((_) async => const Left(ServerFailure('Submission not found')));
 
       final result = await useCase('nonexistent-id');
 
@@ -60,7 +60,7 @@ void main() {
 
     test('should return ValidationFailure when submission not graded', () async {
       when(() => mockRepository.returnSubmission(submissionId: any(named: 'submissionId')))
-          .thenAnswer((_) async => Left(ValidationFailure('Submission must be graded before returning')));
+          .thenAnswer((_) async => const Left(ValidationFailure('Submission must be graded before returning')));
 
       final result = await useCase(tSubmissionId);
 
@@ -73,7 +73,7 @@ void main() {
 
     test('should return UnauthorizedFailure when not authorized', () async {
       when(() => mockRepository.returnSubmission(submissionId: any(named: 'submissionId')))
-          .thenAnswer((_) async => Left(UnauthorizedFailure('Unauthorized')));
+          .thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(tSubmissionId);
 
@@ -86,7 +86,7 @@ void main() {
 
     test('should return ServerFailure when server error occurs', () async {
       when(() => mockRepository.returnSubmission(submissionId: any(named: 'submissionId')))
-          .thenAnswer((_) async => Left(ServerFailure('Server error')));
+          .thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(tSubmissionId);
 

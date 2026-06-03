@@ -51,6 +51,7 @@ enum SyncOperation {
   saveScores('save_scores'),
   setOverride('set_override'),
   clearOverride('clear_override'),
+  gradeEssay('grade_essay'),
   setup('setup');
 
   const SyncOperation(this.serverValue);

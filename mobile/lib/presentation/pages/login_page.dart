@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/services/school_setup_service.dart';
 import 'package:likha/injection_container.dart' as di;
 import 'package:likha/presentation/pages/desktop/core/platform_detector.dart';
 import 'package:likha/presentation/pages/setup/school_setup_page.dart';
-import 'package:likha/presentation/pages/shared/widgets/auth_desktop_layout.dart';
-import 'package:likha/presentation/pages/shared/widgets/forms/styled_text_field.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_auth_layout.dart';
+import 'package:likha/presentation/layouts/mobile/mobile_auth_layout.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
-import 'package:likha/presentation/widgets/styled_dialog.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -78,12 +80,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       margin: const EdgeInsets.only(bottom: 24),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
+        color: AppColors.backgroundDisabled,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         children: [
-          const Icon(Icons.school_outlined, size: 16, color: Color(0xFF7A7A7A)),
+          const Icon(Icons.school_outlined, size: 16, color: AppColors.foregroundTertiary),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -91,7 +93,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF7A7A7A),
+                color: AppColors.foregroundTertiary,
               ),
             ),
           ),
@@ -101,7 +103,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               'Not your school?',
               style: TextStyle(
                 fontSize: 12,
-                color: Color(0xFF999999),
+                color: AppColors.foregroundTertiary,
                 decoration: TextDecoration.underline,
               ),
             ),
@@ -132,7 +134,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF202020),
+                color: AppColors.foregroundDark,
                 letterSpacing: -0.5,
               ),
               textAlign: TextAlign.center,
@@ -143,7 +145,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF999999),
+                color: AppColors.foregroundTertiary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -153,10 +155,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFEDED),
+                  color: AppColors.semanticErrorBackground,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: const Color(0xFFDC3545),
+                    color: AppColors.semanticErrorDark,
                     width: 1,
                   ),
                 ),
@@ -165,7 +167,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFFDC3545),
+                    color: AppColors.semanticErrorDark,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -190,8 +192,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             Container(
               decoration: BoxDecoration(
                 color: isLoading
-                    ? const Color(0xFFE0E0E0)
-                    : const Color(0xFF2B2B2B),
+                    ? AppColors.borderLight
+                    : AppColors.accentCharcoal,
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Container(
@@ -200,8 +202,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   onPressed: isLoading ? null : _handleContinue,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isLoading
-                        ? const Color(0xFFF5F5F5)
-                        : const Color(0xFF2B2B2B),
+                        ? AppColors.backgroundDisabled
+                        : AppColors.accentCharcoal,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -215,7 +217,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
-                            color: Color(0xFF999999),
+                            color: AppColors.foregroundTertiary,
                           ),
                         )
                       : const Text(
@@ -239,13 +241,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: PlatformDetector.isDesktop
-          ? AuthDesktopLayout(formContent: _buildFormBody(authState.isLoading))
-          : SafeArea(
-              child: Center(child: _buildFormBody(authState.isLoading)),
-            ),
+    if (PlatformDetector.isDesktop) {
+      return DesktopAuthLayout(
+        formContent: _buildFormBody(authState.isLoading),
+      );
+    }
+
+    return MobileAuthLayout(
+      showLogo: false,
+      formContent: _buildFormBody(authState.isLoading),
     );
   }
 }
