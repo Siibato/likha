@@ -105,6 +105,15 @@ async fn main() {
                 println!("All login attempt records cleared.");
                 return;
             }
+            "seed-e2e" => {
+                println!("Seeding deterministic E2E world...");
+                let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
+                    .await
+                    .expect("Failed to connect to database");
+                server::seed::e2e::seed_e2e_world(&db).await;
+                println!("E2E seed complete.");
+                return;
+            }
             other => {
                 eprintln!("Unknown command: {}", other);
                 eprintln!("Available commands:");
@@ -112,6 +121,7 @@ async fn main() {
                 eprintln!("  delete-db               Delete the database file");
                 eprintln!("  reset-db                Delete and recreate the database");
                 eprintln!("  clear-invalid-attempts  Clear all login attempt records");
+                eprintln!("  seed-e2e                Seed deterministic E2E world data");
                 std::process::exit(1);
             }
         }
