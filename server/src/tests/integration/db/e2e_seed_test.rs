@@ -1,13 +1,13 @@
 use sea_orm::EntityTrait;
 
-use crate::seed::e2e::ids::*;
-use crate::seed::e2e::seed_e2e_world;
+use crate::seed::fixtures::e2e::*;
+use crate::seed::seed_e2e_world;
 use crate::tests::common::test_db::test_db;
 
 #[tokio::test]
 async fn test_e2e_seed_produces_expected_row_counts() {
     let db = test_db().await;
-    seed_e2e_world(&db).await;
+    seed_e2e_world(&db).await.expect("E2E seed should succeed");
 
     // ── Users ──────────────────────────────────────────────────────────────────
     let users = ::entity::users::Entity::find()
@@ -104,7 +104,7 @@ async fn test_e2e_seed_produces_expected_row_counts() {
 #[tokio::test]
 async fn test_e2e_seed_soft_deleted_entities_have_deleted_at() {
     let db = test_db().await;
-    seed_e2e_world(&db).await;
+    seed_e2e_world(&db).await.expect("E2E seed should succeed");
 
     let deleted_class = ::entity::classes::Entity::find_by_id(CLASS_DELETED_8_ID)
         .one(&db).await.expect("find deleted class").expect("deleted class must exist");
@@ -122,7 +122,7 @@ async fn test_e2e_seed_soft_deleted_entities_have_deleted_at() {
 #[tokio::test]
 async fn test_e2e_seed_grade_items_created_for_published_entities() {
     let db = test_db().await;
-    seed_e2e_world(&db).await;
+    seed_e2e_world(&db).await.expect("E2E seed should succeed");
 
     let grade_items = ::entity::grade_items::Entity::find()
         .all(&db).await.expect("find grade items");

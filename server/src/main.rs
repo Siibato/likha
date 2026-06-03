@@ -110,7 +110,7 @@ async fn main() {
                 let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
                     .await
                     .expect("Failed to connect to database");
-                server::seed::e2e::seed_e2e_world(&db).await;
+                server::seed::scenarios::e2e::seed_e2e_world(&db).await.expect("E2E seed failed");
                 println!("E2E seed complete.");
                 return;
             }
