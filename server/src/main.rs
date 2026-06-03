@@ -1,9 +1,3 @@
-mod config;
-mod db;
-mod middleware;
-mod modules;
-mod utils;
-
 use axum::Router;
 use chrono::Utc;
 use dotenv::dotenv;
@@ -18,19 +12,19 @@ use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::timeout::TimeoutLayer;
 use uuid::Uuid;
 
-use crate::modules::assessment::service::AssessmentService;
-use crate::modules::assignment::service::AssignmentService;
-use crate::modules::auth::service::AuthService;
-use crate::modules::class::service::ClassService;
-use crate::modules::learning_material::service::LearningMaterialService;
-use crate::modules::tos::service::TosService;
-use crate::modules::grading::service::GradeComputationService;
-use crate::modules::setup::service::SetupService;
-use crate::modules::entitlement::EntitlementService;
-use crate::modules::sync::service::{SyncPushService, SyncConflictService, SyncFullService, SyncDeltaService};
-use crate::utils::file_encryption::parse_key;
-use crate::modules::sync::{ManifestRepository, ProcessedOperationsRepository};
-use crate::middleware::{RateLimitLayer, RateLimitStore};
+use server::modules::assessment::service::AssessmentService;
+use server::modules::assignment::service::AssignmentService;
+use server::modules::auth::service::AuthService;
+use server::modules::class::service::ClassService;
+use server::modules::learning_material::service::LearningMaterialService;
+use server::modules::tos::service::TosService;
+use server::modules::grading::service::GradeComputationService;
+use server::modules::setup::service::SetupService;
+use server::modules::entitlement::EntitlementService;
+use server::modules::sync::service::{SyncPushService, SyncConflictService, SyncFullService, SyncDeltaService};
+use server::utils::file_encryption::parse_key;
+use server::modules::sync::{ManifestRepository, ProcessedOperationsRepository};
+use server::middleware::{RateLimitLayer, RateLimitStore};
 
 #[tokio::main]
 async fn main() {
@@ -42,7 +36,7 @@ async fn main() {
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
-    let config = config::ServerConfig::from_env();
+    let config = server::config::ServerConfig::from_env();
     let args: Vec<String> = std::env::args().collect();
 
     if args.len() > 1 {
@@ -71,7 +65,7 @@ async fn main() {
             }
             "create-db" => {
                 println!("Creating database and running migrations...");
-                let db = db::establish_connection(&config.database_url, &config.db_encryption_key)
+                let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
                     .await
                     .expect("Failed to connect to database");
                 run_migrations(&db).await.expect("Failed to run migrations");
@@ -94,7 +88,7 @@ async fn main() {
                 }
 
                 println!("Creating fresh database and running migrations...");
-                let db = db::establish_connection(&config.database_url, &config.db_encryption_key)
+                let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
                     .await
                     .expect("Failed to connect to database");
                 run_migrations(&db).await.expect("Failed to run migrations");
@@ -103,10 +97,10 @@ async fn main() {
                 return;
             }
             "clear-invalid-attempts" => {
-                let db = db::establish_connection(&config.database_url, &config.db_encryption_key)
+                let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
                     .await
                     .expect("Failed to connect to database");
-                let repo = crate::modules::auth::LoginAttemptRepository::new(db);
+                let repo = server::modules::auth::LoginAttemptRepository::new(db);
                 repo.clear_all_attempts().await.expect("Failed to clear attempts");
                 println!("All login attempt records cleared.");
                 return;
@@ -128,7 +122,7 @@ async fn main() {
     tracing::info!("Port: {}", config.port);
 
     // Connect to database
-    let db = db::establish_connection(&config.database_url, &config.db_encryption_key)
+    let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
         .await
         .expect("Failed to connect to database");
 
@@ -141,13 +135,13 @@ async fn main() {
     seed_admin(&db).await.expect("Failed to seed admin account");
 
     // Initialize services
-    let auth_service = Arc::new(crate::modules::auth::service::AuthService::new(
+    let auth_service = Arc::new(server::modules::auth::service::AuthService::new(
         db.clone(),
         config.jwt_secret.clone(),
         config.jwt_expiration,
     ));
 
-    let admin_service = Arc::new(crate::modules::admin::service::AdminService::new(db.clone()));
+    let admin_service = Arc::new(server::modules::admin::service::AdminService::new(db.clone()));
 
     let class_service = Arc::new(ClassService::new(db.clone()));
 
@@ -165,7 +159,7 @@ async fn main() {
     ));
 
     // Initialize new offline-first sync services
-    let _entitlement_repo = crate::modules::entitlement::repository::EntitlementRepository::new(db.clone());
+    let _entitlement_repo = server::modules::entitlement::repository::EntitlementRepository::new(db.clone());
     let manifest_repo = ManifestRepository::new(db.clone());
 
     let entitlement_service = Arc::new(EntitlementService::new(db.clone()));
@@ -236,16 +230,16 @@ async fn main() {
 }
 
 fn create_app(
-    config: &config::ServerConfig,
+    config: &server::config::ServerConfig,
     auth_service: Arc<AuthService>,
-    admin_service: Arc<crate::modules::admin::service::AdminService>,
-    class_service: Arc<crate::modules::class::service::ClassService>,
+    admin_service: Arc<server::modules::admin::service::AdminService>,
+    class_service: Arc<server::modules::class::service::ClassService>,
     assessment_service: Arc<AssessmentService>,
     assignment_service: Arc<AssignmentService>,
     material_service: Arc<LearningMaterialService>,
     grade_computation_service: Arc<GradeComputationService>,
     tos_service: Arc<TosService>,
-    setup_service: Arc<crate::modules::setup::service::SetupService>,
+    setup_service: Arc<server::modules::setup::service::SetupService>,
     sync_push_service: Arc<SyncPushService>,
     sync_conflict_service: Arc<SyncConflictService>,
     sync_full_service: Arc<SyncFullService>,
@@ -255,18 +249,18 @@ fn create_app(
     let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
 
     let api = Router::new()
-        .merge(crate::modules::health::routes::routes())
-        .merge(crate::modules::auth::routes::routes(auth_service.clone()))
-        .merge(crate::modules::admin::routes::routes(admin_service))
-        .merge(crate::modules::class::routes::routes(class_service))
-        .merge(crate::modules::assessment::routes::routes(assessment_service.clone()))
-        .merge(crate::modules::assignment::routes::routes(assignment_service.clone()))
-        .merge(crate::modules::learning_material::routes::routes(material_service))
-        .merge(crate::modules::grading::routes::routes(grade_computation_service))
-        .merge(crate::modules::tos::routes::routes(tos_service))
-        .merge(crate::modules::setup::routes::routes(setup_service))
-        .merge(crate::modules::tasks::routes::routes(assignment_service, assessment_service))
-        .merge(crate::modules::sync::routes::routes(
+        .merge(server::modules::health::routes::routes())
+        .merge(server::modules::auth::routes::routes(auth_service.clone()))
+        .merge(server::modules::admin::routes::routes(admin_service))
+        .merge(server::modules::class::routes::routes(class_service))
+        .merge(server::modules::assessment::routes::routes(assessment_service.clone()))
+        .merge(server::modules::assignment::routes::routes(assignment_service.clone()))
+        .merge(server::modules::learning_material::routes::routes(material_service))
+        .merge(server::modules::grading::routes::routes(grade_computation_service))
+        .merge(server::modules::tos::routes::routes(tos_service))
+        .merge(server::modules::setup::routes::routes(setup_service))
+        .merge(server::modules::tasks::routes::routes(assignment_service, assessment_service))
+        .merge(server::modules::sync::routes::routes(
             sync_push_service,
             sync_conflict_service,
             sync_full_service,
@@ -278,11 +272,11 @@ fn create_app(
         .layer(RequestBodyLimitLayer::new(config.max_body_size_bytes as usize))
         .layer(TimeoutLayer::with_status_code(axum::http::StatusCode::REQUEST_TIMEOUT, Duration::from_secs(60)))
         .layer(build_cors_layer(config))
-        .layer(axum::middleware::from_fn(middleware::add_security_headers))
-        .layer(middleware::logging_middleware())
+        .layer(axum::middleware::from_fn(server::middleware::add_security_headers))
+        .layer(server::middleware::logging_middleware())
 }
 
-fn build_cors_layer(config: &config::ServerConfig) -> CorsLayer {
+fn build_cors_layer(config: &server::config::ServerConfig) -> CorsLayer {
     let x_device_id: HeaderName = "x-device-id".parse().expect("valid header name");
 
     let allowed_methods = [
