@@ -1,6 +1,6 @@
 use sea_orm::EntityTrait;
 
-use crate::seed::e2e::data::*;
+use crate::seed::e2e::ids::*;
 use crate::seed::e2e::seed_e2e_world;
 use crate::tests::common::test_db::test_db;
 

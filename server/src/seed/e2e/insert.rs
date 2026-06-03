@@ -17,13 +17,10 @@ use crate::modules::class::repository::ClassRepository;
 use crate::modules::grading::repository::GradeComputationRepository;
 use crate::modules::tos::repository::TosRepository;
 
-use super::data::*;
+use super::fixtures::*;
+use super::ids::*;
 
 pub async fn seed_e2e_world(db: &DatabaseConnection) {
-    // Disable FK enforcement during seeding. The production DB connection does not
-    // enable FKs (db.rs never executes PRAGMA foreign_keys = ON), but the test DB
-    // migrator leaves FKs ON. Raw-SQL helpers like upsert_score pass UUIDs as TEXT
-    // strings while SeaORM stores them as BLOB, causing spurious FK violations.
     db.execute(sea_orm::Statement::from_string(
         sea_orm::DatabaseBackend::Sqlite,
         "PRAGMA foreign_keys = OFF".to_string(),
@@ -38,7 +35,6 @@ pub async fn seed_e2e_world(db: &DatabaseConnection) {
     step6_submissions(db).await;
     step7_materials(db).await;
     step8_grading(db).await;
-    // Re-enable FK enforcement now that seeding is done.
     db.execute(sea_orm::Statement::from_string(
         sea_orm::DatabaseBackend::Sqlite,
         "PRAGMA foreign_keys = ON".to_string(),
@@ -74,34 +70,13 @@ async fn step1_users(db: &DatabaseConnection) {
 
     let user_repo = UserRepository::new(db.clone());
 
-    // Remove any default admin inserted by reset-db so we can insert with hardcoded UUID.
     users::Entity::delete_many()
         .filter(users::Column::Role.eq("admin"))
         .exec(db)
         .await
         .expect("seed: delete default admin");
 
-    struct UserSpec {
-        id: Uuid,
-        username: &'static str,
-        full_name: &'static str,
-        role: &'static str,
-        password: Option<&'static str>,
-        account_status: &'static str,
-        deleted: bool,
-    }
-
-    let specs = vec![
-        UserSpec { id: ADMIN_ID, username: "admin", full_name: "System Administrator", role: "admin", password: None, account_status: "pending_activation", deleted: false },
-        UserSpec { id: TEACHER_01_ID, username: "teacher_01", full_name: "Teacher One", role: "teacher", password: Some(PASSWORD_TEACHER), account_status: "active", deleted: false },
-        UserSpec { id: TEACHER_02_ID, username: "teacher_02", full_name: "Teacher Two", role: "teacher", password: Some(PASSWORD_TEACHER), account_status: "active", deleted: false },
-        UserSpec { id: STUDENT_01_ID, username: "student_01", full_name: "Student One", role: "student", password: Some(PASSWORD_STUDENT), account_status: "active", deleted: false },
-        UserSpec { id: STUDENT_02_ID, username: "student_02", full_name: "Student Two", role: "student", password: Some(PASSWORD_STUDENT), account_status: "active", deleted: false },
-        UserSpec { id: STUDENT_03_ID, username: "student_03", full_name: "Student Three", role: "student", password: Some(PASSWORD_STUDENT), account_status: "active", deleted: false },
-        UserSpec { id: STUDENT_DELETED_ID, username: "student_deleted_99", full_name: "Student Deleted 99", role: "student", password: Some(PASSWORD_STUDENT), account_status: "active", deleted: true },
-    ];
-
-    for spec in specs {
+    for spec in users() {
         user_repo
             .create_account(spec.username.to_string(), spec.full_name.to_string(), spec.role.to_string(), Some(spec.id))
             .await
@@ -115,7 +90,6 @@ async fn step1_users(db: &DatabaseConnection) {
                 .expect("seed: set_password");
         }
 
-        // Activate + patch timestamps
         let user = users::Entity::find_by_id(spec.id)
             .one(db)
             .await
@@ -145,24 +119,7 @@ async fn step2_classes(db: &DatabaseConnection) {
 
     let class_repo = ClassRepository::new(db.clone());
 
-    struct ClassSpec {
-        id: Uuid,
-        title: &'static str,
-        grade_level: &'static str,
-        is_advisory: bool,
-        is_archived: bool,
-        deleted: bool,
-    }
-
-    let specs = vec![
-        ClassSpec { id: CLASS_MATH_8A_ID, title: "Mathematics 8A", grade_level: "8", is_advisory: false, is_archived: false, deleted: false },
-        ClassSpec { id: CLASS_SCI_8A_ID, title: "Science 8A", grade_level: "8", is_advisory: false, is_archived: false, deleted: false },
-        ClassSpec { id: CLASS_ADVISORY_8A_ID, title: "Advisory 8A", grade_level: "8", is_advisory: true, is_archived: false, deleted: false },
-        ClassSpec { id: CLASS_ARCHIVED_10A_ID, title: "Archived Class 10A", grade_level: "10", is_advisory: false, is_archived: true, deleted: false },
-        ClassSpec { id: CLASS_DELETED_8_ID, title: "Deleted Science 8 (should not appear)", grade_level: "8", is_advisory: false, is_archived: false, deleted: true },
-    ];
-
-    for spec in specs {
+    for spec in classes() {
         class_repo
             .create_class(spec.title.to_string(), Some("E2E test class".to_string()), Some(spec.id), spec.is_advisory)
             .await
@@ -182,28 +139,12 @@ async fn step2_classes(db: &DatabaseConnection) {
         am.update(db).await.expect("seed: patch class");
     }
 
-    // Enroll teachers
-    // teacher_01 → Math 8A, Sci 8A, Advisory 8A
-    for cid in [CLASS_MATH_8A_ID, CLASS_SCI_8A_ID, CLASS_ADVISORY_8A_ID] {
-        class_repo.add_participant(cid, TEACHER_01_ID).await.expect("seed: add teacher_01");
-    }
-    // teacher_02 → Advisory 8A, Archived 10A
-    for cid in [CLASS_ADVISORY_8A_ID, CLASS_ARCHIVED_10A_ID] {
-        class_repo.add_participant(cid, TEACHER_02_ID).await.expect("seed: add teacher_02");
+    for enr in teacher_enrollments() {
+        class_repo.add_participant(enr.class_id, enr.user_id).await.expect("seed: add teacher");
     }
 
-    // Enroll students
-    // student_01 → Math, Sci, Advisory
-    for cid in [CLASS_MATH_8A_ID, CLASS_SCI_8A_ID, CLASS_ADVISORY_8A_ID] {
-        class_repo.add_participant(cid, STUDENT_01_ID).await.expect("seed: add student_01");
-    }
-    // student_02 → Math, Sci, Advisory
-    for cid in [CLASS_MATH_8A_ID, CLASS_SCI_8A_ID, CLASS_ADVISORY_8A_ID] {
-        class_repo.add_participant(cid, STUDENT_02_ID).await.expect("seed: add student_02");
-    }
-    // student_03 → Math, Advisory
-    for cid in [CLASS_MATH_8A_ID, CLASS_ADVISORY_8A_ID] {
-        class_repo.add_participant(cid, STUDENT_03_ID).await.expect("seed: add student_03");
+    for enr in student_enrollments() {
+        class_repo.add_participant(enr.class_id, enr.user_id).await.expect("seed: add student");
     }
 
     println!("  [seed] classes & enrollment done");
@@ -214,36 +155,17 @@ async fn step2_classes(db: &DatabaseConnection) {
 async fn step3_tos(db: &DatabaseConnection) {
     let tos_repo = TosRepository::new(db.clone());
 
-    tos_repo.create_tos(
-        TOS_MATH_8A_ID, CLASS_MATH_8A_ID, 1,
-        "TOS for Mathematics 8A - Q1", "difficulty", 30, "days",
-        30.0, 50.0, 20.0, 15.0, 20.0, 20.0, 15.0, 15.0, 15.0,
-    ).await.expect("seed: TOS math");
-
-    tos_repo.create_tos(
-        TOS_SCI_8A_ID, CLASS_SCI_8A_ID, 1,
-        "TOS for Science 8A - Q1", "bloom", 30, "days",
-        30.0, 50.0, 20.0, 15.0, 20.0, 20.0, 15.0, 15.0, 15.0,
-    ).await.expect("seed: TOS sci");
-
-    struct CompSpec {
-        id: Uuid,
-        tos_id: Uuid,
-        code: &'static str,
-        text: &'static str,
-        order: i32,
+    for t in tos_fixtures() {
+        tos_repo.create_tos(
+            t.id, t.class_id, t.period,
+            t.title, t.template_type, t.total_items, t.time_limit_unit,
+            t.ww_percent, t.pt_percent, t.qa_percent,
+            t.easy_percent, t.average_percent, t.difficult_percent,
+            t.remembering_percent, t.understanding_percent, t.applying_percent,
+        ).await.expect("seed: TOS");
     }
 
-    let comps = vec![
-        CompSpec { id: COMP_MATH_1_ID, tos_id: TOS_MATH_8A_ID, code: "M8NS-Ia-1", text: "Represents integers on number line", order: 0 },
-        CompSpec { id: COMP_MATH_2_ID, tos_id: TOS_MATH_8A_ID, code: "M8NS-Ib-2", text: "Performs operations on integers", order: 1 },
-        CompSpec { id: COMP_MATH_3_ID, tos_id: TOS_MATH_8A_ID, code: "M8AL-Ia-1", text: "Translates verbal phrases to mathematical expressions", order: 2 },
-        CompSpec { id: COMP_SCI_1_ID, tos_id: TOS_SCI_8A_ID, code: "S8MT-Ia-1", text: "Describes the distribution of active volcanoes", order: 0 },
-        CompSpec { id: COMP_SCI_2_ID, tos_id: TOS_SCI_8A_ID, code: "S8MT-Ib-2", text: "Explains how energy from volcanoes may be tapped", order: 1 },
-        CompSpec { id: COMP_SCI_3_ID, tos_id: TOS_SCI_8A_ID, code: "S8ES-Ia-1", text: "Describes the different layers of the Earth", order: 2 },
-    ];
-
-    for c in comps {
+    for c in competency_fixtures() {
         tos_repo.create_competency(
             c.id, c.tos_id, Some(c.code), c.text,
             5, c.order,
@@ -261,90 +183,8 @@ async fn step4_assessments(db: &DatabaseConnection) {
     let assessment_service = AssessmentService::new(db.clone());
     let created = days_ago(15);
 
-    struct AssessSpec {
-        id: Uuid,
-        class_id: Uuid,
-        title: &'static str,
-        open_offset: i64,
-        close_offset: i64,
-        show_results: bool,
-        results_released: bool,
-        component: &'static str,
-        tos_id: Uuid,
-        questions: QuestionSet,
-        deleted: bool,
-    }
-
-    let specs = vec![
-        AssessSpec {
-            id: ASSESS_MATH_QUIZ1_ID,
-            class_id: CLASS_MATH_8A_ID,
-            title: "Math Quiz 1 (Closed)",
-            open_offset: -7,
-            close_offset: -1,
-            show_results: true,
-            results_released: true,
-            component: "written_work",
-            tos_id: TOS_MATH_8A_ID,
-            questions: math_q1_questions(),
-            deleted: false,
-        },
-        AssessSpec {
-            id: ASSESS_MATH_QUIZ2_ID,
-            class_id: CLASS_MATH_8A_ID,
-            title: "Math Quiz 2 (Open)",
-            open_offset: -1,
-            close_offset: 7,
-            show_results: false,
-            results_released: false,
-            component: "performance_task",
-            tos_id: TOS_MATH_8A_ID,
-            questions: math_q2_questions(),
-            deleted: false,
-        },
-        AssessSpec {
-            id: ASSESS_SCI_TEST1_ID,
-            class_id: CLASS_SCI_8A_ID,
-            title: "Science Test 1 (Closed)",
-            open_offset: -10,
-            close_offset: -2,
-            show_results: true,
-            results_released: true,
-            component: "quarterly_assessment",
-            tos_id: TOS_SCI_8A_ID,
-            questions: sci_t1_questions(),
-            deleted: false,
-        },
-        AssessSpec {
-            id: ASSESS_SCI_TEST2_ID,
-            class_id: CLASS_SCI_8A_ID,
-            title: "Science Test 2 (Open)",
-            open_offset: 1,
-            close_offset: 14,
-            show_results: false,
-            results_released: false,
-            component: "written_work",
-            tos_id: TOS_SCI_8A_ID,
-            questions: sci_t2_questions(),
-            deleted: false,
-        },
-        AssessSpec {
-            id: ASSESS_DELETED_MATH_ID,
-            class_id: CLASS_MATH_8A_ID,
-            title: "[DELETED] Review Test - Math 8A",
-            open_offset: -8,
-            close_offset: -4,
-            show_results: false,
-            results_released: false,
-            component: "written_work",
-            tos_id: TOS_MATH_8A_ID,
-            questions: deleted_questions(),
-            deleted: true,
-        },
-    ];
-
     let n = now();
-    for spec in specs {
+    for spec in assessment_fixtures() {
         let open_at = n + Duration::days(spec.open_offset);
         let close_at = n + Duration::days(spec.close_offset);
 
@@ -364,7 +204,6 @@ async fn step4_assessments(db: &DatabaseConnection) {
             Some(spec.tos_id.to_string()),
         ).await.expect("seed: create_assessment");
 
-        // Patch creation time
         let a = ::entity::assessments::Entity::find_by_id(spec.id)
             .one(db).await.expect("seed: find assess").unwrap();
         let mut am: ::entity::assessments::ActiveModel = a.into();
@@ -372,7 +211,6 @@ async fn step4_assessments(db: &DatabaseConnection) {
         am.updated_at = Set(created);
         am.update(db).await.expect("seed: patch assess");
 
-        // Add 5 questions
         let qs = [
             (spec.questions.q1, "multiple_choice", "What is the first concept in this topic?", 1, 0, spec.questions.comps[0], "easy", "remembering"),
             (spec.questions.q2, "multiple_choice", "Which statement best describes the second concept?", 2, 1, spec.questions.comps[1], "medium", "understanding"),
@@ -392,7 +230,6 @@ async fn step4_assessments(db: &DatabaseConnection) {
                 Some(qid),
             ).await.expect("seed: add_question");
 
-            // Patch tos_competency_id, difficulty, cognitive_level
             let q = assessment_questions::Entity::find_by_id(qid)
                 .one(db).await.expect("seed: find q").unwrap();
             let mut qam: assessment_questions::ActiveModel = q.into();
@@ -402,7 +239,6 @@ async fn step4_assessments(db: &DatabaseConnection) {
             qam.update(db).await.expect("seed: patch question");
         }
 
-        // Choices for MCQ questions (q1, q2)
         for (qid, correct_idx) in [(spec.questions.q1, 1usize), (spec.questions.q2, 2usize)] {
             let choices_texts = ["Option A", "Option B (correct)", "Option C", "Option D"];
             for (i, text) in choices_texts.iter().enumerate() {
@@ -415,7 +251,6 @@ async fn step4_assessments(db: &DatabaseConnection) {
             }
         }
 
-        // Answer keys for identification questions (q3, q4)
         for (qid, answer_text) in [(spec.questions.q3, "42"), (spec.questions.q4, "principle")] {
             let ak = answer_keys::ActiveModel {
                 id: Set(Uuid::new_v4()),
@@ -423,7 +258,6 @@ async fn step4_assessments(db: &DatabaseConnection) {
             };
             let inserted_ak = ak.insert(db).await.expect("seed: answer_key");
 
-            // Primary acceptable answer
             let acc1 = answer_key_acceptable_answers::ActiveModel {
                 id: Set(Uuid::new_v4()),
                 answer_key_id: Set(inserted_ak.id),
@@ -431,7 +265,6 @@ async fn step4_assessments(db: &DatabaseConnection) {
             };
             acc1.insert(db).await.expect("seed: acceptable_answer 1");
 
-            // Variant acceptable answer
             let variant = format!("{}-variant", answer_text);
             let acc2 = answer_key_acceptable_answers::ActiveModel {
                 id: Set(Uuid::new_v4()),
@@ -441,14 +274,12 @@ async fn step4_assessments(db: &DatabaseConnection) {
             acc2.insert(db).await.expect("seed: acceptable_answer 2");
         }
 
-        // Answer key for essay question (q5) — empty text, manual grading
         let essay_ak = answer_keys::ActiveModel {
             id: Set(Uuid::new_v4()),
             question_id: Set(spec.questions.q5),
         };
         essay_ak.insert(db).await.expect("seed: essay answer_key");
 
-        // Publish via service (needs at least 1 question, auto-creates grade item)
         if !spec.deleted {
             assessment_service
                 .publish_assessment(spec.id, TEACHER_01_ID)
@@ -462,7 +293,6 @@ async fn step4_assessments(db: &DatabaseConnection) {
                     .expect("seed: release_results");
             }
         } else {
-            // Soft-delete the assessment
             let a2 = ::entity::assessments::Entity::find_by_id(spec.id)
                 .one(db).await.expect("seed: find assess for delete").unwrap();
             let mut am2: ::entity::assessments::ActiveModel = a2.into();
@@ -481,25 +311,8 @@ async fn step5_assignments(db: &DatabaseConnection) {
     let assignment_service = AssignmentService::new(db.clone());
     let created = days_ago(15);
 
-    struct AssignSpec {
-        id: Uuid,
-        class_id: Uuid,
-        title: &'static str,
-        due_offset: i64,
-        total_points: i32,
-        component: &'static str,
-        deleted: bool,
-    }
-
-    let specs = vec![
-        AssignSpec { id: ASSIGN_MATH_HW1_ID, class_id: CLASS_MATH_8A_ID, title: "Math Homework 1 (Past Due)", due_offset: -5, total_points: 50, component: "written_work", deleted: false },
-        AssignSpec { id: ASSIGN_SCI_LAB_ID, class_id: CLASS_SCI_8A_ID, title: "Science Lab Report (Due Soon)", due_offset: 2, total_points: 100, component: "performance_task", deleted: false },
-        AssignSpec { id: ASSIGN_MATH_PROJECT_ID, class_id: CLASS_MATH_8A_ID, title: "Math Project (Future)", due_offset: 14, total_points: 200, component: "performance_task", deleted: false },
-        AssignSpec { id: ASSIGN_DELETED_ID, class_id: CLASS_SCI_8A_ID, title: "[DELETED] Extra Credit", due_offset: -3, total_points: 50, component: "written_work", deleted: true },
-    ];
-
     let n = now();
-    for spec in specs {
+    for spec in assignment_fixtures() {
         let due_at = n + Duration::days(spec.due_offset);
 
         assignment_repo.create_assignment(
@@ -519,7 +332,6 @@ async fn step5_assignments(db: &DatabaseConnection) {
             Some(spec.component.to_string()),
         ).await.expect("seed: create_assignment");
 
-        // Patch creation time
         let a = assignments::Entity::find_by_id(spec.id)
             .one(db).await.expect("seed: find assignment").unwrap();
         let mut am: ::entity::assignments::ActiveModel = a.into();
@@ -534,7 +346,6 @@ async fn step5_assignments(db: &DatabaseConnection) {
             am2.deleted_at = Set(Some(days_ago(3)));
             am2.update(db).await.expect("seed: soft delete assignment");
         } else {
-            // Publish via service (auto-creates grade item)
             assignment_service
                 .publish_assignment(spec.id, TEACHER_01_ID)
                 .await
@@ -556,27 +367,9 @@ async fn step6_submissions(db: &DatabaseConnection) {
 async fn step6a_assessment_submissions(db: &DatabaseConnection) {
     let assessment_repo = AssessmentRepository::new(db.clone());
 
-    struct SubSpec {
-        sub_id: Uuid,
-        assessment_id: Uuid,
-        student_id: Uuid,
-        started_offset: i64,
-    }
+    let questions_map = assessment_question_sets();
 
-    let specs = vec![
-        SubSpec { sub_id: SUB_ASSESS_S01_MQ1, assessment_id: ASSESS_MATH_QUIZ1_ID, student_id: STUDENT_01_ID, started_offset: -6 },
-        SubSpec { sub_id: SUB_ASSESS_S02_MQ1, assessment_id: ASSESS_MATH_QUIZ1_ID, student_id: STUDENT_02_ID, started_offset: -6 },
-        SubSpec { sub_id: SUB_ASSESS_S03_MQ1, assessment_id: ASSESS_MATH_QUIZ1_ID, student_id: STUDENT_03_ID, started_offset: -5 },
-        SubSpec { sub_id: SUB_ASSESS_S01_ST1, assessment_id: ASSESS_SCI_TEST1_ID, student_id: STUDENT_01_ID, started_offset: -9 },
-        SubSpec { sub_id: SUB_ASSESS_S02_ST1, assessment_id: ASSESS_SCI_TEST1_ID, student_id: STUDENT_02_ID, started_offset: -9 },
-    ];
-
-    let questions_map: Vec<(Uuid, &[Uuid])> = vec![
-        (ASSESS_MATH_QUIZ1_ID, &[Q_MATH_Q1_1, Q_MATH_Q1_2, Q_MATH_Q1_3, Q_MATH_Q1_4, Q_MATH_Q1_5]),
-        (ASSESS_SCI_TEST1_ID, &[Q_SCI_T1_1, Q_SCI_T1_2, Q_SCI_T1_3, Q_SCI_T1_4, Q_SCI_T1_5]),
-    ];
-
-    for spec in &specs {
+    for spec in &assessment_submission_fixtures() {
         assessment_repo
             .create_submission(spec.assessment_id, spec.student_id, Some(spec.sub_id))
             .await
@@ -662,11 +455,10 @@ async fn step6a_assessment_submissions(db: &DatabaseConnection) {
             }
         }
 
-        // Calculate total points and mark submitted
         let total: f64 = if spec.student_id == STUDENT_01_ID {
             1.0 + 2.0 + 1.0 + 2.0 // MCQ1=1, MCQ2=2, ident3=1, ident4=2, essay=0
         } else if spec.student_id == STUDENT_02_ID {
-            1.0 // only MCQ1 correct
+            1.0 
         } else {
             0.0
         };
@@ -685,68 +477,36 @@ async fn step6a_assessment_submissions(db: &DatabaseConnection) {
 
 async fn step6b_assignment_submissions(db: &DatabaseConnection) {
     let assignment_repo = AssignmentRepository::new(db.clone());
-    let submitted = days_ago(4);
-    let graded_at = days_ago(3);
 
-    // student_01 → Math HW1 (graded)
-    assignment_repo
-        .create_submission(ASSIGN_MATH_HW1_ID, STUDENT_01_ID, Some(SUB_ASSIGN_S01_HW1))
-        .await
-        .expect("seed: create assign sub s01_hw1");
+    for sub in assignment_submission_fixtures() {
+        assignment_repo
+            .create_submission(sub.assignment_id, sub.student_id, Some(sub.sub_id))
+            .await
+            .expect("seed: create assign sub");
 
-    assignment_repo
-        .update_submission_text(SUB_ASSIGN_S01_HW1, Some("My completed homework.".to_string()))
-        .await
-        .expect("seed: update_submission_text s01");
+        if let Some(text) = sub.text {
+            assignment_repo
+                .update_submission_text(sub.sub_id, Some(text.to_string()))
+                .await
+                .expect("seed: update_submission_text");
+        }
 
-    assignment_repo
-        .update_submission_status(SUB_ASSIGN_S01_HW1, "submitted")
-        .await
-        .expect("seed: update_submission_status s01");
+        assignment_repo
+            .update_submission_status(sub.sub_id, sub.status)
+            .await
+            .expect("seed: update_submission_status");
 
-    assignment_repo
-        .grade_submission(SUB_ASSIGN_S01_HW1, 45, Some("Good work, minor deductions.".to_string()), Some(TEACHER_01_ID))
-        .await
-        .expect("seed: grade_submission s01");
+        if let (Some(grade), Some(feedback), Some(graded_by)) = (sub.grade, sub.feedback, sub.graded_by) {
+            assignment_repo
+                .grade_submission(sub.sub_id, grade, Some(feedback.to_string()), Some(graded_by))
+                .await
+                .expect("seed: grade_submission");
+        }
 
-    // Patch submitted_at and graded_at
-    patch_assign_sub_timestamps(db, SUB_ASSIGN_S01_HW1, submitted, Some(graded_at)).await;
-
-    // student_02 → Math HW1 (ungraded)
-    assignment_repo
-        .create_submission(ASSIGN_MATH_HW1_ID, STUDENT_02_ID, Some(SUB_ASSIGN_S02_HW1))
-        .await
-        .expect("seed: create assign sub s02_hw1");
-
-    assignment_repo
-        .update_submission_text(SUB_ASSIGN_S02_HW1, Some("My homework attempt.".to_string()))
-        .await
-        .expect("seed: update_submission_text s02");
-
-    assignment_repo
-        .update_submission_status(SUB_ASSIGN_S02_HW1, "submitted")
-        .await
-        .expect("seed: update_submission_status s02");
-
-    patch_assign_sub_timestamps(db, SUB_ASSIGN_S02_HW1, submitted, None).await;
-
-    // student_01 → Sci Lab (ungraded)
-    assignment_repo
-        .create_submission(ASSIGN_SCI_LAB_ID, STUDENT_01_ID, Some(SUB_ASSIGN_S01_LAB))
-        .await
-        .expect("seed: create assign sub s01_lab");
-
-    assignment_repo
-        .update_submission_text(SUB_ASSIGN_S01_LAB, Some("My lab report.".to_string()))
-        .await
-        .expect("seed: update_submission_text s01_lab");
-
-    assignment_repo
-        .update_submission_status(SUB_ASSIGN_S01_LAB, "submitted")
-        .await
-        .expect("seed: update_submission_status s01_lab");
-
-    patch_assign_sub_timestamps(db, SUB_ASSIGN_S01_LAB, submitted, None).await;
+        let submitted_at = days_ago(sub.submitted_offset as u64);
+        let graded_at = sub.graded_offset.map(|o| days_ago(o as u64));
+        patch_assign_sub_timestamps(db, sub.sub_id, submitted_at, graded_at).await;
+    }
 }
 
 async fn patch_assign_sub_timestamps(
@@ -771,41 +531,7 @@ async fn patch_assign_sub_timestamps(
 async fn step7_materials(db: &DatabaseConnection) {
     let n = now();
 
-    struct MatSpec {
-        id: Uuid,
-        class_id: Uuid,
-        title: &'static str,
-        content: &'static str,
-    }
-
-    let specs = vec![
-        MatSpec {
-            id: MAT_MATH_ID,
-            class_id: CLASS_MATH_8A_ID,
-            title: "Unit 1: Integer Operations",
-            content: "## Integer Operations\n\nIntegers are whole numbers that can be positive, negative, or zero.\n\nOperations on integers follow specific rules for signs.\n\nPractice with number lines helps build intuition.",
-        },
-        MatSpec {
-            id: MAT_SCI_ID,
-            class_id: CLASS_SCI_8A_ID,
-            title: "Unit 1: Volcanoes",
-            content: "## Volcanoes\n\nVolcanoes are openings in the Earth's crust where magma reaches the surface.\n\nThe Philippines lies on the Pacific Ring of Fire.\n\nGeothermal energy can be harnessed from volcanic activity.",
-        },
-        MatSpec {
-            id: MAT_ADVISORY_ID,
-            class_id: CLASS_ADVISORY_8A_ID,
-            title: "Advisory Guidelines",
-            content: "## Advisory Class Guidelines\n\nThis advisory class covers homeroom activities and student welfare.\n\nAttendance and punctuality are expected.",
-        },
-        MatSpec {
-            id: MAT_ARCHIVED_ID,
-            class_id: CLASS_ARCHIVED_10A_ID,
-            title: "Old Reference Material",
-            content: "## Old Reference\n\nThis material is from a previous term.\n\nPlease refer to updated resources.",
-        },
-    ];
-
-    for spec in specs {
+    for spec in material_fixtures() {
         let model = learning_materials::ActiveModel {
             id: Set(spec.id),
             class_id: Set(spec.class_id),
@@ -828,7 +554,6 @@ async fn step7_materials(db: &DatabaseConnection) {
 async fn step8_grading(db: &DatabaseConnection) {
     let grade_repo = GradeComputationRepository::new(db.clone());
 
-    // Setup grade records for the 2 active subject classes
     for class_id in [CLASS_MATH_8A_ID, CLASS_SCI_8A_ID] {
         grade_repo
             .setup_defaults(class_id, "math_sci")
@@ -836,38 +561,17 @@ async fn step8_grading(db: &DatabaseConnection) {
             .expect("seed: setup_defaults");
     }
 
-    // Grade items for assessments are auto-created by publish_assessment service.
-    // We only need to create manual items for assessments that need it (all were published via service,
-    // so grade items are already present). Nothing extra needed here.
-
-    // Populate grade scores for enrolled students
-    // Math 8A students: student_01, student_02, student_03
-    // Sci 8A students:  student_01, student_02
-
-    // Find grade items by source
-    let assess_items: Vec<(Uuid, Vec<Uuid>)> = vec![
-        (ASSESS_MATH_QUIZ1_ID, vec![STUDENT_01_ID, STUDENT_02_ID, STUDENT_03_ID]),
-        (ASSESS_MATH_QUIZ2_ID, vec![STUDENT_01_ID, STUDENT_02_ID, STUDENT_03_ID]),
-        (ASSESS_SCI_TEST1_ID, vec![STUDENT_01_ID, STUDENT_02_ID]),
-        (ASSESS_SCI_TEST2_ID, vec![STUDENT_01_ID, STUDENT_02_ID]),
-    ];
-
-    let assign_items: Vec<(Uuid, Vec<Uuid>)> = vec![
-        (ASSIGN_MATH_HW1_ID, vec![STUDENT_01_ID, STUDENT_02_ID, STUDENT_03_ID]),
-        (ASSIGN_SCI_LAB_ID, vec![STUDENT_01_ID, STUDENT_02_ID]),
-        (ASSIGN_MATH_PROJECT_ID, vec![STUDENT_01_ID, STUDENT_02_ID, STUDENT_03_ID]),
-    ];
-
     let n = now();
-    for (source_id, students) in assess_items {
+
+    for fixture in assessment_grade_scores() {
         let item = grade_repo
-            .find_by_source("assessment", &source_id.to_string())
+            .find_by_source(fixture.source_type, &fixture.source_id.to_string())
             .await
             .expect("seed: find_by_source assess");
 
         if let Some(item) = item {
-            for student_id in students {
-                let score = get_student_assess_score(student_id, source_id);
+            for &student_id in fixture.students {
+                let score = get_student_assess_score(student_id, fixture.source_id);
                 grade_scores::ActiveModel {
                     id: Set(Uuid::new_v4()),
                     grade_item_id: Set(item.id),
@@ -883,15 +587,15 @@ async fn step8_grading(db: &DatabaseConnection) {
         }
     }
 
-    for (source_id, students) in assign_items {
+    for fixture in assignment_grade_scores() {
         let item = grade_repo
-            .find_by_source("assignment", &source_id.to_string())
+            .find_by_source(fixture.source_type, &fixture.source_id.to_string())
             .await
             .expect("seed: find_by_source assign");
 
         if let Some(item) = item {
-            for student_id in students {
-                let score = get_student_assign_score(student_id, source_id);
+            for &student_id in fixture.students {
+                let score = get_student_assign_score(student_id, fixture.source_id);
                 grade_scores::ActiveModel {
                     id: Set(Uuid::new_v4()),
                     grade_item_id: Set(item.id),
@@ -907,15 +611,8 @@ async fn step8_grading(db: &DatabaseConnection) {
         }
     }
 
-    // Period grades — direct ActiveModel insert to avoid raw-SQL UUID mismatch.
     let computed = days_ago(1);
-    for (class_id, student_id, initial_grade) in [
-        (CLASS_MATH_8A_ID, STUDENT_01_ID, 85.0_f64),
-        (CLASS_MATH_8A_ID, STUDENT_02_ID, 72.0_f64),
-        (CLASS_MATH_8A_ID, STUDENT_03_ID, 65.0_f64),
-        (CLASS_SCI_8A_ID, STUDENT_01_ID, 88.0_f64),
-        (CLASS_SCI_8A_ID, STUDENT_02_ID, 70.0_f64),
-    ] {
+    for (class_id, student_id, initial_grade) in period_grade_fixtures() {
         let transmuted = crate::modules::grading::helpers::deped_weights::transmute_grade(initial_grade);
         period_grades::ActiveModel {
             id: Set(Uuid::new_v4()),
@@ -935,22 +632,3 @@ async fn step8_grading(db: &DatabaseConnection) {
     println!("  [seed] grading done");
 }
 
-fn get_student_assess_score(student_id: Uuid, assessment_id: Uuid) -> f64 {
-    match (student_id, assessment_id) {
-        (id, _) if id == STUDENT_01_ID => 6.0,  // out of 11 total (1+2+1+2+5)
-        (id, _) if id == STUDENT_02_ID => 1.0,
-        _ => 0.0,
-    }
-}
-
-fn get_student_assign_score(student_id: Uuid, assignment_id: Uuid) -> f64 {
-    if assignment_id == ASSIGN_MATH_HW1_ID {
-        match student_id {
-            id if id == STUDENT_01_ID => 45.0,
-            id if id == STUDENT_02_ID => 0.0, // ungraded → 0
-            _ => 0.0,
-        }
-    } else {
-        0.0 // future / ungraded
-    }
-}
