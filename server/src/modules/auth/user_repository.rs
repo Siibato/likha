@@ -2,7 +2,7 @@ use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
 use ::entity::{refresh_tokens, users};
-use crate::db::repositories::repository_operations::user as ops;
+use crate::modules::auth::repository_operations::user as ops;
 use crate::utils::AppResult;
 
 pub struct UserRepository {

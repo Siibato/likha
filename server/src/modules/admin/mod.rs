@@ -1,5 +1,6 @@
 pub mod schema;
 pub mod repository;
+pub mod repository_operations;
 pub mod service;
 pub mod service_operations;
 pub mod handler;

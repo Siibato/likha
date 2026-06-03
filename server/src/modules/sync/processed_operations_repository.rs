@@ -3,7 +3,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-use crate::db::repositories::repository_operations::processed_operations as ops;
+use crate::modules::sync::repository_operations::processed_operations as ops;
 use crate::modules::sync::service_operations::push::OperationResult;
 
 /// Repository for tracking processed sync operations

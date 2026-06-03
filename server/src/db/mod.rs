@@ -1,5 +1,3 @@
-pub mod repositories;
-
 use sea_orm::{Database, DatabaseConnection, DbErr, Statement, ConnectionTrait};
 
 pub async fn establish_connection(

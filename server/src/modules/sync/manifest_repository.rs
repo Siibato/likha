@@ -3,7 +3,7 @@ use sea_orm::DatabaseConnection;
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::db::repositories::repository_operations::manifest as ops;
+use crate::modules::sync::repository_operations::manifest as ops;
 pub use ops::{ManifestEntry, PaginatedRecords};
 
 /// Repository for building and querying manifests

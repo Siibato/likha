@@ -1,5 +1,6 @@
 pub mod schema;
 pub mod helpers;
+pub mod repository_operations;
 pub mod manifest_repository;
 pub mod processed_operations_repository;
 pub mod repository;

@@ -1,7 +1,7 @@
 use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
-use crate::db::repositories::repository_operations::login_attempt as ops;
+use crate::modules::auth::repository_operations::login_attempt as ops;
 use crate::utils::AppResult;
 
 pub struct LoginAttemptRepository {
