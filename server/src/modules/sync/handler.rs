@@ -7,7 +7,7 @@ use axum::{
 use std::sync::Arc;
 
 use crate::middleware::auth_middleware::AuthUser;
-use crate::schema::common::success_response;
+use crate::utils::response::success_response;
 use crate::modules::sync::service::{SyncPushService, SyncDeltaService, SyncFullService, SyncConflictService};
 use crate::modules::sync::schema::{DeltaRequest, FullSyncRequest, ConflictResolutionRequest};
 

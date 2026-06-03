@@ -1,8 +1,8 @@
 use sea_orm::DatabaseConnection;
 
-use crate::db::repositories::activity_log_repository::ActivityLogRepository;
-use crate::db::repositories::login_attempt_repository::LoginAttemptRepository;
-use crate::db::repositories::user_repository::UserRepository;
+use crate::modules::admin::ActivityLogRepository;
+use crate::modules::auth::LoginAttemptRepository;
+use crate::modules::auth::UserRepository;
 use crate::utils::jwt::JwtService;
 
 pub struct AuthService {

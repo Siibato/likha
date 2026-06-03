@@ -3,7 +3,7 @@ use uuid::Uuid;
 use crate::utils::{AppError, AppResult};
 use crate::modules::assignment::schema::*;
 use crate::modules::assignment::repository::AssignmentRepository;
-use crate::services::file_service;
+use crate::utils::file_service;
 
 const DEFAULT_MAX_FILE_SIZE_MB: i32 = 10;
 

@@ -2,8 +2,8 @@ use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
 use crate::modules::auth::schema::UserResponse;
 use crate::modules::admin::schema::ResetAccountRequest;
-use crate::db::repositories::user_repository::UserRepository;
-use crate::db::repositories::activity_log_repository::ActivityLogRepository;
+use crate::modules::auth::UserRepository;
+use crate::modules::admin::ActivityLogRepository;
 use crate::modules::auth::helpers::user_to_response;
 
 pub async fn reset_account(

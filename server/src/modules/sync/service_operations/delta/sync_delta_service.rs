@@ -2,8 +2,8 @@ use std::sync::Arc;
 use sea_orm::DatabaseConnection;
 use serde_json::Value;
 
-use crate::db::repositories::manifest_repository::ManifestRepository;
-use crate::services::entitlement::EntitlementService;
+use crate::modules::sync::ManifestRepository;
+use crate::modules::entitlement::EntitlementService;
 
 /// Request for delta sync
 #[derive(Debug, Clone, serde::Deserialize)]

@@ -1,6 +1,6 @@
 use crate::utils::AppResult;
 use crate::modules::auth::schema::UserResponse;
-use crate::db::repositories::user_repository::UserRepository;
+use crate::modules::auth::UserRepository;
 use crate::modules::auth::helpers::user_to_response;
 
 pub async fn get_all_accounts(

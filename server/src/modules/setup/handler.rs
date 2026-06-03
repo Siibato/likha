@@ -9,7 +9,7 @@ use std::sync::Arc;
 use crate::middleware::auth_middleware::AuthUser;
 use crate::modules::setup::schema::{UpdateCodeRequest, UpdateSchoolSettingsRequest, VerifyQuery};
 use crate::modules::setup::service::SetupService;
-use crate::schema::common::success_response;
+use crate::utils::response::success_response;
 use crate::utils::auth_guards::require_admin;
 
 /// PUBLIC — students verify their school code.

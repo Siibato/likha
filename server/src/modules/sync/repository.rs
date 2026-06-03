@@ -1,5 +1,5 @@
 use sea_orm::DatabaseConnection;
-use crate::db::repositories::manifest_repository::ManifestRepository;
+use crate::modules::sync::ManifestRepository;
 
 pub struct SyncRepository {
     pub db: DatabaseConnection,

@@ -8,7 +8,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::modules::admin::schema::{CreateAccountRequest, LockAccountRequest, MessageResponse, ResetAccountRequest, SearchStudentsQuery, UpdateAccountRequest};
-use crate::schema::common::success_response;
+use crate::utils::response::success_response;
 use crate::modules::admin::service::AdminService;
 use crate::middleware::auth_middleware::AuthUser;
 use crate::utils::auth_guards::require_admin;

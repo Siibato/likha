@@ -2,7 +2,7 @@ use sea_orm::DatabaseConnection;
 use std::env;
 
 use crate::modules::assignment::repository::AssignmentRepository;
-use crate::db::repositories::activity_log_repository::ActivityLogRepository;
+use crate::modules::admin::ActivityLogRepository;
 use crate::modules::class::repository::ClassRepository;
 use crate::modules::grading::repository::GradeComputationRepository;
 use crate::modules::assignment::service_operations as ops;

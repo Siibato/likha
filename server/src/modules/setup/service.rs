@@ -1,7 +1,7 @@
 use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
-use crate::db::repositories::activity_log_repository::ActivityLogRepository;
+use crate::modules::admin::ActivityLogRepository;
 use crate::modules::setup::repository::SetupRepository;
 use crate::modules::setup::schema::{
     QrCodeResponse, SchoolSettingsResponse, ShortCodeResponse, UpdateCodeRequest,

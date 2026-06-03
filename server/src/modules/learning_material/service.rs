@@ -1,5 +1,5 @@
 use sea_orm::DatabaseConnection;
-use crate::db::repositories::activity_log_repository::ActivityLogRepository;
+use crate::modules::admin::ActivityLogRepository;
 use crate::modules::class::repository::ClassRepository;
 use crate::modules::learning_material::repository::LearningMaterialRepository;
 

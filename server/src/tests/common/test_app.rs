@@ -6,12 +6,9 @@ use axum::http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::timeout::TimeoutLayer;
 
-use crate::db::repositories::{
-    manifest_repository::ManifestRepository,
-    processed_operations_repository::ProcessedOperationsRepository,
-};
-use crate::routes::api_routes;
-use crate::services::entitlement::EntitlementService;
+use crate::modules::sync::{ManifestRepository, ProcessedOperationsRepository};
+use crate::modules::entitlement::EntitlementService;
+use crate::middleware::{RateLimitLayer, RateLimitStore};
 use crate::modules::setup::service::SetupService;
 use crate::modules::sync::service::{SyncPushService, SyncConflictService, SyncFullService, SyncDeltaService};
 use crate::modules::grading::service::GradeComputationService;
@@ -84,25 +81,31 @@ pub async fn build_test_app(db: DatabaseConnection) -> Router {
         .allow_methods(Any)
         .allow_headers([AUTHORIZATION, CONTENT_TYPE, ACCEPT]);
 
+    let rate_limit_store = Arc::new(RateLimitStore::new());
+    let jwt_secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| TEST_JWT_SECRET.to_string());
+
+    let api = Router::new()
+        .merge(crate::modules::health::routes::routes())
+        .merge(crate::modules::auth::routes::routes(auth_service.clone()))
+        .merge(crate::modules::admin::routes::routes(admin_service))
+        .merge(crate::modules::class::routes::routes(class_service))
+        .merge(crate::modules::assessment::routes::routes(assessment_service.clone()))
+        .merge(crate::modules::assignment::routes::routes(assignment_service.clone()))
+        .merge(crate::modules::learning_material::routes::routes(material_service))
+        .merge(crate::modules::grading::routes::routes(grade_computation_service))
+        .merge(crate::modules::tos::routes::routes(tos_service))
+        .merge(crate::modules::setup::routes::routes(setup_service))
+        .merge(crate::modules::tasks::routes::routes(assignment_service, assessment_service))
+        .merge(crate::modules::sync::routes::routes(
+            sync_push_service,
+            sync_conflict_service,
+            sync_full_service,
+            sync_delta_service,
+        ))
+        .layer(RateLimitLayer::new(rate_limit_store, jwt_secret));
+
     Router::new()
-        .nest(
-            "/api/v1",
-            api_routes(
-                auth_service,
-                admin_service,
-                class_service,
-                assessment_service,
-                assignment_service,
-                material_service,
-                grade_computation_service,
-                tos_service,
-                setup_service,
-                sync_push_service,
-                sync_conflict_service,
-                sync_full_service,
-                sync_delta_service,
-            ),
-        )
+        .nest("/api/v1", api)
         .layer(TimeoutLayer::with_status_code(
             axum::http::StatusCode::REQUEST_TIMEOUT,
             Duration::from_secs(30),

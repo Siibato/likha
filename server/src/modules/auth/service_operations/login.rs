@@ -2,9 +2,9 @@ use chrono::{Duration, Utc};
 use crate::utils::error::{AppError, AppResult};
 use crate::modules::auth::schema::{AuthResponse, LoginRequest};
 use crate::utils::password::PasswordService;
-use crate::db::repositories::user_repository::UserRepository;
-use crate::db::repositories::login_attempt_repository::LoginAttemptRepository;
-use crate::db::repositories::activity_log_repository::ActivityLogRepository;
+use crate::modules::auth::UserRepository;
+use crate::modules::auth::LoginAttemptRepository;
+use crate::modules::admin::ActivityLogRepository;
 use crate::utils::jwt::JwtService;
 use crate::modules::auth::helpers::user_to_response;
 

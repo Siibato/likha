@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
-use crate::services::file_service;
+use crate::utils::file_service;
 
 impl crate::modules::learning_material::service::LearningMaterialService {
     pub async fn download_file(

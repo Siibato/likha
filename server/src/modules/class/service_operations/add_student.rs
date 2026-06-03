@@ -3,7 +3,7 @@ use crate::utils::error::{AppError, AppResult};
 use crate::modules::class::schema::EnrollmentResponse;
 use crate::modules::auth::schema::UserResponse;
 use crate::modules::class::repository::ClassRepository;
-use crate::db::repositories::user_repository::UserRepository;
+use crate::modules::auth::UserRepository;
 
 pub async fn add_student(
     class_repo: &ClassRepository,

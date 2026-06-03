@@ -1,7 +1,7 @@
 use uuid::Uuid;
 use crate::utils::{AppError, AppResult, parse_datetime, validators::Validator};
 use crate::modules::assignment::schema::*;
-use crate::db::repositories::activity_log_repository::ActivityLogRepository;
+use crate::modules::admin::ActivityLogRepository;
 use crate::modules::class::repository::ClassRepository;
 use crate::modules::assignment::repository::AssignmentRepository;
 

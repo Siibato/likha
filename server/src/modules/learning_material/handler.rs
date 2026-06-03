@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use crate::middleware::auth_middleware::AuthUser;
 use crate::modules::auth::schema::MessageResponse;
-use crate::schema::common::success_response;
+use crate::utils::response::success_response;
 use crate::modules::learning_material::schema::*;
 use crate::modules::learning_material::service::LearningMaterialService;
 use crate::utils::auth_guards::require_teacher;

@@ -2,7 +2,7 @@ use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
 use crate::modules::class::schema::{ClassResponse, ClassListResponse};
 use crate::modules::class::repository::ClassRepository;
-use crate::db::repositories::user_repository::UserRepository;
+use crate::modules::auth::UserRepository;
 
 pub async fn get_teacher_classes(
     class_repo: &ClassRepository,

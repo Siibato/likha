@@ -1,6 +1,6 @@
 use uuid::Uuid;
 use crate::utils::{AppError, AppResult};
-use crate::db::repositories::activity_log_repository::ActivityLogRepository;
+use crate::modules::admin::ActivityLogRepository;
 use crate::modules::class::repository::ClassRepository;
 use crate::modules::assignment::repository::AssignmentRepository;
 

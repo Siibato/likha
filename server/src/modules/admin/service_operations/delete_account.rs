@@ -1,7 +1,7 @@
 use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
-use crate::db::repositories::user_repository::UserRepository;
-use crate::db::repositories::activity_log_repository::ActivityLogRepository;
+use crate::modules::auth::UserRepository;
+use crate::modules::admin::ActivityLogRepository;
 
 pub async fn delete_account(
     user_repo: &UserRepository,

@@ -1,11 +1,7 @@
 mod config;
 mod db;
-mod handlers;
 mod middleware;
 mod modules;
-mod routes;
-mod schema;
-mod services;
 mod utils;
 
 use axum::Router;
@@ -30,13 +26,11 @@ use crate::modules::learning_material::service::LearningMaterialService;
 use crate::modules::tos::service::TosService;
 use crate::modules::grading::service::GradeComputationService;
 use crate::modules::setup::service::SetupService;
-use crate::services::entitlement::EntitlementService;
+use crate::modules::entitlement::EntitlementService;
 use crate::modules::sync::service::{SyncPushService, SyncConflictService, SyncFullService, SyncDeltaService};
 use crate::utils::file_encryption::parse_key;
-use crate::db::repositories::{
-    manifest_repository::ManifestRepository,
-    processed_operations_repository::ProcessedOperationsRepository,
-};
+use crate::modules::sync::{ManifestRepository, ProcessedOperationsRepository};
+use crate::middleware::{RateLimitLayer, RateLimitStore};
 
 #[tokio::main]
 async fn main() {
@@ -112,7 +106,7 @@ async fn main() {
                 let db = db::establish_connection(&config.database_url, &config.db_encryption_key)
                     .await
                     .expect("Failed to connect to database");
-                let repo = crate::db::repositories::login_attempt_repository::LoginAttemptRepository::new(db);
+                let repo = crate::modules::auth::LoginAttemptRepository::new(db);
                 repo.clear_all_attempts().await.expect("Failed to clear attempts");
                 println!("All login attempt records cleared.");
                 return;
@@ -171,7 +165,7 @@ async fn main() {
     ));
 
     // Initialize new offline-first sync services
-    let _entitlement_repo = crate::db::repositories::entitlement_repository::EntitlementRepository::new(db.clone());
+    let _entitlement_repo = crate::modules::entitlement::repository::EntitlementRepository::new(db.clone());
     let manifest_repo = ManifestRepository::new(db.clone());
 
     let entitlement_service = Arc::new(EntitlementService::new(db.clone()));
@@ -257,25 +251,30 @@ fn create_app(
     sync_full_service: Arc<SyncFullService>,
     sync_delta_service: Arc<SyncDeltaService>,
 ) -> Router {
-    Router::new()
-        .nest(
-            "/api/v1",
-            routes::api_routes(
-                auth_service,
-                admin_service,
-                class_service,
-                assessment_service,
-                assignment_service,
-                material_service,
-                grade_computation_service,
-                tos_service,
-                setup_service,
-                sync_push_service,
-                sync_conflict_service,
-                sync_full_service,
-                sync_delta_service,
-            ),
-        )
+    let rate_limit_store = Arc::new(RateLimitStore::new());
+    let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+
+    let api = Router::new()
+        .merge(crate::modules::health::routes::routes())
+        .merge(crate::modules::auth::routes::routes(auth_service.clone()))
+        .merge(crate::modules::admin::routes::routes(admin_service))
+        .merge(crate::modules::class::routes::routes(class_service))
+        .merge(crate::modules::assessment::routes::routes(assessment_service.clone()))
+        .merge(crate::modules::assignment::routes::routes(assignment_service.clone()))
+        .merge(crate::modules::learning_material::routes::routes(material_service))
+        .merge(crate::modules::grading::routes::routes(grade_computation_service))
+        .merge(crate::modules::tos::routes::routes(tos_service))
+        .merge(crate::modules::setup::routes::routes(setup_service))
+        .merge(crate::modules::tasks::routes::routes(assignment_service, assessment_service))
+        .merge(crate::modules::sync::routes::routes(
+            sync_push_service,
+            sync_conflict_service,
+            sync_full_service,
+            sync_delta_service,
+        ))
+        .layer(RateLimitLayer::new(rate_limit_store, jwt_secret));
+
+    Router::new().nest("/api/v1", api)
         .layer(RequestBodyLimitLayer::new(config.max_body_size_bytes as usize))
         .layer(TimeoutLayer::with_status_code(axum::http::StatusCode::REQUEST_TIMEOUT, Duration::from_secs(60)))
         .layer(build_cors_layer(config))

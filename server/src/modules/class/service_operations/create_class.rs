@@ -3,7 +3,7 @@ use crate::utils::error::{AppError, AppResult};
 use crate::utils::validators::Validator;
 use crate::modules::class::schema::{ClassResponse, CreateClassRequest};
 use crate::modules::class::repository::ClassRepository;
-use crate::db::repositories::user_repository::UserRepository;
+use crate::modules::auth::UserRepository;
 
 pub async fn create_class(
     class_repo: &ClassRepository,

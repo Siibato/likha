@@ -1,5 +1,5 @@
 use crate::modules::class::repository::ClassRepository;
-use crate::db::repositories::manifest_repository::ManifestRepository;
+use crate::modules::sync::ManifestRepository;
 use crate::tests::common::test_db::test_db;
 
 #[tokio::test]

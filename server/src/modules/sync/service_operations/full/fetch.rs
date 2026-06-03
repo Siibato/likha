@@ -230,7 +230,7 @@ impl super::SyncFullService {
             .collect();
 
         let batch_enrollment_data = if batch_enrollment_ids.is_empty() {
-            crate::db::repositories::manifest_repository::PaginatedRecords {
+            crate::modules::sync::manifest_repository::PaginatedRecords {
                 records: Vec::new(),
             }
         } else {

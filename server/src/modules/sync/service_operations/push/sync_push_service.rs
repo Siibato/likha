@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use crate::services::entitlement::EntitlementService;
+use crate::modules::entitlement::EntitlementService;
 use crate::modules::class::service::ClassService;
 use crate::modules::assessment::service::AssessmentService;
 use crate::modules::assignment::service::AssignmentService;
@@ -45,7 +45,7 @@ pub struct SyncPushService {
     pub admin_service: Arc<AdminService>,
     pub grade_computation_service: Arc<GradeComputationService>,
     pub tos_service: Arc<TosService>,
-    pub processed_ops_repo: Arc<crate::db::repositories::processed_operations_repository::ProcessedOperationsRepository>,
+    pub processed_ops_repo: Arc<crate::modules::sync::ProcessedOperationsRepository>,
 }
 
 impl SyncPushService {
@@ -59,7 +59,7 @@ impl SyncPushService {
         admin_service: Arc<AdminService>,
         grade_computation_service: Arc<GradeComputationService>,
         tos_service: Arc<TosService>,
-        processed_ops_repo: Arc<crate::db::repositories::processed_operations_repository::ProcessedOperationsRepository>,
+        processed_ops_repo: Arc<crate::modules::sync::ProcessedOperationsRepository>,
     ) -> Self {
         Self {
             entitlement_service,

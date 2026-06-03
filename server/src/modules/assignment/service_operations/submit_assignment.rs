@@ -1,7 +1,7 @@
 use uuid::Uuid;
 use crate::utils::{AppError, AppResult};
 use crate::modules::assignment::schema::*;
-use crate::db::repositories::activity_log_repository::ActivityLogRepository;
+use crate::modules::admin::ActivityLogRepository;
 use crate::modules::assignment::repository::AssignmentRepository;
 
 pub async fn submit_assignment(

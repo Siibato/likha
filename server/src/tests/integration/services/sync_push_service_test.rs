@@ -2,7 +2,7 @@ use chrono::Utc;
 use uuid::Uuid;
 use crate::modules::assignment::repository::AssignmentRepository;
 use crate::modules::class::repository::ClassRepository;
-use crate::db::repositories::user_repository::UserRepository;
+use crate::modules::auth::UserRepository;
 use crate::tests::common::test_db::test_db;
 
 /// Integration test that mimics a "create assignment" sync push operation

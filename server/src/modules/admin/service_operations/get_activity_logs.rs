@@ -1,7 +1,7 @@
 use uuid::Uuid;
 use crate::utils::AppResult;
 use ::entity::activity_logs;
-use crate::db::repositories::activity_log_repository::ActivityLogRepository;
+use crate::modules::admin::ActivityLogRepository;
 
 pub async fn get_activity_logs(
     activity_log_repo: &ActivityLogRepository,

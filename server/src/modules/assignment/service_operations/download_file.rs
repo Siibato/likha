@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use uuid::Uuid;
 use crate::utils::{AppError, AppResult};
 use crate::modules::assignment::repository::AssignmentRepository;
-use crate::services::file_service;
+use crate::utils::file_service;
 
 pub async fn download_file(
     assignment_repo: &AssignmentRepository,

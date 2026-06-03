@@ -11,7 +11,7 @@ use uuid::Uuid;
 use crate::middleware::auth_middleware::AuthUser;
 use crate::modules::assignment::schema::*;
 use crate::modules::auth::schema::MessageResponse;
-use crate::schema::common::success_response;
+use crate::utils::response::success_response;
 use crate::modules::assignment::service::AssignmentService;
 use crate::utils::auth_guards::{require_teacher, require_student};
 use crate::utils::error::AppError;

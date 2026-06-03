@@ -1,6 +1,6 @@
 //! Tests for common schema utilities
 
-use crate::schema::common::{success_response, ApiResponse};
+use crate::utils::response::{success_response, ApiResponse};
 use axum::http::StatusCode;
 
 #[test]

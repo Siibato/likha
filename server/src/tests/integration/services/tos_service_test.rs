@@ -1,7 +1,7 @@
 use uuid::Uuid;
 use crate::modules::class::repository::ClassRepository;
 use crate::modules::tos::repository::TosRepository;
-use crate::db::repositories::user_repository::UserRepository;
+use crate::modules::auth::UserRepository;
 use crate::tests::common::test_db::test_db;
 
 /// Helper: create a class + teacher participant so TOS CRUD auth checks pass

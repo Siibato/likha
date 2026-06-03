@@ -7,7 +7,7 @@ impl crate::modules::assessment::service::AssessmentService {
         &self,
         class_id: Uuid,
         student_id: Uuid,
-    ) -> AppResult<Vec<crate::schema::tasks_schema::StudentAssessmentListItem>> {
+    ) -> AppResult<Vec<crate::modules::tasks::schema::StudentAssessmentListItem>> {
         let assessments = self
             .assessment_repo
             .find_published_by_class_id(class_id)
@@ -20,7 +20,7 @@ impl crate::modules::assessment::service::AssessmentService {
                 .find_by_student_and_assessment(student_id, a.id)
                 .await?;
 
-            items.push(crate::schema::tasks_schema::StudentAssessmentListItem {
+            items.push(crate::modules::tasks::schema::StudentAssessmentListItem {
                 id: a.id,
                 title: a.title,
                 total_points: a.total_points,

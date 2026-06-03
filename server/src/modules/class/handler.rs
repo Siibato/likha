@@ -9,7 +9,7 @@ use uuid::Uuid;
 
 use crate::modules::auth::schema::MessageResponse;
 use crate::modules::class::schema::{AddStudentRequest, CreateClassRequest, UpdateClassRequest};
-use crate::schema::common::success_response;
+use crate::utils::response::success_response;
 use crate::modules::class::service::ClassService;
 use crate::middleware::auth_middleware::AuthUser;
 use crate::utils::auth_guards::require_teacher_or_admin;

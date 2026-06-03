@@ -10,7 +10,7 @@ use std::sync::Arc;
 use crate::modules::auth::schema::{
     ActivateAccountRequest, CheckUsernameRequest, LoginRequest, MessageResponse, RefreshTokenRequest,
 };
-use crate::schema::common::success_response;
+use crate::utils::response::success_response;
 use crate::modules::auth::service::AuthService;
 use crate::middleware::auth_middleware::AuthUser;
 

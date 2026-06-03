@@ -3,7 +3,7 @@ use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
 use crate::modules::learning_material::schema::FileMetadataResponse;
 use crate::modules::learning_material::service::{MAX_FILE_SIZE_MB, MAX_FILES_PER_MATERIAL};
-use crate::services::file_service;
+use crate::utils::file_service;
 
 impl crate::modules::learning_material::service::LearningMaterialService {
     pub async fn upload_file(

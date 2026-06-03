@@ -5,7 +5,7 @@ use crate::modules::class::repository::ClassRepository;
 use crate::tests::common::test_db::test_db;
 
 async fn setup(db: &sea_orm::DatabaseConnection) -> (Uuid, Uuid, Uuid) {
-    use crate::db::repositories::user_repository::UserRepository;
+    use crate::modules::auth::UserRepository;
     let class_id = ClassRepository::new(db.clone())
         .create_class("Class".to_string(), None, None, false)
         .await
@@ -62,7 +62,7 @@ async fn test_find_by_student_and_assessment() {
 
 #[tokio::test]
 async fn test_count_by_assessment_id() {
-    use crate::db::repositories::user_repository::UserRepository;
+    use crate::modules::auth::UserRepository;
     let db = test_db().await;
     let (_, assessment_id, student1) = setup(&db).await;
     let student2 = UserRepository::new(db.clone())

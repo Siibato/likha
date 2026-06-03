@@ -1,8 +1,8 @@
 use std::sync::Arc;
 use sea_orm::DatabaseConnection;
 
-use crate::db::repositories::manifest_repository::ManifestRepository;
-use crate::services::entitlement::EntitlementService;
+use crate::modules::sync::ManifestRepository;
+use crate::modules::entitlement::EntitlementService;
 
 /// Request for full sync
 #[derive(Debug, Clone, serde::Deserialize)]
