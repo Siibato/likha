@@ -1,4 +1,4 @@
-use crate::schema::class_schema::{
+use crate::modules::class::schema::{
     AddStudentRequest, CreateClassRequest, UpdateClassRequest,
 };
 

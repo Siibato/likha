@@ -1,7 +1,7 @@
 use uuid::Uuid;
-use crate::db::repositories::processed_operations_repository::ProcessedOperationsRepository;
-use crate::db::repositories::user_repository::UserRepository;
-use crate::services::sync_push::OperationResult;
+use crate::modules::sync::ProcessedOperationsRepository;
+use crate::modules::auth::UserRepository;
+use crate::modules::sync::service_operations::push::OperationResult;
 use crate::tests::common::test_db::test_db;
 
 fn sample_result() -> OperationResult {

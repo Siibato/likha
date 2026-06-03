@@ -6,26 +6,19 @@ use axum::http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::timeout::TimeoutLayer;
 
-use crate::db::repositories::{
-    manifest_repository::ManifestRepository,
-    processed_operations_repository::ProcessedOperationsRepository,
-};
-use crate::routes::api_routes;
-use crate::services::{
-    assessment::AssessmentService,
-    assignment::AssignmentService,
-    auth::AuthService,
-    class::ClassService,
-    entitlement::EntitlementService,
-    grade_computation::GradeComputationService,
-    learning_material::LearningMaterialService,
-    setup_service::SetupService,
-    sync_conflict_service::SyncConflictService,
-    sync_delta::SyncDeltaService,
-    sync_full::SyncFullService,
-    sync_push::SyncPushService,
-    tos::TosService,
-};
+use crate::modules::sync::{ManifestRepository, ProcessedOperationsRepository};
+use crate::modules::entitlement::EntitlementService;
+use crate::middleware::{RateLimitLayer, RateLimitStore};
+use crate::modules::setup::service::SetupService;
+use crate::modules::sync::service::{SyncPushService, SyncConflictService, SyncFullService, SyncDeltaService};
+use crate::modules::grading::service::GradeComputationService;
+
+use crate::modules::assessment::service::AssessmentService;
+use crate::modules::admin::service::AdminService;
+use crate::modules::assignment::service::AssignmentService;
+use crate::modules::class::service::ClassService;
+use crate::modules::learning_material::service::LearningMaterialService;
+use crate::modules::tos::service::TosService;
 
 /// The auth middleware reads JWT_SECRET from the env, falling back to this constant.
 /// We match it here so tokens generated in tests are accepted by the middleware.
@@ -37,18 +30,15 @@ pub const TEST_FILE_ENCRYPTION_KEY: [u8; 32] = [0u8; 32];
 pub async fn build_test_app(db: DatabaseConnection) -> Router {
     // Ensure JWT_SECRET is set so auth middleware does not panic.
     std::env::set_var("JWT_SECRET", TEST_JWT_SECRET);
-    let auth_service = Arc::new(AuthService::new(
+    let auth_service = Arc::new(crate::modules::auth::service::AuthService::new(
         db.clone(),
         TEST_JWT_SECRET.to_string(),
         3600,
     ));
+    let admin_service = Arc::new(AdminService::new(db.clone()));
     let class_service = Arc::new(ClassService::new(db.clone()));
     let assessment_service = Arc::new(AssessmentService::new(db.clone()));
-    let assignment_service = Arc::new(AssignmentService::new(
-        db.clone(),
-        TEST_FILE_STORAGE.to_string(),
-        TEST_FILE_ENCRYPTION_KEY,
-    ));
+    let assignment_service = Arc::new(AssignmentService::new(db.clone()));
     let material_service = Arc::new(LearningMaterialService::new(
         db.clone(),
         TEST_FILE_STORAGE.to_string(),
@@ -69,6 +59,7 @@ pub async fn build_test_app(db: DatabaseConnection) -> Router {
         assignment_service.clone(),
         material_service.clone(),
         auth_service.clone(),
+        admin_service.clone(),
         grade_computation_service.clone(),
         tos_service.clone(),
         processed_ops_repo,
@@ -90,24 +81,31 @@ pub async fn build_test_app(db: DatabaseConnection) -> Router {
         .allow_methods(Any)
         .allow_headers([AUTHORIZATION, CONTENT_TYPE, ACCEPT]);
 
+    let rate_limit_store = Arc::new(RateLimitStore::new());
+    let jwt_secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| TEST_JWT_SECRET.to_string());
+
+    let api = Router::new()
+        .merge(crate::modules::health::routes::routes())
+        .merge(crate::modules::auth::routes::routes(auth_service.clone()))
+        .merge(crate::modules::admin::routes::routes(admin_service))
+        .merge(crate::modules::class::routes::routes(class_service))
+        .merge(crate::modules::assessment::routes::routes(assessment_service.clone()))
+        .merge(crate::modules::assignment::routes::routes(assignment_service.clone()))
+        .merge(crate::modules::learning_material::routes::routes(material_service))
+        .merge(crate::modules::grading::routes::routes(grade_computation_service))
+        .merge(crate::modules::tos::routes::routes(tos_service))
+        .merge(crate::modules::setup::routes::routes(setup_service))
+        .merge(crate::modules::tasks::routes::routes(assignment_service, assessment_service))
+        .merge(crate::modules::sync::routes::routes(
+            sync_push_service,
+            sync_conflict_service,
+            sync_full_service,
+            sync_delta_service,
+        ))
+        .layer(RateLimitLayer::new(rate_limit_store, jwt_secret));
+
     Router::new()
-        .nest(
-            "/api/v1",
-            api_routes(
-                auth_service,
-                class_service,
-                assessment_service,
-                assignment_service,
-                material_service,
-                grade_computation_service,
-                tos_service,
-                setup_service,
-                sync_push_service,
-                sync_conflict_service,
-                sync_full_service,
-                sync_delta_service,
-            ),
-        )
+        .nest("/api/v1", api)
         .layer(TimeoutLayer::with_status_code(
             axum::http::StatusCode::REQUEST_TIMEOUT,
             Duration::from_secs(30),
