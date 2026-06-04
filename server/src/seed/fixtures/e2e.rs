@@ -116,18 +116,7 @@ pub fn e2e_users(ctx: &SeedContext) -> Vec<UserSpec> {
     let deleted = ctx.days_ago(6);
 
     vec![
-        // Admin
-        UserSpec {
-            id: ADMIN_ID,
-            username: "admin".into(),
-            full_name: "System Administrator".into(),
-            role: "admin".into(),
-            password_hash: None,
-            account_status: "pending_activation".into(),
-            created_at: created,
-            activated_at: None,
-            deleted_at: None,
-        },
+        // Note: Admin is created by reset-db, not included here to avoid duplicate username
         // Teachers
         UserSpec {
             id: TEACHER_01_ID,

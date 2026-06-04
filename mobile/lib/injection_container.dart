@@ -168,6 +168,10 @@ import 'package:likha/services/storage_service.dart';
 final sl = GetIt.instance;
 
 Future<void> init() async {
+  if (sl.isRegistered<FlutterSecureStorage>()) {
+    return;
+  }
+
   // External
   const secureStorage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),

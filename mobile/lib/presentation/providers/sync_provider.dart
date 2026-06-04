@@ -34,6 +34,12 @@ class SyncNotifier extends StateNotifier<SyncState> {
   }
 
   Future<void> refreshCounts() => _updateCounts();
+
+  @override
+  void dispose() {
+    _syncManager.setStateListener(null);
+    super.dispose();
+  }
 }
 
 final syncProvider = StateNotifierProvider<SyncNotifier, SyncState>((ref) {

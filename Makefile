@@ -6,20 +6,8 @@
 SERVER_DIR := server
 MOBILE_DIR := mobile
 
-TEST_PORT        ?= 18080
 TEST_DEVICE_HOST ?= 10.0.2.2
-TEST_DB          := $(SERVER_DIR)/data/lms_e2e_test.db
-
-export DATABASE_URL        := sqlite://$(TEST_DB)?mode=rwc
-export HOST                := 0.0.0.0
-export PORT                := $(TEST_PORT)
-export JWT_SECRET          := dev-secret-key-please-change-min-32-chars-for-production-use
-export DB_ENCRYPTION_KEY   := change-me-to-a-strong-random-key-min-32-chars
-export FILE_ENCRYPTION_KEY := 0000000000000000000000000000000000000000000000000000000000000000
-export SCHOOL_CODE         := E2ETST
-export ALLOWED_ORIGINS     :=
-export MAX_BODY_SIZE_MB    := 55
-export RUST_LOG            := info
+TEST_DB_URL      := sqlite://./data/lms_e2e_test.db?mode=rwc
 
 .SHELLFLAGS := -euo pipefail -c
 
@@ -55,7 +43,7 @@ db-reset:
 	@cd $(SERVER_DIR) && cargo run -- reset-db
 
 db-seed:
-	@cd $(SERVER_DIR) && cargo run -- reset-db && cargo run -- seed-e2e
+	@cd $(SERVER_DIR) && DATABASE_URL="$(TEST_DB_URL)" cargo run -- reset-db && DATABASE_URL="$(TEST_DB_URL)" cargo run -- seed-e2e
 
 db-delete:
 	@cd $(SERVER_DIR) && cargo run -- delete-db
@@ -79,7 +67,7 @@ test-mobile:
 	@cd $(MOBILE_DIR) && flutter test
 
 test-e2e-mobile: build db-seed
-	@./scripts/run-mobile-e2e.sh
+	@DATABASE_URL="$(TEST_DB_URL)" TEST_DEVICE_HOST=$(TEST_DEVICE_HOST) ./scripts/tests/run-mobile-e2e.sh
 
 test-e2e-desktop:
 	@echo "E2E desktop tests not yet implemented — run 'make test-e2e-mobile' instead"
