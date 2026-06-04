@@ -10,7 +10,7 @@ Future<GradeItemModel> createGradeItem(
 }) async {
   try {
     final response = await dioClient.dio.post(
-      dioClient.dio.options.baseUrl + '/classes/$classId/grade-items',
+      '${dioClient.dio.options.baseUrl}/classes/$classId/grade-items',
       data: data,
     );
     final responseData = response.data['data'] ?? response.data;

@@ -14,7 +14,7 @@ Future<List<GradeItemModel>> getGradeItems(
     if (component != null) queryParams['component'] = component;
 
     final response = await dioClient.dio.get(
-      dioClient.dio.options.baseUrl + '/classes/$classId/grade-items',
+      '${dioClient.dio.options.baseUrl}/classes/$classId/grade-items',
       queryParameters: queryParams,
     );
     final data = response.data['data'] ?? response.data;

@@ -9,7 +9,7 @@ Future<List<Map<String, dynamic>>> getGradeSummary(
 }) async {
   try {
     final response = await dioClient.dio.get(
-      dioClient.dio.options.baseUrl + '/classes/$classId/grades/summary',
+      '${dioClient.dio.options.baseUrl}/classes/$classId/grades/summary',
       queryParameters: {'grading_period_number': gradingPeriodNumber},
     );
     final data = response.data['data'] ?? response.data;

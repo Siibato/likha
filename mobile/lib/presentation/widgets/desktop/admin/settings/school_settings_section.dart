@@ -179,7 +179,7 @@ class _SchoolSettingsSectionState extends State<SchoolSettingsSection> {
         children: [
           const Text(
             'School Information',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: AppColors.foregroundPrimary,
@@ -331,9 +331,9 @@ class SchoolSettingsCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 'School Settings',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: AppColors.foregroundTertiary,

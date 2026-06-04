@@ -9,7 +9,7 @@ Future<List<PeriodGradeModel>> getMyGrades(
 }) async {
   try {
     final response = await dioClient.dio.get(
-      dioClient.dio.options.baseUrl + '/classes/$classId/my-grades',
+      '${dioClient.dio.options.baseUrl}/classes/$classId/my-grades',
     );
     final data = response.data['data'] ?? response.data;
     final grades = data['grades'] as List<dynamic>? ?? [];

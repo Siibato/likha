@@ -301,7 +301,7 @@ class _EnumerationAnswerDetail extends StatelessWidget {
               ],
             ),
           );
-        }).toList(),
+        }),
         if (answer.isCorrect != true &&
             answer.correctAnswers != null &&
             answer.correctAnswers!.isNotEmpty) ...[

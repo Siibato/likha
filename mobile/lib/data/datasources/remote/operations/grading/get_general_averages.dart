@@ -9,7 +9,7 @@ Future<GeneralAverageResponseModel> getGeneralAverages(
 }) async {
   try {
     final response = await dioClient.dio.get(
-      dioClient.dio.options.baseUrl + '/classes/$classId/general-averages',
+      '${dioClient.dio.options.baseUrl}/classes/$classId/general-averages',
     );
     final data = response.data['data'] ?? response.data;
     return GeneralAverageResponseModel.fromJson(

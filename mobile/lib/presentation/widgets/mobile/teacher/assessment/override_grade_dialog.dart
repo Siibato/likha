@@ -64,33 +64,32 @@ class _OverrideGradeDialogState extends State<OverrideGradeDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          RadioListTile<bool>(
-            title: const Text('Mark as Incorrect (0 points)'),
-            value: false,
+          RadioGroup<bool>(
             groupValue: _isCorrect,
             onChanged: (value) {
+              if (value == null) return;
               setState(() {
-                _isCorrect = value!;
-                _showPointsInput = false;
+                _isCorrect = value;
+                _showPointsInput = value;
                 _validationError = null;
               });
             },
-            contentPadding: EdgeInsets.zero,
-            dense: true,
-          ),
-          RadioListTile<bool>(
-            title: const Text('Mark as Correct (specify points)'),
-            value: true,
-            groupValue: _isCorrect,
-            onChanged: (value) {
-              setState(() {
-                _isCorrect = value!;
-                _showPointsInput = true;
-                _validationError = null;
-              });
-            },
-            contentPadding: EdgeInsets.zero,
-            dense: true,
+            child: const Column(
+              children: [
+                RadioListTile<bool>(
+                  title: Text('Mark as Incorrect (0 points)'),
+                  value: false,
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
+                RadioListTile<bool>(
+                  title: Text('Mark as Correct (specify points)'),
+                  value: true,
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
+              ],
+            ),
           ),
           if (_showPointsInput) ...[
             const SizedBox(height: 12),

@@ -7,7 +7,7 @@ Future<Map<String, dynamic>> getDepEdPresets(
 ) async {
   try {
     final response = await dioClient.dio.get(
-      dioClient.dio.options.baseUrl + '/grading-presets/deped',
+      '${dioClient.dio.options.baseUrl}/grading-presets/deped',
     );
     return (response.data['data'] ?? response.data) as Map<String, dynamic>;
   } on DioException catch (e) {

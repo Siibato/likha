@@ -11,7 +11,7 @@ Future<List<GradeConfigModel>> getGradingConfig(
   try {
     ProviderLogger.instance.debug('getGradingConfig called for classId: $classId');
     final response = await dioClient.dio.get(
-      dioClient.dio.options.baseUrl + '/classes/$classId/grading-config',
+      '${dioClient.dio.options.baseUrl}/classes/$classId/grading-config',
     );
     ProviderLogger.instance.debug('API response: ${response.data}');
     final raw = response.data['data'] ?? response.data;

@@ -74,9 +74,9 @@ impl super::SyncPushService {
             "create" => {
                 let assignment_id = extract_field!(self, op, parse_uuid_field, "assignment_id");
                 // Extract optional submission_id from payload (client-provided UUID)
-                let submission_id = self.parse_uuid_field(&op.payload, "id").ok();
+                let client_submission_id = self.parse_uuid_field(&op.payload, "id").ok();
 
-                match self.assignment_service.create_or_get_submission(assignment_id, user_id).await {
+                match self.assignment_service.create_or_get_submission(assignment_id, user_id, client_submission_id).await {
                     Ok(r) => self.success_result(op, Some(r.id.to_string()), Some(r.updated_at)),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }

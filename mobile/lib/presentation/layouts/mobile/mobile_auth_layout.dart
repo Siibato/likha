@@ -51,7 +51,7 @@ class MobileAuthLayout extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Center(
+                    const Center(
                       child: Text(
                         'Create, learn and grow.',
                         style: AppTextStyles.mobilePageSubtitle,

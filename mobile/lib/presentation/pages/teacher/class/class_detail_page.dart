@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/presentation/pages/teacher/class/class_student_list_page.dart';

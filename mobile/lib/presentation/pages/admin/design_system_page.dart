@@ -162,15 +162,15 @@ class DesignSystemPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    _DSSection(
+                    const _DSSection(
                       label: 'CHIPS',
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _ChipRow(label: 'DEFAULT'),
-                          const SizedBox(height: 12),
+                          SizedBox(height: 12),
                           _ChipRow(label: 'DARK', variant: InfoChipVariant.dark),
-                          const SizedBox(height: 12),
+                          SizedBox(height: 12),
                           _ChipRow(label: 'ACCENT', variant: InfoChipVariant.accent),
                         ],
                       ),

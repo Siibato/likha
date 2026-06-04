@@ -44,14 +44,6 @@ class _AdminClassDetailDesktopState
           (c) => c?.id == widget.classId,
           orElse: () => null,
         );
-    final teacherName = classInfo != null
-        ? (classInfo.teacherFullName.isNotEmpty
-            ? classInfo.teacherFullName
-            : classInfo.teacherUsername)
-        : 'Unknown';
-
-    final isAdvisory =
-        detail?.isAdvisory == true || (classInfo?.isAdvisory == true);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
@@ -211,14 +203,14 @@ class _AdminClassDetailDesktopState
                 color: AppColors.backgroundTertiary,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                child: Row(
+                child: const Row(
                   children: [
                     Expanded(
                         child: Text('Student', style: _headerStyle)),
-                    const SizedBox(
+                    SizedBox(
                         width: 150,
                         child: Text('Username', style: _headerStyle)),
-                    const SizedBox(
+                    SizedBox(
                         width: 120,
                         child: Text('Joined', style: _headerStyle)),
                   ],

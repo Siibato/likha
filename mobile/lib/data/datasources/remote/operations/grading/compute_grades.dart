@@ -9,7 +9,7 @@ Future<void> computeGrades(
 }) async {
   try {
     await dioClient.dio.post(
-      dioClient.dio.options.baseUrl + '/classes/$classId/grades/compute',
+      '${dioClient.dio.options.baseUrl}/classes/$classId/grades/compute',
       queryParameters: {'grading_period_number': gradingPeriodNumber},
     );
   } on DioException catch (e) {

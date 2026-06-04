@@ -9,7 +9,7 @@ Future<void> saveScores(
 }) async {
   try {
     await dioClient.dio.put(
-      dioClient.dio.options.baseUrl + '/grade-items/$gradeItemId/scores',
+      '${dioClient.dio.options.baseUrl}/grade-items/$gradeItemId/scores',
       data: {'scores': scores},
     );
   } on DioException catch (e) {

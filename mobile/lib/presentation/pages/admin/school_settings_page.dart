@@ -220,7 +220,7 @@ class _AdminSchoolSettingsPageState extends State<AdminSchoolSettingsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  InfoPanel(
+                  const InfoPanel(
                     child: Text(
                       'These settings are used in printed reports (TOS, Item Analysis) for DepEd-formatted headers.',
                       style: TextStyle(

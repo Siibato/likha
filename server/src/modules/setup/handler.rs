@@ -17,7 +17,7 @@ pub async fn verify_code(
     State(setup_service): State<Arc<SetupService>>,
     Query(query): Query<VerifyQuery>,
 ) -> impl IntoResponse {
-    match setup_service.verify_code(&query.code).await {
+    match setup_service.verify_school_code(&query.code).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }

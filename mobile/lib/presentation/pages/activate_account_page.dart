@@ -92,7 +92,7 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            Text(
+            const Text(
               'Create a password to activate your account',
               style: TextStyle(
                 fontSize: 15,
@@ -157,7 +157,7 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(13),
-                      borderSide: BorderSide(
+                      borderSide: const BorderSide(
                         color: AppColors.accentCharcoal,
                         width: 1.5,
                       ),
@@ -237,7 +237,7 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(13),
-                      borderSide: BorderSide(
+                      borderSide: const BorderSide(
                         color: AppColors.accentCharcoal,
                         width: 1.5,
                       ),
@@ -288,7 +288,7 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
                     ),
                   ),
                   child: isLoading
-                      ? SizedBox(
+                      ? const SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
@@ -296,7 +296,7 @@ class _ActivateAccountPageState extends ConsumerState<ActivateAccountPage> {
                             color: AppColors.foregroundTertiary,
                           ),
                         )
-                      : Text(
+                      : const Text(
                           'Activate Account',
                           style: TextStyle(
                             fontSize: 16,

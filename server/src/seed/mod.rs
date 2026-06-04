@@ -7,4 +7,5 @@ pub mod tools;
 
 // Re-export key types for convenience
 pub use scenarios::e2e::seed_e2e_world;
+pub use scenarios::manual::seed_manual_world;
 pub use tools::{SeedContext, seed_id};

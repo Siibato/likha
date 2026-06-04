@@ -164,7 +164,7 @@ class AccountDataTable extends StatelessWidget {
       },
       onTap: onTap,
       rowsPerPage: rowsPerPage,
-      emptyState: EmptyState.generic(
+      emptyState: const EmptyState.generic(
         title: 'No accounts found',
         subtitle: 'No accounts match your search criteria',
         icon: Icons.person_outline_rounded,

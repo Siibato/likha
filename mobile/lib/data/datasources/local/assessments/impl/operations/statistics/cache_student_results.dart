@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:likha/core/database/db_schema.dart';
+import 'package:likha/core/logging/cache_logger.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/data/models/assessments/submission_model.dart';
 import 'package:sqflite/sqflite.dart';
@@ -21,5 +22,6 @@ Future<void> cacheStudentResultsOp(
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   } catch (e) {
+    CacheLogger.instance.warn('Failed to cache student results', e);
   }
 }

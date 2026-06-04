@@ -9,7 +9,7 @@ Future<Map<String, dynamic>> getMyGradeDetail(
 }) async {
   try {
     final response = await dioClient.dio.get(
-      dioClient.dio.options.baseUrl + '/classes/$classId/my-grades/$gradingPeriodNumber',
+      '${dioClient.dio.options.baseUrl}/classes/$classId/my-grades/$gradingPeriodNumber',
     );
     return (response.data['data'] ?? response.data) as Map<String, dynamic>;
   } on DioException catch (e) {

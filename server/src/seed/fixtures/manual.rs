@@ -580,9 +580,9 @@ pub fn manual_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
             // Time window: 60% closed, 30% open, 10% future
             let time_window = assess_global_idx % 10;
             let (open_at, close_at, is_closed, is_future) = match time_window {
-                0..=5 => (ctx.days_ago(7), ctx.days_ago(1), true, false),      // Closed (60%)
-                6..=8 => (ctx.days_ago(1), ctx.days_from_now(7), false, false), // Open (30%)
-                _ => (ctx.days_from_now(1), ctx.days_from_now(14), false, true),  // Future (10%)
+                0..=5 => (now - chrono::Duration::days(7), now - chrono::Duration::days(1), true, false),      // Closed (60%)
+                6..=8 => (now - chrono::Duration::days(1), now + chrono::Duration::days(7), false, false), // Open (30%)
+                _ => (now + chrono::Duration::days(1), now + chrono::Duration::days(14), false, true),  // Future (10%)
             };
 
             let is_published = !is_future;
@@ -601,7 +601,6 @@ pub fn manual_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
                 class_idx,
                 assess_idx,
                 question_count,
-                tos_id,
             );
 
             let total_points: i32 = questions.iter().map(|q| q.points).sum();
@@ -641,7 +640,7 @@ pub fn manual_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
     // Add 1 soft-deleted assessment
     let deleted_class_id = class_id("math_8a");
     let deleted_tos_id = tos_id("math_8a_tos");
-    let deleted_questions = generate_questions("math_8a", 0, 99, 5, &deleted_tos_id);
+    let deleted_questions = generate_questions("math_8a", 0, 99, 5);
     let deleted_total_points: i32 = deleted_questions.iter().map(|q| q.points).sum();
 
     assessments.push(AssessmentSpec {
@@ -673,7 +672,6 @@ fn generate_questions(
     class_idx: usize,
     assess_idx: usize,
     count: usize,
-    tos_id: &Uuid,
 ) -> Vec<QuestionSpec> {
     let mut questions = Vec::with_capacity(count);
 
@@ -843,7 +841,6 @@ pub fn manual_assignments(ctx: &SeedContext) -> Vec<AssignmentSpec> {
 
 pub fn manual_materials(ctx: &SeedContext) -> Vec<MaterialSpec> {
     let created = ctx.days_ago(20);
-    let deleted = ctx.days_ago(2);
 
     let class_configs = [
         ("math_8a", class_id("math_8a")),
@@ -873,7 +870,7 @@ pub fn manual_materials(ctx: &SeedContext) -> Vec<MaterialSpec> {
 
     let mut materials = Vec::with_capacity(45);
 
-    for (class_idx, (class_key, class_id)) in class_configs.iter().enumerate() {
+    for (class_key, class_id) in &class_configs {
         for mat_idx in 0..3 {
             let mat_id = material_id(&format!("{}_mat_{}", class_key, mat_idx));
 
@@ -888,17 +885,6 @@ pub fn manual_materials(ctx: &SeedContext) -> Vec<MaterialSpec> {
             });
         }
     }
-
-    // Add 1 soft-deleted learning material
-    materials.push(MaterialSpec {
-        id: material_id("deleted_extra_notes"),
-        class_id: class_id("math_8a"),
-        title: "[DELETED] Extra Notes".into(),
-        description: Some("Seeded material for manual testing.".into()),
-        content_text: Some("This material is soft-deleted and should not appear in the UI.".into()),
-        order_index: 3,
-        created_at: ctx.days_ago(10),
-    });
 
     materials
 }

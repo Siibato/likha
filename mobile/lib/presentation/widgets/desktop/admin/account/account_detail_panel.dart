@@ -32,7 +32,7 @@ class AccountDetailPanel extends StatelessWidget {
     return BaseActionCard(
       title: 'Account Information',
       subtitle: user.username,
-      icon: Icon(Icons.person_outline_rounded),
+      icon: const Icon(Icons.person_outline_rounded),
       actions: [
         if (user.accountStatus != 'locked')
           _ActionChip(

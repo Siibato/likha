@@ -1,5 +1,3 @@
-import 'package:sqflite/sqflite.dart';
-
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/data/models/grading/period_grade_model.dart';

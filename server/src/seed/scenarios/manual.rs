@@ -76,11 +76,11 @@ pub async fn seed_manual_world(db: &DatabaseConnection) -> Result<(), AppError> 
     inserters::grading::insert_grade_records(db, &grade_records, ctx.now()).await?;
 
     // Generate and insert grade scores (5% have overrides)
-    let grade_scores = generate_grade_scores(&students, &classes, &assessments, &assignments, &enrollments, &ctx);
+    let grade_scores = generate_grade_scores(&students, &assessments, &assignments, &enrollments, &ctx);
     inserters::grading::insert_grade_scores(db, &grade_scores, ctx.now()).await?;
 
     // Generate and insert period grades
-    let period_grades = generate_period_grades(&students, &classes, &grade_records, &grade_scores, &ctx);
+    let period_grades = generate_period_grades(&students, &grade_records, &grade_scores, &ctx);
     inserters::grading::insert_period_grades(db, &period_grades, ctx.now()).await?;
 
     enable_foreign_keys(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
@@ -130,7 +130,6 @@ fn generate_grade_records(classes: &[crate::seed::specs::ClassSpec]) -> Vec<crat
 
 fn generate_grade_scores(
     students: &[crate::seed::specs::UserSpec],
-    classes: &[crate::seed::specs::ClassSpec],
     assessments: &[crate::seed::specs::AssessmentSpec],
     assignments: &[crate::seed::specs::AssignmentSpec],
     enrollments: &[crate::seed::specs::EnrollmentSpec],
@@ -140,6 +139,7 @@ fn generate_grade_scores(
     use uuid::Uuid;
 
     let mut scores = Vec::new();
+    let now = ctx.now();
 
     // Build class -> students map
     let mut class_students: std::collections::HashMap<Uuid, Vec<usize>> = std::collections::HashMap::new();
@@ -155,7 +155,7 @@ fn generate_grade_scores(
     let mut item_counter = 0;
 
     for assessment in assessments {
-        if !assessment.is_published || assessment.deleted_at.is_some() {
+        if !assessment.is_published || assessment.deleted_at.is_some() || assessment.open_at > now {
             continue;
         }
 
@@ -188,7 +188,7 @@ fn generate_grade_scores(
     }
 
     for assignment in assignments {
-        if !assignment.is_published || assignment.deleted_at.is_some() {
+        if !assignment.is_published || assignment.deleted_at.is_some() || assignment.due_at > now {
             continue;
         }
 
@@ -223,7 +223,6 @@ fn generate_grade_scores(
 
 fn generate_period_grades(
     students: &[crate::seed::specs::UserSpec],
-    classes: &[crate::seed::specs::ClassSpec],
     grade_records: &[crate::seed::specs::GradeRecordSpec],
     grade_scores: &[crate::seed::specs::GradeScoreSpec],
     ctx: &SeedContext,
@@ -263,7 +262,7 @@ fn generate_period_grades(
                 initial_grade: Some(initial_grade),
                 transmuted_grade: Some(transmuted),
                 is_locked: false,
-                computed_at: Some(ctx.days_ago(1)),
+                computed_at: Some(ctx.days_ago(1 + student_idx as i64)),
             });
         }
     }

@@ -11,13 +11,11 @@ use crate::modules::setup::service_operations as ops;
 use crate::utils::AppResult;
 
 pub struct SetupService {
-    db: DatabaseConnection,
     setup_repo: SetupRepository,
     activity_log_repo: ActivityLogRepository,
 }
 
 impl SetupService {
-    /// Creates the service and seeds the school_settings row if it doesn't exist.
     pub async fn new(db: DatabaseConnection, default_school_code: String) -> Self {
         let setup_repo = SetupRepository::new(db.clone());
         let activity_log_repo = ActivityLogRepository::new(db.clone());
@@ -27,7 +25,6 @@ impl SetupService {
         }
 
         Self {
-            db,
             setup_repo,
             activity_log_repo,
         }
@@ -38,7 +35,7 @@ impl SetupService {
     // ---------------------------------------------------------------------------
 
     /// Verifies a school code (case-insensitive). Returns school_name on match.
-    pub async fn verify_code(&self, code: &str) -> AppResult<VerifyResponse> {
+    pub async fn verify_school_code(&self, code: &str) -> AppResult<VerifyResponse> {
         ops::verify_code(&self.setup_repo, code).await
     }
 

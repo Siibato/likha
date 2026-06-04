@@ -46,7 +46,7 @@ pub fn generate_assessment_submissions(
         // Get students enrolled in this class
         let enrolled_students = class_students.get(&assessment.class_id).cloned().unwrap_or_default();
 
-        for (student_idx_in_class, student_id) in enrolled_students.iter().enumerate() {
+        for student_id in &enrolled_students {
             let Some(&global_student_idx) = student_indices.get(student_id) else {
                 continue;
             };
@@ -184,7 +184,7 @@ pub fn generate_assignment_submissions(
         // Get a teacher for grading
         let teacher_id = teachers.get(assign_idx % teachers.len()).map(|t| t.id);
 
-        for (student_idx_in_class, student_id) in enrolled_students.iter().enumerate() {
+        for student_id in &enrolled_students {
             let Some(&global_student_idx) = student_indices.get(student_id) else {
                 continue;
             };

@@ -121,6 +121,7 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
     // Handle results - navigate back after brief delay to show message
     if (anyUploadFailed) {
       await Future.delayed(const Duration(milliseconds: 100));
+      if (!mounted) return;
       AppDialogs.showConfirmation(
         context: context,
         title: 'Upload Partially Complete',

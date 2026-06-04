@@ -61,6 +61,7 @@ dependencies:
   # School setup flow
   app_links: ^6.3.2         # Deep link handling (likha://setup?server=cloud)
   mobile_scanner: ^5.2.3    # QR camera scanner
+  web: ^1.1.1
 
 dependency_overrides:
   shared_preferences_android: 2.4.17

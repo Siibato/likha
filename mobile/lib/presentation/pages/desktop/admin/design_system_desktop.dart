@@ -129,16 +129,16 @@ class DesignSystemDesktop extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 40),
-          _DSSection(
+          const _DSSection(
             label: 'BADGES',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const _BadgeRow(label: 'OUTLINED'),
-                const SizedBox(height: 16),
-                const _BadgeRow(label: 'FILLED', filled: true),
-                const SizedBox(height: 20),
-                const Text(
+                _BadgeRow(label: 'OUTLINED'),
+                SizedBox(height: 16),
+                _BadgeRow(label: 'FILLED', filled: true),
+                SizedBox(height: 20),
+                Text(
                   'PALETTE VARIANTS',
                   style: TextStyle(
                     fontSize: 10,
@@ -147,8 +147,8 @@ class DesignSystemDesktop extends StatelessWidget {
                     letterSpacing: 1.1,
                   ),
                 ),
-                const SizedBox(height: 10),
-                const _PaletteBadgeRow(),
+                SizedBox(height: 10),
+                _PaletteBadgeRow(),
               ],
             ),
           ),
@@ -159,7 +159,7 @@ class DesignSystemDesktop extends StatelessWidget {
               spacing: 24,
               runSpacing: 16,
               children: [
-                _ChipTile(label: 'DEFAULT', chip: const InfoChip(icon: Icons.info_outline_rounded, label: 'Label')),
+                const _ChipTile(label: 'DEFAULT', chip: InfoChip(icon: Icons.info_outline_rounded, label: 'Label')),
                 _ChipTile(label: 'DARK', chip: InfoChip.dark(icon: Icons.class_outlined, label: 'Label')),
                 _ChipTile(label: 'ACCENT', chip: InfoChip.accent(icon: Icons.star_rounded, label: 'Label')),
               ],
