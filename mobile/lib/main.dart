@@ -16,11 +16,13 @@ void main() async {
 
   // Initialize sqflite for non-Android/iOS platforms
   initializeSqflite();
-  try {
-    await dotenv.load(fileName: '.env');
-  } catch (e) {
-    // .env not found - will use fallback URL
-    CoreLogger.instance.warn('.env file not loaded: $e');
+  if (dotenv.env.isEmpty) {
+    try {
+      await dotenv.load(fileName: '.env');
+    } catch (e) {
+      // .env not found - will use fallback URL
+      CoreLogger.instance.warn('.env file not loaded: $e');
+    }
   }
   await di.init();
 
