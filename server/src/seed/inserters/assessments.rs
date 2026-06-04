@@ -25,7 +25,7 @@ pub async fn insert_assessment_with_questions(
         spec.total_points,
         Some(spec.id),
         false, // allow_retake
-        Some(1), // grading_period_number
+        Some(spec.grading_period_number),
         Some(spec.component.clone()),
         Some(spec.tos_id.to_string()),
     )

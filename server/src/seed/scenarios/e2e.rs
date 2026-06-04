@@ -45,7 +45,7 @@ pub async fn seed_e2e_world(db: &DatabaseConnection) -> Result<(), AppError> {
     inserters::submissions::insert_assignment_submissions(db, &assignment_submissions).await?;
 
     let grade_records = fixtures::e2e_grade_records();
-    inserters::grading::insert_grade_records(db, &grade_records).await?;
+    inserters::grading::insert_grade_records(db, &grade_records, ctx.now()).await?;
 
     enable_foreign_keys(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
 

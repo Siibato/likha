@@ -93,6 +93,13 @@ async fn main() {
                     .expect("Failed to connect to database");
                 run_migrations(&db).await.expect("Failed to run migrations");
                 seed_admin(&db).await.expect("Failed to seed admin account");
+
+                if args.iter().any(|arg| arg == "--with-seed") {
+                    println!("Seeding manual testing world...");
+                    server::seed::scenarios::manual::seed_manual_world(&db).await.expect("Manual seed failed");
+                    println!("Manual seed complete.");
+                }
+
                 println!("Database reset complete");
                 return;
             }
@@ -114,14 +121,55 @@ async fn main() {
                 println!("E2E seed complete.");
                 return;
             }
+            "seed-manual" => {
+                println!("Seeding manual testing world...");
+                let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
+                    .await
+                    .expect("Failed to connect to database");
+                server::seed::scenarios::manual::seed_manual_world(&db).await.expect("Manual seed failed");
+                println!("Manual seed complete.");
+                return;
+            }
+            "deseed" => {
+                use sea_orm::ConnectionTrait;
+                println!("Clearing all seeded data and re-initializing...");
+                let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
+                    .await
+                    .expect("Failed to connect to database");
+
+                // Get all table names to clear (excluding migrations)
+                let tables = vec![
+                    "users", "classes", "enrollments", "assessments", "assessment_questions",
+                    "question_choices", "answer_keys", "tos_competencies", "table_of_specifications",
+                    "assignments", "learning_materials", "assessment_submissions", "submission_answers",
+                    "submission_answer_items", "assignment_submissions", "grade_record", "grade_items",
+                    "grade_scores", "period_grades", "activity_logs", "advisory_class_students",
+                    "sync_manifest", "sync_processed_operations",
+                ];
+
+                for table in tables {
+                    let sql = format!("DELETE FROM {}", table);
+                    if let Err(e) = db.execute_unprepared(&sql).await {
+                        eprintln!("Warning: Failed to clear table {}: {}", table, e);
+                    }
+                }
+
+                // Reset admin account
+                seed_admin(&db).await.expect("Failed to seed admin account");
+                println!("Deseed complete. All data cleared, admin account reset.");
+                return;
+            }
             other => {
                 eprintln!("Unknown command: {}", other);
                 eprintln!("Available commands:");
                 eprintln!("  create-db               Create the database and run migrations");
                 eprintln!("  delete-db               Delete the database file");
                 eprintln!("  reset-db                Delete and recreate the database");
+                eprintln!("  reset-db --with-seed    Reset and seed manual test data");
                 eprintln!("  clear-invalid-attempts  Clear all login attempt records");
                 eprintln!("  seed-e2e                Seed deterministic E2E world data");
+                eprintln!("  seed-manual             Seed manual testing world data");
+                eprintln!("  deseed                  Clear all seeded data and reset admin");
                 std::process::exit(1);
             }
         }

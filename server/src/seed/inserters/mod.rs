@@ -1,3 +1,4 @@
+pub mod activity_logs;
 pub mod assessments;
 pub mod assignments;
 pub mod classes;

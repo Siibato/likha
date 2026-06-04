@@ -83,6 +83,7 @@ pub struct AssessmentSpec {
     pub deleted_at: Option<NaiveDateTime>,
     pub is_published: bool,
     pub results_released: bool,
+    pub grading_period_number: i32,
     pub questions: Vec<QuestionSpec>,
 }
 
@@ -103,6 +104,7 @@ pub struct QuestionSpec {
 
 #[derive(Debug, Clone)]
 pub struct ChoiceSpec {
+    pub id: Uuid,
     pub text: String,
     pub is_correct: bool,
     pub order: i32,
@@ -189,7 +191,7 @@ pub struct SchoolSettingsSpec {
 #[derive(Debug, Clone)]
 pub struct GradeRecordSpec {
     pub class_id: Uuid,
-    pub grading_period_type: String,
+    pub grading_period_number: i32,
     pub ww_weight: f64,
     pub pt_weight: f64,
     pub qa_weight: f64,
@@ -213,4 +215,13 @@ pub struct PeriodGradeSpec {
     pub transmuted_grade: Option<i32>,
     pub is_locked: bool,
     pub computed_at: Option<NaiveDateTime>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ActivityLogSpec {
+    pub id: Uuid,
+    pub user_id: Uuid,
+    pub action: String,
+    pub details: Option<String>,
+    pub created_at: NaiveDateTime,
 }

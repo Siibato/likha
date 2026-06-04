@@ -1,20 +1,28 @@
 use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
 use uuid::Uuid;
 
-use crate::modules::grading::repository::GradeComputationRepository;
 use crate::seed::specs::{GradeRecordSpec, GradeScoreSpec, PeriodGradeSpec};
 use crate::utils::AppError;
-use ::entity::{grade_scores, period_grades};
+use ::entity::{grade_record, grade_scores, period_grades};
 
 pub async fn insert_grade_records(
     db: &DatabaseConnection,
     specs: &[GradeRecordSpec],
+    now: chrono::NaiveDateTime,
 ) -> Result<(), AppError> {
-    let repo = GradeComputationRepository::new(db.clone());
-
     for spec in specs {
-        repo.setup_defaults(spec.class_id, &spec.grading_period_type)
-            .await?;
+        let record = grade_record::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            class_id: Set(spec.class_id),
+            grading_period_number: Set(Some(spec.grading_period_number)),
+            ww_weight: Set(spec.ww_weight),
+            pt_weight: Set(spec.pt_weight),
+            qa_weight: Set(spec.qa_weight),
+            created_at: Set(now),
+            updated_at: Set(now),
+            deleted_at: Set(None),
+        };
+        record.insert(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
     }
 
     Ok(())
