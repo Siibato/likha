@@ -11,7 +11,7 @@ TEST_DB_URL      := sqlite://./data/lms_e2e_test.db?mode=rwc
 
 .SHELLFLAGS := -euo pipefail -c
 
-.PHONY: help setup dev dev-server dev-mobile dev-web dev-desktop db-reset db-seed db-delete build build-apk build-macos build-windows test-server test-mobile test-e2e-mobile test-e2e-desktop format lint docker-up docker-down clean
+.PHONY: help setup dev dev-server dev-mobile dev-web dev-desktop db-reset db-seed db-delete build build-apk build-macos build-windows test-server test-mobile test-e2e-auth test-e2e-admin test-e2e-mobile test-e2e-desktop format lint docker-up docker-down clean
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-22s\033[0m %s\n", $$1, $$2}'
@@ -66,8 +66,13 @@ test-server:
 test-mobile:
 	@cd $(MOBILE_DIR) && flutter test
 
-test-e2e-mobile: build db-seed
-	@DATABASE_URL="$(TEST_DB_URL)" TEST_DEVICE_HOST=$(TEST_DEVICE_HOST) ./scripts/tests/run-mobile-e2e.sh
+test-e2e-auth: build db-seed
+	@DATABASE_URL="$(TEST_DB_URL)" TEST_DEVICE_HOST=$(TEST_DEVICE_HOST) ./scripts/tests/run-mobile-e2e.sh "integration_test/mobile/auth_e2e_test.dart"
+
+test-e2e-admin: build db-seed
+	@DATABASE_URL="$(TEST_DB_URL)" TEST_DEVICE_HOST=$(TEST_DEVICE_HOST) ./scripts/tests/run-mobile-e2e.sh "integration_test/mobile/admin_e2e_test.dart"
+
+test-e2e-mobile: test-e2e-auth test-e2e-admin
 
 test-e2e-desktop:
 	@echo "E2E desktop tests not yet implemented — run 'make test-e2e-mobile' instead"

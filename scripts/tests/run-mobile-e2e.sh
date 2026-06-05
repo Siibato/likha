@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
-# Mobile Auth E2E Test Runner
+# Mobile E2E Test Runner
 #
 # Starts the seeded test server, waits for it to be healthy, runs Flutter
-# integration tests, then shuts the server down. Called by `make test-e2e-mobile`.
+# integration tests, then shuts the server down.
+#
+# Usage:
+#   ./run-mobile-e2e.sh [test-path]
+#
+# Arguments:
+#   test-path   Flutter test file or directory (default: integration_test/mobile/auth_e2e_test.dart)
+#
 # Environment variables inherited from the Makefile:
 #   DATABASE_URL  - overrides the test database URL
 #   TEST_DEVICE_HOST - device host for Flutter test URL
@@ -16,6 +23,9 @@ MOBILE_DIR="$PROJECT_ROOT/mobile"
 
 TEST_DEVICE_HOST="${TEST_DEVICE_HOST:-10.0.2.2}"
 TEST_DB_URL="${TEST_DB_URL:-sqlite://./data/lms_e2e_test.db?mode=rwc}"
+
+# Resolve test path argument; default to auth e2e test
+TEST_PATH="${1:-integration_test/mobile/auth_e2e_test.dart}"
 
 SERVER_PID=""
 
@@ -56,7 +66,8 @@ if [ "$DEVICE_COUNT" -eq 0 ]; then
   exit 1
 fi
 
-flutter test integration_test/mobile/auth_e2e_test.dart \
+echo "Running E2E test: $TEST_PATH"
+flutter test "$TEST_PATH" \
   --dart-define=TEST_SERVER_URL="http://${TEST_DEVICE_HOST}:${SERVER_PORT}"
 
 echo "All tests passed."

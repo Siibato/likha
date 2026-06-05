@@ -1,6 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'pages/account_detail_page.dart';
+import 'pages/account_management_page.dart';
+import 'pages/activate_account_page.dart';
+import 'pages/admin_dashboard_page.dart';
 import 'pages/connection_method_page.dart';
+import 'pages/create_account_page.dart';
 import 'pages/home_page.dart';
 import 'pages/login_page.dart';
 import 'pages/login_password_page.dart';
@@ -8,13 +13,6 @@ import 'pages/school_code_page.dart';
 import 'pages/sync_loading_page.dart';
 import 'pages/welcome_page.dart';
 
-/// Registry of all page objects for a single test.
-///
-/// Usage:
-/// ```dart
-/// final pages = MobilePages(tester);
-/// await pages.welcome.tapGetStarted();
-/// ```
 class MobilePages {
   final WidgetTester tester;
 
@@ -25,6 +23,11 @@ class MobilePages {
   late final SchoolCodePage schoolCode = SchoolCodePage(tester);
   late final LoginPage login = LoginPage(tester);
   late final LoginPasswordPage password = LoginPasswordPage(tester);
+  late final ActivateAccountPage activateAccount = ActivateAccountPage(tester);
+  late final AdminDashboardPage adminDashboard = AdminDashboardPage(tester);
+  late final CreateAccountPage createAccount = CreateAccountPage(tester);
+  late final AccountManagementPage accountManagement = AccountManagementPage(tester);
+  late final AccountDetailPage accountDetail = AccountDetailPage(tester);
   late final SyncLoadingPage syncLoading = SyncLoadingPage(tester);
   late final HomePage home = HomePage(tester);
 }

@@ -6,7 +6,6 @@ abstract class BasePage {
 
   static const Duration defaultTimeout = Duration(seconds: 10);
 
-  /// Pump until [finder] matches at least one widget.
   Future<void> pumpUntilFound(
     Finder finder, {
     Duration timeout = defaultTimeout,
@@ -19,7 +18,6 @@ abstract class BasePage {
     throw TestFailure('Timed out waiting for $finder');
   }
 
-  /// Pump until [finder] matches no widgets.
   Future<void> pumpUntilNotFound(
     Finder finder, {
     Duration timeout = defaultTimeout,

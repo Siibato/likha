@@ -6,7 +6,6 @@ import 'support/flows/auth_flow.dart';
 import 'support/mobile_pages.dart';
 import 'support/test_setup_helper.dart';
 
-/// Server must be running with E2E seed (school code: E2ETST).
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 

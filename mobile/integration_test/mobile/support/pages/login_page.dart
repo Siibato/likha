@@ -9,6 +9,7 @@ class LoginPage extends BasePage {
 
   static const String subtitleText = 'Enter your username to continue';
   static const String continueLabel = 'Continue';
+  static const String lockedErrorText = 'This account is locked. Contact an administrator.';
 
   Finder get _usernameField => find.byType(StyledTextField);
   Finder get _continueButton => find.widgetWithText(ElevatedButton, continueLabel);
@@ -25,5 +26,9 @@ class LoginPage extends BasePage {
   Future<void> tapContinue() async {
     await tester.tap(_continueButton);
     await tester.pumpAndSettle(const Duration(seconds: 5));
+  }
+
+  void expectLockedErrorVisible() {
+    expect(find.text(lockedErrorText), findsOneWidget);
   }
 }

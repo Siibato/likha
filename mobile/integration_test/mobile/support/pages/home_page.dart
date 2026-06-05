@@ -6,6 +6,8 @@ class HomePage extends BasePage {
   HomePage(super.tester);
 
   static const String classesTabText = 'Classes';
+  static const String profileTabLabel = 'Profile';
+  static const String logoutLabel = 'Log out';
 
   Future<void> waitForClassesTab({Duration timeout = const Duration(seconds: 30)}) async {
     final end = DateTime.now().add(timeout);
@@ -17,7 +19,6 @@ class HomePage extends BasePage {
         return;
       }
 
-      // If sync failed, tap "Continue Anyway" to proceed
       final continueAnyway = find.text('Continue Anyway');
       if (continueAnyway.evaluate().isNotEmpty) {
         await tester.tap(continueAnyway);
@@ -26,6 +27,16 @@ class HomePage extends BasePage {
       }
     }
     throw TestFailure('Timed out waiting for home page / Classes tab');
+  }
+
+  Future<void> tapProfileTab() async {
+    await tester.tap(find.text(profileTabLabel));
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> tapLogout() async {
+    await tester.tap(find.text(logoutLabel));
+    await tester.pumpAndSettle(const Duration(seconds: 3));
   }
 
   void expectClassesTabVisible() {

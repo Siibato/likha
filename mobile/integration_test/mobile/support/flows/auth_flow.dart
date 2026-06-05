@@ -21,8 +21,6 @@ class AuthFlow {
     await pages.schoolCode.enterSchoolCode(schoolCode);
     await pages.schoolCode.tapConnect();
 
-    // After successful connection the app restarts to AuthWrapper.
-    // Wait for the initial loading spinner to disappear before asserting LoginPage.
     await pages.schoolCode.pumpUntilNotFound(find.byType(CircularProgressIndicator));
 
     await pages.login.waitUntilVisible();
@@ -73,8 +71,6 @@ class AuthFlow {
     await pages.schoolCode.enterSchoolCode(schoolCode);
     await pages.schoolCode.tapConnect();
 
-    // After successful connection the app restarts to AuthWrapper.
-    // Wait for the initial loading spinner to disappear before asserting LoginPage.
     await pages.schoolCode.pumpUntilNotFound(find.byType(CircularProgressIndicator));
 
     await pages.login.waitUntilVisible();
