@@ -111,6 +111,8 @@ class ClassNotifier extends StateNotifier<ClassState> {
 
     final result = await _getMyClasses(skipBackgroundRefresh: skipBackgroundRefresh);
 
+    if (!mounted) return;
+
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
@@ -128,6 +130,8 @@ class ClassNotifier extends StateNotifier<ClassState> {
     state = state.copyWith(isLoading: true, clearError: true);
 
     final result = await _getAllClasses(skipBackgroundRefresh: skipBackgroundRefresh);
+
+    if (!mounted) return;
 
     result.fold(
       (failure) => state = state.copyWith(
