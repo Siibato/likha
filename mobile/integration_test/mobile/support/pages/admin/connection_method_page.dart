@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '_base_page.dart';
+import '../_base_page.dart';
 
 class ConnectionMethodPage extends BasePage {
   ConnectionMethodPage(super.tester);

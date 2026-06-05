@@ -3,7 +3,7 @@ import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_dropdown.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_button.dart';
 
-import '_base_page.dart';
+import '../_base_page.dart';
 
 class CreateAccountPage extends BasePage {
   CreateAccountPage(super.tester);

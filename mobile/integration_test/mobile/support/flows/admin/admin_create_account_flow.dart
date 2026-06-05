@@ -1,4 +1,4 @@
-import '../mobile_pages.dart';
+import '../../mobile_pages.dart';
 
 class AdminCreateAccountFlow {
   final MobilePages pages;

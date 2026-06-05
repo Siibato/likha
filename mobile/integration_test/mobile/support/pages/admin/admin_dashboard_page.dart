@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:likha/presentation/widgets/shared/cards/navigation_card.dart';
 
-import '_base_page.dart';
+import '../_base_page.dart';
 
 class AdminDashboardPage extends BasePage {
   AdminDashboardPage(super.tester);

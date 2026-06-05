@@ -2,11 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:likha/main.dart' as app;
 
-import 'support/flows/admin_create_account_flow.dart';
-import 'support/flows/admin_lock_unlock_flow.dart';
-import 'support/flows/admin_reset_password_flow.dart';
-import 'support/flows/admin_setup_flow.dart';
-import 'support/flows/student_activation_flow.dart';
+import 'support/flows/admin/admin_create_account_flow.dart';
+import 'support/flows/admin/admin_lock_unlock_flow.dart';
+import 'support/flows/admin/admin_reset_password_flow.dart';
+import 'support/flows/admin/admin_setup_flow.dart';
+import 'support/flows/admin/student_activation_flow.dart';
 import 'support/mobile_pages.dart';
 import 'support/test_setup_helper.dart';
 

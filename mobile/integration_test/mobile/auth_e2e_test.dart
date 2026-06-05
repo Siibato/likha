@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:likha/main.dart' as app;
 
-import 'support/flows/auth_flow.dart';
+import 'support/flows/auth/auth_flow.dart';
 import 'support/mobile_pages.dart';
 import 'support/test_setup_helper.dart';
 

@@ -1,17 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'pages/account_detail_page.dart';
-import 'pages/account_management_page.dart';
-import 'pages/activate_account_page.dart';
-import 'pages/admin_dashboard_page.dart';
-import 'pages/connection_method_page.dart';
-import 'pages/create_account_page.dart';
-import 'pages/home_page.dart';
-import 'pages/login_page.dart';
-import 'pages/login_password_page.dart';
-import 'pages/school_code_page.dart';
-import 'pages/sync_loading_page.dart';
-import 'pages/welcome_page.dart';
+import 'pages/admin/account_detail_page.dart';
+import 'pages/admin/account_management_page.dart';
+import 'pages/admin/activate_account_page.dart';
+import 'pages/admin/admin_dashboard_page.dart';
+import 'pages/admin/connection_method_page.dart';
+import 'pages/admin/create_account_page.dart';
+import 'pages/auth/home_page.dart';
+import 'pages/auth/login_page.dart';
+import 'pages/auth/login_password_page.dart';
+import 'pages/auth/school_code_page.dart';
+import 'pages/auth/sync_loading_page.dart';
+import 'pages/auth/welcome_page.dart';
 
 class MobilePages {
   final WidgetTester tester;

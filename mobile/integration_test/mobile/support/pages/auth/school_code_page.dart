@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 
-import '_base_page.dart';
+import '../_base_page.dart';
 
 class SchoolCodePage extends BasePage {
   SchoolCodePage(super.tester);

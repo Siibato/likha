@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import '_base_page.dart';
+import '../_base_page.dart';
 
 class HomePage extends BasePage {
   HomePage(super.tester);

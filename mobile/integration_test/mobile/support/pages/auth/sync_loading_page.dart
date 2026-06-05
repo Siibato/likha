@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import '_base_page.dart';
+import '../_base_page.dart';
 
 class SyncLoadingPage extends BasePage {
   SyncLoadingPage(super.tester);
