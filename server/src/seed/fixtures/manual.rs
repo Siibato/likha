@@ -1,7 +1,7 @@
 //! Manual seeding fixtures (stub for future implementation).
 //!
 //! This will contain the large-scale seed data:
-//! - 76 users (1 admin + 5 teachers + 70 students)
+//! - 75 users (5 teachers + 70 students, admin created separately by seed_admin)
 //! - 15 classes
 //! - 440 enrollments
 //! - 15 TOS with 60 competencies
@@ -21,19 +21,6 @@ pub fn manual_users(ctx: &SeedContext) -> Vec<UserSpec> {
     let activated = ctx.days_ago(29);
     let deleted = ctx.days_ago(6);
     let mut users = Vec::with_capacity(76);
-
-    // Admin (1)
-    users.push(UserSpec {
-        id: user_id("admin"),
-        username: "admin".into(),
-        full_name: "System Administrator".into(),
-        role: "admin".into(),
-        password_hash: None,
-        account_status: "pending_activation".into(),
-        created_at: created,
-        activated_at: None,
-        deleted_at: None,
-    });
 
     // Teachers (5)
     for i in 1..=5 {
@@ -890,9 +877,10 @@ pub fn manual_materials(ctx: &SeedContext) -> Vec<MaterialSpec> {
 }
 
 pub fn manual_school_settings(_ctx: &SeedContext) -> SchoolSettingsSpec {
+    let school_code = std::env::var("SCHOOL_CODE").unwrap_or_else(|_| "SEED-SCHOOL".to_string());
     SchoolSettingsSpec {
         id: 1,
-        school_code: "SEED-SCHOOL".into(),
+        school_code,
         school_name: Some("Likha Test School".into()),
         school_region: Some("NCR".into()),
         school_division: Some("Division of City Schools".into()),

@@ -11,7 +11,7 @@ TEST_DB_URL      := sqlite://./data/lms_e2e_test.db?mode=rwc
 
 .SHELLFLAGS := -euo pipefail -c
 
-.PHONY: help setup dev dev-server dev-mobile dev-web dev-desktop db-reset db-seed db-delete build build-apk build-macos build-windows test-server test-mobile test-e2e-auth test-e2e-admin test-e2e-mobile test-e2e-desktop format lint docker-up docker-down clean
+.PHONY: help setup dev dev-server dev-mobile dev-web dev-desktop db-reset db-seed db-seed-e2e db-delete build build-apk build-macos build-windows test-server test-mobile test-e2e-auth test-e2e-admin test-e2e-mobile test-e2e-desktop format lint docker-up docker-down clean
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-22s\033[0m %s\n", $$1, $$2}'
@@ -22,15 +22,12 @@ setup:
 	@cd $(MOBILE_DIR) && flutter pub get
 	@mkdir -p $(SERVER_DIR)/data $(SERVER_DIR)/storage/materials $(SERVER_DIR)/storage/submissions $(SERVER_DIR)/storage/exports
 
-dev:
-	@cd $(SERVER_DIR) && cargo run &
-	@trap "pkill -f 'cargo run' || true" EXIT
-	@cd $(MOBILE_DIR) && flutter run
-
 dev-server:
 	@cd $(SERVER_DIR) && cargo run
 
 dev-mobile:
+	@emulator -avd Medium_Phone_API_36.1 > /dev/null 2>&1 &
+	@sleep 5
 	@cd $(MOBILE_DIR) && flutter run
 
 dev-web:
@@ -43,6 +40,9 @@ db-reset:
 	@cd $(SERVER_DIR) && cargo run -- reset-db
 
 db-seed:
+	@cd $(SERVER_DIR) && cargo run -- reset-db --with-seed
+
+db-seed-e2e:
 	@cd $(SERVER_DIR) && DATABASE_URL="$(TEST_DB_URL)" cargo run -- reset-db && DATABASE_URL="$(TEST_DB_URL)" cargo run -- seed-e2e
 
 db-delete:
