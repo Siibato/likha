@@ -17,14 +17,16 @@ impl crate::modules::learning_material::service::LearningMaterialService {
 
         let materials = self.material_repo.find_by_class_id(class_id).await?;
 
-        let mut material_responses = Vec::new();
-        for material in materials {
-            let file_count = self
-                .material_repo
-                .count_files_by_material(material.id)
-                .await?;
+        if materials.is_empty() {
+            return Ok(MaterialListResponse { materials: vec![] });
+        }
 
-            material_responses.push(MaterialResponse {
+        let material_ids: Vec<Uuid> = materials.iter().map(|m| m.id).collect();
+        let file_counts = self.material_repo.count_files_by_materials(&material_ids).await?;
+
+        let material_responses = materials.into_iter().map(|material| {
+            let file_count = file_counts.get(&material.id).copied().unwrap_or(0);
+            MaterialResponse {
                 id: material.id,
                 class_id: material.class_id,
                 title: material.title,
@@ -34,8 +36,8 @@ impl crate::modules::learning_material::service::LearningMaterialService {
                 file_count,
                 created_at: material.created_at.to_string(),
                 updated_at: material.updated_at.to_string(),
-            });
-        }
+            }
+        }).collect();
 
         Ok(MaterialListResponse {
             materials: material_responses,

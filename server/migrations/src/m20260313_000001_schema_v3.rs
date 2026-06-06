@@ -117,11 +117,11 @@ impl MigrationTrait for Migration {
         db.execute_unprepared("ALTER TABLE refresh_tokens_new RENAME TO refresh_tokens;")
             .await?;
         db.execute_unprepared(
-            "CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id);",
+            "CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);",
         )
         .await?;
         db.execute_unprepared(
-            "CREATE INDEX idx_refresh_tokens_token_hash ON refresh_tokens(token_hash);",
+            "CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token_hash ON refresh_tokens(token_hash);",
         )
         .await?;
 
@@ -153,12 +153,12 @@ impl MigrationTrait for Migration {
             .await?;
         db.execute_unprepared("ALTER TABLE class_participants_new RENAME TO class_participants;")
             .await?;
-        db.execute_unprepared("CREATE INDEX idx_class_participants_class_id ON class_participants(class_id);")
+        db.execute_unprepared("CREATE INDEX IF NOT EXISTS idx_class_participants_class_id ON class_participants(class_id);")
             .await?;
-        db.execute_unprepared("CREATE INDEX idx_class_participants_user_id ON class_participants(user_id);")
+        db.execute_unprepared("CREATE INDEX IF NOT EXISTS idx_class_participants_user_id ON class_participants(user_id);")
             .await?;
         db.execute_unprepared(
-            "CREATE INDEX idx_class_participants_removed_at ON class_participants(removed_at);",
+            "CREATE INDEX IF NOT EXISTS idx_class_participants_removed_at ON class_participants(removed_at);",
         )
         .await?;
 
@@ -203,12 +203,12 @@ impl MigrationTrait for Migration {
             .await?;
         db.execute_unprepared("ALTER TABLE assessments_new RENAME TO assessments;")
             .await?;
-        db.execute_unprepared("CREATE INDEX idx_assessments_class_id ON assessments(class_id);")
+        db.execute_unprepared("CREATE INDEX IF NOT EXISTS idx_assessments_class_id ON assessments(class_id);")
             .await?;
-        db.execute_unprepared("CREATE INDEX idx_assessments_deleted_at ON assessments(deleted_at);")
+        db.execute_unprepared("CREATE INDEX IF NOT EXISTS idx_assessments_deleted_at ON assessments(deleted_at);")
             .await?;
         db.execute_unprepared(
-            "CREATE INDEX idx_assessments_class_order ON assessments(class_id, order_index);",
+            "CREATE INDEX IF NOT EXISTS idx_assessments_class_order ON assessments(class_id, order_index);",
         )
         .await?;
 
@@ -246,19 +246,19 @@ impl MigrationTrait for Migration {
         db.execute_unprepared("ALTER TABLE assessment_submissions_new RENAME TO assessment_submissions;")
             .await?;
         db.execute_unprepared(
-            "CREATE INDEX idx_assessment_submissions_assessment_id ON assessment_submissions(assessment_id);",
+            "CREATE INDEX IF NOT EXISTS idx_assessment_submissions_assessment_id ON assessment_submissions(assessment_id);",
         )
         .await?;
         db.execute_unprepared(
-            "CREATE INDEX idx_assessment_submissions_user_id ON assessment_submissions(user_id);",
+            "CREATE INDEX IF NOT EXISTS idx_assessment_submissions_user_id ON assessment_submissions(user_id);",
         )
         .await?;
         db.execute_unprepared(
-            "CREATE INDEX idx_assessment_submissions_updated_at ON assessment_submissions(updated_at);",
+            "CREATE INDEX IF NOT EXISTS idx_assessment_submissions_updated_at ON assessment_submissions(updated_at);",
         )
         .await?;
         db.execute_unprepared(
-            "CREATE INDEX idx_assessment_submissions_deleted_at ON assessment_submissions(deleted_at);",
+            "CREATE INDEX IF NOT EXISTS idx_assessment_submissions_deleted_at ON assessment_submissions(deleted_at);",
         )
         .await?;
 
@@ -290,9 +290,9 @@ impl MigrationTrait for Migration {
             .await?;
         db.execute_unprepared("ALTER TABLE submission_answers_new RENAME TO submission_answers;")
             .await?;
-        db.execute_unprepared("CREATE INDEX idx_submission_answers_submission_id ON submission_answers(submission_id);")
+        db.execute_unprepared("CREATE INDEX IF NOT EXISTS idx_submission_answers_submission_id ON submission_answers(submission_id);")
             .await?;
-        db.execute_unprepared("CREATE INDEX idx_submission_answers_question_id ON submission_answers(question_id);")
+        db.execute_unprepared("CREATE INDEX IF NOT EXISTS idx_submission_answers_question_id ON submission_answers(question_id);")
             .await?;
 
         // === assignments: Drop last_modified_at ===
@@ -335,12 +335,12 @@ impl MigrationTrait for Migration {
             .await?;
         db.execute_unprepared("ALTER TABLE assignments_new RENAME TO assignments;")
             .await?;
-        db.execute_unprepared("CREATE INDEX idx_assignments_class_id ON assignments(class_id);")
+        db.execute_unprepared("CREATE INDEX IF NOT EXISTS idx_assignments_class_id ON assignments(class_id);")
             .await?;
-        db.execute_unprepared("CREATE INDEX idx_assignments_deleted_at ON assignments(deleted_at);")
+        db.execute_unprepared("CREATE INDEX IF NOT EXISTS idx_assignments_deleted_at ON assignments(deleted_at);")
             .await?;
         db.execute_unprepared(
-            "CREATE INDEX idx_assignments_class_order ON assignments(class_id, order_index);",
+            "CREATE INDEX IF NOT EXISTS idx_assignments_class_order ON assignments(class_id, order_index);",
         )
         .await?;
 
@@ -386,15 +386,15 @@ impl MigrationTrait for Migration {
         db.execute_unprepared("ALTER TABLE assignment_submissions_new RENAME TO assignment_submissions;")
             .await?;
         db.execute_unprepared(
-            "CREATE INDEX idx_assignment_submissions_assignment_id ON assignment_submissions(assignment_id);",
+            "CREATE INDEX IF NOT EXISTS idx_assignment_submissions_assignment_id ON assignment_submissions(assignment_id);",
         )
         .await?;
         db.execute_unprepared(
-            "CREATE INDEX idx_assignment_submissions_student_id ON assignment_submissions(student_id);",
+            "CREATE INDEX IF NOT EXISTS idx_assignment_submissions_student_id ON assignment_submissions(student_id);",
         )
         .await?;
         db.execute_unprepared(
-            "CREATE INDEX idx_assignment_submissions_deleted_at ON assignment_submissions(deleted_at);",
+            "CREATE INDEX IF NOT EXISTS idx_assignment_submissions_deleted_at ON assignment_submissions(deleted_at);",
         )
         .await?;
 
@@ -431,13 +431,13 @@ impl MigrationTrait for Migration {
             .await?;
         db.execute_unprepared("ALTER TABLE learning_materials_new RENAME TO learning_materials;")
             .await?;
-        db.execute_unprepared("CREATE INDEX idx_learning_materials_class_id ON learning_materials(class_id);")
+        db.execute_unprepared("CREATE INDEX IF NOT EXISTS idx_learning_materials_class_id ON learning_materials(class_id);")
             .await?;
         db.execute_unprepared(
-            "CREATE INDEX idx_learning_materials_class_order ON learning_materials(class_id, order_index);",
+            "CREATE INDEX IF NOT EXISTS idx_learning_materials_class_order ON learning_materials(class_id, order_index);",
         )
         .await?;
-        db.execute_unprepared("CREATE INDEX idx_learning_materials_deleted_at ON learning_materials(deleted_at);")
+        db.execute_unprepared("CREATE INDEX IF NOT EXISTS idx_learning_materials_deleted_at ON learning_materials(deleted_at);")
             .await?;
 
         // === CREATE NEW TABLES ===

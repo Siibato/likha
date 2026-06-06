@@ -75,6 +75,10 @@ pub async fn seed_manual_world(db: &DatabaseConnection) -> Result<(), AppError> 
     // Insert grade records
     inserters::grading::insert_grade_records(db, &grade_records, ctx.now()).await?;
 
+    // Generate and insert grade items (must exist before grade_scores FK)
+    let grade_items = generate_grade_items(&assessments, &assignments, &ctx);
+    inserters::grading::insert_grade_items(db, &grade_items, ctx.now()).await?;
+
     // Generate and insert grade scores (5% have overrides)
     let grade_scores = generate_grade_scores(&students, &assessments, &assignments, &enrollments, &ctx);
     inserters::grading::insert_grade_scores(db, &grade_scores, ctx.now()).await?;
@@ -87,7 +91,7 @@ pub async fn seed_manual_world(db: &DatabaseConnection) -> Result<(), AppError> 
 
     // Summary
     let summary = format!(
-        "Manual seed complete: {} users, {} classes, {} enrollments, {} TOS, {} competencies, {} assessments, {} assignments, {} materials, {} assessment submissions, {} assignment submissions, {} grade records, {} grade scores, {} period grades",
+        "Manual seed complete: {} users, {} classes, {} enrollments, {} TOS, {} competencies, {} assessments, {} assignments, {} materials, {} assessment submissions, {} assignment submissions, {} grade records, {} grade items, {} grade scores, {} period grades",
         users.len(),
         classes.len(),
         enrollments.len(),
@@ -99,6 +103,7 @@ pub async fn seed_manual_world(db: &DatabaseConnection) -> Result<(), AppError> 
         assessment_submissions.len(),
         assignment_submissions.len(),
         grade_records.len(),
+        grade_items.len(),
         grade_scores.len(),
         period_grades.len()
     );
@@ -126,6 +131,57 @@ fn generate_grade_records(classes: &[crate::seed::specs::ClassSpec]) -> Vec<crat
         }
     }
     records
+}
+
+fn generate_grade_items(
+    assessments: &[crate::seed::specs::AssessmentSpec],
+    assignments: &[crate::seed::specs::AssignmentSpec],
+    ctx: &SeedContext,
+) -> Vec<crate::seed::specs::GradeItemSpec> {
+    use crate::seed::tools::seed_id;
+
+    let mut items = Vec::new();
+    let now = ctx.now();
+
+    for assessment in assessments {
+        if !assessment.is_published || assessment.deleted_at.is_some() || assessment.open_at > now {
+            continue;
+        }
+
+        let id = seed_id("grade_items", &format!("assess_{}_{}", assessment.id, assessment.grading_period_number));
+        items.push(crate::seed::specs::GradeItemSpec {
+            id,
+            class_id: assessment.class_id,
+            title: assessment.title.clone(),
+            component: assessment.component.clone(),
+            grading_period_number: assessment.grading_period_number,
+            total_points: assessment.total_points as f64,
+            source_type: "assessment".to_string(),
+            source_id: Some(assessment.id.to_string()),
+            order_index: 0,
+        });
+    }
+
+    for assignment in assignments {
+        if !assignment.is_published || assignment.deleted_at.is_some() || assignment.due_at > now {
+            continue;
+        }
+
+        let id = seed_id("grade_items", &format!("assign_{}_{}", assignment.id, assignment.grading_period_number));
+        items.push(crate::seed::specs::GradeItemSpec {
+            id,
+            class_id: assignment.class_id,
+            title: assignment.title.clone(),
+            component: assignment.component.clone(),
+            grading_period_number: assignment.grading_period_number,
+            total_points: assignment.total_points as f64,
+            source_type: "assignment".to_string(),
+            source_id: Some(assignment.id.to_string()),
+            order_index: 0,
+        });
+    }
+
+    items
 }
 
 fn generate_grade_scores(

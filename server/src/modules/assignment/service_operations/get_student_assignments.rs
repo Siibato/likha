@@ -1,4 +1,3 @@
-use futures::future::try_join_all;
 use uuid::Uuid;
 use crate::utils::AppResult;
 use crate::modules::assignment::schema::*;
@@ -12,30 +11,39 @@ pub async fn get_student_assignments(
 ) -> AppResult<AssignmentListResponse> {
     let classes = class_repo.find_classes_by_student_id(student_id).await?;
 
-    let per_class_futures = classes
-        .iter()
-        .map(|class| assignment_repo.find_published_by_class_id(class.id));
-    let all_assignments: Vec<_> = try_join_all(per_class_futures)
-        .await?
-        .into_iter()
-        .flatten()
-        .collect();
+    if classes.is_empty() {
+        return Ok(AssignmentListResponse { assignments: vec![] });
+    }
 
-    let response_futures = all_assignments.iter().map(|a| async move {
-        let (submission, submission_count, graded_count) = tokio::try_join!(
-            assignment_repo.find_student_submission(a.id, student_id),
-            assignment_repo.count_submissions_by_assignment(a.id),
-            assignment_repo.count_graded_by_assignment(a.id),
-        )?;
-        Ok::<AssignmentResponse, crate::utils::AppError>(AssignmentResponse {
+    let class_ids: Vec<Uuid> = classes.iter().map(|c| c.id).collect();
+    let all_assignments = assignment_repo.find_published_by_class_ids(&class_ids).await?;
+
+    if all_assignments.is_empty() {
+        return Ok(AssignmentListResponse { assignments: vec![] });
+    }
+
+    let assignment_ids: Vec<Uuid> = all_assignments.iter().map(|a| a.id).collect();
+
+    let (submissions_map, submission_counts, graded_counts) = tokio::try_join!(
+        assignment_repo.find_student_submissions_for_assignments(&assignment_ids, student_id),
+        assignment_repo.count_submissions_by_assignments(&assignment_ids),
+        assignment_repo.count_graded_by_assignments(&assignment_ids),
+    )?;
+
+    let responses = all_assignments.into_iter().map(|a| {
+        let submission = submissions_map.get(&a.id);
+        let submission_count = submission_counts.get(&a.id).copied().unwrap_or(0);
+        let graded_count = graded_counts.get(&a.id).copied().unwrap_or(0);
+
+        AssignmentResponse {
             id: a.id,
             class_id: a.class_id,
-            title: a.title.clone(),
-            instructions: a.instructions.clone(),
+            title: a.title,
+            instructions: a.instructions,
             total_points: a.total_points,
             allows_text_submission: a.allows_text_submission,
             allows_file_submission: a.allows_file_submission,
-            allowed_file_types: a.allowed_file_types.clone(),
+            allowed_file_types: a.allowed_file_types,
             max_file_size_mb: a.max_file_size_mb,
             due_at: a.due_at.to_string(),
             is_published: a.is_published,
@@ -43,15 +51,14 @@ pub async fn get_student_assignments(
             submission_count,
             graded_count,
             grading_period_number: a.grading_period_number,
-            component: a.component.clone(),
-            submission_status: submission.as_ref().map(|s| s.status.clone()),
-            submission_id: submission.as_ref().map(|s| s.id),
+            component: a.component,
+            submission_status: submission.map(|s| s.status.clone()),
+            submission_id: submission.map(|s| s.id),
             score: submission.and_then(|s| s.points),
             created_at: a.created_at.to_string(),
             updated_at: a.updated_at.to_string(),
-        })
-    });
+        }
+    }).collect();
 
-    let responses = try_join_all(response_futures).await?;
     Ok(AssignmentListResponse { assignments: responses })
 }

@@ -26,7 +26,7 @@ use server::utils::file_encryption::parse_key;
 use server::modules::sync::{ManifestRepository, ProcessedOperationsRepository};
 use server::middleware::{RateLimitLayer, RateLimitStore};
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread", worker_threads = 16)]
 async fn main() {
     dotenv().ok();
 

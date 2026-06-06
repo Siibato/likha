@@ -1,7 +1,7 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::{class_participants, users};
+use ::entity::class_participants;
 use crate::utils::{AppError, AppResult};
 use std::collections::HashMap;
 
@@ -13,23 +13,17 @@ pub async fn count_students_for_classes(
         return Ok(HashMap::new());
     }
 
-    let participant_with_user = class_participants::Entity::find()
+    let rows: Vec<(Uuid, i64)> = class_participants::Entity::find()
+        .select_only()
+        .column(class_participants::Column::ClassId)
+        .column_as(class_participants::Column::Id.count(), "count")
         .filter(class_participants::Column::ClassId.is_in(class_ids))
         .filter(class_participants::Column::RemovedAt.is_null())
-        .find_also_related(users::Entity)
+        .group_by(class_participants::Column::ClassId)
+        .into_tuple()
         .all(db)
         .await
         .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-    let mut counts: HashMap<Uuid, usize> = HashMap::new();
-
-    for (participant, user) in participant_with_user {
-        if let Some(ref u) = user {
-            if u.role == "student" {
-                *counts.entry(participant.class_id).or_insert(0) += 1;
-            }
-        }
-    }
-
-    Ok(counts)
+    Ok(rows.into_iter().map(|(id, count)| (id, count as usize)).collect())
 }

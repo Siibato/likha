@@ -127,8 +127,9 @@ impl AssessmentRepository {
         choice_text: String,
         is_correct: bool,
         order_index: i32,
+        client_id: Option<Uuid>,
     ) -> AppResult<question_choices::Model> {
-        ops::add_choice(&self.db, question_id, choice_text, is_correct, order_index).await
+        ops::add_choice(&self.db, question_id, choice_text, is_correct, order_index, client_id).await
     }
 
     pub async fn find_choices_by_question_id(
@@ -166,6 +167,13 @@ impl AssessmentRepository {
         ops::find_correct_answers_by_question_id(&self.db, question_id).await
     }
 
+    pub async fn find_correct_answers_by_question_ids(
+        &self,
+        question_ids: &[Uuid],
+    ) -> AppResult<std::collections::HashMap<Uuid, Vec<answer_key_acceptable_answers::Model>>> {
+        ops::find_correct_answers_by_question_ids(&self.db, question_ids).await
+    }
+
     pub async fn delete_correct_answers_by_question_id(&self, question_id: Uuid) -> AppResult<()> {
         ops::delete_correct_answers_by_question_id(&self.db, question_id).await
     }
@@ -192,6 +200,13 @@ impl AssessmentRepository {
 
     pub async fn find_enumeration_items_for_question(&self, question_id: Uuid) -> AppResult<Vec<(answer_keys::Model, Vec<answer_key_acceptable_answers::Model>)>> {
         ops::find_enumeration_items_for_question(&self.db, question_id).await
+    }
+
+    pub async fn find_enumeration_items_for_questions(
+        &self,
+        question_ids: &[Uuid],
+    ) -> AppResult<std::collections::HashMap<Uuid, Vec<(answer_keys::Model, Vec<answer_key_acceptable_answers::Model>)>>> {
+        ops::find_enumeration_items_for_questions(&self.db, question_ids).await
     }
 
     /// Creates one answer_key row + its acceptable answer rows for one enumeration slot.

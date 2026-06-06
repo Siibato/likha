@@ -198,6 +198,19 @@ pub struct GradeRecordSpec {
 }
 
 #[derive(Debug, Clone)]
+pub struct GradeItemSpec {
+    pub id: Uuid,
+    pub class_id: Uuid,
+    pub title: String,
+    pub component: String,
+    pub grading_period_number: i32,
+    pub total_points: f64,
+    pub source_type: String,
+    pub source_id: Option<String>,
+    pub order_index: i32,
+}
+
+#[derive(Debug, Clone)]
 pub struct GradeScoreSpec {
     pub grade_item_id: Uuid,
     pub student_id: Uuid,

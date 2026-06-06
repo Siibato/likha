@@ -21,7 +21,11 @@ pub mod update_submission_status;
 pub mod grade_submission;
 pub mod return_submission;
 pub mod count_submissions_by_assignment;
+pub mod count_submissions_by_assignments;
 pub mod count_graded_by_assignment;
+pub mod count_graded_by_assignments;
+pub mod find_published_by_class_ids;
+pub mod find_student_submissions_for_assignments;
 
 // File operations (flattened from submissions subdirectory)
 pub mod save_file;
@@ -54,7 +58,11 @@ pub use update_submission_status::*;
 pub use grade_submission::*;
 pub use return_submission::*;
 pub use count_submissions_by_assignment::*;
+pub use count_submissions_by_assignments::*;
 pub use count_graded_by_assignment::*;
+pub use count_graded_by_assignments::*;
+pub use find_published_by_class_ids::*;
+pub use find_student_submissions_for_assignments::*;
 
 pub use save_file::*;
 pub use find_file_by_id::*;
