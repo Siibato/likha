@@ -138,6 +138,13 @@ impl AssessmentRepository {
         ops::find_choices_by_question_id(&self.db, question_id).await
     }
 
+    pub async fn find_choices_by_question_ids(
+        &self,
+        question_ids: &[Uuid],
+    ) -> AppResult<Vec<question_choices::Model>> {
+        ops::find_choices_by_question_ids(&self.db, question_ids).await
+    }
+
     pub async fn delete_choices_by_question_id(&self, question_id: Uuid) -> AppResult<()> {
         ops::delete_choices_by_question_id(&self.db, question_id).await
     }
@@ -218,6 +225,10 @@ impl AssessmentRepository {
 
     pub async fn find_submissions_by_assessment_id(&self, assessment_id: Uuid) -> AppResult<Vec<assessment_submissions::Model>> {
         ops::find_submissions_by_assessment_id(&self.db, assessment_id).await
+    }
+
+    pub async fn find_submitted_submissions_by_assessment_id(&self, assessment_id: Uuid) -> AppResult<Vec<assessment_submissions::Model>> {
+        ops::find_submitted_submissions_by_assessment_id(&self.db, assessment_id).await
     }
 
     pub async fn find_by_student_and_assessment(&self, student_id: Uuid, assessment_id: Uuid) -> AppResult<Option<assessment_submissions::Model>> {
