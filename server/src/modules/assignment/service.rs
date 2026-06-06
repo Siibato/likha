@@ -189,12 +189,14 @@ impl AssignmentService {
         &self,
         assignment_id: uuid::Uuid,
         student_id: uuid::Uuid,
+        client_submission_id: Option<uuid::Uuid>,
     ) -> AppResult<crate::modules::assignment::schema::AssignmentSubmissionResponse> {
         ops::create_or_get_submission(
             &self.assignment_repo,
             &self.class_repo,
             assignment_id,
             student_id,
+            client_submission_id,
         ).await
     }
 

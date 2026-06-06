@@ -9,7 +9,7 @@ Future<List<GradeScoreModel>> getScoresByItem(
 }) async {
   try {
     final response = await dioClient.dio.get(
-      dioClient.dio.options.baseUrl + '/grade-items/$gradeItemId/scores',
+      '${dioClient.dio.options.baseUrl}/grade-items/$gradeItemId/scores',
     );
     final data = response.data['data'] ?? response.data;
     

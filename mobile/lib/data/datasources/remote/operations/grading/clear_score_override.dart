@@ -8,7 +8,7 @@ Future<void> clearScoreOverride(
 }) async {
   try {
     await dioClient.dio.delete(
-      dioClient.dio.options.baseUrl + '/grade-scores/$scoreId/override',
+      '${dioClient.dio.options.baseUrl}/grade-scores/$scoreId/override',
     );
   } on DioException catch (e) {
     throw dioClient.handleError(e);

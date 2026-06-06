@@ -265,9 +265,6 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
     ProviderLogger.instance.log('backfillFromActivities() - starting for classId: $classId, quarter: $gradingPeriodNumber');
     ProviderLogger.instance.log('backfillFromActivities() - current state has ${state.items.length} items');
     
-    for (final item in state.items) {
-    }
-    
     final existingSourceIds = state.items
         .where((i) => i.sourceId != null)
         .map((i) => i.sourceId!)
@@ -579,9 +576,6 @@ class GradeScoresNotifier extends StateNotifier<GradeScoresState> {
       );
       if (state.error != null) return;
     }
-
-    for (final entry in allScores.entries) {
-    }
     
     state = state.copyWith(isLoading: false, scoresByItem: allScores);
   }
@@ -709,9 +703,6 @@ class GradeScoresNotifier extends StateNotifier<GradeScoresState> {
         },
       );
       if (state.error != null) return;
-    }
-
-    for (final entry in allScores.entries) {
     }
     
     state = state.copyWith(isLoading: false, scoresByItem: allScores);

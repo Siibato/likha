@@ -118,9 +118,9 @@ class GradeComponentSection extends StatelessWidget {
               ],
               // Percentage/weighted rows are not available in the current schema
               // but the layout is preserved for future use.
-              Row(
+              const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
+                children: [
                   Text(
                     'Percentage: --',
                     style: TextStyle(fontSize: 12, color: AppColors.foregroundTertiary),

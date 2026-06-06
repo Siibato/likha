@@ -8,7 +8,7 @@ Future<void> deleteGradeItem(
 }) async {
   try {
     await dioClient.dio.delete(
-      dioClient.dio.options.baseUrl + '/grade-items/$id',
+      '${dioClient.dio.options.baseUrl}/grade-items/$id',
     );
   } on DioException catch (e) {
     throw dioClient.handleError(e);

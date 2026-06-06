@@ -9,7 +9,7 @@ Future<void> setupGrading(
 }) async {
   try {
     await dioClient.dio.post(
-      dioClient.dio.options.baseUrl + '/classes/$classId/grading-config/setup',
+      '${dioClient.dio.options.baseUrl}/classes/$classId/grading-config/setup',
       data: data,
     );
   } on DioException catch (e) {

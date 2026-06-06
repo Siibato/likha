@@ -279,7 +279,7 @@ class _AdminSchoolSettingsDesktopState
                     const InfoPanel(
                       child: Text(
                         'These settings are used in printed reports (TOS, Item Analysis) for DepEd-formatted headers.',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                           color: AppColors.foregroundSecondary,
@@ -322,7 +322,7 @@ class _AdminSchoolSettingsDesktopState
                               )
                             : const Text(
                                 'Save Settings',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
                                 ),

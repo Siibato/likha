@@ -77,7 +77,6 @@ pub async fn get_assignments(
 pub async fn get_student_assignments(
     State(service): State<Arc<AssignmentService>>,
     auth_user: AuthUser,
-    Path(class_id): Path<Uuid>,
 ) -> impl IntoResponse {
     if let Err(r) = require_student(&auth_user) {
         return r;
@@ -247,7 +246,7 @@ pub async fn create_submission(
     }
 
     match service
-        .create_or_get_submission(id, auth_user.user_id)
+        .create_or_get_submission(id, auth_user.user_id, None)
         .await
     {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),

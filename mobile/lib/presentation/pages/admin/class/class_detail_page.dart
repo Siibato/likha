@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/admin/class/class_edit_page.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 import 'package:likha/presentation/widgets/mobile/admin/account/student_action_card.dart';
 import 'package:likha/presentation/widgets/shared/cards/info_panel.dart';
 import 'package:likha/presentation/widgets/shared/primitives/info_row.dart';
@@ -61,6 +62,38 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
     super.dispose();
   }
 
+  void _showDeleteConfirmation(BuildContext context, String className) {
+    showDialog(
+      context: context,
+      builder: (ctx) => StyledDialog(
+        title: 'Delete Class',
+        content: Text(
+          'Are you sure you want to delete "$className"? This action cannot be undone.',
+          style: const TextStyle(
+            fontSize: 14,
+            color: AppColors.foregroundSecondary,
+          ),
+        ),
+        leadingAction: StyledDialogAction(
+          label: 'Delete',
+          isPrimary: true,
+          isDestructive: true,
+          onPressed: () {
+            Navigator.pop(ctx);
+            ref.read(classProvider.notifier).deleteClass(widget.classId);
+            Navigator.pop(context);
+          },
+        ),
+        actions: [
+          StyledDialogAction(
+            label: 'Cancel',
+            onPressed: () => Navigator.pop(ctx),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final classState = ref.watch(classProvider);
@@ -105,7 +138,7 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
           ),
         ),
         actions: [
-          if (classInfo != null)
+          if (classInfo != null) ...[
             IconButton(
               icon: const Icon(Icons.edit_rounded),
               tooltip: 'Edit Class',
@@ -119,6 +152,12 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                 ref.read(classProvider.notifier).loadClassDetail(widget.classId);
               }),
             ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline_rounded),
+              tooltip: 'Delete Class',
+              onPressed: () => _showDeleteConfirmation(context, classInfo.title),
+            ),
+          ],
         ],
       ),
       body: detail == null

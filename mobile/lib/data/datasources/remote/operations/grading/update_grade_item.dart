@@ -9,7 +9,7 @@ Future<void> updateGradeItem(
 }) async {
   try {
     await dioClient.dio.put(
-      dioClient.dio.options.baseUrl + '/grade-items/$id',
+      '${dioClient.dio.options.baseUrl}/grade-items/$id',
       data: data,
     );
   } on DioException catch (e) {

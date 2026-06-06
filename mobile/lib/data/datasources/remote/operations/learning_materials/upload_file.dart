@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:http_parser/http_parser.dart';
 
 import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';

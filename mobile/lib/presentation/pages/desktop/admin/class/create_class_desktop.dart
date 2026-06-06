@@ -92,9 +92,9 @@ class _AdminCreateClassDesktopState
         ),
         body: Center(
           child: teachers.isEmpty && !adminState.isLoading
-              ? Column(
+              ? const Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Icon(Icons.person_outline_rounded,
                         size: 64, color: AppColors.borderLight),
                     SizedBox(height: 16),

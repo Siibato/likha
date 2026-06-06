@@ -10,7 +10,7 @@ Future<Sf9ResponseModel> getSf9(
 }) async {
   try {
     final response = await dioClient.dio.get(
-      dioClient.dio.options.baseUrl + '/classes/$classId/students/$studentId/sf9',
+      '${dioClient.dio.options.baseUrl}/classes/$classId/students/$studentId/sf9',
     );
     final data = response.data['data'] ?? response.data;
     return Sf9ResponseModel.fromJson(data as Map<String, dynamic>);

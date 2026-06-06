@@ -1,6 +1,5 @@
 use chrono::Utc;
 use sea_orm::*;
-use uuid::Uuid;
 
 use ::entity::school_settings;
 use crate::utils::AppResult;

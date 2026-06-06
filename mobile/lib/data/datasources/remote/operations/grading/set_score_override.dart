@@ -9,7 +9,7 @@ Future<void> setScoreOverride(
 }) async {
   try {
     await dioClient.dio.put(
-      dioClient.dio.options.baseUrl + '/grade-scores/$scoreId/override',
+      '${dioClient.dio.options.baseUrl}/grade-scores/$scoreId/override',
       data: {'override_score': overrideScore},
     );
   } on DioException catch (e) {

@@ -318,7 +318,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
             letterSpacing: -0.4,
           ),
         ),
-        actions: [],
+        actions: const [],
       ),
       body: assessmentState.isLoading && assessment == null
           ? const Center(

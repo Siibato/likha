@@ -10,7 +10,7 @@ Future<List<PeriodGradeModel>> getPeriodGrades(
 }) async {
   try {
     final response = await dioClient.dio.get(
-      dioClient.dio.options.baseUrl + '/classes/$classId/grades',
+      '${dioClient.dio.options.baseUrl}/classes/$classId/grades',
       queryParameters: {'grading_period_number': gradingPeriodNumber},
     );
     final data = response.data['data'] ?? response.data;

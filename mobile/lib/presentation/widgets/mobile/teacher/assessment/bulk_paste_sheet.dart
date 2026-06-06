@@ -158,7 +158,7 @@ class _BulkPasteSheetState extends ConsumerState<BulkPasteSheet> {
                         )
                       : const Text(
                           'Import',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                           ),

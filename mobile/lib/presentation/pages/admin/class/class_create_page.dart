@@ -188,8 +188,8 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
                   items: [
                     const DropdownMenuItem<String?>(
                       value: null,
-                      child: Text('Select a teacher'),
                       enabled: false,
+                      child: Text('Select a teacher'),
                     ),
                     ...teachers
                         .map(
@@ -201,7 +201,7 @@ class _AdminCreateClassPageState extends ConsumerState<AdminCreateClassPage> {
                             ),
                           ),
                         )
-                        .toList(),
+                        ,
                   ],
                   onChanged: (value) {
                     setState(() {

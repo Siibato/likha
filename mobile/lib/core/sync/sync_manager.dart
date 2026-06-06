@@ -114,7 +114,7 @@ class SyncManager {
   }
 
   /// Register listener for sync state changes
-  void setStateListener(void Function(SyncState) listener) {
+  void setStateListener(void Function(SyncState)? listener) {
     _stateListener = listener;
   }
 

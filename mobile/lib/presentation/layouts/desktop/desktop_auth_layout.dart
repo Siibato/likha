@@ -34,7 +34,7 @@ class DesktopAuthLayout extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Text(
+                  const Text(
                     'Create, learn and grow.',
                     style: AppTextStyles.desktopPageSubtitle,
                   ),

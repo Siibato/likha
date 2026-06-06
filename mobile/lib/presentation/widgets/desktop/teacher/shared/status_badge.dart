@@ -44,13 +44,12 @@ class StatusBadge extends StatelessWidget {
   /// Creates an active/inactive status badge
   StatusBadge.active({
     super.key,
-    required bool isActive,
+    required this.isActive,
     String? activeText,
     String? inactiveText,
     this.padding,
     this.borderRadius,
-  }) : isActive = isActive,
-       activeText = activeText ?? 'Active',
+  }) : activeText = activeText ?? 'Active',
        inactiveText = inactiveText ?? 'Inactive',
        activeColor = AppColors.accentCharcoal,
        inactiveColor = AppColors.foregroundTertiary,

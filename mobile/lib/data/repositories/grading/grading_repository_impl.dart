@@ -283,8 +283,6 @@ class GradingRepositoryImpl implements GradingRepository {
             gradingPeriodNumber: gradingPeriodNumber,
             component: component,
           );
-          for (final model in models) {
-          }
           await _localDataSource.saveItems(models);
           final entities = models.map(_itemToEntity).toList();
           return Right(entities);
@@ -300,8 +298,6 @@ class GradingRepositoryImpl implements GradingRepository {
         gradingPeriodNumber,
         component: component,
       );
-      for (final model in cached) {
-      }
       final entities = cached.map(_itemToEntity).toList();
       return Right(entities);
     } on ServerFailure catch (e) {

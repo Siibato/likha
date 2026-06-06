@@ -232,9 +232,9 @@ class _LoginPasswordPageState extends ConsumerState<LoginPasswordPage> {
                     ),
                     child: Column(
                       children: [
-                        Text(
+                        const Text(
                           'Password is incorrect',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: AppColors.semanticErrorDark,
