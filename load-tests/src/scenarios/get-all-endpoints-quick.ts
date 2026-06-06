@@ -3,6 +3,7 @@ import { Options } from 'k6/options';
 import { buildOptions } from '../core/scenario-builder';
 import { loginAll } from '../core/auth-manager';
 import { runAllEndpoints } from '../core/all-endpoints-runner';
+import { endpointThresholds } from '../config/thresholds';
 import { teacherAccounts, studentAccounts } from '../data/accounts';
 import { MixedSetupData } from '../types/scenario';
 
@@ -11,10 +12,20 @@ const stages = [
   { duration: '45s', target: 50 },
 ];
 
+// Derive from shared thresholds — omit heavy endpoints not run by this scenario
+const {
+  'http_req_duration{name:Teacher:AllGradeData}': _allGradeData,
+  'http_req_duration{name:Teacher:SF9}': _sf9,
+  'http_req_duration{name:Teacher:SF10}': _sf10,
+  'http_req_duration{name:Shared:SubmissionDownload}': _subDownload,
+  'http_req_duration{name:Shared:MaterialDownload}': _matDownload,
+  ...quickEndpointThresholds
+} = endpointThresholds;
+
 export const options: Options = buildOptions(stages, {
   http_req_duration: ['p(95)<500'],
   http_req_failed: ['rate<0.05'],
-});
+}, quickEndpointThresholds);
 
 export const handleSummary = createReportGenerator('get-all-endpoints-quick').handleSummary;
 
