@@ -18,14 +18,12 @@ import { teacherAccounts, studentAccounts } from '../data/accounts';
 import { activeClasses, publishedAssessments, publishedAssignments, manifest, randomItem } from '../data/manifest';
 import { MixedSetupData } from '../types/scenario';
 
-// ===== 3.5-MINUTE INTENSE STAGES =====
-// Total: 3m30s load + overhead = ~5 minutes total
 const stages = [
-  { duration: '15s', target: 10 },   // Warm-up
-  { duration: '1m', target: 50 },   // Moderate
-  { duration: '1m', target: 100 },  // Heavy
-  { duration: '1m', target: 200 },  // Stress (bottleneck detection)
-  { duration: '15s', target: 0 },   // Cool-down
+  { duration: '30s', target: 10 },
+  { duration: '2m', target: 50 },
+  { duration: '3m', target: 100 },
+  { duration: '3m', target: 200 },
+  { duration: '30s', target: 0 },
 ];
 
 // ===== ENDPOINT-SPECIFIC THRESHOLDS =====
