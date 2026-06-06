@@ -3,6 +3,14 @@ node_modules/
 .env
 seed-manifest.json
 *.csv
+
+# Generated reports - timestamped JSON files per scenario
+reports/*/
+!reports/.gitkeep
+
+# Dashboard index (auto-generated)
+reports/index.json
 reports/*.html
-reports/*.json
+
+# Legacy archive (replaced by per-scenario files)
 reports/archive.json

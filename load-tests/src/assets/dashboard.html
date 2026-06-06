@@ -72,20 +72,51 @@
 </div>
 
 <script>
-const scenarios = ['all', 'baseline', 'stress', 'classroom-mix', 'exam-surge', 'delta-sync', 'teacher-grading'];
-let archive = [];
+// Scenarios are dynamically discovered from the manifest
+let scenarios = ['all'];
+let manifest = { reports: [] };
+let reportCache = new Map(); // Cache for loaded report data
 let selectedScenario = 'all';
 let selectedRun = null;
 let compareRun = null;
 let chartInstance = null;
 
+/**
+ * Load the manifest and then fetch all individual report files
+ */
 async function loadArchive() {
   try {
-    const res = await fetch('archive.json');
-    if (!res.ok) return;
-    archive = await res.json();
-  } catch {
-    archive = [];
+    const res = await fetch('index.json');
+    if (!res.ok) {
+      // Try API endpoint if static file not found
+      const apiRes = await fetch('/api/manifest');
+      if (!apiRes.ok) return;
+      manifest = await apiRes.json();
+    } else {
+      manifest = await res.json();
+    }
+
+    // Discover unique scenarios from manifest
+    const uniqueScenarios = new Set(manifest.reports.map(r => r.scenario));
+    scenarios = ['all', ...Array.from(uniqueScenarios).sort()];
+
+    // Pre-load all report data
+    reportCache.clear();
+    for (const entry of manifest.reports) {
+      try {
+        const reportRes = await fetch(entry.path);
+        if (reportRes.ok) {
+          const report = await reportRes.json();
+          reportCache.set(entry.path, report);
+        }
+      } catch (e) {
+        console.warn(`Failed to load report ${entry.path}:`, e);
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load archive:', e);
+    manifest = { reports: [] };
+    reportCache.clear();
   }
 }
 
@@ -111,7 +142,10 @@ function selectScenario(s) {
 }
 
 function getRuns() {
-  let runs = [...archive].sort((a, b) => new Date(b.meta.timestamp) - new Date(a.meta.timestamp));
+  // Get runs from the loaded report cache
+  let runs = Array.from(reportCache.values());
+  runs.sort((a, b) => new Date(b.meta.timestamp) - new Date(a.meta.timestamp));
+
   if (selectedScenario !== 'all') {
     runs = runs.filter(r => r.meta.scenario === selectedScenario);
   }

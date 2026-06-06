@@ -25,8 +25,8 @@ export const options: Options = buildOptions(stages.baseline, thresholds.normal,
 
 export const handleSummary = createReportGenerator('baseline').handleSummary;
 
-const TEACHER_VUS = 10;
-const STUDENT_VUS = 20;
+const TEACHER_VUS = 15;
+const STUDENT_VUS = 35;
 
 export function setup(): MixedSetupData {
   console.log(`Baseline setup: logging in ${TEACHER_VUS} teachers + ${STUDENT_VUS} students...`);
@@ -67,16 +67,16 @@ function runTeacherFlow(token: string): void {
 
   const classRes = classService.list();
   expectAll(classRes, 'baseline-teacher-classes', { status: 200, underMs: 500 });
-  sleep(0.5);
+  sleep(0.3);
 
   const assessRes = assessmentService.metadata();
   expectAll(assessRes, 'baseline-teacher-assessments', { status: 200, underMs: 500 });
-  sleep(0.5);
+  sleep(0.3);
 
   const classId = activeClasses[(__VU - 1) % activeClasses.length].id;
   const assignRes = assignmentService.list(classId);
   expectAll(assignRes, 'baseline-teacher-assignments', { status: 200, underMs: 500 });
-  sleep(1);
+  sleep(0.5);
 }
 
 function runStudentFlow(token: string): void {
@@ -87,13 +87,13 @@ function runStudentFlow(token: string): void {
 
   const classRes = classService.list();
   expectAll(classRes, 'baseline-student-classes', { status: 200, underMs: 500 });
-  sleep(0.5);
+  sleep(0.3);
 
   const assessRes = assessmentService.metadata();
   expectAll(assessRes, 'baseline-student-assessments', { status: 200, underMs: 500 });
-  sleep(0.5);
+  sleep(0.3);
 
   const assignRes = assignmentService.studentList();
   expectAll(assignRes, 'baseline-student-assignments', { status: 200, underMs: 500 });
-  sleep(1);
+  sleep(0.5);
 }

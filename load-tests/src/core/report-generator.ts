@@ -1,17 +1,8 @@
 import { ScenarioReport, EndpointMetrics, ThresholdResult, ErrorDistribution } from '../types/report';
+import { getReportPath } from './paths';
 
-declare function open(path: string): string;
-
-const ARCHIVE_PATH = 'reports/archive.json';
-
-// Read existing archive at init time (open() only works in init context)
-let existingArchive: ScenarioReport[] = [];
-try {
-  const raw = open(ARCHIVE_PATH);
-  existingArchive = JSON.parse(raw) as ScenarioReport[];
-} catch {
-  // archive.json doesn't exist yet — that's fine
-}
+// k6's handleSummary runs in a special context where we can return file outputs
+// Each test run generates a new timestamped JSON file in reports/{scenario}/
 
 function formatDuration(ms: number): string {
   const seconds = Math.floor(ms / 1000);
@@ -154,9 +145,8 @@ function buildReport(scenarioName: string, data: Record<string, any>): ScenarioR
   const thresholdResults = buildThresholds(metrics);
   const passed = thresholdResults.length === 0 || thresholdResults.every((t) => t.passed);
 
-  // Find previous run
-  const previousRuns = existingArchive.filter((a) => a.meta.scenario === scenarioName);
-  const previousRun = previousRuns.length > 0 ? previousRuns[previousRuns.length - 1] : undefined;
+  // Note: Previous run comparison is now handled by the dashboard
+  // which loads multiple reports and compares client-side
 
   return {
     meta: {
@@ -175,14 +165,6 @@ function buildReport(scenarioName: string, data: Record<string, any>): ScenarioR
     endpoints: buildEndpoints(metrics),
     thresholds: thresholdResults,
     errors: buildErrors(metrics),
-    previousRun: previousRun
-      ? {
-          timestamp: previousRun.meta.timestamp,
-          p95: previousRun.meta.p95,
-          errorRate: previousRun.meta.failedRate,
-          throughput: previousRun.meta.throughput,
-        }
-      : undefined,
   };
 }
 
@@ -195,7 +177,7 @@ function escapeHtml(text: string): string {
 }
 
 function buildHtml(report: ScenarioReport): string {
-  const { meta, endpoints, thresholds, errors, previousRun } = report;
+  const { meta, endpoints, thresholds, errors } = report;
   const ts = meta.timestamp.replace(/[:.]/g, '-');
 
   const passClass = meta.passed ? 'pass' : 'fail';
@@ -262,30 +244,9 @@ function buildHtml(report: ScenarioReport): string {
       </table>`
     : '<p>No errors recorded.</p>';
 
-  // Previous run comparison
-  const comparisonHtml = previousRun
-    ? `<table class="comparison">
-        <tr><th>Metric</th><th>Previous</th><th>Current</th><th>Delta</th></tr>
-        <tr>
-          <td>p95 latency (ms)</td>
-          <td>${previousRun.p95.toFixed(2)}</td>
-          <td>${meta.p95.toFixed(2)}</td>
-          <td class="${meta.p95 > previousRun.p95 ? 'fail' : 'pass'}">${(meta.p95 - previousRun.p95).toFixed(2)}</td>
-        </tr>
-        <tr>
-          <td>Error rate (%)</td>
-          <td>${previousRun.errorRate.toFixed(2)}</td>
-          <td>${meta.failedRate.toFixed(2)}</td>
-          <td class="${meta.failedRate > previousRun.errorRate ? 'fail' : 'pass'}">${(meta.failedRate - previousRun.errorRate).toFixed(2)}</td>
-        </tr>
-        <tr>
-          <td>Throughput (req/s)</td>
-          <td>${previousRun.throughput.toFixed(2)}</td>
-          <td>${meta.throughput.toFixed(2)}</td>
-          <td class="${meta.throughput < previousRun.throughput ? 'fail' : 'pass'}">${(meta.throughput - previousRun.throughput).toFixed(2)}</td>
-        </tr>
-      </table>`
-    : '<p>No previous run found for comparison.</p>';
+  // Note: Previous run comparison is now handled by the dashboard
+  // which can load and compare multiple reports client-side
+  const comparisonHtml = '<p>Compare runs using the web dashboard.</p>';
 
   // Latency bar chart (CSS-only)
   const chartHtml = endpoints.length
@@ -374,16 +335,10 @@ export function createReportGenerator(scenarioName: string) {
   return {
     handleSummary(data: Record<string, any>): Record<string, string> {
       const report = buildReport(scenarioName, data);
-      const html = buildHtml(report);
-      const json = JSON.stringify(report, null, 2);
 
-      const safeTs = report.meta.timestamp.replace(/[:.]/g, '-');
-      const htmlPath = `reports/${safeTs}_${scenarioName}.html`;
-      const jsonPath = `reports/${safeTs}_${scenarioName}.json`;
-
-      // Append to history
-      const updatedArchive = [...existingArchive, report];
-      const archiveJson = JSON.stringify(updatedArchive, null, 2);
+      // Generate timestamped output path for this run
+      const reportPath = getReportPath(scenarioName, report.meta.timestamp);
+      const reportJson = JSON.stringify(report, null, 2);
 
       // Rich CLI summary — build directly from raw k6 metrics
       const { meta: m, thresholds: thr } = report;
@@ -494,9 +449,7 @@ export function createReportGenerator(scenarioName: string) {
       const stdout = lines.join('\n');
 
       return {
-        [htmlPath]: html,
-        [jsonPath]: json,
-        [ARCHIVE_PATH]: archiveJson,
+        [reportPath]: reportJson,
         stdout,
       };
     },

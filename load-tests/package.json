@@ -15,7 +15,9 @@
     "test:delta": "export $(grep -v '^#' .env | xargs) && k6 run dist/delta-sync.js",
     "test:grading": "export $(grep -v '^#' .env | xargs) && k6 run dist/teacher-grading.js",
     "test:all": "pnpm build && export $(grep -v '^#' .env | xargs) && k6 run dist/baseline.js && k6 run dist/stress.js",
-    "dashboard": "node scripts/dashboard-server.mjs"
+    "dashboard": "node scripts/dashboard-server.mjs",
+    "reports:clean": "rm -rf reports/*/ reports/index.json",
+    "reports:list": "find reports -name '*.json' -type f 2>/dev/null | head -20 || echo 'No reports found'"
   },
   "devDependencies": {
     "@types/k6": "^0.54.0",
