@@ -1,4 +1,5 @@
 import { sleep } from 'k6';
+import { createReportGenerator } from '../core/report-generator';
 import { Options } from 'k6/options';
 import { buildOptions } from '../core/scenario-builder';
 import { loginAll } from '../core/auth-manager';
@@ -17,6 +18,8 @@ import { TokenMap } from '../types/scenario';
 const VU_COUNT = 100;
 
 export const options: Options = buildOptions(stages.gradualRamp(VU_COUNT), thresholds.sync);
+
+export const handleSummary = createReportGenerator('delta-sync').handleSummary;
 
 export function setup(): TokenMap {
   console.log('Delta sync setup: logging in students...');

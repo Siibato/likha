@@ -1,5 +1,5 @@
 import { build } from 'esbuild';
-import { readdirSync } from 'fs';
+import { readdirSync, copyFileSync } from 'fs';
 import { join } from 'path';
 
 const scenarioDir = './src/scenarios';
@@ -25,4 +25,5 @@ await build({
   logLevel: 'info',
 });
 
+copyFileSync('seed-manifest.json', join(outDir, 'seed-manifest.json'));
 console.log(`Build complete → ${outDir}/`);

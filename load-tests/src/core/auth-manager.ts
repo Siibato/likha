@@ -26,7 +26,8 @@ export function loginOne(account: Account): string {
   let token = '';
   try {
     const body = res.json() as Record<string, unknown>;
-    token = (body.token ?? body.access_token ?? '') as string;
+    const data = body.data as Record<string, unknown> | undefined;
+    token = (data?.access_token ?? body.access_token ?? body.token ?? '') as string;
   } catch {
     throw new Error(`Login response parse failed for ${account.username}`);
   }

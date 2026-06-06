@@ -1,4 +1,5 @@
 import { sleep } from 'k6';
+import { createReportGenerator } from '../core/report-generator';
 import { Options } from 'k6/options';
 import { buildOptions } from '../core/scenario-builder';
 import { loginPool } from '../core/auth-manager';
@@ -15,6 +16,8 @@ import { TokenMap } from '../types/scenario';
 // Simulates all 70 students bursting into the same exam simultaneously,
 // auto-saving answers every ~10s, then submitting at the end.
 export const options: Options = buildOptions(stages.examSurge, thresholds.normal);
+
+export const handleSummary = createReportGenerator('exam-surge').handleSummary;
 
 // Pick one published assessment to storm. All VUs use this same assessment.
 const TARGET_ASSESSMENT = publishedAssessments.length > 0 ? publishedAssessments[0] : null;

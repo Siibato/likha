@@ -8,13 +8,14 @@
     "build": "node build.mjs",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
-    "test:baseline": "k6 run --env-file .env dist/baseline.js",
-    "test:stress": "k6 run --env-file .env dist/stress.js",
-    "test:classroom": "k6 run --env-file .env dist/classroom-mix.js",
-    "test:exam": "k6 run --env-file .env dist/exam-surge.js",
-    "test:delta": "k6 run --env-file .env dist/delta-sync.js",
-    "test:grading": "k6 run --env-file .env dist/teacher-grading.js",
-    "test:all": "pnpm build && k6 run --env-file .env dist/baseline.js && k6 run --env-file .env dist/stress.js"
+    "test:baseline": "export $(grep -v '^#' .env | xargs) && k6 run dist/baseline.js",
+    "test:stress": "export $(grep -v '^#' .env | xargs) && k6 run dist/stress.js",
+    "test:classroom": "export $(grep -v '^#' .env | xargs) && k6 run dist/classroom-mix.js",
+    "test:exam": "export $(grep -v '^#' .env | xargs) && k6 run dist/exam-surge.js",
+    "test:delta": "export $(grep -v '^#' .env | xargs) && k6 run dist/delta-sync.js",
+    "test:grading": "export $(grep -v '^#' .env | xargs) && k6 run dist/teacher-grading.js",
+    "test:all": "pnpm build && export $(grep -v '^#' .env | xargs) && k6 run dist/baseline.js && k6 run dist/stress.js",
+    "dashboard": "node scripts/dashboard-server.mjs"
   },
   "devDependencies": {
     "@types/k6": "^0.54.0",

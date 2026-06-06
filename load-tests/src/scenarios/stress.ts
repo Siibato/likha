@@ -1,4 +1,5 @@
 import { sleep } from 'k6';
+import { createReportGenerator } from '../core/report-generator';
 import { Options } from 'k6/options';
 import { buildOptions } from '../core/scenario-builder';
 import { loginAll } from '../core/auth-manager';
@@ -15,6 +16,8 @@ import { TokenMap } from '../types/scenario';
 const VU_COUNT = 500;
 
 export const options: Options = buildOptions(stages.stress, thresholds.stress);
+
+export const handleSummary = createReportGenerator('stress').handleSummary;
 
 export function setup(): TokenMap {
   console.log('Stress setup: logging in students...');

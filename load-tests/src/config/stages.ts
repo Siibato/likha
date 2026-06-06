@@ -2,9 +2,9 @@ import { Stage } from 'k6/options';
 
 export const stages = {
   baseline: [
-    { duration: '30s', target: 25 },
-    { duration: '2m', target: 50 },
-    { duration: '30s', target: 0 },
+    { duration: '20s', target: 15 },
+    { duration: '30s', target: 30 },
+    { duration: '10s', target: 0 },
   ] satisfies Stage[],
 
   stress: [

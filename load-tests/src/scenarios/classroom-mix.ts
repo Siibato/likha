@@ -1,4 +1,5 @@
 import { sleep } from 'k6';
+import { createReportGenerator } from '../core/report-generator';
 import { Options } from 'k6/options';
 import { buildOptions } from '../core/scenario-builder';
 import { loginPool } from '../core/auth-manager';
@@ -23,6 +24,8 @@ const TOTAL_VU_COUNT = TEACHER_VU_COUNT + STUDENT_VU_COUNT;
 export const options: Options = {
   ...buildOptions(stages.gradualRamp(TOTAL_VU_COUNT), thresholds.normal),
 };
+
+export const handleSummary = createReportGenerator('classroom-mix').handleSummary;
 
 export function setup(): MixedSetupData {
   console.log('Classroom-mix setup: logging in teachers and students...');

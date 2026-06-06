@@ -54,7 +54,7 @@ pnpm test:grading
 pnpm test:all
 
 # Export results to CSV
-k6 run --env-file .env --out csv=results.csv dist/stress.js
+export $(grep -v '^#' .env | xargs) && k6 run --out csv=results.csv dist/stress.js
 ```
 
 ## Project Structure

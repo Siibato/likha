@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Likha Load Test Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root { --bg: #f5f5f5; --card: #fff; --border: #e0e0e0; --text: #333; --muted: #666; --pass: #28a745; --fail: #dc3545; --primary: #4dabf7; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+  header { background: var(--card); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 1.4rem; }
+  .filters { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .filters button { padding: 0.4rem 0.9rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); cursor: pointer; font-size: 0.85rem; }
+  .filters button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .container { display: flex; height: calc(100vh - 64px); }
+  .sidebar { width: 300px; min-width: 260px; background: var(--card); border-right: 1px solid var(--border); overflow-y: auto; padding: 1rem; }
+  .sidebar h2 { margin: 0 0 0.6rem; font-size: 1rem; }
+  .run-card { padding: 0.7rem; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 0.5rem; cursor: pointer; transition: box-shadow 0.15s; }
+  .run-card:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+  .run-card.selected { border-color: var(--primary); background: #f0f9ff; }
+  .run-card .row { display: flex; justify-content: space-between; align-items: center; }
+  .run-card .ts { font-size: 0.75rem; color: var(--muted); }
+  .run-card .badge { font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 3px; font-weight: 600; }
+  .run-card .badge.pass { background: #d4edda; color: #155724; }
+  .run-card .badge.fail { background: #f8d7da; color: #721c24; }
+  .run-card .compare-check { margin-left: auto; display: flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; color: var(--muted); }
+  .main { flex: 1; overflow-y: auto; padding: 1.5rem 2rem; }
+  .empty { color: var(--muted); font-size: 0.95rem; }
+  .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin: 1rem 0; }
+  .meta-card { background: var(--card); padding: 1rem; border-radius: 6px; border: 1px solid var(--border); }
+  .meta-card .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .meta-card .value { font-size: 1.3rem; font-weight: 600; margin-top: 0.2rem; }
+  .chart-container { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; margin: 1rem 0; }
+  .chart-container canvas { max-height: 280px; }
+  h2 { margin-top: 1.5rem; font-size: 1.15rem; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+  table { width: 100%; border-collapse: collapse; margin-top: 0.6rem; font-size: 0.82rem; background: var(--card); }
+  th, td { padding: 0.45rem 0.5rem; text-align: right; border-bottom: 1px solid var(--border); }
+  th { text-align: left; background: #f8f9fa; font-weight: 600; }
+  td:first-child, th:first-child { text-align: left; }
+  .pass { color: var(--pass); }
+  .fail { color: var(--fail); }
+  .delta-up { color: var(--fail); }
+  .delta-down { color: var(--pass); }
+  .bar-row { display: flex; align-items: center; gap: 0.5rem; margin: 0.35rem 0; }
+  .bar-label { width: 180px; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-track { flex: 1; height: 16px; background: #e9ecef; border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--primary); border-radius: 3px; }
+  .bar-value { width: 55px; font-size: 0.8rem; text-align: right; }
+  .comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; }
+  .panel h3 { margin-top: 0; font-size: 1rem; }
+  .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+  .tabs button { padding: 0.4rem 0.8rem; border: none; background: transparent; border-bottom: 2px solid transparent; cursor: pointer; }
+  .tabs button.active { border-bottom-color: var(--primary); font-weight: 600; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Load Test Dashboard</h1>
+  <div class="filters" id="filters"></div>
+</header>
+<div class="container">
+  <div class="sidebar" id="sidebar">
+    <h2>Runs</h2>
+    <div id="runList"></div>
+  </div>
+  <div class="main" id="main">
+    <div class="empty">Select a scenario above to browse test runs.</div>
+  </div>
+</div>
+
+<script>
+const scenarios = ['all', 'baseline', 'stress', 'classroom-mix', 'exam-surge', 'delta-sync', 'teacher-grading'];
+let archive = [];
+let selectedScenario = 'all';
+let selectedRun = null;
+let compareRun = null;
+let chartInstance = null;
+
+async function loadArchive() {
+  try {
+    const res = await fetch('archive.json');
+    if (!res.ok) return;
+    archive = await res.json();
+  } catch {
+    archive = [];
+  }
+}
+
+function fmtDate(ts) {
+  const d = new Date(ts);
+  return d.toLocaleString();
+}
+
+function renderFilters() {
+  const el = document.getElementById('filters');
+  el.innerHTML = scenarios.map(s =>
+    `<button class="${s === selectedScenario ? 'active' : ''}" onclick="selectScenario('${s}')">${s}</button>`
+  ).join('');
+}
+
+function selectScenario(s) {
+  selectedScenario = s;
+  selectedRun = null;
+  compareRun = null;
+  renderFilters();
+  renderSidebar();
+  renderMain();
+}
+
+function getRuns() {
+  let runs = [...archive].sort((a, b) => new Date(b.meta.timestamp) - new Date(a.meta.timestamp));
+  if (selectedScenario !== 'all') {
+    runs = runs.filter(r => r.meta.scenario === selectedScenario);
+  }
+  return runs;
+}
+
+function renderSidebar() {
+  const runs = getRuns();
+  const el = document.getElementById('runList');
+  if (!runs.length) {
+    el.innerHTML = '<div class="empty">No runs found.</div>';
+    return;
+  }
+  el.innerHTML = runs.map(r => {
+    const m = r.meta;
+    const sel = selectedRun && selectedRun.meta.timestamp === m.timestamp ? 'selected' : '';
+    const checked = compareRun && compareRun.meta.timestamp === m.timestamp ? 'checked' : '';
+    return `<div class="run-card ${sel}" onclick="selectRun('${m.timestamp}')">
+      <div class="row">
+        <span class="badge ${m.passed ? 'pass' : 'fail'}">${m.passed ? 'PASS' : 'FAIL'}</span>
+        <span class="compare-check" onclick="event.stopPropagation(); toggleCompare('${m.timestamp}')">
+          <input type="checkbox" ${checked}> Compare
+        </span>
+      </div>
+      <div class="ts">${fmtDate(m.timestamp)}</div>
+      <div style="margin-top:0.3rem;font-size:0.8rem;color:#555">
+        ${m.totalRequests.toLocaleString()} reqs · p95 ${m.p95.toFixed(1)}ms · ${m.throughput.toFixed(1)} r/s
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function selectRun(ts) {
+  const runs = getRuns();
+  selectedRun = runs.find(r => r.meta.timestamp === ts) || null;
+  renderSidebar();
+  renderMain();
+}
+
+function toggleCompare(ts) {
+  const runs = getRuns();
+  const run = runs.find(r => r.meta.timestamp === ts);
+  if (!run) return;
+  if (compareRun && compareRun.meta.timestamp === ts) {
+    compareRun = null;
+  } else {
+    compareRun = run;
+  }
+  renderSidebar();
+  renderMain();
+}
+
+function escapeHtml(t) {
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function buildMeta(report) {
+  const m = report.meta;
+  return `<div class="meta">
+    <div class="meta-card"><div class="label">Total Requests</div><div class="value">${m.totalRequests.toLocaleString()}</div></div>
+    <div class="meta-card"><div class="label">Failed Rate</div><div class="value ${m.failedRate > 0 ? 'fail' : 'pass'}">${m.failedRate.toFixed(2)}%</div></div>
+    <div class="meta-card"><div class="label">Throughput</div><div class="value">${m.throughput.toFixed(1)} req/s</div></div>
+    <div class="meta-card"><div class="label">p95 Latency</div><div class="value">${m.p95.toFixed(1)}ms</div></div>
+    <div class="meta-card"><div class="label">Max VUs</div><div class="value">${m.maxVus}</div></div>
+    <div class="meta-card"><div class="label">Duration</div><div class="value">${m.duration}</div></div>
+  </div>`;
+}
+
+function buildEndpoints(endpoints) {
+  if (!endpoints.length) return '<p>No endpoint data.</p>';
+  const maxBar = Math.max(...endpoints.map(e => e.p95));
+  const chart = `<div class="chart-container"><h3>p95 Latency by Endpoint</h3>${endpoints.map(e => {
+    const w = maxBar > 0 ? (e.p95 / maxBar) * 100 : 0;
+    return `<div class="bar-row"><span class="bar-label">${escapeHtml(e.name)}</span><div class="bar-track"><div class="bar-fill" style="width:${w.toFixed(1)}%"></div></div><span class="bar-value">${e.p95.toFixed(0)}ms</span></div>`;
+  }).join('')}</div>`;
+  const table = `<table>
+    <tr><th>Endpoint</th><th>Count</th><th>Fail%</th><th>Min</th><th>Avg</th><th>Med</th><th>p50</th><th>p90</th><th>p95</th><th>p99</th><th>Max</th></tr>
+    ${endpoints.map(e => `<tr>
+      <td>${escapeHtml(e.name)}</td><td>${e.count}</td>
+      <td class="${e.failRate > 0 ? 'fail' : ''}">${e.failRate.toFixed(2)}%</td>
+      <td>${e.min.toFixed(1)}</td><td>${e.avg.toFixed(1)}</td><td>${e.med.toFixed(1)}</td>
+      <td>${e.p50.toFixed(1)}</td><td>${e.p90.toFixed(1)}</td>
+      <td class="${e.p95 > 200 ? 'fail' : ''}">${e.p95.toFixed(1)}</td>
+      <td>${e.p99.toFixed(1)}</td><td>${e.max.toFixed(1)}</td>
+    </tr>`).join('')}
+  </table>`;
+  return chart + table;
+}
+
+function buildThresholds(thresholds) {
+  if (!thresholds.length) return '<p>No thresholds configured.</p>';
+  return `<table><tr><th>Metric</th><th>Rule</th><th>Result</th></tr>
+    ${thresholds.map(t => `<tr class="${t.passed ? 'pass' : 'fail'}"><td>${escapeHtml(t.metric)}</td><td>${escapeHtml(t.rule)}</td><td>${t.passed ? 'pass' : 'fail'}</td></tr>`).join('')}
+  </table>`;
+}
+
+function buildErrors(errors) {
+  if (!errors.length) return '<p>No errors recorded.</p>';
+  return `<table><tr><th>Status</th><th>Count</th><th>%</th></tr>
+    ${errors.map(e => `<tr><td>${e.status}</td><td>${e.count}</td><td>${e.percentage.toFixed(2)}%</td></tr>`).join('')}
+  </table>`;
+}
+
+function buildComparison(a, b) {
+  const ma = a.meta, mb = b.meta;
+  function deltaRow(label, va, vb, fmt = v => v.toFixed(2), lowerIsBetter = false) {
+    const d = va - vb;
+    const bad = lowerIsBetter ? d > 0 : d < 0;
+    const cls = bad ? 'delta-up' : 'delta-down';
+    const sign = d > 0 ? '+' : '';
+    return `<tr><td>${label}</td><td>${fmt(va)}</td><td>${fmt(vb)}</td><td class="${cls}">${sign}${fmt(d)}</td></tr>`;
+  }
+  const metaTable = `<table>
+    <tr><th>Metric</th><th>Run A</th><th>Run B</th><th>Delta</th></tr>
+    ${deltaRow('p95 (ms)', ma.p95, mb.p95)}
+    ${deltaRow('Error rate (%)', ma.failedRate, mb.failedRate, v => v.toFixed(2), true)}
+    ${deltaRow('Throughput (r/s)', ma.throughput, mb.throughput)}
+    ${deltaRow('Total requests', ma.totalRequests, mb.totalRequests, v => v.toLocaleString())}
+  </table>`;
+
+  const epNames = new Set([...a.endpoints.map(e => e.name), ...b.endpoints.map(e => e.name)]);
+  const epRows = Array.from(epNames).sort().map(name => {
+    const ea = a.endpoints.find(e => e.name === name);
+    const eb = b.endpoints.find(e => e.name === name);
+    if (!ea || !eb) return '';
+    const dp = ea.p95 - eb.p95;
+    const df = ea.failRate - eb.failRate;
+    return `<tr>
+      <td>${escapeHtml(name)}</td>
+      <td>${ea.p95.toFixed(1)}</td><td>${eb.p95.toFixed(1)}</td>
+      <td class="${dp > 0 ? 'delta-up' : 'delta-down'}">${dp > 0 ? '+' : ''}${dp.toFixed(1)}</td>
+      <td>${ea.failRate.toFixed(2)}%</td><td>${eb.failRate.toFixed(2)}%</td>
+      <td class="${df > 0 ? 'delta-up' : 'delta-down'}">${df > 0 ? '+' : ''}${df.toFixed(2)}%</td>
+    </tr>`;
+  }).join('');
+  const epTable = epRows ? `<table>
+    <tr><th>Endpoint</th><th>p95 A</th><th>p95 B</th><th>Delta</th><th>Fail% A</th><th>Fail% B</th><th>Delta</th></tr>
+    ${epRows}
+  </table>` : '<p>No shared endpoints to compare.</p>';
+
+  return `<div class="comparison-grid">
+    <div class="panel"><h3>${fmtDate(ma.timestamp)} (${ma.scenario})</h3>${buildMeta(a)}</div>
+    <div class="panel"><h3>${fmtDate(mb.timestamp)} (${mb.scenario})</h3>${buildMeta(b)}</div>
+  </div>
+  <h2>Meta Comparison</h2>${metaTable}
+  <h2>Endpoint Comparison</h2>${epTable}`;
+}
+
+function renderTrendChart(runs) {
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  if (chartInstance) chartInstance.destroy();
+  const labels = runs.map(r => fmtDate(r.meta.timestamp));
+  const data = {
+    labels,
+    datasets: [
+      { label: 'p95 (ms)', data: runs.map(r => r.meta.p95), borderColor: '#4dabf7', tension: 0.2, yAxisID: 'y' },
+      { label: 'Error rate (%)', data: runs.map(r => r.meta.failedRate), borderColor: '#dc3545', tension: 0.2, yAxisID: 'y1' },
+      { label: 'Throughput (r/s)', data: runs.map(r => r.meta.throughput), borderColor: '#28a745', tension: 0.2, yAxisID: 'y' },
+    ]
+  };
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { position: 'top' } },
+      scales: {
+        y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'p95 / Throughput' } },
+        y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'Error rate (%)' }, grid: { drawOnChartArea: false } },
+      }
+    }
+  });
+}
+
+function renderMain() {
+  const el = document.getElementById('main');
+  const runs = getRuns();
+  if (!runs.length) {
+    el.innerHTML = '<div class="empty">No runs found for this scenario.</div>';
+    return;
+  }
+
+  if (compareRun && selectedRun) {
+    el.innerHTML = `<h2>Comparison</h2>` + buildComparison(selectedRun, compareRun);
+    return;
+  }
+
+  if (!selectedRun) {
+    // Show trends by default
+    el.innerHTML = `<h2>Trends · ${selectedScenario === 'all' ? 'All Scenarios' : selectedScenario}</h2>
+      <div class="chart-container"><canvas id="trendChart"></canvas></div>`;
+    renderTrendChart(runs);
+    return;
+  }
+
+  const r = selectedRun;
+  const m = r.meta;
+  el.innerHTML = `
+    <h1>${m.scenario} <span class="badge ${m.passed ? 'pass' : 'fail'}">${m.passed ? 'PASSED' : 'FAILED'}</span></h1>
+    <div style="color:#666;font-size:0.9rem;margin-bottom:1rem">${fmtDate(m.timestamp)} · Duration: ${m.duration} · Max VUs: ${m.maxVus}</div>
+    ${buildMeta(r)}
+    <h2>Thresholds</h2>${buildThresholds(r.thresholds)}
+    <h2>Per-Endpoint Metrics</h2>${buildEndpoints(r.endpoints)}
+    <h2>Error Distribution</h2>${buildErrors(r.errors)}
+    ${r.previousRun ? `<h2>Comparison with Previous Run (${fmtDate(r.previousRun.timestamp)})</h2>
+    <table>
+      <tr><th>Metric</th><th>Previous</th><th>Current</th><th>Delta</th></tr>
+      <tr><td>p95 latency (ms)</td><td>${r.previousRun.p95.toFixed(2)}</td><td>${m.p95.toFixed(2)}</td><td class="${m.p95 > r.previousRun.p95 ? 'delta-up' : 'delta-down'}">${(m.p95 - r.previousRun.p95).toFixed(2)}</td></tr>
+      <tr><td>Error rate (%)</td><td>${r.previousRun.errorRate.toFixed(2)}</td><td>${m.failedRate.toFixed(2)}</td><td class="${m.failedRate > r.previousRun.errorRate ? 'delta-up' : 'delta-down'}">${(m.failedRate - r.previousRun.errorRate).toFixed(2)}</td></tr>
+      <tr><td>Throughput (req/s)</td><td>${r.previousRun.throughput.toFixed(2)}</td><td>${m.throughput.toFixed(2)}</td><td class="${m.throughput < r.previousRun.throughput ? 'delta-up' : 'delta-down'}">${(m.throughput - r.previousRun.throughput).toFixed(2)}</td></tr>
+    </table>` : ''}
+  `;
+}
+
+(async function init() {
+  await loadArchive();
+  renderFilters();
+  renderSidebar();
+  renderMain();
+})();
+</script>
+</body>
+</html>

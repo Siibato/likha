@@ -3,3 +3,6 @@ node_modules/
 .env
 seed-manifest.json
 *.csv
+reports/*.html
+reports/*.json
+reports/archive.json

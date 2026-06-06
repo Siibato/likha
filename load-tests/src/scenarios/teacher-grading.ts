@@ -1,4 +1,5 @@
 import { sleep } from 'k6';
+import { createReportGenerator } from '../core/report-generator';
 import { Options } from 'k6/options';
 import { buildOptions } from '../core/scenario-builder';
 import { loginPool } from '../core/auth-manager';
@@ -20,6 +21,8 @@ export const options: Options = buildOptions(
   stages.gradualRamp(TEACHER_VU_COUNT),
   thresholds.normal,
 );
+
+export const handleSummary = createReportGenerator('teacher-grading').handleSummary;
 
 export function setup(): TokenMap {
   console.log('Teacher grading setup: logging in teachers...');
