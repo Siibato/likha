@@ -20,6 +20,9 @@ import 'pages/admin/class_detail_desktop_page.dart';
 import 'pages/admin/class_edit_desktop_page.dart';
 import 'pages/admin/school_settings_desktop_page.dart';
 import 'pages/admin/manage_enrollment_desktop_page.dart';
+import 'pages/teacher/teacher_dashboard_desktop_page.dart';
+import 'pages/teacher/teacher_class_detail_desktop_page.dart';
+import 'pages/teacher/teacher_class_student_list_desktop_page.dart';
 
 class DesktopPages {
   final WidgetTester tester;
@@ -48,4 +51,8 @@ class DesktopPages {
   late final ClassEditDesktopPage classEdit = ClassEditDesktopPage(tester);
   late final SchoolSettingsDesktopPage schoolSettings = SchoolSettingsDesktopPage(tester);
   late final ManageEnrollmentDesktopPage manageEnrollment = ManageEnrollmentDesktopPage(tester);
+
+  late final TeacherDashboardDesktopPage teacherDashboard = TeacherDashboardDesktopPage(tester);
+  late final TeacherClassDetailDesktopPage teacherClassDetail = TeacherClassDetailDesktopPage(tester);
+  late final TeacherClassStudentListDesktopPage teacherClassStudentList = TeacherClassStudentListDesktopPage(tester);
 }
