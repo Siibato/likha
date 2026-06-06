@@ -1,6 +1,7 @@
 pub mod fixtures;
 pub mod generators;
 pub mod inserters;
+pub mod manifest;
 pub mod scenarios;
 pub mod specs;
 pub mod tools;

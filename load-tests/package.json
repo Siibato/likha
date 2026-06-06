@@ -1,0 +1,31 @@
+{
+  "name": "likha-load-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "k6 load tests for Likha LMS server",
+  "packageManager": "pnpm@10.29.3",
+  "scripts": {
+    "build": "node build.mjs",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit",
+    "test:baseline": "mkdir -p reports/baseline && export $(grep -v '^#' .env | xargs) && k6 run dist/baseline.js",
+    "test:stress": "mkdir -p reports/stress && export $(grep -v '^#' .env | xargs) && k6 run dist/stress.js",
+    "test:classroom": "mkdir -p reports/classroom-mix && export $(grep -v '^#' .env | xargs) && k6 run dist/classroom-mix.js",
+    "test:exam": "mkdir -p reports/exam-surge && export $(grep -v '^#' .env | xargs) && k6 run dist/exam-surge.js",
+    "test:delta": "mkdir -p reports/delta-sync && export $(grep -v '^#' .env | xargs) && k6 run dist/delta-sync.js",
+    "test:grading": "mkdir -p reports/teacher-grading && export $(grep -v '^#' .env | xargs) && k6 run dist/teacher-grading.js",
+    "test:all-endpoints": "mkdir -p reports/get-all-endpoints && export $(grep -v '^#' .env | xargs) && k6 run dist/get-all-endpoints.js",
+    "test:all": "pnpm build && export $(grep -v '^#' .env | xargs) && k6 run dist/baseline.js && k6 run dist/stress.js",
+    "dashboard": "node scripts/dashboard-server.mjs",
+    "reports:clean": "rm -rf reports/*/ reports/index.json",
+    "reports:list": "find reports -name '*.json' -type f 2>/dev/null | head -20 || echo 'No reports found'"
+  },
+  "devDependencies": {
+    "@types/k6": "^0.54.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "esbuild": "^0.23.0",
+    "eslint": "^9.0.0",
+    "typescript": "^5.5.0"
+  }
+}
