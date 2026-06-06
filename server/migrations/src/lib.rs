@@ -31,6 +31,7 @@ mod m20260408_000002_tos_blooms_percentages;
 mod m20260412_000001_erd_alignment;
 mod m20260420_000001_full_melcs;
 mod m20260606_000001_add_class_participants_composite_index;
+mod m20260606_000002_add_performance_indexes;
 
 pub struct Migrator;
 
@@ -69,6 +70,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260412_000001_erd_alignment::Migration),
             Box::new(m20260420_000001_full_melcs::Migration),
             Box::new(m20260606_000001_add_class_participants_composite_index::Migration),
+            Box::new(m20260606_000002_add_performance_indexes::Migration),
         ]
     }
 }

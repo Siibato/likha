@@ -1,3 +1,4 @@
+use futures::future::try_join_all;
 use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
 use crate::utils::fmt_utc;
@@ -27,11 +28,8 @@ impl crate::modules::assessment::service::AssessmentService {
         let questions = self.assessment_repo
             .find_questions_by_assessment_id(assessment_id).await?;
 
-        let mut question_responses = Vec::new();
-        for q in questions {
-            let question_response = self.build_question_response(&q, role).await?;
-            question_responses.push(question_response);
-        }
+        let question_futures = questions.iter().map(|q| self.build_question_response(q, role));
+        let question_responses = try_join_all(question_futures).await?;
 
         Ok(AssessmentDetailResponse {
             id: assessment.id,

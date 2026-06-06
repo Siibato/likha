@@ -1,3 +1,4 @@
+use futures::future::join_all;
 use sea_orm::EntityTrait;
 use uuid::Uuid;
 use crate::modules::grading::schema::{GradeSummaryResponse, GradeSummaryRow};
@@ -10,33 +11,29 @@ impl crate::modules::grading::service::GradeComputationService {
         class_id: Uuid,
         grading_period_number: i32,
     ) -> AppResult<GradeSummaryResponse> {
-        let config = self
-            .repo
-            .get_config(class_id, grading_period_number)
-            .await?
-            .ok_or_else(|| {
-                AppError::BadRequest(
-                    "Grading config not set up for this class/period".to_string(),
-                )
-            })?;
+        let (config_opt, period_grades_data, participants) = tokio::try_join!(
+            self.repo.get_config(class_id, grading_period_number),
+            self.repo.get_all_for_class(class_id, grading_period_number),
+            self.class_repo.find_participants_by_class_id(class_id, None),
+        )?;
 
-        let period_grades_data = self.repo.get_all_for_class(class_id, grading_period_number).await?;
+        let config = config_opt.ok_or_else(|| {
+            AppError::BadRequest(
+                "Grading config not set up for this class/period".to_string(),
+            )
+        })?;
 
-        let participants = self
-            .class_repo
-            .find_participants_by_class_id(class_id, None)
-            .await?;
-
-        let mut student_name_map: std::collections::HashMap<Uuid, String> =
-            std::collections::HashMap::new();
-        for p in &participants {
-            if let Ok(Some(user)) = ::entity::users::Entity::find_by_id(p.user_id)
+        let name_futures = participants.iter().map(|p| async move {
+            let user = ::entity::users::Entity::find_by_id(p.user_id)
                 .one(&self.db)
                 .await
-            {
-                student_name_map.insert(p.user_id, user.full_name);
-            }
-        }
+                .ok()
+                .flatten();
+            (p.user_id, user.map(|u| u.full_name).unwrap_or_else(|| "Unknown".to_string()))
+        });
+        let name_pairs = join_all(name_futures).await;
+        let student_name_map: std::collections::HashMap<Uuid, String> =
+            name_pairs.into_iter().collect();
 
         let students = period_grades_data
             .into_iter()

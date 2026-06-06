@@ -2480,6 +2480,7 @@ dependencies = [
  "chrono",
  "dotenv",
  "entity",
+ "futures",
  "hex",
  "image",
  "jsonwebtoken",
