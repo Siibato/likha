@@ -128,6 +128,26 @@ async fn main() {
                     .expect("Failed to connect to database");
                 server::seed::scenarios::manual::seed_manual_world(&db).await.expect("Manual seed failed");
                 println!("Manual seed complete.");
+
+                // Optional: --export-manifest <path>
+                if let Some(flag_pos) = args.iter().position(|a| a == "--export-manifest") {
+                    let manifest_path = args.get(flag_pos + 1)
+                        .map(|s| s.as_str())
+                        .unwrap_or("../load-tests/seed-manifest.json");
+
+                    let ctx = server::seed::tools::SeedContext::new();
+                    let users = server::seed::fixtures::manual::manual_users(&ctx);
+                    let classes = server::seed::fixtures::manual::manual_classes(&ctx);
+                    let assessments = server::seed::fixtures::manual::manual_assessments(&ctx);
+                    let assignments = server::seed::fixtures::manual::manual_assignments(&ctx);
+
+                    let manifest = server::seed::manifest::build_manifest(
+                        &users, &classes, &assessments, &assignments,
+                    );
+                    server::seed::manifest::export_manifest(&manifest, manifest_path)
+                        .expect("Failed to export seed manifest");
+                }
+
                 return;
             }
             "deseed" => {
@@ -169,6 +189,7 @@ async fn main() {
                 eprintln!("  clear-invalid-attempts  Clear all login attempt records");
                 eprintln!("  seed-e2e                Seed deterministic E2E world data");
                 eprintln!("  seed-manual             Seed manual testing world data");
+                eprintln!("  seed-manual --export-manifest <path>  Seed and export manifest JSON (default: ../load-tests/seed-manifest.json)");
                 eprintln!("  deseed                  Clear all seeded data and reset admin");
                 std::process::exit(1);
             }
