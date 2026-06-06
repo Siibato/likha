@@ -6,7 +6,7 @@ export class AuthService {
   constructor(private client: ApiClient) {}
 
   me() {
-    return this.client.get('/auth/me');
+    return this.client.get('/auth/me', { tags: { name: 'Auth:Me' } });
   }
 
   logout() {

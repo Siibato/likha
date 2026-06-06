@@ -4,11 +4,11 @@ export class TosService {
   constructor(private client: ApiClient) {}
 
   list(classId: string) {
-    return this.client.get(`/classes/${classId}/tos`, { tags: { name: 'TosList' } });
+    return this.client.get(`/classes/${classId}/tos`, { tags: { name: 'Teacher:TosList' } });
   }
 
   detail(id: string) {
-    return this.client.get(`/tos/${id}`, { tags: { name: 'TosDetail' } });
+    return this.client.get(`/tos/${id}`, { tags: { name: 'Teacher:TosDetail' } });
   }
 
   create(classId: string, payload: Record<string, unknown>) {
@@ -20,6 +20,6 @@ export class TosService {
   }
 
   searchMelcs(query: string) {
-    return this.client.get(`/melcs?q=${encodeURIComponent(query)}`, { tags: { name: 'MelcsSearch' } });
+    return this.client.get(`/melcs?q=${encodeURIComponent(query)}`, { tags: { name: 'Teacher:MelcsSearch' } });
   }
 }

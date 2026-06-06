@@ -4,16 +4,16 @@ import { AnswerPayload } from '../types/api';
 export class AssessmentService {
   constructor(private client: ApiClient) {}
 
-  list(classId: string) {
-    return this.client.get(`/classes/${classId}/assessments`, { tags: { name: 'AssessmentList' } });
+  list(classId: string, role: 'Teacher' | 'Student' = 'Teacher') {
+    return this.client.get(`/classes/${classId}/assessments`, { tags: { name: `${role}:AssessmentList` } });
   }
 
   metadata() {
-    return this.client.get('/assessments/metadata', { tags: { name: 'AssessmentMetadata' } });
+    return this.client.get('/assessments/metadata', { tags: { name: 'Shared:AssessmentMetadata' } });
   }
 
-  detail(id: string) {
-    return this.client.get(`/assessments/${id}`, { tags: { name: 'AssessmentDetail' } });
+  detail(id: string, role: 'Teacher' | 'Student' = 'Teacher') {
+    return this.client.get(`/assessments/${id}`, { tags: { name: `${role}:AssessmentDetail` } });
   }
 
   start(id: string) {
@@ -29,15 +29,23 @@ export class AssessmentService {
   }
 
   getResults(submissionId: string) {
-    return this.client.get(`/submissions/${submissionId}/results`, { tags: { name: 'AssessmentResults' } });
+    return this.client.get(`/submissions/${submissionId}/results`, { tags: { name: 'Student:AssessmentResults' } });
   }
 
   getStatistics(id: string) {
-    return this.client.get(`/assessments/${id}/statistics`, { tags: { name: 'AssessmentStats' } });
+    return this.client.get(`/assessments/${id}/statistics`, { tags: { name: 'Teacher:AssessmentStats' } });
   }
 
   getSubmissions(id: string) {
-    return this.client.get(`/assessments/${id}/submissions`, { tags: { name: 'AssessmentSubmissions' } });
+    return this.client.get(`/assessments/${id}/submissions`, { tags: { name: 'Teacher:AssessmentSubmissions' } });
+  }
+
+  getSubmissionDetail(id: string) {
+    return this.client.get(`/submissions/${id}`, { tags: { name: 'Teacher:SubmissionDetail' } });
+  }
+
+  getStudentSubmissions(classId: string, studentId: string) {
+    return this.client.get(`/classes/${classId}/students/${studentId}/assessment-submissions`, { tags: { name: 'Teacher:StudentAssessmentSubmissions' } });
   }
 
   gradeEssay(answerId: string, points: number, feedback?: string) {

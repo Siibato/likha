@@ -3,16 +3,20 @@ import { ApiClient } from '../core/api-client';
 export class AssignmentService {
   constructor(private client: ApiClient) {}
 
-  list(classId: string) {
-    return this.client.get(`/classes/${classId}/assignments`, { tags: { name: 'AssignmentList' } });
+  list(classId: string, role: 'Teacher' | 'Student' = 'Teacher') {
+    return this.client.get(`/classes/${classId}/assignments`, { tags: { name: `${role}:AssignmentList` } });
+  }
+
+  metadata() {
+    return this.client.get('/classes/{class_id}/assignments/metadata', { tags: { name: 'Shared:AssignmentMetadata' } });
   }
 
   studentList() {
-    return this.client.get('/student-assignments', { tags: { name: 'StudentAssignmentList' } });
+    return this.client.get('/student-assignments', { tags: { name: 'Student:AssignmentList' } });
   }
 
-  detail(id: string) {
-    return this.client.get(`/assignments/${id}`, { tags: { name: 'AssignmentDetail' } });
+  detail(id: string, role: 'Teacher' | 'Student' = 'Teacher') {
+    return this.client.get(`/assignments/${id}`, { tags: { name: `${role}:AssignmentDetail` } });
   }
 
   submit(id: string) {
@@ -32,7 +36,19 @@ export class AssignmentService {
   }
 
   getSubmissions(id: string) {
-    return this.client.get(`/assignments/${id}/submissions`, { tags: { name: 'AssignmentSubmissions' } });
+    return this.client.get(`/assignments/${id}/submissions`, { tags: { name: 'Teacher:AssignmentSubmissions' } });
+  }
+
+  getSubmissionDetail(id: string) {
+    return this.client.get(`/assignment-submissions/${id}`, { tags: { name: 'Teacher:AssignmentSubmissionDetail' } });
+  }
+
+  getStudentSubmissions(assignmentId: string, studentId: string) {
+    return this.client.get(`/assignments/${assignmentId}/students/${studentId}/submissions`, { tags: { name: 'Teacher:StudentAssignmentSubmissions' } });
+  }
+
+  downloadFile(fileId: string) {
+    return this.client.get(`/submission-files/${fileId}/download`, { tags: { name: 'Shared:SubmissionDownload' }, timeout: '30s' });
   }
 
   publish(id: string) {

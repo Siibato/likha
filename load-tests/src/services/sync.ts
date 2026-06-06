@@ -6,14 +6,14 @@ export class SyncService {
 
   fullSync() {
     return this.client.post('/sync/full', undefined, {
-      tags: { name: 'SyncFull' },
+      tags: { name: 'Sync:Full' },
       timeout: '15s',
     });
   }
 
   deltaSync(payload: SyncDeltaPayload) {
     return this.client.post('/sync/deltas', payload, {
-      tags: { name: 'SyncDelta' },
+      tags: { name: 'Sync:Delta' },
       timeout: '10s',
     });
   }

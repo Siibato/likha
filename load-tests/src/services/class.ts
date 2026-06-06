@@ -3,16 +3,16 @@ import { ApiClient } from '../core/api-client';
 export class ClassService {
   constructor(private client: ApiClient) {}
 
-  list() {
-    return this.client.get('/classes', { tags: { name: 'ClassList' } });
+  list(role: 'Teacher' | 'Student' = 'Teacher') {
+    return this.client.get('/classes', { tags: { name: `${role}:ClassList` } });
   }
 
-  detail(id: string) {
-    return this.client.get(`/classes/${id}`, { tags: { name: 'ClassDetail' } });
+  detail(id: string, role: 'Teacher' | 'Student' = 'Teacher') {
+    return this.client.get(`/classes/${id}`, { tags: { name: `${role}:ClassDetail` } });
   }
 
   metadata() {
-    return this.client.get('/classes/metadata', { tags: { name: 'ClassMetadata' } });
+    return this.client.get('/classes/metadata', { tags: { name: 'Shared:ClassMetadata' } });
   }
 
   create(payload: { title: string; description?: string; grade_level?: string; school_year?: string }) {

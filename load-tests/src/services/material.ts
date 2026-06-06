@@ -3,16 +3,16 @@ import { ApiClient } from '../core/api-client';
 export class MaterialService {
   constructor(private client: ApiClient) {}
 
-  list(classId: string) {
-    return this.client.get(`/classes/${classId}/materials`, { tags: { name: 'MaterialList' } });
+  list(classId: string, role: 'Teacher' | 'Student' = 'Teacher') {
+    return this.client.get(`/classes/${classId}/materials`, { tags: { name: `${role}:MaterialList` } });
   }
 
   metadata() {
-    return this.client.get('/materials/metadata', { tags: { name: 'MaterialMetadata' } });
+    return this.client.get('/materials/metadata', { tags: { name: 'Shared:MaterialMetadata' } });
   }
 
-  detail(id: string) {
-    return this.client.get(`/materials/${id}`, { tags: { name: 'MaterialDetail' } });
+  detail(id: string, role: 'Teacher' | 'Student' = 'Teacher') {
+    return this.client.get(`/materials/${id}`, { tags: { name: `${role}:MaterialDetail` } });
   }
 
   create(classId: string, payload: { title: string; description?: string; content_text?: string }) {
@@ -24,6 +24,6 @@ export class MaterialService {
   }
 
   downloadFile(fileId: string) {
-    return this.client.get(`/material-files/${fileId}/download`, { tags: { name: 'MaterialDownload' }, timeout: '30s' });
+    return this.client.get(`/material-files/${fileId}/download`, { tags: { name: 'Shared:MaterialDownload' }, timeout: '30s' });
   }
 }
