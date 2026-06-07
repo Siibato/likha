@@ -24,9 +24,10 @@ use server::modules::entitlement::EntitlementService;
 use server::modules::sync::service::{SyncPushService, SyncConflictService, SyncFullService, SyncDeltaService};
 use server::utils::file_encryption::parse_key;
 use server::modules::sync::{ManifestRepository, ProcessedOperationsRepository};
+use server::cache::{RedisCache, CacheTtl};
 use server::middleware::{RateLimitLayer, RateLimitStore};
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread", worker_threads = 16)]
 async fn main() {
     dotenv().ok();
 
@@ -213,29 +214,37 @@ async fn main() {
     // Seed default admin account
     seed_admin(&db).await.expect("Failed to seed admin account");
 
+    // Initialize Redis cache
+    let cache_ttl = CacheTtl {
+        list_seconds: config.cache_ttl_list_seconds,
+        detail_seconds: config.cache_ttl_detail_seconds,
+        static_seconds: config.cache_ttl_static_seconds,
+    };
+    let redis_cache = RedisCache::new(&config.redis_url, config.cache_enabled, cache_ttl).await;
+
     // Initialize services
     let auth_service = Arc::new(server::modules::auth::service::AuthService::new(
         db.clone(),
         config.jwt_secret.clone(),
         config.jwt_expiration,
-    ));
+    ).with_cache(redis_cache.clone()));
 
-    let admin_service = Arc::new(server::modules::admin::service::AdminService::new(db.clone()));
+    let admin_service = Arc::new(server::modules::admin::service::AdminService::new(db.clone()).with_cache(redis_cache.clone()));
 
-    let class_service = Arc::new(ClassService::new(db.clone()));
+    let class_service = Arc::new(ClassService::new(db.clone()).with_cache(redis_cache.clone()));
 
-    let assessment_service = Arc::new(AssessmentService::new(db.clone()));
+    let assessment_service = Arc::new(AssessmentService::new(db.clone()).with_cache(redis_cache.clone()));
 
     // Parse file encryption key from hex string
     let file_encryption_key = parse_key(&config.file_encryption_key)
         .expect("Invalid FILE_ENCRYPTION_KEY format");
 
-    let assignment_service = Arc::new(AssignmentService::new(db.clone()));
+    let assignment_service = Arc::new(AssignmentService::new(db.clone()).with_cache(redis_cache.clone()));
     let material_service = Arc::new(LearningMaterialService::new(
         db.clone(),
         config.file_storage_path.clone(),
         file_encryption_key,
-    ));
+    ).with_cache(redis_cache.clone()));
 
     // Initialize new offline-first sync services
     let _entitlement_repo = server::modules::entitlement::repository::EntitlementRepository::new(db.clone());
@@ -244,11 +253,11 @@ async fn main() {
     let entitlement_service = Arc::new(EntitlementService::new(db.clone()));
 
     let processed_ops_repo = Arc::new(ProcessedOperationsRepository::new(db.clone()));
-    let grade_computation_service = Arc::new(GradeComputationService::new(db.clone()));
-    let tos_service = Arc::new(TosService::new(db.clone()));
+    let grade_computation_service = Arc::new(GradeComputationService::new(db.clone()).with_cache(redis_cache.clone()));
+    let tos_service = Arc::new(TosService::new(db.clone()).with_cache(redis_cache.clone()));
 
     let setup_service = Arc::new(
-        SetupService::new(db.clone(), config.school_code.clone()).await,
+        SetupService::new(db.clone(), config.school_code.clone()).await.with_cache(redis_cache.clone()),
     );
 
     let sync_push_service = Arc::new(SyncPushService::new(

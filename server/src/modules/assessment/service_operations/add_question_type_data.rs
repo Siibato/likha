@@ -16,6 +16,7 @@ impl crate::modules::assessment::service::AssessmentService {
                             choice.choice_text.clone(),
                             choice.is_correct,
                             choice.order_index,
+                            None,
                         ).await?;
                     }
                 }

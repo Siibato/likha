@@ -58,6 +58,10 @@ impl crate::modules::assessment::service::AssessmentService {
             0
         };
 
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_assessments(teacher_id, class_id).await;
+            inv.invalidate_assessment_detail(assessment.id).await;
+        }
         Ok(AssessmentResponse {
             id: assessment.id,
             class_id: assessment.class_id,

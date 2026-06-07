@@ -30,6 +30,10 @@ impl crate::modules::assessment::service::AssessmentService {
         let submission_count = self.assessment_repo
             .count_submissions_by_assessment_id(assessment_id).await?;
 
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_assessment_statistics(assessment_id).await;
+        }
+
         Ok(AssessmentResponse {
             id: released.id,
             class_id: released.class_id,

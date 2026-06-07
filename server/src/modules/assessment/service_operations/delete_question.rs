@@ -27,6 +27,10 @@ impl crate::modules::assessment::service::AssessmentService {
         self.assessment_repo.delete_question(question_id).await?;
         self.assessment_repo.update_total_points(question.assessment_id).await?;
 
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_assessment_detail(question.assessment_id).await;
+        }
+
         Ok(())
     }
 }

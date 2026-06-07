@@ -8,7 +8,7 @@ impl crate::modules::assessment::service::AssessmentService {
     pub(super) async fn compute_item_analysis(
         &self,
         questions: &[entity::assessment_questions::Model],
-        submitted: &[&entity::assessment_submissions::Model],
+        submitted: &[entity::assessment_submissions::Model],
         student_question_correct: &HashMap<(Uuid, Uuid), bool>,
         student_question_choices: &HashMap<(Uuid, Uuid), Vec<(Option<Uuid>, bool)>>,
         submission_count: usize,
@@ -25,18 +25,56 @@ impl crate::modules::assessment::service::AssessmentService {
         let upper_size = upper_group.len() as f64;
         let lower_size = lower_group.len() as f64;
 
-        let mut question_choices: HashMap<Uuid, Vec<(Uuid, String, bool)>> = HashMap::new();
-        for q in questions {
-            if q.question_type == "multiple_choice" {
-                let choices = self.assessment_repo.find_choices_by_question_id(q.id).await?;
-                question_choices.insert(
-                    q.id,
-                    choices.into_iter().map(|c| (c.id, c.choice_text, c.is_correct)).collect(),
-                );
+        // Batch-load all choices for MC questions in a single query
+        let mc_question_ids: Vec<Uuid> = questions
+            .iter()
+            .filter(|q| q.question_type == "multiple_choice")
+            .map(|q| q.id)
+            .collect();
+
+        let mut question_choices: HashMap<Uuid, Vec<(Uuid, String, bool)>> =
+            HashMap::with_capacity(mc_question_ids.len());
+        if !mc_question_ids.is_empty() {
+            let all_choices = self.assessment_repo.find_choices_by_question_ids(&mc_question_ids).await?;
+            for c in all_choices {
+                question_choices
+                    .entry(c.question_id)
+                    .or_default()
+                    .push((c.id, c.choice_text, c.is_correct));
             }
         }
 
-        let mut item_analyses = Vec::new();
+        // Pre-compute correct counts per question for upper/lower groups
+        let mut upper_correct: HashMap<Uuid, usize> = HashMap::with_capacity(questions.len());
+        let mut lower_correct: HashMap<Uuid, usize> = HashMap::with_capacity(questions.len());
+        for ((student_id, question_id), is_correct) in student_question_correct {
+            if !is_correct {
+                continue;
+            }
+            if upper_group.contains(student_id) {
+                *upper_correct.entry(*question_id).or_insert(0) += 1;
+            }
+            if lower_group.contains(student_id) {
+                *lower_correct.entry(*question_id).or_insert(0) += 1;
+            }
+        }
+
+        // Pre-compute distractor selection counts: (question_id, choice_id) -> (total, upper, lower)
+        let mut choice_selections: HashMap<(Uuid, Uuid), (usize, usize, usize)> = HashMap::new();
+        for ((student_id, question_id), selections) in student_question_choices {
+            for (choice_id_opt, _) in selections {
+                if let Some(choice_id) = choice_id_opt {
+                    let (total, upper, lower) = choice_selections
+                        .entry((*question_id, *choice_id))
+                        .or_insert((0, 0, 0));
+                    *total += 1;
+                    if upper_group.contains(student_id) { *upper += 1; }
+                    if lower_group.contains(student_id) { *lower += 1; }
+                }
+            }
+        }
+
+        let mut item_analyses = Vec::with_capacity(questions.len());
         let mut total_p = 0.0;
         let mut total_d = 0.0;
         let mut retain_count = 0;
@@ -44,21 +82,8 @@ impl crate::modules::assessment::service::AssessmentService {
         let mut discard_count = 0;
 
         for q in questions {
-            let mut ru = 0usize;
-            let mut rl = 0usize;
-
-            for &uid in &upper_group {
-                let key = (uid, q.id);
-                if let Some(&correct) = student_question_correct.get(&key) {
-                    if correct { ru += 1; }
-                }
-            }
-            for &uid in &lower_group {
-                let key = (uid, q.id);
-                if let Some(&correct) = student_question_correct.get(&key) {
-                    if correct { rl += 1; }
-                }
-            }
+            let ru = upper_correct.get(&q.id).copied().unwrap_or(0);
+            let rl = lower_correct.get(&q.id).copied().unwrap_or(0);
 
             let p = if upper_size + lower_size > 0.0 {
                 (ru + rl) as f64 / (upper_size + lower_size)
@@ -84,25 +109,13 @@ impl crate::modules::assessment::service::AssessmentService {
             let distractors = if q.question_type == "multiple_choice" {
                 if let Some(choices) = question_choices.get(&q.id) {
                     let total_students = submission_count;
-                    let mut distractor_results = Vec::new();
+                    let mut distractor_results = Vec::with_capacity(choices.len());
 
                     for (choice_id, choice_text, is_correct) in choices {
-                        let mut upper_count = 0usize;
-                        let mut lower_count = 0usize;
-                        let mut total_selected = 0usize;
-
-                        for s in submitted.iter() {
-                            let key = (s.user_id, q.id);
-                            if let Some(selections) = student_question_choices.get(&key) {
-                                for (sel_choice_id, _) in selections {
-                                    if sel_choice_id.as_ref() == Some(choice_id) {
-                                        total_selected += 1;
-                                        if upper_group.contains(&s.user_id) { upper_count += 1; }
-                                        if lower_group.contains(&s.user_id) { lower_count += 1; }
-                                    }
-                                }
-                            }
-                        }
+                        let (total_selected, upper_count, lower_count) = choice_selections
+                            .get(&(q.id, *choice_id))
+                            .copied()
+                            .unwrap_or((0, 0, 0));
 
                         let total_percentage = if total_students > 0 {
                             (total_selected as f64 / total_students as f64) * 100.0

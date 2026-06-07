@@ -29,6 +29,9 @@ impl crate::modules::grading::service::GradeComputationService {
                 order_index,
             )
             .await?;
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_class_grades(class_id, grading_period_number).await;
+        }
         Ok(GradeItemResponse::from(item))
     }
 }

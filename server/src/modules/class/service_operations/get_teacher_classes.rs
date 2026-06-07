@@ -16,9 +16,17 @@ pub async fn get_teacher_classes(
 
     let classes = class_repo.find_by_teacher_id(teacher_id).await?;
 
+    if classes.is_empty() {
+        return Ok(ClassListResponse { classes: vec![] });
+    }
+
+    // Batch fetch student counts in 1 query
+    let class_ids: Vec<Uuid> = classes.iter().map(|c| c.id).collect();
+    let student_counts = class_repo.count_students_for_classes(class_ids).await?;
+
     let mut class_responses = Vec::new();
     for class in classes {
-        let student_count = class_repo.count_students_in_class(class.id).await?;
+        let student_count = student_counts.get(&class.id).copied().unwrap_or(0);
         class_responses.push(ClassResponse {
             id: class.id,
             title: class.title,

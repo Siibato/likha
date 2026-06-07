@@ -53,7 +53,7 @@ pub struct ReorderAssignmentsRequest {
 
 // ===== RESPONSE SCHEMAS =====
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AssignmentResponse {
     pub id: Uuid,
     pub class_id: Uuid,
@@ -78,7 +78,7 @@ pub struct AssignmentResponse {
     pub updated_at: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AssignmentListResponse {
     pub assignments: Vec<AssignmentResponse>,
 }

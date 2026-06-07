@@ -42,6 +42,10 @@ impl crate::modules::tos::service::TosService {
         let creating_pct = request.creating_percentage.unwrap_or(16.67);
 
         let id = client_id.unwrap_or_else(Uuid::new_v4);
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_tos_list(class_id).await;
+        }
+
         let tos = self.tos_repo
             .create_tos(
                 id,

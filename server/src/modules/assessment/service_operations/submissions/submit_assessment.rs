@@ -39,6 +39,12 @@ impl crate::modules::assessment::service::AssessmentService {
         let student = self.user_repo.find_by_id(student_id).await?
             .ok_or_else(|| AppError::NotFound("Student not found".to_string()))?;
 
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_assessment_submissions(submission.assessment_id).await;
+            inv.invalidate_assessment_submission_detail(submission_id).await;
+            inv.invalidate_student_results(submission_id).await;
+        }
+
         let response = SubmissionSummaryResponse {
             id: submitted.id,
             student_id: submitted.user_id,

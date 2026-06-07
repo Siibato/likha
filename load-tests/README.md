@@ -50,6 +50,9 @@ pnpm test:delta
 # Teacher grading: grading burst + grade compute (5 VU)
 pnpm test:grading
 
+# Quick profiler: all endpoints, 50 VU, 1 min — fast outlier detection
+pnpm test:all-endpoints-quick
+
 # Run all in sequence
 pnpm test:all
 

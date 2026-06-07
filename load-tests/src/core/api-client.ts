@@ -4,6 +4,7 @@ import { env } from '../config/env';
 export type RequestOptions = {
   timeout?: string;
   tags?: Record<string, string>;
+  expectedStatuses?: number[];
 };
 
 export class ApiClient {
@@ -19,42 +20,58 @@ export class ApiClient {
   }
 
   get(path: string, opts: RequestOptions = {}): RefinedResponse<ResponseType> {
-    return http.get(`${this.baseUrl}${path}`, {
+    const params: any = {
       headers: this.authHeader,
       timeout: opts.timeout ?? env.defaultTimeout,
       tags: opts.tags,
-    });
+    };
+    if (opts.expectedStatuses) {
+      params.responseCallback = http.expectedStatuses(...opts.expectedStatuses);
+    }
+    return http.get(`${this.baseUrl}${path}`, params);
   }
 
   post(path: string, body?: unknown, opts: RequestOptions = {}): RefinedResponse<ResponseType> {
+    const params: any = {
+      headers: this.authHeader,
+      timeout: opts.timeout ?? env.defaultTimeout,
+      tags: opts.tags,
+    };
+    if (opts.expectedStatuses) {
+      params.responseCallback = http.expectedStatuses(...opts.expectedStatuses);
+    }
     return http.post(
       `${this.baseUrl}${path}`,
       body !== undefined ? JSON.stringify(body) : null,
-      {
-        headers: this.authHeader,
-        timeout: opts.timeout ?? env.defaultTimeout,
-        tags: opts.tags,
-      },
+      params,
     );
   }
 
   put(path: string, body?: unknown, opts: RequestOptions = {}): RefinedResponse<ResponseType> {
+    const params: any = {
+      headers: this.authHeader,
+      timeout: opts.timeout ?? env.defaultTimeout,
+      tags: opts.tags,
+    };
+    if (opts.expectedStatuses) {
+      params.responseCallback = http.expectedStatuses(...opts.expectedStatuses);
+    }
     return http.put(
       `${this.baseUrl}${path}`,
       body !== undefined ? JSON.stringify(body) : null,
-      {
-        headers: this.authHeader,
-        timeout: opts.timeout ?? env.defaultTimeout,
-        tags: opts.tags,
-      },
+      params,
     );
   }
 
   delete(path: string, opts: RequestOptions = {}): RefinedResponse<ResponseType> {
-    return http.del(`${this.baseUrl}${path}`, null, {
+    const params: any = {
       headers: this.authHeader,
       timeout: opts.timeout ?? env.defaultTimeout,
       tags: opts.tags,
-    });
+    };
+    if (opts.expectedStatuses) {
+      params.responseCallback = http.expectedStatuses(...opts.expectedStatuses);
+    }
+    return http.del(`${this.baseUrl}${path}`, null, params);
   }
 }

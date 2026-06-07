@@ -1,3 +1,4 @@
+use futures::future::try_join_all;
 use uuid::Uuid;
 use crate::utils::{AppError, AppResult};
 use crate::modules::assignment::schema::*;
@@ -21,12 +22,14 @@ pub async fn get_assignments(
         assignment_repo.find_published_by_class_id(class_id).await?
     };
 
-    let mut responses = Vec::new();
-    for a in assignments {
-        let submission_count = assignment_repo.count_submissions_by_assignment(a.id).await?;
-        let graded_count = assignment_repo.count_graded_by_assignment(a.id).await?;
+    let is_student = role == "student";
+    let response_futures = assignments.into_iter().map(|a| async move {
+        let (submission_count, graded_count) = tokio::try_join!(
+            assignment_repo.count_submissions_by_assignment(a.id),
+            assignment_repo.count_graded_by_assignment(a.id),
+        )?;
 
-        let (submission_status, submission_id, score) = if role == "student" {
+        let (submission_status, submission_id, score) = if is_student {
             let submission = assignment_repo.find_student_submission(a.id, user_id).await?;
             (
                 submission.as_ref().map(|s| s.status.clone()),
@@ -37,7 +40,7 @@ pub async fn get_assignments(
             (None, None, None)
         };
 
-        responses.push(AssignmentResponse {
+        Ok::<AssignmentResponse, AppError>(AssignmentResponse {
             id: a.id,
             class_id: a.class_id,
             title: a.title,
@@ -59,8 +62,9 @@ pub async fn get_assignments(
             score,
             created_at: a.created_at.to_string(),
             updated_at: a.updated_at.to_string(),
-        });
-    }
+        })
+    });
 
+    let responses = try_join_all(response_futures).await?;
     Ok(AssignmentListResponse { assignments: responses })
 }

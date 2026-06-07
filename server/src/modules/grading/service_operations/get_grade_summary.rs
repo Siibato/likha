@@ -1,5 +1,7 @@
+use futures::future::join_all;
 use sea_orm::EntityTrait;
 use uuid::Uuid;
+use crate::cache::CacheKey;
 use crate::modules::grading::schema::{GradeSummaryResponse, GradeSummaryRow};
 use crate::utils::{AppError, AppResult};
 use crate::modules::grading::helpers::deped_weights;
@@ -10,33 +12,35 @@ impl crate::modules::grading::service::GradeComputationService {
         class_id: Uuid,
         grading_period_number: i32,
     ) -> AppResult<GradeSummaryResponse> {
-        let config = self
-            .repo
-            .get_config(class_id, grading_period_number)
-            .await?
-            .ok_or_else(|| {
-                AppError::BadRequest(
-                    "Grading config not set up for this class/period".to_string(),
-                )
-            })?;
-
-        let period_grades_data = self.repo.get_all_for_class(class_id, grading_period_number).await?;
-
-        let participants = self
-            .class_repo
-            .find_participants_by_class_id(class_id, None)
-            .await?;
-
-        let mut student_name_map: std::collections::HashMap<Uuid, String> =
-            std::collections::HashMap::new();
-        for p in &participants {
-            if let Ok(Some(user)) = ::entity::users::Entity::find_by_id(p.user_id)
-                .one(&self.db)
-                .await
-            {
-                student_name_map.insert(p.user_id, user.full_name);
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::GradeSummary(class_id, grading_period_number).as_str();
+            if let Some(cached) = cache.get::<GradeSummaryResponse>(&key).await {
+                return Ok(cached);
             }
         }
+        let (config_opt, period_grades_data, participants) = tokio::try_join!(
+            self.repo.get_config(class_id, grading_period_number),
+            self.repo.get_all_for_class(class_id, grading_period_number),
+            self.class_repo.find_participants_by_class_id(class_id, None),
+        )?;
+
+        let config = config_opt.ok_or_else(|| {
+            AppError::BadRequest(
+                "Grading config not set up for this class/period".to_string(),
+            )
+        })?;
+
+        let name_futures = participants.iter().map(|p| async move {
+            let user = ::entity::users::Entity::find_by_id(p.user_id)
+                .one(&self.db)
+                .await
+                .ok()
+                .flatten();
+            (p.user_id, user.map(|u| u.full_name).unwrap_or_else(|| "Unknown".to_string()))
+        });
+        let name_pairs = join_all(name_futures).await;
+        let student_name_map: std::collections::HashMap<Uuid, String> =
+            name_pairs.into_iter().collect();
 
         let students = period_grades_data
             .into_iter()
@@ -58,13 +62,18 @@ impl crate::modules::grading::service::GradeComputationService {
             })
             .collect();
 
-        Ok(GradeSummaryResponse {
+        let result = GradeSummaryResponse {
             class_id: class_id.to_string(),
             grading_period_number,
             ww_weight: config.ww_weight,
             pt_weight: config.pt_weight,
             qa_weight: config.qa_weight,
             students,
-        })
+        };
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::GradeSummary(class_id, grading_period_number).as_str();
+            cache.set(&key, &result, cache.ttl.list_seconds).await;
+        }
+        Ok(result)
     }
 }

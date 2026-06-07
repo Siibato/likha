@@ -7,7 +7,7 @@ use crate::modules::auth::UserRepository;
 
 pub async fn get_class_detail(
     class_repo: &ClassRepository,
-    user_repo: &UserRepository,
+    _user_repo: &UserRepository,
     class_id: Uuid,
 ) -> AppResult<ClassDetailResponse> {
     let class = class_repo
@@ -15,15 +15,16 @@ pub async fn get_class_detail(
         .await?
         .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-    let enrollments = class_repo
-        .find_participants_by_class_id(class_id, Some("student"))
+    // Single query to get all student participants with their user data
+    let participants_with_users = class_repo
+        .find_participants_with_users_by_class_id(class_id, Some("student"))
         .await?;
 
-    let mut students = Vec::new();
-    for enrollment in enrollments {
-        if let Some(user) = user_repo.find_by_id(enrollment.user_id).await? {
+    let students: Vec<EnrollmentResponse> = participants_with_users
+        .into_iter()
+        .map(|(enrollment, user)| {
             let is_active = user.account_status != "locked" && user.account_status != "deactivated";
-            students.push(EnrollmentResponse {
+            EnrollmentResponse {
                 id: enrollment.id,
                 student: UserResponse {
                     id: user.id,
@@ -36,9 +37,9 @@ pub async fn get_class_detail(
                     created_at: user.created_at.to_string(),
                 },
                 joined_at: enrollment.joined_at.to_string(),
-            });
-        }
-    }
+            }
+        })
+        .collect();
 
     let teacher = class_repo.find_teacher_of_class(class_id).await?
         .ok_or_else(|| AppError::InternalServerError("Class has no teacher assigned".to_string()))?;

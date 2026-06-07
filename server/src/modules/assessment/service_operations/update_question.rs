@@ -42,6 +42,7 @@ impl crate::modules::assessment::service::AssessmentService {
                     choice.choice_text,
                     choice.is_correct,
                     choice.order_index,
+                    None,
                 ).await?;
             }
         }
@@ -63,6 +64,10 @@ impl crate::modules::assessment::service::AssessmentService {
         }
 
         self.assessment_repo.update_total_points(question.assessment_id).await?;
+
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_assessment_detail(question.assessment_id).await;
+        }
 
         let response = self.build_question_response(&updated, "teacher").await?;
         Ok(response)

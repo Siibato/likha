@@ -20,12 +20,10 @@ impl crate::modules::assessment::service::AssessmentService {
         }
 
         let submissions = self.assessment_repo
-            .find_submissions_by_assessment_id(assessment_id).await?;
+            .find_submitted_submissions_by_assessment_id(assessment_id).await?;
+        let submission_count = submissions.len();
 
-        let submitted: Vec<_> = submissions.iter().filter(|s| s.submitted_at.is_some()).collect();
-        let submission_count = submitted.len();
-
-        let scores: Vec<f64> = submitted.iter().map(|s| s.total_points as f64).collect();
+        let scores: Vec<f64> = submissions.iter().map(|s| s.total_points).collect();
 
         let class_statistics = if scores.is_empty() {
             ClassStatistics {
@@ -46,8 +44,10 @@ impl crate::modules::assessment::service::AssessmentService {
         let questions = self.assessment_repo
             .find_questions_by_assessment_id(assessment_id).await?;
 
-        let mut student_question_correct: HashMap<(Uuid, Uuid), bool> = HashMap::new();
-        let mut student_question_choices: HashMap<(Uuid, Uuid), Vec<(Option<Uuid>, bool)>> = HashMap::new();
+        let mut student_question_correct: HashMap<(Uuid, Uuid), bool> =
+            HashMap::with_capacity(all_details.len());
+        let mut student_question_choices: HashMap<(Uuid, Uuid), Vec<(Option<Uuid>, bool)>> =
+            HashMap::with_capacity(all_details.len());
 
         for detail in &all_details {
             let key = (detail.student_id, detail.question_id);
@@ -62,18 +62,21 @@ impl crate::modules::assessment::service::AssessmentService {
             }
         }
 
-        let mut question_stats = Vec::new();
-        for q in &questions {
-            let mut correct_count = 0;
-            let mut incorrect_count = 0;
-
-            for s in &submitted {
-                let key = (s.user_id, q.id);
-                if let Some(&is_correct) = student_question_correct.get(&key) {
-                    if is_correct { correct_count += 1; } else { incorrect_count += 1; }
-                }
+        // Pre-aggregate correct/incorrect counts per question in O(details) instead of O(Q × S)
+        let mut correct_counts: HashMap<Uuid, usize> = HashMap::with_capacity(questions.len());
+        let mut incorrect_counts: HashMap<Uuid, usize> = HashMap::with_capacity(questions.len());
+        for ((_, question_id), is_correct) in &student_question_correct {
+            if *is_correct {
+                *correct_counts.entry(*question_id).or_insert(0) += 1;
+            } else {
+                *incorrect_counts.entry(*question_id).or_insert(0) += 1;
             }
+        }
 
+        let mut question_stats = Vec::with_capacity(questions.len());
+        for q in &questions {
+            let correct_count = correct_counts.get(&q.id).copied().unwrap_or(0);
+            let incorrect_count = incorrect_counts.get(&q.id).copied().unwrap_or(0);
             let total_answered = correct_count + incorrect_count;
             let correct_percentage = if total_answered > 0 {
                 (correct_count as f64 / total_answered as f64) * 100.0
@@ -93,7 +96,7 @@ impl crate::modules::assessment::service::AssessmentService {
         let (item_analysis, test_summary) = if submission_count >= 10 {
             self.compute_item_analysis(
                 &questions,
-                &submitted,
+                &submissions,
                 &student_question_correct,
                 &student_question_choices,
                 submission_count,

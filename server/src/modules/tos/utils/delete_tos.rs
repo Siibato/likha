@@ -12,6 +12,11 @@ impl crate::modules::tos::service::TosService {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
-        self.tos_repo.soft_delete_tos(tos_id).await
+        self.tos_repo.soft_delete_tos(tos_id).await?;
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_tos_detail(tos_id).await;
+            inv.invalidate_tos_list(tos.class_id).await;
+        }
+        Ok(())
     }
 }

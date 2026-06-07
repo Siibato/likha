@@ -19,6 +19,10 @@ impl crate::modules::learning_material::service::LearningMaterialService {
         let max_order = self.material_repo.get_max_order_index(class_id).await?;
         let order_index = max_order + 1;
 
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_material_list(class_id).await;
+        }
+
         let material = self
             .material_repo
             .create_material(class_id, title, description, content_text, order_index, client_id)

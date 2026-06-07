@@ -34,6 +34,11 @@ impl crate::modules::tos::service::TosService {
             }
         }
 
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_tos_detail(tos_id).await;
+            inv.invalidate_tos_list(tos.class_id).await;
+        }
+
         self.tos_repo
             .update_tos(
                 tos_id,

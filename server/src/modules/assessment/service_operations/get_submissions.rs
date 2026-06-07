@@ -1,3 +1,4 @@
+use futures::future::try_join_all;
 use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
 use crate::modules::assessment::schema::*;
@@ -21,14 +22,13 @@ impl crate::modules::assessment::service::AssessmentService {
         let submissions = self.assessment_repo
             .find_submissions_by_assessment_id(assessment_id).await?;
 
-        let mut responses = Vec::new();
-        for s in submissions {
+        let response_futures = submissions.into_iter().map(|s| async move {
             let student = self.user_repo.find_by_id(s.user_id).await?
                 .ok_or_else(|| AppError::NotFound("Student not found".to_string()))?;
 
             let earned_score = s.total_points;
 
-            responses.push(SubmissionSummaryResponse {
+            Ok::<SubmissionSummaryResponse, AppError>(SubmissionSummaryResponse {
                 id: s.id,
                 student_id: s.user_id,
                 student_name: student.full_name,
@@ -38,9 +38,10 @@ impl crate::modules::assessment::service::AssessmentService {
                 total_points: s.total_points,
                 auto_score: earned_score,
                 final_score: earned_score,
-            });
-        }
+            })
+        });
 
-        Ok(SubmissionListResponse { submissions: responses })
+        let submissions = try_join_all(response_futures).await?;
+        Ok(SubmissionListResponse { submissions })
     }
 }

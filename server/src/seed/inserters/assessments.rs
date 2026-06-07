@@ -108,7 +108,7 @@ async fn insert_question_with_choices_and_key(
 
     if spec.question_type == "multiple_choice" {
         for choice in &spec.choices {
-            repo.add_choice(spec.id, choice.text.clone(), choice.is_correct, choice.order)
+            repo.add_choice(spec.id, choice.text.clone(), choice.is_correct, choice.order, Some(choice.id))
                 .await?;
         }
     }

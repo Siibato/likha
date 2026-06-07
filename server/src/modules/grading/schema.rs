@@ -65,7 +65,7 @@ pub struct QuarterQuery {
 
 // ===== RESPONSE SCHEMAS =====
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GradingConfigResponse {
     pub id: String,
     pub class_id: String,
@@ -75,7 +75,7 @@ pub struct GradingConfigResponse {
     pub qa_weight: f64,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GradeItemResponse {
     pub id: String,
     pub class_id: String,
@@ -88,7 +88,7 @@ pub struct GradeItemResponse {
     pub order_index: i32,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GradeScoreResponse {
     pub id: String,
     pub grade_item_id: String,
@@ -99,7 +99,7 @@ pub struct GradeScoreResponse {
     pub effective_score: Option<f64>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct PeriodGradeResponse {
     pub id: String,
     pub class_id: String,
@@ -114,14 +114,14 @@ pub struct PeriodGradeResponse {
 /// Backward-compat alias
 pub type QuarterlyGradeResponse = PeriodGradeResponse;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct FinalGradeResponse {
     pub student_id: String,
     pub period_grades: Vec<PeriodGradeResponse>,
     pub final_grade: Option<f64>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GradeSummaryRow {
     pub student_id: String,
     pub student_name: String,
@@ -131,7 +131,7 @@ pub struct GradeSummaryRow {
     pub is_locked: bool,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GradeSummaryResponse {
     pub class_id: String,
     pub grading_period_number: i32,
@@ -141,7 +141,7 @@ pub struct GradeSummaryResponse {
     pub students: Vec<GradeSummaryRow>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct PresetInfo {
     pub key: String,
     pub label: String,
@@ -150,12 +150,12 @@ pub struct PresetInfo {
     pub qa: f64,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct DepEdPresetsResponse {
     pub presets: Vec<PresetInfo>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ClassGradingSetupResponse {
     pub class_id: String,
     pub grade_level: String,
@@ -166,13 +166,13 @@ pub struct ClassGradingSetupResponse {
 
 // ===== GENERAL AVERAGE (GSA) SCHEMAS =====
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GeneralAverageResponse {
     pub class_id: String,
     pub students: Vec<StudentGeneralAverage>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct StudentGeneralAverage {
     pub student_id: String,
     pub student_name: String,
@@ -181,7 +181,7 @@ pub struct StudentGeneralAverage {
     pub subjects: Vec<SubjectGrade>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SubjectGrade {
     pub class_id: String,
     pub class_title: String,
@@ -190,7 +190,7 @@ pub struct SubjectGrade {
 
 // ===== SF9/SF10 SCHEMAS =====
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Sf9Response {
     pub student_id: String,
     pub student_name: String,
@@ -201,7 +201,7 @@ pub struct Sf9Response {
     pub general_average: Option<Sf9QuarterlyAverages>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Sf9SubjectRow {
     pub class_title: String,
     pub subject_group: Option<String>,
@@ -213,7 +213,7 @@ pub struct Sf9SubjectRow {
     pub descriptor: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Sf9QuarterlyAverages {
     pub q1: Option<i32>,
     pub q2: Option<i32>,
@@ -287,7 +287,7 @@ impl From<::entity::period_grades::Model> for PeriodGradeResponse {
 
 // ===== BATCH RESPONSE SCHEMAS =====
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AllGradeDataResponse {
     pub grade_items: Vec<GradeItemResponse>,
     pub grade_summary: GradeSummaryResponse,

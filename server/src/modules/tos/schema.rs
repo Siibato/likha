@@ -88,7 +88,7 @@ pub struct MelcsSearchQuery {
 
 // ===== RESPONSE SCHEMAS =====
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TosResponse {
     pub id: String,
     pub class_id: String,
@@ -111,7 +111,7 @@ pub struct TosResponse {
     pub updated_at: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CompetencyResponse {
     pub id: String,
     pub competency_code: Option<String>,
@@ -129,7 +129,7 @@ pub struct CompetencyResponse {
     pub creating_count: Option<i32>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TosListResponse {
     pub items: Vec<TosResponse>,
 }

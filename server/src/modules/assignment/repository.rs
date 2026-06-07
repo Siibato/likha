@@ -46,6 +46,10 @@ impl AssignmentRepository {
         ops::find_published_by_class_id(&self.db, class_id).await
     }
 
+    pub async fn find_published_by_class_ids(&self, class_ids: &[Uuid]) -> AppResult<Vec<assignments::Model>> {
+        ops::find_published_by_class_ids(&self.db, class_ids).await
+    }
+
     pub async fn update_assignment(
         &self,
         id: Uuid,
@@ -133,8 +137,24 @@ impl AssignmentRepository {
         ops::count_submissions_by_assignment(&self.db, assignment_id).await
     }
 
+    pub async fn count_submissions_by_assignments(&self, assignment_ids: &[Uuid]) -> AppResult<std::collections::HashMap<Uuid, usize>> {
+        ops::count_submissions_by_assignments(&self.db, assignment_ids).await
+    }
+
     pub async fn count_graded_by_assignment(&self, assignment_id: Uuid) -> AppResult<usize> {
         ops::count_graded_by_assignment(&self.db, assignment_id).await
+    }
+
+    pub async fn count_graded_by_assignments(&self, assignment_ids: &[Uuid]) -> AppResult<std::collections::HashMap<Uuid, usize>> {
+        ops::count_graded_by_assignments(&self.db, assignment_ids).await
+    }
+
+    pub async fn find_student_submissions_for_assignments(
+        &self,
+        assignment_ids: &[Uuid],
+        student_id: Uuid,
+    ) -> AppResult<std::collections::HashMap<Uuid, assignment_submissions::Model>> {
+        ops::find_student_submissions_for_assignments(&self.db, assignment_ids, student_id).await
     }
 
     pub async fn save_file(

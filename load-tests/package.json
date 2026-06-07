@@ -15,6 +15,7 @@
     "test:delta": "mkdir -p reports/delta-sync && export $(grep -v '^#' .env | xargs) && k6 run dist/delta-sync.js",
     "test:grading": "mkdir -p reports/teacher-grading && export $(grep -v '^#' .env | xargs) && k6 run dist/teacher-grading.js",
     "test:all-endpoints": "mkdir -p reports/get-all-endpoints && export $(grep -v '^#' .env | xargs) && k6 run dist/get-all-endpoints.js",
+    "test:all-endpoints-quick": "mkdir -p reports/get-all-endpoints-quick && export $(grep -v '^#' .env | xargs) && k6 run dist/get-all-endpoints-quick.js",
     "test:all": "pnpm build && export $(grep -v '^#' .env | xargs) && k6 run dist/baseline.js && k6 run dist/stress.js",
     "dashboard": "node scripts/dashboard-server.mjs",
     "reports:clean": "rm -rf reports/*/ reports/index.json",
