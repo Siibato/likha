@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Mobile E2E Test Runner
+# Client E2E Test Runner
 #
 # Starts the seeded test server, waits for it to be healthy, runs Flutter
 # integration tests, then shuts the server down.
 #
 # Usage:
-#   ./run-mobile-e2e.sh [test-path]
+#   ./run-client-e2e.sh [test-path]
 #
 # Arguments:
 #   test-path   Flutter test file or directory (default: integration_test/mobile/auth_e2e_test.dart)
@@ -19,7 +19,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 SERVER_DIR="$PROJECT_ROOT/server"
-MOBILE_DIR="$PROJECT_ROOT/mobile"
+CLIENT_DIR="$PROJECT_ROOT/client"
 
 TEST_DEVICE_HOST="${TEST_DEVICE_HOST:-10.0.2.2}"
 TEST_DB_URL="${TEST_DB_URL:-sqlite://./data/lms_e2e_test.db?mode=rwc}"
@@ -56,7 +56,7 @@ for i in {1..30}; do
   sleep 1
 done
 
-cd "$MOBILE_DIR"
+cd "$CLIENT_DIR"
 
 DEVICE_COUNT=$(flutter devices --machine 2>/dev/null | grep '"id"' | wc -l | tr -d ' ')
 if [ "$DEVICE_COUNT" -eq 0 ]; then

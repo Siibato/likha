@@ -1,4 +1,4 @@
-# mobile
+# client
 
 A new Flutter project.
 

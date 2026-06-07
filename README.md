@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Rust (for server)
-- Flutter SDK (for mobile)
+- Flutter SDK (for client app)
 - Android Studio (for Android development)
   - Android SDK
   - Android Emulator or physical Android device
@@ -30,7 +30,7 @@ The server will:
 - Run database migrations
 - Start listening on `http://localhost:8080`
 
-### 3. Run the mobile app
+### 3. Run the client app
 
 #### Step 1: Start an Android emulator
 
@@ -98,7 +98,7 @@ emulator -avd lowres_device_256 -memory 256
 #### Step 2: Run the Flutter app
 
 ```bash
-cd mobile
+cd client
 flutter pub get
 ```
 
@@ -131,7 +131,7 @@ flutter run -d <device_id>
    ```bash
    adb reverse tcp:8080 tcp:8080
    ```
-5. Update `mobile/.env` to use localhost:
+5. Update `client/.env` to use localhost:
    ```env
    API_BASE_URL=http://localhost:8080
    ```
@@ -152,13 +152,13 @@ The web version shows the desktop UI (side navigation rail) and uses IndexedDB f
 Run this once to copy the required SQLite web worker files:
 
 ```bash
-cd mobile
+cd client
 dart run sqflite_common_ffi_web:setup
 ```
 
 #### Configure the API URL
 
-In `mobile/.env`, make sure the API URL points to localhost:
+In `client/.env`, make sure the API URL points to localhost:
 
 ```env
 API_BASE_URL=http://localhost:8080
@@ -167,7 +167,7 @@ API_BASE_URL=http://localhost:8080
 #### Run
 
 ```bash
-cd mobile
+cd client
 flutter run -d chrome
 ```
 
@@ -176,7 +176,7 @@ flutter run -d chrome
 Both macOS and Windows desktop targets are already configured in the project.
 
 ```bash
-cd mobile
+cd client
 
 # macOS
 flutter run -d macos
@@ -210,7 +210,7 @@ Delete the `.db` file to reset local app data.
 To build an APK for distribution or testing:
 
 ```bash
-cd mobile
+cd client
 flutter build apk --release
 ```
 
