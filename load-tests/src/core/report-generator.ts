@@ -46,15 +46,20 @@ function buildEndpoints(metrics: Record<string, any>): EndpointMetrics[] {
     const name = nameMatch[1];
     const values = metric.values || {};
 
+    // Read request count from http_reqs sub-metric (http_req_duration doesn't include count)
+    const reqsKey = `http_reqs{name:${name}}`;
+    const reqsMetric = metrics[reqsKey];
+    const count = reqsMetric?.values?.count ?? 0;
+
     // Find matching failed sub-metric
     const failedKey = `http_req_failed{name:${name}}`;
     const failedMetric = metrics[failedKey];
     const failCount = failedMetric?.values?.fails ?? 0;
-    const failRate = values.count ? (failCount / values.count) * 100 : 0;
+    const failRate = count ? (failCount / count) * 100 : 0;
 
     endpoints.push({
       name,
-      count: values.count ?? 0,
+      count,
       failCount,
       failRate: Math.round(failRate * 100) / 100,
       min: values.min ?? 0,
@@ -94,9 +99,9 @@ function buildErrors(metrics: Record<string, any>): ErrorDistribution[] {
 
   const errors: ErrorDistribution[] = [];
 
-  // k6 tracks status codes via http_reqs{status:XXX} sub-metrics
+  // k6 tracks status codes via http_reqs{status:XXX,expected_response:...} sub-metrics
   for (const [key, metric] of Object.entries(metrics)) {
-    const statusMatch = key.match(/^http_reqs\{status:(\d+)\}$/);
+    const statusMatch = key.match(/^http_reqs\{status:(\d+)/);
     if (!statusMatch) continue;
     const status = parseInt(statusMatch[1], 10);
     const count = metric.values?.count ?? 0;
@@ -353,10 +358,12 @@ export function createReportGenerator(scenarioName: string) {
         if (!nameMatch) continue;
         const name = nameMatch[1];
         const v = metric.values || {};
+        const reqsKey = `http_reqs{name:${name}}`;
+        const reqsMetric = metrics[reqsKey];
+        const count = reqsMetric?.values?.count ?? 0;
         const failedKey = `http_req_failed{name:${name}}`;
         const failedMetric = metrics[failedKey];
         const failCount = failedMetric?.values?.fails ?? 0;
-        const count = v.count ?? 0;
         cliEndpoints.push({
           name,
           count,

@@ -91,7 +91,7 @@ export function runAllEndpoints(data: MixedSetupData, opts: RunnerOptions): void
       const assessDetailRes = assessmentSvc.detail(assessment.id, role);
       expectAll(assessDetailRes, 'teacher-assessment-detail', { status: 200, underMs: 400 });
 
-      const submissionsRes = assessmentSvc.getSubmissions(assessment.id);
+      const submissionsRes = assessmentSvc.getSubmissions(assessment.id, { expectedStatuses: [200, 404] });
       // May 404 if no submissions exist
       if (submissionsRes.status === 200) {
         expectAll(submissionsRes, 'teacher-assessment-submissions', { status: 200, underMs: 500 });
@@ -109,7 +109,7 @@ export function runAllEndpoints(data: MixedSetupData, opts: RunnerOptions): void
       const assignDetailRes = assignmentSvc.detail(assignment.id, role);
       expectAll(assignDetailRes, 'teacher-assignment-detail', { status: 200, underMs: 400 });
 
-      const assignSubsRes = assignmentSvc.getSubmissions(assignment.id);
+      const assignSubsRes = assignmentSvc.getSubmissions(assignment.id, { expectedStatuses: [200, 404] });
       if (assignSubsRes.status === 200) {
         expectAll(assignSubsRes, 'teacher-assignment-submissions', { status: 200, underMs: 500 });
       }
@@ -136,18 +136,18 @@ export function runAllEndpoints(data: MixedSetupData, opts: RunnerOptions): void
     expectAll(presetsRes, 'teacher-deped-presets', { status: 200, underMs: 300 });
 
     // General averages
-    const genAvgRes = gradingSvc.getGeneralAverages(classId);
+    const genAvgRes = gradingSvc.getGeneralAverages(classId, { expectedStatuses: [200, 404] });
     if (genAvgRes.status === 200) {
       expectAll(genAvgRes, 'teacher-general-averages', { status: 200, underMs: 600 });
     }
 
     // TOS
-    const tosRes = tosSvc.list(classId);
+    const tosRes = tosSvc.list(classId, { expectedStatuses: [200, 404] });
     if (tosRes.status === 200) {
       expectAll(tosRes, 'teacher-tos-list', { status: 200, underMs: 400 });
     }
 
-    const melcsRes = tosSvc.searchMelcs('science');
+    const melcsRes = tosSvc.searchMelcs('science', { expectedStatuses: [200, 404] });
     if (melcsRes.status === 200) {
       expectAll(melcsRes, 'teacher-melcs-search', { status: 200, underMs: 500 });
     }
@@ -237,7 +237,7 @@ export function runAllEndpoints(data: MixedSetupData, opts: RunnerOptions): void
       const students = manifest.users.filter(u => u.role === 'student');
       if (students.length > 0) {
         const student = randomItem(students);
-        const resultsRes = assessmentSvc.getStudentSubmissions(classId, student.id);
+        const resultsRes = assessmentSvc.getStudentSubmissions(classId, student.id, { expectedStatuses: [200, 404] });
         if (resultsRes.status === 200) {
           expectAll(resultsRes, 'student-assessment-results', { status: 200, underMs: 500 });
         }

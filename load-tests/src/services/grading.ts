@@ -1,4 +1,4 @@
-import { ApiClient } from '../core/api-client';
+import { ApiClient, RequestOptions } from '../core/api-client';
 
 export class GradingService {
   constructor(private client: ApiClient) {}
@@ -54,8 +54,8 @@ export class GradingService {
     return this.client.get(`/classes/${classId}/my-grades/${quarter}`, { tags: { name: 'Student:MyQuarterGrades' } });
   }
 
-  getGeneralAverages(classId: string) {
-    return this.client.get(`/classes/${classId}/grades/general-average`, { tags: { name: 'Teacher:GeneralAverages' } });
+  getGeneralAverages(classId: string, opts?: RequestOptions) {
+    return this.client.get(`/classes/${classId}/grades/general-average`, { tags: { name: 'Teacher:GeneralAverages' }, ...opts });
   }
 
   getDepedPresets() {

@@ -1,4 +1,4 @@
-import { ApiClient } from '../core/api-client';
+import { ApiClient, RequestOptions } from '../core/api-client';
 import { AnswerPayload } from '../types/api';
 
 export class AssessmentService {
@@ -36,16 +36,16 @@ export class AssessmentService {
     return this.client.get(`/assessments/${id}/statistics`, { tags: { name: 'Teacher:AssessmentStats' } });
   }
 
-  getSubmissions(id: string) {
-    return this.client.get(`/assessments/${id}/submissions`, { tags: { name: 'Teacher:AssessmentSubmissions' } });
+  getSubmissions(id: string, opts?: RequestOptions) {
+    return this.client.get(`/assessments/${id}/submissions`, { tags: { name: 'Teacher:AssessmentSubmissions' }, ...opts });
   }
 
   getSubmissionDetail(id: string) {
     return this.client.get(`/submissions/${id}`, { tags: { name: 'Teacher:SubmissionDetail' } });
   }
 
-  getStudentSubmissions(classId: string, studentId: string) {
-    return this.client.get(`/classes/${classId}/students/${studentId}/assessment-submissions`, { tags: { name: 'Teacher:StudentAssessmentSubmissions' } });
+  getStudentSubmissions(classId: string, studentId: string, opts?: RequestOptions) {
+    return this.client.get(`/classes/${classId}/students/${studentId}/assessment-submissions`, { tags: { name: 'Teacher:StudentAssessmentSubmissions' }, ...opts });
   }
 
   gradeEssay(answerId: string, points: number, feedback?: string) {

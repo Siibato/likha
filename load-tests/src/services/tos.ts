@@ -1,10 +1,10 @@
-import { ApiClient } from '../core/api-client';
+import { ApiClient, RequestOptions } from '../core/api-client';
 
 export class TosService {
   constructor(private client: ApiClient) {}
 
-  list(classId: string) {
-    return this.client.get(`/classes/${classId}/tos`, { tags: { name: 'Teacher:TosList' } });
+  list(classId: string, opts?: RequestOptions) {
+    return this.client.get(`/classes/${classId}/tos`, { tags: { name: 'Teacher:TosList' }, ...opts });
   }
 
   detail(id: string) {
@@ -19,7 +19,7 @@ export class TosService {
     return this.client.post(`/tos/${tosId}/competencies`, payload, { tags: { name: 'TosAddCompetency' } });
   }
 
-  searchMelcs(query: string) {
-    return this.client.get(`/melcs?q=${encodeURIComponent(query)}`, { tags: { name: 'Teacher:MelcsSearch' } });
+  searchMelcs(query: string, opts?: RequestOptions) {
+    return this.client.get(`/melcs?q=${encodeURIComponent(query)}`, { tags: { name: 'Teacher:MelcsSearch' }, ...opts });
   }
 }

@@ -1,4 +1,4 @@
-import { ApiClient } from '../core/api-client';
+import { ApiClient, RequestOptions } from '../core/api-client';
 
 export class AssignmentService {
   constructor(private client: ApiClient) {}
@@ -35,8 +35,8 @@ export class AssignmentService {
     return this.client.post(`/assignment-submissions/${submissionId}/return`, undefined, { tags: { name: 'AssignmentReturn' } });
   }
 
-  getSubmissions(id: string) {
-    return this.client.get(`/assignments/${id}/submissions`, { tags: { name: 'Teacher:AssignmentSubmissions' } });
+  getSubmissions(id: string, opts?: RequestOptions) {
+    return this.client.get(`/assignments/${id}/submissions`, { tags: { name: 'Teacher:AssignmentSubmissions' }, ...opts });
   }
 
   getSubmissionDetail(id: string) {
