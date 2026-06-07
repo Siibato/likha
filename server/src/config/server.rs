@@ -15,6 +15,11 @@ pub struct ServerConfig {
     pub file_encryption_key: String,
     pub allowed_origins: Vec<String>,
     pub max_body_size_bytes: u64,
+    pub redis_url: String,
+    pub cache_enabled: bool,
+    pub cache_ttl_list_seconds: u64,
+    pub cache_ttl_detail_seconds: u64,
+    pub cache_ttl_static_seconds: u64,
 }
 
 impl ServerConfig {
@@ -67,6 +72,23 @@ impl ServerConfig {
             file_encryption_key,
             allowed_origins,
             max_body_size_bytes,
+            redis_url: env::var("REDIS_URL").unwrap_or_else(|_| "redis://localhost:6379".to_string()),
+            cache_enabled: env::var("CACHE_ENABLED")
+                .unwrap_or_else(|_| "true".to_string())
+                .parse::<bool>()
+                .unwrap_or(true),
+            cache_ttl_list_seconds: env::var("CACHE_TTL_LIST_SECONDS")
+                .unwrap_or_else(|_| "300".to_string())
+                .parse()
+                .unwrap_or(300),
+            cache_ttl_detail_seconds: env::var("CACHE_TTL_DETAIL_SECONDS")
+                .unwrap_or_else(|_| "120".to_string())
+                .parse()
+                .unwrap_or(120),
+            cache_ttl_static_seconds: env::var("CACHE_TTL_STATIC_SECONDS")
+                .unwrap_or_else(|_| "3600".to_string())
+                .parse()
+                .unwrap_or(3600),
         }
     }
 }

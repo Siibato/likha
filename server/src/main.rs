@@ -24,6 +24,7 @@ use server::modules::entitlement::EntitlementService;
 use server::modules::sync::service::{SyncPushService, SyncConflictService, SyncFullService, SyncDeltaService};
 use server::utils::file_encryption::parse_key;
 use server::modules::sync::{ManifestRepository, ProcessedOperationsRepository};
+use server::cache::{RedisCache, CacheTtl};
 use server::middleware::{RateLimitLayer, RateLimitStore};
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 16)]
@@ -222,15 +223,23 @@ async fn main() {
 
     let admin_service = Arc::new(server::modules::admin::service::AdminService::new(db.clone()));
 
-    let class_service = Arc::new(ClassService::new(db.clone()));
+    // Initialize Redis cache
+    let cache_ttl = CacheTtl {
+        list_seconds: config.cache_ttl_list_seconds,
+        detail_seconds: config.cache_ttl_detail_seconds,
+        static_seconds: config.cache_ttl_static_seconds,
+    };
+    let redis_cache = RedisCache::new(&config.redis_url, config.cache_enabled, cache_ttl).await;
 
-    let assessment_service = Arc::new(AssessmentService::new(db.clone()));
+    let class_service = Arc::new(ClassService::new(db.clone()).with_cache(redis_cache.clone()));
+
+    let assessment_service = Arc::new(AssessmentService::new(db.clone()).with_cache(redis_cache.clone()));
 
     // Parse file encryption key from hex string
     let file_encryption_key = parse_key(&config.file_encryption_key)
         .expect("Invalid FILE_ENCRYPTION_KEY format");
 
-    let assignment_service = Arc::new(AssignmentService::new(db.clone()));
+    let assignment_service = Arc::new(AssignmentService::new(db.clone()).with_cache(redis_cache.clone()));
     let material_service = Arc::new(LearningMaterialService::new(
         db.clone(),
         config.file_storage_path.clone(),

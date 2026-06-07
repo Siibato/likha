@@ -61,7 +61,7 @@ pub async fn get_assessments(
     Path(class_id): Path<Uuid>,
 ) -> impl IntoResponse {
     match service
-        .get_assessments(class_id, auth_user.user_id, &auth_user.role)
+        .get_assessments_cached(class_id, auth_user.user_id, &auth_user.role)
         .await
     {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),

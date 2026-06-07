@@ -1,6 +1,8 @@
 use sea_orm::DatabaseConnection;
 use std::env;
+use std::sync::Arc;
 
+use crate::cache::{CacheKey, CacheInvalidator, RedisCache};
 use crate::modules::assignment::repository::AssignmentRepository;
 use crate::modules::admin::ActivityLogRepository;
 use crate::modules::class::repository::ClassRepository;
@@ -15,6 +17,8 @@ pub struct AssignmentService {
     pub file_storage_path: String,
     pub file_encryption_key: [u8; 32],
     pub grade_computation_repo: GradeComputationRepository,
+    cache: Option<Arc<RedisCache>>,
+    invalidator: Option<CacheInvalidator>,
 }
 
 impl AssignmentService {
@@ -40,7 +44,15 @@ impl AssignmentService {
             grade_computation_repo: GradeComputationRepository::new(db.clone()),
             file_storage_path,
             file_encryption_key,
+            cache: None,
+            invalidator: None,
         }
+    }
+
+    pub fn with_cache(mut self, cache: Arc<RedisCache>) -> Self {
+        self.invalidator = Some(CacheInvalidator::new(cache.clone()));
+        self.cache = Some(cache);
+        self
     }
 
     pub async fn create_assignment(
@@ -50,7 +62,7 @@ impl AssignmentService {
         teacher_id: uuid::Uuid,
         client_id: Option<uuid::Uuid>,
     ) -> AppResult<crate::modules::assignment::schema::AssignmentResponse> {
-        ops::create_assignment(
+        let result = ops::create_assignment(
             &self.assignment_repo,
             &self.class_repo,
             &self.activity_log_repo,
@@ -58,7 +70,11 @@ impl AssignmentService {
             request,
             teacher_id,
             client_id,
-        ).await
+        ).await?;
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_teacher_assignments(teacher_id).await;
+        }
+        Ok(result)
     }
 
     pub async fn get_assignments(
@@ -95,11 +111,22 @@ impl AssignmentService {
         &self,
         student_id: uuid::Uuid,
     ) -> AppResult<crate::modules::assignment::schema::AssignmentListResponse> {
-        ops::get_student_assignments(
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::AssignmentListStudent(student_id).as_str();
+            if let Some(cached) = cache.get::<crate::modules::assignment::schema::AssignmentListResponse>(&key).await {
+                return Ok(cached);
+            }
+        }
+        let result = ops::get_student_assignments(
             &self.assignment_repo,
             &self.class_repo,
             student_id,
-        ).await
+        ).await?;
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::AssignmentListStudent(student_id).as_str();
+            cache.set(&key, &result, cache.ttl.list_seconds).await;
+        }
+        Ok(result)
     }
 
     pub async fn update_assignment(
@@ -122,14 +149,18 @@ impl AssignmentService {
         assignment_id: uuid::Uuid,
         teacher_id: uuid::Uuid,
     ) -> AppResult<crate::modules::assignment::schema::AssignmentResponse> {
-        ops::publish_assignment(
+        let result = ops::publish_assignment(
             &self.assignment_repo,
             &self.class_repo,
             &self.activity_log_repo,
             &self.grade_computation_repo,
             assignment_id,
             teacher_id,
-        ).await
+        ).await?;
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_teacher_assignments(teacher_id).await;
+        }
+        Ok(result)
     }
 
     pub async fn unpublish_assignment(
@@ -151,13 +182,17 @@ impl AssignmentService {
         assignment_id: uuid::Uuid,
         teacher_id: uuid::Uuid,
     ) -> AppResult<()> {
-        ops::soft_delete(
+        let result = ops::soft_delete(
             &self.assignment_repo,
             &self.class_repo,
             &self.activity_log_repo,
             assignment_id,
             teacher_id,
-        ).await
+        ).await?;
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_teacher_assignments(teacher_id).await;
+        }
+        Ok(result)
     }
 
     pub async fn reorder_assignments(

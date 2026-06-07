@@ -121,7 +121,7 @@ pub struct ReorderQuestionsRequest {
 
 // ===== RESPONSE SCHEMAS =====
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AssessmentResponse {
     pub id: Uuid,
     pub class_id: Uuid,
@@ -144,7 +144,7 @@ pub struct AssessmentResponse {
     pub updated_at: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AssessmentListResponse {
     pub assessments: Vec<AssessmentResponse>,
 }

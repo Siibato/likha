@@ -30,6 +30,7 @@ entity = { path = "entity" }
 migration = { path = "migrations" }
 async-trait = "0.1"
 futures = { version = "0.3", default-features = false, features = ["alloc"] }
+fred = { version = "10" }
 
 [dev-dependencies]
 # mockall = "0.13"  # not yet vendored; trait-based mock tests scaffolded but guarded by #[cfg(feature = "mock_tests")]
