@@ -75,7 +75,7 @@ pub async fn get_assessment_detail(
     Path(assessment_id): Path<Uuid>,
 ) -> impl IntoResponse {
     match service
-        .get_assessment_detail(assessment_id, auth_user.user_id, &auth_user.role)
+        .get_assessment_detail_cached(assessment_id, auth_user.user_id, &auth_user.role)
         .await
     {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
@@ -241,7 +241,7 @@ pub async fn get_submissions(
         return r;
     }
 
-    match service.get_submissions(assessment_id, auth_user.user_id).await {
+    match service.get_submissions_cached(assessment_id, auth_user.user_id).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -256,7 +256,7 @@ pub async fn get_submission_detail(
         return r;
     }
 
-    match service.get_submission_detail(submission_id, auth_user.user_id).await {
+    match service.get_submission_detail_cached(submission_id, auth_user.user_id).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -303,7 +303,7 @@ pub async fn get_statistics(
         return r;
     }
 
-    match service.get_statistics(assessment_id, auth_user.user_id).await {
+    match service.get_statistics_cached(assessment_id, auth_user.user_id).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -390,7 +390,7 @@ pub async fn get_student_results(
         return r;
     }
 
-    match service.get_student_results(submission_id, auth_user.user_id).await {
+    match service.get_student_results_cached(submission_id, auth_user.user_id).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -432,7 +432,7 @@ pub async fn get_student_assessment_submissions(
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
-    match service.get_student_assessment_submissions(class_id, student_id, auth_user.user_id).await {
+    match service.get_student_assessment_submissions_cached(class_id, student_id, auth_user.user_id).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }

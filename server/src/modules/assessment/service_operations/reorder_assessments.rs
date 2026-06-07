@@ -26,6 +26,10 @@ impl crate::modules::assessment::service::AssessmentService {
             .reorder_assessments(class_id, request.assessment_ids)
             .await?;
 
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_assessments(teacher_id, class_id).await;
+        }
+
         Ok(())
     }
 }

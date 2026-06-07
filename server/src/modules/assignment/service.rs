@@ -83,13 +83,24 @@ impl AssignmentService {
         user_id: uuid::Uuid,
         role: &str,
     ) -> AppResult<crate::modules::assignment::schema::AssignmentListResponse> {
-        ops::get_assignments(
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::AssignmentListByClass(class_id, user_id, role.to_string()).as_str();
+            if let Some(cached) = cache.get::<crate::modules::assignment::schema::AssignmentListResponse>(&key).await {
+                return Ok(cached);
+            }
+        }
+        let result = ops::get_assignments(
             &self.assignment_repo,
             &self.class_repo,
             class_id,
             user_id,
             role,
-        ).await
+        ).await?;
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::AssignmentListByClass(class_id, user_id, role.to_string()).as_str();
+            cache.set(&key, &result, cache.ttl.list_seconds).await;
+        }
+        Ok(result)
     }
 
     pub async fn get_assignment_detail(
@@ -231,13 +242,17 @@ impl AssignmentService {
         assignment_ids: Vec<uuid::Uuid>,
         teacher_id: uuid::Uuid,
     ) -> AppResult<()> {
-        ops::reorder_assignments(
+        let result = ops::reorder_assignments(
             &self.assignment_repo,
             &self.class_repo,
             class_id,
             assignment_ids,
             teacher_id,
-        ).await
+        ).await?;
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_teacher_assignments(teacher_id).await;
+        }
+        Ok(result)
     }
 
     pub async fn get_assignments_metadata(

@@ -21,6 +21,10 @@ impl crate::modules::learning_material::service::LearningMaterialService {
             .await?;
 
         self.material_repo.soft_delete_file(file_id).await?;
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_material_detail(material.id).await;
+            inv.invalidate_material_list(material.class_id).await;
+        }
 
         if let (Some(hash), Some(path)) = (file.file_hash, file.file_path) {
             if let Ok(count) = self.material_repo.count_active_by_hash(&hash, file_id).await {

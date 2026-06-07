@@ -1,9 +1,16 @@
 use uuid::Uuid;
+use crate::cache::CacheKey;
 use crate::modules::tos::schema::*;
 use crate::utils::{AppError, AppResult};
 
 impl crate::modules::tos::service::TosService {
     pub async fn get_tos(&self, tos_id: Uuid) -> AppResult<TosResponse> {
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::TosDetail(tos_id).as_str();
+            if let Some(cached) = cache.get::<TosResponse>(&key).await {
+                return Ok(cached);
+            }
+        }
         let tos = self.tos_repo
             .find_tos_by_id(tos_id)
             .await?
@@ -11,7 +18,7 @@ impl crate::modules::tos::service::TosService {
 
         let competencies = self.tos_repo.find_competencies_by_tos(tos_id).await?;
 
-        Ok(TosResponse {
+        let result = TosResponse {
             id: tos.id.to_string(),
             class_id: tos.class_id.to_string(),
             grading_period_number: tos.grading_period_number,
@@ -49,6 +56,11 @@ impl crate::modules::tos::service::TosService {
                 .collect(),
             created_at: tos.created_at.to_string(),
             updated_at: tos.updated_at.to_string(),
-        })
+        };
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::TosDetail(tos_id).as_str();
+            cache.set(&key, &result, cache.ttl.detail_seconds).await;
+        }
+        Ok(result)
     }
 }

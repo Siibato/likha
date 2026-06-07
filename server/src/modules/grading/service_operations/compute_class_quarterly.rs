@@ -13,6 +13,13 @@ impl crate::modules::grading::service::GradeComputationService {
         let futures = student_ids
             .iter()
             .map(|&student_id| self.compute_student_quarterly(class_id, student_id, grading_period_number));
-        try_join_all(futures).await
+        let result = try_join_all(futures).await?;
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_class_grades(class_id, grading_period_number).await;
+            for student_id in &student_ids {
+                inv.invalidate_student_grades(class_id, *student_id, grading_period_number).await;
+            }
+        }
+        Ok(result)
     }
 }

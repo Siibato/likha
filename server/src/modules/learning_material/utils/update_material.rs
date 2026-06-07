@@ -36,6 +36,11 @@ impl crate::modules::learning_material::service::LearningMaterialService {
             None
         };
 
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_material_detail(material_id).await;
+            inv.invalidate_material_list(material.class_id).await;
+        }
+
         let updated = self
             .material_repo
             .update_material(material_id, title, description, content_text)

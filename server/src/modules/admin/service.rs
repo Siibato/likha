@@ -1,4 +1,6 @@
+use std::sync::Arc;
 use uuid::Uuid;
+use crate::cache::{CacheInvalidator, RedisCache};
 use crate::utils::AppResult;
 use crate::modules::auth::schema::UserResponse;
 use crate::modules::admin::schema::{CreateAccountRequest, UpdateAccountRequest, ResetAccountRequest, LockAccountRequest};
@@ -11,13 +13,23 @@ use ::entity::activity_logs;
 
 pub struct AdminService {
     pub repository: AdminRepository,
+    cache: Option<Arc<RedisCache>>,
+    invalidator: Option<CacheInvalidator>,
 }
 
 impl AdminService {
     pub fn new(db: sea_orm::DatabaseConnection) -> Self {
         Self {
             repository: AdminRepository::new(db),
+            cache: None,
+            invalidator: None,
         }
+    }
+
+    pub fn with_cache(mut self, cache: Arc<RedisCache>) -> Self {
+        self.invalidator = Some(CacheInvalidator::new(cache.clone()));
+        self.cache = Some(cache);
+        self
     }
 
     pub async fn create_account(
@@ -42,13 +54,16 @@ impl AdminService {
         request: UpdateAccountRequest,
         admin_id: Uuid,
     ) -> AppResult<UserResponse> {
-        update_account(
+        let result = update_account(
             &self.repository.user_repo,
             user_id,
             request,
             admin_id,
-        )
-        .await
+        ).await?;
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_user_profile(user_id).await;
+        }
+        Ok(result)
     }
 
     pub async fn reset_account(
@@ -56,13 +71,17 @@ impl AdminService {
         request: ResetAccountRequest,
         admin_id: Uuid,
     ) -> AppResult<UserResponse> {
-        reset_account(
+        let user_id = request.user_id;
+        let result = reset_account(
             &self.repository.user_repo,
             &self.repository.activity_log_repo,
             request,
             admin_id,
-        )
-        .await
+        ).await?;
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_user_profile(user_id).await;
+        }
+        Ok(result)
     }
 
     pub async fn get_account(&self, user_id: Uuid) -> AppResult<UserResponse> {

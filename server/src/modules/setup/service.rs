@@ -1,6 +1,8 @@
 use sea_orm::DatabaseConnection;
+use std::sync::Arc;
 use uuid::Uuid;
 
+use crate::cache::{CacheInvalidator, CacheKey, RedisCache};
 use crate::modules::admin::ActivityLogRepository;
 use crate::modules::setup::repository::SetupRepository;
 use crate::modules::setup::schema::{
@@ -13,6 +15,8 @@ use crate::utils::AppResult;
 pub struct SetupService {
     setup_repo: SetupRepository,
     activity_log_repo: ActivityLogRepository,
+    cache: Option<Arc<RedisCache>>,
+    invalidator: Option<CacheInvalidator>,
 }
 
 impl SetupService {
@@ -27,7 +31,15 @@ impl SetupService {
         Self {
             setup_repo,
             activity_log_repo,
+            cache: None,
+            invalidator: None,
         }
+    }
+
+    pub fn with_cache(mut self, cache: Arc<RedisCache>) -> Self {
+        self.invalidator = Some(CacheInvalidator::new(cache.clone()));
+        self.cache = Some(cache);
+        self
     }
 
     // ---------------------------------------------------------------------------
@@ -41,7 +53,18 @@ impl SetupService {
 
     /// Returns public school info (school_name only).
     pub async fn get_school_info(&self) -> AppResult<VerifyResponse> {
-        ops::get_school_info(&self.setup_repo).await
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::SchoolInfo.as_str();
+            if let Some(cached) = cache.get::<VerifyResponse>(&key).await {
+                return Ok(cached);
+            }
+        }
+        let result = ops::get_school_info(&self.setup_repo).await?;
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::SchoolInfo.as_str();
+            cache.set(&key, &result, cache.ttl.static_seconds).await;
+        }
+        Ok(result)
     }
 
     // ---------------------------------------------------------------------------
@@ -50,7 +73,18 @@ impl SetupService {
 
     /// Returns all school settings.
     pub async fn get_school_settings(&self) -> AppResult<SchoolSettingsResponse> {
-        ops::get_school_settings(&self.setup_repo).await
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::SchoolSettings.as_str();
+            if let Some(cached) = cache.get::<SchoolSettingsResponse>(&key).await {
+                return Ok(cached);
+            }
+        }
+        let result = ops::get_school_settings(&self.setup_repo).await?;
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::SchoolSettings.as_str();
+            cache.set(&key, &result, cache.ttl.static_seconds).await;
+        }
+        Ok(result)
     }
 
     /// Updates school details (name, region, division, year).
@@ -58,17 +92,38 @@ impl SetupService {
         &self,
         request: UpdateSchoolSettingsRequest,
     ) -> AppResult<SchoolSettingsResponse> {
-        ops::update_school_settings(&self.setup_repo, request).await
+        let result = ops::update_school_settings(&self.setup_repo, request).await?;
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_school_settings().await;
+            inv.invalidate_school_info().await;
+        }
+        Ok(result)
     }
 
     /// Updates the school code in the database.
     pub async fn update_code(&self, request: UpdateCodeRequest, admin_id: Uuid) -> AppResult<()> {
-        ops::update_school_code(&self.setup_repo, &self.activity_log_repo, request.code, admin_id).await
+        let result = ops::update_school_code(&self.setup_repo, &self.activity_log_repo, request.code, admin_id).await?;
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_school_code().await;
+            inv.invalidate_school_settings().await;
+        }
+        Ok(result)
     }
 
     /// Returns the current school code.
     pub async fn get_school_code(&self) -> AppResult<ShortCodeResponse> {
-        ops::get_school_code(&self.setup_repo).await
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::SchoolCode.as_str();
+            if let Some(cached) = cache.get::<ShortCodeResponse>(&key).await {
+                return Ok(cached);
+            }
+        }
+        let result = ops::get_school_code(&self.setup_repo).await?;
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::SchoolCode.as_str();
+            cache.set(&key, &result, cache.ttl.static_seconds).await;
+        }
+        Ok(result)
     }
 
     /// Generates a QR code PNG containing the plain school code text.

@@ -1,4 +1,5 @@
 use uuid::Uuid;
+use crate::cache::CacheKey;
 use crate::utils::error::AppResult;
 use crate::modules::learning_material::schema::{MaterialResponse, MaterialListResponse};
 
@@ -13,6 +14,13 @@ impl crate::modules::learning_material::service::LearningMaterialService {
             self.verify_teacher_owns_class(class_id, user_id).await?;
         } else {
             self.verify_student_enrolled(class_id, user_id).await?;
+        }
+
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::MaterialList(class_id).as_str();
+            if let Some(cached) = cache.get::<MaterialListResponse>(&key).await {
+                return Ok(cached);
+            }
         }
 
         let materials = self.material_repo.find_by_class_id(class_id).await?;
@@ -39,8 +47,13 @@ impl crate::modules::learning_material::service::LearningMaterialService {
             }
         }).collect();
 
-        Ok(MaterialListResponse {
+        let result = MaterialListResponse {
             materials: material_responses,
-        })
+        };
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::MaterialList(class_id).as_str();
+            cache.set(&key, &result, cache.ttl.list_seconds).await;
+        }
+        Ok(result)
     }
 }

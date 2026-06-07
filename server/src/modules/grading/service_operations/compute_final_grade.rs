@@ -1,4 +1,5 @@
 use uuid::Uuid;
+use crate::cache::CacheKey;
 use crate::modules::grading::schema::{FinalGradeResponse, QuarterlyGradeResponse};
 use crate::utils::AppResult;
 
@@ -8,6 +9,12 @@ impl crate::modules::grading::service::GradeComputationService {
         class_id: Uuid,
         student_id: Uuid,
     ) -> AppResult<FinalGradeResponse> {
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::FinalGrade(class_id, student_id).as_str();
+            if let Some(cached) = cache.get::<FinalGradeResponse>(&key).await {
+                return Ok(cached);
+            }
+        }
         let quarters = self
             .repo
             .get_all_for_student(class_id, student_id)
@@ -28,10 +35,15 @@ impl crate::modules::grading::service::GradeComputationService {
             Some(locked_grades.iter().sum::<f64>() / locked_grades.len() as f64)
         };
 
-        Ok(FinalGradeResponse {
+        let result = FinalGradeResponse {
             student_id: student_id.to_string(),
             period_grades: period_responses,
             final_grade,
-        })
+        };
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::FinalGrade(class_id, student_id).as_str();
+            cache.set(&key, &result, cache.ttl.detail_seconds).await;
+        }
+        Ok(result)
     }
 }

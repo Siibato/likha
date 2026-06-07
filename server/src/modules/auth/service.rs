@@ -1,5 +1,7 @@
 use sea_orm::DatabaseConnection;
+use std::sync::Arc;
 
+use crate::cache::{CacheInvalidator, RedisCache};
 use crate::modules::admin::ActivityLogRepository;
 use crate::modules::auth::LoginAttemptRepository;
 use crate::modules::auth::UserRepository;
@@ -10,6 +12,8 @@ pub struct AuthService {
     pub activity_log_repo: ActivityLogRepository,
     pub login_attempt_repo: LoginAttemptRepository,
     pub jwt_service: JwtService,
+    cache: Option<Arc<RedisCache>>,
+    invalidator: Option<CacheInvalidator>,
 }
 
 impl AuthService {
@@ -23,7 +27,15 @@ impl AuthService {
             activity_log_repo: ActivityLogRepository::new(db.clone()),
             login_attempt_repo: LoginAttemptRepository::new(db),
             jwt_service: JwtService::new(jwt_secret, jwt_expiration),
+            cache: None,
+            invalidator: None,
         }
+    }
+
+    pub fn with_cache(mut self, cache: Arc<RedisCache>) -> Self {
+        self.invalidator = Some(CacheInvalidator::new(cache.clone()));
+        self.cache = Some(cache);
+        self
     }
 
     // Authentication operations
@@ -32,7 +44,11 @@ impl AuthService {
     }
 
     pub async fn activate_account(&self, request: crate::modules::auth::schema::ActivateAccountRequest) -> crate::utils::AppResult<crate::modules::auth::schema::AuthResponse> {
-        crate::modules::auth::service_operations::activate_account(&self.user_repo, &self.activity_log_repo, &self.jwt_service, request).await
+        let result = crate::modules::auth::service_operations::activate_account(&self.user_repo, &self.activity_log_repo, &self.jwt_service, request).await?;
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_user_profile(result.user.id).await;
+        }
+        Ok(result)
     }
 
     pub async fn login(&self, request: crate::modules::auth::schema::LoginRequest, ip: &str) -> crate::utils::AppResult<crate::modules::auth::schema::AuthResponse> {
@@ -45,6 +61,22 @@ impl AuthService {
 
     pub async fn get_current_user(&self, user_id: uuid::Uuid) -> crate::utils::AppResult<crate::modules::auth::schema::UserResponse> {
         crate::modules::auth::service_operations::get_current_user(&self.user_repo, user_id).await
+    }
+
+    pub async fn get_current_user_cached(&self, user_id: uuid::Uuid) -> crate::utils::AppResult<crate::modules::auth::schema::UserResponse> {
+        use crate::cache::CacheKey;
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::UserProfile(user_id).as_str();
+            if let Some(cached) = cache.get::<crate::modules::auth::schema::UserResponse>(&key).await {
+                return Ok(cached);
+            }
+        }
+        let result = self.get_current_user(user_id).await?;
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::UserProfile(user_id).as_str();
+            cache.set(&key, &result, cache.ttl.detail_seconds).await;
+        }
+        Ok(result)
     }
 
     pub async fn logout(&self, refresh_token: &str) -> crate::utils::AppResult<()> {

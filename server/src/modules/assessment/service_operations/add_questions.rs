@@ -23,6 +23,10 @@ impl crate::modules::assessment::service::AssessmentService {
             return Err(AppError::BadRequest("Cannot add questions to a published assessment".to_string()));
         }
 
-        self.insert_questions_for_assessment(assessment_id, request.questions, teacher_id).await
+        let result = self.insert_questions_for_assessment(assessment_id, request.questions, teacher_id).await?;
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_assessment_detail(assessment_id).await;
+        }
+        Ok(result)
     }
 }

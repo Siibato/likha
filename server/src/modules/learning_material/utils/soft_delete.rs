@@ -22,6 +22,10 @@ impl crate::modules::learning_material::service::LearningMaterialService {
         }
 
         self.material_repo.soft_delete(material_id).await?;
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_material_detail(material_id).await;
+            inv.invalidate_material_list(material.class_id).await;
+        }
 
         Ok(())
     }

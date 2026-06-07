@@ -22,6 +22,11 @@ impl crate::modules::tos::service::TosService {
         let existing = self.tos_repo.find_competencies_by_tos(tos_id).await?;
         let order_index = request.order_index.unwrap_or(existing.len() as i32);
 
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_tos_detail(tos_id).await;
+            inv.invalidate_tos_list(tos.class_id).await;
+        }
+
         let comp = self.tos_repo
             .create_competency(
                 competency_id,

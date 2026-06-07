@@ -15,6 +15,9 @@ impl crate::modules::grading::service::GradeComputationService {
             .repo
             .upsert_config(class_id, grading_period_number, ww_weight, pt_weight, qa_weight)
             .await?;
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_class_grades(class_id, grading_period_number).await;
+        }
         Ok(GradingConfigResponse::from(config))
     }
 }

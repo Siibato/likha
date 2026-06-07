@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct VerifyResponse {
     pub school_name: Option<String>,
 }
@@ -11,12 +11,12 @@ pub struct QrCodeResponse {
     pub qr_png_base64: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ShortCodeResponse {
     pub code: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SchoolSettingsResponse {
     pub school_code: String,
     pub school_name: Option<String>,

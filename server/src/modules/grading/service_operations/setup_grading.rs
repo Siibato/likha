@@ -12,6 +12,9 @@ impl crate::modules::grading::service::GradeComputationService {
         _semester: Option<i32>,
     ) -> AppResult<ClassGradingSetupResponse> {
         self.repo.setup_defaults(class_id, &subject_group).await?;
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_all_class_grades(class_id).await;
+        }
         self.get_grading_config(class_id).await
     }
 }
