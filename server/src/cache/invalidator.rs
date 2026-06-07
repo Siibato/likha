@@ -45,6 +45,14 @@ impl CacheInvalidator {
         self.cache.del(&CacheKey::AssessmentList(user_id, class_id).as_str()).await;
     }
 
+    pub async fn invalidate_assignment_detail(&self, assignment_id: Uuid) {
+        let keys = vec![
+            CacheKey::AssignmentDetailStudent(assignment_id).as_str(),
+            CacheKey::AssignmentDetailTeacher(assignment_id).as_str(),
+        ];
+        self.cache.del_keys(keys).await;
+    }
+
     pub async fn invalidate_class_and_enrolled(&self, class_id: Uuid) {
         self.invalidate_class(class_id).await;
     }

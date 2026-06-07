@@ -98,13 +98,31 @@ impl AssignmentService {
         user_id: uuid::Uuid,
         role: &str,
     ) -> AppResult<crate::modules::assignment::schema::AssignmentResponse> {
-        ops::get_assignment_detail(
+        let cache_key = if role == "student" {
+            CacheKey::AssignmentDetailStudent(assignment_id).as_str()
+        } else {
+            CacheKey::AssignmentDetailTeacher(assignment_id).as_str()
+        };
+
+        if let Some(ref cache) = self.cache {
+            if let Some(cached) = cache.get::<crate::modules::assignment::schema::AssignmentResponse>(&cache_key).await {
+                return Ok(cached);
+            }
+        }
+
+        let result = ops::get_assignment_detail(
             &self.assignment_repo,
             &self.class_repo,
             assignment_id,
             user_id,
             role,
-        ).await
+        ).await?;
+
+        if let Some(ref cache) = self.cache {
+            cache.set(&cache_key, &result, cache.ttl.detail_seconds).await;
+        }
+
+        Ok(result)
     }
 
     pub async fn get_student_assignments(
@@ -135,13 +153,18 @@ impl AssignmentService {
         request: crate::modules::assignment::schema::UpdateAssignmentRequest,
         teacher_id: uuid::Uuid,
     ) -> AppResult<crate::modules::assignment::schema::AssignmentResponse> {
-        ops::update_assignment(
+        let result = ops::update_assignment(
             &self.assignment_repo,
             &self.class_repo,
             assignment_id,
             request,
             teacher_id,
-        ).await
+        ).await?;
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_assignment_detail(assignment_id).await;
+            inv.invalidate_teacher_assignments(teacher_id).await;
+        }
+        Ok(result)
     }
 
     pub async fn publish_assignment(
@@ -158,6 +181,7 @@ impl AssignmentService {
             teacher_id,
         ).await?;
         if let Some(ref inv) = self.invalidator {
+            inv.invalidate_assignment_detail(assignment_id).await;
             inv.invalidate_teacher_assignments(teacher_id).await;
         }
         Ok(result)
@@ -168,13 +192,18 @@ impl AssignmentService {
         assignment_id: uuid::Uuid,
         teacher_id: uuid::Uuid,
     ) -> AppResult<crate::modules::assignment::schema::AssignmentResponse> {
-        ops::unpublish_assignment(
+        let result = ops::unpublish_assignment(
             &self.assignment_repo,
             &self.class_repo,
             &self.activity_log_repo,
             assignment_id,
             teacher_id,
-        ).await
+        ).await?;
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_assignment_detail(assignment_id).await;
+            inv.invalidate_teacher_assignments(teacher_id).await;
+        }
+        Ok(result)
     }
 
     pub async fn soft_delete(
@@ -190,6 +219,7 @@ impl AssignmentService {
             teacher_id,
         ).await?;
         if let Some(ref inv) = self.invalidator {
+            inv.invalidate_assignment_detail(assignment_id).await;
             inv.invalidate_teacher_assignments(teacher_id).await;
         }
         Ok(result)
