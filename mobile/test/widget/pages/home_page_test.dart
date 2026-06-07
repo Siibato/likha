@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:likha/domain/auth/entities/user.dart';
-import 'package:likha/presentation/pages/home_page.dart';
+import 'package:likha/presentation/pages/shared/home_page.dart';
 import 'package:likha/presentation/providers/auth_notifier.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 

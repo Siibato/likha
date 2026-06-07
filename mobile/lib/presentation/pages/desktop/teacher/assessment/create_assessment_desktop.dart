@@ -8,7 +8,7 @@ import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/utils/snackbar_utils.dart';
 import 'package:likha/domain/assessments/usecases/create_assessment.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
-import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_draft.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';

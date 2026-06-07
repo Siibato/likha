@@ -5,7 +5,7 @@ import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/presentation/widgets/mobile/admin/account/edit_dialog.dart';
 import 'package:likha/presentation/widgets/desktop/admin/account/account_detail_panel.dart';
 import 'package:likha/presentation/widgets/desktop/admin/account/activity_log_table.dart';
-import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_dropdown.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';

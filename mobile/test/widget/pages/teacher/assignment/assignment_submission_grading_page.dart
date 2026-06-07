@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:likha/presentation/pages/teacher/assignment/assignment_submission_grading_page.dart';
+import 'package:likha/presentation/pages/mobile/teacher/assignment/assignment_submission_grading_page.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 
 import '../../../helpers/widget_test_helpers.dart';

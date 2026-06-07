@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
-import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/grade/grade_submission_desktop.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/submission_data_table.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';

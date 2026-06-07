@@ -4,7 +4,7 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:likha/domain/assessments/usecases/override_answer.dart';
-import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/widgets/shared/primitives/status_badge.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';

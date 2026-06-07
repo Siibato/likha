@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
-import 'package:likha/presentation/pages/desktop/core/desktop_navigation_rail.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_navigation_rail.dart';
 import 'package:likha/presentation/pages/desktop/teacher/class/classes_desktop.dart';
 import 'package:likha/presentation/pages/desktop/teacher/dashboard_desktop.dart';
 import 'package:likha/presentation/pages/desktop/teacher/grade/grades_desktop.dart';

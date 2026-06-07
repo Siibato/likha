@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
-import 'package:likha/presentation/pages/teacher/class/class_detail_page.dart';
+import 'package:likha/presentation/pages/mobile/teacher/class/class_detail_page.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
 import '../../../helpers/widget_test_helpers.dart';

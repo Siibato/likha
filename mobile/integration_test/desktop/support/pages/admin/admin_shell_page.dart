@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:likha/presentation/pages/desktop/core/desktop_navigation_rail.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_navigation_rail.dart';
 
 import '../_base_page.dart';
 

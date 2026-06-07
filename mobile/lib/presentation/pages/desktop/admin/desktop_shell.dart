@@ -8,7 +8,7 @@ import 'package:likha/presentation/pages/desktop/admin/class/classes_desktop.dar
 import 'package:likha/presentation/pages/desktop/admin/dashboard_desktop.dart';
 import 'package:likha/presentation/pages/desktop/admin/design_system_desktop.dart';
 import 'package:likha/presentation/pages/desktop/admin/school_settings_desktop.dart';
-import 'package:likha/presentation/pages/desktop/core/desktop_navigation_rail.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_navigation_rail.dart';
 import 'package:likha/presentation/utils/logout_helper.dart';
 
 class AdminDesktopShell extends ConsumerStatefulWidget {

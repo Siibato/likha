@@ -4,7 +4,7 @@ import 'package:likha/core/utils/transmutation_util.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
-import 'package:likha/presentation/pages/shared/grade_skeleton_cell.dart';
+import 'package:likha/presentation/widgets/shared/skeletons/grade_skeleton_cell.dart';
 import 'package:likha/presentation/widgets/shared/teacher/grade/grade_spreadsheet_cells.dart';
 
 /// Single student row for the grade spreadsheet.

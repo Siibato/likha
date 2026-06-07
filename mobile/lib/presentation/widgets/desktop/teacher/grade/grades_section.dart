@@ -5,7 +5,7 @@ import 'package:likha/presentation/pages/desktop/teacher/grade/class_grading_set
 import 'package:likha/presentation/widgets/shared/teacher/grade/grade_spreadsheet.dart';
 import 'package:likha/presentation/widgets/shared/teacher/grade/grade_spreadsheet_cells.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/add_grade_item_dialog.dart';
-import 'package:likha/presentation/pages/teacher/grade/grade_summary_page.dart';
+import 'package:likha/presentation/pages/mobile/teacher/grade/grade_summary_page.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
 import 'package:likha/services/grade_export_service.dart';

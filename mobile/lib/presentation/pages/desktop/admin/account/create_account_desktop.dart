@@ -5,7 +5,7 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_button.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_dropdown.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
-import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
 

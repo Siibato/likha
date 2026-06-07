@@ -8,7 +8,7 @@ import 'package:likha/core/services/school_setup_service.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/setup/entities/school_config.dart';
 import 'package:likha/injection_container.dart' as di;
-import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/shared/cards/info_panel.dart';
 import 'package:likha/presentation/widgets/shared/forms/school_settings_form.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';

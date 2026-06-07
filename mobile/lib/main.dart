@@ -7,8 +7,8 @@ import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/core/logging/core_logger.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/injection_container.dart' as di;
-import 'package:likha/presentation/pages/home_page.dart';
-import 'package:likha/presentation/pages/login_page.dart';
+import 'package:likha/presentation/pages/shared/home_page.dart';
+import 'package:likha/presentation/pages/shared/auth/login_page.dart';
 import 'package:likha/presentation/widgets/auth_wrapper.dart';
 
 void main() async {

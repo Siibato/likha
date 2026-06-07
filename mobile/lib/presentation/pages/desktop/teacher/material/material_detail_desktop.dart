@@ -6,7 +6,7 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/utils/file_opener.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
-import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/utils/formatters.dart';

@@ -5,7 +5,7 @@ import 'package:likha/domain/classes/entities/class_entity.dart';
 import 'package:likha/presentation/pages/desktop/admin/class/class_detail_desktop.dart';
 import 'package:likha/presentation/pages/desktop/admin/class/create_class_desktop.dart';
 import 'package:likha/presentation/widgets/desktop/admin/class/class_data_table.dart';
-import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 

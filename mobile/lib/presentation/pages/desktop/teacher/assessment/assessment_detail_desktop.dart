@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
-import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/assessment/edit_assessment_desktop.dart';
 import 'package:likha/presentation/pages/desktop/teacher/assessment/assessment_submissions_desktop.dart';
 import 'package:likha/presentation/pages/desktop/teacher/assessment/assessment_statistics_desktop.dart';

@@ -5,7 +5,7 @@ import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/presentation/pages/desktop/admin/class/edit_class_desktop.dart';
 import 'package:likha/presentation/pages/desktop/admin/class/manage_enrollment_desktop.dart';
 import 'package:likha/presentation/widgets/desktop/admin/class/class_info_panel.dart';
-import 'package:likha/presentation/pages/desktop/core/desktop_page_scaffold.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
 class AdminClassDetailDesktop extends ConsumerStatefulWidget {
