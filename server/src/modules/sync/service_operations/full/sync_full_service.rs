@@ -36,6 +36,7 @@ pub struct FullSyncResponse {
     pub period_grades: Vec<serde_json::Value>,
     pub table_of_specifications: Vec<serde_json::Value>,
     pub tos_competencies: Vec<serde_json::Value>,
+    pub activity_logs: Vec<serde_json::Value>,
 }
 
 /// Service for full sync on login

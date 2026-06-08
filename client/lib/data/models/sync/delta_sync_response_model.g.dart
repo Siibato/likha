@@ -55,6 +55,9 @@ DeltaPayload _$DeltaPayloadFromJson(Map<String, dynamic> json) => DeltaPayload(
   tosCompetencies: EntityDeltas.fromJson(
     json['tos_competencies'] as Map<String, dynamic>,
   ),
+  activityLogs: EntityDeltas.fromJson(
+    json['activity_logs'] as Map<String, dynamic>,
+  ),
 );
 
 Map<String, dynamic> _$DeltaPayloadToJson(DeltaPayload instance) =>
@@ -73,6 +76,7 @@ Map<String, dynamic> _$DeltaPayloadToJson(DeltaPayload instance) =>
       'period_grades': instance.periodGrades,
       'table_of_specifications': instance.tableOfSpecifications,
       'tos_competencies': instance.tosCompetencies,
+      'activity_logs': instance.activityLogs,
     };
 
 DeltaSyncResponseModel _$DeltaSyncResponseModelFromJson(

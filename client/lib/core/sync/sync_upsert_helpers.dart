@@ -1032,6 +1032,43 @@ class SyncUpsertHelpers {
     }
   }
 
+  Future<void> upsertActivityLogs(
+    Database db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+
+        await db.insert(
+          DbTables.activityLogs,
+          {
+            CommonCols.id: record['id'],
+            ActivityLogsCols.userId: record['user_id'],
+            ActivityLogsCols.action: record['action'],
+            ActivityLogsCols.details: record['details'],
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.needsSync: 0,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert activity log', e);
+      }
+    }
+
+    _log.upsertSummary('activity_logs', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert activity logs', failedCount);
+    }
+  }
+
   /// Save sync token (last_sync_at) to sync_metadata
   Future<void> saveSyncToken(Database db, String syncToken) async {
     await db.insert(
@@ -1424,6 +1461,24 @@ class SyncUpsertHelpers {
       for (final id in deleted) {
         await db.update(
           DbTables.tosCompetencies,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id],
+        );
+      }
+    }
+
+    final activityLogsDeltas = deltas['activity_logs'];
+    if (activityLogsDeltas != null) {
+      final updated = activityLogsDeltas.updated;
+      updatedCounts['activity_logs'] = updated.length;
+      await upsertActivityLogs(db, updated);
+
+      final deleted = activityLogsDeltas.deleted;
+      deletedCounts['activity_logs'] = deleted.length;
+      for (final id in deleted) {
+        await db.update(
+          DbTables.activityLogs,
           {CommonCols.deletedAt: DateTime.now().toIso8601String()},
           where: '${CommonCols.id} = ?',
           whereArgs: [id],

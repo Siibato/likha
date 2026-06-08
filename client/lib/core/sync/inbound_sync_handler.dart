@@ -119,6 +119,7 @@ class InboundSyncHandler {
     await _upsertHelpers.upsertEnrolledStudents(db, participantUsers);
     await _upsertHelpers.upsertParticipants(db, baseResponse.enrollments, participantUsers);
     await _upsertHelpers.recalculateClassStudentCounts(db);
+    await _upsertHelpers.upsertActivityLogs(db, baseResponse.activityLogs);
 
     _log.baseResponse(
       classes: baseResponse.classes.length,
@@ -240,6 +241,7 @@ class InboundSyncHandler {
         final periodGrades = batchResponse.periodGrades;
         final tableOfSpecifications = batchResponse.tableOfSpecifications;
         final tosCompetencies = batchResponse.tosCompetencies;
+        final activityLogs = batchResponse.activityLogs;
 
         // Extract enrolled_students and enrollments from batch (for full offline support)
         final batchParticipantUsers = batchResponse.enrolledStudents ?? <Map<String, dynamic>>[];
@@ -262,8 +264,9 @@ class InboundSyncHandler {
           'period_grades': periodGrades.length,
           'table_of_specifications': tableOfSpecifications.length,
           'tos_competencies': tosCompetencies.length,
-          'enrolled_students': batchParticipantUsers.length,  // NEW: for offline support
-          'enrollments': batchParticipants.length,              // NEW: for offline support
+          'activity_logs': activityLogs.length,
+          'enrolled_students': batchParticipantUsers.length,
+          'enrollments': batchParticipants.length,
         });
 
         // Build submission count map (needed for mismatch detector below)
@@ -340,6 +343,7 @@ class InboundSyncHandler {
 
         await _upsertHelpers.upsertTableOfSpecifications(db, tableOfSpecifications);
         await _upsertHelpers.upsertTosCompetencies(db, tosCompetencies);
+        await _upsertHelpers.upsertActivityLogs(db, activityLogs);
       }
     }
 

@@ -5,6 +5,7 @@ use uuid::Uuid;
 
 use crate::utils::AppResult;
 use crate::modules::sync::helpers::enrich_questions;
+use crate::modules::sync::sync_scope::SyncScope;
 
 use super::sync_full_service::{FullSyncRequest, FullSyncResponse};
 use super::enrich_submissions::enrich_assessment_submissions;
@@ -35,6 +36,8 @@ impl super::SyncFullService {
             .entitlement_service
             .get_user_manifest(user_id, user_role)
             .await?;
+
+        let scope = SyncScope::for_role(user_role);
 
         tracing::debug!(
             "User manifest retrieved: classes={}, enrollments={}, assessments={}, assignments={}",
@@ -130,6 +133,20 @@ impl super::SyncFullService {
             let sync_token = now.to_rfc3339();
             let server_time = now.to_rfc3339();
 
+            let activity_logs = if scope.include_activity_logs {
+                let log_ids: Vec<Uuid> = manifest.activity_logs.iter().map(|e| e.id).collect();
+                if log_ids.is_empty() {
+                    Vec::new()
+                } else {
+                    self.manifest_repo
+                        .get_activity_logs_paginated(log_ids, 10000)
+                        .await?
+                        .records
+                }
+            } else {
+                Vec::new()
+            };
+
             return Ok(FullSyncResponse {
                 sync_token,
                 server_time,
@@ -153,6 +170,7 @@ impl super::SyncFullService {
                 period_grades: vec![],
                 table_of_specifications: vec![],
                 tos_competencies: vec![],
+                activity_logs,
             });
         }
 
@@ -194,30 +212,28 @@ impl super::SyncFullService {
                 period_grades: vec![],
                 table_of_specifications: vec![],
                 tos_competencies: vec![],
+                activity_logs: vec![],
             });
         }
 
         // Get filtered assessment IDs (for the batch classes)
-        let batch_assessment_ids: Vec<Uuid> = manifest.assessments
-            .iter()
-            .filter(|_a| true) // Assessment IDs are already filtered by entitlement service
-            .map(|e| e.id)
-            .collect();
+        let batch_assessment_ids: Vec<Uuid> = if scope.include_assessments {
+            manifest.assessments.iter().map(|e| e.id).collect()
+        } else {
+            Vec::new()
+        };
 
-        let batch_assignment_ids: Vec<Uuid> = manifest.assignments
-            .iter()
-            .filter(|_a| true) // Assignment IDs are already filtered by entitlement service
-            .map(|e| e.id)
-            .collect();
+        let batch_assignment_ids: Vec<Uuid> = if scope.include_assignments {
+            manifest.assignments.iter().map(|e| e.id).collect()
+        } else {
+            Vec::new()
+        };
 
-        let batch_material_ids: Vec<Uuid> = manifest.learning_materials
-            .iter()
-            .filter(|_m| true) // Material IDs are already filtered by entitlement service
-            .map(|e| e.id)
-            .collect();
-
-        // Will derive actual scoped question_ids after assessments are fetched and filtered
-        let question_ids: Vec<Uuid>;
+        let batch_material_ids: Vec<Uuid> = if scope.include_learning_materials {
+            manifest.learning_materials.iter().map(|e| e.id).collect()
+        } else {
+            Vec::new()
+        };
 
         // Fetch enrollments for batch classes (needed for full offline support)
         let batch_enrollment_ids: Vec<Uuid> = manifest.enrollments
@@ -267,285 +283,322 @@ impl super::SyncFullService {
         tracing::debug!("BATCH REQUEST: enrollments={}, enrolled_students={}",
             batch_enrollments.len(), batch_enrolled_students.len());
 
-        // Fetch entity data (same as current logic)
-        tracing::debug!("Fetching assessments for batch");
-        let assessments_raw = self
-            .manifest_repo
-            .get_assessments_paginated(batch_assessment_ids.clone(), 10000)
-            .await?
-            .records;
-        // Filter to only assessments belonging to the requested batch class_ids
-        let assessments: Vec<Value> = assessments_raw
-            .into_iter()
-            .filter(|a| {
-                a.get("class_id")
-                    .and_then(|v| v.as_str())
-                    .and_then(|s| Uuid::parse_str(s).ok())
-                    .map(|id| batch_class_id_set.contains(&id))
-                    .unwrap_or(false)
-            })
-            .collect();
-        let actual_batch_assessment_ids: Vec<Uuid> = assessments
-            .iter()
-            .filter_map(|a| a.get("id").and_then(|v| v.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
-            .collect();
-        tracing::debug!("Fetched {} assessments ({} after class filter)", batch_assessment_ids.len(), assessments.len());
+        let mut assessments: Vec<Value> = Vec::new();
+        let mut actual_batch_assessment_ids: Vec<Uuid> = Vec::new();
+        let mut enriched_questions: Vec<Value> = Vec::new();
+        let mut enriched_assessment_submissions: Vec<Value> = Vec::new();
+        let mut assignments: Vec<Value> = Vec::new();
+        let mut actual_batch_assignment_ids: Vec<Uuid> = Vec::new();
+        let mut assignment_submissions: Vec<Value> = Vec::new();
+        let mut learning_materials: Vec<Value> = Vec::new();
+        let mut material_files: Vec<Value> = Vec::new();
+        let mut submission_files: Vec<Value> = Vec::new();
+        let mut assessment_statistics: Vec<Value> = Vec::new();
+        let mut student_results: Vec<Value> = Vec::new();
+        let mut grade_configs: Vec<Value> = Vec::new();
+        let mut grade_items_data: Vec<Value> = Vec::new();
+        let mut grade_scores_data: Vec<Value> = Vec::new();
+        let mut quarterly_grades_data: Vec<Value> = Vec::new();
+        let mut table_of_specifications: Vec<Value> = Vec::new();
+        let mut tos_competencies: Vec<Value> = Vec::new();
 
-        // Scope question IDs to only questions for assessments in this batch
-        question_ids = manifest.assessment_questions
-            .iter()
-            .map(|e| e.id)
-            .collect();
-        tracing::debug!("BATCH REQUEST: Found {} question_ids in manifest for {} assessments",
-            question_ids.len(), actual_batch_assessment_ids.len());
-
-        tracing::debug!("Fetching questions for batch");
-        let questions = if question_ids.is_empty() {
-            tracing::debug!("No questions to fetch (question_ids is empty)");
-            Vec::new()
-        } else {
-            self.manifest_repo
-                .get_questions_paginated(question_ids.clone(), 10000)
+        if scope.include_assessments {
+            tracing::debug!("Fetching assessments for batch");
+            let assessments_raw = self
+                .manifest_repo
+                .get_assessments_paginated(batch_assessment_ids.clone(), 10000)
                 .await?
-                .records
-        };
-        tracing::debug!("Fetched {} questions total for {} question_ids", questions.len(), question_ids.len());
-
-        // Log questions per assessment
-        let mut questions_by_assessment: HashMap<String, Vec<&Value>> = HashMap::new();
-        for q in &questions {
-            if let Some(ass_id) = q.get("assessment_id").and_then(|v| v.as_str()) {
-                questions_by_assessment.entry(ass_id.to_string()).or_insert_with(Vec::new).push(q);
-            }
-        }
-        for assessment in &assessments {
-            let ass_id = assessment.get("id").and_then(|v| v.as_str()).unwrap_or("unknown");
-            let ass_title = assessment.get("title").and_then(|v| v.as_str()).unwrap_or("unknown");
-            let q_count = questions_by_assessment.get(ass_id).map(|v| v.len()).unwrap_or(0);
-            tracing::debug!("Assessment '{}' ({}): {} questions", ass_title, ass_id, q_count);
+                .records;
+            assessments = assessments_raw
+                .into_iter()
+                .filter(|a| {
+                    a.get("class_id")
+                        .and_then(|v| v.as_str())
+                        .and_then(|s| Uuid::parse_str(s).ok())
+                        .map(|id| batch_class_id_set.contains(&id))
+                        .unwrap_or(false)
+                })
+                .collect();
+            actual_batch_assessment_ids = assessments
+                .iter()
+                .filter_map(|a| a.get("id").and_then(|v| v.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+                .collect();
+            tracing::debug!("Fetched {} assessments ({} after class filter)", batch_assessment_ids.len(), assessments.len());
         }
 
-        tracing::debug!("Fetching assignments for batch");
-        let assignments_raw = self
-            .manifest_repo
-            .get_assignments_paginated(batch_assignment_ids.clone(), 10000)
-            .await?
-            .records;
-        let assignments: Vec<Value> = assignments_raw
-            .into_iter()
-            .filter(|a| {
-                a.get("class_id")
-                    .and_then(|v| v.as_str())
-                    .and_then(|s| Uuid::parse_str(s).ok())
-                    .map(|id| batch_class_id_set.contains(&id))
-                    .unwrap_or(false)
-            })
-            .collect();
-        let actual_batch_assignment_ids: Vec<Uuid> = assignments
-            .iter()
-            .filter_map(|a| a.get("id").and_then(|v| v.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
-            .collect();
-        tracing::debug!("Fetched {} assignments ({} after class filter)", batch_assignment_ids.len(), assignments.len());
+        let questions: Vec<Value>;
+        if scope.include_questions {
+            let question_ids: Vec<Uuid> = manifest.assessment_questions
+                .iter()
+                .map(|e| e.id)
+                .collect();
+            tracing::debug!("BATCH REQUEST: Found {} question_ids in manifest for {} assessments",
+                question_ids.len(), actual_batch_assessment_ids.len());
 
-        // Role-aware assessment submissions
-        let assessment_submission_ids: Vec<Uuid> = manifest.assessment_submissions.iter().map(|e| e.id).collect();
-        tracing::debug!("Fetching {} assessment submissions", assessment_submission_ids.len());
-        let assessment_submissions = if assessment_submission_ids.is_empty() {
-            Vec::new()
-        } else {
-            match user_role {
-                "student" => {
-                    self.manifest_repo
-                        .get_student_submissions_for_assessments(user_id, actual_batch_assessment_ids.clone(), 10000)
-                        .await?
-                        .records
-                }
-                _ => {
-                    self.get_all_assessment_submissions_for_assessments(&actual_batch_assessment_ids, 10000)
-                        .await?
-                }
-            }
-        };
-        tracing::debug!("Fetched {} assessment submissions", assessment_submissions.len());
-
-        // Role-aware assignment submissions
-        let assignment_submission_ids: Vec<Uuid> = manifest.assignment_submissions.iter().map(|e| e.id).collect();
-        tracing::debug!("Fetching {} assignment submissions", assignment_submission_ids.len());
-        let assignment_submissions = if assignment_submission_ids.is_empty() {
-            Vec::new()
-        } else {
-            match user_role {
-                "student" => {
-                    self.manifest_repo
-                        .get_student_assignment_submissions_for_assignments(user_id, actual_batch_assignment_ids.clone(), 10000)
-                        .await?
-                        .records
-                }
-                _ => {
-                    self.get_all_assignment_submissions_for_assignments(&actual_batch_assignment_ids, 10000)
-                        .await?
-                }
-            }
-        };
-        tracing::debug!("Fetched {} assignment submissions", assignment_submissions.len());
-
-        tracing::debug!("Fetching learning materials for batch");
-        let materials_raw = self
-            .manifest_repo
-            .get_materials_paginated(batch_material_ids.clone(), 10000)
-            .await?
-            .records;
-        let learning_materials: Vec<Value> = materials_raw
-            .into_iter()
-            .filter(|m| {
-                m.get("class_id")
-                    .and_then(|v| v.as_str())
-                    .and_then(|s| Uuid::parse_str(s).ok())
-                    .map(|id| batch_class_id_set.contains(&id))
-                    .unwrap_or(false)
-            })
-            .collect();
-        tracing::debug!("Fetched {} learning materials ({} after class filter)", batch_material_ids.len(), learning_materials.len());
-
-        // Enrich questions and submissions
-        tracing::debug!("Enriching {} questions", questions.len());
-        let enriched_questions = enrich_questions(&self.db, questions, user_role).await?;
-
-        tracing::debug!("Enriching {} assessment submissions", assessment_submissions.len());
-        let enriched_assessment_submissions = enrich_assessment_submissions(&self.db, assessment_submissions).await?;
-
-        // Fetch material_files
-        let material_ids: Vec<Uuid> = learning_materials
-            .iter()
-            .filter_map(|m| m.get("id").and_then(|id| id.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
-            .collect();
-        tracing::debug!("Fetching material files for {} materials", material_ids.len());
-        let material_files = if material_ids.is_empty() {
-            Vec::new()
-        } else {
-            self.manifest_repo.get_material_files_for_materials(material_ids).await?
-        };
-        tracing::debug!("Fetched {} material files", material_files.len());
-
-        // Fetch submission_files (for assignment submissions — FK points to assignment_submissions.id, not assessments)
-        let submission_ids: Vec<Uuid> = assignment_submissions
-            .iter()
-            .filter_map(|s| s.get("id").and_then(|id| id.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
-            .collect();
-        tracing::debug!("Fetching submission files for {} submissions", submission_ids.len());
-        let submission_files = if submission_ids.is_empty() {
-            Vec::new()
-        } else {
-            self.manifest_repo.get_submission_files_for_submissions(submission_ids).await?
-        };
-        tracing::debug!("Fetched {} submission files", submission_files.len());
-
-        // Compute assessment statistics (teacher only)
-        let assessment_statistics = match user_role {
-            "student" => {
-                tracing::debug!("User is student - skipping assessment statistics computation");
-                vec![]
-            }
-            _ => {
-                tracing::debug!("User is {} - computing assessment statistics from {} assessments and {} submissions",
-                    user_role, assessments.len(), enriched_assessment_submissions.len());
-                let stats = compute_assessment_statistics(&assessments, &enriched_assessment_submissions);
-                tracing::debug!("Computed {} assessment statistics", stats.len());
-                if !stats.is_empty() {
-                    tracing::debug!("Assessment statistics: {:?}", stats);
-                }
-                stats
-            }
-        };
-
-        // Format student results (student only)
-        let student_results = match user_role {
-            "student" => {
-                tracing::debug!("User is student - formatting student results from {} submissions and {} assessments",
-                    enriched_assessment_submissions.len(), assessments.len());
-                let results = format_student_results(&enriched_assessment_submissions, &assessments);
-                tracing::debug!("Formatted {} student results", results.len());
-                if !results.is_empty() {
-                    tracing::debug!("Student results: {:?}", results);
-                }
-                results
-            }
-            _ => {
-                tracing::debug!("User is {} - skipping student results formatting (teacher/admin only)", user_role);
-                vec![]
-            }
-        };
-
-        // Fetch grading data for batch classes
-        tracing::debug!("Fetching grading data for batch");
-        let grade_configs = self.manifest_repo
-            .get_grade_configs_for_classes(batch_class_ids.clone())
-            .await?;
-        let grade_items_data = self.manifest_repo
-            .get_grade_items_for_classes(batch_class_ids.clone())
-            .await?;
-
-        // Get grade_item IDs for score fetching
-        let grade_item_ids: Vec<Uuid> = grade_items_data
-            .iter()
-            .filter_map(|gi| gi.get("id").and_then(|id| id.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
-            .collect();
-
-        // Role-aware grade scores
-        let grade_scores_data = if grade_item_ids.is_empty() {
-            Vec::new()
-        } else {
-            match user_role {
-                "student" => {
-                    self.manifest_repo
-                        .get_student_grade_scores(user_id, grade_item_ids)
-                        .await?
-                }
-                _ => {
-                    self.manifest_repo
-                        .get_all_grade_scores(grade_item_ids)
-                        .await?
-                }
-            }
-        };
-
-        // Role-aware quarterly grades
-        let quarterly_grades_data = match user_role {
-            "student" => {
+            tracing::debug!("Fetching questions for batch");
+            questions = if question_ids.is_empty() {
+                tracing::debug!("No questions to fetch (question_ids is empty)");
+                Vec::new()
+            } else {
                 self.manifest_repo
-                    .get_student_quarterly_grades(user_id, batch_class_ids.clone())
+                    .get_questions_paginated(question_ids.clone(), 10000)
                     .await?
+                    .records
+            };
+            tracing::debug!("Fetched {} questions total for {} question_ids", questions.len(), question_ids.len());
+
+            let mut questions_by_assessment: HashMap<String, Vec<&Value>> = HashMap::new();
+            for q in &questions {
+                if let Some(ass_id) = q.get("assessment_id").and_then(|v| v.as_str()) {
+                    questions_by_assessment.entry(ass_id.to_string()).or_insert_with(Vec::new).push(q);
+                }
             }
-            _ => {
-                self.manifest_repo
-                    .get_all_quarterly_grades(batch_class_ids.clone())
-                    .await?
+            for assessment in &assessments {
+                let ass_id = assessment.get("id").and_then(|v| v.as_str()).unwrap_or("unknown");
+                let ass_title = assessment.get("title").and_then(|v| v.as_str()).unwrap_or("unknown");
+                let q_count = questions_by_assessment.get(ass_id).map(|v| v.len()).unwrap_or(0);
+                tracing::debug!("Assessment '{}' ({}): {} questions", ass_title, ass_id, q_count);
             }
-        };
 
-        tracing::debug!("Fetched grading data: configs={}, items={}, scores={}, quarterly={}",
-            grade_configs.len(), grade_items_data.len(), grade_scores_data.len(), quarterly_grades_data.len());
+            tracing::debug!("Enriching {} questions", questions.len());
+            enriched_questions = enrich_questions(&self.db, questions, user_role).await?;
+        }
 
-        // Fetch TOS data for batch classes
-        let table_of_specifications = self.manifest_repo
-            .get_table_of_specifications_for_classes(batch_class_ids.clone())
-            .await?;
-
-        let tos_ids: Vec<Uuid> = table_of_specifications
-            .iter()
-            .filter_map(|tos| tos.get("id").and_then(|id| id.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
-            .collect();
-
-        let tos_competencies = if tos_ids.is_empty() {
-            Vec::new()
-        } else {
-            self.manifest_repo
-                .get_tos_competencies_for_tos_ids(tos_ids)
+        if scope.include_assignments {
+            tracing::debug!("Fetching assignments for batch");
+            let assignments_raw = self
+                .manifest_repo
+                .get_assignments_paginated(batch_assignment_ids.clone(), 10000)
                 .await?
-        };
+                .records;
+            assignments = assignments_raw
+                .into_iter()
+                .filter(|a| {
+                    a.get("class_id")
+                        .and_then(|v| v.as_str())
+                        .and_then(|s| Uuid::parse_str(s).ok())
+                        .map(|id| batch_class_id_set.contains(&id))
+                        .unwrap_or(false)
+                })
+                .collect();
+            actual_batch_assignment_ids = assignments
+                .iter()
+                .filter_map(|a| a.get("id").and_then(|v| v.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+                .collect();
+            tracing::debug!("Fetched {} assignments ({} after class filter)", batch_assignment_ids.len(), assignments.len());
+        }
 
-        tracing::debug!("Fetched TOS data: table_of_specifications={}, tos_competencies={}",
-            table_of_specifications.len(), tos_competencies.len());
+        let assessment_submissions: Vec<Value>;
+        if scope.include_submissions {
+            let assessment_submission_ids: Vec<Uuid> = manifest.assessment_submissions.iter().map(|e| e.id).collect();
+            tracing::debug!("Fetching {} assessment submissions", assessment_submission_ids.len());
+            assessment_submissions = if assessment_submission_ids.is_empty() {
+                Vec::new()
+            } else {
+                match user_role {
+                    "student" => {
+                        self.manifest_repo
+                            .get_student_submissions_for_assessments(user_id, actual_batch_assessment_ids.clone(), 10000)
+                            .await?
+                            .records
+                    }
+                    _ => {
+                        self.get_all_assessment_submissions_for_assessments(&actual_batch_assessment_ids, 10000)
+                            .await?
+                    }
+                }
+            };
+            tracing::debug!("Fetched {} assessment submissions", assessment_submissions.len());
+
+            let assignment_submission_ids: Vec<Uuid> = manifest.assignment_submissions.iter().map(|e| e.id).collect();
+            tracing::debug!("Fetching {} assignment submissions", assignment_submission_ids.len());
+            assignment_submissions = if assignment_submission_ids.is_empty() {
+                Vec::new()
+            } else {
+                match user_role {
+                    "student" => {
+                        self.manifest_repo
+                            .get_student_assignment_submissions_for_assignments(user_id, actual_batch_assignment_ids.clone(), 10000)
+                            .await?
+                            .records
+                    }
+                    _ => {
+                        self.get_all_assignment_submissions_for_assignments(&actual_batch_assignment_ids, 10000)
+                            .await?
+                    }
+                }
+            };
+            tracing::debug!("Fetched {} assignment submissions", assignment_submissions.len());
+
+            tracing::debug!("Enriching {} assessment submissions", assessment_submissions.len());
+            enriched_assessment_submissions = enrich_assessment_submissions(&self.db, assessment_submissions).await?;
+        }
+
+        if scope.include_learning_materials {
+            tracing::debug!("Fetching learning materials for batch");
+            let materials_raw = self
+                .manifest_repo
+                .get_materials_paginated(batch_material_ids.clone(), 10000)
+                .await?
+                .records;
+            learning_materials = materials_raw
+                .into_iter()
+                .filter(|m| {
+                    m.get("class_id")
+                        .and_then(|v| v.as_str())
+                        .and_then(|s| Uuid::parse_str(s).ok())
+                        .map(|id| batch_class_id_set.contains(&id))
+                        .unwrap_or(false)
+                })
+                .collect();
+            tracing::debug!("Fetched {} learning materials ({} after class filter)", batch_material_ids.len(), learning_materials.len());
+        }
+
+        if scope.include_files {
+            let material_ids: Vec<Uuid> = learning_materials
+                .iter()
+                .filter_map(|m| m.get("id").and_then(|id| id.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+                .collect();
+            tracing::debug!("Fetching material files for {} materials", material_ids.len());
+            material_files = if material_ids.is_empty() {
+                Vec::new()
+            } else {
+                self.manifest_repo.get_material_files_for_materials(material_ids).await?
+            };
+            tracing::debug!("Fetched {} material files", material_files.len());
+
+            let submission_ids: Vec<Uuid> = assignment_submissions
+                .iter()
+                .filter_map(|s| s.get("id").and_then(|id| id.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+                .collect();
+            tracing::debug!("Fetching submission files for {} submissions", submission_ids.len());
+            submission_files = if submission_ids.is_empty() {
+                Vec::new()
+            } else {
+                self.manifest_repo.get_submission_files_for_submissions(submission_ids).await?
+            };
+            tracing::debug!("Fetched {} submission files", submission_files.len());
+        }
+
+        if scope.include_statistics {
+            assessment_statistics = match user_role {
+                "student" => {
+                    tracing::debug!("User is student - skipping assessment statistics computation");
+                    vec![]
+                }
+                _ => {
+                    tracing::debug!("User is {} - computing assessment statistics from {} assessments and {} submissions",
+                        user_role, assessments.len(), enriched_assessment_submissions.len());
+                    let stats = compute_assessment_statistics(&assessments, &enriched_assessment_submissions);
+                    tracing::debug!("Computed {} assessment statistics", stats.len());
+                    if !stats.is_empty() {
+                        tracing::debug!("Assessment statistics: {:?}", stats);
+                    }
+                    stats
+                }
+            };
+
+            student_results = match user_role {
+                "student" => {
+                    tracing::debug!("User is student - formatting student results from {} submissions and {} assessments",
+                        enriched_assessment_submissions.len(), assessments.len());
+                    let results = format_student_results(&enriched_assessment_submissions, &assessments);
+                    tracing::debug!("Formatted {} student results", results.len());
+                    if !results.is_empty() {
+                        tracing::debug!("Student results: {:?}", results);
+                    }
+                    results
+                }
+                _ => {
+                    tracing::debug!("User is {} - skipping student results formatting (teacher/admin only)", user_role);
+                    vec![]
+                }
+            };
+        }
+
+        if scope.include_grade_data {
+            tracing::debug!("Fetching grading data for batch");
+            grade_configs = self.manifest_repo
+                .get_grade_configs_for_classes(batch_class_ids.clone())
+                .await?;
+            grade_items_data = self.manifest_repo
+                .get_grade_items_for_classes(batch_class_ids.clone())
+                .await?;
+
+            let grade_item_ids: Vec<Uuid> = grade_items_data
+                .iter()
+                .filter_map(|gi| gi.get("id").and_then(|id| id.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+                .collect();
+
+            grade_scores_data = if grade_item_ids.is_empty() {
+                Vec::new()
+            } else {
+                match user_role {
+                    "student" => {
+                        self.manifest_repo
+                            .get_student_grade_scores(user_id, grade_item_ids)
+                            .await?
+                    }
+                    _ => {
+                        self.manifest_repo
+                            .get_all_grade_scores(grade_item_ids)
+                            .await?
+                    }
+                }
+            };
+
+            quarterly_grades_data = match user_role {
+                "student" => {
+                    self.manifest_repo
+                        .get_student_quarterly_grades(user_id, batch_class_ids.clone())
+                        .await?
+                }
+                _ => {
+                    self.manifest_repo
+                        .get_all_quarterly_grades(batch_class_ids.clone())
+                        .await?
+                }
+            };
+
+            tracing::debug!("Fetched grading data: configs={}, items={}, scores={}, quarterly={}",
+                grade_configs.len(), grade_items_data.len(), grade_scores_data.len(), quarterly_grades_data.len());
+        }
+
+        if scope.include_tos {
+            table_of_specifications = self.manifest_repo
+                .get_table_of_specifications_for_classes(batch_class_ids.clone())
+                .await?;
+
+            let tos_ids: Vec<Uuid> = table_of_specifications
+                .iter()
+                .filter_map(|tos| tos.get("id").and_then(|id| id.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+                .collect();
+
+            tos_competencies = if tos_ids.is_empty() {
+                Vec::new()
+            } else {
+                self.manifest_repo
+                    .get_tos_competencies_for_tos_ids(tos_ids)
+                    .await?
+            };
+
+            tracing::debug!("Fetched TOS data: table_of_specifications={}, tos_competencies={}",
+                table_of_specifications.len(), tos_competencies.len());
+        }
+
+        let activity_logs = if scope.include_activity_logs {
+            let log_ids: Vec<Uuid> = manifest.activity_logs.iter().map(|e| e.id).collect();
+            if log_ids.is_empty() {
+                Vec::new()
+            } else {
+                self.manifest_repo
+                    .get_activity_logs_paginated(log_ids, 10000)
+                    .await?
+                    .records
+            }
+        } else {
+            Vec::new()
+        };
 
         let now = Utc::now();
         let sync_token = now.to_rfc3339();
@@ -561,7 +614,6 @@ impl super::SyncFullService {
             student_results.len()
         );
 
-
         tracing::debug!(
             "Full sync response for user_id={}: {} assessments, {} questions, {} submissions",
             user_id,
@@ -573,10 +625,10 @@ impl super::SyncFullService {
         Ok(FullSyncResponse {
             sync_token,
             server_time,
-            user: None, // Not returned in batch requests (already returned in base)
-            classes: vec![], // Not returned in batch requests
-            enrollments: batch_enrollments, // Batch classes' enrollments for full offline support
-            enrolled_students: batch_enrolled_students, // Batch classes' students for full offline support
+            user: None,
+            classes: vec![],
+            enrollments: batch_enrollments,
+            enrolled_students: batch_enrolled_students,
             assessments,
             questions: enriched_questions,
             assessment_submissions: enriched_assessment_submissions,
@@ -593,6 +645,7 @@ impl super::SyncFullService {
             period_grades: quarterly_grades_data,
             table_of_specifications,
             tos_competencies,
+            activity_logs,
         })
     }
 

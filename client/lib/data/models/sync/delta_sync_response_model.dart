@@ -56,6 +56,9 @@ class DeltaPayload {
   @JsonKey(name: 'tos_competencies')
   final EntityDeltas tosCompetencies;
 
+  @JsonKey(name: 'activity_logs')
+  final EntityDeltas activityLogs;
+
   DeltaPayload({
     required this.classes,
     required this.enrollments,
@@ -71,6 +74,7 @@ class DeltaPayload {
     required this.periodGrades,
     required this.tableOfSpecifications,
     required this.tosCompetencies,
+    required this.activityLogs,
   });
 
   factory DeltaPayload.fromJson(Map<String, dynamic> json) =>

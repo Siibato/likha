@@ -32,6 +32,7 @@ pub mod get_all_assessment_submissions_for_assessments;
 pub mod get_all_assignment_submissions_for_assignments;
 pub mod get_material_files_for_materials;
 pub mod get_submission_files_for_submissions;
+pub mod get_activity_logs_paginated;
 
 // Section C: Delta/since queries
 pub mod get_classes_since;
@@ -42,6 +43,7 @@ pub mod get_enrollments_since;
 pub mod get_questions_since;
 pub mod get_assessment_submissions_since;
 pub mod get_assignment_submissions_since;
+pub mod get_activity_logs_since;
 
 // Section E: Grading sync queries
 pub mod get_grade_configs_for_classes;
@@ -104,6 +106,7 @@ pub use get_all_assessment_submissions_for_assessments::get_all_assessment_submi
 pub use get_all_assignment_submissions_for_assignments::get_all_assignment_submissions_for_assignments;
 pub use get_material_files_for_materials::get_material_files_for_materials;
 pub use get_submission_files_for_submissions::get_submission_files_for_submissions;
+pub use get_activity_logs_paginated::get_activity_logs_paginated;
 
 pub use get_classes_since::get_classes_since;
 pub use get_assessments_since::get_assessments_since;
@@ -113,6 +116,7 @@ pub use get_enrollments_since::get_enrollments_since;
 pub use get_questions_since::get_questions_since;
 pub use get_assessment_submissions_since::get_assessment_submissions_since;
 pub use get_assignment_submissions_since::get_assignment_submissions_since;
+pub use get_activity_logs_since::get_activity_logs_since;
 
 pub use get_grade_configs_for_classes::get_grade_configs_for_classes;
 pub use get_grade_items_for_classes::get_grade_items_for_classes;

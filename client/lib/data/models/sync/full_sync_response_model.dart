@@ -56,6 +56,9 @@ class FullSyncResponseModel {
   @JsonKey(name: 'tos_competencies', defaultValue: <Map<String, dynamic>>[])
   final List<Map<String, dynamic>> tosCompetencies;
 
+  @JsonKey(name: 'activity_logs', defaultValue: <Map<String, dynamic>>[])
+  final List<Map<String, dynamic>> activityLogs;
+
   final Map<String, dynamic>? user;
 
   @JsonKey(name: 'enrolled_students')
@@ -82,6 +85,7 @@ class FullSyncResponseModel {
     this.periodGrades = const [],
     this.tableOfSpecifications = const [],
     this.tosCompetencies = const [],
+    this.activityLogs = const [],
     this.user,
     this.enrolledStudents,
   });

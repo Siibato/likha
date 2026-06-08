@@ -71,6 +71,10 @@ impl ManifestRepository {
         ops::get_activity_logs_manifest(&self.db, user_id, user_role).await
     }
 
+    pub async fn get_activity_logs_paginated(&self, log_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
+        ops::get_activity_logs_paginated(&self.db, log_ids, limit).await
+    }
+
     // ─── Section B: Paginated Full-Data Queries ───────────────────────────────
 
     pub async fn get_classes_paginated(&self, class_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
@@ -157,6 +161,10 @@ impl ManifestRepository {
 
     pub async fn get_assignment_submissions_since(&self, user_id: Uuid, submission_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
         ops::get_assignment_submissions_since(&self.db, user_id, submission_ids, since).await
+    }
+
+    pub async fn get_activity_logs_since(&self, log_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_activity_logs_since(&self.db, log_ids, since).await
     }
 
     // ─── Section E: Grading Sync Queries ─────────────────────────────────────
