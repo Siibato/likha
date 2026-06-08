@@ -87,6 +87,15 @@ export const endpointThresholds = {
   'http_req_duration{name:Sync:Full}': ['p(95)<3000'],
   'http_req_duration{name:Sync:Delta}': ['p(95)<1500'],
 
+  // Admin endpoints
+  'http_req_duration{name:Admin:AccountList}': ['p(95)<500'],
+  'http_req_duration{name:Admin:AccountDetail}': ['p(95)<300'],
+  'http_req_duration{name:Admin:ActivityLogs}': ['p(95)<400'],
+  'http_req_duration{name:Admin:SetupQr}': ['p(95)<300'],
+  'http_req_duration{name:Admin:SetupCode}': ['p(95)<200'],
+  'http_req_duration{name:Admin:SchoolSettings}': ['p(95)<200'],
+  'http_req_duration{name:Admin:StudentSearch}': ['p(95)<400'],
+
   // File downloads (variable, high timeout)
   'http_req_duration{name:Shared:SubmissionDownload}': ['p(95)<2000'],
   'http_req_duration{name:Shared:MaterialDownload}': ['p(95)<2000'],

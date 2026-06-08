@@ -10,7 +10,7 @@ import { AssignmentService } from '../services/assignment';
 import { expectAll } from '../core/check-helpers';
 import { stages } from '../config/stages';
 import { thresholds } from '../config/thresholds';
-import { teacherAccounts, studentAccounts } from '../data/accounts';
+import { teacherAccounts, studentAccounts, adminAccounts } from '../data/accounts';
 import { activeClasses } from '../data/manifest';
 import { MixedSetupData } from '../types/scenario';
 
@@ -30,10 +30,11 @@ const STUDENT_VUS = 35;
 
 export function setup(): MixedSetupData {
   console.log(`Baseline setup: logging in ${TEACHER_VUS} teachers + ${STUDENT_VUS} students...`);
+  const adminTokens = loginAll(adminAccounts, 0);
   const teacherTokens = loginAll(teacherAccounts, TEACHER_VUS);
   const studentTokens = loginAll(studentAccounts, STUDENT_VUS);
   console.log(`Setup complete: ${Object.keys(teacherTokens).length} teachers + ${Object.keys(studentTokens).length} students ready`);
-  return { teacherTokens, studentTokens };
+  return { adminTokens, teacherTokens, studentTokens };
 }
 
 declare const __VU: number;
