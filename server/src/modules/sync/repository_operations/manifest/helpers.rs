@@ -41,7 +41,9 @@ pub async fn build_teacher_map(
     Ok(map)
 }
 
-/// Generic pagination helper — handles limit capping and record collection
+/// Sync data fetch helper — returns all requested records up to the
+/// caller-supplied limit. Callers are responsible for setting appropriate
+/// bounds. This does NOT silently truncate.
 pub async fn paginate_query<E, F>(
     db: &DatabaseConnection,
     query: Select<E>,
@@ -53,15 +55,14 @@ where
     E::Model: Send + Sync,
     F: Fn(E::Model) -> Value,
 {
-    let effective_limit = std::cmp::min(limit, 500) as u64;
+    let effective_limit = limit as u64;
     let records = query
-        .limit(effective_limit + 1)
+        .limit(effective_limit)
         .all(db)
         .await
         .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
     let records: Vec<Value> = records
         .into_iter()
-        .take(effective_limit as usize)
         .map(mapper)
         .collect();
     Ok(PaginatedRecords { records })

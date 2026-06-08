@@ -166,6 +166,7 @@ impl super::SyncFullService {
             .filter_map(|id| Uuid::parse_str(id).ok())
             .filter(|id| entitled_class_ids.contains(id))
             .collect();
+        let batch_class_id_set: std::collections::HashSet<Uuid> = batch_class_ids.iter().cloned().collect();
 
         if batch_class_ids.is_empty() {
             tracing::warn!("All requested class_ids are invalid for user_id={}", user_id);
@@ -215,13 +216,8 @@ impl super::SyncFullService {
             .map(|e| e.id)
             .collect();
 
-        let question_ids: Vec<Uuid> = manifest.assessment_questions.iter().map(|e| e.id).collect();
-        tracing::debug!("BATCH REQUEST: Found {} question_ids in manifest for {} assessments",
-            question_ids.len(), batch_assessment_ids.len());
-
-        if question_ids.is_empty() {
-            tracing::debug!("No questions found in manifest for assessments");
-        }
+        // Will derive actual scoped question_ids after assessments are fetched and filtered
+        let question_ids: Vec<Uuid>;
 
         // Fetch enrollments for batch classes (needed for full offline support)
         let batch_enrollment_ids: Vec<Uuid> = manifest.enrollments
@@ -273,12 +269,35 @@ impl super::SyncFullService {
 
         // Fetch entity data (same as current logic)
         tracing::debug!("Fetching assessments for batch");
-        let assessments = self
+        let assessments_raw = self
             .manifest_repo
             .get_assessments_paginated(batch_assessment_ids.clone(), 10000)
             .await?
             .records;
-        tracing::debug!("Fetched {} assessments", assessments.len());
+        // Filter to only assessments belonging to the requested batch class_ids
+        let assessments: Vec<Value> = assessments_raw
+            .into_iter()
+            .filter(|a| {
+                a.get("class_id")
+                    .and_then(|v| v.as_str())
+                    .and_then(|s| Uuid::parse_str(s).ok())
+                    .map(|id| batch_class_id_set.contains(&id))
+                    .unwrap_or(false)
+            })
+            .collect();
+        let actual_batch_assessment_ids: Vec<Uuid> = assessments
+            .iter()
+            .filter_map(|a| a.get("id").and_then(|v| v.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+            .collect();
+        tracing::debug!("Fetched {} assessments ({} after class filter)", batch_assessment_ids.len(), assessments.len());
+
+        // Scope question IDs to only questions for assessments in this batch
+        question_ids = manifest.assessment_questions
+            .iter()
+            .map(|e| e.id)
+            .collect();
+        tracing::debug!("BATCH REQUEST: Found {} question_ids in manifest for {} assessments",
+            question_ids.len(), actual_batch_assessment_ids.len());
 
         tracing::debug!("Fetching questions for batch");
         let questions = if question_ids.is_empty() {
@@ -307,12 +326,26 @@ impl super::SyncFullService {
         }
 
         tracing::debug!("Fetching assignments for batch");
-        let assignments = self
+        let assignments_raw = self
             .manifest_repo
             .get_assignments_paginated(batch_assignment_ids.clone(), 10000)
             .await?
             .records;
-        tracing::debug!("Fetched {} assignments", assignments.len());
+        let assignments: Vec<Value> = assignments_raw
+            .into_iter()
+            .filter(|a| {
+                a.get("class_id")
+                    .and_then(|v| v.as_str())
+                    .and_then(|s| Uuid::parse_str(s).ok())
+                    .map(|id| batch_class_id_set.contains(&id))
+                    .unwrap_or(false)
+            })
+            .collect();
+        let actual_batch_assignment_ids: Vec<Uuid> = assignments
+            .iter()
+            .filter_map(|a| a.get("id").and_then(|v| v.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+            .collect();
+        tracing::debug!("Fetched {} assignments ({} after class filter)", batch_assignment_ids.len(), assignments.len());
 
         // Role-aware assessment submissions
         let assessment_submission_ids: Vec<Uuid> = manifest.assessment_submissions.iter().map(|e| e.id).collect();
@@ -323,12 +356,12 @@ impl super::SyncFullService {
             match user_role {
                 "student" => {
                     self.manifest_repo
-                        .get_student_submissions_for_assessments(user_id, batch_assessment_ids.clone(), 10000)
+                        .get_student_submissions_for_assessments(user_id, actual_batch_assessment_ids.clone(), 10000)
                         .await?
                         .records
                 }
                 _ => {
-                    self.get_all_assessment_submissions_for_assessments(&batch_assessment_ids, 10000)
+                    self.get_all_assessment_submissions_for_assessments(&actual_batch_assessment_ids, 10000)
                         .await?
                 }
             }
@@ -344,12 +377,12 @@ impl super::SyncFullService {
             match user_role {
                 "student" => {
                     self.manifest_repo
-                        .get_student_assignment_submissions_for_assignments(user_id, batch_assignment_ids.clone(), 10000)
+                        .get_student_assignment_submissions_for_assignments(user_id, actual_batch_assignment_ids.clone(), 10000)
                         .await?
                         .records
                 }
                 _ => {
-                    self.get_all_assignment_submissions_for_assignments(&batch_assignment_ids, 10000)
+                    self.get_all_assignment_submissions_for_assignments(&actual_batch_assignment_ids, 10000)
                         .await?
                 }
             }
@@ -357,12 +390,22 @@ impl super::SyncFullService {
         tracing::debug!("Fetched {} assignment submissions", assignment_submissions.len());
 
         tracing::debug!("Fetching learning materials for batch");
-        let learning_materials = self
+        let materials_raw = self
             .manifest_repo
-            .get_materials_paginated(batch_material_ids, 10000)
+            .get_materials_paginated(batch_material_ids.clone(), 10000)
             .await?
             .records;
-        tracing::debug!("Fetched {} learning materials", learning_materials.len());
+        let learning_materials: Vec<Value> = materials_raw
+            .into_iter()
+            .filter(|m| {
+                m.get("class_id")
+                    .and_then(|v| v.as_str())
+                    .and_then(|s| Uuid::parse_str(s).ok())
+                    .map(|id| batch_class_id_set.contains(&id))
+                    .unwrap_or(false)
+            })
+            .collect();
+        tracing::debug!("Fetched {} learning materials ({} after class filter)", batch_material_ids.len(), learning_materials.len());
 
         // Enrich questions and submissions
         tracing::debug!("Enriching {} questions", questions.len());

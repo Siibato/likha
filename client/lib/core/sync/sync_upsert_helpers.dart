@@ -9,7 +9,20 @@ class SyncUpsertHelpers {
 
   SyncUpsertHelpers(this._log);
 
-  
+  /// Check if a record exists in a given table by id.
+  /// Used as a defensive FK pre-check before inserting child records.
+  Future<bool> _fkExists(Database db, String table, String id) async {
+    if (id.isEmpty) return false;
+    final result = await db.query(
+      table,
+      columns: [CommonCols.id],
+      where: '${CommonCols.id} = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    return result.isNotEmpty;
+  }
+
   Future<void> upsertClasses(
     Database db,
     List<dynamic> records,
@@ -531,12 +544,24 @@ class SyncUpsertHelpers {
         final answerId = answerData['id']?.toString();
         if (answerId == null) continue;
 
+        final questionId = answerData['question_id']?.toString() ?? '';
+        if (questionId.isEmpty) {
+          _log.warn('Skipping answer $answerId: missing question_id');
+          continue;
+        }
+
+        // DEFENSE: Skip if the referenced question wasn't synced
+        if (!await _fkExists(db, DbTables.assessmentQuestions, questionId)) {
+          _log.warn('Skipping answer $answerId: question $questionId not found locally');
+          continue;
+        }
+
         await db.insert(
           DbTables.submissionAnswers,
           {
             CommonCols.id: answerId,
             SubmissionAnswersCols.submissionId: submissionId,
-            SubmissionAnswersCols.questionId: answerData['question_id'],
+            SubmissionAnswersCols.questionId: questionId,
             SubmissionAnswersCols.points: (answerData['points_earned'] as num?)?.toDouble() ?? 0.0,
             SubmissionAnswersCols.overriddenBy: answerData['overridden_by'],
             SubmissionAnswersCols.overriddenAt: answerData['overridden_at'],
@@ -553,12 +578,30 @@ class SyncUpsertHelpers {
             final itemId = itemData['id']?.toString();
             if (itemId == null) continue;
 
+            // DEFENSE: Skip if referenced choice wasn't synced
+            final choiceId = itemData['choice_id']?.toString();
+            if (choiceId != null && choiceId.isNotEmpty) {
+              if (!await _fkExists(db, DbTables.questionChoices, choiceId)) {
+                _log.warn('Skipping answer item $itemId: choice $choiceId not found locally');
+                continue;
+              }
+            }
+
+            // DEFENSE: Skip if referenced answer_key wasn't synced
+            final answerKeyId = itemData['answer_key_id']?.toString();
+            if (answerKeyId != null && answerKeyId.isNotEmpty) {
+              if (!await _fkExists(db, DbTables.answerKeys, answerKeyId)) {
+                _log.warn('Skipping answer item $itemId: answer_key $answerKeyId not found locally');
+                continue;
+              }
+            }
+
             await db.insert(
               DbTables.submissionAnswerItems,
               {
                 CommonCols.id: itemId,
                 SubmissionAnswerItemsCols.submissionAnswerId: answerId,
-                SubmissionAnswerItemsCols.choiceId: itemData['choice_id'],
+                SubmissionAnswerItemsCols.choiceId: choiceId,
                 SubmissionAnswerItemsCols.answerText: itemData['answer_text'],
                 SubmissionAnswerItemsCols.isCorrect: (itemData['is_correct'] == true) ? 1 : 0,
                 CommonCols.cachedAt: DateTime.now().toIso8601String(),
@@ -646,7 +689,13 @@ class SyncUpsertHelpers {
     List<dynamic> records,
   ) async {
     for (final record in records) {
-      await _preserveLocalPathUpsert(db, DbTables.materialFiles, MaterialFilesCols.materialId, record as Map<String, dynamic>);
+      final data = record as Map<String, dynamic>;
+      final materialId = data['material_id']?.toString() ?? '';
+      if (materialId.isNotEmpty && !await _fkExists(db, DbTables.learningMaterials, materialId)) {
+        _log.warn('Skipping material file ${data['id']}: material $materialId not found locally');
+        continue;
+      }
+      await _preserveLocalPathUpsert(db, DbTables.materialFiles, MaterialFilesCols.materialId, data);
     }
   }
 
@@ -656,7 +705,13 @@ class SyncUpsertHelpers {
     List<dynamic> records,
   ) async {
     for (final record in records) {
-      await _preserveLocalPathUpsert(db, DbTables.submissionFiles, SubmissionFilesCols.submissionId, record as Map<String, dynamic>);
+      final data = record as Map<String, dynamic>;
+      final submissionId = data['submission_id']?.toString() ?? '';
+      if (submissionId.isNotEmpty && !await _fkExists(db, DbTables.assignmentSubmissions, submissionId)) {
+        _log.warn('Skipping submission file ${data['id']}: submission $submissionId not found locally');
+        continue;
+      }
+      await _preserveLocalPathUpsert(db, DbTables.submissionFiles, SubmissionFilesCols.submissionId, data);
     }
   }
 

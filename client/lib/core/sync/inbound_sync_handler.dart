@@ -266,9 +266,9 @@ class InboundSyncHandler {
           'enrollments': batchParticipants.length,              // NEW: for offline support
         });
 
-        // Log assessment submission details for debugging
+        // Build submission count map (needed for mismatch detector below)
+        final byAssessment = <String, int>{};
         if (assessmentSubmissions.isNotEmpty) {
-          final byAssessment = <String, int>{};
           for (final s in assessmentSubmissions) {
             final aid = s['assessment_id']?.toString();
             if (aid != null) {
@@ -291,6 +291,17 @@ class InboundSyncHandler {
           final title = assessment['title'] as String? ?? 'unknown';
           final qCount = questionsByAssessment[assessmentId] ?? 0;
           _log.questionsPerAssessment(title, assessmentId ?? '?', qCount);
+        }
+
+        // Detect potential truncation: submissions with answers but zero questions
+        for (final assessment in assessments) {
+          final assessmentId = assessment['id'] as String?;
+          if (assessmentId == null) continue;
+          final qCount = questionsByAssessment[assessmentId] ?? 0;
+          final subCount = byAssessment[assessmentId] ?? 0;
+          if (subCount > 0 && qCount == 0) {
+            _log.warn('WARNING: Assessment $assessmentId has $subCount submissions but 0 questions — possible server truncation');
+          }
         }
 
         // NEW: Upsert batch enrolled_students and enrollments (for full offline support)
