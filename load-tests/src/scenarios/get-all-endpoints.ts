@@ -4,7 +4,7 @@ import { buildOptions } from '../core/scenario-builder';
 import { loginAll } from '../core/auth-manager';
 import { runAllEndpoints } from '../core/all-endpoints-runner';
 import { endpointThresholds } from '../config/thresholds';
-import { teacherAccounts, studentAccounts } from '../data/accounts';
+import { teacherAccounts, studentAccounts, adminAccounts } from '../data/accounts';
 import { MixedSetupData } from '../types/scenario';
 
 const stages = [
@@ -24,17 +24,19 @@ export const options: Options = buildOptions(stages, {
 
 export const handleSummary = createReportGenerator('get-all-endpoints').handleSummary;
 
-const TEACHER_VUS = 100;  // 50% teachers
-const STUDENT_VUS = 100;  // 50% students
+const TEACHER_VUS = 100;
+const STUDENT_VUS = 100;
+const ADMIN_VUS = 10;
 
 export function setup(): MixedSetupData {
-  console.log(`Setup: logging in ${TEACHER_VUS} teachers + ${STUDENT_VUS} students...`);
+  console.log(`Setup: logging in ${ADMIN_VUS} admins + ${TEACHER_VUS} teachers + ${STUDENT_VUS} students...`);
+  const adminTokens = loginAll(adminAccounts, ADMIN_VUS);
   const teacherTokens = loginAll(teacherAccounts, TEACHER_VUS);
   const studentTokens = loginAll(studentAccounts, STUDENT_VUS);
-  console.log(`Setup complete: ${Object.keys(teacherTokens).length} teachers + ${Object.keys(studentTokens).length} students ready`);
-  return { teacherTokens, studentTokens };
+  console.log(`Setup complete: ${Object.keys(adminTokens).length} admins + ${Object.keys(teacherTokens).length} teachers + ${Object.keys(studentTokens).length} students ready`);
+  return { adminTokens, teacherTokens, studentTokens };
 }
 
 export default function (data: MixedSetupData): void {
-  runAllEndpoints(data, { includeHeavyEndpoints: true, teacherVus: TEACHER_VUS });
+  runAllEndpoints(data, { includeHeavyEndpoints: true, teacherVus: TEACHER_VUS, studentVus: STUDENT_VUS, adminVus: ADMIN_VUS });
 }

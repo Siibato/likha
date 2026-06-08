@@ -235,53 +235,9 @@ impl super::SyncFullService {
             Vec::new()
         };
 
-        // Fetch enrollments for batch classes (needed for full offline support)
-        let batch_enrollment_ids: Vec<Uuid> = manifest.enrollments
-            .iter()
-            .map(|e| e.id)
-            .collect();
-
-        let batch_enrollment_data = if batch_enrollment_ids.is_empty() {
-            crate::modules::sync::manifest_repository::PaginatedRecords {
-                records: Vec::new(),
-            }
-        } else {
-            self.manifest_repo
-                .get_enrollments_paginated(batch_enrollment_ids, 10000)
-                .await?
-        };
-        let batch_enrollments = batch_enrollment_data.records.clone();
-
-        // Extract unique student_ids from enrollment records
-        let batch_student_ids: Vec<Uuid> = batch_enrollment_data
-            .records
-            .iter()
-            .filter_map(|e| {
-                e.get("student_id")
-                    .and_then(|id| id.as_str())
-                    .and_then(|id_str| uuid::Uuid::parse_str(id_str).ok())
-            })
-            .collect::<std::collections::HashSet<_>>()
-            .into_iter()
-            .collect();
-
-        // Fetch enrolled student profiles (role-aware: students don't see classmates)
-        let batch_enrolled_students = match user_role {
-            "student" => Vec::new(),
-            _ => {
-                if batch_student_ids.is_empty() {
-                    Vec::new()
-                } else {
-                    self.manifest_repo
-                        .get_users_paginated(batch_student_ids, 10000)
-                        .await?
-                        .records
-                }
-            }
-        };
-
-        tracing::debug!("BATCH REQUEST: enrollments={}, enrolled_students={}",
-            batch_enrollments.len(), batch_enrolled_students.len());
+        // NOTE: enrollments and enrolled_students are already sent in the base request.
+        // Skip redundant re-fetching in batch requests to reduce payload and DB load.
+        tracing::debug!("BATCH REQUEST: skipping redundant enrollments/enrolled_students (already in base response)");
 
         let mut assessments: Vec<Value> = Vec::new();
         let mut actual_batch_assessment_ids: Vec<Uuid> = Vec::new();
@@ -586,19 +542,9 @@ impl super::SyncFullService {
                 table_of_specifications.len(), tos_competencies.len());
         }
 
-        let activity_logs = if scope.include_activity_logs {
-            let log_ids: Vec<Uuid> = manifest.activity_logs.iter().map(|e| e.id).collect();
-            if log_ids.is_empty() {
-                Vec::new()
-            } else {
-                self.manifest_repo
-                    .get_activity_logs_paginated(log_ids, 10000)
-                    .await?
-                    .records
-            }
-        } else {
-            Vec::new()
-        };
+        // NOTE: activity_logs are already sent in the base request.
+        // Skip redundant re-fetching in batch requests.
+        tracing::debug!("BATCH REQUEST: skipping redundant activity_logs (already in base response)");
 
         let now = Utc::now();
         let sync_token = now.to_rfc3339();
@@ -627,8 +573,8 @@ impl super::SyncFullService {
             server_time,
             user: None,
             classes: vec![],
-            enrollments: batch_enrollments,
-            enrolled_students: batch_enrolled_students,
+            enrollments: vec![],
+            enrolled_students: vec![],
             assessments,
             questions: enriched_questions,
             assessment_submissions: enriched_assessment_submissions,
@@ -645,7 +591,7 @@ impl super::SyncFullService {
             period_grades: quarterly_grades_data,
             table_of_specifications,
             tos_competencies,
-            activity_logs,
+            activity_logs: vec![],
         })
     }
 

@@ -1038,16 +1038,31 @@ class SyncUpsertHelpers {
   ) async {
     int successCount = 0;
     int failedCount = 0;
+    int skippedCount = 0;
 
     for (final record in records) {
       try {
         if (record is! Map<String, dynamic>) continue;
 
+        final userId = record['user_id']?.toString() ?? '';
+        if (userId.isEmpty) {
+          _log.warn('Activity log ${record['id']} has empty user_id, skipping');
+          skippedCount++;
+          continue;
+        }
+
+        // DEFENSE: Skip if referenced user wasn't synced
+        if (!await _fkExists(db, DbTables.users, userId)) {
+          _log.warn('Skipping activity log ${record['id']}: user $userId not found locally');
+          skippedCount++;
+          continue;
+        }
+
         await db.insert(
           DbTables.activityLogs,
           {
             CommonCols.id: record['id'],
-            ActivityLogsCols.userId: record['user_id'],
+            ActivityLogsCols.userId: userId,
             ActivityLogsCols.action: record['action'],
             ActivityLogsCols.details: record['details'],
             CommonCols.createdAt: record['created_at'],
@@ -1064,6 +1079,9 @@ class SyncUpsertHelpers {
     }
 
     _log.upsertSummary('activity_logs', successCount);
+    if (skippedCount > 0) {
+      _log.warn('Skipped $skippedCount activity logs (missing FK)');
+    }
     if (failedCount > 0) {
       _log.warn('Failed to upsert activity logs', failedCount);
     }
