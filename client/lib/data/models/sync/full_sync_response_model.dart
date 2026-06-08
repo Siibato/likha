@@ -3,6 +3,25 @@ import 'package:json_annotation/json_annotation.dart';
 part 'full_sync_response_model.g.dart';
 
 @JsonSerializable()
+class SyncPlanModel {
+  @JsonKey(name: 'needs_entity_batches')
+  final bool needsEntityBatches;
+
+  @JsonKey(name: 'total_classes')
+  final int totalClasses;
+
+  SyncPlanModel({
+    required this.needsEntityBatches,
+    required this.totalClasses,
+  });
+
+  factory SyncPlanModel.fromJson(Map<String, dynamic> json) =>
+      _$SyncPlanModelFromJson(json);
+
+  Map<String, dynamic> toJson() => _$SyncPlanModelToJson(this);
+}
+
+@JsonSerializable()
 class FullSyncResponseModel {
   @JsonKey(name: 'sync_token')
   final String syncToken;
@@ -64,6 +83,9 @@ class FullSyncResponseModel {
   @JsonKey(name: 'enrolled_students')
   final List<Map<String, dynamic>>? enrolledStudents;
 
+  @JsonKey(name: 'sync_plan')
+  final SyncPlanModel? syncPlan;
+
   FullSyncResponseModel({
     required this.syncToken,
     required this.serverTime,
@@ -88,6 +110,7 @@ class FullSyncResponseModel {
     this.activityLogs = const [],
     this.user,
     this.enrolledStudents,
+    this.syncPlan,
   });
 
   factory FullSyncResponseModel.fromJson(Map<String, dynamic> json) =>

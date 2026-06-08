@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
@@ -33,7 +35,6 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
   bool _hasSchoolConfig = false;
 
   // Admin school details check (after login)
-  bool _adminSchoolDetailsChecked = false;
   bool _adminSchoolDetailsExist = false;
 
   @override
@@ -109,30 +110,18 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
     if (authState.isAuthenticated) {
       if (_lastSyncedUserId != authState.user?.id) {
         _lastSyncedUserId = authState.user?.id;
-        _adminSchoolDetailsChecked = false;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           di.sl<SyncManager>().start();
 
           if (authState.user?.role == 'admin') {
-            ref.read(adminProvider.notifier).cacheAccountsOffline();
-            _checkAdminSchoolDetails();
+            unawaited(ref.read(adminProvider.notifier).cacheAccountsOffline());
+            unawaited(_checkAdminSchoolDetails());
           } else {
             setState(() {
-              _adminSchoolDetailsChecked = true;
               _adminSchoolDetailsExist = true;
             });
           }
         });
-      }
-
-      // Admin school details check — block dashboard if not set
-      if (authState.user?.role == 'admin' && !_adminSchoolDetailsChecked) {
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        );
-      }
-      if (authState.user?.role == 'admin' && !_adminSchoolDetailsExist) {
-        return const SchoolDetailsSetupPage();
       }
 
       final syncState = ref.watch(syncProvider);
@@ -145,6 +134,11 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
           !_syncFailureAcknowledged &&
           syncState.phase == SyncPhase.failed) {
         return SyncLoadingPage(onContinueOffline: _acknowledgeSyncFailure);
+      }
+
+      // Admin school details check — evaluate after sync completes
+      if (authState.user?.role == 'admin' && !_adminSchoolDetailsExist) {
+        return const SchoolDetailsSetupPage();
       }
 
       return const HomePage();
@@ -170,7 +164,6 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
       final schoolName = data?['school_name'] as String?;
       if (mounted) {
         setState(() {
-          _adminSchoolDetailsChecked = true;
           _adminSchoolDetailsExist = schoolName != null && schoolName.isNotEmpty;
         });
       }
@@ -178,7 +171,6 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
       // If check fails (e.g., offline), allow access to dashboard
       if (mounted) {
         setState(() {
-          _adminSchoolDetailsChecked = true;
           _adminSchoolDetailsExist = true;
         });
       }

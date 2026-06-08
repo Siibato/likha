@@ -1,6 +1,7 @@
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/sync/sync_logger.dart';
+import 'package:likha/core/sync/sync_semaphore.dart';
 import 'package:likha/core/sync/sync_state.dart';
 import 'package:likha/core/sync/sync_upsert_helpers.dart';
 import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';
@@ -202,10 +203,32 @@ class InboundSyncHandler {
       }
     }
 
-    // STEP 4: Iterate through batches with progress updates
-    if (classBatches.isNotEmpty) {
-      for (int batchIndex = 0; batchIndex < classBatches.length; batchIndex++) {
+    // STEP 4: Fetch and upsert entity batches
+    final needsEntityBatches = baseResponse.syncPlan?.needsEntityBatches ?? true;
+
+    if (needsEntityBatches && classBatches.isNotEmpty) {
+      // Fetch all batches concurrently with bounded concurrency
+      final semaphore = SyncSemaphore(maxConcurrency: 3);
+      final futures = List.generate(classBatches.length, (index) {
+        return semaphore.run(() async {
+          final batch = classBatches[index];
+          final response = await _syncRemoteDataSource.fullSync(
+            deviceId: deviceId,
+            classIds: batch,
+            receiveTimeout: const Duration(seconds: 30),
+          );
+          return MapEntry(index, response);
+        });
+      });
+      final results = await Future.wait(futures);
+      results.sort((a, b) => a.key.compareTo(b.key));
+
+      // Upsert in original order so progress bar is deterministic
+      for (final entry in results) {
+        final batchIndex = entry.key;
+        final batchResponse = entry.value;
         final batch = classBatches[batchIndex];
+
         const progressBase = 0.1;
         const progressRange = 0.85;
         final batchProgress = progressBase + (progressRange * (batchIndex / classBatches.length));
@@ -216,13 +239,6 @@ class InboundSyncHandler {
         _updateState(progress: batchProgress, currentStep: currentStepText);
 
         _log.batchStart(batchIndex, classBatches.length, batch);
-
-        // Make batch request with receiveTimeout
-        final batchResponse = await _syncRemoteDataSource.fullSync(
-          deviceId: deviceId,
-          classIds: batch,
-          receiveTimeout: const Duration(seconds: 30),
-        );
 
         // Upsert all entities from batch response
         final assessments = batchResponse.assessments;
@@ -345,6 +361,8 @@ class InboundSyncHandler {
         await _upsertHelpers.upsertTosCompetencies(db, tosCompetencies);
         await _upsertHelpers.upsertActivityLogs(db, activityLogs);
       }
+    } else if (!needsEntityBatches) {
+      _log.warn('Skipping entity batches (server says none needed)');
     }
 
     await _upsertHelpers.recalculateClassStudentCounts(db);

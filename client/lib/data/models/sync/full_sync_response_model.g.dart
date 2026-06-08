@@ -6,6 +6,20 @@ part of 'full_sync_response_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+SyncPlanModel _$SyncPlanModelFromJson(
+  Map<String, dynamic> json,
+) => SyncPlanModel(
+  needsEntityBatches: json['needs_entity_batches'] as bool,
+  totalClasses: (json['total_classes'] as num).toInt(),
+);
+
+Map<String, dynamic> _$SyncPlanModelToJson(
+  SyncPlanModel instance,
+) => <String, dynamic>{
+  'needs_entity_batches': instance.needsEntityBatches,
+  'total_classes': instance.totalClasses,
+};
+
 FullSyncResponseModel _$FullSyncResponseModelFromJson(
   Map<String, dynamic> json,
 ) => FullSyncResponseModel(
@@ -94,6 +108,9 @@ FullSyncResponseModel _$FullSyncResponseModelFromJson(
   enrolledStudents: (json['enrolled_students'] as List<dynamic>?)
       ?.map((e) => e as Map<String, dynamic>)
       .toList(),
+  syncPlan: json['sync_plan'] == null
+      ? null
+      : SyncPlanModel.fromJson(json['sync_plan'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$FullSyncResponseModelToJson(
@@ -122,4 +139,5 @@ Map<String, dynamic> _$FullSyncResponseModelToJson(
   'activity_logs': instance.activityLogs,
   'user': instance.user,
   'enrolled_students': instance.enrolledStudents,
+  'sync_plan': instance.syncPlan,
 };

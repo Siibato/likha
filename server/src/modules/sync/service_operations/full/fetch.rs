@@ -39,6 +39,13 @@ impl super::SyncFullService {
 
         let scope = SyncScope::for_role(user_role);
 
+        let needs_entity_batches = scope.include_assessments
+            || scope.include_assignments
+            || scope.include_learning_materials
+            || scope.include_grade_data
+            || scope.include_tos
+            || scope.include_submissions;
+
         tracing::debug!(
             "User manifest retrieved: classes={}, enrollments={}, assessments={}, assignments={}",
             manifest.classes.len(),
@@ -129,6 +136,8 @@ impl super::SyncFullService {
             };
             tracing::debug!("Fetched {} enrolled students", enrolled_students.len());
 
+            let total_classes = classes.len();
+
             let now = Utc::now();
             let sync_token = now.to_rfc3339();
             let server_time = now.to_rfc3339();
@@ -171,6 +180,10 @@ impl super::SyncFullService {
                 table_of_specifications: vec![],
                 tos_competencies: vec![],
                 activity_logs,
+                sync_plan: Some(super::sync_full_service::SyncPlan {
+                    needs_entity_batches,
+                    total_classes,
+                }),
             });
         }
 
@@ -213,6 +226,7 @@ impl super::SyncFullService {
                 table_of_specifications: vec![],
                 tos_competencies: vec![],
                 activity_logs: vec![],
+                sync_plan: None,
             });
         }
 
@@ -592,6 +606,7 @@ impl super::SyncFullService {
             table_of_specifications,
             tos_competencies,
             activity_logs: vec![],
+            sync_plan: None,
         })
     }
 
