@@ -26,21 +26,10 @@ declare const __VU: number;
 export function runAllEndpoints(data: MixedSetupData, opts: RunnerOptions): void {
   const { includeHeavyEndpoints = false, teacherVus, studentVus, adminVus } = opts;
 
-  // Determine VU type: teachers first, then students, then admins
-  const isTeacher = __VU <= teacherVus;
-  const isStudent = __VU > teacherVus && __VU <= teacherVus + studentVus;
-  const isAdmin = __VU > teacherVus + studentVus;
+  const role = data.roleMap?.[__VU];
+  const token = data.vuTokens?.[__VU];
 
-  const token = isTeacher
-    ? data.teacherTokens[__VU]
-    : isStudent
-      ? data.studentTokens[__VU - teacherVus]
-      : data.adminTokens[__VU - teacherVus - studentVus];
-
-  const role: 'Admin' | 'Teacher' | 'Student' = isAdmin ? 'Admin' : isTeacher ? 'Teacher' : 'Student';
-
-  if (!token) {
-    console.error(`No token for VU ${__VU} (role=${role})`);
+  if (!role || !token) {
     return;
   }
 

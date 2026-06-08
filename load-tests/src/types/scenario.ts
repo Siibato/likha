@@ -26,4 +26,6 @@ export interface MixedSetupData {
   adminTokens: TokenMap;
   teacherTokens: TokenMap;
   studentTokens: TokenMap;
+  roleMap?: Record<number, 'Teacher' | 'Student' | 'Admin'>;
+  vuTokens?: TokenMap;
 }

@@ -3,15 +3,18 @@ import { Options } from 'k6/options';
 import { buildOptions } from '../core/scenario-builder';
 import { loginAll } from '../core/auth-manager';
 import { runAllEndpoints } from '../core/all-endpoints-runner';
+import { buildRoleMap } from '../core/role-map';
 import { endpointThresholds } from '../config/thresholds';
 import { teacherAccounts, studentAccounts, adminAccounts } from '../data/accounts';
 import { MixedSetupData } from '../types/scenario';
+
+const TOTAL_VUS = 200;
 
 const stages = [
   { duration: '30s', target: 10 },
   { duration: '2m', target: 50 },
   { duration: '3m', target: 100 },
-  { duration: '3m', target: 200 },
+  { duration: '3m', target: TOTAL_VUS },
   { duration: '30s', target: 0 },
 ];
 
@@ -24,9 +27,9 @@ export const options: Options = buildOptions(stages, {
 
 export const handleSummary = createReportGenerator('get-all-endpoints').handleSummary;
 
-const TEACHER_VUS = 100;
-const STUDENT_VUS = 100;
-const ADMIN_VUS = 10;
+const TEACHER_VUS = 76;
+const STUDENT_VUS = 120;
+const ADMIN_VUS = 4;
 
 export function setup(): MixedSetupData {
   console.log(`Setup: logging in ${ADMIN_VUS} admins + ${TEACHER_VUS} teachers + ${STUDENT_VUS} students...`);
@@ -34,7 +37,9 @@ export function setup(): MixedSetupData {
   const teacherTokens = loginAll(teacherAccounts, TEACHER_VUS);
   const studentTokens = loginAll(studentAccounts, STUDENT_VUS);
   console.log(`Setup complete: ${Object.keys(adminTokens).length} admins + ${Object.keys(teacherTokens).length} teachers + ${Object.keys(studentTokens).length} students ready`);
-  return { adminTokens, teacherTokens, studentTokens };
+
+  const { roleMap, vuTokens } = buildRoleMap(TEACHER_VUS, STUDENT_VUS, ADMIN_VUS, teacherTokens, studentTokens, adminTokens);
+  return { adminTokens, teacherTokens, studentTokens, roleMap, vuTokens };
 }
 
 export default function (data: MixedSetupData): void {
