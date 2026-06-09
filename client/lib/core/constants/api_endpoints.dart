@@ -63,17 +63,11 @@ class ApiEndpoints {
   static final accountsList = ApiEndpoint<List<UserModel>>(
     '/api/v1/auth/accounts',
     (json) {
-      RepoLogger.instance.log('accountsList parsing: json keys = ${json.keys.toList()}');
-      final accounts = json['accounts'];
-      RepoLogger.instance.log('accountsList parsing: accounts field = $accounts');
-      if (accounts is List<dynamic>) {
-        RepoLogger.instance.log('accountsList parsing: Found ${accounts.length} accounts in list');
-        return accounts
-            .map((e) => UserModel.fromJson(e as Map<String, dynamic>))
-            .toList();
-      }
-      RepoLogger.instance.error('accountsList parsing: accounts is not a List, it is ${accounts.runtimeType}');
-      throw FormatException('Expected accounts to be a List, got ${accounts.runtimeType}');
+      final accounts = json as List<dynamic>;
+      RepoLogger.instance.log('accountsList parsing: Found ${accounts.length} accounts in list');
+      return accounts
+          .map((e) => UserModel.fromJson(e as Map<String, dynamic>))
+          .toList();
     },
   );
 

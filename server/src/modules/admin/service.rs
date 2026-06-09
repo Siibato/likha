@@ -3,7 +3,7 @@ use uuid::Uuid;
 use crate::cache::{CacheInvalidator, RedisCache};
 use crate::utils::AppResult;
 use crate::modules::auth::schema::UserResponse;
-use crate::modules::admin::schema::{CreateAccountRequest, UpdateAccountRequest, ResetAccountRequest, LockAccountRequest};
+use crate::modules::admin::schema::{AccountListResponse, CreateAccountRequest, UpdateAccountRequest, ResetAccountRequest, LockAccountRequest};
 use crate::modules::admin::repository::AdminRepository;
 use crate::modules::admin::service_operations::{
     create_account, update_account, reset_account, get_account, get_all_accounts,
@@ -88,7 +88,7 @@ impl AdminService {
         get_account(&self.repository.user_repo, user_id).await
     }
 
-    pub async fn get_all_accounts(&self) -> AppResult<Vec<UserResponse>> {
+    pub async fn get_all_accounts(&self) -> AppResult<AccountListResponse> {
         get_all_accounts(&self.repository.user_repo).await
     }
 

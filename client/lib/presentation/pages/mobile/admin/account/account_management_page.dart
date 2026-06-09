@@ -19,6 +19,7 @@ class _AccountManagementPageState
     extends ConsumerState<AccountManagementPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  String? _selectedRole;
 
   @override
   void initState() {
@@ -40,6 +41,7 @@ class _AccountManagementPageState
 
     final filteredAccounts = adminState.accounts.where((user) {
       if (user.isAdmin) return false;
+      if (_selectedRole != null && user.role != _selectedRole) return false;
       if (_searchQuery.isEmpty) return true;
       final q = _searchQuery.toLowerCase();
       return user.username.toLowerCase().contains(q) ||
@@ -79,6 +81,30 @@ class _AccountManagementPageState
               _searchController.clear();
               setState(() => _searchQuery = '');
             },
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: Row(
+              children: [
+                _RoleFilterChip(
+                  label: 'All',
+                  selected: _selectedRole == null,
+                  onTap: () => setState(() => _selectedRole = null),
+                ),
+                const SizedBox(width: 8),
+                _RoleFilterChip(
+                  label: 'Teacher',
+                  selected: _selectedRole == 'teacher',
+                  onTap: () => setState(() => _selectedRole = 'teacher'),
+                ),
+                const SizedBox(width: 8),
+                _RoleFilterChip(
+                  label: 'Student',
+                  selected: _selectedRole == 'student',
+                  onTap: () => setState(() => _selectedRole = 'student'),
+                ),
+              ],
+            ),
           ),
           Expanded(
             child: ContentStateBuilder(
@@ -121,6 +147,44 @@ class _AccountManagementPageState
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _RoleFilterChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _RoleFilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.accentCharcoal : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? AppColors.accentCharcoal : AppColors.borderLight,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: selected ? Colors.white : AppColors.foregroundTertiary,
+          ),
+        ),
       ),
     );
   }
