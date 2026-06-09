@@ -17,7 +17,8 @@ pub async fn get_classes_paginated(
     let teacher_map = helpers::build_teacher_map(db, &class_ids).await?;
 
     let query = classes::Entity::find()
-        .filter(classes::Column::Id.is_in(class_ids));
+        .filter(classes::Column::Id.is_in(class_ids))
+        .filter(classes::Column::DeletedAt.is_null());
     helpers::paginate_query(db, query, limit, move |r| {
         let (teacher_id, teacher_username, teacher_full_name) = teacher_map
             .get(&r.id)

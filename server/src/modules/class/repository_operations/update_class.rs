@@ -13,6 +13,7 @@ pub async fn update_class(
     is_advisory: Option<bool>,
 ) -> AppResult<classes::Model> {
     let class = classes::Entity::find_by_id(id)
+        .filter(classes::Column::DeletedAt.is_null())
         .one(db)
         .await
         .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?

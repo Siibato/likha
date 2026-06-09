@@ -20,7 +20,7 @@ pub async fn get_classes_manifest(
         .map(|r| ManifestEntry {
             id: r.id,
             updated_at: r.updated_at,
-            deleted: false,
+            deleted: r.deleted_at.is_some(),
         })
         .collect())
 }

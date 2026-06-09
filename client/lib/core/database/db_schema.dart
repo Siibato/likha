@@ -92,6 +92,7 @@ abstract final class ClassesCols {
   static const String schoolYear = 'school_year';
   static const String gradingPeriodType = 'grading_period_type';
   static const String isAdvisory = 'is_advisory';
+  static const String deletedAt = 'deleted_at';
 }
 
 abstract final class ClassParticipantsCols {

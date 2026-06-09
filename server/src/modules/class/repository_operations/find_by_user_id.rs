@@ -26,6 +26,7 @@ pub async fn find_by_user_id(
     classes::Entity::find()
         .filter(classes::Column::Id.is_in(class_ids))
         .filter(classes::Column::IsArchived.eq(false))
+        .filter(classes::Column::DeletedAt.is_null())
         .order_by_desc(classes::Column::CreatedAt)
         .all(db)
         .await
