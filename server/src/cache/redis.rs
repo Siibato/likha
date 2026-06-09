@@ -4,9 +4,13 @@ use fred::types::{config::Config as RedisConfig, Expiration};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::sync::Arc;
+use std::time::Duration;
+use tokio::time::timeout;
 use tracing::{debug, warn};
 
 use super::ttl::CacheTtl;
+
+const REDIS_TIMEOUT: Duration = Duration::from_secs(2);
 
 #[derive(Clone)]
 pub struct RedisCache {
@@ -44,23 +48,30 @@ impl RedisCache {
             return None;
         }
 
-        match self.client.get::<Option<String>, _>(key).await {
-            Ok(Some(json)) => match serde_json::from_str::<T>(&json) {
-                Ok(value) => {
-                    debug!("CACHE HIT: {}", key);
-                    Some(value)
-                }
-                Err(e) => {
-                    debug!("CACHE DESER ERROR for {}: {}", key, e);
+        let result = timeout(REDIS_TIMEOUT, self.client.get::<Option<String>, _>(key)).await;
+        match result {
+            Ok(Ok(cached)) => match cached {
+                Some(json) => match serde_json::from_str::<T>(&json) {
+                    Ok(value) => {
+                        debug!("CACHE HIT: {}", key);
+                        Some(value)
+                    }
+                    Err(e) => {
+                        debug!("CACHE DESER ERROR for {}: {}", key, e);
+                        None
+                    }
+                },
+                None => {
+                    debug!("CACHE MISS: {}", key);
                     None
                 }
             },
-            Ok(None) => {
-                debug!("CACHE MISS: {}", key);
+            Ok(Err(e)) => {
+                debug!("CACHE GET ERROR for {}: {}", key, e);
                 None
             }
-            Err(e) => {
-                debug!("CACHE GET ERROR for {}: {}", key, e);
+            Err(_) => {
+                debug!("CACHE GET TIMEOUT for {}: Redis operation timed out", key);
                 None
             }
         }
@@ -84,15 +95,21 @@ impl RedisCache {
             }
         };
 
-        match self.client.set::<(), _, _>(
-            key,
-            json,
-            Some(Expiration::EX(ttl_secs as i64)),
-            None,
-            false,
-        ).await {
-            Ok(_) => debug!("CACHE SET: {} (ttl={}s)", key, ttl_secs),
-            Err(e) => debug!("CACHE SET ERROR for {}: {}", key, e),
+        match timeout(
+            REDIS_TIMEOUT,
+            self.client.set::<(), _, _>(
+                key,
+                json,
+                Some(Expiration::EX(ttl_secs as i64)),
+                None,
+                false,
+            ),
+        )
+        .await
+        {
+            Ok(Ok(_)) => debug!("CACHE SET: {} (ttl={}s)", key, ttl_secs),
+            Ok(Err(e)) => debug!("CACHE SET ERROR for {}: {}", key, e),
+            Err(_) => debug!("CACHE SET TIMEOUT for {}: Redis operation timed out", key),
         }
     }
 
@@ -101,9 +118,10 @@ impl RedisCache {
             return;
         }
 
-        match self.client.del::<(), _>(key).await {
-            Ok(_) => debug!("CACHE DEL: {}", key),
-            Err(e) => debug!("CACHE DEL ERROR for {}: {}", key, e),
+        match timeout(REDIS_TIMEOUT, self.client.del::<(), _>(key)).await {
+            Ok(Ok(_)) => debug!("CACHE DEL: {}", key),
+            Ok(Err(e)) => debug!("CACHE DEL ERROR for {}: {}", key, e),
+            Err(_) => debug!("CACHE DEL TIMEOUT for {}: Redis operation timed out", key),
         }
     }
 
@@ -113,9 +131,10 @@ impl RedisCache {
         }
 
         let count = keys.len();
-        match self.client.del::<(), Vec<String>>(keys).await {
-            Ok(_) => debug!("CACHE DEL {} keys", count),
-            Err(e) => debug!("CACHE DEL ERROR: {}", e),
+        match timeout(REDIS_TIMEOUT, self.client.del::<(), Vec<String>>(keys)).await {
+            Ok(Ok(_)) => debug!("CACHE DEL {} keys", count),
+            Ok(Err(e)) => debug!("CACHE DEL ERROR: {}", e),
+            Err(_) => debug!("CACHE DEL TIMEOUT: Redis operation timed out for {} keys", count),
         }
     }
 }
