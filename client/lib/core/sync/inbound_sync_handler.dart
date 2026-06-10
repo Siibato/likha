@@ -95,32 +95,34 @@ class InboundSyncHandler {
       if (uid != null && uid.isNotEmpty) uniqueUserIds.add(uid);
     }
 
-    // Cache the logged-in user from sync response (BEFORE enrollment upserts to avoid CASCADE DELETE)
-    if (userData.isNotEmpty) {
-      await _upsertHelpers.upsertCurrentUser(db, userData);
-      participantUsers.add(userData);
-      uniqueUserIds.remove(userData['id']?.toString()); // Remove already upserted user
-    }
-
-    // Upsert enrolled students from sync response
-    if (enrolledStudentsData.isNotEmpty) {
-      final studentsList = enrolledStudentsData.cast<Map<String, dynamic>>();
-      await _upsertHelpers.upsertEnrolledStudents(db, studentsList);
-      participantUsers.addAll(studentsList);
-      // Remove upserted users from uniqueUserIds set
-      for (final student in studentsList) {
-        final uid = student['id']?.toString();
-        if (uid != null) uniqueUserIds.remove(uid);
-      }
-    }
-
-    // Upsert all base response data sequentially (proper await ensures committed before verification)
+    // Upsert all base response data in a single transaction (atomic + fast)
     _log.warn('Starting base response data upsert (classes, enrollments, students)...');
-    await _upsertHelpers.upsertClasses(db, baseResponse.classes);
-    await _upsertHelpers.upsertEnrolledStudents(db, participantUsers);
-    await _upsertHelpers.upsertParticipants(db, baseResponse.enrollments, participantUsers);
-    await _upsertHelpers.recalculateClassStudentCounts(db);
-    await _upsertHelpers.upsertActivityLogs(db, baseResponse.activityLogs);
+    await db.transaction((txn) async {
+      // Cache the logged-in user from sync response (BEFORE enrollment upserts to avoid CASCADE DELETE)
+      if (userData.isNotEmpty) {
+        await _upsertHelpers.upsertCurrentUser(txn, userData);
+        participantUsers.add(userData);
+        uniqueUserIds.remove(userData['id']?.toString()); // Remove already upserted user
+      }
+
+      // Upsert enrolled students from sync response
+      if (enrolledStudentsData.isNotEmpty) {
+        final studentsList = enrolledStudentsData.cast<Map<String, dynamic>>();
+        await _upsertHelpers.upsertEnrolledStudents(txn, studentsList);
+        participantUsers.addAll(studentsList);
+        // Remove upserted users from uniqueUserIds set
+        for (final student in studentsList) {
+          final uid = student['id']?.toString();
+          if (uid != null) uniqueUserIds.remove(uid);
+        }
+      }
+
+      await _upsertHelpers.upsertClasses(txn, baseResponse.classes);
+      await _upsertHelpers.upsertEnrolledStudents(txn, participantUsers);
+      await _upsertHelpers.upsertParticipants(txn, baseResponse.enrollments, participantUsers);
+      await _upsertHelpers.recalculateClassStudentCounts(txn);
+      await _upsertHelpers.upsertActivityLogs(txn, baseResponse.activityLogs);
+    });
 
     _log.baseResponse(
       classes: baseResponse.classes.length,
@@ -324,42 +326,44 @@ class InboundSyncHandler {
         }
 
         // NEW: Upsert batch enrolled_students and enrollments (for full offline support)
-        await _upsertHelpers.upsertEnrolledStudents(db, batchParticipantUsers);
-        await _upsertHelpers.upsertParticipants(db, batchParticipants, batchParticipantUsers);
+        await db.transaction((txn) async {
+          await _upsertHelpers.upsertEnrolledStudents(txn, batchParticipantUsers);
+          await _upsertHelpers.upsertParticipants(txn, batchParticipants, batchParticipantUsers);
 
-        // Update in-memory studentMap with batch students so submissions can reference them
-        for (final s in batchParticipantUsers) {
-          final id = s['id']?.toString();
-          if (id != null && id.isNotEmpty) {
-            studentMap[id] = s;
+          // Update in-memory studentMap with batch students so submissions can reference them
+          for (final s in batchParticipantUsers) {
+            final id = s['id']?.toString();
+            if (id != null && id.isNotEmpty) {
+              studentMap[id] = s;
+            }
           }
-        }
 
-        await _upsertHelpers.upsertAssessments(db, assessments);
-        await _upsertHelpers.upsertQuestions(db, questions);
-        await _upsertHelpers.upsertAssessmentSubmissions(db, assessmentSubmissions, studentMap);
-        await _upsertHelpers.upsertAssignments(db, assignments);
-        await _upsertHelpers.upsertAssignmentSubmissions(db, assignmentSubmissions, studentMap);
-        await _upsertHelpers.upsertSubmissionFiles(db, submissionFiles);
-        await _upsertHelpers.upsertLearningMaterials(db, learningMaterials);
-        await _upsertHelpers.upsertMaterialFiles(db, materialFiles);
+          await _upsertHelpers.upsertAssessments(txn, assessments);
+          await _upsertHelpers.upsertQuestions(txn, questions);
+          await _upsertHelpers.upsertAssessmentSubmissions(txn, assessmentSubmissions, studentMap);
+          await _upsertHelpers.upsertAssignments(txn, assignments);
+          await _upsertHelpers.upsertAssignmentSubmissions(txn, assignmentSubmissions, studentMap);
+          await _upsertHelpers.upsertSubmissionFiles(txn, submissionFiles);
+          await _upsertHelpers.upsertLearningMaterials(txn, learningMaterials);
+          await _upsertHelpers.upsertMaterialFiles(txn, materialFiles);
 
-        // NOTE: assessment_statistics_cache is still skipped (no use case), but student_results_cache now exists
-        _log.warn(
-          'Skipping upsert of ${assessmentStatistics.length} assessment_statistics (table not in schema)',
-        );
+          // NOTE: assessment_statistics_cache is still skipped (no use case), but student_results_cache now exists
+          _log.warn(
+            'Skipping upsert of ${assessmentStatistics.length} assessment_statistics (table not in schema)',
+          );
 
-        // Write student_results to cache
-        await _upsertHelpers.upsertStudentResults(db, studentResults);
+          // Write student_results to cache
+          await _upsertHelpers.upsertStudentResults(txn, studentResults);
 
-        await _upsertHelpers.upsertGradeConfigs(db, gradeConfigs);
-        await _upsertHelpers.upsertGradeItems(db, gradeItems);
-        await _upsertHelpers.upsertGradeScores(db, gradeScores);
-        await _upsertHelpers.upsertQuarterlyGrades(db, periodGrades);
+          await _upsertHelpers.upsertGradeConfigs(txn, gradeConfigs);
+          await _upsertHelpers.upsertGradeItems(txn, gradeItems);
+          await _upsertHelpers.upsertGradeScores(txn, gradeScores);
+          await _upsertHelpers.upsertQuarterlyGrades(txn, periodGrades);
 
-        await _upsertHelpers.upsertTableOfSpecifications(db, tableOfSpecifications);
-        await _upsertHelpers.upsertTosCompetencies(db, tosCompetencies);
-        await _upsertHelpers.upsertActivityLogs(db, activityLogs);
+          await _upsertHelpers.upsertTableOfSpecifications(txn, tableOfSpecifications);
+          await _upsertHelpers.upsertTosCompetencies(txn, tosCompetencies);
+          await _upsertHelpers.upsertActivityLogs(txn, activityLogs);
+        });
       }
     } else if (!needsEntityBatches) {
       _log.warn('Skipping entity batches (server says none needed)');

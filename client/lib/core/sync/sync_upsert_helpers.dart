@@ -11,7 +11,7 @@ class SyncUpsertHelpers {
 
   /// Check if a record exists in a given table by id.
   /// Used as a defensive FK pre-check before inserting child records.
-  Future<bool> _fkExists(Database db, String table, String id) async {
+  Future<bool> _fkExists(DatabaseExecutor db, String table, String id) async {
     if (id.isEmpty) return false;
     final result = await db.query(
       table,
@@ -24,7 +24,7 @@ class SyncUpsertHelpers {
   }
 
   Future<void> upsertClasses(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     int successCount = 0;
@@ -88,7 +88,7 @@ class SyncUpsertHelpers {
     await populateTeacherInfoFromAccounts(db);
   }
 
-  Future<void> populateTeacherInfoFromAccounts(Database db) async {
+  Future<void> populateTeacherInfoFromAccounts(DatabaseExecutor db) async {
     try {
       final classesNeedingTeacher = await db.query(
         DbTables.classes,
@@ -141,7 +141,7 @@ class SyncUpsertHelpers {
   }
 
   Future<void> upsertParticipants(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> participants,
     List<dynamic> participantUsers,
   ) async {
@@ -179,7 +179,7 @@ class SyncUpsertHelpers {
     }
   }
 
-  Future<void> recalculateClassStudentCounts(Database db) async {
+  Future<void> recalculateClassStudentCounts(DatabaseExecutor db) async {
     try {
       await db.rawUpdate('''
         UPDATE classes
@@ -197,7 +197,7 @@ class SyncUpsertHelpers {
 
   /// This distinguishes enrolled students from search-cached students
   Future<void> upsertEnrolledStudents(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     for (final record in records) {
@@ -225,7 +225,7 @@ class SyncUpsertHelpers {
 
   /// Explicit upsert handler for assessments with proper field mapping
   Future<void> upsertAssessments(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     for (final record in records) {
@@ -265,7 +265,7 @@ class SyncUpsertHelpers {
 
   /// Explicit upsert handler for questions with proper field mapping
   Future<void> upsertQuestions(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     for (final record in records) {
@@ -408,7 +408,7 @@ class SyncUpsertHelpers {
 
   /// Explicit upsert handler for assignments with proper field mapping
   Future<void> upsertAssignments(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     for (final record in records) {
@@ -450,7 +450,7 @@ class SyncUpsertHelpers {
 
   /// Explicit upsert handler for learning materials with proper field mapping
   Future<void> upsertLearningMaterials(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     for (final record in records) {
@@ -477,7 +477,7 @@ class SyncUpsertHelpers {
 
   /// Explicit upsert handler for assessment submissions with nested answers
   Future<void> upsertAssessmentSubmissions(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
     Map<String, dynamic> studentMap,
   ) async {
@@ -541,7 +541,7 @@ class SyncUpsertHelpers {
   }
 
   Future<void> _upsertSubmissionAnswers(
-    Database db,
+    DatabaseExecutor db,
     String submissionId,
     List<dynamic> answers,
   ) async {
@@ -628,7 +628,7 @@ class SyncUpsertHelpers {
 
   /// Explicit upsert handler for assignment submissions with student enrichment
   Future<void> upsertAssignmentSubmissions(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
     Map<String, dynamic> studentMap,
   ) async {
@@ -660,7 +660,7 @@ class SyncUpsertHelpers {
   }
 
   Future<void> _preserveLocalPathUpsert(
-    Database db,
+    DatabaseExecutor db,
     String table,
     String fkColumn,
     Map<String, dynamic> data,
@@ -692,7 +692,7 @@ class SyncUpsertHelpers {
 
   /// NEW: Upsert material files metadata (no binary data)
   Future<void> upsertMaterialFiles(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     for (final record in records) {
@@ -708,7 +708,7 @@ class SyncUpsertHelpers {
 
   /// NEW: Upsert submission files metadata (no binary data)
   Future<void> upsertSubmissionFiles(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     for (final record in records) {
@@ -724,7 +724,7 @@ class SyncUpsertHelpers {
 
   /// Upsert grade component configurations
   Future<void> upsertGradeConfigs(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     int successCount = 0;
@@ -766,7 +766,7 @@ class SyncUpsertHelpers {
 
   /// Upsert grade items
   Future<void> upsertGradeItems(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     int successCount = 0;
@@ -811,7 +811,7 @@ class SyncUpsertHelpers {
 
   /// Upsert grade scores
   Future<void> upsertGradeScores(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     int successCount = 0;
@@ -900,7 +900,7 @@ class SyncUpsertHelpers {
 
   /// Upsert quarterly grades
   Future<void> upsertQuarterlyGrades(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     int successCount = 0;
@@ -944,7 +944,7 @@ class SyncUpsertHelpers {
 
   /// Upsert table_of_specifications
   Future<void> upsertTableOfSpecifications(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     int successCount = 0;
@@ -990,7 +990,7 @@ class SyncUpsertHelpers {
 
   /// Upsert tos_competencies
   Future<void> upsertTosCompetencies(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     int successCount = 0;
@@ -1040,7 +1040,7 @@ class SyncUpsertHelpers {
   }
 
   Future<void> upsertActivityLogs(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     int successCount = 0;
@@ -1095,7 +1095,7 @@ class SyncUpsertHelpers {
   }
 
   /// Save sync token (last_sync_at) to sync_metadata
-  Future<void> saveSyncToken(Database db, String syncToken) async {
+  Future<void> saveSyncToken(DatabaseExecutor db, String syncToken) async {
     await db.insert(
       DbTables.syncMetadata,
       {SyncMetadataCols.key: DbValues.metaLastSyncAt, SyncMetadataCols.value: syncToken},
@@ -1104,7 +1104,7 @@ class SyncUpsertHelpers {
   }
 
   /// Save sync expiry timestamp to sync_metadata
-  Future<void> saveSyncExpiry(Database db, String expiryAt) async {
+  Future<void> saveSyncExpiry(DatabaseExecutor db, String expiryAt) async {
     await db.insert(
       DbTables.syncMetadata,
       {SyncMetadataCols.key: DbValues.metaDataExpiryAt, SyncMetadataCols.value: expiryAt},
@@ -1113,7 +1113,7 @@ class SyncUpsertHelpers {
   }
 
   /// Upsert current logged-in user
-  Future<void> upsertCurrentUser(Database db, Map<String, dynamic> userData) async {
+  Future<void> upsertCurrentUser(DatabaseExecutor db, Map<String, dynamic> userData) async {
     await db.insert(
       DbTables.users,
       {
@@ -1137,7 +1137,7 @@ class SyncUpsertHelpers {
   /// This method is kept for reference but is never called.
   @Deprecated('Table assessment_statistics_cache does not exist in local_database schema')
   Future<void> upsertStatistics(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     _log.warn('upsertStatistics called but table does not exist; skipping');
@@ -1146,40 +1146,38 @@ class SyncUpsertHelpers {
 
   /// Upsert student results cache (assessment performance data)
   Future<void> upsertStudentResults(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     if (records.isEmpty) return;
-    await db.transaction((txn) async {
-      for (final result in records) {
-        try {
-          final data = result as Map<String, dynamic>;
-          final submissionId = data['submission_id']?.toString();
-          if (submissionId == null || submissionId.isEmpty) {
-            _log.warn('Student result missing submission_id, skipping');
-            continue;
-          }
-          final now = DateTime.now().toIso8601String();
-          await txn.insert(
-            DbTables.studentResultsCache,
-            {
-              StudentResultsCacheCols.submissionId: submissionId,
-              StudentResultsCacheCols.resultsJson: jsonEncode(data),
-              CommonCols.cachedAt: now,
-            },
-            conflictAlgorithm: ConflictAlgorithm.replace,
-          );
-        } catch (e) {
-          _log.warn('Failed to cache student result: $e');
+    for (final result in records) {
+      try {
+        final data = result as Map<String, dynamic>;
+        final submissionId = data['submission_id']?.toString();
+        if (submissionId == null || submissionId.isEmpty) {
+          _log.warn('Student result missing submission_id, skipping');
+          continue;
         }
+        final now = DateTime.now().toIso8601String();
+        await db.insert(
+          DbTables.studentResultsCache,
+          {
+            StudentResultsCacheCols.submissionId: submissionId,
+            StudentResultsCacheCols.resultsJson: jsonEncode(data),
+            CommonCols.cachedAt: now,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      } catch (e) {
+        _log.warn('Failed to cache student result: $e');
       }
-    });
+    }
     _log.upsertSummary(DbTables.studentResultsCache, records.length);
   }
 
   /// Process delta payload: upsert updated, soft-delete removed
   Future<void> processDeltaPayload(
-    Database db,
+    DatabaseExecutor db,
     Map<String, dynamic> deltas,
   ) async {
     final updatedCounts = <String, int>{};
