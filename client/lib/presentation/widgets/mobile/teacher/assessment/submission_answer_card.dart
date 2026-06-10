@@ -136,15 +136,6 @@ class SubmissionAnswerCard extends StatelessWidget {
           const Divider(height: 1, color: AppColors.borderLight),
           const SizedBox(height: 12),
           _buildAnswerContent(),
-          if (!isEssay && isOverrideCorrect != null) ...[
-            const SizedBox(height: 8),
-            const StatusBadge(
-              label: 'Grade overridden',
-              color: AppColors.accentAmber,
-              icon: Icons.edit_outlined,
-              variant: BadgeVariant.filled,
-            ),
-          ],
           if (!isEssay && isOverrideCorrect == null && !isPending)
             const SizedBox(height: 8),
           const SizedBox(height: 12),

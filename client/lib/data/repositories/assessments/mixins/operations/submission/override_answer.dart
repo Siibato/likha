@@ -12,32 +12,26 @@ ResultFuture<SubmissionAnswer> overrideAnswer(
   double? points,
 }) async {
   try {
-    if (!base.serverReachabilityService.isServerReachable) {
-      await base.localDataSource.overrideAnswerLocally(
-        answerId: answerId,
-        isCorrect: isCorrect,
-        points: points,
-      );
-      return Right(SubmissionAnswer(
-        id: answerId,
-        questionId: '',
-        questionText: '',
-        questionType: '',
-        points: 0,
-        isOverrideCorrect: isCorrect,
-        pointsAwarded: points ?? (isCorrect ? 0 : 0),
-      ));
-    }
-
-    final result = await base.remoteDataSource.overrideAnswer(
-        answerId: answerId, isCorrect: isCorrect, points: points);
-    return Right(result);
-  } on NetworkException catch (_) {
+    // Always write locally first (optimistic)
     await base.localDataSource.overrideAnswerLocally(
       answerId: answerId,
       isCorrect: isCorrect,
       points: points,
     );
+
+    if (base.serverReachabilityService.isServerReachable) {
+      try {
+        final result = await base.remoteDataSource.overrideAnswer(
+          answerId: answerId,
+          isCorrect: isCorrect,
+          points: points,
+        );
+        return Right(result);
+      } on NetworkException catch (_) {
+        // Swallow – change is already persisted locally and sync-queued
+      }
+    }
+
     return Right(SubmissionAnswer(
       id: answerId,
       questionId: '',

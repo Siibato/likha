@@ -47,14 +47,6 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
     await ref.read(teacherAssessmentProvider.notifier).gradeEssayAnswer(
           GradeEssayParams(answerId: answerId, points: points),
         );
-
-    if (!mounted) return;
-    final state = ref.read(teacherAssessmentProvider);
-    if (state.error == null) {
-      ref
-          .read(teacherAssessmentProvider.notifier)
-          .loadSubmissionDetail(widget.submissionId);
-    }
   }
 
   Future<void> _overrideAnswer(String answerId, bool isCorrect, {double? points}) async {
@@ -65,15 +57,6 @@ class _SubmissionReviewPageState extends ConsumerState<SubmissionReviewPage> {
             points: points,
           ),
         );
-
-    if (!mounted) return;
-    final state = ref.read(teacherAssessmentProvider);
-    if (state.error == null) {
-      // Reload submission detail to reflect updated scores
-      ref
-          .read(teacherAssessmentProvider.notifier)
-          .loadSubmissionDetail(widget.submissionId);
-    }
   }
 
   @override
