@@ -9,7 +9,7 @@ use crate::modules::sync::sync_scope::SyncScope;
 
 use super::sync_full_service::{FullSyncRequest, FullSyncResponse};
 use super::enrich_submissions::enrich_assessment_submissions;
-use super::statistics::{compute_assessment_statistics, format_student_results};
+use super::statistics::format_student_results;
 
 impl super::SyncFullService {
     /// Get full sync data for user
@@ -197,7 +197,7 @@ impl super::SyncFullService {
             .filter_map(|id| Uuid::parse_str(id).ok())
             .filter(|id| entitled_class_ids.contains(id))
             .collect();
-        let batch_class_id_set: std::collections::HashSet<Uuid> = batch_class_ids.iter().cloned().collect();
+        let _batch_class_id_set: std::collections::HashSet<Uuid> = batch_class_ids.iter().cloned().collect();
 
         if batch_class_ids.is_empty() {
             tracing::warn!("All requested class_ids are invalid for user_id={}", user_id);
@@ -230,24 +230,8 @@ impl super::SyncFullService {
             });
         }
 
-        // Get filtered assessment IDs (for the batch classes)
-        let batch_assessment_ids: Vec<Uuid> = if scope.include_assessments {
-            manifest.assessments.iter().map(|e| e.id).collect()
-        } else {
-            Vec::new()
-        };
-
-        let batch_assignment_ids: Vec<Uuid> = if scope.include_assignments {
-            manifest.assignments.iter().map(|e| e.id).collect()
-        } else {
-            Vec::new()
-        };
-
-        let batch_material_ids: Vec<Uuid> = if scope.include_learning_materials {
-            manifest.learning_materials.iter().map(|e| e.id).collect()
-        } else {
-            Vec::new()
-        };
+        // NOTE: We now fetch assessments/assignments/materials directly by class_id
+        // instead of gathering manifest IDs and filtering in Rust.
 
         // NOTE: enrollments and enrolled_students are already sent in the base request.
         // Skip redundant re-fetching in batch requests to reduce payload and DB load.
@@ -274,34 +258,30 @@ impl super::SyncFullService {
 
         if scope.include_assessments {
             tracing::debug!("Fetching assessments for batch");
-            let assessments_raw = self
+            assessments = self
                 .manifest_repo
-                .get_assessments_paginated(batch_assessment_ids.clone(), 10000)
+                .get_assessments_for_classes(batch_class_ids.clone(), 10000)
                 .await?
                 .records;
-            assessments = assessments_raw
-                .into_iter()
-                .filter(|a| {
-                    a.get("class_id")
-                        .and_then(|v| v.as_str())
-                        .and_then(|s| Uuid::parse_str(s).ok())
-                        .map(|id| batch_class_id_set.contains(&id))
-                        .unwrap_or(false)
-                })
-                .collect();
             actual_batch_assessment_ids = assessments
                 .iter()
                 .filter_map(|a| a.get("id").and_then(|v| v.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
                 .collect();
-            tracing::debug!("Fetched {} assessments ({} after class filter)", batch_assessment_ids.len(), assessments.len());
+            tracing::debug!("Fetched {} assessments", assessments.len());
         }
 
         let questions: Vec<Value>;
         if scope.include_questions {
-            let question_ids: Vec<Uuid> = manifest.assessment_questions
-                .iter()
-                .map(|e| e.id)
-                .collect();
+            let question_ids: Vec<Uuid> = if actual_batch_assessment_ids.is_empty() {
+                Vec::new()
+            } else {
+                self.manifest_repo
+                    .get_questions_manifest(actual_batch_assessment_ids.clone())
+                    .await?
+                    .iter()
+                    .map(|e| e.id)
+                    .collect()
+            };
             tracing::debug!("BATCH REQUEST: Found {} question_ids in manifest for {} assessments",
                 question_ids.len(), actual_batch_assessment_ids.len());
 
@@ -336,26 +316,16 @@ impl super::SyncFullService {
 
         if scope.include_assignments {
             tracing::debug!("Fetching assignments for batch");
-            let assignments_raw = self
+            assignments = self
                 .manifest_repo
-                .get_assignments_paginated(batch_assignment_ids.clone(), 10000)
+                .get_assignments_for_classes(batch_class_ids.clone(), 10000)
                 .await?
                 .records;
-            assignments = assignments_raw
-                .into_iter()
-                .filter(|a| {
-                    a.get("class_id")
-                        .and_then(|v| v.as_str())
-                        .and_then(|s| Uuid::parse_str(s).ok())
-                        .map(|id| batch_class_id_set.contains(&id))
-                        .unwrap_or(false)
-                })
-                .collect();
             actual_batch_assignment_ids = assignments
                 .iter()
                 .filter_map(|a| a.get("id").and_then(|v| v.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
                 .collect();
-            tracing::debug!("Fetched {} assignments ({} after class filter)", batch_assignment_ids.len(), assignments.len());
+            tracing::debug!("Fetched {} assignments", assignments.len());
         }
 
         let assessment_submissions: Vec<Value>;
@@ -406,22 +376,12 @@ impl super::SyncFullService {
 
         if scope.include_learning_materials {
             tracing::debug!("Fetching learning materials for batch");
-            let materials_raw = self
+            learning_materials = self
                 .manifest_repo
-                .get_materials_paginated(batch_material_ids.clone(), 10000)
+                .get_materials_for_classes(batch_class_ids.clone(), 10000)
                 .await?
                 .records;
-            learning_materials = materials_raw
-                .into_iter()
-                .filter(|m| {
-                    m.get("class_id")
-                        .and_then(|v| v.as_str())
-                        .and_then(|s| Uuid::parse_str(s).ok())
-                        .map(|id| batch_class_id_set.contains(&id))
-                        .unwrap_or(false)
-                })
-                .collect();
-            tracing::debug!("Fetched {} learning materials ({} after class filter)", batch_material_ids.len(), learning_materials.len());
+            tracing::debug!("Fetched {} learning materials", learning_materials.len());
         }
 
         if scope.include_files {
@@ -451,20 +411,16 @@ impl super::SyncFullService {
         }
 
         if scope.include_statistics {
+            // Server-side statistics are skipped for teachers/admins;
+            // the client computes them on-demand from raw assessment + submission data.
             assessment_statistics = match user_role {
                 "student" => {
                     tracing::debug!("User is student - skipping assessment statistics computation");
                     vec![]
                 }
                 _ => {
-                    tracing::debug!("User is {} - computing assessment statistics from {} assessments and {} submissions",
-                        user_role, assessments.len(), enriched_assessment_submissions.len());
-                    let stats = compute_assessment_statistics(&assessments, &enriched_assessment_submissions);
-                    tracing::debug!("Computed {} assessment statistics", stats.len());
-                    if !stats.is_empty() {
-                        tracing::debug!("Assessment statistics: {:?}", stats);
-                    }
-                    stats
+                    tracing::debug!("User is {} - skipping server-side statistics (computed client-side)", user_role);
+                    vec![]
                 }
             };
 
@@ -480,7 +436,7 @@ impl super::SyncFullService {
                     results
                 }
                 _ => {
-                    tracing::debug!("User is {} - skipping student results formatting (teacher/admin only)", user_role);
+                    tracing::debug!("User is {} - skipping student results formatting (computed client-side)", user_role);
                     vec![]
                 }
             };
@@ -488,12 +444,12 @@ impl super::SyncFullService {
 
         if scope.include_grade_data {
             tracing::debug!("Fetching grading data for batch");
-            grade_configs = self.manifest_repo
-                .get_grade_configs_for_classes(batch_class_ids.clone())
-                .await?;
-            grade_items_data = self.manifest_repo
-                .get_grade_items_for_classes(batch_class_ids.clone())
-                .await?;
+            let (grade_configs_result, grade_items_result) = tokio::try_join!(
+                self.manifest_repo.get_grade_configs_for_classes(batch_class_ids.clone()),
+                self.manifest_repo.get_grade_items_for_classes(batch_class_ids.clone()),
+            )?;
+            grade_configs = grade_configs_result;
+            grade_items_data = grade_items_result;
 
             let grade_item_ids: Vec<Uuid> = grade_items_data
                 .iter()

@@ -181,8 +181,8 @@ class InboundSyncHandler {
       }
     }
 
-    for (int i = 0; i < classesForBatching.length; i += 2) {
-      final batch = classesForBatching.skip(i).take(2)
+    for (int i = 0; i < classesForBatching.length; i += 4) {
+      final batch = classesForBatching.skip(i).take(4)
           .map((c) => c['id']?.toString() ?? '')
           .where((id) => id.isNotEmpty)
           .toList();

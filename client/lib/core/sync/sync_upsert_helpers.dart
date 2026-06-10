@@ -270,6 +270,13 @@ class SyncUpsertHelpers {
   ) async {
     for (final record in records) {
       final data = record as Map<String, dynamic>;
+      final assessmentId = data['assessment_id']?.toString() ?? '';
+
+      // DEFENSE: Skip if the referenced assessment wasn't synced in this batch
+      if (assessmentId.isEmpty || !await _fkExists(db, DbTables.assessments, assessmentId)) {
+        _log.warn('Skipping question ${data['id']}: assessment $assessmentId not found locally');
+        continue;
+      }
 
       await db.insert(
         DbTables.assessmentQuestions,

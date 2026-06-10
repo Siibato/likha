@@ -93,6 +93,18 @@ impl ManifestRepository {
         ops::get_materials_paginated(&self.db, material_ids, limit).await
     }
 
+    pub async fn get_assessments_for_classes(&self, class_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
+        ops::get_assessments_for_classes(&self.db, class_ids, limit).await
+    }
+
+    pub async fn get_assignments_for_classes(&self, class_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
+        ops::get_assignments_for_classes(&self.db, class_ids, limit).await
+    }
+
+    pub async fn get_materials_for_classes(&self, class_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
+        ops::get_materials_for_classes(&self.db, class_ids, limit).await
+    }
+
     pub async fn get_enrollments_paginated(&self, enrollment_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
         ops::get_enrollments_paginated(&self.db, enrollment_ids, limit).await
     }

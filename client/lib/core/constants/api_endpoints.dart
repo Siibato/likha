@@ -63,7 +63,7 @@ class ApiEndpoints {
   static final accountsList = ApiEndpoint<List<UserModel>>(
     '/api/v1/auth/accounts',
     (json) {
-      final accounts = json as List<dynamic>;
+      final accounts = json['accounts'] as List<dynamic>;
       RepoLogger.instance.log('accountsList parsing: Found ${accounts.length} accounts in list');
       return accounts
           .map((e) => UserModel.fromJson(e as Map<String, dynamic>))
