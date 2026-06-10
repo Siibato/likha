@@ -119,7 +119,8 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
   /// Updates local cache only if data has changed.
   /// Emits DataEventBus event if files have changed so the detail page can reload.
   /// All errors are swallowed — users keep seeing cached data without interruption.
-  /// ConflictAlgorithm.ignore on file inserts ensures local_path values are never overwritten.
+  /// Stale file metadata is deleted and re-inserted so the cache mirrors server state exactly.
+  /// getCachedSubmissionFilesOp auto-repairs local_path from disk for existing downloads.
   void _backgroundRefreshSubmission(String submissionId) {
     Future.microtask(() async {
       try {
@@ -154,6 +155,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
     if (cached.score != fresh.score) return true;
     if (cached.textContent != fresh.textContent) return true;
     if (cached.feedback != fresh.feedback) return true;
+    if (cached.gradedBy != fresh.gradedBy) return true;
     if (_submissionFilesHaveChanged(cached.files, fresh.files)) return true;
     return false;
   }

@@ -21,11 +21,12 @@ Future<void> cacheSubmissionDetailOp(
           AssignmentSubmissionsCols.assignmentId: submission.assignmentId,
           AssignmentSubmissionsCols.studentId: submission.studentId,
           AssignmentSubmissionsCols.status: submission.status,
-          AssignmentSubmissionsCols.textContent: enc.encryptField(submission.textContent),
+          AssignmentSubmissionsCols.textContent: submission.textContent != null ? enc.encryptField(submission.textContent) : null,
           AssignmentSubmissionsCols.submittedAt: submission.submittedAt?.toIso8601String(),
           // AssignmentSubmissionsCols.isLate field removed - no longer needed
           AssignmentSubmissionsCols.points: submission.score,
-          AssignmentSubmissionsCols.feedback: enc.encryptField(submission.feedback),
+          AssignmentSubmissionsCols.feedback: submission.feedback != null ? enc.encryptField(submission.feedback) : null,
+          AssignmentSubmissionsCols.gradedBy: submission.gradedBy,
           AssignmentSubmissionsCols.gradedAt: submission.gradedAt?.toIso8601String(),
           CommonCols.createdAt: submission.createdAt.toIso8601String(),
           CommonCols.updatedAt: submission.updatedAt.toIso8601String(),
@@ -34,25 +35,25 @@ Future<void> cacheSubmissionDetailOp(
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
-      // Cache submission files metadata
+      // Clear stale file metadata for this submission, then re-insert fresh list.
+      // Actual file bytes on disk are untouched; getCachedSubmissionFilesOp
+      // auto-repairs local_path from disk on the next read.
+      await txn.delete(
+        DbTables.submissionFiles,
+        where: '${SubmissionFilesCols.submissionId} = ?',
+        whereArgs: [submission.id],
+      );
       for (final file in submission.files) {
-        final existing = await txn.query(
-          DbTables.submissionFiles,
-          where: '${CommonCols.id} = ?',
-          whereArgs: [file.id],
-        );
-        if (existing.isEmpty) {
-          await txn.insert(DbTables.submissionFiles, {
-            CommonCols.id: file.id,
-            SubmissionFilesCols.submissionId: submission.id,
-            SubmissionFilesCols.fileName: file.fileName,
-            SubmissionFilesCols.fileType: file.fileType,
-            SubmissionFilesCols.fileSize: file.fileSize,
-            SubmissionFilesCols.uploadedAt: file.uploadedAt.toIso8601String(),
-            SubmissionFilesCols.localPath: '',
-            CommonCols.cachedAt: now,
-          }, conflictAlgorithm: ConflictAlgorithm.ignore);
-        }
+        await txn.insert(DbTables.submissionFiles, {
+          CommonCols.id: file.id,
+          SubmissionFilesCols.submissionId: submission.id,
+          SubmissionFilesCols.fileName: file.fileName,
+          SubmissionFilesCols.fileType: file.fileType,
+          SubmissionFilesCols.fileSize: file.fileSize,
+          SubmissionFilesCols.uploadedAt: file.uploadedAt.toIso8601String(),
+          SubmissionFilesCols.localPath: '',
+          CommonCols.cachedAt: now,
+        }, conflictAlgorithm: ConflictAlgorithm.ignore);
       }
     });
   } catch (e) {

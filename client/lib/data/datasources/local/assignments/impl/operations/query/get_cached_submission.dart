@@ -35,6 +35,7 @@ Future<AssignmentSubmissionModel?> getCachedSubmissionOp(
       score: decryptedSub['points'] as int?,
       feedback: decryptedSub['feedback'] as String?,
       gradedAt: decryptedSub['graded_at'] != null ? DateTime.parse(decryptedSub['graded_at'] as String) : null,
+      gradedBy: decryptedSub['graded_by'] as String?,
       files: files,
       createdAt: DateTime.parse(decryptedSub['created_at'] as String),
       updatedAt: DateTime.parse(decryptedSub['updated_at'] as String),
