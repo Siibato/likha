@@ -2,13 +2,11 @@ import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/core/security/encryption_service.dart';
 import 'package:uuid/uuid.dart';
 
 Future<String> createSubmissionLocallyOp(
   LocalDatabase localDatabase,
   SyncQueue syncQueue,
-  EncryptionService enc,
   String assignmentId,
   String studentId,
   String studentName,
@@ -34,7 +32,7 @@ Future<String> createSubmissionLocallyOp(
         await txn.update(
           DbTables.assignmentSubmissions,
           {
-            AssignmentSubmissionsCols.textContent: enc.encryptField(textContent ?? ''),
+            AssignmentSubmissionsCols.textContent: textContent ?? '',
             AssignmentSubmissionsCols.status: DbValues.statusDraft,
             CommonCols.updatedAt: now.toIso8601String(),
             CommonCols.cachedAt: now.toIso8601String(),
@@ -67,7 +65,7 @@ Future<String> createSubmissionLocallyOp(
           AssignmentSubmissionsCols.assignmentId: assignmentId,
           AssignmentSubmissionsCols.studentId: studentId,
           AssignmentSubmissionsCols.status: DbValues.statusDraft,
-          AssignmentSubmissionsCols.textContent: enc.encryptField(textContent ?? ''),
+          AssignmentSubmissionsCols.textContent: textContent ?? '',
           CommonCols.createdAt: now.toIso8601String(),
           CommonCols.updatedAt: now.toIso8601String(),
           CommonCols.cachedAt: now.toIso8601String(),

@@ -1,13 +1,11 @@
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
-import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/data/models/assignments/assignment_submission_model.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 Future<void> cacheSubmissionDetailOp(
   LocalDatabase localDatabase,
-  EncryptionService enc,
   AssignmentSubmissionModel submission,
 ) async {
   try {
@@ -21,11 +19,11 @@ Future<void> cacheSubmissionDetailOp(
           AssignmentSubmissionsCols.assignmentId: submission.assignmentId,
           AssignmentSubmissionsCols.studentId: submission.studentId,
           AssignmentSubmissionsCols.status: submission.status,
-          AssignmentSubmissionsCols.textContent: submission.textContent != null ? enc.encryptField(submission.textContent) : null,
+          AssignmentSubmissionsCols.textContent: submission.textContent,
           AssignmentSubmissionsCols.submittedAt: submission.submittedAt?.toIso8601String(),
           // AssignmentSubmissionsCols.isLate field removed - no longer needed
           AssignmentSubmissionsCols.points: submission.score,
-          AssignmentSubmissionsCols.feedback: submission.feedback != null ? enc.encryptField(submission.feedback) : null,
+          AssignmentSubmissionsCols.feedback: submission.feedback,
           AssignmentSubmissionsCols.gradedBy: submission.gradedBy,
           AssignmentSubmissionsCols.gradedAt: submission.gradedAt?.toIso8601String(),
           CommonCols.createdAt: submission.createdAt.toIso8601String(),

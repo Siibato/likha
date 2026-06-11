@@ -1,14 +1,12 @@
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:uuid/uuid.dart';
 
 Future<void> updateMaterialLocallyOp(
   LocalDatabase localDatabase,
   SyncQueue syncQueue,
-  EncryptionService enc,
   String materialId,
   String title,
   String description,
@@ -22,9 +20,9 @@ Future<void> updateMaterialLocallyOp(
       await txn.update(
         DbTables.learningMaterials,
         {
-          LearningMaterialsCols.title: enc.encryptField(title),
+          LearningMaterialsCols.title: title,
           LearningMaterialsCols.description: description,
-          LearningMaterialsCols.contentText: enc.encryptField(contentText),
+          LearningMaterialsCols.contentText: contentText,
           CommonCols.updatedAt: now.toIso8601String(),
           CommonCols.needsSync: 1,
           CommonCols.cachedAt: now.toIso8601String(),

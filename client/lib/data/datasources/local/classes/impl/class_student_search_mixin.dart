@@ -18,11 +18,11 @@ mixin ClassStudentSearchMixin on ClassLocalDataSourceBase {
 
   @override
   Future<List<UserModel>> searchCachedStudents(String query) async {
-    return searchCachedStudentsOp(localDatabase, enc, query);
+    return searchCachedStudentsOp(localDatabase, query);
   }
 
   @override
   Future<List<UserModel>> getCachedParticipants(String classId) async {
-    return getCachedParticipantsOp(localDatabase, enc, classId);
+    return getCachedParticipantsOp(localDatabase, classId);
   }
 }

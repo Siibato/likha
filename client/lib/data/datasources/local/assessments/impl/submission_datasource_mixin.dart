@@ -56,7 +56,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
     String assessmentId,
     String studentId,
   ) async {
-    return getCachedStudentSubmissionOp(localDatabase, enc, assessmentId, studentId);
+    return getCachedStudentSubmissionOp(localDatabase, assessmentId, studentId);
   }
 
   @override
@@ -69,7 +69,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
 
   @override
   Future<SubmissionDetailModel?> getCachedSubmissionDetail(String submissionId) async {
-    return getCachedSubmissionDetailOp(localDatabase, enc, submissionId);
+    return getCachedSubmissionDetailOp(localDatabase, submissionId);
   }
 
   @override
@@ -79,7 +79,7 @@ mixin SubmissionDataSourceMixin on AssessmentLocalDataSourceBase {
 
   @override
   Future<List<SubmissionSummaryModel>> getCachedSubmissions(String assessmentId) async {
-    return getCachedSubmissionsOp(localDatabase, enc, assessmentId);
+    return getCachedSubmissionsOp(localDatabase, assessmentId);
   }
 
   @override

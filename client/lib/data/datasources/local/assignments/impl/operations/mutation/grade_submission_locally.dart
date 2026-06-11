@@ -2,13 +2,11 @@ import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/core/security/encryption_service.dart';
 import 'package:uuid/uuid.dart';
 
 Future<void> gradeSubmissionLocallyOp(
   LocalDatabase localDatabase,
   SyncQueue syncQueue,
-  EncryptionService enc,
   String submissionId,
   int score,
   String? feedback,
@@ -21,7 +19,7 @@ Future<void> gradeSubmissionLocallyOp(
         DbTables.assignmentSubmissions,
         {
           AssignmentSubmissionsCols.points: score,
-          AssignmentSubmissionsCols.feedback: enc.encryptField(feedback),
+          AssignmentSubmissionsCols.feedback: feedback,
           AssignmentSubmissionsCols.gradedAt: now.toIso8601String(),
           AssignmentSubmissionsCols.status: DbValues.statusGraded,
           CommonCols.needsSync: 1,

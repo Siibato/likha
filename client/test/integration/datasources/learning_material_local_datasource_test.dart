@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
-import 'package:likha/core/security/noop_encryption_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/datasources/local/learning_materials/impl/learning_material_local_datasource_impl.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
@@ -32,7 +31,7 @@ void main() {
   setUp(() async {
     await openFreshTestDatabase();
     syncQueue = SyncQueueImpl(LocalDatabase());
-    datasource = LearningMaterialLocalDataSourceImpl(LocalDatabase(), syncQueue, const NoOpEncryptionService());
+    datasource = LearningMaterialLocalDataSourceImpl(LocalDatabase(), syncQueue);
   });
 
   tearDown(() => closeTestDatabase());

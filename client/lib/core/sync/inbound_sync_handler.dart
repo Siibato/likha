@@ -5,7 +5,7 @@ import 'package:likha/core/sync/sync_semaphore.dart';
 import 'package:likha/core/sync/sync_state.dart';
 import 'package:likha/core/sync/sync_upsert_helpers.dart';
 import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 class InboundSyncHandler {

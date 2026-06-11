@@ -55,7 +55,6 @@ mixin AssessmentCreateMixin on AssessmentLocalDataSourceBase {
     return createAssessmentWithQuestionsLocallyOp(
       localDatabase,
       syncQueue,
-      enc,
       classId,
       title,
       description,

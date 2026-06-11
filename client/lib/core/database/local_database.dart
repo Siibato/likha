@@ -1,10 +1,13 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:likha/core/logging/core_logger.dart';
 
 /// Local SQLite Database for offline-first functionality
 ///
-/// SCHEMA VERSION: 1 (consolidated from v12)
+/// SCHEMA VERSION: 2 (v1 → v2: removed per-field AES encryption, migrated to SQLCipher db-level encryption)
 /// TOTAL TABLES: 32
 ///
 /// This database was consolidated from 12 historical versions into a single
@@ -29,6 +32,7 @@ class LocalDatabase {
   static final LocalDatabase _instance = LocalDatabase._internal();
 
   Database? _db;
+  String? _dbPassword;
 
   LocalDatabase._internal();
 
@@ -42,7 +46,30 @@ class LocalDatabase {
   }
 
   Future<void> initialize() async {
+    _dbPassword = await _getOrCreateDbPassword();
     await database; // Trigger initialization
+  }
+
+  static const _passwordStorageKey = 'db_cipher_key';
+
+  Future<String> _getOrCreateDbPassword() async {
+    const storage = FlutterSecureStorage(
+      aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    );
+    String? existing = await storage.read(key: _passwordStorageKey);
+    if (existing != null && existing.isNotEmpty) return existing;
+    final newKey = _generateRandomHex(32);
+    await storage.write(key: _passwordStorageKey, value: newKey);
+    return newKey;
+  }
+
+  static String _generateRandomHex(int bytes) {
+    final rng = Random.secure();
+    final buf = StringBuffer();
+    for (var i = 0; i < bytes; i++) {
+      buf.write(rng.nextInt(256).toRadixString(16).padLeft(2, '0'));
+    }
+    return buf.toString();
   }
 
   Future<Database> _initDatabase() async {
@@ -51,7 +78,8 @@ class LocalDatabase {
 
     return openDatabase(
       dbFilePath,
-      version: 1,
+      password: kIsWeb ? null : _dbPassword,
+      version: 2,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
       onDowngrade: _downgradeDatabase,

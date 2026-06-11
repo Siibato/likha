@@ -1,13 +1,11 @@
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/database/local_database.dart';
-import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/data/models/classes/class_detail_model.dart';
 
 Future<ClassDetailModel> getCachedClassDetailOp(
   LocalDatabase localDatabase,
-  EncryptionService enc,
   String classId,
 ) async {
   try {
@@ -33,7 +31,7 @@ Future<ClassDetailModel> getCachedClassDetailOp(
       teacherId: classMap[ClassesCols.teacherId] as String? ?? '',
       isArchived: (classMap[ClassesCols.isArchived] as int?) == 1,
       isAdvisory: (classMap[ClassesCols.isAdvisory] as int?) == 1,
-      students: _mapParticipants(enc, participantResults),
+      students: _mapParticipants(participantResults),
       createdAt: DateTime.parse(classMap[CommonCols.createdAt] as String),
       updatedAt: DateTime.parse(classMap[CommonCols.updatedAt] as String),
     );
@@ -43,35 +41,26 @@ Future<ClassDetailModel> getCachedClassDetailOp(
   }
 }
 
-List<ParticipantModel> _mapParticipants(EncryptionService enc, List<Map<String, Object?>> rows) {
+List<ParticipantModel> _mapParticipants(List<Map<String, Object?>> rows) {
   return rows.map((e) {
     final accountStatus = e['account_status'] as String?;
     final isActive = accountStatus != null &&
         accountStatus != 'locked' &&
         accountStatus != 'deactivated';
-
-    final decryptedRow = _decryptUserRow(enc, e);
     return ParticipantModel(
-      id: decryptedRow['id'] as String,
+      id: e['id'] as String,
       student: UserModel(
-        id: decryptedRow['user_id'] as String,
-        username: decryptedRow['username'] as String? ?? '',
-        fullName: decryptedRow['full_name'] as String? ?? '',
-        role: decryptedRow['role'] as String? ?? '',
+        id: e['user_id'] as String,
+        username: e['username'] as String? ?? '',
+        fullName: e['full_name'] as String? ?? '',
+        role: e['role'] as String? ?? '',
         accountStatus: accountStatus ?? 'active',
         isActive: isActive,
-        createdAt: decryptedRow['created_at'] != null
-            ? DateTime.parse(decryptedRow['created_at'] as String)
-            : DateTime.parse(decryptedRow['joined_at'] as String),
+        createdAt: e['created_at'] != null
+            ? DateTime.parse(e['created_at'] as String)
+            : DateTime.parse(e['joined_at'] as String),
       ),
-      joinedAt: DateTime.parse(decryptedRow['joined_at'] as String),
+      joinedAt: DateTime.parse(e['joined_at'] as String),
     );
   }).toList();
-}
-
-Map<String, dynamic> _decryptUserRow(EncryptionService enc, Map<String, dynamic> row) {
-  final m = Map<String, dynamic>.from(row);
-  m['username'] = enc.decryptField(row['username'] as String?);
-  m['full_name'] = enc.decryptField(row['full_name'] as String?);
-  return m;
 }

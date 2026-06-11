@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/sync/sync_logger.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 class SyncUpsertHelpers {
   final SyncLogger _log;

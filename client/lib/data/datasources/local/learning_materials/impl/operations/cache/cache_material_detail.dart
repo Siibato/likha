@@ -1,14 +1,11 @@
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
-import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
-import 'package:likha/core/database/db_schema.dart';
 
 Future<void> cacheMaterialDetailOp(
   LocalDatabase localDatabase,
-  EncryptionService enc,
   LearningMaterialModel material,
 ) async {
   try {
@@ -16,8 +13,6 @@ Future<void> cacheMaterialDetailOp(
     final map = material.toMap();
     map['cached_at'] = DateTime.now().toIso8601String();
     map['needs_sync'] = 0;
-    map[LearningMaterialsCols.title] = enc.encryptField(map[LearningMaterialsCols.title] as String?);
-    map[LearningMaterialsCols.contentText] = enc.encryptField(map[LearningMaterialsCols.contentText] as String?);
     // Manual UPSERT: UPDATE first, INSERT if rowsUpdated == 0
     final rowsUpdated = await db.update(
       'learning_materials',

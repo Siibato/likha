@@ -13,12 +13,12 @@ import 'operations/cache/clear_all_cache.dart';
 mixin LearningMaterialCacheMixin on LearningMaterialLocalDataSourceBase {
   @override
   Future<void> cacheMaterials(List<LearningMaterialModel> materials) async {
-    return cacheMaterialsOp(localDatabase, enc, materials);
+    return cacheMaterialsOp(localDatabase, materials);
   }
 
   @override
   Future<void> cacheMaterialDetail(LearningMaterialModel material) async {
-    return cacheMaterialDetailOp(localDatabase, enc, material);
+    return cacheMaterialDetailOp(localDatabase, material);
   }
 
   @override

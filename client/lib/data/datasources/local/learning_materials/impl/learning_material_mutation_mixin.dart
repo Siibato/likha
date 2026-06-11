@@ -14,7 +14,7 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
     required String description,
     required String contentText,
   }) async {
-    return createMaterialLocallyOp(localDatabase, syncQueue, enc, classId, title, description, contentText);
+    return createMaterialLocallyOp(localDatabase, syncQueue, classId, title, description, contentText);
   }
 
   @override
@@ -24,7 +24,7 @@ mixin LearningMaterialMutationMixin on LearningMaterialLocalDataSourceBase {
     required String description,
     required String contentText,
   }) async {
-    return updateMaterialLocallyOp(localDatabase, syncQueue, enc, materialId, title, description, contentText);
+    return updateMaterialLocallyOp(localDatabase, syncQueue, materialId, title, description, contentText);
   }
 
   @override

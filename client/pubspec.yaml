@@ -16,12 +16,11 @@ dependencies:
   http_parser: ^4.0.0
   connectivity_plus: ^5.0.0
   
-  sqflite: ^2.3.0
+  sqflite_sqlcipher: ^3.4.0
   sqflite_common_ffi: ^2.3.0
   sqflite_common_ffi_web: ^0.4.5+2
   flutter_secure_storage: ^9.0.0
   shared_preferences: ^2.0.0
-  encrypt: ^5.0.3
 
   # Functional programming
   dartz: ^0.10.1
@@ -65,6 +64,7 @@ dependencies:
 
 dependency_overrides:
   shared_preferences_android: 2.4.17
+  sqflite: ^2.3.0
 
 dev_dependencies:
   flutter_test:

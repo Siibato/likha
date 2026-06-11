@@ -14,28 +14,28 @@ import 'operations/query/delete_assignment_local.dart';
 mixin AssignmentQueryMixin on AssignmentLocalDataSourceBase {
   @override
   Future<List<AssignmentModel>> getCachedAssignments(String classId, {bool publishedOnly = false, String? studentId}) async {
-    return getCachedAssignmentsOp(localDatabase, enc, classId, publishedOnly, studentId);
+    return getCachedAssignmentsOp(localDatabase, classId, publishedOnly, studentId);
   }
 
   @override
   Future<AssignmentModel> getCachedAssignmentDetail(String assignmentId) async {
-    return getCachedAssignmentDetailOp(localDatabase, enc, assignmentId);
+    return getCachedAssignmentDetailOp(localDatabase, assignmentId);
   }
 
   @override
   Future<AssignmentSubmissionModel?> getCachedSubmission(String submissionId) async {
-    return getCachedSubmissionOp(localDatabase, enc, submissionId);
+    return getCachedSubmissionOp(localDatabase, submissionId);
   }
 
   @override
   Future<List<SubmissionFileModel>> getCachedSubmissionFiles(String submissionId) async {
     final db = await localDatabase.database;
-    return getCachedSubmissionFilesOp(db, enc, submissionId);
+    return getCachedSubmissionFilesOp(db, submissionId);
   }
 
   @override
   Future<List<SubmissionListItemModel>> getCachedSubmissions(String assignmentId) async {
-    return getCachedSubmissionsOp(localDatabase, enc, assignmentId);
+    return getCachedSubmissionsOp(localDatabase, assignmentId);
   }
 
   @override

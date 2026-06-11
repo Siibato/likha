@@ -16,7 +16,7 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
     String studentName = '',
     String? textContent,
   }) async {
-    return createSubmissionLocallyOp(localDatabase, syncQueue, enc, assignmentId, studentId, studentName, textContent);
+    return createSubmissionLocallyOp(localDatabase, syncQueue, assignmentId, studentId, studentName, textContent);
   }
 
   @override
@@ -24,7 +24,7 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
     required String submissionId,
     required String textContent,
   }) async {
-    return updateSubmissionTextLocallyOp(localDatabase, syncQueue, enc, submissionId, textContent);
+    return updateSubmissionTextLocallyOp(localDatabase, syncQueue, submissionId, textContent);
   }
 
   @override
@@ -41,7 +41,7 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
     required int score,
     String? feedback,
   }) async {
-    return gradeSubmissionLocallyOp(localDatabase, syncQueue, enc, submissionId, score, feedback);
+    return gradeSubmissionLocallyOp(localDatabase, syncQueue, submissionId, score, feedback);
   }
 
   @override

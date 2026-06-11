@@ -1,4 +1,4 @@
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';

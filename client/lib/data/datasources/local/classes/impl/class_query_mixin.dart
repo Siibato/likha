@@ -9,21 +9,21 @@ import 'operations/query/build_class_detail_from_participants.dart';
 mixin ClassQueryMixin on ClassLocalDataSourceBase {
   @override
   Future<List<ClassModel>> getCachedClasses({String? teacherId}) async {
-    return getCachedClassesOp(localDatabase, enc, teacherId);
+    return getCachedClassesOp(localDatabase, teacherId);
   }
 
   @override
   Future<List<ClassModel>> getCachedClassesForUser(String userId) async {
-    return getCachedClassesForUserOp(localDatabase, enc, userId);
+    return getCachedClassesForUserOp(localDatabase, userId);
   }
 
   @override
   Future<ClassDetailModel> getCachedClassDetail(String classId) async {
-    return getCachedClassDetailOp(localDatabase, enc, classId);
+    return getCachedClassDetailOp(localDatabase, classId);
   }
 
   @override
   Future<ClassDetailModel?> buildClassDetailFromParticipants(String classId) async {
-    return buildClassDetailFromParticipantsOp(localDatabase, enc, classId);
+    return buildClassDetailFromParticipantsOp(localDatabase, classId);
   }
 }

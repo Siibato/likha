@@ -12,7 +12,7 @@ import 'package:likha/data/datasources/local/assessments/assessment_local_dataso
 import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';
 import 'package:likha/services/storage_service.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 export 'package:likha/core/sync/sync_state.dart';
 

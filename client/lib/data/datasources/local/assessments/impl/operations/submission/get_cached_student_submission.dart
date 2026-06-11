@@ -1,12 +1,10 @@
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
-import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/data/models/assessments/submission_model.dart';
 
 Future<SubmissionSummaryModel?> getCachedStudentSubmissionOp(
   LocalDatabase localDatabase,
-  EncryptionService enc,
   String assessmentId,
   String studentId,
 ) async {
@@ -29,8 +27,8 @@ Future<SubmissionSummaryModel?> getCachedStudentSubmissionOp(
       id: rawRow['id'] as String,
       assessmentId: rawRow['assessment_id'] as String? ?? '',
       studentId: rawRow['user_id'] as String? ?? '',
-      studentName: enc.decryptField(rawRow['student_name'] as String?) ?? '',
-      studentUsername: enc.decryptField(rawRow['student_username'] as String?) ?? '',
+      studentName: rawRow['student_name'] as String? ?? '',
+      studentUsername: rawRow['student_username'] as String? ?? '',
       startedAt: DateTime.parse(rawRow['started_at'] as String),
       submittedAt: rawRow['submitted_at'] != null ? DateTime.parse(rawRow['submitted_at'] as String) : null,
       autoScore: (rawRow['earned_points'] as num?)?.toDouble() ?? 0.0,

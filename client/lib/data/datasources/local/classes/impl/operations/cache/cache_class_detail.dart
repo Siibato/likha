@@ -1,14 +1,12 @@
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/database/local_database.dart';
-import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/data/models/classes/class_detail_model.dart';
 import 'package:likha/data/models/classes/class_model.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 Future<void> cacheClassDetailOp(
   LocalDatabase localDatabase,
-  EncryptionService enc,
   ClassDetailModel classDetail,
 ) async {
   try {
@@ -26,8 +24,8 @@ Future<void> cacheClassDetailOp(
           limit: 1,
         );
         if (teacherRows.isNotEmpty) {
-          teacherUsername = enc.decryptField(teacherRows.first['username'] as String?) ?? '';
-          teacherFullName = enc.decryptField(teacherRows.first['full_name'] as String?) ?? '';
+          teacherUsername = teacherRows.first['username'] as String? ?? '';
+          teacherFullName = teacherRows.first['full_name'] as String? ?? '';
         }
       }
 

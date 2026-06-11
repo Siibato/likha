@@ -9,21 +9,21 @@ import 'operations/query/get_cached_activity_logs.dart';
 mixin AuthQueryMixin on AuthLocalDataSourceBase {
   @override
   Future<UserModel> getCachedCurrentUser([String? userId]) async {
-    return getCachedCurrentUserOp(localDatabase, enc, userId);
+    return getCachedCurrentUserOp(localDatabase, userId);
   }
 
   @override
   Future<List<UserModel>> getCachedAccounts() async {
-    return getCachedAccountsOp(localDatabase, enc);
+    return getCachedAccountsOp(localDatabase);
   }
 
   @override
   Future<UserModel> getCachedUser(String userId) async {
-    return getCachedUserOp(localDatabase, enc, userId);
+    return getCachedUserOp(localDatabase, userId);
   }
 
   @override
   Future<List<ActivityLogModel>> getCachedActivityLogs(String userId) async {
-    return getCachedActivityLogsOp(localDatabase, enc, userId);
+    return getCachedActivityLogsOp(localDatabase, userId);
   }
 }

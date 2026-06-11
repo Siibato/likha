@@ -2,13 +2,11 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
-import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/data/models/assignments/submission_file_model.dart';
 import 'package:path_provider/path_provider.dart';
 
 Future<List<SubmissionFileModel>> getCachedSubmissionFilesOp(
   dynamic db,
-  EncryptionService enc,
   String submissionId,
 ) async {
   try {
