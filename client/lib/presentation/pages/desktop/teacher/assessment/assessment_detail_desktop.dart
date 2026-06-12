@@ -55,19 +55,6 @@ class _AssessmentDetailDesktopState
           Navigator.of(context).pop();
           return;
         }
-
-        // Reload on question/assessment changes
-        if (next.successMessage == 'Questions added' ||
-            next.successMessage == 'Question updated' ||
-            next.successMessage == 'Question deleted' ||
-            next.successMessage == 'Assessment updated' ||
-            next.successMessage == 'Assessment published' ||
-            next.successMessage == 'Assessment moved to draft' ||
-            next.successMessage == 'Results released') {
-          ref
-              .read(teacherAssessmentProvider.notifier)
-              .loadAssessmentDetail(widget.assessmentId);
-        }
       }
 
       if (next.error != null) {

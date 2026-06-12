@@ -21,6 +21,35 @@ ResultFuture<Assessment> updateAssessment(
 }) async {
   try {
     if (!base.serverReachabilityService.isServerReachable) {
+      Assessment? cached;
+      try {
+        final (cachedModel, _) =
+            await base.localDataSource.getCachedAssessmentDetail(assessmentId);
+        cached = Assessment(
+          id: cachedModel.id,
+          classId: cachedModel.classId,
+          title: title ?? cachedModel.title,
+          description: description ?? cachedModel.description,
+          timeLimitMinutes: timeLimitMinutes ?? cachedModel.timeLimitMinutes,
+          openAt: openAt != null ? DateTime.parse(openAt) : cachedModel.openAt,
+          closeAt: closeAt != null ? DateTime.parse(closeAt) : cachedModel.closeAt,
+          showResultsImmediately: showResultsImmediately ?? cachedModel.showResultsImmediately,
+          resultsReleased: cachedModel.resultsReleased,
+          isPublished: cachedModel.isPublished,
+          orderIndex: cachedModel.orderIndex,
+          totalPoints: cachedModel.totalPoints,
+          questionCount: cachedModel.questionCount,
+          submissionCount: cachedModel.submissionCount,
+          tosId: cachedModel.tosId,
+          gradingPeriodNumber: gradingPeriodNumber ?? cachedModel.gradingPeriodNumber,
+          component: component ?? cachedModel.component,
+          createdAt: cachedModel.createdAt,
+          updatedAt: DateTime.now(),
+          needsSync: true,
+          cachedAt: cachedModel.cachedAt,
+        );
+      } catch (_) {}
+
       await base.syncQueue.enqueue(SyncQueueEntry(
         id: const Uuid().v4(),
         entityType: SyncEntityType.assessment,
@@ -42,6 +71,10 @@ ResultFuture<Assessment> updateAssessment(
         maxRetries: 5,
         createdAt: DateTime.now(),
       ));
+
+      if (cached != null) {
+        return Right(cached);
+      }
 
       return Right(Assessment(
         id: assessmentId,

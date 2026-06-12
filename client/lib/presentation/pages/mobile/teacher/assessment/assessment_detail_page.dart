@@ -168,13 +168,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
           hasSubmissions: hasSubmissions,
         ),
       ),
-    ).then((result) {
-      if (result == true) {
-        ref
-            .read(teacherAssessmentProvider.notifier)
-            .loadAssessmentDetail(widget.assessmentId);
-      }
-    });
+    );
   }
 
   void _enterQuestionReorderMode(List<Question> questions) {
@@ -290,12 +284,6 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
         if (next.successMessage == 'Assessment deleted') {
           Navigator.pop(context, true);
         }
-        if (next.successMessage == 'Question deleted' ||
-            next.successMessage == 'Questions added') {
-          ref
-              .read(teacherAssessmentProvider.notifier)
-              .loadAssessmentDetail(widget.assessmentId);
-        }
       }
       if (next.error != null && prev?.error != next.error) {
         setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
@@ -372,14 +360,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                                         assessment: assessment,
                                       ),
                                     ),
-                                  ).then((result) {
-                                    if (result == true) {
-                                      ref
-                                          .read(teacherAssessmentProvider.notifier)
-                                          .loadAssessmentDetail(
-                                              widget.assessmentId);
-                                    }
-                                  })
+                                  )
                               : null,
                         ),
                         const SizedBox(height: 16),
@@ -466,14 +447,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                                           assessmentId: widget.assessmentId,
                                         ),
                                       ),
-                                    ).then((result) {
-                                      if (result == true) {
-                                        ref
-                                            .read(teacherAssessmentProvider.notifier)
-                                            .loadAssessmentDetail(
-                                                widget.assessmentId);
-                                      }
-                                    })
+                                    )
                                 : null,
                             onEditQuestion: !assessment.isPublished
                                 ? (question) => _navigateToEditQuestion(

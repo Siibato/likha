@@ -39,24 +39,52 @@ ResultFuture<Assessment> publishAssessment(
 
       await base.localDataSource.markAssessmentPublishedLocally(assessmentId: assessmentId);
 
-      return Right(Assessment(
-        id: assessmentId,
-        classId: '',
-        title: '',
-        description: null,
-        timeLimitMinutes: 0,
-        openAt: DateTime.now(),
-        closeAt: DateTime.now(),
-        showResultsImmediately: false,
-        resultsReleased: false,
-        isPublished: true,
-        orderIndex: 0,
-        totalPoints: 0,
-        questionCount: 0,
-        submissionCount: 0,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ));
+      try {
+        final (cached, _) =
+            await base.localDataSource.getCachedAssessmentDetail(assessmentId);
+        return Right(Assessment(
+          id: cached.id,
+          classId: cached.classId,
+          title: cached.title,
+          description: cached.description,
+          timeLimitMinutes: cached.timeLimitMinutes,
+          openAt: cached.openAt,
+          closeAt: cached.closeAt,
+          showResultsImmediately: cached.showResultsImmediately,
+          resultsReleased: cached.resultsReleased,
+          isPublished: true,
+          orderIndex: cached.orderIndex,
+          totalPoints: cached.totalPoints,
+          questionCount: cached.questionCount,
+          submissionCount: cached.submissionCount,
+          tosId: cached.tosId,
+          gradingPeriodNumber: cached.gradingPeriodNumber,
+          component: cached.component,
+          createdAt: cached.createdAt,
+          updatedAt: DateTime.now(),
+          needsSync: true,
+          cachedAt: cached.cachedAt,
+        ));
+      } catch (_) {
+        return Right(Assessment(
+          id: assessmentId,
+          classId: '',
+          title: '',
+          description: null,
+          timeLimitMinutes: 0,
+          openAt: DateTime.now(),
+          closeAt: DateTime.now(),
+          showResultsImmediately: false,
+          resultsReleased: false,
+          isPublished: true,
+          orderIndex: 0,
+          totalPoints: 0,
+          questionCount: 0,
+          submissionCount: 0,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ));
+      }
     }
 
     final result =

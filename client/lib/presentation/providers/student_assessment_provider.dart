@@ -126,14 +126,99 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
   }
 
   Future<void> submitAssessment(String submissionId) async {
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    final previousStartResult = state.startResult;
+    final previousCurrentStudentSubmission = state.currentStudentSubmission;
+    final previousAssessments = state.assessments;
+
+    final assessmentId = state.currentStudentSubmission?.assessmentId
+        ?? state.startResult?.submissionId; // use as fallback hint
+
+    SubmissionSummary? optimisticSubmission;
+    if (state.currentStudentSubmission != null) {
+      final s = state.currentStudentSubmission!;
+      optimisticSubmission = SubmissionSummary(
+        id: s.id,
+        assessmentId: s.assessmentId,
+        studentId: s.studentId,
+        studentName: s.studentName,
+        studentUsername: s.studentUsername,
+        startedAt: s.startedAt,
+        submittedAt: s.submittedAt ?? DateTime.now(),
+        autoScore: s.autoScore,
+        finalScore: s.finalScore,
+        totalPoints: s.totalPoints,
+        isSubmitted: true,
+        createdAt: s.createdAt,
+        updatedAt: s.updatedAt,
+        cachedAt: s.cachedAt,
+        needsSync: true,
+      );
+    }
+
+    final optimisticAssessments = assessmentId != null
+        ? state.assessments.map((a) {
+            if (a.id == assessmentId) {
+              return Assessment(
+                id: a.id,
+                classId: a.classId,
+                title: a.title,
+                description: a.description,
+                timeLimitMinutes: a.timeLimitMinutes,
+                openAt: a.openAt,
+                closeAt: a.closeAt,
+                showResultsImmediately: a.showResultsImmediately,
+                resultsReleased: a.resultsReleased,
+                isPublished: a.isPublished,
+                orderIndex: a.orderIndex,
+                totalPoints: a.totalPoints,
+                questionCount: a.questionCount,
+                submissionCount: a.submissionCount,
+                isSubmitted: true,
+                tosId: a.tosId,
+                gradingPeriodNumber: a.gradingPeriodNumber,
+                component: a.component,
+                createdAt: a.createdAt,
+                updatedAt: a.updatedAt,
+                cachedAt: a.cachedAt,
+                needsSync: a.needsSync,
+              );
+            }
+            return a;
+          }).toList()
+        : state.assessments;
+
+    if (optimisticSubmission != null) {
+      state = state.copyWith(
+        isLoading: true,
+        error: null,
+        successMessage: null,
+        startResult: null,
+        currentStudentSubmission: optimisticSubmission,
+        assessments: optimisticAssessments,
+      );
+    } else {
+      state = state.copyWith(
+        isLoading: true,
+        error: null,
+        successMessage: null,
+        startResult: null,
+        assessments: optimisticAssessments,
+      );
+    }
+
     final result = await _submitAssessment(submissionId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
-      (_) => state = state.copyWith(
+      (failure) => state = state.copyWith(
+        isLoading: false,
+        error: AppErrorMapper.fromFailure(failure),
+        startResult: previousStartResult,
+        currentStudentSubmission: previousCurrentStudentSubmission,
+        assessments: previousAssessments,
+      ),
+      (submission) => state = state.copyWith(
         isLoading: false,
         successMessage: 'Assessment submitted',
-        startResult: null,
+        currentStudentSubmission: submission,
       ),
     );
   }

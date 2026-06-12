@@ -27,6 +27,15 @@ ResultVoid reorderQuestions(
       }
       return const Right(null);
     }
+    for (int i = 0; i < questionIds.length; i++) {
+      try {
+        await base.localDataSource.updateQuestionLocally(
+          questionId: questionIds[i],
+          updates: {'order_index': i},
+          isOfflineMutation: false,
+        );
+      } catch (_) {}
+    }
     await base.remoteDataSource.reorderAllQuestions(
       assessmentId: assessmentId,
       questionIds: questionIds,
