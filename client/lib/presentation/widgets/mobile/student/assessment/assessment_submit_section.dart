@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
-import 'package:likha/presentation/utils/formatters.dart';
+import 'package:likha/core/utils/formatters.dart';
 
 class AssessmentSubmitSection extends StatelessWidget {
   final int remainingSeconds;

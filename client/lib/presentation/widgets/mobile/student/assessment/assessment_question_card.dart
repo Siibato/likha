@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
-import 'package:likha/presentation/utils/formatters.dart';
+import 'package:likha/core/utils/formatters.dart';
 import 'package:likha/presentation/widgets/mobile/student/assessment/assessment_question_input.dart';
 import 'package:likha/presentation/widgets/shared/cards/base_card.dart';
 

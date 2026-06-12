@@ -1,4 +1,4 @@
-import 'package:likha/core/constants/api_endpoint.dart';
+import 'package:likha/core/network/api_types.dart';
 import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/data/models/auth/activity_log_model.dart';
 import 'package:likha/data/models/auth/auth_response_model.dart';

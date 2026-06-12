@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'dart:io' show File;
 import 'package:flutter/foundation.dart';
-import 'package:likha/core/constants/api_constants.dart';
+import 'package:likha/core/config/api_config.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/core/services/school_setup_service.dart';
 import 'package:likha/core/theme/app_colors.dart';

@@ -1,7 +1,22 @@
 import 'package:likha/core/errors/exceptions.dart';
 
-/// Typed mirror of the server's generic response envelope.
-/// The server wraps all responses in: { success: bool, status_code: int, data?: T, error?: string }
+class ApiEndpoint<T> {
+  final String path;
+  final T Function(dynamic json) fromJson;
+
+  const ApiEndpoint(this.path, this.fromJson);
+
+  factory ApiEndpoint.fromModel(
+    String path,
+    T Function(Map<String, dynamic>) modelFromJson,
+  ) {
+    return ApiEndpoint(
+      path,
+      (dynamic json) => modelFromJson(json as Map<String, dynamic>),
+    );
+  }
+}
+
 class ApiResponse<T> {
   /// Whether the request was successful
   final bool success;

@@ -3,7 +3,7 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/widgets/shared/cards/base_card.dart';
 import 'package:likha/presentation/widgets/shared/primitives/card_icon_slot.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_button.dart';
-import 'package:likha/presentation/utils/formatters.dart';
+import 'package:likha/core/utils/formatters.dart';
 
 class AssignmentFilesCard extends StatelessWidget {
   final List files;

@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
-import 'package:likha/core/sync/sync_logger.dart';
+import 'package:likha/core/logging/sync_logger.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/sync_state.dart';
 import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';

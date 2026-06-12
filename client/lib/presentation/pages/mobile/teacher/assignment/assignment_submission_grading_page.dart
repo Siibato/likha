@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/presentation/utils/snackbar_utils.dart';
 import 'package:likha/domain/assignments/entities/submission_file.dart';
 import 'package:likha/domain/assignments/usecases/grade_submission.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';

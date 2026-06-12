@@ -6,7 +6,7 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/core/errors/error_messages.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/presentation/utils/snackbar_utils.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
 import 'package:likha/domain/assessments/usecases/create_assessment.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_draft.dart';
@@ -18,7 +18,7 @@ import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_save_button.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/dashboard/reorder_position_dialog.dart';
 import 'package:likha/presentation/widgets/shared/primitives/class_section_header.dart';
-import 'package:likha/presentation/utils/formatters.dart';
+import 'package:likha/core/utils/formatters.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/services/impl/school_setup_service_impl.dart';
+import 'package:likha/core/services/school_setup_service_impl.dart';
 
 class MockDio extends Mock implements Dio {}
 class MockSharedPreferences extends Mock implements SharedPreferences {}

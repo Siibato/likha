@@ -9,7 +9,7 @@ import 'package:likha/presentation/pages/desktop/teacher/assessment/assessment_s
 import 'package:likha/presentation/pages/desktop/teacher/assessment/assessment_statistics_desktop.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
-import 'package:likha/presentation/utils/formatters.dart';
+import 'package:likha/core/utils/formatters.dart';
 import 'package:likha/presentation/widgets/shared/feedback/content_state_builder.dart';
 
 class AssessmentDetailDesktop extends ConsumerStatefulWidget {

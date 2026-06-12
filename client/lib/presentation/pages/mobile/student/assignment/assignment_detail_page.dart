@@ -15,7 +15,7 @@ import 'package:likha/domain/assignments/usecases/upload_file.dart';
 import 'package:likha/presentation/widgets/shared/primitives/class_section_header.dart';
 import 'package:likha/presentation/widgets/shared/cards/score_display_card.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
-import 'package:likha/presentation/utils/formatters.dart';
+import 'package:likha/core/utils/formatters.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/widgets/mobile/student/assignment/assignment_feedback_card.dart';
 import 'package:likha/presentation/widgets/mobile/student/assignment/assignment_files_card.dart';

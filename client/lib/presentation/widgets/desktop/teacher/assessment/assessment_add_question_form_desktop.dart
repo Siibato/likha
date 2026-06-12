@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:likha/core/theme/app_colors.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/presentation/utils/snackbar_utils.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_question_type_editors.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_draft.dart';
 

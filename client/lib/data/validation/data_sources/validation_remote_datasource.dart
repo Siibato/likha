@@ -1,5 +1,5 @@
-import 'package:likha/core/constants/api_endpoint.dart';
-import 'package:likha/core/validation/models/validation_metadata.dart';
+import 'package:likha/core/network/api_types.dart';
+import 'package:likha/data/validation/models/validation_metadata.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/core/errors/exceptions.dart';
 

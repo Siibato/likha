@@ -4,7 +4,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/services/server_clock_service.dart';
-import 'package:likha/core/sync/sync_logger.dart';
+import 'package:likha/core/logging/sync_logger.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
