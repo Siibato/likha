@@ -927,19 +927,11 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     state = state.copyWith(isLoading: false);
 
     List<int>? fileBytes;
-    bool success = false;
     result.fold(
       (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
-      (bytes) {
-        fileBytes = bytes;
-        success = true;
-      },
+      (bytes) => fileBytes = bytes,
     );
 
-    if (success && state.currentSubmission != null) {
-      // Await reload so localPath is updated before caller reads state
-      await loadSubmissionDetail(state.currentSubmission!.id);
-    }
     return fileBytes;
   }
 

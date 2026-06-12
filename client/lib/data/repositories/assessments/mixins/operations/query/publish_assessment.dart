@@ -87,9 +87,11 @@ ResultFuture<Assessment> publishAssessment(
       }
     }
 
+    await base.localDataSource.markAssessmentPublishedLocally(assessmentId: assessmentId);
+
     final result =
         await base.remoteDataSource.publishAssessment(assessmentId: assessmentId);
-    await base.localDataSource.markAssessmentPublishedLocally(assessmentId: assessmentId);
+    await base.localDataSource.cacheAssessments([result]);
     return Right(result);
   } on ServerException catch (e) {
     return Left(ServerFailure(e.message, statusCode: e.statusCode));

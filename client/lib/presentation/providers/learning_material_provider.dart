@@ -391,14 +391,47 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     final previousFiles = state.currentMaterial != null
         ? List<MaterialFile>.from(state.currentMaterial!.files)
         : null;
-
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      clearUploadProgress: true,
-      currentUploadFileName: fileName,
+    final tempFileId = 'temp-file-${DateTime.now().microsecondsSinceEpoch}';
+    final optimisticFile = MaterialFile(
+      id: tempFileId,
+      fileName: fileName,
+      fileType: 'application/octet-stream',
+      fileSize: 0,
+      uploadedAt: DateTime.now(),
+      localPath: filePath,
+      cachedAt: DateTime.now(),
+      needsSync: true,
     );
+
+    if (state.currentMaterial != null) {
+      final optimisticFiles = [...state.currentMaterial!.files, optimisticFile];
+      state = state.copyWith(
+        isLoading: true,
+        clearError: true,
+        clearSuccess: true,
+        clearUploadProgress: true,
+        currentUploadFileName: fileName,
+        currentMaterial: MaterialDetail(
+          id: state.currentMaterial!.id,
+          classId: state.currentMaterial!.classId,
+          title: state.currentMaterial!.title,
+          description: state.currentMaterial!.description,
+          contentText: state.currentMaterial!.contentText,
+          orderIndex: state.currentMaterial!.orderIndex,
+          files: optimisticFiles,
+          createdAt: state.currentMaterial!.createdAt,
+          updatedAt: DateTime.now(),
+        ),
+      );
+    } else {
+      state = state.copyWith(
+        isLoading: true,
+        clearError: true,
+        clearSuccess: true,
+        clearUploadProgress: true,
+        currentUploadFileName: fileName,
+      );
+    }
 
     final result = await _uploadFile(
       materialId: materialId,
@@ -440,7 +473,9 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
       },
       (file) {
         if (state.currentMaterial != null) {
-          final updatedFiles = [...state.currentMaterial!.files, file];
+          final updatedFiles = state.currentMaterial!.files
+              .map((f) => f.id == tempFileId ? file : f)
+              .toList();
           final updatedDetail = MaterialDetail(
             id: state.currentMaterial!.id,
             classId: state.currentMaterial!.classId,

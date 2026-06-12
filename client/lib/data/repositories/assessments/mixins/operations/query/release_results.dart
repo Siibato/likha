@@ -55,6 +55,8 @@ ResultFuture<Assessment> releaseResults(
       }
     }
 
+    await base.localDataSource.releaseResultsLocally(assessmentId: assessmentId);
+
     final result =
         await base.remoteDataSource.releaseResults(assessmentId: assessmentId);
     await base.localDataSource.cacheAssessments([result]);
