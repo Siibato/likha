@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:likha/core/theme/app_colors.dart';
-import 'package:likha/core/utils/snackbar_utils.dart';
+import 'package:likha/presentation/utils/snackbar_utils.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 
 typedef OnReorderCallback = void Function(int currentIndex, int newIndex);

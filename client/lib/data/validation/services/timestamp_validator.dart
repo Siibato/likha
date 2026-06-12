@@ -1,9 +1,9 @@
 import 'package:likha/core/logging/validation_logger.dart';
-import 'package:likha/core/validation/services/data_validator.dart';
-import 'package:likha/core/validation/models/validation_metadata.dart';
-import 'package:likha/core/validation/models/validation_result.dart';
-import 'package:likha/core/validation/data_sources/validation_remote_datasource.dart';
-import 'package:likha/core/validation/repositories/validation_metadata_repository.dart';
+import 'package:likha/data/validation/services/data_validator.dart';
+import 'package:likha/data/validation/models/validation_metadata.dart';
+import 'package:likha/data/validation/models/validation_result.dart';
+import 'package:likha/data/validation/data_sources/validation_remote_datasource.dart';
+import 'package:likha/data/validation/repositories/validation_metadata_repository.dart';
 import 'package:likha/core/network/connectivity_service.dart';
 
 class TimestampValidator implements DataValidator {

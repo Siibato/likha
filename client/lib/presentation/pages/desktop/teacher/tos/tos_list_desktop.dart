@@ -5,7 +5,7 @@ import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/tos/create_tos_desktop.dart';
 import 'package:likha/presentation/pages/desktop/teacher/tos/tos_detail_desktop.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
-import 'package:likha/presentation/utils/formatters.dart';
+import 'package:likha/core/utils/formatters.dart';
 
 class TosListDesktop extends ConsumerStatefulWidget {
   final String classId;

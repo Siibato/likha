@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:likha/core/validation/services/data_validator.dart';
-import 'package:likha/core/validation/services/validation_service.dart';
-import 'package:likha/core/validation/models/validation_result.dart';
+import 'package:likha/data/validation/services/data_validator.dart';
+import 'package:likha/data/validation/services/validation_service.dart';
+import 'package:likha/data/validation/models/validation_result.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';

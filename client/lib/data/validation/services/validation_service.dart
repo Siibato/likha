@@ -1,5 +1,5 @@
 import 'package:likha/core/logging/validation_logger.dart';
-import 'package:likha/core/validation/services/data_validator.dart';
+import 'package:likha/data/validation/services/data_validator.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';

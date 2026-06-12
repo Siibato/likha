@@ -1,7 +1,7 @@
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/core/validation/services/validation_service.dart';
+import 'package:likha/data/validation/services/validation_service.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/data/datasources/remote/class_remote_datasource.dart';
 import 'package:likha/domain/classes/repositories/class_repository.dart';

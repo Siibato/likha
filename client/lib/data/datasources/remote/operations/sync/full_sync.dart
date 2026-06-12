@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'package:likha/core/constants/api_endpoints.dart';
-import 'package:likha/core/network/api_response.dart';
+import 'package:likha/core/network/api_types.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/models/sync/full_sync_response_model.dart';
 

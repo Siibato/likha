@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
-import 'package:likha/core/sync/sync_logger.dart';
+import 'package:likha/core/logging/sync_logger.dart';
 import 'package:likha/core/sync/sync_upsert_helpers.dart';
 
 import '../../helpers/test_database.dart';

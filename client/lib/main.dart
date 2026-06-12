@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
-import 'package:likha/core/db/sqflite_initializer.dart';
+import 'package:likha/core/database/sqflite_initializer.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/core/logging/core_logger.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
