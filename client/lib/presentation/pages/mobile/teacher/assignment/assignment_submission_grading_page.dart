@@ -210,12 +210,6 @@ class _GradeSubmissionPageState extends ConsumerState<AssignmentSubmissionGradin
           prev?.successMessage != next.successMessage) {
         context.showSuccessSnackBar(next.successMessage!, durationMs: 3000);
         ref.read(assignmentProvider.notifier).clearMessages();
-        if (next.successMessage == 'Submission graded' ||
-            next.successMessage == 'Submission returned for revision') {
-          ref
-              .read(assignmentProvider.notifier)
-              .loadSubmissionDetail(widget.submissionId);
-        }
       }
       if (next.error != null && prev?.error != next.error) {
         setState(() => _formError = AppErrorMapper.toUserMessage(next.error));

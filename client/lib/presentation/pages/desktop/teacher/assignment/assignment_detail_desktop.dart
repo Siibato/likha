@@ -106,14 +106,6 @@ class _AssignmentDetailDesktopState
           Navigator.of(context).pop(true);
           return;
         }
-
-        // Reload on publish/unpublish changes
-        if (next.successMessage == 'Assignment published' ||
-            next.successMessage == 'Assignment moved to draft') {
-          ref
-              .read(assignmentProvider.notifier)
-              .loadAssignmentDetail(widget.assignmentId);
-        }
       }
 
       if (next.error != null && prev?.error != next.error) {

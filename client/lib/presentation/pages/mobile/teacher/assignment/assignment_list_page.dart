@@ -264,11 +264,7 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
                         MaterialPageRoute(
                           builder: (_) => CreateAssignmentPage(classId: widget.classId),
                         ),
-                      ).then((result) {
-                        if (result == true) {
-                          ref.read(assignmentProvider.notifier).loadAssignments(widget.classId);
-                        }
-                      }),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.accentCharcoal,
                         foregroundColor: Colors.white,
@@ -338,9 +334,7 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
                                         assignmentId: assignment.id,
                                       ),
                                     ),
-                                  ).then((_) => ref
-                                      .read(assignmentProvider.notifier)
-                                      .loadAssignments(widget.classId)),
+                                  ),
                                 );
                               },
                             ),

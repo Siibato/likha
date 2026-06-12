@@ -221,11 +221,6 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
             fileName: file.name,
           ),
         );
-
-    if (!mounted) return;
-    ref
-        .read(assignmentProvider.notifier)
-        .loadSubmissionDetail(_submissionId!);
   }
 
   Future<void> _handleSubmit() async {
@@ -255,12 +250,6 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
 
   Future<void> _deleteFile(String fileId) async {
     await ref.read(assignmentProvider.notifier).deleteSubmissionFile(fileId);
-
-    if (_submissionId != null && mounted) {
-      ref
-          .read(assignmentProvider.notifier)
-          .loadSubmissionDetail(_submissionId!);
-    }
   }
 
   /// Open file — in browser on web, with system default app on native

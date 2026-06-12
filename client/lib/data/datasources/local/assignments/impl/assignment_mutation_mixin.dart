@@ -7,6 +7,7 @@ import 'operations/mutation/return_submission_locally.dart';
 import 'operations/mutation/mark_assignment_published_locally.dart';
 import 'operations/mutation/mark_assignment_unpublished_locally.dart';
 import 'operations/mutation/soft_delete_submission_file.dart';
+import 'operations/mutation/update_assignment_order_locally.dart';
 
 mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
   @override
@@ -59,6 +60,14 @@ mixin AssignmentMutationMixin on AssignmentLocalDataSourceBase {
   @override
   Future<void> markAssignmentUnpublishedLocally({required String assignmentId}) async {
     return markAssignmentUnpublishedLocallyOp(localDatabase, syncQueue, assignmentId);
+  }
+
+  @override
+  Future<void> updateAssignmentOrderLocally({
+    required String assignmentId,
+    required int orderIndex,
+  }) async {
+    return updateAssignmentOrderLocallyOp(localDatabase, assignmentId, orderIndex);
   }
 
   @override

@@ -141,11 +141,6 @@ class _GradeSubmissionDesktopState
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
         ref.read(assignmentProvider.notifier).clearMessages();
-        if (next.successMessage == 'Submission graded') {
-          ref
-              .read(assignmentProvider.notifier)
-              .loadSubmissionDetail(widget.submissionId);
-        }
       }
       if (next.error != null && prev?.error != next.error) {
         setState(() => _formError = AppErrorMapper.toUserMessage(next.error));

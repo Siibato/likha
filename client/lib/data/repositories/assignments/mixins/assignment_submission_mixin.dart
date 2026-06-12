@@ -9,6 +9,7 @@ import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
 import 'package:likha/domain/assignments/entities/submission_file.dart';
 import 'package:likha/data/models/assignments/assignment_submission_model.dart';
+import 'package:likha/data/models/assignments/submission_file_model.dart';
 import 'package:likha/data/repositories/assignments/assignment_repository_base.dart';
 import 'package:uuid/uuid.dart';
 
@@ -160,6 +161,27 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
     return false;
   }
 
+  AssignmentSubmissionModel _toSubmissionModel(AssignmentSubmission submission) {
+    return AssignmentSubmissionModel(
+      id: submission.id,
+      assignmentId: submission.assignmentId,
+      studentId: submission.studentId,
+      studentName: submission.studentName,
+      status: submission.status,
+      textContent: submission.textContent,
+      submittedAt: submission.submittedAt,
+      score: submission.score,
+      feedback: submission.feedback,
+      gradedAt: submission.gradedAt,
+      gradedBy: submission.gradedBy,
+      files: submission.files,
+      createdAt: submission.createdAt,
+      updatedAt: submission.updatedAt,
+      cachedAt: submission.cachedAt,
+      needsSync: submission.needsSync,
+    );
+  }
+
   /// Helper: checks if submission files have changed between cached and fresh versions.
   bool _submissionFilesHaveChanged(
     List<SubmissionFile> cached,
@@ -210,16 +232,75 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
         ));
       }
 
-      final result = await remoteDataSource.gradeSubmission(
-        submissionId: submissionId,
-        data: {
-          'score': score,
-          if (feedback != null) 'feedback': feedback,
-        },
+      final cached = await localDataSource.getCachedSubmission(submissionId);
+      final optimisticSubmission = cached != null
+          ? AssignmentSubmission(
+              id: cached.id,
+              assignmentId: cached.assignmentId,
+              studentId: cached.studentId,
+              studentName: cached.studentName,
+              status: 'graded',
+              textContent: cached.textContent,
+              submittedAt: cached.submittedAt,
+              score: score,
+              feedback: feedback,
+              gradedAt: DateTime.now(),
+              gradedBy: cached.gradedBy,
+              files: cached.files,
+              createdAt: cached.createdAt,
+              updatedAt: DateTime.now(),
+              cachedAt: DateTime.now(),
+              needsSync: true,
+            )
+          : AssignmentSubmission(
+              id: submissionId,
+              assignmentId: '',
+              studentId: '',
+              studentName: '',
+              status: 'graded',
+              score: score,
+              feedback: feedback,
+              files: const [],
+              textContent: null,
+              submittedAt: DateTime.now(),
+              gradedAt: DateTime.now(),
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+              needsSync: true,
+              cachedAt: DateTime.now(),
+            );
+
+      await localDataSource.cacheSubmissionDetail(
+        _toSubmissionModel(optimisticSubmission),
       );
-      // Ensure cache is fresh before listener (ref.listen in page) re-reads it
-      await localDataSource.cacheSubmissionDetail(result);
-      return Right(result);
+
+      try {
+        final result = await remoteDataSource.gradeSubmission(
+          submissionId: submissionId,
+          data: {
+            'score': score,
+            if (feedback != null) 'feedback': feedback,
+          },
+        );
+        await localDataSource.cacheSubmissionDetail(result);
+        return Right(result);
+      } on NetworkException {
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assignmentSubmission,
+          operation: SyncOperation.grade,
+          payload: {
+            'id': submissionId,
+            'score': score,
+            if (feedback != null) 'feedback': feedback,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 3,
+          createdAt: DateTime.now(),
+        ));
+        return Right(optimisticSubmission);
+      }
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
@@ -260,11 +341,66 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
         ));
       }
 
-      final result = await remoteDataSource.returnSubmission(
-          submissionId: submissionId);
-      // Ensure cache is fresh before listener (ref.listen in page) re-reads it
-      await localDataSource.cacheSubmissionDetail(result);
-      return Right(result);
+      final cached = await localDataSource.getCachedSubmission(submissionId);
+      final optimisticSubmission = cached != null
+          ? AssignmentSubmission(
+              id: cached.id,
+              assignmentId: cached.assignmentId,
+              studentId: cached.studentId,
+              studentName: cached.studentName,
+              status: 'returned',
+              textContent: cached.textContent,
+              submittedAt: cached.submittedAt,
+              score: cached.score,
+              feedback: cached.feedback,
+              gradedAt: cached.gradedAt,
+              gradedBy: cached.gradedBy,
+              files: cached.files,
+              createdAt: cached.createdAt,
+              updatedAt: DateTime.now(),
+              cachedAt: DateTime.now(),
+              needsSync: true,
+            )
+          : AssignmentSubmission(
+              id: submissionId,
+              assignmentId: '',
+              studentId: '',
+              studentName: '',
+              status: 'returned',
+              files: const [],
+              textContent: null,
+              score: null,
+              feedback: null,
+              submittedAt: DateTime.now(),
+              gradedAt: null,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+              needsSync: true,
+              cachedAt: DateTime.now(),
+            );
+
+      await localDataSource.cacheSubmissionDetail(
+        _toSubmissionModel(optimisticSubmission),
+      );
+
+      try {
+        final result = await remoteDataSource.returnSubmission(
+            submissionId: submissionId);
+        await localDataSource.cacheSubmissionDetail(result);
+        return Right(result);
+      } on NetworkException {
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assignmentSubmission,
+          operation: SyncOperation.update,
+          payload: {'id': submissionId, 'action': 'return'},
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 3,
+          createdAt: DateTime.now(),
+        ));
+        return Right(optimisticSubmission);
+      }
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
@@ -312,15 +448,59 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
         ));
       }
 
-      RepoLogger.instance.warn('[CREATE_SUBMISSION] ONLINE PATH — calling remote');
-      final result = await remoteDataSource.createSubmission(
+      final studentId = await storageService.getUserId() ?? '';
+      final tempId = const Uuid().v4();
+      final now = DateTime.now();
+      final optimisticSubmission = AssignmentSubmission(
+        id: tempId,
         assignmentId: assignmentId,
+        studentId: studentId,
+        studentName: '',
+        status: 'draft',
         textContent: textContent,
+        score: null,
+        feedback: null,
+        files: const [],
+        submittedAt: null,
+        gradedAt: null,
+        createdAt: now,
+        updatedAt: now,
+        needsSync: true,
+        cachedAt: now,
       );
-      RepoLogger.instance.warn('[CREATE_SUBMISSION] ONLINE SUCCESS — id=${result.id}');
-      // Cache submission for offline access (Fix 6)
-      unawaited(localDataSource.cacheSubmissionDetail(result));
-      return Right(result);
+
+      await localDataSource.cacheSubmissionDetail(
+        _toSubmissionModel(optimisticSubmission),
+      );
+
+      RepoLogger.instance.warn('[CREATE_SUBMISSION] ONLINE PATH — calling remote');
+      try {
+        final result = await remoteDataSource.createSubmission(
+          assignmentId: assignmentId,
+          textContent: textContent,
+        );
+        RepoLogger.instance.warn('[CREATE_SUBMISSION] ONLINE SUCCESS — id=${result.id}');
+        await localDataSource.cacheSubmissionDetail(result);
+        return Right(result);
+      } on NetworkException catch (e) {
+        RepoLogger.instance.warn('[CREATE_SUBMISSION] Online path network fallback — enqueueing. msg=${e.message}');
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assignmentSubmission,
+          operation: SyncOperation.create,
+          payload: {
+            'id': tempId,
+            'assignment_id': assignmentId,
+            'student_id': studentId,
+            if (textContent != null) 'text_content': textContent,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 3,
+          createdAt: DateTime.now(),
+        ));
+        return Right(optimisticSubmission);
+      }
     } on ServerException catch (e) {
       RepoLogger.instance.error('[CREATE_SUBMISSION] ServerException — ${e.message}');
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
@@ -370,10 +550,10 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
     void Function(int sent, int total)? onSendProgress,
   }) async {
     try {
-      if (!serverReachabilityService.isServerReachable) {
-        final size = await fileSize(filePath);
-        final mime = mimeType(filePath);
+      final size = await fileSize(filePath);
+      final mime = mimeType(filePath);
 
+      if (!serverReachabilityService.isServerReachable) {
         final localFileId = const Uuid().v4();
         await localDataSource.stageFileForUpload(
           submissionId: submissionId,
@@ -395,15 +575,50 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
         ));
       }
 
-      final result = await remoteDataSource.uploadFile(
+      final tempId = const Uuid().v4();
+      final optimisticFile = SubmissionFileModel(
+        id: tempId,
         submissionId: submissionId,
-        filePath: filePath,
         fileName: fileName,
-        onSendProgress: onSendProgress,
+        fileType: mime,
+        fileSize: size,
+        uploadedAt: DateTime.now(),
+        localPath: filePath,
+        needsSync: true,
+        cachedAt: DateTime.now(),
       );
-      // Fix 1: Cache uploaded file locally for immediate visibility
-      unawaited(localDataSource.cacheSubmissionFile(submissionId, result));
-      return Right(result);
+      await localDataSource.cacheSubmissionFile(submissionId, optimisticFile);
+
+      try {
+        final result = await remoteDataSource.uploadFile(
+          submissionId: submissionId,
+          filePath: filePath,
+          fileName: fileName,
+          onSendProgress: onSendProgress,
+        );
+        await localDataSource.softDeleteSubmissionFile(tempId);
+        await localDataSource.cacheSubmissionFile(submissionId, result);
+        return Right(result);
+      } on NetworkException {
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.submissionFile,
+          operation: SyncOperation.upload,
+          payload: {
+            'file_id': tempId,
+            'submission_id': submissionId,
+            'local_path': filePath,
+            'file_name': fileName,
+            'file_type': mime,
+            'file_size': size,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 3,
+          createdAt: DateTime.now(),
+        ));
+        return Right(optimisticFile);
+      }
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
@@ -416,6 +631,8 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
   @override
   ResultVoid deleteFile({required String fileId}) async {
     try {
+      await localDataSource.softDeleteSubmissionFile(fileId);
+
       if (!serverReachabilityService.isServerReachable) {
         await syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),
@@ -427,13 +644,25 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
           maxRetries: 5,
           createdAt: DateTime.now(),
         ));
-        // Fix 5: Soft-delete locally so file disappears from UI immediately
-        await localDataSource.softDeleteSubmissionFile(fileId);
         return const Right(null);
       }
 
-      await remoteDataSource.deleteFile(fileId: fileId);
-      return const Right(null);
+      try {
+        await remoteDataSource.deleteFile(fileId: fileId);
+        return const Right(null);
+      } on NetworkException {
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.submissionFile,
+          operation: SyncOperation.delete,
+          payload: {'file_id': fileId},
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
+        ));
+        return const Right(null);
+      }
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
@@ -485,31 +714,71 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
         ));
       }
 
+      final cached = await localDataSource.getCachedSubmission(submissionId);
+      final assignmentId = cached?.assignmentId ?? '';
+      final optimisticSubmission = AssignmentSubmission(
+        id: submissionId,
+        assignmentId: assignmentId,
+        studentId: cached?.studentId ?? '',
+        studentName: cached?.studentName ?? '',
+        status: 'submitted',
+        files: cached?.files ?? const [],
+        textContent: cached?.textContent,
+        score: cached?.score,
+        feedback: cached?.feedback,
+        submittedAt: DateTime.now(),
+        gradedAt: cached?.gradedAt,
+        createdAt: cached?.createdAt ?? DateTime.now(),
+        updatedAt: DateTime.now(),
+        needsSync: true,
+        cachedAt: DateTime.now(),
+      );
+      await localDataSource.cacheSubmissionDetail(
+        _toSubmissionModel(optimisticSubmission),
+      );
+
       RepoLogger.instance.warn('[SUBMIT_ASSIGNMENT] ONLINE PATH — calling remote');
-      final result = await remoteDataSource.submitAssignment(
-          submissionId: submissionId);
-      RepoLogger.instance.warn('[SUBMIT_ASSIGNMENT] ONLINE SUCCESS — id=${result.id} status=${result.status}');
-
-      // Best-effort: cache submission detail for offline viewing
       try {
-        await localDataSource.cacheSubmissions(
-          result.assignmentId,
-          [SubmissionListItemModel(
-            id: result.id,
-            studentId: result.studentId,
-            studentName: result.studentName,
-            studentUsername: '', // Not available from detail response
-            status: result.status,
-            submittedAt: result.submittedAt,
-            // isLate field removed - no longer needed
-            score: result.score,
-          )],
-        );
-      } catch (_) {
-        // Silently fail — don't block submission if cache write fails
-      }
+        final result = await remoteDataSource.submitAssignment(
+            submissionId: submissionId);
+        RepoLogger.instance.warn('[SUBMIT_ASSIGNMENT] ONLINE SUCCESS — id=${result.id} status=${result.status}');
 
-      return Right(result);
+        try {
+          await localDataSource.cacheSubmissions(
+            result.assignmentId,
+            [SubmissionListItemModel(
+              id: result.id,
+              studentId: result.studentId,
+              studentName: result.studentName,
+              studentUsername: '',
+              status: result.status,
+              submittedAt: result.submittedAt,
+              score: result.score,
+            )],
+          );
+        } catch (_) {}
+
+        await localDataSource.cacheSubmissionDetail(result);
+        return Right(result);
+      } on NetworkException catch (e) {
+        RepoLogger.instance.warn('[SUBMIT_ASSIGNMENT] Online path network fallback — enqueueing. msg=${e.message}');
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assignmentSubmission,
+          operation: SyncOperation.submit,
+          payload: {
+            'submission_id': submissionId,
+            'assignment_id': assignmentId,
+            if (optimisticSubmission.textContent != null && optimisticSubmission.textContent!.isNotEmpty)
+              'text_content': optimisticSubmission.textContent,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 3,
+          createdAt: DateTime.now(),
+        ));
+        return Right(optimisticSubmission);
+      }
     } on ServerException catch (e) {
       RepoLogger.instance.error('[SUBMIT_ASSIGNMENT] ServerException — ${e.message}');
       return Left(ServerFailure(e.message, statusCode: e.statusCode));

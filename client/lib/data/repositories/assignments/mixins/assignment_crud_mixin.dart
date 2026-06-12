@@ -106,26 +106,83 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
         return Right(optimisticAssignment);
       }
 
-      final result = await remoteDataSource.createAssignment(
+      final localId = const Uuid().v4();
+      final localNow = DateTime.now();
+      final optimisticModel = AssignmentModel(
+        id: localId,
         classId: classId,
-        data: {
-          'title': title,
-          'instructions': instructions,
-          'total_points': totalPoints,
-          'allows_text_submission': allowsTextSubmission,
-          'allows_file_submission': allowsFileSubmission,
-          if (allowedFileTypes != null) 'allowed_file_types': allowedFileTypes,
-          if (maxFileSizeMb != null) 'max_file_size_mb': maxFileSizeMb,
-          'due_at': dueAt,
-          'is_published': isPublished,
-          if (gradingPeriodNumber != null) 'grading_period_number': gradingPeriodNumber,
-          if (component != null) 'component': component,
-          if (noSubmissionRequired != null) 'no_submission_required': noSubmissionRequired,
-        },
+        title: title,
+        instructions: instructions,
+        totalPoints: totalPoints,
+        allowsTextSubmission: allowsTextSubmission,
+        allowsFileSubmission: allowsFileSubmission,
+        allowedFileTypes: allowedFileTypes,
+        maxFileSizeMb: maxFileSizeMb,
+        dueAt: DateTime.parse(dueAt),
+        isPublished: isPublished,
+        orderIndex: 0,
+        submissionCount: 0,
+        gradedCount: 0,
+        gradingPeriodNumber: gradingPeriodNumber,
+        component: component,
+        createdAt: localNow,
+        updatedAt: localNow,
+        needsSync: true,
       );
-      // Cache the assignment locally so it persists across app restarts
-      await localDataSource.cacheAssignments([result]);
-      return Right(result);
+
+      await localDataSource.cacheAssignments([optimisticModel]);
+
+      try {
+        final result = await remoteDataSource.createAssignment(
+          classId: classId,
+          data: {
+            'title': title,
+            'instructions': instructions,
+            'total_points': totalPoints,
+            'allows_text_submission': allowsTextSubmission,
+            'allows_file_submission': allowsFileSubmission,
+            if (allowedFileTypes != null) 'allowed_file_types': allowedFileTypes,
+            if (maxFileSizeMb != null) 'max_file_size_mb': maxFileSizeMb,
+            'due_at': dueAt,
+            'is_published': isPublished,
+            if (gradingPeriodNumber != null) 'grading_period_number': gradingPeriodNumber,
+            if (component != null) 'component': component,
+            if (noSubmissionRequired != null) 'no_submission_required': noSubmissionRequired,
+          },
+        );
+        if (result.id != localId) {
+          await localDataSource.deleteAssignmentLocal(assignmentId: localId);
+        }
+        await localDataSource.cacheAssignments([result]);
+        return Right(result);
+      } on NetworkException {
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assignment,
+          operation: SyncOperation.create,
+          payload: {
+            'id': localId,
+            'class_id': classId,
+            'title': title,
+            'instructions': instructions,
+            'total_points': totalPoints,
+            'allows_text_submission': allowsTextSubmission,
+            'allows_file_submission': allowsFileSubmission,
+            if (allowedFileTypes != null) 'allowed_file_types': allowedFileTypes,
+            if (maxFileSizeMb != null) 'max_file_size_mb': maxFileSizeMb,
+            'due_at': dueAt,
+            'is_published': isPublished,
+            if (gradingPeriodNumber != null) 'grading_period_number': gradingPeriodNumber,
+            if (component != null) 'component': component,
+            if (noSubmissionRequired != null) 'no_submission_required': noSubmissionRequired,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
+        ));
+        return Right(optimisticModel);
+      }
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
@@ -148,6 +205,48 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
     String? dueAt,
   }) async {
     try {
+      final cached = await localDataSource.getCachedAssignmentDetail(assignmentId);
+      final optimisticAssignment = cached.copyWith(
+        title: title,
+        instructions: instructions,
+        totalPoints: totalPoints,
+        allowsTextSubmission: allowsTextSubmission,
+        allowsFileSubmission: allowsFileSubmission,
+        allowedFileTypes: allowedFileTypes,
+        maxFileSizeMb: maxFileSizeMb,
+        dueAt: dueAt != null ? DateTime.parse(dueAt) : null,
+        updatedAt: DateTime.now(),
+        needsSync: true,
+      );
+
+      await localDataSource.cacheAssignmentDetail(
+        AssignmentModel(
+          id: optimisticAssignment.id,
+          classId: optimisticAssignment.classId,
+          title: optimisticAssignment.title,
+          instructions: optimisticAssignment.instructions,
+          totalPoints: optimisticAssignment.totalPoints,
+          allowsTextSubmission: optimisticAssignment.allowsTextSubmission,
+          allowsFileSubmission: optimisticAssignment.allowsFileSubmission,
+          allowedFileTypes: optimisticAssignment.allowedFileTypes,
+          maxFileSizeMb: optimisticAssignment.maxFileSizeMb,
+          dueAt: optimisticAssignment.dueAt,
+          isPublished: optimisticAssignment.isPublished,
+          orderIndex: optimisticAssignment.orderIndex,
+          submissionCount: optimisticAssignment.submissionCount,
+          gradedCount: optimisticAssignment.gradedCount,
+          submissionStatus: optimisticAssignment.submissionStatus,
+          submissionId: optimisticAssignment.submissionId,
+          score: optimisticAssignment.score,
+          gradingPeriodNumber: optimisticAssignment.gradingPeriodNumber,
+          component: optimisticAssignment.component,
+          createdAt: optimisticAssignment.createdAt,
+          updatedAt: optimisticAssignment.updatedAt,
+          cachedAt: optimisticAssignment.cachedAt,
+          needsSync: true,
+        ),
+      );
+
       if (!serverReachabilityService.isServerReachable) {
         await syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),
@@ -170,42 +269,48 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
           createdAt: DateTime.now(),
         ));
 
-        return Right(Assignment(
-          id: assignmentId,
-          classId: '',
-          title: title ?? '',
-          instructions: instructions ?? '',
-          totalPoints: totalPoints ?? 0,
-          allowsTextSubmission: allowsTextSubmission ?? false,
-          allowsFileSubmission: allowsFileSubmission ?? false,
-          allowedFileTypes: allowedFileTypes,
-          maxFileSizeMb: maxFileSizeMb,
-          dueAt: dueAt != null ? DateTime.parse(dueAt) : DateTime.now(),
-          isPublished: false,
-          orderIndex: 0,
-          submissionCount: 0,
-          gradedCount: 0,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ));
+        return Right(optimisticAssignment);
       }
 
-      final result = await remoteDataSource.updateAssignment(
-        assignmentId: assignmentId,
-        data: {
-          if (title != null) 'title': title,
-          if (instructions != null) 'instructions': instructions,
-          if (totalPoints != null) 'total_points': totalPoints,
-          if (allowsTextSubmission != null) 'allows_text_submission': allowsTextSubmission,
-          if (allowsFileSubmission != null) 'allows_file_submission': allowsFileSubmission,
-          if (allowedFileTypes != null) 'allowed_file_types': allowedFileTypes,
-          if (maxFileSizeMb != null) 'max_file_size_mb': maxFileSizeMb,
-          if (dueAt != null) 'due_at': dueAt,
-        },
-      );
-      // Cache the updated assignment locally so changes persist across app restarts
-      await localDataSource.cacheAssignments([result]);
-      return Right(result);
+      try {
+        final result = await remoteDataSource.updateAssignment(
+          assignmentId: assignmentId,
+          data: {
+            if (title != null) 'title': title,
+            if (instructions != null) 'instructions': instructions,
+            if (totalPoints != null) 'total_points': totalPoints,
+            if (allowsTextSubmission != null) 'allows_text_submission': allowsTextSubmission,
+            if (allowsFileSubmission != null) 'allows_file_submission': allowsFileSubmission,
+            if (allowedFileTypes != null) 'allowed_file_types': allowedFileTypes,
+            if (maxFileSizeMb != null) 'max_file_size_mb': maxFileSizeMb,
+            if (dueAt != null) 'due_at': dueAt,
+          },
+        );
+        await localDataSource.cacheAssignments([result]);
+        return Right(result);
+      } on NetworkException {
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assignment,
+          operation: SyncOperation.update,
+          payload: {
+            'id': assignmentId,
+            if (title != null) 'title': title,
+            if (instructions != null) 'instructions': instructions,
+            if (totalPoints != null) 'total_points': totalPoints,
+            if (allowsTextSubmission != null) 'allows_text_submission': allowsTextSubmission,
+            if (allowsFileSubmission != null) 'allows_file_submission': allowsFileSubmission,
+            if (allowedFileTypes != null) 'allowed_file_types': allowedFileTypes,
+            if (maxFileSizeMb != null) 'max_file_size_mb': maxFileSizeMb,
+            if (dueAt != null) 'due_at': dueAt,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
+        ));
+        return Right(optimisticAssignment);
+      }
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
@@ -218,6 +323,8 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
   @override
   ResultVoid deleteAssignment({required String assignmentId}) async {
     try {
+      await localDataSource.deleteAssignmentLocal(assignmentId: assignmentId);
+
       if (!serverReachabilityService.isServerReachable) {
         await syncQueue.enqueue(SyncQueueEntry(
           id: const Uuid().v4(),
@@ -229,15 +336,25 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
           maxRetries: 5,
           createdAt: DateTime.now(),
         ));
-        // Soft-delete the assignment locally so it's not visible in the UI
-        await localDataSource.deleteAssignmentLocal(assignmentId: assignmentId);
         return const Right(null);
       }
 
-      await remoteDataSource.deleteAssignment(assignmentId: assignmentId);
-      // Update local cache to mark assignment as deleted
-      await localDataSource.deleteAssignmentLocal(assignmentId: assignmentId);
-      return const Right(null);
+      try {
+        await remoteDataSource.deleteAssignment(assignmentId: assignmentId);
+        return const Right(null);
+      } on NetworkException {
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assignment,
+          operation: SyncOperation.delete,
+          payload: {'id': assignmentId},
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
+        ));
+        return const Right(null);
+      }
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
@@ -252,45 +369,23 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
     required String assignmentId,
   }) async {
     try {
+      await localDataSource.markAssignmentPublishedLocally(assignmentId: assignmentId);
+
       if (!serverReachabilityService.isServerReachable) {
-        await syncQueue.enqueue(SyncQueueEntry(
-          id: const Uuid().v4(),
-          entityType: SyncEntityType.assignment,
-          operation: SyncOperation.publish,
-          payload: {'id': assignmentId},
-          status: SyncStatus.pending,
-          retryCount: 0,
-          maxRetries: 5,
-          createdAt: DateTime.now(),
-        ));
-
-        // Persist published state to local DB immediately
-        await localDataSource.markAssignmentPublishedLocally(assignmentId: assignmentId);
-
-        return Right(Assignment(
-          id: assignmentId,
-          classId: '',
-          title: '',
-          instructions: '',
-          totalPoints: 0,
-          allowsTextSubmission: true,
-          allowsFileSubmission: false,
-          allowedFileTypes: null,
-          maxFileSizeMb: null,
-          dueAt: DateTime.now(),
-          isPublished: true,
-          orderIndex: 0,
-          submissionCount: 0,
-          gradedCount: 0,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ));
+        final cached = await localDataSource.getCachedAssignmentDetail(assignmentId);
+        return Right(cached);
       }
 
-      final result = await remoteDataSource.publishAssignment(
-        assignmentId: assignmentId,
-      );
-      return Right(result);
+      try {
+        final result = await remoteDataSource.publishAssignment(
+          assignmentId: assignmentId,
+        );
+        await localDataSource.cacheAssignments([result]);
+        return Right(result);
+      } on NetworkException {
+        final cached = await localDataSource.getCachedAssignmentDetail(assignmentId);
+        return Right(cached);
+      }
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
@@ -305,33 +400,23 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
     required String assignmentId,
   }) async {
     try {
-      if (!serverReachabilityService.isServerReachable) {
-        await localDataSource.markAssignmentUnpublishedLocally(assignmentId: assignmentId);
+      await localDataSource.markAssignmentUnpublishedLocally(assignmentId: assignmentId);
 
-        return Right(Assignment(
-          id: assignmentId,
-          classId: '',
-          title: '',
-          instructions: '',
-          totalPoints: 0,
-          allowsTextSubmission: true,
-          allowsFileSubmission: false,
-          allowedFileTypes: null,
-          maxFileSizeMb: null,
-          dueAt: DateTime.now(),
-          isPublished: false,
-          orderIndex: 0,
-          submissionCount: 0,
-          gradedCount: 0,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ));
+      if (!serverReachabilityService.isServerReachable) {
+        final cached = await localDataSource.getCachedAssignmentDetail(assignmentId);
+        return Right(cached);
       }
 
-      final result = await remoteDataSource.unpublishAssignment(
-        assignmentId: assignmentId,
-      );
-      return Right(result);
+      try {
+        final result = await remoteDataSource.unpublishAssignment(
+          assignmentId: assignmentId,
+        );
+        await localDataSource.cacheAssignments([result]);
+        return Right(result);
+      } on NetworkException {
+        final cached = await localDataSource.getCachedAssignmentDetail(assignmentId);
+        return Right(cached);
+      }
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
@@ -349,6 +434,10 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
     try {
       if (!serverReachabilityService.isServerReachable) {
         for (int i = 0; i < assignmentIds.length; i++) {
+          await localDataSource.updateAssignmentOrderLocally(
+            assignmentId: assignmentIds[i],
+            orderIndex: i,
+          );
           await syncQueue.enqueue(SyncQueueEntry(
             id: const Uuid().v4(),
             entityType: SyncEntityType.assignment,
@@ -362,11 +451,33 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
         }
         return const Right(null);
       }
-      await remoteDataSource.reorderAllAssignments(
-        classId: classId,
-        assignmentIds: assignmentIds,
-      );
-      return const Right(null);
+      for (int i = 0; i < assignmentIds.length; i++) {
+        await localDataSource.updateAssignmentOrderLocally(
+          assignmentId: assignmentIds[i],
+          orderIndex: i,
+        );
+      }
+      try {
+        await remoteDataSource.reorderAllAssignments(
+          classId: classId,
+          assignmentIds: assignmentIds,
+        );
+        return const Right(null);
+      } on NetworkException {
+        for (int i = 0; i < assignmentIds.length; i++) {
+          await syncQueue.enqueue(SyncQueueEntry(
+            id: const Uuid().v4(),
+            entityType: SyncEntityType.assignment,
+            operation: SyncOperation.update,
+            payload: {'id': assignmentIds[i], 'order_index': i},
+            status: SyncStatus.pending,
+            retryCount: 0,
+            maxRetries: 5,
+            createdAt: DateTime.now(),
+          ));
+        }
+        return const Right(null);
+      }
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
