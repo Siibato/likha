@@ -97,17 +97,6 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
       selectedQuarter: _selectedQuarter,
       ref: ref,
     );
-
-    // Reload items and scores after dialog closes
-    Future.delayed(Duration.zero, () {
-      ref.read(gradeItemsProvider.notifier).loadItems(widget.classId).then((_) {
-        final itemsState = ref.read(gradeItemsProvider);
-        if (itemsState.items.isNotEmpty) {
-          final itemIds = itemsState.items.map((i) => i.id).toList();
-          ref.read(gradeScoresProvider.notifier).loadScoresForItems(itemIds);
-        }
-      });
-    });
   }
 
   void _handleAddColumn(String component) {

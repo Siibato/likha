@@ -100,26 +100,14 @@ class GradingConfigNotifier extends StateNotifier<GradingConfigState> {
   Future<void> setupGrading(SetupGradingParams params) async {
     state = state.copyWith(isLoading: true, error: null, successMessage: null);
     final result = await _setupGrading(params);
-    String? errorMsg;
     result.fold(
-      (failure) => errorMsg = AppErrorMapper.fromFailure(failure),
-      (_) {},
-    );
-    if (errorMsg != null) {
-      state = state.copyWith(isLoading: false, error: errorMsg);
-      return;
-    }
-    final configResult = await _getGradingConfig(params.classId);
-    configResult.fold(
+      (failure) => state = state.copyWith(
+        isLoading: false,
+        error: AppErrorMapper.fromFailure(failure),
+      ),
       (_) => state = state.copyWith(
         isLoading: false,
-        isConfigured: true, // write succeeded even if re-read failed
-        successMessage: 'Grading configured',
-      ),
-      (configs) => state = state.copyWith(
-        isLoading: false,
         isConfigured: true,
-        configs: configs,
         successMessage: 'Grading configured',
       ),
     );
@@ -129,10 +117,36 @@ class GradingConfigNotifier extends StateNotifier<GradingConfigState> {
     required String classId,
     required List<Map<String, dynamic>> configs,
   }) async {
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    final previousConfigs = List<GradeConfig>.from(state.configs);
+    // Optimistically apply weight changes to every matching config entry
+    final optimisticConfigs = state.configs.map((c) {
+      final incoming = configs.firstWhere(
+        (m) => m['grading_period_number'] == c.gradingPeriodNumber,
+        orElse: () => const {},
+      );
+      if (incoming.isEmpty) return c;
+      return GradeConfig(
+        id: c.id,
+        classId: c.classId,
+        gradingPeriodNumber: c.gradingPeriodNumber,
+        wwWeight: (incoming['ww_weight'] as num?)?.toDouble() ?? c.wwWeight,
+        ptWeight: (incoming['pt_weight'] as num?)?.toDouble() ?? c.ptWeight,
+        qaWeight: (incoming['qa_weight'] as num?)?.toDouble() ?? c.qaWeight,
+      );
+    }).toList();
+    state = state.copyWith(
+      isLoading: true,
+      error: null,
+      successMessage: null,
+      configs: optimisticConfigs,
+    );
     final result = await _updateGradingConfig(classId: classId, configs: configs);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
+      (failure) => state = state.copyWith(
+        isLoading: false,
+        configs: previousConfigs,
+        error: AppErrorMapper.fromFailure(failure),
+      ),
       (_) => state = state.copyWith(
         isLoading: false,
         successMessage: 'Grading config updated',
@@ -227,26 +241,62 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
   }
 
   Future<void> createItem(String classId, Map<String, dynamic> data) async {
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    final previousItems = List<GradeItem>.from(state.items);
+    final now = DateTime.now();
+    final tempItem = GradeItem(
+      id: 'optimistic_${now.millisecondsSinceEpoch}',
+      classId: classId,
+      title: (data['title'] as String?) ?? '',
+      component: (data['component'] as String?) ?? '',
+      gradingPeriodNumber: (data['grading_period_number'] as int?) ?? state.currentQuarter,
+      totalPoints: (data['total_points'] as num?)?.toDouble() ?? 0.0,
+      sourceType: (data['source_type'] as String?) ?? 'manual',
+      sourceId: data['source_id'] as String?,
+      orderIndex: (data['order_index'] as int?) ?? state.items.length,
+      createdAt: now,
+      updatedAt: now,
+    );
+    state = state.copyWith(
+      isLoading: true,
+      error: null,
+      successMessage: null,
+      items: [...state.items, tempItem],
+    );
     final result = await _createGradeItem(classId: classId, data: data);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
+      (failure) => state = state.copyWith(
+        isLoading: false,
+        items: previousItems,
+        error: AppErrorMapper.fromFailure(failure),
+      ),
       (item) => state = state.copyWith(
         isLoading: false,
-        items: [...state.items, item],
+        items: [
+          ...state.items.where((i) => i.id != tempItem.id),
+          item,
+        ],
         successMessage: 'Grade item created',
       ),
     );
   }
 
   Future<void> deleteItem(String id) async {
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    final previousItems = List<GradeItem>.from(state.items);
+    state = state.copyWith(
+      isLoading: true,
+      error: null,
+      successMessage: null,
+      items: state.items.where((i) => i.id != id).toList(),
+    );
     final result = await _deleteGradeItem(id);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
+      (failure) => state = state.copyWith(
+        isLoading: false,
+        items: previousItems,
+        error: AppErrorMapper.fromFailure(failure),
+      ),
       (_) => state = state.copyWith(
         isLoading: false,
-        items: state.items.where((i) => i.id != id).toList(),
         successMessage: 'Grade item deleted',
       ),
     );
@@ -584,20 +634,11 @@ class GradeScoresNotifier extends StateNotifier<GradeScoresState> {
     String gradeItemId,
     List<Map<String, dynamic>> scores,
   ) async {
-    state = state.copyWith(error: null, successMessage: null);
-    final result = await _saveScores(gradeItemId: gradeItemId, scores: scores);
-    String? errorMsg;
-    result.fold(
-      (failure) => errorMsg = AppErrorMapper.fromFailure(failure),
-      (_) {},
+    final previousScoresByItem = Map<String, List<GradeScore>>.from(
+      state.scoresByItem.map((k, v) => MapEntry(k, List<GradeScore>.from(v))),
     );
-    if (errorMsg != null) {
-      state = state.copyWith(isLoading: false, error: errorMsg);
-      return;
-    }
-    // Optimistically update the in-memory map so the cell shows the new value
-    // immediately. The save is sync-queued and will reach the server later;
-    // re-fetching from remote right now would return the stale (pre-save) value.
+    // Optimistically update the in-memory map before the async call so the
+    // cell shows the new value immediately.
     final updated = Map<String, List<GradeScore>>.from(state.scoresByItem);
     final existing = List<GradeScore>.from(updated[gradeItemId] ?? []);
     for (final s in scores) {
@@ -627,53 +668,103 @@ class GradeScoresNotifier extends StateNotifier<GradeScoresState> {
       }
     }
     updated[gradeItemId] = existing;
-    state = state.copyWith(
-      isLoading: false,
-      scoresByItem: updated,
-      successMessage: 'Scores saved',
+    state = state.copyWith(error: null, successMessage: null, scoresByItem: updated);
+    final result = await _saveScores(gradeItemId: gradeItemId, scores: scores);
+    result.fold(
+      (failure) => state = state.copyWith(
+        isLoading: false,
+        scoresByItem: previousScoresByItem,
+        error: AppErrorMapper.fromFailure(failure),
+      ),
+      (_) => state = state.copyWith(
+        isLoading: false,
+        successMessage: 'Scores saved',
+      ),
     );
   }
 
   Future<void> setOverride(String scoreId, double overrideScore) async {
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    final previousScoresByItem = Map<String, List<GradeScore>>.from(
+      state.scoresByItem.map((k, v) => MapEntry(k, List<GradeScore>.from(v))),
+    );
+    // Optimistically apply override immediately
+    final updated = Map<String, List<GradeScore>>.from(state.scoresByItem);
+    for (final entry in updated.entries) {
+      final idx = entry.value.indexWhere((s) => s.id == scoreId);
+      if (idx >= 0) {
+        final old = entry.value[idx];
+        final newList = List<GradeScore>.from(entry.value);
+        newList[idx] = GradeScore(
+          id: old.id,
+          gradeItemId: old.gradeItemId,
+          studentId: old.studentId,
+          score: old.score,
+          isAutoPopulated: old.isAutoPopulated,
+          overrideScore: overrideScore,
+        );
+        updated[entry.key] = newList;
+        break;
+      }
+    }
+    state = state.copyWith(
+      isLoading: true,
+      error: null,
+      successMessage: null,
+      scoresByItem: updated,
+    );
     final result = await _setScoreOverride(
       scoreId: scoreId,
       overrideScore: overrideScore,
     );
-    String? errorMsg;
     result.fold(
-      (failure) => errorMsg = AppErrorMapper.fromFailure(failure),
-      (_) {},
-    );
-    if (errorMsg != null) {
-      state = state.copyWith(isLoading: false, error: errorMsg);
-      return;
-    }
-    // Find which item this score belongs to and reload its scores so the
-    // override is visible in the grid immediately.
-    final itemId = state.scoresByItem.entries
-        .where((e) => e.value.any((s) => s.id == scoreId))
-        .map((e) => e.key)
-        .firstOrNull;
-    if (itemId != null) {
-      final fresh = await _getScoresByItem(itemId);
-      final updated = Map<String, List<GradeScore>>.from(state.scoresByItem);
-      fresh.fold((_) {}, (newScores) => updated[itemId] = newScores);
-      state = state.copyWith(
+      (failure) => state = state.copyWith(
         isLoading: false,
-        scoresByItem: updated,
+        scoresByItem: previousScoresByItem,
+        error: AppErrorMapper.fromFailure(failure),
+      ),
+      (_) => state = state.copyWith(
+        isLoading: false,
         successMessage: 'Score override applied',
-      );
-    } else {
-      state = state.copyWith(isLoading: false, successMessage: 'Score override applied');
-    }
+      ),
+    );
   }
 
   Future<void> clearOverride(String scoreId) async {
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    final previousScoresByItem = Map<String, List<GradeScore>>.from(
+      state.scoresByItem.map((k, v) => MapEntry(k, List<GradeScore>.from(v))),
+    );
+    // Optimistically clear the override immediately
+    final updated = Map<String, List<GradeScore>>.from(state.scoresByItem);
+    for (final entry in updated.entries) {
+      final idx = entry.value.indexWhere((s) => s.id == scoreId);
+      if (idx >= 0) {
+        final old = entry.value[idx];
+        final newList = List<GradeScore>.from(entry.value);
+        newList[idx] = GradeScore(
+          id: old.id,
+          gradeItemId: old.gradeItemId,
+          studentId: old.studentId,
+          score: old.score,
+          isAutoPopulated: old.isAutoPopulated,
+          overrideScore: null,
+        );
+        updated[entry.key] = newList;
+        break;
+      }
+    }
+    state = state.copyWith(
+      isLoading: true,
+      error: null,
+      successMessage: null,
+      scoresByItem: updated,
+    );
     final result = await _clearScoreOverride(scoreId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
+      (failure) => state = state.copyWith(
+        isLoading: false,
+        scoresByItem: previousScoresByItem,
+        error: AppErrorMapper.fromFailure(failure),
+      ),
       (_) => state = state.copyWith(
         isLoading: false,
         successMessage: 'Score override cleared',
@@ -788,6 +879,20 @@ class PeriodGradesNotifier extends StateNotifier<PeriodGradesState> {
     required int quarter,
     required int transmutedGrade,
   }) async {
+    final previousSummary = state.summary != null
+        ? List<Map<String, dynamic>>.from(state.summary!)
+        : null;
+    // Optimistically update the summary before the async call
+    final currentSummary = state.summary;
+    if (currentSummary != null) {
+      final optimistic = currentSummary.map((row) {
+        if (row['student_id'] == studentId) {
+          return {...row, 'transmuted_grade': transmutedGrade.toDouble()};
+        }
+        return row;
+      }).toList();
+      state = state.copyWith(summary: optimistic);
+    }
     final result = await _updatePeriodGrade(
       classId: classId,
       studentId: studentId,
@@ -795,20 +900,11 @@ class PeriodGradesNotifier extends StateNotifier<PeriodGradesState> {
       transmutedGrade: transmutedGrade,
     );
     result.fold(
-      (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
-      (_) {
-        // Optimistically update the summary in state if loaded
-        final summary = state.summary;
-        if (summary != null) {
-          final updated = summary.map((row) {
-            if (row['student_id'] == studentId) {
-              return {...row, 'transmuted_grade': transmutedGrade.toDouble()};
-            }
-            return row;
-          }).toList();
-          state = state.copyWith(summary: updated);
-        }
-      },
+      (failure) => state = state.copyWith(
+        summary: previousSummary,
+        error: AppErrorMapper.fromFailure(failure),
+      ),
+      (_) {},
     );
   }
 }

@@ -135,9 +135,6 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
       selectedQuarter: _selectedQuarter,
       ref: ref,
     );
-
-    // Reload items and scores after dialog closes
-    Future.delayed(Duration.zero, () => _loadItemsAndSummary());
   }
 
   void _showExportDialog(BuildContext context, {required bool isDownload}) {
