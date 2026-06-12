@@ -79,6 +79,23 @@ mixin LearningMaterialCrudMixin on LearningMaterialRepositoryBase {
           if (contentText != null) 'content_text': contentText,
         },
       );
+
+      try {
+        final cached = await localDataSource.getCachedMaterials(classId);
+        final model = LearningMaterialModel(
+          id: result.id,
+          classId: result.classId,
+          title: result.title,
+          description: result.description,
+          contentText: result.contentText,
+          orderIndex: result.orderIndex,
+          fileCount: result.fileCount,
+          createdAt: result.createdAt,
+          updatedAt: result.updatedAt,
+        );
+        await localDataSource.cacheMaterials([model, ...cached]);
+      } catch (_) {}
+
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
@@ -152,6 +169,22 @@ mixin LearningMaterialCrudMixin on LearningMaterialRepositoryBase {
           if (contentText != null) 'content_text': contentText,
         },
       );
+
+      try {
+        final updatedModel = LearningMaterialModel(
+          id: result.id,
+          classId: result.classId,
+          title: result.title,
+          description: result.description,
+          contentText: result.contentText,
+          orderIndex: result.orderIndex,
+          fileCount: result.fileCount,
+          createdAt: result.createdAt,
+          updatedAt: result.updatedAt,
+        );
+        await localDataSource.cacheMaterials([updatedModel]);
+      } catch (_) {}
+
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
@@ -233,6 +266,23 @@ mixin LearningMaterialCrudMixin on LearningMaterialRepositoryBase {
         materialId: materialId,
         newOrderIndex: newOrderIndex,
       );
+
+      try {
+        final existing = await localDataSource.getCachedMaterialDetail(materialId);
+        final updatedModel = LearningMaterialModel(
+          id: existing.id,
+          classId: existing.classId,
+          title: existing.title,
+          description: existing.description,
+          contentText: existing.contentText,
+          orderIndex: newOrderIndex,
+          fileCount: existing.fileCount,
+          createdAt: existing.createdAt,
+          updatedAt: DateTime.now(),
+        );
+        await localDataSource.cacheMaterials([updatedModel]);
+      } catch (_) {}
+
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
@@ -270,6 +320,27 @@ mixin LearningMaterialCrudMixin on LearningMaterialRepositoryBase {
         classId: classId,
         materialIds: materialIds,
       );
+
+      try {
+        final cached = await localDataSource.getCachedMaterials(classId);
+        final reordered = cached.map((m) {
+          final idx = materialIds.indexOf(m.id);
+          if (idx == -1) return m;
+          return LearningMaterialModel(
+            id: m.id,
+            classId: m.classId,
+            title: m.title,
+            description: m.description,
+            contentText: m.contentText,
+            orderIndex: idx,
+            fileCount: m.fileCount,
+            createdAt: m.createdAt,
+            updatedAt: DateTime.now(),
+          );
+        }).toList();
+        await localDataSource.cacheMaterials(reordered);
+      } catch (_) {}
+
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));

@@ -96,7 +96,26 @@ class AdminNotifier extends StateNotifier<AdminState> {
     required String role,
   }) async {
     ProviderLogger.instance.log('createAccount START: username=$username, fullName=$fullName, role=$role');
-    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    final previousAccounts = List<User>.from(state.accounts);
+
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final tempUser = User(
+      id: tempId,
+      username: username,
+      fullName: fullName,
+      role: role,
+      accountStatus: 'pending_activation',
+      isActive: false,
+      activatedAt: null,
+      createdAt: DateTime.now(),
+    );
+
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      clearSuccess: true,
+      accounts: [tempUser, ...state.accounts],
+    );
 
     final result = await _createAccount(CreateAccountParams(
       username: username,
@@ -111,6 +130,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
         ProviderLogger.instance.log('User message: $userMessage');
         state = state.copyWith(
           isLoading: false,
+          accounts: previousAccounts,
           error: userMessage,
         );
       },
@@ -118,7 +138,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
         ProviderLogger.instance.log('createAccount SUCCESS: user id=${user.id}, username=${user.username}');
         state = state.copyWith(
           isLoading: false,
-          accounts: [user, ...state.accounts],
+          accounts: state.accounts.map((a) => a.id == tempId ? user : a).toList(),
           successMessage: 'Account created successfully',
         );
       },
@@ -126,22 +146,43 @@ class AdminNotifier extends StateNotifier<AdminState> {
   }
 
   Future<void> resetAccount(String userId) async {
-    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    final previousAccounts = List<User>.from(state.accounts);
+
+    final optimisticAccounts = state.accounts.map((a) {
+      if (a.id == userId) {
+        return User(
+          id: a.id,
+          username: a.username,
+          fullName: a.fullName,
+          role: a.role,
+          accountStatus: 'pending_activation',
+          isActive: false,
+          activatedAt: null,
+          createdAt: a.createdAt,
+        );
+      }
+      return a;
+    }).toList();
+
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      clearSuccess: true,
+      accounts: optimisticAccounts,
+    );
 
     final result = await _resetAccount(userId);
 
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
+        accounts: previousAccounts,
         error: AppErrorMapper.fromFailure(failure),
       ),
       (updatedUser) {
-        final updatedAccounts = state.accounts.map((a) {
-          return a.id == updatedUser.id ? updatedUser : a;
-        }).toList();
         state = state.copyWith(
           isLoading: false,
-          accounts: updatedAccounts,
+          accounts: state.accounts.map((a) => a.id == updatedUser.id ? updatedUser : a).toList(),
           successMessage: 'Account reset successfully',
         );
       },
@@ -149,7 +190,30 @@ class AdminNotifier extends StateNotifier<AdminState> {
   }
 
   Future<void> lockAccount(String userId, bool locked, {String? reason}) async {
-    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    final previousAccounts = List<User>.from(state.accounts);
+
+    final optimisticAccounts = state.accounts.map((a) {
+      if (a.id == userId) {
+        return User(
+          id: a.id,
+          username: a.username,
+          fullName: a.fullName,
+          role: a.role,
+          accountStatus: locked ? 'locked' : 'activated',
+          isActive: !locked,
+          activatedAt: a.activatedAt,
+          createdAt: a.createdAt,
+        );
+      }
+      return a;
+    }).toList();
+
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      clearSuccess: true,
+      accounts: optimisticAccounts,
+    );
 
     final result = await _lockAccount(LockAccountParams(
       userId: userId,
@@ -160,15 +224,13 @@ class AdminNotifier extends StateNotifier<AdminState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
+        accounts: previousAccounts,
         error: AppErrorMapper.fromFailure(failure),
       ),
       (updatedUser) {
-        final updatedAccounts = state.accounts.map((a) {
-          return a.id == updatedUser.id ? updatedUser : a;
-        }).toList();
         state = state.copyWith(
           isLoading: false,
-          accounts: updatedAccounts,
+          accounts: state.accounts.map((a) => a.id == updatedUser.id ? updatedUser : a).toList(),
           successMessage: locked ? 'Account locked' : 'Account unlocked',
         );
       },
@@ -201,7 +263,30 @@ class AdminNotifier extends StateNotifier<AdminState> {
     String? fullName,
     String? role,
   }) async {
-    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    final previousAccounts = List<User>.from(state.accounts);
+
+    final optimisticAccounts = state.accounts.map((a) {
+      if (a.id == userId) {
+        return User(
+          id: a.id,
+          username: a.username,
+          fullName: fullName ?? a.fullName,
+          role: role ?? a.role,
+          accountStatus: a.accountStatus,
+          isActive: a.isActive,
+          activatedAt: a.activatedAt,
+          createdAt: a.createdAt,
+        );
+      }
+      return a;
+    }).toList();
+
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      clearSuccess: true,
+      accounts: optimisticAccounts,
+    );
 
     final result = await _updateAccount(UpdateAccountParams(
       userId: userId,
@@ -212,15 +297,13 @@ class AdminNotifier extends StateNotifier<AdminState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
+        accounts: previousAccounts,
         error: AppErrorMapper.fromFailure(failure),
       ),
       (updatedUser) {
-        final updatedAccounts = state.accounts.map((a) {
-          return a.id == updatedUser.id ? updatedUser : a;
-        }).toList();
         state = state.copyWith(
           isLoading: false,
-          accounts: updatedAccounts,
+          accounts: state.accounts.map((a) => a.id == updatedUser.id ? updatedUser : a).toList(),
           successMessage: 'Account updated successfully',
         );
       },
@@ -228,18 +311,25 @@ class AdminNotifier extends StateNotifier<AdminState> {
   }
 
   Future<void> deleteAccount(String userId) async {
-    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    final previousAccounts = List<User>.from(state.accounts);
+
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      clearSuccess: true,
+      accounts: state.accounts.where((a) => a.id != userId).toList(),
+    );
 
     final result = await _deleteAccount(userId: userId);
 
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
+        accounts: previousAccounts,
         error: AppErrorMapper.fromFailure(failure),
       ),
       (_) => state = state.copyWith(
         isLoading: false,
-        accounts: state.accounts.where((a) => a.id != userId).toList(),
         successMessage: 'Account deleted successfully',
       ),
     );

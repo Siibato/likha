@@ -7,6 +7,7 @@ import 'operations/cache/cache_created_account.dart';
 import 'operations/cache/cache_activity_logs.dart';
 import 'operations/cache/clear_activity_logs_for_user.dart';
 import 'operations/cache/clear_all_cache.dart';
+import 'operations/cache/delete_account_locally.dart';
 
 mixin AuthCacheMixin on AuthLocalDataSourceBase {
   @override
@@ -32,6 +33,11 @@ mixin AuthCacheMixin on AuthLocalDataSourceBase {
   @override
   Future<void> clearActivityLogsForUser(String userId) async {
     return clearActivityLogsForUserOp(localDatabase, userId);
+  }
+
+  @override
+  Future<void> deleteAccountLocally(String userId) async {
+    return deleteAccountLocallyOp(localDatabase, userId);
   }
 
   @override

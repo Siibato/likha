@@ -100,6 +100,11 @@ mixin LearningMaterialFileMixin on LearningMaterialRepositoryBase {
       }
 
       await remoteDataSource.deleteFile(fileId: fileId);
+
+      try {
+        await localDataSource.deleteMaterialFileLocally(fileId);
+      } catch (_) {}
+
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));

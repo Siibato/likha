@@ -98,6 +98,22 @@ mixin AuthAdminMixin on AuthRepositoryBase {
         role: role,
       );
       RepoLogger.instance.log('createAccount SUCCESS (online): account created on server');
+
+      try {
+        final cached = await localDataSource.getCachedAccounts();
+        final model = UserModel(
+          id: result.id,
+          username: result.username,
+          fullName: result.fullName,
+          role: result.role,
+          accountStatus: result.accountStatus,
+          isActive: result.isActive,
+          activatedAt: result.activatedAt,
+          createdAt: result.createdAt,
+        );
+        await localDataSource.cacheAccounts([model, ...cached]);
+      } catch (_) {}
+
       return Right(result);
     } on ServerException catch (e) {
       RepoLogger.instance.error('ServerException in createAccount', e);
@@ -245,6 +261,27 @@ mixin AuthAdminMixin on AuthRepositoryBase {
       }
 
       final result = await remoteDataSource.resetAccount(userId: userId);
+
+      try {
+        final cached = await localDataSource.getCachedAccounts();
+        final updated = cached.map((a) {
+          if (a.id == userId) {
+            return UserModel(
+              id: a.id,
+              username: a.username,
+              fullName: a.fullName,
+              role: a.role,
+              accountStatus: 'pending_activation',
+              isActive: false,
+              activatedAt: null,
+              createdAt: a.createdAt,
+            );
+          }
+          return a;
+        }).toList();
+        await localDataSource.cacheAccounts(updated);
+      } catch (_) {}
+
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
@@ -321,6 +358,27 @@ mixin AuthAdminMixin on AuthRepositoryBase {
         locked: locked,
         reason: reason,
       );
+
+      try {
+        final cached = await localDataSource.getCachedAccounts();
+        final updated = cached.map((a) {
+          if (a.id == userId) {
+            return UserModel(
+              id: a.id,
+              username: a.username,
+              fullName: a.fullName,
+              role: a.role,
+              accountStatus: locked ? 'locked' : 'activated',
+              isActive: !locked,
+              activatedAt: a.activatedAt,
+              createdAt: a.createdAt,
+            );
+          }
+          return a;
+        }).toList();
+        await localDataSource.cacheAccounts(updated);
+      } catch (_) {}
+
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
@@ -398,6 +456,27 @@ mixin AuthAdminMixin on AuthRepositoryBase {
         fullName: fullName,
         role: role,
       );
+
+      try {
+        final cached = await localDataSource.getCachedAccounts();
+        final updated = cached.map((a) {
+          if (a.id == userId) {
+            return UserModel(
+              id: a.id,
+              username: a.username,
+              fullName: fullName ?? a.fullName,
+              role: role ?? a.role,
+              accountStatus: a.accountStatus,
+              isActive: a.isActive,
+              activatedAt: a.activatedAt,
+              createdAt: a.createdAt,
+            );
+          }
+          return a;
+        }).toList();
+        await localDataSource.cacheAccounts(updated);
+      } catch (_) {}
+
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
@@ -411,7 +490,31 @@ mixin AuthAdminMixin on AuthRepositoryBase {
   @override
   ResultVoid deleteAccount({required String userId}) async {
     try {
+      if (!serverReachabilityService.isServerReachable) {
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.adminUser,
+          operation: SyncOperation.delete,
+          payload: {'id': userId},
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
+        ));
+
+        try {
+          await localDataSource.deleteAccountLocally(userId);
+        } catch (_) {}
+
+        return const Right(null);
+      }
+
       await remoteDataSource.deleteAccount(userId: userId);
+
+      try {
+        await localDataSource.deleteAccountLocally(userId);
+      } catch (_) {}
+
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));

@@ -153,7 +153,30 @@ class ClassNotifier extends StateNotifier<ClassState> {
     String? teacherFullName,
     bool isAdvisory = false,
   }) async {
-    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    final previousClasses = List<ClassEntity>.from(state.classes);
+
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final tempClass = ClassEntity(
+      id: tempId,
+      title: title,
+      description: description,
+      teacherId: teacherId ?? '',
+      teacherUsername: teacherUsername ?? '',
+      teacherFullName: teacherFullName ?? '',
+      isArchived: false,
+      isAdvisory: isAdvisory,
+      studentCount: 0,
+      gradingPeriodType: null,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      clearSuccess: true,
+      classes: [tempClass, ...state.classes],
+    );
 
     final result = await _createClass(CreateClassParams(
       title: title,
@@ -167,11 +190,12 @@ class ClassNotifier extends StateNotifier<ClassState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
+        classes: previousClasses,
         error: AppErrorMapper.fromFailure(failure),
       ),
       (newClass) => state = state.copyWith(
         isLoading: false,
-        classes: [newClass, ...state.classes],
+        classes: state.classes.map((c) => c.id == tempId ? newClass : c).toList(),
         successMessage: 'Class created successfully',
       ),
     );
@@ -216,7 +240,64 @@ class ClassNotifier extends StateNotifier<ClassState> {
     String? teacherId,
     bool? isAdvisory,
   }) async {
-    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    final previousClasses = List<ClassEntity>.from(state.classes);
+    final previousDetail = state.currentClassDetail;
+
+    final existing = state.classes.firstWhere(
+      (c) => c.id == classId,
+      orElse: () => ClassEntity(
+        id: classId,
+        title: title ?? '',
+        description: description,
+        teacherId: teacherId ?? '',
+        teacherUsername: '',
+        teacherFullName: '',
+        isArchived: false,
+        isAdvisory: isAdvisory ?? false,
+        studentCount: 0,
+        gradingPeriodType: null,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+    );
+
+    final optimisticClass = ClassEntity(
+      id: existing.id,
+      title: title ?? existing.title,
+      description: description ?? existing.description,
+      teacherId: teacherId ?? existing.teacherId,
+      teacherUsername: existing.teacherUsername,
+      teacherFullName: existing.teacherFullName,
+      isArchived: existing.isArchived,
+      isAdvisory: isAdvisory ?? existing.isAdvisory,
+      studentCount: existing.studentCount,
+      gradingPeriodType: existing.gradingPeriodType,
+      createdAt: existing.createdAt,
+      updatedAt: DateTime.now(),
+    );
+
+    ClassDetail? optimisticDetail;
+    if (previousDetail != null && previousDetail.id == classId) {
+      optimisticDetail = ClassDetail(
+        id: previousDetail.id,
+        title: title ?? previousDetail.title,
+        description: description ?? previousDetail.description,
+        teacherId: teacherId ?? previousDetail.teacherId,
+        isArchived: previousDetail.isArchived,
+        isAdvisory: isAdvisory ?? previousDetail.isAdvisory,
+        students: previousDetail.students,
+        createdAt: previousDetail.createdAt,
+        updatedAt: DateTime.now(),
+      );
+    }
+
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      clearSuccess: true,
+      classes: state.classes.map((c) => c.id == classId ? optimisticClass : c).toList(),
+      currentClassDetail: optimisticDetail ?? previousDetail,
+    );
 
     final result = await _updateClass(UpdateClassParams(
       classId: classId,
@@ -229,24 +310,16 @@ class ClassNotifier extends StateNotifier<ClassState> {
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
+        classes: previousClasses,
+        currentClassDetail: previousDetail,
         error: AppErrorMapper.fromFailure(failure),
       ),
       (updatedClass) {
-        // Update the class in the classes list
-        final updatedClasses = state.classes.map((c) {
-          if (c.id == classId) {
-            return updatedClass;
-          }
-          return c;
-        }).toList();
-
         state = state.copyWith(
           isLoading: false,
-          classes: updatedClasses,
+          classes: state.classes.map((c) => c.id == classId ? updatedClass : c).toList(),
           successMessage: 'Class updated successfully',
         );
-        // Reload class detail to get updated info
-        loadClassDetail(classId);
       },
     );
   }
@@ -368,8 +441,6 @@ class ClassNotifier extends StateNotifier<ClassState> {
             loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
           );
         }
-        // Reload class detail in background to sync with server
-        loadClassDetail(classId);
       },
     );
   }
@@ -439,8 +510,6 @@ class ClassNotifier extends StateNotifier<ClassState> {
           successMessage: 'Student removed from class',
           loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
         );
-        // Reload class detail in background to sync with server
-        loadClassDetail(classId);
       },
     );
   }
@@ -472,18 +541,24 @@ class ClassNotifier extends StateNotifier<ClassState> {
   }
 
   Future<void> deleteClass(String classId) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    final previousClasses = List<ClassEntity>.from(state.classes);
+
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      classes: state.classes.where((c) => c.id != classId).toList(),
+    );
 
     final result = await _deleteClass(classId: classId);
 
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
+        classes: previousClasses,
         error: AppErrorMapper.fromFailure(failure),
       ),
       (_) => state = state.copyWith(
         isLoading: false,
-        classes: state.classes.where((c) => c.id != classId).toList(),
         successMessage: 'Class deleted successfully',
       ),
     );

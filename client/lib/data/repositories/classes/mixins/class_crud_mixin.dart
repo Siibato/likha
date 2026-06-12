@@ -113,9 +113,29 @@ mixin ClassCrudMixin on ClassRepositoryBase {
   @override
   ResultVoid deleteClass({required String classId}) async {
     try {
+      if (!serverReachabilityService.isServerReachable) {
+        await syncQueue.enqueue(SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.classEntity,
+          operation: SyncOperation.delete,
+          payload: {'id': classId},
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
+        ));
+
+        try {
+          final cached = await localDataSource.getCachedClasses();
+          final updated = cached.where((c) => c.id != classId).toList();
+          await localDataSource.cacheClasses(updated);
+        } catch (_) {}
+
+        return const Right(null);
+      }
+
       await remoteDataSource.deleteClass(classId: classId);
 
-      // Remove from local cache
       try {
         final cached = await localDataSource.getCachedClasses();
         final updated = cached.where((c) => c.id != classId).toList();
@@ -211,6 +231,30 @@ mixin ClassCrudMixin on ClassRepositoryBase {
         }
       }
 
+      // Optimistic: write to local cache before remote call
+      try {
+        final cachedClasses = await localDataSource.getCachedClasses();
+        final optimisticCache = cachedClasses.map((c) {
+          if (c.id == classId) {
+            return ClassModel(
+              id: c.id,
+              title: title ?? c.title,
+              description: description ?? c.description,
+              teacherId: teacherId ?? c.teacherId,
+              teacherUsername: c.teacherUsername,
+              teacherFullName: c.teacherFullName,
+              isArchived: c.isArchived,
+              isAdvisory: isAdvisory ?? c.isAdvisory,
+              studentCount: c.studentCount,
+              createdAt: c.createdAt,
+              updatedAt: DateTime.now(),
+            );
+          }
+          return c;
+        }).toList();
+        await localDataSource.cacheClasses(optimisticCache);
+      } catch (_) {}
+
       final result = await remoteDataSource.updateClass(
         classId: classId,
         title: title,
@@ -218,6 +262,13 @@ mixin ClassCrudMixin on ClassRepositoryBase {
         teacherId: teacherId,
         isAdvisory: isAdvisory,
       );
+
+      // Overwrite local cache with server-returned result
+      try {
+        final cachedClasses = await localDataSource.getCachedClasses();
+        final updatedCache = cachedClasses.map((c) => c.id == classId ? result : c).toList();
+        await localDataSource.cacheClasses(updatedCache);
+      } catch (_) {}
 
       syncInBackgroundForClass(classId);
 

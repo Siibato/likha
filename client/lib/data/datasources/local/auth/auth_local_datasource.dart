@@ -11,5 +11,6 @@ abstract class AuthLocalDataSource {
   Future<List<ActivityLogModel>> getCachedActivityLogs(String userId);
   Future<void> cacheActivityLogs(List<ActivityLogModel> logs, String userId);
   Future<void> clearActivityLogsForUser(String userId);
+  Future<void> deleteAccountLocally(String userId);
   Future<void> clearAllCache();
 }
