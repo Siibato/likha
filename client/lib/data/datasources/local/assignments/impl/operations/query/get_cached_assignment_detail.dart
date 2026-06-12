@@ -1,12 +1,10 @@
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/database/local_database.dart';
-import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/data/models/assignments/assignment_model.dart';
 
 Future<AssignmentModel> getCachedAssignmentDetailOp(
   LocalDatabase localDatabase,
-  EncryptionService enc,
   String assignmentId,
 ) async {
   try {
@@ -17,7 +15,7 @@ Future<AssignmentModel> getCachedAssignmentDetailOp(
       whereArgs: [assignmentId],
     );
     if (results.isEmpty) throw CacheException('Assignment $assignmentId not cached');
-    final base = AssignmentModel.fromMap(_decryptAssignmentRow(enc, results.first));
+    final base = AssignmentModel.fromMap(results.first);
 
     // Enrich with submission counts
     final countRow = await db.rawQuery(
@@ -60,11 +58,4 @@ Future<AssignmentModel> getCachedAssignmentDetailOp(
     if (e is CacheException) rethrow;
     throw CacheException(e.toString());
   }
-}
-
-Map<String, dynamic> _decryptAssignmentRow(EncryptionService enc, Map<String, dynamic> row) {
-  final m = Map<String, dynamic>.from(row);
-  m[AssignmentsCols.title] = enc.decryptField(row[AssignmentsCols.title] as String?);
-  m[AssignmentsCols.instructions] = enc.decryptField(row[AssignmentsCols.instructions] as String?);
-  return m;
 }

@@ -12,7 +12,7 @@ import { GradingService } from '../services/grading';
 import { expectAll, expectStatus2xx } from '../core/check-helpers';
 import { stages } from '../config/stages';
 import { thresholds } from '../config/thresholds';
-import { teacherAccounts, studentAccounts } from '../data/accounts';
+import { teacherAccounts, studentAccounts, adminAccounts } from '../data/accounts';
 import { fakeAssessmentSubmissionPush } from '../data/fixtures';
 import { manifest, publishedAssessments, activeClasses, randomItem } from '../data/manifest';
 import { MixedSetupData } from '../types/scenario';
@@ -29,10 +29,11 @@ export const handleSummary = createReportGenerator('classroom-mix').handleSummar
 
 export function setup(): MixedSetupData {
   console.log('Classroom-mix setup: logging in teachers and students...');
+  const adminTokens = loginPool(adminAccounts);
   const teacherTokens = loginPool(teacherAccounts);
   const studentTokens = loginPool(studentAccounts);
   console.log(`Setup complete: ${teacherAccounts.length} teachers + ${studentAccounts.length} students`);
-  return { teacherTokens, studentTokens };
+  return { adminTokens, teacherTokens, studentTokens };
 }
 
 declare const __VU: number;

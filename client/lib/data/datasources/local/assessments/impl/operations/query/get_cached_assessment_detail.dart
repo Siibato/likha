@@ -1,13 +1,11 @@
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
-import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/data/models/assessments/assessment_model.dart';
 import 'package:likha/data/models/assessments/question_model.dart';
 
 Future<(AssessmentModel, List<QuestionModel>)> getCachedAssessmentDetailOp(
   LocalDatabase localDatabase,
-  EncryptionService enc,
   String assessmentId,
 ) async {
   try {
@@ -41,7 +39,7 @@ Future<(AssessmentModel, List<QuestionModel>)> getCachedAssessmentDetailOp(
       final choices = choicesResults.map((c) {
         return {
           'id': c['id'],
-          'choice_text': enc.decryptField(c['choice_text'] as String?),
+          'choice_text': c['choice_text'],
           'is_correct': (c['is_correct'] as int?) == 1,
           'order_index': c['order_index'],
         };
@@ -73,7 +71,7 @@ Future<(AssessmentModel, List<QuestionModel>)> getCachedAssessmentDetailOp(
             'acceptable_answers': acceptableAnswersResults.map((aa) {
               return {
                 'id': aa['id'],
-                'answer_text': enc.decryptField(aa['answer_text'] as String?),
+                'answer_text': aa['answer_text'],
               };
             }).toList(),
           });
@@ -81,7 +79,7 @@ Future<(AssessmentModel, List<QuestionModel>)> getCachedAssessmentDetailOp(
           for (final answer in acceptableAnswersResults) {
             correctAnswers.add({
               'id': answer['id'],
-              'answer_text': enc.decryptField(answer['answer_text'] as String?),
+              'answer_text': answer['answer_text'],
             });
           }
         }
@@ -91,7 +89,7 @@ Future<(AssessmentModel, List<QuestionModel>)> getCachedAssessmentDetailOp(
         'id': q['id'],
         'assessment_id': q['assessment_id'],
         'question_type': q['question_type'],
-        'question_text': enc.decryptField(q['question_text'] as String?),
+        'question_text': q['question_text'],
         'points': q['points'],
         'order_index': q['order_index'],
         'is_multi_select': (q['is_multi_select'] as int?) == 1,

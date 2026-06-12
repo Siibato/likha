@@ -1,12 +1,10 @@
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/database/local_database.dart';
-import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/data/models/assignments/assignment_model.dart';
 
 Future<List<AssignmentModel>> getCachedAssignmentsOp(
   LocalDatabase localDatabase,
-  EncryptionService enc,
   String classId,
   bool publishedOnly,
   String? studentId,
@@ -28,7 +26,7 @@ Future<List<AssignmentModel>> getCachedAssignmentsOp(
     if (studentId == null) {
       final enriched = <AssignmentModel>[];
       for (final row in results) {
-        final base = AssignmentModel.fromMap(_decryptAssignmentRow(enc, row));
+        final base = AssignmentModel.fromMap(row);
         // Compute dynamic submissionCount and gradedCount
         final countRow = await db.rawQuery(
           'SELECT COUNT(*) as total, SUM(CASE WHEN status IN (\'graded\',\'returned\') THEN 1 ELSE 0 END) as graded FROM ${DbTables.assignmentSubmissions} WHERE assignment_id = ? AND deleted_at IS NULL',
@@ -73,8 +71,8 @@ Future<List<AssignmentModel>> getCachedAssignmentsOp(
     // Enrich each assignment with per-student submission data and dynamic counts (E8, E2)
     final enriched = <AssignmentModel>[];
     for (final row in results) {
-      final base = AssignmentModel.fromMap(_decryptAssignmentRow(enc, row));
-      final sub = await getStudentSubmissionForAssignmentOp(db, enc, base.id, studentId);
+      final base = AssignmentModel.fromMap(row);
+      final sub = await getStudentSubmissionForAssignmentOp(db, base.id, studentId);
 
       // Compute dynamic submissionCount and gradedCount (E8: fixes always-0 from cache)
       final countRow = await db.rawQuery(
@@ -121,16 +119,8 @@ Future<List<AssignmentModel>> getCachedAssignmentsOp(
   }
 }
 
-Map<String, dynamic> _decryptAssignmentRow(EncryptionService enc, Map<String, dynamic> row) {
-  final m = Map<String, dynamic>.from(row);
-  m[AssignmentsCols.title] = enc.decryptField(row[AssignmentsCols.title] as String?);
-  m[AssignmentsCols.instructions] = enc.decryptField(row[AssignmentsCols.instructions] as String?);
-  return m;
-}
-
 Future<(String submissionId, String status, int? score)?> getStudentSubmissionForAssignmentOp(
   dynamic db,
-  EncryptionService enc,
   String assignmentId,
   String studentId,
 ) async {

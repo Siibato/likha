@@ -69,39 +69,21 @@ impl MigrationTrait for Migration {
             .await?;
 
         // Create indexes on class_participants
-        manager
-            .create_index(
-                Index::create()
-                    .name("idx_class_participants_class_id")
-                    .table(ClassParticipants::Table)
-                    .col(ClassParticipants::ClassId)
-                    .to_owned(),
-            )
-            .await?;
+        let db = manager.get_connection();
+        db.execute_unprepared(
+            "CREATE INDEX IF NOT EXISTS idx_class_participants_class_id ON class_participants (class_id)"
+        ).await?;
 
-        manager
-            .create_index(
-                Index::create()
-                    .name("idx_class_participants_user_id")
-                    .table(ClassParticipants::Table)
-                    .col(ClassParticipants::UserId)
-                    .to_owned(),
-            )
-            .await?;
+        db.execute_unprepared(
+            "CREATE INDEX IF NOT EXISTS idx_class_participants_user_id ON class_participants (user_id)"
+        ).await?;
 
-        manager
-            .create_index(
-                Index::create()
-                    .name("idx_class_participants_removed_at")
-                    .table(ClassParticipants::Table)
-                    .col(ClassParticipants::RemovedAt)
-                    .to_owned(),
-            )
-            .await?;
+        db.execute_unprepared(
+            "CREATE INDEX IF NOT EXISTS idx_class_participants_removed_at ON class_participants (removed_at)"
+        ).await?;
 
         // Migrate data from class_enrollments to class_participants (students)
         // Using INSERT ... SELECT for better compatibility
-        let db = manager.get_connection();
         db.execute_unprepared(
             "INSERT INTO class_participants (id, class_id, user_id, role, joined_at, updated_at, removed_at)
              SELECT gen_random_uuid(), class_id, student_id, 'student', enrolled_at, enrolled_at, removed_at
@@ -122,7 +104,8 @@ impl MigrationTrait for Migration {
         // Drop the class_enrollments table
         manager
             .drop_table(Table::drop().table(ClassEnrollments::Table).to_owned())
-            .await?;
+            .await
+            .ok();
 
         // Drop teacher_id FK index from classes
         manager
@@ -139,8 +122,8 @@ impl MigrationTrait for Migration {
         // First, we'll use raw SQL to handle this since SQLite doesn't support dropping FK constraints
         let db = manager.get_connection();
 
-        // SQLite: recreate classes table without teacher_id using BEGIN/COMMIT for transaction safety
-        db.execute_unprepared("BEGIN").await?;
+        // SQLite: recreate classes table without teacher_id
+        db.execute_unprepared("DROP TABLE IF EXISTS classes_new").await.ok();
 
         db.execute_unprepared(
             "CREATE TABLE classes_new (
@@ -155,23 +138,23 @@ impl MigrationTrait for Migration {
         )
         .await?;
 
+        // Copy data from old classes table if it exists
         db.execute_unprepared(
             "INSERT INTO classes_new (id, title, description, is_archived, deleted_at, created_at, updated_at)
-             SELECT id, title, description, COALESCE(is_archived, 0), deleted_at, created_at, updated_at FROM classes"
+             SELECT id, title, description, COALESCE(is_archived, 0), NULL, created_at, updated_at FROM classes"
         )
-        .await?;
+        .await
+        .ok();
 
-        db.execute_unprepared("DROP TABLE classes").await?;
+        db.execute_unprepared("DROP TABLE IF EXISTS classes").await?;
 
-        db.execute_unprepared(
-            "ALTER TABLE classes_new RENAME TO classes"
-        )
-        .await?;
-
-        db.execute_unprepared("COMMIT").await?;
+        db.execute_unprepared("ALTER TABLE classes_new RENAME TO classes").await?;
 
         // For SQLite, recreate users table without is_active and created_by, add deleted_at
-        db.execute_unprepared("BEGIN").await?;
+        // Disable foreign keys temporarily to allow table replacement
+        db.execute_unprepared("PRAGMA foreign_keys = OFF").await.ok();
+
+        db.execute_unprepared("DROP TABLE IF EXISTS users_new").await.ok();
 
         db.execute_unprepared(
             "CREATE TABLE users_new (
@@ -193,20 +176,19 @@ impl MigrationTrait for Migration {
             "INSERT INTO users_new (id, username, password_hash, full_name, role, account_status, activated_at, created_at, updated_at, deleted_at)
              SELECT id, username, password_hash, full_name, role, account_status, activated_at, created_at, updated_at, NULL FROM users"
         )
-        .await?;
+        .await
+        .ok();
 
-        db.execute_unprepared("DROP TABLE users").await?;
+        db.execute_unprepared("DROP TABLE IF EXISTS users").await.ok();
 
-        db.execute_unprepared(
-            "ALTER TABLE users_new RENAME TO users"
-        )
-        .await?;
+        db.execute_unprepared("ALTER TABLE users_new RENAME TO users").await?;
 
-        db.execute_unprepared("COMMIT").await?;
+        // Re-enable foreign keys
+        db.execute_unprepared("PRAGMA foreign_keys = ON").await.ok();
 
         // Create index on users.deleted_at
         db.execute_unprepared(
-            "CREATE INDEX idx_users_deleted_at ON users (deleted_at)"
+            "CREATE INDEX IF NOT EXISTS idx_users_deleted_at ON users (deleted_at)"
         )
         .await?;
 

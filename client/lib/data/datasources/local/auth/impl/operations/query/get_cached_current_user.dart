@@ -1,12 +1,10 @@
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/database/local_database.dart';
-import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/data/models/auth/user_model.dart';
 
 Future<UserModel> getCachedCurrentUserOp(
   LocalDatabase localDatabase,
-  EncryptionService enc,
   String? userId,
 ) async {
   try {
@@ -32,16 +30,9 @@ Future<UserModel> getCachedCurrentUserOp(
     }
 
     if (result.isEmpty) throw CacheException('No cached current user found');
-    return UserModel.fromMap(_decryptUserRow(enc, result.first));
+    return UserModel.fromMap(result.first);
   } catch (e) {
     if (e is CacheException) rethrow;
     throw CacheException(e.toString());
   }
-}
-
-Map<String, dynamic> _decryptUserRow(EncryptionService enc, Map<String, dynamic> row) {
-  final m = Map<String, dynamic>.from(row);
-  m['full_name'] = enc.decryptField(row['full_name'] as String?);
-  m['username'] = enc.decryptField(row['username'] as String?);
-  return m;
 }

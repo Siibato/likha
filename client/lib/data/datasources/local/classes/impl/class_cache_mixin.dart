@@ -23,7 +23,7 @@ mixin ClassCacheMixin on ClassLocalDataSourceBase {
 
   @override
   Future<void> cacheClassDetail(ClassDetailModel classDetail) async {
-    return cacheClassDetailOp(localDatabase, enc, classDetail);
+    return cacheClassDetailOp(localDatabase, classDetail);
   }
 
   @override

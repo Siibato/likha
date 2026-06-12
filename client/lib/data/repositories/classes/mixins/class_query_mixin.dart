@@ -7,6 +7,9 @@ import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
 
 mixin ClassQueryMixin on ClassRepositoryBase {
+  /// Prevent duplicate in-flight background fetches.
+  Future<void>? _myClassesBackgroundFetch;
+  Future<void>? _allClassesBackgroundFetch;
   @override
   ResultFuture<List<ClassEntity>> getAllClasses({bool skipBackgroundRefresh = false}) async {
     try {
@@ -120,7 +123,8 @@ mixin ClassQueryMixin on ClassRepositoryBase {
   /// Emits a DataEventBus event so the page can reload from updated cache.
   /// All errors are swallowed — users keep seeing stale cache without error.
   void _backgroundFetchMyClasses() {
-    Future.microtask(() async {
+    if (_myClassesBackgroundFetch != null) return;
+    _myClassesBackgroundFetch = Future.microtask(() async {
       try {
         final fresh = await remoteDataSource.getMyClasses();
         final currentUserId = await getCurrentUserId();
@@ -139,7 +143,9 @@ mixin ClassQueryMixin on ClassRepositoryBase {
           await _cacheStudentParticipations(fresh, currentUserId);
           dataEventBus.notifyClassesChanged();
         }
-      } catch (_) {}
+      } catch (_) {} finally {
+        _myClassesBackgroundFetch = null;
+      }
     });
   }
 
@@ -148,7 +154,8 @@ mixin ClassQueryMixin on ClassRepositoryBase {
   /// Emits a DataEventBus event so the page can reload from updated cache.
   /// All errors are swallowed — users keep seeing stale cache without error.
   void _backgroundFetchAllClasses() {
-    Future.microtask(() async {
+    if (_allClassesBackgroundFetch != null) return;
+    _allClassesBackgroundFetch = Future.microtask(() async {
       try {
         final fresh = await remoteDataSource.getAllClasses();
         final List<ClassEntity> cached;
@@ -163,7 +170,9 @@ mixin ClassQueryMixin on ClassRepositoryBase {
           await localDataSource.cacheClasses(fresh);
           dataEventBus.notifyClassesChanged();
         }
-      } catch (_) {}
+      } catch (_) {} finally {
+        _allClassesBackgroundFetch = null;
+      }
     });
   }
 

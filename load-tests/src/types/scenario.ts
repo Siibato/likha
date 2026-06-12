@@ -15,7 +15,7 @@ export type TokenMap = Record<number, string>;
 export interface VUContext {
   token: string;
   vuId: number;
-  role: 'teacher' | 'student';
+  role: 'admin' | 'teacher' | 'student';
 }
 
 export interface BaseSetupData {
@@ -23,6 +23,9 @@ export interface BaseSetupData {
 }
 
 export interface MixedSetupData {
+  adminTokens: TokenMap;
   teacherTokens: TokenMap;
   studentTokens: TokenMap;
+  roleMap?: Record<number, 'Teacher' | 'Student' | 'Admin'>;
+  vuTokens?: TokenMap;
 }

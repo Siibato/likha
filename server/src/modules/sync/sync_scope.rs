@@ -1,0 +1,67 @@
+pub struct SyncScope {
+    pub include_assessments: bool,
+    pub include_assignments: bool,
+    pub include_learning_materials: bool,
+    pub include_grade_data: bool,
+    pub include_tos: bool,
+    pub include_activity_logs: bool,
+    pub include_questions: bool,
+    pub include_submissions: bool,
+    pub include_files: bool,
+    pub include_statistics: bool,
+}
+
+impl SyncScope {
+    pub fn for_role(role: &str) -> Self {
+        match role {
+            "admin" => Self {
+                include_assessments: false,
+                include_assignments: false,
+                include_learning_materials: false,
+                include_grade_data: false,
+                include_tos: false,
+                include_activity_logs: true,
+                include_questions: false,
+                include_submissions: false,
+                include_files: false,
+                include_statistics: false,
+            },
+            "teacher" => Self {
+                include_assessments: true,
+                include_assignments: true,
+                include_learning_materials: true,
+                include_grade_data: true,
+                include_tos: true,
+                include_activity_logs: true,
+                include_questions: true,
+                include_submissions: true,
+                include_files: true,
+                include_statistics: true,
+            },
+            "student" => Self {
+                include_assessments: true,
+                include_assignments: true,
+                include_learning_materials: true,
+                include_grade_data: true,
+                include_tos: false,
+                include_activity_logs: true,
+                include_questions: true,
+                include_submissions: true,
+                include_files: true,
+                include_statistics: false,
+            },
+            _ => Self {
+                include_assessments: false,
+                include_assignments: false,
+                include_learning_materials: false,
+                include_grade_data: false,
+                include_tos: false,
+                include_activity_logs: false,
+                include_questions: false,
+                include_submissions: false,
+                include_files: false,
+                include_statistics: false,
+            },
+        }
+    }
+}

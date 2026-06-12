@@ -16,7 +16,7 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
 
   @override
   Future<void> cacheAssessmentDetail(AssessmentModel assessment, List<QuestionModel> questions) async {
-    return cacheAssessmentDetailOp(localDatabase, enc, assessment, questions);
+    return cacheAssessmentDetailOp(localDatabase, assessment, questions);
   }
 
   @override
@@ -25,7 +25,7 @@ mixin AssessmentCacheMixin on AssessmentLocalDataSourceBase {
     List<QuestionModel> questions, {
     bool isServerConfirmed = false,
   }) async {
-    return cacheQuestionsOp(localDatabase, enc, assessmentId, questions, isServerConfirmed: isServerConfirmed);
+    return cacheQuestionsOp(localDatabase, assessmentId, questions, isServerConfirmed: isServerConfirmed);
   }
 
   @override

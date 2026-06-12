@@ -96,6 +96,7 @@ async fn main() {
                 seed_admin(&db).await.expect("Failed to seed admin account");
 
                 if args.iter().any(|arg| arg == "--with-seed") {
+                    activate_admin(&db).await.expect("Failed to activate admin account");
                     println!("Seeding manual testing world...");
                     server::seed::scenarios::manual::seed_manual_world(&db).await.expect("Manual seed failed");
                     println!("Manual seed complete.");
@@ -118,6 +119,7 @@ async fn main() {
                 let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
                     .await
                     .expect("Failed to connect to database");
+                activate_admin(&db).await.expect("Failed to activate admin account");
                 server::seed::scenarios::e2e::seed_e2e_world(&db).await.expect("E2E seed failed");
                 println!("E2E seed complete.");
                 return;
@@ -127,6 +129,7 @@ async fn main() {
                 let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
                     .await
                     .expect("Failed to connect to database");
+                activate_admin(&db).await.expect("Failed to activate admin account");
                 server::seed::scenarios::manual::seed_manual_world(&db).await.expect("Manual seed failed");
                 println!("Manual seed complete.");
 
@@ -438,6 +441,29 @@ async fn seed_admin(db: &DatabaseConnection) -> Result<(), sea_orm::DbErr> {
     admin.insert(db).await?;
     tracing::info!("Default admin account created (username: admin, status: pending_activation)");
 
+    Ok(())
+}
+
+async fn activate_admin(db: &DatabaseConnection) -> Result<(), sea_orm::DbErr> {
+    use ::entity::users;
+
+    let admin = users::Entity::find()
+        .filter(users::Column::Role.eq("admin"))
+        .one(db)
+        .await?
+        .ok_or_else(|| sea_orm::DbErr::Custom("Admin account not found".to_string()))?;
+
+    let password_hash = bcrypt::hash("admin123", 4).expect("Failed to hash admin password");
+    let now = Utc::now().naive_utc();
+
+    let mut am: users::ActiveModel = admin.into();
+    am.password_hash = Set(Some(password_hash));
+    am.account_status = Set("active".to_string());
+    am.activated_at = Set(Some(now));
+    am.updated_at = Set(now);
+    am.update(db).await?;
+
+    tracing::info!("Admin account activated (username: admin, status: active)");
     Ok(())
 }
 

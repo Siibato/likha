@@ -468,26 +468,127 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
   }
 
   Future<void> overrideAnswer(OverrideAnswerParams params) async {
+    final previousSubmission = state.currentSubmission;
     state = state.copyWith(isLoading: true, error: null, successMessage: null);
+
+    if (previousSubmission != null) {
+      final updatedAnswers = previousSubmission.answers.map((answer) {
+        if (answer.id == params.answerId) {
+          final newPointsAwarded = params.points ?? (params.isCorrect ? answer.points.toDouble() : 0.0);
+          return SubmissionAnswer(
+            id: answer.id,
+            questionId: answer.questionId,
+            questionText: answer.questionText,
+            questionType: answer.questionType,
+            points: answer.points,
+            answerText: answer.answerText,
+            selectedChoices: answer.selectedChoices,
+            enumerationAnswers: answer.enumerationAnswers,
+            isAutoCorrect: answer.isAutoCorrect,
+            isOverrideCorrect: params.isCorrect,
+            pointsAwarded: newPointsAwarded,
+            isPendingEssayGrade: answer.isPendingEssayGrade,
+          );
+        }
+        return answer;
+      }).toList();
+
+      final newFinalScore = updatedAnswers.fold(0.0, (sum, a) => sum + a.pointsAwarded);
+
+      state = state.copyWith(
+        currentSubmission: SubmissionDetail(
+          id: previousSubmission.id,
+          assessmentId: previousSubmission.assessmentId,
+          studentId: previousSubmission.studentId,
+          studentName: previousSubmission.studentName,
+          startedAt: previousSubmission.startedAt,
+          submittedAt: previousSubmission.submittedAt,
+          autoScore: previousSubmission.autoScore,
+          finalScore: newFinalScore,
+          isSubmitted: previousSubmission.isSubmitted,
+          totalPoints: previousSubmission.totalPoints,
+          answers: updatedAnswers,
+        ),
+      );
+    }
+
     final result = await _overrideAnswer(params);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
-      (_) => state = state.copyWith(
-        isLoading: false,
-        successMessage: 'Grade overridden',
-      ),
+      (failure) {
+        state = state.copyWith(
+          isLoading: false,
+          error: AppErrorMapper.fromFailure(failure),
+          currentSubmission: previousSubmission,
+        );
+      },
+      (_) {
+        state = state.copyWith(
+          isLoading: false,
+          successMessage: 'Grade overridden',
+        );
+      },
     );
   }
 
   Future<void> gradeEssayAnswer(GradeEssayParams params) async {
+    final previousSubmission = state.currentSubmission;
     state = state.copyWith(isLoading: true, error: null, successMessage: null);
+
+    if (previousSubmission != null) {
+      final updatedAnswers = previousSubmission.answers.map((answer) {
+        if (answer.id == params.answerId) {
+          return SubmissionAnswer(
+            id: answer.id,
+            questionId: answer.questionId,
+            questionText: answer.questionText,
+            questionType: answer.questionType,
+            points: answer.points,
+            answerText: answer.answerText,
+            selectedChoices: answer.selectedChoices,
+            enumerationAnswers: answer.enumerationAnswers,
+            isAutoCorrect: answer.isAutoCorrect,
+            isOverrideCorrect: answer.isOverrideCorrect,
+            pointsAwarded: params.points,
+            isPendingEssayGrade: false,
+          );
+        }
+        return answer;
+      }).toList();
+
+      final newFinalScore = updatedAnswers.fold(0.0, (sum, a) => sum + a.pointsAwarded);
+
+      state = state.copyWith(
+        currentSubmission: SubmissionDetail(
+          id: previousSubmission.id,
+          assessmentId: previousSubmission.assessmentId,
+          studentId: previousSubmission.studentId,
+          studentName: previousSubmission.studentName,
+          startedAt: previousSubmission.startedAt,
+          submittedAt: previousSubmission.submittedAt,
+          autoScore: previousSubmission.autoScore,
+          finalScore: newFinalScore,
+          isSubmitted: previousSubmission.isSubmitted,
+          totalPoints: previousSubmission.totalPoints,
+          answers: updatedAnswers,
+        ),
+      );
+    }
+
     final result = await _gradeEssay(params);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
-      (_) => state = state.copyWith(
-        isLoading: false,
-        successMessage: 'Essay graded',
-      ),
+      (failure) {
+        state = state.copyWith(
+          isLoading: false,
+          error: AppErrorMapper.fromFailure(failure),
+          currentSubmission: previousSubmission,
+        );
+      },
+      (_) {
+        state = state.copyWith(
+          isLoading: false,
+          successMessage: 'Essay graded',
+        );
+      },
     );
   }
 

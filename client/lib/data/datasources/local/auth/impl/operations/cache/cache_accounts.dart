@@ -1,12 +1,10 @@
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/database/local_database.dart';
-import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/data/models/auth/user_model.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 Future<void> cacheAccountsOp(
   LocalDatabase localDatabase,
-  EncryptionService enc,
   List<UserModel> accounts,
 ) async {
   try {
@@ -16,8 +14,6 @@ Future<void> cacheAccountsOp(
         final map = account.toMap();
         map['cached_at'] = DateTime.now().toIso8601String();
         map['needs_sync'] = 0;
-        map['full_name'] = enc.encryptField(map['full_name'] as String?);
-        map['username'] = enc.encryptField(map['username'] as String?);
         await txn.insert('users', map, conflictAlgorithm: ConflictAlgorithm.replace);
       }
     });

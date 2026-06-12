@@ -2,13 +2,11 @@ import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/core/security/encryption_service.dart';
 import 'package:uuid/uuid.dart';
 
 Future<void> updateSubmissionTextLocallyOp(
   LocalDatabase localDatabase,
   SyncQueue syncQueue,
-  EncryptionService enc,
   String submissionId,
   String textContent,
 ) async {
@@ -19,7 +17,7 @@ Future<void> updateSubmissionTextLocallyOp(
       await txn.update(
         DbTables.assignmentSubmissions,
         {
-          AssignmentSubmissionsCols.textContent: enc.encryptField(textContent),
+          AssignmentSubmissionsCols.textContent: textContent,
           CommonCols.updatedAt: now.toIso8601String(),
           CommonCols.needsSync: 1,
           CommonCols.cachedAt: now.toIso8601String(),

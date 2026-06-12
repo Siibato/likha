@@ -18,9 +18,8 @@ class _TeacherGradesPageState extends ConsumerState<TeacherGradesPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(classProvider.notifier).loadClasses();
-    });
+    // Data is loaded by TeacherClassesPage (tab 0) via the shared classProvider.
+    // No need to trigger another background fetch here.
   }
 
   @override

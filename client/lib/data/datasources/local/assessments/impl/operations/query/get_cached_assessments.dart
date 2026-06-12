@@ -2,12 +2,10 @@ import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/logging/repo_logger.dart';
-import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/data/models/assessments/assessment_model.dart';
 
 Future<List<AssessmentModel>> getCachedAssessmentsOp(
   LocalDatabase localDatabase,
-  EncryptionService enc,
   String classId, {
   bool publishedOnly = false,
 }) async {

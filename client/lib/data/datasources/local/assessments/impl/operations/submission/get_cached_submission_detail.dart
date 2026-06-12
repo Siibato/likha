@@ -1,12 +1,10 @@
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/logging/repo_logger.dart';
-import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/data/models/assessments/submission_model.dart';
 
 Future<SubmissionDetailModel?> getCachedSubmissionDetailOp(
   LocalDatabase localDatabase,
-  EncryptionService enc,
   String submissionId,
 ) async {
   try {
@@ -40,7 +38,7 @@ Future<SubmissionDetailModel?> getCachedSubmissionDetailOp(
     for (final row in answerRows) {
       final answerId = row['answer_id'] as String;
       final questionType = row['question_type'] as String;
-      final questionText = enc.decryptField(row['question_text'] as String?) ?? '';
+      final questionText = row['question_text'] as String? ?? '';
 
       final itemRows = await db.rawQuery('''
         SELECT sai.id, sai.choice_id, sai.answer_text, sai.is_correct, qc.choice_text
@@ -57,7 +55,7 @@ Future<SubmissionDetailModel?> getCachedSubmissionDetailOp(
         selectedChoices = itemRows
             .map((item) => SelectedChoiceModel(
                   choiceId: item['choice_id'] as String? ?? '',
-                  choiceText: enc.decryptField(item['choice_text'] as String?) ?? '',
+                  choiceText: item['choice_text'] as String? ?? '',
                   isCorrect: (item['is_correct'] as int?) == 1,
                 ))
             .toList();
@@ -96,7 +94,7 @@ Future<SubmissionDetailModel?> getCachedSubmissionDetailOp(
       id: sub['id'] as String,
       assessmentId: sub['assessment_id'] as String? ?? '',
       studentId: sub['user_id'] as String? ?? '',
-      studentName: enc.decryptField(sub['student_name'] as String?) ?? '',
+      studentName: sub['student_name'] as String? ?? '',
       startedAt: DateTime.parse(sub['started_at'] as String),
       submittedAt: sub['submitted_at'] != null ? DateTime.parse(sub['submitted_at'] as String) : null,
       autoScore: (sub['earned_points'] as num?)?.toDouble() ?? 0.0,

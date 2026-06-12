@@ -2,16 +2,29 @@ import 'dart:convert';
 
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/sync/sync_logger.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 class SyncUpsertHelpers {
   final SyncLogger _log;
 
   SyncUpsertHelpers(this._log);
 
-  
+  /// Check if a record exists in a given table by id.
+  /// Used as a defensive FK pre-check before inserting child records.
+  Future<bool> _fkExists(DatabaseExecutor db, String table, String id) async {
+    if (id.isEmpty) return false;
+    final result = await db.query(
+      table,
+      columns: [CommonCols.id],
+      where: '${CommonCols.id} = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    return result.isNotEmpty;
+  }
+
   Future<void> upsertClasses(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     int successCount = 0;
@@ -75,7 +88,7 @@ class SyncUpsertHelpers {
     await populateTeacherInfoFromAccounts(db);
   }
 
-  Future<void> populateTeacherInfoFromAccounts(Database db) async {
+  Future<void> populateTeacherInfoFromAccounts(DatabaseExecutor db) async {
     try {
       final classesNeedingTeacher = await db.query(
         DbTables.classes,
@@ -128,7 +141,7 @@ class SyncUpsertHelpers {
   }
 
   Future<void> upsertParticipants(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> participants,
     List<dynamic> participantUsers,
   ) async {
@@ -166,7 +179,7 @@ class SyncUpsertHelpers {
     }
   }
 
-  Future<void> recalculateClassStudentCounts(Database db) async {
+  Future<void> recalculateClassStudentCounts(DatabaseExecutor db) async {
     try {
       await db.rawUpdate('''
         UPDATE classes
@@ -184,7 +197,7 @@ class SyncUpsertHelpers {
 
   /// This distinguishes enrolled students from search-cached students
   Future<void> upsertEnrolledStudents(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     for (final record in records) {
@@ -212,7 +225,7 @@ class SyncUpsertHelpers {
 
   /// Explicit upsert handler for assessments with proper field mapping
   Future<void> upsertAssessments(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     for (final record in records) {
@@ -252,11 +265,18 @@ class SyncUpsertHelpers {
 
   /// Explicit upsert handler for questions with proper field mapping
   Future<void> upsertQuestions(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     for (final record in records) {
       final data = record as Map<String, dynamic>;
+      final assessmentId = data['assessment_id']?.toString() ?? '';
+
+      // DEFENSE: Skip if the referenced assessment wasn't synced in this batch
+      if (assessmentId.isEmpty || !await _fkExists(db, DbTables.assessments, assessmentId)) {
+        _log.warn('Skipping question ${data['id']}: assessment $assessmentId not found locally');
+        continue;
+      }
 
       await db.insert(
         DbTables.assessmentQuestions,
@@ -388,7 +408,7 @@ class SyncUpsertHelpers {
 
   /// Explicit upsert handler for assignments with proper field mapping
   Future<void> upsertAssignments(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     for (final record in records) {
@@ -430,7 +450,7 @@ class SyncUpsertHelpers {
 
   /// Explicit upsert handler for learning materials with proper field mapping
   Future<void> upsertLearningMaterials(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     for (final record in records) {
@@ -457,7 +477,7 @@ class SyncUpsertHelpers {
 
   /// Explicit upsert handler for assessment submissions with nested answers
   Future<void> upsertAssessmentSubmissions(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
     Map<String, dynamic> studentMap,
   ) async {
@@ -521,7 +541,7 @@ class SyncUpsertHelpers {
   }
 
   Future<void> _upsertSubmissionAnswers(
-    Database db,
+    DatabaseExecutor db,
     String submissionId,
     List<dynamic> answers,
   ) async {
@@ -531,12 +551,24 @@ class SyncUpsertHelpers {
         final answerId = answerData['id']?.toString();
         if (answerId == null) continue;
 
+        final questionId = answerData['question_id']?.toString() ?? '';
+        if (questionId.isEmpty) {
+          _log.warn('Skipping answer $answerId: missing question_id');
+          continue;
+        }
+
+        // DEFENSE: Skip if the referenced question wasn't synced
+        if (!await _fkExists(db, DbTables.assessmentQuestions, questionId)) {
+          _log.warn('Skipping answer $answerId: question $questionId not found locally');
+          continue;
+        }
+
         await db.insert(
           DbTables.submissionAnswers,
           {
             CommonCols.id: answerId,
             SubmissionAnswersCols.submissionId: submissionId,
-            SubmissionAnswersCols.questionId: answerData['question_id'],
+            SubmissionAnswersCols.questionId: questionId,
             SubmissionAnswersCols.points: (answerData['points_earned'] as num?)?.toDouble() ?? 0.0,
             SubmissionAnswersCols.overriddenBy: answerData['overridden_by'],
             SubmissionAnswersCols.overriddenAt: answerData['overridden_at'],
@@ -553,12 +585,30 @@ class SyncUpsertHelpers {
             final itemId = itemData['id']?.toString();
             if (itemId == null) continue;
 
+            // DEFENSE: Skip if referenced choice wasn't synced
+            final choiceId = itemData['choice_id']?.toString();
+            if (choiceId != null && choiceId.isNotEmpty) {
+              if (!await _fkExists(db, DbTables.questionChoices, choiceId)) {
+                _log.warn('Skipping answer item $itemId: choice $choiceId not found locally');
+                continue;
+              }
+            }
+
+            // DEFENSE: Skip if referenced answer_key wasn't synced
+            final answerKeyId = itemData['answer_key_id']?.toString();
+            if (answerKeyId != null && answerKeyId.isNotEmpty) {
+              if (!await _fkExists(db, DbTables.answerKeys, answerKeyId)) {
+                _log.warn('Skipping answer item $itemId: answer_key $answerKeyId not found locally');
+                continue;
+              }
+            }
+
             await db.insert(
               DbTables.submissionAnswerItems,
               {
                 CommonCols.id: itemId,
                 SubmissionAnswerItemsCols.submissionAnswerId: answerId,
-                SubmissionAnswerItemsCols.choiceId: itemData['choice_id'],
+                SubmissionAnswerItemsCols.choiceId: choiceId,
                 SubmissionAnswerItemsCols.answerText: itemData['answer_text'],
                 SubmissionAnswerItemsCols.isCorrect: (itemData['is_correct'] == true) ? 1 : 0,
                 CommonCols.cachedAt: DateTime.now().toIso8601String(),
@@ -578,7 +628,7 @@ class SyncUpsertHelpers {
 
   /// Explicit upsert handler for assignment submissions with student enrichment
   Future<void> upsertAssignmentSubmissions(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
     Map<String, dynamic> studentMap,
   ) async {
@@ -610,7 +660,7 @@ class SyncUpsertHelpers {
   }
 
   Future<void> _preserveLocalPathUpsert(
-    Database db,
+    DatabaseExecutor db,
     String table,
     String fkColumn,
     Map<String, dynamic> data,
@@ -642,27 +692,39 @@ class SyncUpsertHelpers {
 
   /// NEW: Upsert material files metadata (no binary data)
   Future<void> upsertMaterialFiles(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     for (final record in records) {
-      await _preserveLocalPathUpsert(db, DbTables.materialFiles, MaterialFilesCols.materialId, record as Map<String, dynamic>);
+      final data = record as Map<String, dynamic>;
+      final materialId = data['material_id']?.toString() ?? '';
+      if (materialId.isNotEmpty && !await _fkExists(db, DbTables.learningMaterials, materialId)) {
+        _log.warn('Skipping material file ${data['id']}: material $materialId not found locally');
+        continue;
+      }
+      await _preserveLocalPathUpsert(db, DbTables.materialFiles, MaterialFilesCols.materialId, data);
     }
   }
 
   /// NEW: Upsert submission files metadata (no binary data)
   Future<void> upsertSubmissionFiles(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     for (final record in records) {
-      await _preserveLocalPathUpsert(db, DbTables.submissionFiles, SubmissionFilesCols.submissionId, record as Map<String, dynamic>);
+      final data = record as Map<String, dynamic>;
+      final submissionId = data['submission_id']?.toString() ?? '';
+      if (submissionId.isNotEmpty && !await _fkExists(db, DbTables.assignmentSubmissions, submissionId)) {
+        _log.warn('Skipping submission file ${data['id']}: submission $submissionId not found locally');
+        continue;
+      }
+      await _preserveLocalPathUpsert(db, DbTables.submissionFiles, SubmissionFilesCols.submissionId, data);
     }
   }
 
   /// Upsert grade component configurations
   Future<void> upsertGradeConfigs(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     int successCount = 0;
@@ -704,7 +766,7 @@ class SyncUpsertHelpers {
 
   /// Upsert grade items
   Future<void> upsertGradeItems(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     int successCount = 0;
@@ -749,7 +811,7 @@ class SyncUpsertHelpers {
 
   /// Upsert grade scores
   Future<void> upsertGradeScores(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     int successCount = 0;
@@ -838,7 +900,7 @@ class SyncUpsertHelpers {
 
   /// Upsert quarterly grades
   Future<void> upsertQuarterlyGrades(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     int successCount = 0;
@@ -882,7 +944,7 @@ class SyncUpsertHelpers {
 
   /// Upsert table_of_specifications
   Future<void> upsertTableOfSpecifications(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     int successCount = 0;
@@ -928,7 +990,7 @@ class SyncUpsertHelpers {
 
   /// Upsert tos_competencies
   Future<void> upsertTosCompetencies(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     int successCount = 0;
@@ -977,8 +1039,63 @@ class SyncUpsertHelpers {
     }
   }
 
+  Future<void> upsertActivityLogs(
+    DatabaseExecutor db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+    int skippedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+
+        final userId = record['user_id']?.toString() ?? '';
+        if (userId.isEmpty) {
+          _log.warn('Activity log ${record['id']} has empty user_id, skipping');
+          skippedCount++;
+          continue;
+        }
+
+        // DEFENSE: Skip if referenced user wasn't synced
+        if (!await _fkExists(db, DbTables.users, userId)) {
+          _log.warn('Skipping activity log ${record['id']}: user $userId not found locally');
+          skippedCount++;
+          continue;
+        }
+
+        await db.insert(
+          DbTables.activityLogs,
+          {
+            CommonCols.id: record['id'],
+            ActivityLogsCols.userId: userId,
+            ActivityLogsCols.action: record['action'],
+            ActivityLogsCols.details: record['details'],
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.needsSync: 0,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert activity log', e);
+      }
+    }
+
+    _log.upsertSummary('activity_logs', successCount);
+    if (skippedCount > 0) {
+      _log.warn('Skipped $skippedCount activity logs (missing FK)');
+    }
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert activity logs', failedCount);
+    }
+  }
+
   /// Save sync token (last_sync_at) to sync_metadata
-  Future<void> saveSyncToken(Database db, String syncToken) async {
+  Future<void> saveSyncToken(DatabaseExecutor db, String syncToken) async {
     await db.insert(
       DbTables.syncMetadata,
       {SyncMetadataCols.key: DbValues.metaLastSyncAt, SyncMetadataCols.value: syncToken},
@@ -987,7 +1104,7 @@ class SyncUpsertHelpers {
   }
 
   /// Save sync expiry timestamp to sync_metadata
-  Future<void> saveSyncExpiry(Database db, String expiryAt) async {
+  Future<void> saveSyncExpiry(DatabaseExecutor db, String expiryAt) async {
     await db.insert(
       DbTables.syncMetadata,
       {SyncMetadataCols.key: DbValues.metaDataExpiryAt, SyncMetadataCols.value: expiryAt},
@@ -996,7 +1113,7 @@ class SyncUpsertHelpers {
   }
 
   /// Upsert current logged-in user
-  Future<void> upsertCurrentUser(Database db, Map<String, dynamic> userData) async {
+  Future<void> upsertCurrentUser(DatabaseExecutor db, Map<String, dynamic> userData) async {
     await db.insert(
       DbTables.users,
       {
@@ -1020,7 +1137,7 @@ class SyncUpsertHelpers {
   /// This method is kept for reference but is never called.
   @Deprecated('Table assessment_statistics_cache does not exist in local_database schema')
   Future<void> upsertStatistics(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     _log.warn('upsertStatistics called but table does not exist; skipping');
@@ -1029,40 +1146,38 @@ class SyncUpsertHelpers {
 
   /// Upsert student results cache (assessment performance data)
   Future<void> upsertStudentResults(
-    Database db,
+    DatabaseExecutor db,
     List<dynamic> records,
   ) async {
     if (records.isEmpty) return;
-    await db.transaction((txn) async {
-      for (final result in records) {
-        try {
-          final data = result as Map<String, dynamic>;
-          final submissionId = data['submission_id']?.toString();
-          if (submissionId == null || submissionId.isEmpty) {
-            _log.warn('Student result missing submission_id, skipping');
-            continue;
-          }
-          final now = DateTime.now().toIso8601String();
-          await txn.insert(
-            DbTables.studentResultsCache,
-            {
-              StudentResultsCacheCols.submissionId: submissionId,
-              StudentResultsCacheCols.resultsJson: jsonEncode(data),
-              CommonCols.cachedAt: now,
-            },
-            conflictAlgorithm: ConflictAlgorithm.replace,
-          );
-        } catch (e) {
-          _log.warn('Failed to cache student result: $e');
+    for (final result in records) {
+      try {
+        final data = result as Map<String, dynamic>;
+        final submissionId = data['submission_id']?.toString();
+        if (submissionId == null || submissionId.isEmpty) {
+          _log.warn('Student result missing submission_id, skipping');
+          continue;
         }
+        final now = DateTime.now().toIso8601String();
+        await db.insert(
+          DbTables.studentResultsCache,
+          {
+            StudentResultsCacheCols.submissionId: submissionId,
+            StudentResultsCacheCols.resultsJson: jsonEncode(data),
+            CommonCols.cachedAt: now,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      } catch (e) {
+        _log.warn('Failed to cache student result: $e');
       }
-    });
+    }
     _log.upsertSummary(DbTables.studentResultsCache, records.length);
   }
 
   /// Process delta payload: upsert updated, soft-delete removed
   Future<void> processDeltaPayload(
-    Database db,
+    DatabaseExecutor db,
     Map<String, dynamic> deltas,
   ) async {
     final updatedCounts = <String, int>{};
@@ -1369,6 +1484,24 @@ class SyncUpsertHelpers {
       for (final id in deleted) {
         await db.update(
           DbTables.tosCompetencies,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id],
+        );
+      }
+    }
+
+    final activityLogsDeltas = deltas['activity_logs'];
+    if (activityLogsDeltas != null) {
+      final updated = activityLogsDeltas.updated;
+      updatedCounts['activity_logs'] = updated.length;
+      await upsertActivityLogs(db, updated);
+
+      final deleted = activityLogsDeltas.deleted;
+      deletedCounts['activity_logs'] = deleted.length;
+      for (final id in deleted) {
+        await db.update(
+          DbTables.activityLogs,
           {CommonCols.deletedAt: DateTime.now().toIso8601String()},
           where: '${CommonCols.id} = ?',
           whereArgs: [id],

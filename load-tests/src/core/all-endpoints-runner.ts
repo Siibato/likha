@@ -9,6 +9,7 @@ import { TosService } from '../services/tos';
 import { SyncService } from '../services/sync';
 import { HealthService } from '../services/health';
 import { AuthService } from '../services/auth';
+import { AdminService } from '../services/admin';
 import { expectAll } from './check-helpers';
 import { activeClasses, publishedAssessments, publishedAssignments, manifest, randomItem } from '../data/manifest';
 import { MixedSetupData } from '../types/scenario';
@@ -16,21 +17,19 @@ import { MixedSetupData } from '../types/scenario';
 interface RunnerOptions {
   includeHeavyEndpoints?: boolean;
   teacherVus: number;
+  studentVus: number;
+  adminVus: number;
 }
 
 declare const __VU: number;
 
 export function runAllEndpoints(data: MixedSetupData, opts: RunnerOptions): void {
-  const { includeHeavyEndpoints = false, teacherVus } = opts;
-  const studentVus = teacherVus; // symmetrical split
+  const { includeHeavyEndpoints = false, teacherVus, studentVus, adminVus } = opts;
 
-  // Determine VU type (first N = teacher, rest = student)
-  const isTeacher = __VU <= teacherVus;
-  const token = isTeacher ? data.teacherTokens[__VU] : data.studentTokens[__VU - teacherVus];
-  const role: 'Teacher' | 'Student' = isTeacher ? 'Teacher' : 'Student';
+  const role = data.roleMap?.[__VU];
+  const token = data.vuTokens?.[__VU];
 
-  if (!token) {
-    console.error(`No token for VU ${__VU}`);
+  if (!role || !token) {
     return;
   }
 
@@ -45,6 +44,7 @@ export function runAllEndpoints(data: MixedSetupData, opts: RunnerOptions): void
   const gradingSvc = new GradingService(client);
   const materialSvc = new MaterialService(client);
   const tosSvc = new TosService(client);
+  const adminSvc = new AdminService(client);
   const syncSvc = new SyncService(client);
 
   // Get random class/assessment/assignment for detail calls
@@ -243,6 +243,32 @@ export function runAllEndpoints(data: MixedSetupData, opts: RunnerOptions): void
         }
       }
     }
+  }
+
+  if (role === 'Admin') {
+    // Admin workflow
+
+    const accountsRes = adminSvc.listAccounts();
+    expectAll(accountsRes, 'admin-account-list', { status: 200, underMs: 500 });
+
+    const randomUser = randomItem(manifest.users);
+    const accountRes = adminSvc.getAccount(randomUser.id);
+    expectAll(accountRes, 'admin-account-detail', { status: 200, underMs: 300 });
+
+    const logsRes = adminSvc.getActivityLogs(randomUser.id);
+    expectAll(logsRes, 'admin-activity-logs', { status: 200, underMs: 400 });
+
+    const qrRes = adminSvc.getQrCode();
+    expectAll(qrRes, 'admin-setup-qr', { status: 200, underMs: 300 });
+
+    const codeRes = adminSvc.getSchoolCode();
+    expectAll(codeRes, 'admin-setup-code', { status: 200, underMs: 200 });
+
+    const settingsRes = adminSvc.getSchoolSettings();
+    expectAll(settingsRes, 'admin-school-settings', { status: 200, underMs: 200 });
+
+    const searchRes = adminSvc.searchStudents('student');
+    expectAll(searchRes, 'admin-student-search', { status: 200, underMs: 400 });
   }
 
   // ===== 3. SYNC PULL (critical bottleneck detection) =====

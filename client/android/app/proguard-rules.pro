@@ -51,5 +51,9 @@
 -keep public class javax.net.ssl.** { public *; }
 -keep public class java.security.** { public *; }
 
+# SQLCipher (required by sqflite_sqlcipher)
+-keep class net.sqlcipher.** { *; }
+-keep class net.sqlcipher.database.** { *; }
+
 # Don't obfuscate
 -dontobfuscate

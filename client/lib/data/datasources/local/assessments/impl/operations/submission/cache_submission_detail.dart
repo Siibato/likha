@@ -2,7 +2,7 @@ import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/data/models/assessments/submission_model.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 Future<void> cacheSubmissionDetailOp(

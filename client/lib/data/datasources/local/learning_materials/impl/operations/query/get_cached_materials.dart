@@ -1,13 +1,11 @@
 import 'package:likha/core/logging/cache_logger.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
-import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/core/database/db_schema.dart';
 
 Future<List<LearningMaterialModel>> getCachedMaterialsOp(
   LocalDatabase localDatabase,
-  EncryptionService enc,
   String classId,
 ) async {
   try {
@@ -35,9 +33,9 @@ Future<List<LearningMaterialModel>> getCachedMaterialsOp(
       materials.add(LearningMaterialModel(
         id: materialId,
         classId: result['class_id'] as String,
-        title: enc.decryptField(result['title'] as String?) ?? '',
+        title: result['title'] as String? ?? '',
         description: result['description'] as String?,
-        contentText: enc.decryptField(result['content_text'] as String?),
+        contentText: result['content_text'] as String?,
         orderIndex: result['order_index'] as int,
         fileCount: actualCount,
         createdAt: DateTime.parse(result['created_at'] as String),

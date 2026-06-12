@@ -27,7 +27,7 @@ dev-server:
 
 dev-client:
 	@emulator -avd Medium_Phone_API_36.1 > /dev/null 2>&1 &
-	@sleep 5
+	@sleep 15
 	@cd $(CLIENT_DIR) && flutter run
 
 dev-web:

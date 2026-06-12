@@ -3,7 +3,7 @@ import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/logging/cache_logger.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/data/models/assessments/statistics_model.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 Future<void> cacheStatisticsOp(
   LocalDatabase localDatabase,

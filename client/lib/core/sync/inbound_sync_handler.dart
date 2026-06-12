@@ -1,10 +1,11 @@
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/sync/sync_logger.dart';
+import 'package:likha/core/sync/sync_semaphore.dart';
 import 'package:likha/core/sync/sync_state.dart';
 import 'package:likha/core/sync/sync_upsert_helpers.dart';
 import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 class InboundSyncHandler {
@@ -94,31 +95,34 @@ class InboundSyncHandler {
       if (uid != null && uid.isNotEmpty) uniqueUserIds.add(uid);
     }
 
-    // Cache the logged-in user from sync response (BEFORE enrollment upserts to avoid CASCADE DELETE)
-    if (userData.isNotEmpty) {
-      await _upsertHelpers.upsertCurrentUser(db, userData);
-      participantUsers.add(userData);
-      uniqueUserIds.remove(userData['id']?.toString()); // Remove already upserted user
-    }
-
-    // Upsert enrolled students from sync response
-    if (enrolledStudentsData.isNotEmpty) {
-      final studentsList = enrolledStudentsData.cast<Map<String, dynamic>>();
-      await _upsertHelpers.upsertEnrolledStudents(db, studentsList);
-      participantUsers.addAll(studentsList);
-      // Remove upserted users from uniqueUserIds set
-      for (final student in studentsList) {
-        final uid = student['id']?.toString();
-        if (uid != null) uniqueUserIds.remove(uid);
-      }
-    }
-
-    // Upsert all base response data sequentially (proper await ensures committed before verification)
+    // Upsert all base response data in a single transaction (atomic + fast)
     _log.warn('Starting base response data upsert (classes, enrollments, students)...');
-    await _upsertHelpers.upsertClasses(db, baseResponse.classes);
-    await _upsertHelpers.upsertEnrolledStudents(db, participantUsers);
-    await _upsertHelpers.upsertParticipants(db, baseResponse.enrollments, participantUsers);
-    await _upsertHelpers.recalculateClassStudentCounts(db);
+    await db.transaction((txn) async {
+      // Cache the logged-in user from sync response (BEFORE enrollment upserts to avoid CASCADE DELETE)
+      if (userData.isNotEmpty) {
+        await _upsertHelpers.upsertCurrentUser(txn, userData);
+        participantUsers.add(userData);
+        uniqueUserIds.remove(userData['id']?.toString()); // Remove already upserted user
+      }
+
+      // Upsert enrolled students from sync response
+      if (enrolledStudentsData.isNotEmpty) {
+        final studentsList = enrolledStudentsData.cast<Map<String, dynamic>>();
+        await _upsertHelpers.upsertEnrolledStudents(txn, studentsList);
+        participantUsers.addAll(studentsList);
+        // Remove upserted users from uniqueUserIds set
+        for (final student in studentsList) {
+          final uid = student['id']?.toString();
+          if (uid != null) uniqueUserIds.remove(uid);
+        }
+      }
+
+      await _upsertHelpers.upsertClasses(txn, baseResponse.classes);
+      await _upsertHelpers.upsertEnrolledStudents(txn, participantUsers);
+      await _upsertHelpers.upsertParticipants(txn, baseResponse.enrollments, participantUsers);
+      await _upsertHelpers.recalculateClassStudentCounts(txn);
+      await _upsertHelpers.upsertActivityLogs(txn, baseResponse.activityLogs);
+    });
 
     _log.baseResponse(
       classes: baseResponse.classes.length,
@@ -179,8 +183,8 @@ class InboundSyncHandler {
       }
     }
 
-    for (int i = 0; i < classesForBatching.length; i += 2) {
-      final batch = classesForBatching.skip(i).take(2)
+    for (int i = 0; i < classesForBatching.length; i += 4) {
+      final batch = classesForBatching.skip(i).take(4)
           .map((c) => c['id']?.toString() ?? '')
           .where((id) => id.isNotEmpty)
           .toList();
@@ -201,10 +205,32 @@ class InboundSyncHandler {
       }
     }
 
-    // STEP 4: Iterate through batches with progress updates
-    if (classBatches.isNotEmpty) {
-      for (int batchIndex = 0; batchIndex < classBatches.length; batchIndex++) {
+    // STEP 4: Fetch and upsert entity batches
+    final needsEntityBatches = baseResponse.syncPlan?.needsEntityBatches ?? true;
+
+    if (needsEntityBatches && classBatches.isNotEmpty) {
+      // Fetch all batches concurrently with bounded concurrency
+      final semaphore = SyncSemaphore(maxConcurrency: 3);
+      final futures = List.generate(classBatches.length, (index) {
+        return semaphore.run(() async {
+          final batch = classBatches[index];
+          final response = await _syncRemoteDataSource.fullSync(
+            deviceId: deviceId,
+            classIds: batch,
+            receiveTimeout: const Duration(seconds: 30),
+          );
+          return MapEntry(index, response);
+        });
+      });
+      final results = await Future.wait(futures);
+      results.sort((a, b) => a.key.compareTo(b.key));
+
+      // Upsert in original order so progress bar is deterministic
+      for (final entry in results) {
+        final batchIndex = entry.key;
+        final batchResponse = entry.value;
         final batch = classBatches[batchIndex];
+
         const progressBase = 0.1;
         const progressRange = 0.85;
         final batchProgress = progressBase + (progressRange * (batchIndex / classBatches.length));
@@ -215,13 +241,6 @@ class InboundSyncHandler {
         _updateState(progress: batchProgress, currentStep: currentStepText);
 
         _log.batchStart(batchIndex, classBatches.length, batch);
-
-        // Make batch request with receiveTimeout
-        final batchResponse = await _syncRemoteDataSource.fullSync(
-          deviceId: deviceId,
-          classIds: batch,
-          receiveTimeout: const Duration(seconds: 30),
-        );
 
         // Upsert all entities from batch response
         final assessments = batchResponse.assessments;
@@ -240,6 +259,7 @@ class InboundSyncHandler {
         final periodGrades = batchResponse.periodGrades;
         final tableOfSpecifications = batchResponse.tableOfSpecifications;
         final tosCompetencies = batchResponse.tosCompetencies;
+        final activityLogs = batchResponse.activityLogs;
 
         // Extract enrolled_students and enrollments from batch (for full offline support)
         final batchParticipantUsers = batchResponse.enrolledStudents ?? <Map<String, dynamic>>[];
@@ -262,13 +282,14 @@ class InboundSyncHandler {
           'period_grades': periodGrades.length,
           'table_of_specifications': tableOfSpecifications.length,
           'tos_competencies': tosCompetencies.length,
-          'enrolled_students': batchParticipantUsers.length,  // NEW: for offline support
-          'enrollments': batchParticipants.length,              // NEW: for offline support
+          'activity_logs': activityLogs.length,
+          'enrolled_students': batchParticipantUsers.length,
+          'enrollments': batchParticipants.length,
         });
 
-        // Log assessment submission details for debugging
+        // Build submission count map (needed for mismatch detector below)
+        final byAssessment = <String, int>{};
         if (assessmentSubmissions.isNotEmpty) {
-          final byAssessment = <String, int>{};
           for (final s in assessmentSubmissions) {
             final aid = s['assessment_id']?.toString();
             if (aid != null) {
@@ -293,43 +314,59 @@ class InboundSyncHandler {
           _log.questionsPerAssessment(title, assessmentId ?? '?', qCount);
         }
 
-        // NEW: Upsert batch enrolled_students and enrollments (for full offline support)
-        await _upsertHelpers.upsertEnrolledStudents(db, batchParticipantUsers);
-        await _upsertHelpers.upsertParticipants(db, batchParticipants, batchParticipantUsers);
-
-        // Update in-memory studentMap with batch students so submissions can reference them
-        for (final s in batchParticipantUsers) {
-          final id = s['id']?.toString();
-          if (id != null && id.isNotEmpty) {
-            studentMap[id] = s;
+        // Detect potential truncation: submissions with answers but zero questions
+        for (final assessment in assessments) {
+          final assessmentId = assessment['id'] as String?;
+          if (assessmentId == null) continue;
+          final qCount = questionsByAssessment[assessmentId] ?? 0;
+          final subCount = byAssessment[assessmentId] ?? 0;
+          if (subCount > 0 && qCount == 0) {
+            _log.warn('WARNING: Assessment $assessmentId has $subCount submissions but 0 questions — possible server truncation');
           }
         }
 
-        await _upsertHelpers.upsertAssessments(db, assessments);
-        await _upsertHelpers.upsertQuestions(db, questions);
-        await _upsertHelpers.upsertAssessmentSubmissions(db, assessmentSubmissions, studentMap);
-        await _upsertHelpers.upsertAssignments(db, assignments);
-        await _upsertHelpers.upsertAssignmentSubmissions(db, assignmentSubmissions, studentMap);
-        await _upsertHelpers.upsertSubmissionFiles(db, submissionFiles);
-        await _upsertHelpers.upsertLearningMaterials(db, learningMaterials);
-        await _upsertHelpers.upsertMaterialFiles(db, materialFiles);
+        // NEW: Upsert batch enrolled_students and enrollments (for full offline support)
+        await db.transaction((txn) async {
+          await _upsertHelpers.upsertEnrolledStudents(txn, batchParticipantUsers);
+          await _upsertHelpers.upsertParticipants(txn, batchParticipants, batchParticipantUsers);
 
-        // NOTE: assessment_statistics_cache is still skipped (no use case), but student_results_cache now exists
-        _log.warn(
-          'Skipping upsert of ${assessmentStatistics.length} assessment_statistics (table not in schema)',
-        );
+          // Update in-memory studentMap with batch students so submissions can reference them
+          for (final s in batchParticipantUsers) {
+            final id = s['id']?.toString();
+            if (id != null && id.isNotEmpty) {
+              studentMap[id] = s;
+            }
+          }
 
-        // Write student_results to cache
-        await _upsertHelpers.upsertStudentResults(db, studentResults);
+          await _upsertHelpers.upsertAssessments(txn, assessments);
+          await _upsertHelpers.upsertQuestions(txn, questions);
+          await _upsertHelpers.upsertAssessmentSubmissions(txn, assessmentSubmissions, studentMap);
+          await _upsertHelpers.upsertAssignments(txn, assignments);
+          await _upsertHelpers.upsertAssignmentSubmissions(txn, assignmentSubmissions, studentMap);
+          await _upsertHelpers.upsertSubmissionFiles(txn, submissionFiles);
+          await _upsertHelpers.upsertLearningMaterials(txn, learningMaterials);
+          await _upsertHelpers.upsertMaterialFiles(txn, materialFiles);
 
-        await _upsertHelpers.upsertGradeConfigs(db, gradeConfigs);
-        await _upsertHelpers.upsertGradeItems(db, gradeItems);
-        await _upsertHelpers.upsertGradeScores(db, gradeScores);
-        await _upsertHelpers.upsertQuarterlyGrades(db, periodGrades);
+          // NOTE: assessment_statistics_cache is still skipped (no use case), but student_results_cache now exists
+          _log.warn(
+            'Skipping upsert of ${assessmentStatistics.length} assessment_statistics (table not in schema)',
+          );
 
-        await _upsertHelpers.upsertTableOfSpecifications(db, tableOfSpecifications);
-        await _upsertHelpers.upsertTosCompetencies(db, tosCompetencies);
+          // Write student_results to cache
+          await _upsertHelpers.upsertStudentResults(txn, studentResults);
+
+          await _upsertHelpers.upsertGradeConfigs(txn, gradeConfigs);
+          await _upsertHelpers.upsertGradeItems(txn, gradeItems);
+          await _upsertHelpers.upsertGradeScores(txn, gradeScores);
+          await _upsertHelpers.upsertQuarterlyGrades(txn, periodGrades);
+
+          await _upsertHelpers.upsertTableOfSpecifications(txn, tableOfSpecifications);
+          await _upsertHelpers.upsertTosCompetencies(txn, tosCompetencies);
+          await _upsertHelpers.upsertActivityLogs(txn, activityLogs);
+        });
       }
+    } else if (!needsEntityBatches) {
+      _log.warn('Skipping entity batches (server says none needed)');
     }
 
     await _upsertHelpers.recalculateClassStudentCounts(db);

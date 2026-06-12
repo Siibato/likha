@@ -3,6 +3,7 @@ use uuid::Uuid;
 
 use crate::utils::{AppError, AppResult};
 use crate::modules::sync::helpers::enrich_questions;
+use crate::modules::sync::sync_scope::SyncScope;
 
 use super::sync_delta_service::{DeltaRequest, DeltaResponse, DeltaPayload};
 use super::separate_deltas::separate_deltas;
@@ -53,6 +54,8 @@ impl super::SyncDeltaService {
             .get_user_manifest(user_id, user_role)
             .await?;
 
+        let scope = SyncScope::for_role(user_role);
+
         // Step 4: Query for deltas per entity type
         tracing::debug!("Fetching class deltas since {}", last_sync_at);
         let classes = self
@@ -71,115 +74,155 @@ impl super::SyncDeltaService {
             .await?;
         tracing::debug!("Got {} enrollment deltas", enrollments.len());
 
-        tracing::debug!("Fetching assessment deltas since {}", last_sync_at);
-        let assessments = self
-            .manifest_repo
-            .get_assessments_since(
-                manifest.assessments.iter().map(|e| e.id).collect(),
-                last_sync_at,
-            )
-            .await?;
-        tracing::debug!("Got {} assessment deltas", assessments.len());
+        let mut assessments: Vec<serde_json::Value> = Vec::new();
+        let mut questions: Vec<serde_json::Value> = Vec::new();
+        let mut assessment_submissions: Vec<serde_json::Value> = Vec::new();
+        let mut assignments: Vec<serde_json::Value> = Vec::new();
+        let mut assignment_submissions: Vec<serde_json::Value> = Vec::new();
+        let mut learning_materials: Vec<serde_json::Value> = Vec::new();
+        let mut grade_configs_raw: Vec<serde_json::Value> = Vec::new();
+        let mut grade_items_raw: Vec<serde_json::Value> = Vec::new();
+        let mut grade_scores_raw: Vec<serde_json::Value> = Vec::new();
+        let mut quarterly_grades_raw: Vec<serde_json::Value> = Vec::new();
+        let mut tos_raw: Vec<serde_json::Value> = Vec::new();
+        let mut tos_competencies_raw: Vec<serde_json::Value> = Vec::new();
+        let mut activity_logs_raw: Vec<serde_json::Value> = Vec::new();
 
-        let question_ids: Vec<Uuid> = manifest.assessment_questions.iter().map(|e| e.id).collect();
-        tracing::debug!("Fetching {} question deltas since {}", question_ids.len(), last_sync_at);
-        let questions = if question_ids.is_empty() {
-            Vec::new()
-        } else {
-            let raw_questions = self.manifest_repo
-                .get_questions_since(question_ids, last_sync_at)
+        if scope.include_assessments {
+            tracing::debug!("Fetching assessment deltas since {}", last_sync_at);
+            assessments = self
+                .manifest_repo
+                .get_assessments_since(
+                    manifest.assessments.iter().map(|e| e.id).collect(),
+                    last_sync_at,
+                )
                 .await?;
-            // Enrich questions with nested data (choices, correct answers, enumeration items)
-            enrich_questions(&self.db, raw_questions, user_role).await?
-        };
-        tracing::debug!("Got {} question deltas", questions.len());
+            tracing::debug!("Got {} assessment deltas", assessments.len());
+        }
 
-        let assessment_submission_ids: Vec<Uuid> =
-            manifest.assessment_submissions.iter().map(|e| e.id).collect();
-        tracing::debug!("Fetching {} assessment submission deltas since {}", assessment_submission_ids.len(), last_sync_at);
-        let assessment_submissions = if assessment_submission_ids.is_empty() {
-            Vec::new()
-        } else {
-            self.manifest_repo
-                .get_assessment_submissions_since(user_id, assessment_submission_ids, last_sync_at)
-                .await?
-        };
-        tracing::debug!("Got {} assessment submission deltas", assessment_submissions.len());
+        if scope.include_questions {
+            let question_ids: Vec<Uuid> = manifest.assessment_questions.iter().map(|e| e.id).collect();
+            tracing::debug!("Fetching {} question deltas since {}", question_ids.len(), last_sync_at);
+            questions = if question_ids.is_empty() {
+                Vec::new()
+            } else {
+                let raw_questions = self.manifest_repo
+                    .get_questions_since(question_ids, last_sync_at)
+                    .await?;
+                enrich_questions(&self.db, raw_questions, user_role).await?
+            };
+            tracing::debug!("Got {} question deltas", questions.len());
+        }
 
-        tracing::debug!("Fetching assignment deltas since {}", last_sync_at);
-        let assignments = self
-            .manifest_repo
-            .get_assignments_since(
-                manifest.assignments.iter().map(|e| e.id).collect(),
-                last_sync_at,
-            )
-            .await?;
-        tracing::debug!("Got {} assignment deltas", assignments.len());
+        if scope.include_submissions {
+            let assessment_submission_ids: Vec<Uuid> =
+                manifest.assessment_submissions.iter().map(|e| e.id).collect();
+            tracing::debug!("Fetching {} assessment submission deltas since {}", assessment_submission_ids.len(), last_sync_at);
+            assessment_submissions = if assessment_submission_ids.is_empty() {
+                Vec::new()
+            } else {
+                self.manifest_repo
+                    .get_assessment_submissions_since(user_id, assessment_submission_ids, last_sync_at)
+                    .await?
+            };
+            tracing::debug!("Got {} assessment submission deltas", assessment_submissions.len());
+        }
 
-        let assignment_submission_ids: Vec<Uuid> =
-            manifest.assignment_submissions.iter().map(|e| e.id).collect();
-        tracing::debug!("Fetching {} assignment submission deltas since {}", assignment_submission_ids.len(), last_sync_at);
-        let assignment_submissions = if assignment_submission_ids.is_empty() {
-            Vec::new()
-        } else {
-            self.manifest_repo
-                .get_assignment_submissions_since(user_id, assignment_submission_ids, last_sync_at)
-                .await?
-        };
-        tracing::debug!("Got {} assignment submission deltas", assignment_submissions.len());
+        if scope.include_assignments {
+            tracing::debug!("Fetching assignment deltas since {}", last_sync_at);
+            assignments = self
+                .manifest_repo
+                .get_assignments_since(
+                    manifest.assignments.iter().map(|e| e.id).collect(),
+                    last_sync_at,
+                )
+                .await?;
+            tracing::debug!("Got {} assignment deltas", assignments.len());
+        }
 
-        tracing::debug!("Fetching learning material deltas since {}", last_sync_at);
-        let learning_materials = self
-            .manifest_repo
-            .get_materials_since(
-                manifest.learning_materials.iter().map(|e| e.id).collect(),
-                last_sync_at,
-            )
-            .await?;
-        tracing::debug!("Got {} learning material deltas", learning_materials.len());
+        if scope.include_submissions {
+            let assignment_submission_ids: Vec<Uuid> =
+                manifest.assignment_submissions.iter().map(|e| e.id).collect();
+            tracing::debug!("Fetching {} assignment submission deltas since {}", assignment_submission_ids.len(), last_sync_at);
+            assignment_submissions = if assignment_submission_ids.is_empty() {
+                Vec::new()
+            } else {
+                self.manifest_repo
+                    .get_assignment_submissions_since(user_id, assignment_submission_ids, last_sync_at)
+                    .await?
+            };
+            tracing::debug!("Got {} assignment submission deltas", assignment_submissions.len());
+        }
 
-        // Step 5: Fetch grading deltas
-        let class_ids: Vec<Uuid> = manifest.classes.iter().map(|e| e.id).collect();
-        let grade_configs_raw = self.manifest_repo
-            .get_grade_configs_since(class_ids.clone(), last_sync_at)
-            .await?;
-        let grade_items_raw = self.manifest_repo
-            .get_grade_items_since(class_ids.clone(), last_sync_at)
-            .await?;
+        if scope.include_learning_materials {
+            tracing::debug!("Fetching learning material deltas since {}", last_sync_at);
+            learning_materials = self
+                .manifest_repo
+                .get_materials_since(
+                    manifest.learning_materials.iter().map(|e| e.id).collect(),
+                    last_sync_at,
+                )
+                .await?;
+            tracing::debug!("Got {} learning material deltas", learning_materials.len());
+        }
 
-        // Get all grade_item IDs for score delta query
-        let all_grade_item_ids: Vec<Uuid> = self.manifest_repo
-            .get_grade_item_ids_for_classes(class_ids.clone())
-            .await?;
+        if scope.include_grade_data {
+            let class_ids: Vec<Uuid> = manifest.classes.iter().map(|e| e.id).collect();
+            grade_configs_raw = self.manifest_repo
+                .get_grade_configs_since(class_ids.clone(), last_sync_at)
+                .await?;
+            grade_items_raw = self.manifest_repo
+                .get_grade_items_since(class_ids.clone(), last_sync_at)
+                .await?;
 
-        let grade_scores_raw = if all_grade_item_ids.is_empty() {
-            Vec::new()
-        } else {
-            match user_role {
+            let all_grade_item_ids: Vec<Uuid> = self.manifest_repo
+                .get_grade_item_ids_for_classes(class_ids.clone())
+                .await?;
+
+            grade_scores_raw = if all_grade_item_ids.is_empty() {
+                Vec::new()
+            } else {
+                match user_role {
+                    "student" => self.manifest_repo
+                        .get_student_grade_scores_since(user_id, all_grade_item_ids, last_sync_at)
+                        .await?,
+                    _ => self.manifest_repo
+                        .get_all_grade_scores_since(all_grade_item_ids, last_sync_at)
+                        .await?,
+                }
+            };
+
+            quarterly_grades_raw = match user_role {
                 "student" => self.manifest_repo
-                    .get_student_grade_scores_since(user_id, all_grade_item_ids, last_sync_at)
+                    .get_student_quarterly_grades_since(user_id, class_ids, last_sync_at)
                     .await?,
                 _ => self.manifest_repo
-                    .get_all_grade_scores_since(all_grade_item_ids, last_sync_at)
+                    .get_all_quarterly_grades_since(class_ids, last_sync_at)
                     .await?,
-            }
-        };
+            };
+        }
 
-        let quarterly_grades_raw = match user_role {
-            "student" => self.manifest_repo
-                .get_student_quarterly_grades_since(user_id, class_ids, last_sync_at)
-                .await?,
-            _ => self.manifest_repo
-                .get_all_quarterly_grades_since(class_ids, last_sync_at)
-                .await?,
-        };
+        if scope.include_tos {
+            tos_raw = self.manifest_repo
+                .get_table_of_specifications_since(manifest.classes.iter().map(|e| e.id).collect(), last_sync_at)
+                .await?;
+            tos_competencies_raw = self.manifest_repo
+                .get_tos_competencies_since(manifest.classes.iter().map(|e| e.id).collect(), last_sync_at)
+                .await?;
+        }
 
-        let tos_raw = self.manifest_repo
-            .get_table_of_specifications_since(manifest.classes.iter().map(|e| e.id).collect(), last_sync_at)
-            .await?;
-        let tos_competencies_raw = self.manifest_repo
-            .get_tos_competencies_since(manifest.classes.iter().map(|e| e.id).collect(), last_sync_at)
-            .await?;
+        if scope.include_activity_logs {
+            let activity_log_ids: Vec<Uuid> = manifest.activity_logs.iter().map(|e| e.id).collect();
+            tracing::debug!("Fetching {} activity log deltas since {}", activity_log_ids.len(), last_sync_at);
+            activity_logs_raw = if activity_log_ids.is_empty() {
+                Vec::new()
+            } else {
+                self.manifest_repo
+                    .get_activity_logs_since(activity_log_ids, last_sync_at)
+                    .await?
+            };
+            tracing::debug!("Got {} activity log deltas", activity_logs_raw.len());
+        }
 
         // Step 6: Separate updated vs deleted for each entity type
         let classes_deltas = separate_deltas(classes);
@@ -196,6 +239,7 @@ impl super::SyncDeltaService {
         let quarterly_grades_deltas = separate_deltas(quarterly_grades_raw);
         let tos_deltas = separate_deltas(tos_raw);
         let tos_competencies_deltas = separate_deltas(tos_competencies_raw);
+        let activity_logs_deltas = separate_deltas(activity_logs_raw);
 
         let now = Utc::now();
         let sync_token = now.to_rfc3339();
@@ -228,6 +272,7 @@ impl super::SyncDeltaService {
                 period_grades: quarterly_grades_deltas,
                 table_of_specifications: tos_deltas,
                 tos_competencies: tos_competencies_deltas,
+                activity_logs: activity_logs_deltas,
             },
         })
     }

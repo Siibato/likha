@@ -1,7 +1,6 @@
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:uuid/uuid.dart';
@@ -9,7 +8,6 @@ import 'package:uuid/uuid.dart';
 Future<LearningMaterialModel> createMaterialLocallyOp(
   LocalDatabase localDatabase,
   SyncQueue syncQueue,
-  EncryptionService enc,
   String classId,
   String title,
   String description,
@@ -36,8 +34,6 @@ Future<LearningMaterialModel> createMaterialLocallyOp(
       final map = material.toMap();
       map[CommonCols.cachedAt] = now.toIso8601String();
       map[CommonCols.needsSync] = 1;
-      map['title'] = enc.encryptField(map['title'] as String?);
-      map['content_text'] = enc.encryptField(map['content_text'] as String?);
       await txn.insert(DbTables.learningMaterials, map);
 
       await syncQueue.enqueue(SyncQueueEntry(

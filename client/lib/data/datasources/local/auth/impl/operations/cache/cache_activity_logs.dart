@@ -1,12 +1,10 @@
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/database/local_database.dart';
-import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/data/models/auth/activity_log_model.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 Future<void> cacheActivityLogsOp(
   LocalDatabase localDatabase,
-  EncryptionService enc,
   List<ActivityLogModel> logs,
   String userId,
 ) async {
@@ -20,7 +18,7 @@ Future<void> cacheActivityLogsOp(
             'id': log.id,
             'user_id': log.userId,
             'action': log.action,
-            'details': enc.encryptField(log.details),
+            'details': log.details,
             'created_at': log.createdAt.toIso8601String(),
             'cached_at': DateTime.now().toIso8601String(),
             'needs_sync': 0,

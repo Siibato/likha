@@ -1,13 +1,11 @@
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
-import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/data/models/assessments/question_model.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 Future<void> cacheQuestionsOp(
   LocalDatabase localDatabase,
-  EncryptionService enc,
   String assessmentId,
   List<QuestionModel> questions, {
   bool isServerConfirmed = false,
@@ -39,7 +37,7 @@ Future<void> cacheQuestionsOp(
             CommonCols.id: question.id,
             AssessmentQuestionsCols.assessmentId: assessmentId,
             AssessmentQuestionsCols.questionType: question.questionType,
-            AssessmentQuestionsCols.questionText: enc.encryptField(question.questionText),
+            AssessmentQuestionsCols.questionText: question.questionText,
             AssessmentQuestionsCols.points: question.points,
             AssessmentQuestionsCols.orderIndex: question.orderIndex,
             AssessmentQuestionsCols.isMultiSelect: question.isMultiSelect ? 1 : 0,
@@ -58,7 +56,7 @@ Future<void> cacheQuestionsOp(
               {
                 CommonCols.id: choice.id,
                 QuestionChoicesCols.questionId: question.id,
-                QuestionChoicesCols.choiceText: enc.encryptField(choice.choiceText),
+                QuestionChoicesCols.choiceText: choice.choiceText,
                 QuestionChoicesCols.isCorrect: choice.isCorrect ? 1 : 0,
                 QuestionChoicesCols.orderIndex: choice.orderIndex,
                 CommonCols.cachedAt: now,
@@ -89,7 +87,7 @@ Future<void> cacheQuestionsOp(
               {
                 CommonCols.id: answer.id,
                 AnswerKeyAcceptableAnswersCols.answerKeyId: answerKeyId,
-                AnswerKeyAcceptableAnswersCols.answerText: enc.encryptField(answer.answerText),
+                AnswerKeyAcceptableAnswersCols.answerText: answer.answerText,
                 CommonCols.cachedAt: now,
                 CommonCols.needsSync: 0,
               },
@@ -119,7 +117,7 @@ Future<void> cacheQuestionsOp(
                 {
                   CommonCols.id: acceptableAnswer.id,
                   AnswerKeyAcceptableAnswersCols.answerKeyId: answerKeyId,
-                  AnswerKeyAcceptableAnswersCols.answerText: enc.encryptField(acceptableAnswer.answerText),
+                  AnswerKeyAcceptableAnswersCols.answerText: acceptableAnswer.answerText,
                   CommonCols.cachedAt: now,
                   CommonCols.needsSync: 0,
                 },

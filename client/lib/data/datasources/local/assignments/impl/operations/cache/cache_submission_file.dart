@@ -2,7 +2,7 @@ import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/data/models/assignments/submission_file_model.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 Future<void> cacheSubmissionFileOp(
   LocalDatabase localDatabase,

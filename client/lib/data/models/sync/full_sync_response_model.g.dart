@@ -6,6 +6,20 @@ part of 'full_sync_response_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+SyncPlanModel _$SyncPlanModelFromJson(
+  Map<String, dynamic> json,
+) => SyncPlanModel(
+  needsEntityBatches: json['needs_entity_batches'] as bool,
+  totalClasses: (json['total_classes'] as num).toInt(),
+);
+
+Map<String, dynamic> _$SyncPlanModelToJson(
+  SyncPlanModel instance,
+) => <String, dynamic>{
+  'needs_entity_batches': instance.needsEntityBatches,
+  'total_classes': instance.totalClasses,
+};
+
 FullSyncResponseModel _$FullSyncResponseModelFromJson(
   Map<String, dynamic> json,
 ) => FullSyncResponseModel(
@@ -35,50 +49,68 @@ FullSyncResponseModel _$FullSyncResponseModelFromJson(
   learningMaterials: (json['learning_materials'] as List<dynamic>)
       .map((e) => e as Map<String, dynamic>)
       .toList(),
-  materialFiles: (json['material_files'] as List<dynamic>?)
+  materialFiles:
+      (json['material_files'] as List<dynamic>?)
           ?.map((e) => e as Map<String, dynamic>)
           .toList() ??
-      const [],
-  submissionFiles: (json['submission_files'] as List<dynamic>?)
+      [],
+  submissionFiles:
+      (json['submission_files'] as List<dynamic>?)
           ?.map((e) => e as Map<String, dynamic>)
           .toList() ??
-      const [],
-  assessmentStatistics: (json['assessment_statistics'] as List<dynamic>?)
+      [],
+  assessmentStatistics:
+      (json['assessment_statistics'] as List<dynamic>?)
           ?.map((e) => e as Map<String, dynamic>)
           .toList() ??
-      const [],
-  studentResults: (json['student_results'] as List<dynamic>?)
+      [],
+  studentResults:
+      (json['student_results'] as List<dynamic>?)
           ?.map((e) => e as Map<String, dynamic>)
           .toList() ??
-      const [],
-  gradeConfigs: (json['grade_configs'] as List<dynamic>?)
+      [],
+  gradeConfigs:
+      (json['grade_configs'] as List<dynamic>?)
           ?.map((e) => e as Map<String, dynamic>)
           .toList() ??
-      const [],
-  gradeItems: (json['grade_items'] as List<dynamic>?)
+      [],
+  gradeItems:
+      (json['grade_items'] as List<dynamic>?)
           ?.map((e) => e as Map<String, dynamic>)
           .toList() ??
-      const [],
-  gradeScores: (json['grade_scores'] as List<dynamic>?)
+      [],
+  gradeScores:
+      (json['grade_scores'] as List<dynamic>?)
           ?.map((e) => e as Map<String, dynamic>)
           .toList() ??
-      const [],
-  periodGrades: (json['period_grades'] as List<dynamic>?)
+      [],
+  periodGrades:
+      (json['period_grades'] as List<dynamic>?)
           ?.map((e) => e as Map<String, dynamic>)
           .toList() ??
-      const [],
-  tableOfSpecifications: (json['table_of_specifications'] as List<dynamic>?)
+      [],
+  tableOfSpecifications:
+      (json['table_of_specifications'] as List<dynamic>?)
           ?.map((e) => e as Map<String, dynamic>)
           .toList() ??
-      const [],
-  tosCompetencies: (json['tos_competencies'] as List<dynamic>?)
+      [],
+  tosCompetencies:
+      (json['tos_competencies'] as List<dynamic>?)
           ?.map((e) => e as Map<String, dynamic>)
           .toList() ??
-      const [],
+      [],
+  activityLogs:
+      (json['activity_logs'] as List<dynamic>?)
+          ?.map((e) => e as Map<String, dynamic>)
+          .toList() ??
+      [],
   user: json['user'] as Map<String, dynamic>?,
   enrolledStudents: (json['enrolled_students'] as List<dynamic>?)
       ?.map((e) => e as Map<String, dynamic>)
       .toList(),
+  syncPlan: json['sync_plan'] == null
+      ? null
+      : SyncPlanModel.fromJson(json['sync_plan'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$FullSyncResponseModelToJson(
@@ -104,6 +136,8 @@ Map<String, dynamic> _$FullSyncResponseModelToJson(
   'period_grades': instance.periodGrades,
   'table_of_specifications': instance.tableOfSpecifications,
   'tos_competencies': instance.tosCompetencies,
+  'activity_logs': instance.activityLogs,
   'user': instance.user,
   'enrolled_students': instance.enrolledStudents,
+  'sync_plan': instance.syncPlan,
 };

@@ -1,5 +1,6 @@
 import { Account } from '../types/scenario';
 
+export const ADMIN_PASSWORD = 'admin123';
 export const TEACHER_PASSWORD = 'teacher123';
 export const STUDENT_PASSWORD = 'student123';
 
@@ -17,7 +18,16 @@ export const studentAccounts: Account[] = Array.from({ length: 70 }, (_, i) => (
   fullName: `Student ${i + 1}`,
 }));
 
-export const allAccounts: Account[] = [...teacherAccounts, ...studentAccounts];
+export const adminAccounts: Account[] = [
+  {
+    username: 'admin',
+    password: ADMIN_PASSWORD,
+    role: 'admin' as const,
+    fullName: 'System Administrator',
+  },
+];
+
+export const allAccounts: Account[] = [...adminAccounts, ...teacherAccounts, ...studentAccounts];
 
 export function getAccountByVU(pool: Account[], vuId: number): Account {
   return pool[(vuId - 1) % pool.length];

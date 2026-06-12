@@ -84,7 +84,7 @@ pub async fn seed_manual_world(db: &DatabaseConnection) -> Result<(), AppError> 
     inserters::grading::insert_grade_scores(db, &grade_scores, ctx.now()).await?;
 
     // Generate and insert period grades
-    let period_grades = generate_period_grades(&students, &grade_records, &grade_scores, &ctx);
+    let period_grades = generate_period_grades(&students, &grade_records, &grade_scores, &enrollments, &ctx);
     inserters::grading::insert_period_grades(db, &period_grades, ctx.now()).await?;
 
     enable_foreign_keys(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
@@ -281,21 +281,33 @@ fn generate_period_grades(
     students: &[crate::seed::specs::UserSpec],
     grade_records: &[crate::seed::specs::GradeRecordSpec],
     grade_scores: &[crate::seed::specs::GradeScoreSpec],
+    enrollments: &[crate::seed::specs::EnrollmentSpec],
     ctx: &SeedContext,
 ) -> Vec<crate::seed::specs::PeriodGradeSpec> {
     use crate::modules::grading::helpers::deped_weights::transmute_grade;
+    use uuid::Uuid;
 
     let mut period_grades = Vec::new();
 
-    // Build student score map per class per period
-    for record in grade_records {
-        // Get students enrolled in this class
-        let enrolled_students: Vec<_> = students.iter().enumerate()
-            .filter(|(_, s)| s.role == "student")
-            .map(|(idx, s)| (idx, s.id))
-            .collect();
+    // Build class_id -> enrolled student_ids lookup (only actual enrollments)
+    let mut class_students: std::collections::HashMap<Uuid, Vec<usize>> = std::collections::HashMap::new();
+    for (idx, student) in students.iter().enumerate() {
+        if student.role != "student" {
+            continue;
+        }
+        for enrollment in enrollments {
+            if enrollment.user_id == student.id {
+                class_students.entry(enrollment.class_id).or_default().push(idx);
+            }
+        }
+    }
 
-        for (student_idx, student_id) in enrolled_students {
+    for record in grade_records {
+        let enrolled = class_students.get(&record.class_id).cloned().unwrap_or_default();
+
+        for &student_idx in &enrolled {
+            let student_id = students[student_idx].id;
+
             // Compute initial grade (simplified: average of scores / 100 * 100)
             let student_scores: Vec<f64> = grade_scores
                 .iter()

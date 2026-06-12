@@ -8,12 +8,12 @@ import 'operations/query/get_cached_material_files.dart';
 mixin LearningMaterialQueryMixin on LearningMaterialLocalDataSourceBase {
   @override
   Future<List<LearningMaterialModel>> getCachedMaterials(String classId) async {
-    return getCachedMaterialsOp(localDatabase, enc, classId);
+    return getCachedMaterialsOp(localDatabase, classId);
   }
 
   @override
   Future<LearningMaterialModel> getCachedMaterialDetail(String materialId) async {
-    return getCachedMaterialDetailOp(localDatabase, enc, materialId);
+    return getCachedMaterialDetailOp(localDatabase, materialId);
   }
 
   @override

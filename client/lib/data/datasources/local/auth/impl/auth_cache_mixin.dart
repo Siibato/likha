@@ -11,22 +11,22 @@ import 'operations/cache/clear_all_cache.dart';
 mixin AuthCacheMixin on AuthLocalDataSourceBase {
   @override
   Future<void> cacheCurrentUser(UserModel user) async {
-    return cacheCurrentUserOp(localDatabase, enc, user);
+    return cacheCurrentUserOp(localDatabase, user);
   }
 
   @override
   Future<void> cacheAccounts(List<UserModel> accounts) async {
-    return cacheAccountsOp(localDatabase, enc, accounts);
+    return cacheAccountsOp(localDatabase, accounts);
   }
 
   @override
   Future<void> cacheCreatedAccount(UserModel account) async {
-    return cacheCreatedAccountOp(localDatabase, enc, syncQueue, account);
+    return cacheCreatedAccountOp(localDatabase, syncQueue, account);
   }
 
   @override
   Future<void> cacheActivityLogs(List<ActivityLogModel> logs, String userId) async {
-    return cacheActivityLogsOp(localDatabase, enc, logs, userId);
+    return cacheActivityLogsOp(localDatabase, logs, userId);
   }
 
   @override
