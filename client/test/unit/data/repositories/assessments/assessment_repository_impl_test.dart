@@ -139,7 +139,7 @@ void main() {
           eventBus: eventBus, syncLogger: syncLogger, isServerReachable: false,
         );
 
-        when(() => local.createAssessmentLocally(
+        when(() => local.createAssessment(
           classId: any(named: 'classId'),
           title: any(named: 'title'),
           timeLimitMinutes: any(named: 'timeLimitMinutes'),
@@ -211,14 +211,14 @@ void main() {
           eventBus: eventBus, syncLogger: syncLogger, isServerReachable: false,
         );
 
-        when(() => local.deleteAssessmentLocally(assessmentId: any(named: 'assessmentId')))
+        when(() => local.deleteAssessment(assessmentId: any(named: 'assessmentId')))
             .thenAnswer((_) async {});
         when(() => syncQueue.enqueue(any())).thenAnswer((_) async {});
 
         final result = await repo.deleteAssessment(assessmentId: 'as-1');
 
         expect(result.isRight(), isTrue);
-        verify(() => local.deleteAssessmentLocally(assessmentId: 'as-1')).called(1);
+        verify(() => local.deleteAssessment(assessmentId: 'as-1')).called(1);
         verify(() => syncQueue.enqueue(any())).called(1);
       });
     });
@@ -238,14 +238,14 @@ void main() {
         );
         when(() => local.getCachedAssessmentDetail(any()))
             .thenAnswer((_) async => (_fakeModel(), [fakeQ]));
-        when(() => local.markAssessmentPublishedLocally(assessmentId: any(named: 'assessmentId')))
+        when(() => local.markAssessmentPublished(assessmentId: any(named: 'assessmentId')))
             .thenAnswer((_) async {});
         when(() => syncQueue.enqueue(any())).thenAnswer((_) async {});
 
         final result = await repo.publishAssessment(assessmentId: 'as-1');
 
         expect(result.isRight(), isTrue);
-        verify(() => local.markAssessmentPublishedLocally(assessmentId: 'as-1')).called(1);
+        verify(() => local.markAssessmentPublished(assessmentId: 'as-1')).called(1);
         verify(() => syncQueue.enqueue(any())).called(1);
       });
     });

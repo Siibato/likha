@@ -22,12 +22,12 @@ ResultVoid deleteAssessment(
         maxRetries: 5,
         createdAt: DateTime.now(),
       ));
-      await base.localDataSource.deleteAssessmentLocally(assessmentId: assessmentId);
+      await base.localDataSource.deleteAssessment(assessmentId: assessmentId);
       return const Right(null);
     }
 
     await base.remoteDataSource.deleteAssessment(assessmentId: assessmentId);
-    await base.localDataSource.deleteAssessmentLocally(assessmentId: assessmentId);
+    await base.localDataSource.deleteAssessment(assessmentId: assessmentId);
     return const Right(null);
   } on ServerException catch (e) {
     return Left(ServerFailure(e.message, statusCode: e.statusCode));

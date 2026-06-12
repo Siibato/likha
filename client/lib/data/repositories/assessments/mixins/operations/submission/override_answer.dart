@@ -13,7 +13,7 @@ ResultFuture<SubmissionAnswer> overrideAnswer(
 }) async {
   try {
     // Always write locally first (optimistic)
-    await base.localDataSource.overrideAnswerLocally(
+    await base.localDataSource.overrideAnswer(
       answerId: answerId,
       isCorrect: isCorrect,
       points: points,

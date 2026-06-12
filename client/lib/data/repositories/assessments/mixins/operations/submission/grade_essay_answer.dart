@@ -12,7 +12,7 @@ ResultFuture<SubmissionAnswer> gradeEssayAnswer(
 }) async {
   try {
     // Always write locally first (optimistic)
-    await base.localDataSource.gradeEssayLocally(
+    await base.localDataSource.gradeEssay(
       answerId: answerId,
       points: points,
     );

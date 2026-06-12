@@ -28,7 +28,7 @@ ResultFuture<SubmissionSummary> submitAssessment(
         totalPoints = 0.0;
       }
 
-      await base.localDataSource.submitAssessmentLocally(
+      await base.localDataSource.submitAssessment(
         submissionId: submissionId,
         assessmentId: assessmentId,
       );

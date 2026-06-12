@@ -32,7 +32,7 @@ ResultFuture<Assessment> createAssessment(
           final id = const Uuid().v4();
           return QuestionModel(
             id: id,
-            assessmentId: '', // Will be set by createAssessmentWithQuestionsLocally
+            assessmentId: '', // Will be set by createAssessmentWithQuestions
             questionType: q['question_type'] as String,
             questionText: q['question_text'] as String,
             points: q['points'] as int,
@@ -67,7 +67,7 @@ ResultFuture<Assessment> createAssessment(
           );
         }).toList();
 
-        final assessmentId = await base.localDataSource.createAssessmentWithQuestionsLocally(
+        final assessmentId = await base.localDataSource.createAssessmentWithQuestions(
           classId: classId,
           title: title,
           description: description,
@@ -110,7 +110,7 @@ ResultFuture<Assessment> createAssessment(
         ));
       }
 
-      final assessmentId = await base.localDataSource.createAssessmentLocally(
+      final assessmentId = await base.localDataSource.createAssessment(
         classId: classId,
         title: title,
         description: description,

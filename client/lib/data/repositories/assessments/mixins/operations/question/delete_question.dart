@@ -12,7 +12,7 @@ ResultVoid deleteQuestion(
 }) async {
   try {
     if (!base.serverReachabilityService.isServerReachable) {
-      await base.localDataSource.deleteQuestionLocally(questionId: questionId);
+      await base.localDataSource.deleteQuestion(questionId: questionId);
 
       await base.syncQueue.enqueue(SyncQueueEntry(
         id: const Uuid().v4(),
@@ -28,7 +28,7 @@ ResultVoid deleteQuestion(
     }
 
     await base.remoteDataSource.deleteQuestion(questionId: questionId);
-    await base.localDataSource.deleteQuestionLocally(questionId: questionId);
+    await base.localDataSource.deleteQuestion(questionId: questionId);
     return const Right(null);
   } on ServerException catch (e) {
     return Left(ServerFailure(e.message, statusCode: e.statusCode));

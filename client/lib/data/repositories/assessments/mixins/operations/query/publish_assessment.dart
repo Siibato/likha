@@ -37,7 +37,7 @@ ResultFuture<Assessment> publishAssessment(
         createdAt: DateTime.now(),
       ));
 
-      await base.localDataSource.markAssessmentPublishedLocally(assessmentId: assessmentId);
+      await base.localDataSource.markAssessmentPublished(assessmentId: assessmentId);
 
       try {
         final (cached, _) =
@@ -87,7 +87,7 @@ ResultFuture<Assessment> publishAssessment(
       }
     }
 
-    await base.localDataSource.markAssessmentPublishedLocally(assessmentId: assessmentId);
+    await base.localDataSource.markAssessmentPublished(assessmentId: assessmentId);
 
     final result =
         await base.remoteDataSource.publishAssessment(assessmentId: assessmentId);

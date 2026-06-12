@@ -8,13 +8,13 @@ abstract class AssignmentLocalDataSource {
   Future<AssignmentModel> getCachedAssignmentDetail(String assignmentId);
   Future<void> cacheAssignments(List<AssignmentModel> assignments);
   Future<void> cacheAssignmentDetail(AssignmentModel assignment);
-  Future<String> createSubmissionLocally({
+  Future<String> createSubmission({
     required String assignmentId,
     required String studentId,
     String studentName = '',
     String? textContent,
   });
-  Future<void> updateSubmissionTextLocally({
+  Future<void> updateSubmissionText({
     required String submissionId,
     required String textContent,
   });
@@ -25,7 +25,7 @@ abstract class AssignmentLocalDataSource {
     required int fileSize,
     required String localPath,
   });
-  Future<void> submitAssignmentLocally({
+  Future<void> submitAssignment({
     required String submissionId,
     required String assignmentId,
   });
@@ -36,24 +36,22 @@ abstract class AssignmentLocalDataSource {
   Future<bool> isFileCached(String fileId);
   Future<List<int>> getCachedFileBytes(String fileId);
   Future<void> cacheFileBytes(String fileId, String fileName, List<int> bytes);
-  Future<void> gradeSubmissionLocally({
+  Future<void> gradeSubmission({
     required String submissionId,
     required int score,
     String? feedback,
   });
-  Future<void> returnSubmissionLocally({
-    required String submissionId,
-  });
+  Future<void> returnSubmission({required String submissionId});
   Future<void> cacheSubmissionDetail(AssignmentSubmissionModel submission);
   Future<void> cacheSubmissionFile(String submissionId, SubmissionFileModel file);
   Future<void> softDeleteSubmissionFile(String fileId);
-  Future<void> markAssignmentPublishedLocally({required String assignmentId});
-  Future<void> markAssignmentUnpublishedLocally({required String assignmentId});
-  Future<void> updateAssignmentOrderLocally({
+  Future<void> markAssignmentPublished({required String assignmentId});
+  Future<void> markAssignmentUnpublished({required String assignmentId});
+  Future<void> updateAssignmentOrder({
     required String assignmentId,
     required int orderIndex,
   });
-  Future<void> deleteAssignmentLocal({required String assignmentId});
+  Future<void> deleteAssignment({required String assignmentId});
   Future<void> clearAllCache();
   Future<(String submissionId, String status, int? score)?> getStudentSubmissionForAssignment(
     String assignmentId,

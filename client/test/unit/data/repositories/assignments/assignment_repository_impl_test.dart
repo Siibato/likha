@@ -223,7 +223,7 @@ void main() {
           isServerReachable: false,
         );
 
-        when(() => local.deleteAssignmentLocal(assignmentId: any(named: 'assignmentId')))
+        when(() => local.deleteAssignment(assignmentId: any(named: 'assignmentId')))
             .thenAnswer((_) async {});
         when(() => syncQueue.enqueue(any())).thenAnswer((_) async {});
 

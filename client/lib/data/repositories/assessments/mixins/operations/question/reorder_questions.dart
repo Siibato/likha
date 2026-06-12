@@ -29,7 +29,7 @@ ResultVoid reorderQuestions(
     }
     for (int i = 0; i < questionIds.length; i++) {
       try {
-        await base.localDataSource.updateQuestionLocally(
+        await base.localDataSource.updateQuestion(
           questionId: questionIds[i],
           updates: {'order_index': i},
           isOfflineMutation: false,

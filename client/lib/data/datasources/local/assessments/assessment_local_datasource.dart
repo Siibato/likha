@@ -9,13 +9,13 @@ abstract class AssessmentLocalDataSource {
   Future<void> cacheAssessments(List<AssessmentModel> assessments);
   Future<void> cacheAssessmentDetail(AssessmentModel assessment, List<QuestionModel> questions);
   Future<void> cacheQuestions(String assessmentId, List<QuestionModel> questions, {bool isServerConfirmed = false});
-  Future<void> updateQuestionLocally({
+  Future<void> updateQuestion({
     required String questionId,
     required Map<String, dynamic> updates,
     bool isOfflineMutation = true,
   });
-  Future<void> deleteQuestionLocally({required String questionId});
-  Future<void> deleteAssessmentLocally({required String assessmentId});
+  Future<void> deleteQuestion({required String questionId});
+  Future<void> deleteAssessment({required String assessmentId});
   Future<QuestionModel?> getCachedQuestion(String questionId);
   Future<void> updateQuestionId({
     required String localId,
@@ -29,7 +29,7 @@ abstract class AssessmentLocalDataSource {
     required String questionId,
     required Map<String, String> idMapping,
   });
-  Future<void> saveAnswersLocally({
+  Future<void> saveAnswers({
     required String submissionId,
     required String answersJson,
   });
@@ -41,7 +41,7 @@ abstract class AssessmentLocalDataSource {
     required String studentUsername,
     required DateTime startedAt,
   });
-  Future<String> startAssessmentLocally({
+  Future<String> startAssessment({
     required String assessmentId,
     required String studentId,
     required String studentName,
@@ -52,13 +52,13 @@ abstract class AssessmentLocalDataSource {
     String assessmentId,
     String studentId,
   );
-  Future<void> submitAssessmentLocally({
+  Future<void> submitAssessment({
     required String submissionId,
     required String assessmentId,
   });
   Future<SubmissionDetailModel?> getCachedSubmissionDetail(String submissionId);
   Future<void> cacheSubmissionDetail(SubmissionDetailModel submission);
-  Future<String> createAssessmentLocally({
+  Future<String> createAssessment({
     required String classId,
     required String title,
     String? description,
@@ -71,7 +71,7 @@ abstract class AssessmentLocalDataSource {
     int? gradingPeriodNumber,
     String? component,
   });
-  Future<String> createAssessmentWithQuestionsLocally({
+  Future<String> createAssessmentWithQuestions({
     required String classId,
     required String title,
     String? description,
@@ -93,17 +93,17 @@ abstract class AssessmentLocalDataSource {
   Future<void> cacheStatistics(AssessmentStatisticsModel statistics);
   Future<StudentResultModel?> getCachedStudentResults(String submissionId);
   Future<void> cacheStudentResults(StudentResultModel result);
-  Future<void> releaseResultsLocally({required String assessmentId});
-  Future<void> overrideAnswerLocally({
+  Future<void> releaseResults({required String assessmentId});
+  Future<void> overrideAnswer({
     required String answerId,
     required bool isCorrect,
     double? points,
   });
-  Future<void> gradeEssayLocally({
+  Future<void> gradeEssay({
     required String answerId,
     required double points,
   });
-  Future<void> markAssessmentPublishedLocally({required String assessmentId});
-  Future<void> markAssessmentUnpublishedLocally({required String assessmentId});
+  Future<void> markAssessmentPublished({required String assessmentId});
+  Future<void> markAssessmentUnpublished({required String assessmentId});
   Future<void> clearAllCache();
 }

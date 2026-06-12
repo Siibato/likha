@@ -19,7 +19,7 @@ ResultFuture<Question> updateQuestion(
         return const Left(ServerFailure('Question not found in local cache'));
       }
 
-      await base.localDataSource.updateQuestionLocally(
+      await base.localDataSource.updateQuestion(
         questionId: questionId,
         updates: data,
       );
@@ -56,7 +56,7 @@ ResultFuture<Question> updateQuestion(
       questionId: questionId,
       data: data,
     );
-    await base.localDataSource.updateQuestionLocally(
+    await base.localDataSource.updateQuestion(
       questionId: questionId,
       updates: data,
       isOfflineMutation: false,  // mark as synced — no re-sync needed

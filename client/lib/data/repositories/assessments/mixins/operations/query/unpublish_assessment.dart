@@ -11,7 +11,7 @@ ResultFuture<Assessment> unpublishAssessment(
 }) async {
   try {
     if (!base.serverReachabilityService.isServerReachable) {
-      await base.localDataSource.markAssessmentUnpublishedLocally(assessmentId: assessmentId);
+      await base.localDataSource.markAssessmentUnpublished(assessmentId: assessmentId);
 
       try {
         final (cached, _) =
@@ -58,7 +58,7 @@ ResultFuture<Assessment> unpublishAssessment(
 
     final result =
         await base.remoteDataSource.unpublishAssessment(assessmentId: assessmentId);
-    await base.localDataSource.markAssessmentUnpublishedLocally(assessmentId: assessmentId);
+    await base.localDataSource.markAssessmentUnpublished(assessmentId: assessmentId);
     return Right(result);
   } on ServerException catch (e) {
     return Left(ServerFailure(e.message, statusCode: e.statusCode));

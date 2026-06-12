@@ -13,7 +13,7 @@ ResultVoid saveAnswers(
 }) async {
   try {
     if (!base.serverReachabilityService.isServerReachable) {
-      await base.localDataSource.saveAnswersLocally(
+      await base.localDataSource.saveAnswers(
         submissionId: submissionId,
         answersJson: jsonEncode(answers),
       );

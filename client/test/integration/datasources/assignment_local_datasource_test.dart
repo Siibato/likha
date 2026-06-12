@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/data/datasources/local/assignments/impl/assignment_local_datasource_impl.dart';
+import 'package:likha/data/datasources/local/assignments/assignment_local_datasource_impl.dart';
 import 'package:likha/data/models/assignments/assignment_model.dart';
 
 import '../../helpers/test_database.dart';
@@ -69,9 +69,9 @@ void main() {
       expect(result.first.id, 'a1');
     });
 
-    test('createSubmissionLocally inserts a draft submission', () async {
+    test('createSubmission inserts a draft submission', () async {
       await datasource.cacheAssignments([_sampleAssignment()]);
-      final submissionId = await datasource.createSubmissionLocally(
+      final submissionId = await datasource.createSubmission(
         assignmentId: 'assignment-001',
         studentId: _studentId,
         textContent: 'My answer',
@@ -90,13 +90,13 @@ void main() {
       expect(rows.first['needs_sync'], 1);
     });
 
-    test('gradeSubmissionLocally updates score and feedback', () async {
+    test('gradeSubmission updates score and feedback', () async {
       await datasource.cacheAssignments([_sampleAssignment()]);
-      final submissionId = await datasource.createSubmissionLocally(
+      final submissionId = await datasource.createSubmission(
         assignmentId: 'assignment-001',
         studentId: _studentId,
       );
-      await datasource.gradeSubmissionLocally(
+      await datasource.gradeSubmission(
         submissionId: submissionId,
         score: 85,
         feedback: 'Good work',

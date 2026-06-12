@@ -11,7 +11,7 @@ ResultFuture<Assessment> releaseResults(
 }) async {
   try {
     if (!base.serverReachabilityService.isServerReachable) {
-      await base.localDataSource.releaseResultsLocally(assessmentId: assessmentId);
+      await base.localDataSource.releaseResults(assessmentId: assessmentId);
       try {
         final (cached, _) =
             await base.localDataSource.getCachedAssessmentDetail(assessmentId);
@@ -55,7 +55,7 @@ ResultFuture<Assessment> releaseResults(
       }
     }
 
-    await base.localDataSource.releaseResultsLocally(assessmentId: assessmentId);
+    await base.localDataSource.releaseResults(assessmentId: assessmentId);
 
     final result =
         await base.remoteDataSource.releaseResults(assessmentId: assessmentId);

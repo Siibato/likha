@@ -57,7 +57,7 @@ ResultFuture<StartSubmissionResult> startAssessment(
         RepoLogger.instance.log('startAssessment() - CREATING NEW OFFLINE SUBMISSION');
         final (_, questions) =
             await base.localDataSource.getCachedAssessmentDetail(assessmentId);
-        final localId = await base.localDataSource.startAssessmentLocally(
+        final localId = await base.localDataSource.startAssessment(
           assessmentId: assessmentId,
           studentId: studentId,
           studentName: studentName,

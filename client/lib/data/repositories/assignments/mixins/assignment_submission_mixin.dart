@@ -203,7 +203,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
-        await localDataSource.gradeSubmissionLocally(
+        await localDataSource.gradeSubmission(
           submissionId: submissionId,
           score: score,
           feedback: feedback,
@@ -316,7 +316,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
   }) async {
     try {
       if (!serverReachabilityService.isServerReachable) {
-        await localDataSource.returnSubmissionLocally(
+        await localDataSource.returnSubmission(
           submissionId: submissionId,
         );
         final cached = await localDataSource.getCachedSubmission(submissionId);
@@ -420,13 +420,13 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
       if (!serverReachabilityService.isServerReachable) {
         RepoLogger.instance.warn('[CREATE_SUBMISSION] OFFLINE PATH — creating locally');
         final studentId = await storageService.getUserId() ?? '';
-        final localId = await localDataSource.createSubmissionLocally(
+        final localId = await localDataSource.createSubmission(
           assignmentId: assignmentId,
           studentId: studentId,
           textContent: textContent,
         );
         RepoLogger.instance.warn('[CREATE_SUBMISSION] OFFLINE SUCCESS — localId=$localId');
-        // No direct syncQueue.enqueue — createSubmissionLocally already enqueues atomically
+        // No direct syncQueue.enqueue — createSubmission already enqueues atomically
 
         return Right(AssignmentSubmission(
           id: localId,
@@ -509,7 +509,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
       // Server went down between health-check intervals — fall back to offline path
       try {
         final studentId = await storageService.getUserId() ?? '';
-        final localId = await localDataSource.createSubmissionLocally(
+        final localId = await localDataSource.createSubmission(
           assignmentId: assignmentId,
           studentId: studentId,
           textContent: textContent,
@@ -683,11 +683,11 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
         final cached = await localDataSource.getCachedSubmission(submissionId);
         RepoLogger.instance.warn('[SUBMIT_ASSIGNMENT] cached submission — id=${cached?.id} status=${cached?.status} assignmentId=${cached?.assignmentId}');
         final assignmentId = cached?.assignmentId ?? '';
-        await localDataSource.submitAssignmentLocally(
+        await localDataSource.submitAssignment(
           submissionId: submissionId,
           assignmentId: assignmentId,
         );
-        // No direct syncQueue.enqueue — submitAssignmentLocally already enqueues atomically
+        // No direct syncQueue.enqueue — submitAssignment already enqueues atomically
 
         // Read the freshly-updated cached row for a complete response
         final updated = await localDataSource.getCachedSubmission(submissionId);
@@ -789,7 +789,7 @@ mixin AssignmentSubmissionMixin on AssignmentRepositoryBase {
         final cached = await localDataSource.getCachedSubmission(submissionId);
         RepoLogger.instance.warn('[SUBMIT_ASSIGNMENT] NetworkException fallback — cached=${cached?.id} status=${cached?.status}');
         final assignmentId = cached?.assignmentId ?? '';
-        await localDataSource.submitAssignmentLocally(
+        await localDataSource.submitAssignment(
           submissionId: submissionId,
           assignmentId: assignmentId,
         );

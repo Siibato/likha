@@ -151,7 +151,7 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
           },
         );
         if (result.id != localId) {
-          await localDataSource.deleteAssignmentLocal(assignmentId: localId);
+          await localDataSource.deleteAssignment(assignmentId: localId);
         }
         await localDataSource.cacheAssignments([result]);
         return Right(result);
@@ -323,7 +323,7 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
   @override
   ResultVoid deleteAssignment({required String assignmentId}) async {
     try {
-      await localDataSource.deleteAssignmentLocal(assignmentId: assignmentId);
+      await localDataSource.deleteAssignment(assignmentId: assignmentId);
 
       if (!serverReachabilityService.isServerReachable) {
         await syncQueue.enqueue(SyncQueueEntry(
@@ -369,7 +369,7 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
     required String assignmentId,
   }) async {
     try {
-      await localDataSource.markAssignmentPublishedLocally(assignmentId: assignmentId);
+      await localDataSource.markAssignmentPublished(assignmentId: assignmentId);
 
       if (!serverReachabilityService.isServerReachable) {
         final cached = await localDataSource.getCachedAssignmentDetail(assignmentId);
@@ -400,7 +400,7 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
     required String assignmentId,
   }) async {
     try {
-      await localDataSource.markAssignmentUnpublishedLocally(assignmentId: assignmentId);
+      await localDataSource.markAssignmentUnpublished(assignmentId: assignmentId);
 
       if (!serverReachabilityService.isServerReachable) {
         final cached = await localDataSource.getCachedAssignmentDetail(assignmentId);
@@ -434,7 +434,7 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
     try {
       if (!serverReachabilityService.isServerReachable) {
         for (int i = 0; i < assignmentIds.length; i++) {
-          await localDataSource.updateAssignmentOrderLocally(
+          await localDataSource.updateAssignmentOrder(
             assignmentId: assignmentIds[i],
             orderIndex: i,
           );
@@ -452,7 +452,7 @@ mixin AssignmentCrudMixin on AssignmentRepositoryBase {
         return const Right(null);
       }
       for (int i = 0; i < assignmentIds.length; i++) {
-        await localDataSource.updateAssignmentOrderLocally(
+        await localDataSource.updateAssignmentOrder(
           assignmentId: assignmentIds[i],
           orderIndex: i,
         );
