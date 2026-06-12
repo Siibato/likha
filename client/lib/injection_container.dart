@@ -163,7 +163,6 @@ import 'package:likha/domain/tos/usecases/update_competency.dart';
 import 'package:likha/domain/tos/usecases/delete_competency.dart';
 import 'package:likha/domain/tos/usecases/bulk_add_competencies.dart';
 import 'package:likha/domain/tos/usecases/search_melcs.dart';
-import 'package:likha/core/security/encryption_service.dart';
 import 'package:likha/services/storage_service.dart';
 final sl = GetIt.instance;
 
@@ -214,10 +213,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => kIsWeb
       ? StorageService(sl<FlutterSecureStorage>(), sl<SharedPreferences>())
       : StorageService(sl<FlutterSecureStorage>()));
-
-  // Core - Encryption (key stored in secure storage, created once at startup)
-  final encryptionService = await AesEncryptionService.create(secureStorage);
-  sl.registerSingleton<EncryptionService>(encryptionService);
 
   // Core - Server Reachability (must be before DioClient to avoid circular dependency)
   // Standalone Dio for health checks — does NOT go through DioClient.
