@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'package:likha/core/network/dio_client.dart';
-import 'package:likha/data/datasources/remote/models/student_assessment_submission_item_model.dart';
+import 'package:likha/data/models/assessments/student_assessment_submission_item_model.dart';
 
 Future<List<StudentAssessmentSubmissionItemModel>> getStudentAssessmentSubmissions(
   DioClient dioClient, {

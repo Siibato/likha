@@ -3,7 +3,7 @@ import 'package:likha/data/models/sync/conflict_model.dart';
 import 'package:likha/data/models/sync/push_response_model.dart';
 import 'package:likha/data/models/sync/full_sync_response_model.dart';
 import 'package:likha/data/models/sync/delta_sync_response_model.dart';
-import 'package:likha/data/datasources/remote/operations/sync/sync.dart' as ops;
+import 'package:likha/data/datasources/remote/sync/operations/sync.dart' as ops;
 
 /// Remote datasource for offline sync operations
 abstract class SyncRemoteDataSource {

@@ -7,7 +7,7 @@ import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
 import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
-import 'package:likha/data/datasources/remote/auth_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/auth/auth_remote_datasource.dart';
 import 'package:likha/domain/auth/repositories/auth_repository.dart';
 import 'package:likha/services/storage_service.dart';
 

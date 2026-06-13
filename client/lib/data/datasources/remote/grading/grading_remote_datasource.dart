@@ -5,7 +5,7 @@ import 'package:likha/data/models/grading/grade_score_model.dart';
 import 'package:likha/data/models/grading/period_grade_model.dart';
 import 'package:likha/data/models/grading/general_average_model.dart';
 import 'package:likha/data/models/grading/sf9_model.dart';
-import 'package:likha/data/datasources/remote/operations/grading/grading.dart' as ops;
+import 'package:likha/data/datasources/remote/grading/operations/grading.dart' as ops;
 
 abstract class GradingRemoteDataSource {
   // Config

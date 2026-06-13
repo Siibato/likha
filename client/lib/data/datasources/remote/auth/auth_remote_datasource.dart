@@ -4,7 +4,7 @@ import 'package:likha/data/models/auth/auth_response_model.dart';
 import 'package:likha/data/models/auth/check_username_result_model.dart';
 import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/services/storage_service.dart';
-import 'package:likha/data/datasources/remote/operations/auth/auth.dart' as ops;
+import 'package:likha/data/datasources/remote/auth/operations/auth.dart' as ops;
 
 abstract class AuthRemoteDataSource {
   Future<CheckUsernameResultModel> checkUsername({required String username});

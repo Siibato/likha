@@ -1,7 +1,7 @@
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/models/tos/tos_model.dart';
 import 'package:likha/data/models/tos/melcs_model.dart';
-import 'package:likha/data/datasources/remote/operations/tos/tos.dart' as ops;
+import 'package:likha/data/datasources/remote/tos/operations/tos.dart' as ops;
 
 abstract class TosRemoteDataSource {
   Future<List<TosModel>> getTosByClass({required String classId});

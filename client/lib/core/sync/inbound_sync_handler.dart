@@ -4,7 +4,7 @@ import 'package:likha/core/logging/sync_logger.dart';
 import 'package:likha/core/sync/sync_semaphore.dart';
 import 'package:likha/core/sync/sync_state.dart';
 import 'package:likha/core/sync/sync_upsert_helpers.dart';
-import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/sync/sync_remote_datasource.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:uuid/uuid.dart';
 

@@ -4,7 +4,7 @@ import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/logging/sync_logger.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/sync_state.dart';
-import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/sync/sync_remote_datasource.dart';
 import 'package:likha/data/models/sync/push_response_model.dart';
 
 class OutboundSyncHandler {
@@ -319,7 +319,7 @@ class OutboundSyncHandler {
   }
 
   /// Handles a single file upload operation by calling the multipart endpoint directly.
-  /// References pattern in: mobile/lib/data/datasources/remote/assignment_remote_datasource.dart
+  /// References pattern in: mobile/lib/data/datasources/remote/assignments/assignment_remote_datasource.dart
   /// For material files, looks up correct (reconciled) material_id from DB instead of using payload.
   Future<void> handleFileUpload(SyncQueueEntry op) async {
     try {

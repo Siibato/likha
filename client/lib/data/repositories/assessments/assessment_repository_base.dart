@@ -6,7 +6,7 @@ import 'package:likha/core/logging/sync_logger.dart';
 import 'package:likha/data/validation/services/validation_service.dart';
 import 'package:likha/services/storage_service.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
-import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
 import 'package:likha/domain/assessments/repositories/assessment_repository.dart';
 
 abstract class AssessmentRepositoryBase extends AssessmentRepository {

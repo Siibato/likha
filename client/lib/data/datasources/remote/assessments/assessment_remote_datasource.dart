@@ -1,10 +1,10 @@
 import 'package:likha/core/network/dio_client.dart';
-import 'package:likha/data/datasources/remote/models/student_assessment_submission_item_model.dart';
+import 'package:likha/data/models/assessments/student_assessment_submission_item_model.dart';
 import 'package:likha/data/models/assessments/assessment_model.dart';
 import 'package:likha/data/models/assessments/question_model.dart';
 import 'package:likha/data/models/assessments/statistics_model.dart';
 import 'package:likha/data/models/assessments/submission_model.dart';
-import 'package:likha/data/datasources/remote/operations/assessments/assessments.dart' as ops;
+import 'package:likha/data/datasources/remote/assessments/operations/assessments.dart' as ops;
 
 abstract class AssessmentRemoteDataSource {
   Future<AssessmentModel> createAssessment({

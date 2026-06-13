@@ -2,7 +2,7 @@ import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/data/models/classes/class_detail_model.dart';
 import 'package:likha/data/models/classes/class_model.dart';
-import 'package:likha/data/datasources/remote/operations/classes/classes.dart' as ops;
+import 'package:likha/data/datasources/remote/classes/operations/classes.dart' as ops;
 
 abstract class ClassRemoteDataSource {
   Future<ClassModel> createClass({

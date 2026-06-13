@@ -2,7 +2,7 @@ import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/data/models/learning_materials/material_detail_model.dart';
 import 'package:likha/data/models/learning_materials/material_file_model.dart';
-import 'package:likha/data/datasources/remote/operations/learning_materials/learning_materials.dart' as ops;
+import 'package:likha/data/datasources/remote/learning_materials/operations/learning_materials.dart' as ops;
 
 abstract class LearningMaterialRemoteDataSource {
   Future<LearningMaterialModel> createMaterial({

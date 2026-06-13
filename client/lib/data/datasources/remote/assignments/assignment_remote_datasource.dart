@@ -1,9 +1,9 @@
 import 'package:likha/core/network/dio_client.dart';
-import 'package:likha/data/datasources/remote/models/student_assignment_submission_item_model.dart';
+import 'package:likha/data/models/assignments/student_assignment_submission_item_model.dart';
 import 'package:likha/data/models/assignments/assignment_model.dart';
 import 'package:likha/data/models/assignments/assignment_submission_model.dart';
 import 'package:likha/data/models/assignments/submission_file_model.dart';
-import 'package:likha/data/datasources/remote/operations/assignments/assignments.dart' as ops;
+import 'package:likha/data/datasources/remote/assignments/operations/assignments.dart' as ops;
 
 abstract class AssignmentRemoteDataSource {
   Future<AssignmentModel> createAssignment({
