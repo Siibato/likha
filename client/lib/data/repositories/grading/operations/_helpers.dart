@@ -51,6 +51,17 @@ GradeScore scoreToEntity(GradeScoreModel m) => GradeScore(
       overrideScore: m.overrideScore,
     );
 
+bool gradeItemsHaveChanged(List<GradeItem> local, List<GradeItem> remote) {
+  if (local.length != remote.length) return true;
+  final localById = {for (final i in local) i.id: i};
+  for (final r in remote) {
+    final l = localById[r.id];
+    if (l == null) return true;
+    if (l.updatedAt.isBefore(r.updatedAt)) return true;
+  }
+  return false;
+}
+
 PeriodGrade periodToEntity(PeriodGradeModel m) => PeriodGrade(
       id: m.id,
       classId: m.classId,

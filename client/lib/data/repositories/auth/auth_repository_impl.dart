@@ -1,3 +1,4 @@
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
@@ -26,6 +27,7 @@ class AuthRepositoryImpl implements AuthRepository {
   final AssessmentLocalDataSource _assessmentLocalDataSource;
   final LearningMaterialLocalDataSource _learningMaterialLocalDataSource;
   final GradingLocalDataSource _gradingLocalDataSource;
+  final DataEventBus _dataEventBus;
 
   AuthRepositoryImpl({
     required AuthRemoteDataSource remoteDataSource,
@@ -38,6 +40,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required AssessmentLocalDataSource assessmentLocalDataSource,
     required LearningMaterialLocalDataSource learningMaterialLocalDataSource,
     required GradingLocalDataSource gradingLocalDataSource,
+    required DataEventBus dataEventBus,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
         _serverReachabilityService = serverReachabilityService,
@@ -47,7 +50,8 @@ class AuthRepositoryImpl implements AuthRepository {
         _assignmentLocalDataSource = assignmentLocalDataSource,
         _assessmentLocalDataSource = assessmentLocalDataSource,
         _learningMaterialLocalDataSource = learningMaterialLocalDataSource,
-        _gradingLocalDataSource = gradingLocalDataSource;
+        _gradingLocalDataSource = gradingLocalDataSource,
+        _dataEventBus = dataEventBus;
 
   @override
   ResultFuture<CheckUsernameResult> checkUsername({required String username}) =>
@@ -94,10 +98,10 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   ResultFuture<User> getCurrentUser() =>
       ops.getCurrentUser(
-        _serverReachabilityService,
         _remoteDataSource,
         _localDataSource,
         _storageService,
+        _dataEventBus,
       );
 
   @override

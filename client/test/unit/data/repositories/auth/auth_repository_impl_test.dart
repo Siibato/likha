@@ -41,6 +41,7 @@ AuthRepositoryImpl _buildRepo({
   MockAssessmentLocalDataSource? assessmentLocal,
   MockLearningMaterialLocalDataSource? materialLocal,
   MockGradingLocalDataSource? gradingLocal,
+  MockDataEventBus? eventBus,
   bool isServerReachable = true,
 }) {
   when(() => reachability.isServerReachable).thenReturn(isServerReachable);
@@ -55,6 +56,7 @@ AuthRepositoryImpl _buildRepo({
     assessmentLocalDataSource: assessmentLocal ?? MockAssessmentLocalDataSource(),
     learningMaterialLocalDataSource: materialLocal ?? MockLearningMaterialLocalDataSource(),
     gradingLocalDataSource: gradingLocal ?? MockGradingLocalDataSource(),
+    dataEventBus: eventBus ?? MockDataEventBus(),
   );
 }
 
@@ -154,15 +156,17 @@ void main() {
       });
     });
 
-    group('getCurrentUser — online', () {
-      test('fetches from remote and caches locally', () async {
+    group('getCurrentUser — cache miss', () {
+      test('blocks on remote fetch and caches when no cache', () async {
         final repo = _buildRepo(
           local: local,
           remote: remote,
           reachability: reachability,
           storage: storage,
-          isServerReachable: true,
         );
+        when(() => storage.getUserId()).thenAnswer((_) async => 'u-1');
+        when(() => local.getCachedCurrentUser('u-1'))
+            .thenThrow(CacheException('No cache'));
         when(() => remote.getCurrentUser()).thenAnswer((_) async => _fakeUser());
 
         final result = await repo.getCurrentUser();
@@ -173,8 +177,8 @@ void main() {
       });
     });
 
-    group('getCurrentUser — offline', () {
-      test('reads from cache when server not reachable', () async {
+    group('getCurrentUser — cache hit', () {
+      test('returns cached user and fires background refresh', () async {
         final repo = _buildRepo(
           local: local,
           remote: remote,
@@ -189,7 +193,7 @@ void main() {
         final result = await repo.getCurrentUser();
 
         expect(result.isRight(), isTrue);
-        verifyNever(() => remote.getCurrentUser());
+        verify(() => local.getCachedCurrentUser('u-1')).called(1);
       });
 
       test('returns UnauthorizedFailure when no stored userId', () async {
@@ -198,7 +202,6 @@ void main() {
           remote: remote,
           reachability: reachability,
           storage: storage,
-          isServerReachable: false,
         );
         when(() => storage.getUserId()).thenAnswer((_) async => null);
 

@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
 import 'package:likha/data/datasources/remote/grading/grading_remote_datasource.dart';
@@ -10,9 +10,9 @@ import 'get_grade_items.dart';
 import 'get_grade_summary.dart';
 
 ResultFuture<Map<String, dynamic>> getGradeDataBatch(
-  ServerReachabilityService serverReachabilityService,
   GradingLocalDataSource localDataSource,
-  GradingRemoteDataSource remoteDataSource, {
+  GradingRemoteDataSource remoteDataSource,
+  DataEventBus dataEventBus, {
   required String classId,
   required int gradingPeriodNumber,
 }) async {
@@ -20,9 +20,9 @@ ResultFuture<Map<String, dynamic>> getGradeDataBatch(
     // For now, implement batch loading by combining individual calls
     // This can be optimized later with a proper batch endpoint
     final gradeItemsResult = await getGradeItems(
-      serverReachabilityService,
       localDataSource,
       remoteDataSource,
+      dataEventBus,
       classId: classId,
       gradingPeriodNumber: gradingPeriodNumber,
     );

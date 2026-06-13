@@ -44,6 +44,7 @@ GradingRepositoryImpl _buildRepo({
   required MockGradingRemoteDataSource remote,
   required MockSyncQueue syncQueue,
   required MockServerReachabilityService reachability,
+  MockDataEventBus? eventBus,
   bool isServerReachable = true,
 }) {
   when(() => reachability.isServerReachable).thenReturn(isServerReachable);
@@ -52,6 +53,7 @@ GradingRepositoryImpl _buildRepo({
     localDataSource: local,
     serverReachabilityService: reachability,
     syncQueue: syncQueue,
+    dataEventBus: eventBus ?? MockDataEventBus(),
   );
 }
 

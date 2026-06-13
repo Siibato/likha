@@ -109,6 +109,7 @@ class ClassRepositoryImpl implements ClassRepository {
       ops.getClassDetail(
         _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         classId: classId,
       );
 

@@ -1,3 +1,4 @@
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -17,16 +18,19 @@ class GradingRepositoryImpl implements GradingRepository {
   final GradingLocalDataSource _localDataSource;
   final ServerReachabilityService _serverReachabilityService;
   final SyncQueue _syncQueue;
+  final DataEventBus _dataEventBus;
 
   GradingRepositoryImpl({
     required GradingRemoteDataSource remoteDataSource,
     required GradingLocalDataSource localDataSource,
     required ServerReachabilityService serverReachabilityService,
     required SyncQueue syncQueue,
+    required DataEventBus dataEventBus,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
         _serverReachabilityService = serverReachabilityService,
-        _syncQueue = syncQueue;
+        _syncQueue = syncQueue,
+        _dataEventBus = dataEventBus;
 
   // ===== Config =====
 
@@ -82,9 +86,9 @@ class GradingRepositoryImpl implements GradingRepository {
     String? component,
   }) =>
       ops.getGradeItems(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         classId: classId,
         gradingPeriodNumber: gradingPeriodNumber,
         component: component,
@@ -301,9 +305,9 @@ class GradingRepositoryImpl implements GradingRepository {
     required int gradingPeriodNumber,
   }) =>
       ops.getGradeDataBatch(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         classId: classId,
         gradingPeriodNumber: gradingPeriodNumber,
       );

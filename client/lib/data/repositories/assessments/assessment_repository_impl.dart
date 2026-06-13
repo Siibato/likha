@@ -86,10 +86,8 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required String classId,
     bool publishedOnly = false,
     bool skipBackgroundRefresh = false,
-    bool forceRemote = false,
   }) =>
       ops.getAssessments(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
         _storageService,
@@ -97,7 +95,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
         classId: classId,
         publishedOnly: publishedOnly,
         skipBackgroundRefresh: skipBackgroundRefresh,
-        forceRemote: forceRemote,
       );
 
   @override

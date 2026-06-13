@@ -76,7 +76,6 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
     bool skipBackgroundRefresh = false,
   }) =>
       ops.getAssignments(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
         _storageService,

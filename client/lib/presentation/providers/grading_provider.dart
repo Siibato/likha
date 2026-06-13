@@ -324,10 +324,10 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
 
     final List<GradeItem> newItems = [];
 
-    // Process assessments — forceRemote ensures we get fresh data even on cold cache
-    ProviderLogger.instance.log('backfillFromActivities() - fetching assessments (forceRemote)');
+    // Process assessments — fetch fresh data for backfill
+    ProviderLogger.instance.log('backfillFromActivities() - fetching assessments');
 
-    final assessmentResult = await sl<GetAssessments>()(classId, forceRemote: true);
+    final assessmentResult = await sl<GetAssessments>()(classId);
     await assessmentResult.fold(
       (failure) {
         ProviderLogger.instance.error('Failed to get assessments for backfill', failure);

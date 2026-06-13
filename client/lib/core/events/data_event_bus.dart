@@ -22,6 +22,12 @@ class DataEventBus {
       StreamController<String>.broadcast();
   final StreamController<void> _classes =
       StreamController<void>.broadcast();
+  final StreamController<String> _classDetail =
+      StreamController<String>.broadcast();
+  final StreamController<void> _currentUser =
+      StreamController<void>.broadcast();
+  final StreamController<String> _gradeItems =
+      StreamController<String>.broadcast();
 
   Stream<String?> get onAssessmentsChanged => _assessments.stream;
   Stream<String?> get onAssessmentDetailChanged => _assessmentDetail.stream;
@@ -29,6 +35,9 @@ class DataEventBus {
   Stream<String?> get onMaterialsChanged   => _materials.stream;
   Stream<String>  get onSubmissionDetailChanged => _submissionDetail.stream;
   Stream<void>    get onClassesChanged      => _classes.stream;
+  Stream<String>  get onClassDetailChanged  => _classDetail.stream;
+  Stream<void>    get onCurrentUserChanged  => _currentUser.stream;
+  Stream<String>  get onGradeItemsChanged   => _gradeItems.stream;
 
   void notifyAssessmentsChanged(String classId) => _assessments.add(classId);
   void notifyAssessmentDetailChanged(String assessmentId) => _assessmentDetail.add(assessmentId);
@@ -42,6 +51,9 @@ class DataEventBus {
     _submissionDetail.add(submissionId);
   }
   void notifyClassesChanged()                    => _classes.add(null);
+  void notifyClassDetailChanged(String classId) => _classDetail.add(classId);
+  void notifyCurrentUserChanged()              => _currentUser.add(null);
+  void notifyGradeItemsChanged(String classId)  => _gradeItems.add(classId);
 
   void dispose() {
     _assessments.close();
@@ -50,5 +62,8 @@ class DataEventBus {
     _materials.close();
     _submissionDetail.close();
     _classes.close();
+    _classDetail.close();
+    _currentUser.close();
+    _gradeItems.close();
   }
 }

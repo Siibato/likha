@@ -2,37 +2,23 @@ import 'package:dartz/dartz.dart';
 import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
-import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
 import 'package:likha/services/storage_service.dart';
 import 'package:likha/core/events/data_event_bus.dart';
 
 ResultFuture<List<Assessment>> getAssessments(
-  ServerReachabilityService serverReachabilityService,
-AssessmentLocalDataSource localDataSource,
-AssessmentRemoteDataSource remoteDataSource,
-StorageService storageService,
-DataEventBus dataEventBus, {
+  AssessmentLocalDataSource localDataSource,
+  AssessmentRemoteDataSource remoteDataSource,
+  StorageService storageService,
+  DataEventBus dataEventBus, {
   required String classId,
   bool publishedOnly = false,
   bool skipBackgroundRefresh = false,
-  bool forceRemote = false,
 }) async {
-  if (forceRemote && serverReachabilityService.isServerReachable) {
-    try {
-      RepoLogger.instance.log('getAssessments() - forceRemote=true, fetching from remote for classId: $classId');
-      final fresh = await remoteDataSource.getAssessments(classId: classId);
-      await localDataSource.cacheAssessments(fresh);
-      RepoLogger.instance.log('getAssessments() - forceRemote: got ${fresh.length} assessments');
-      return Right(fresh);
-    } catch (e) {
-      RepoLogger.instance.warn('getAssessments() - forceRemote fetch failed, falling through to cache', e);
-    }
-  }
-
   try {
     try {
       RepoLogger.instance.log('getAssessments() - loading from cache for classId: $classId');
@@ -101,7 +87,24 @@ DataEventBus dataEventBus, {
       }
 
       if (!skipBackgroundRefresh) {
-        _backgroundFetchAssessments(serverReachabilityService, localDataSource, remoteDataSource, storageService, dataEventBus, classId, publishedOnly: publishedOnly);
+        fireRemoteFetch(
+          dedupKey: 'assessments/$classId/bg',
+          remote: () => remoteDataSource.getAssessments(classId: classId),
+          onSuccess: (fresh) async {
+            final List<Assessment> current;
+            try {
+              current = await localDataSource.getCachedAssessments(classId, publishedOnly: publishedOnly);
+            } on CacheException {
+              await localDataSource.cacheAssessments(fresh);
+              dataEventBus.notifyAssessmentsChanged(classId);
+              return;
+            }
+            if (_assessmentsHaveChanged(current, fresh)) {
+              await localDataSource.cacheAssessments(fresh);
+              dataEventBus.notifyAssessmentsChanged(classId);
+            }
+          },
+        );
       }
 
       for (final a in assessmentsWithDynamicCounts) {
@@ -109,59 +112,22 @@ DataEventBus dataEventBus, {
       }
       return Right(assessmentsWithDynamicCounts);
     } on CacheException {
-      if (!skipBackgroundRefresh) {
-        _backgroundFetchAssessments(serverReachabilityService, localDataSource, remoteDataSource, storageService, dataEventBus, classId, publishedOnly: publishedOnly);
-      }
-
-      return const Right([]);
+      final fresh = await remoteFetch(
+        dedupKey: 'assessments/$classId',
+        remote: () => remoteDataSource.getAssessments(classId: classId),
+      );
+      await localDataSource.cacheAssessments(fresh);
+      return Right(fresh);
     }
+  } on ServerException catch (e) {
+    return Left(ServerFailure(e.message, statusCode: e.statusCode));
+  } on NetworkException catch (e) {
+    return Left(NetworkFailure(e.message));
+  } on CacheException catch (e) {
+    return Left(CacheFailure(e.message));
   } catch (e) {
     return Left(ServerFailure(e.toString()));
   }
-}
-
-void _backgroundFetchAssessments(
-  ServerReachabilityService serverReachabilityService,
-  AssessmentLocalDataSource localDataSource,
-  AssessmentRemoteDataSource remoteDataSource,
-  StorageService storageService,
-  DataEventBus dataEventBus,
-  String classId, {
-  bool publishedOnly = false,
-}) {
-  Future.microtask(() async {
-    try {
-      RepoLogger.instance.log('_backgroundFetchAssessments() - fetching fresh assessments for classId: $classId');
-      final fresh =
-          await remoteDataSource.getAssessments(classId: classId);
-      RepoLogger.instance.log('_backgroundFetchAssessments() - received ${fresh.length} fresh assessments');
-
-      final List<Assessment> cached;
-      try {
-        cached = await localDataSource.getCachedAssessments(classId, publishedOnly: publishedOnly);
-        RepoLogger.instance.log('_backgroundFetchAssessments() - cached ${cached.length} assessments found');
-      } on CacheException {
-        RepoLogger.instance.log('_backgroundFetchAssessments() - cache miss, writing fresh data');
-        await localDataSource.cacheAssessments(fresh);
-        dataEventBus.notifyAssessmentsChanged(classId);
-        return;
-      }
-
-      if (_assessmentsHaveChanged(cached, fresh)) {
-        RepoLogger.instance.log('_backgroundFetchAssessments() - assessments changed, updating cache');
-        await localDataSource.cacheAssessments(fresh);
-        dataEventBus.notifyAssessmentsChanged(classId);
-      } else {
-        RepoLogger.instance.log('_backgroundFetchAssessments() - no changes detected, skipping cache update');
-      }
-    } on NetworkException {
-      RepoLogger.instance.warn('_backgroundFetchAssessments() - network error, cache persists');
-    } on ServerException {
-      RepoLogger.instance.warn('_backgroundFetchAssessments() - server error, cache persists');
-    } catch (e) {
-      RepoLogger.instance.error('_backgroundFetchAssessments() - unexpected error, cache persists', e);
-    }
-  });
 }
 
 bool _assessmentsHaveChanged(

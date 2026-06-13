@@ -4,6 +4,7 @@ import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/data/datasources/remote/classes/class_remote_datasource.dart';
+import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/services/storage_service.dart';
@@ -56,6 +57,12 @@ void backgroundFetchAllClasses(
       _allClassesBackgroundFetch = null;
     }
   });
+}
+
+bool classDetailHasChanged(ClassDetail local, ClassDetail remote) {
+  if (local.updatedAt.isBefore(remote.updatedAt)) return true;
+  if (local.students.length != remote.students.length) return true;
+  return false;
 }
 
 bool classesHaveChanged(List<ClassEntity> local, List<ClassEntity> remote) {
