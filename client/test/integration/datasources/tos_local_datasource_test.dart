@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/data/datasources/local/tos/tos_local_datasource_impl.dart';
+import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/data/models/tos/tos_model.dart';
 
 import '../../helpers/test_database.dart';
