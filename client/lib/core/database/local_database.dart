@@ -76,28 +76,51 @@ class LocalDatabase {
     final dbPath = await getDatabasesPath();
     final dbFilePath = '$dbPath/likha.db';
 
-    return openDatabase(
-      dbFilePath,
-      password: kIsWeb ? null : _dbPassword,
-      version: 2,
-      onCreate: _createTables,
-      onUpgrade: _upgradeDatabase,
-      onDowngrade: _downgradeDatabase,
-      onOpen: (db) async {
+    Future<Database> doOpen() async {
+      return openDatabase(
+        dbFilePath,
+        password: kIsWeb ? null : _dbPassword,
+        version: 2,
+        onCreate: _createTables,
+        onUpgrade: _upgradeDatabase,
+        onDowngrade: _downgradeDatabase,
+        onOpen: (db) async {
+          try {
+            await db.execute('PRAGMA foreign_keys = ON');
+            await db.execute('PRAGMA synchronous = NORMAL');
+            await db.execute('PRAGMA cache_size = 10000');
+            await db.execute('PRAGMA temp_store = MEMORY');
+          } catch (e) {
+            CoreLogger.instance.warn('Failed to set database PRAGMA settings: $e');
+          }
+          // MigrationRunner disabled - all migrations consolidated into _createTables
+          // Future migrations will be handled via onUpgrade with version increments
+        },
+        // Configure database for better performance
+        singleInstance: true,
+      );
+    }
+
+    try {
+      return await doOpen();
+    } on DatabaseException catch (e) {
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('open_failed') ||
+          msg.contains('notadatabase') ||
+          msg.contains('is not a database')) {
+        CoreLogger.instance.warn(
+          'Database open failed (likely key mismatch or corruption). '
+          'Deleting $dbFilePath and recreating.',
+        );
         try {
-          await db.execute('PRAGMA foreign_keys = ON');
-          await db.execute('PRAGMA synchronous = NORMAL');
-          await db.execute('PRAGMA cache_size = 10000');
-          await db.execute('PRAGMA temp_store = MEMORY');
-        } catch (e) {
-          CoreLogger.instance.warn('Failed to set database PRAGMA settings: $e');
+          await deleteDatabase(dbFilePath);
+        } catch (_) {
+          // ignore cleanup errors
         }
-        // MigrationRunner disabled - all migrations consolidated into _createTables
-        // Future migrations will be handled via onUpgrade with version increments
-      },
-      // Configure database for better performance
-      singleInstance: true,
-    );
+        return doOpen();
+      }
+      rethrow;
+    }
   }
 
   Future<void> _createTables(Database db, int version) async {

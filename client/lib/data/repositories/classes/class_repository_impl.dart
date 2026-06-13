@@ -101,7 +101,6 @@ class ClassRepositoryImpl implements ClassRepository {
         _localDataSource,
         _remoteDataSource,
         _dataEventBus,
-        _storageService,
         skipBackgroundRefresh: skipBackgroundRefresh,
       );
 
