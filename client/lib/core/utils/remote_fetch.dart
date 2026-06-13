@@ -40,11 +40,12 @@ Future<T> remoteFetch<T>({
 /// Fire-and-forget remote fetch.
 ///
 /// Calls [onSuccess] with fresh data when remote succeeds.
+/// [onSuccess] is awaited so dedup key stays locked until local writes complete.
 /// All errors are caught silently.
 void fireRemoteFetch<T>({
   required String dedupKey,
   required Future<T> Function() remote,
-  required void Function(T data) onSuccess,
+  required Future<void> Function(T data) onSuccess,
 }) {
   if (_inFlight.contains(dedupKey)) return;
   _inFlight.add(dedupKey);
@@ -52,7 +53,7 @@ void fireRemoteFetch<T>({
   Future.microtask(() async {
     try {
       final data = await _executeRemote(remote);
-      onSuccess(data);
+      await onSuccess(data);
     } on NetworkException {
       // silent
     } on ServerException {
