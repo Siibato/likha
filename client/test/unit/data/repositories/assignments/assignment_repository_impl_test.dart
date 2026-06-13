@@ -44,8 +44,6 @@ AssignmentRepositoryImpl _buildRepo({
   return AssignmentRepositoryImpl(
     remoteDataSource: remote,
     localDataSource: local,
-    validationService: MockValidationService(),
-    connectivityService: MockConnectivityService(),
     syncQueue: syncQueue,
     serverReachabilityService: reachability,
     storageService: storage,

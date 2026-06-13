@@ -40,11 +40,8 @@ LearningMaterialRepositoryImpl _buildRepo({
   return LearningMaterialRepositoryImpl(
     remoteDataSource: remote,
     localDataSource: local,
-    validationService: MockValidationService(),
-    connectivityService: MockConnectivityService(),
     syncQueue: syncQueue,
     serverReachabilityService: reachability,
-    storageService: storage,
     dataEventBus: eventBus,
   );
 }

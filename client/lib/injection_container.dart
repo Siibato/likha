@@ -304,7 +304,6 @@ Future<void> init() async {
       serverReachabilityService: sl<ServerReachabilityService>(),
       storageService: sl<StorageService>(),
       syncQueue: sl<SyncQueue>(),
-      localDatabase: sl<LocalDatabase>(),
       classLocalDataSource: sl<ClassLocalDataSource>(),
       assignmentLocalDataSource: sl<AssignmentLocalDataSource>(),
       assessmentLocalDataSource: sl<AssessmentLocalDataSource>(),
@@ -316,7 +315,6 @@ Future<void> init() async {
     () => ClassRepositoryImpl(
       remoteDataSource: sl<ClassRemoteDataSource>(),
       localDataSource: sl<ClassLocalDataSource>(),
-      validationService: sl<ValidationService>(),
       serverReachabilityService: sl<ServerReachabilityService>(),
       syncQueue: sl<SyncQueue>(),
       storageService: sl<StorageService>(),
@@ -340,8 +338,6 @@ Future<void> init() async {
     () => AssignmentRepositoryImpl(
       remoteDataSource: sl<AssignmentRemoteDataSource>(),
       localDataSource: sl<AssignmentLocalDataSource>(),
-      validationService: sl<ValidationService>(),
-      connectivityService: sl<ConnectivityService>(),
       syncQueue: sl<SyncQueue>(),
       serverReachabilityService: sl<ServerReachabilityService>(),
       storageService: sl<StorageService>(),
@@ -352,11 +348,8 @@ Future<void> init() async {
     () => LearningMaterialRepositoryImpl(
       remoteDataSource: sl<LearningMaterialRemoteDataSource>(),
       localDataSource: sl<LearningMaterialLocalDataSource>(),
-      validationService: sl<ValidationService>(),
-      connectivityService: sl<ConnectivityService>(),
       syncQueue: sl<SyncQueue>(),
       serverReachabilityService: sl<ServerReachabilityService>(),
-      storageService: sl<StorageService>(),
       dataEventBus: sl<DataEventBus>(),
     ),
   );

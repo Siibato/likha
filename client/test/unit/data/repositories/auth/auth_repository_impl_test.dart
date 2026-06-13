@@ -50,7 +50,6 @@ AuthRepositoryImpl _buildRepo({
     serverReachabilityService: reachability,
     storageService: storage,
     syncQueue: MockSyncQueue(),
-    localDatabase: MockLocalDatabase(),
     classLocalDataSource: classLocal ?? MockClassLocalDataSource(),
     assignmentLocalDataSource: assignmentLocal ?? MockAssignmentLocalDataSource(),
     assessmentLocalDataSource: assessmentLocal ?? MockAssessmentLocalDataSource(),

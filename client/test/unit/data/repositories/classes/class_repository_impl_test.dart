@@ -39,7 +39,6 @@ ClassRepositoryImpl _buildRepo({
   return ClassRepositoryImpl(
     remoteDataSource: remote,
     localDataSource: local,
-    validationService: MockValidationService(),
     serverReachabilityService: reachability,
     syncQueue: syncQueue,
     storageService: storage,
