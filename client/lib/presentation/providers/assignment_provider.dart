@@ -242,59 +242,17 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   }
 
   Future<void> createAssignment(CreateAssignmentParams params) async {
-    final previousAssignments = state.assignments;
-    final previousCurrentAssignment = state.currentAssignment;
-    final tempId = 'temp-${DateTime.now().microsecondsSinceEpoch}';
-    final now = DateTime.now();
-    final optimisticDueAt = DateTime.tryParse(params.dueAt) ?? now;
-    final optimisticAssignment = Assignment(
-      id: tempId,
-      classId: params.classId,
-      title: params.title,
-      instructions: params.instructions,
-      totalPoints: params.totalPoints,
-      allowsTextSubmission: params.allowsTextSubmission,
-      allowsFileSubmission: params.allowsFileSubmission,
-      allowedFileTypes: params.allowedFileTypes,
-      maxFileSizeMb: params.maxFileSizeMb,
-      dueAt: optimisticDueAt,
-      isPublished: params.isPublished,
-      orderIndex: 0,
-      submissionCount: 0,
-      gradedCount: 0,
-      gradingPeriodNumber: params.gradingPeriodNumber,
-      component: params.component,
-      createdAt: now,
-      updatedAt: now,
-      needsSync: true,
-    );
-
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      assignments: [optimisticAssignment, ...state.assignments],
-      currentAssignment: optimisticAssignment,
-    );
+    state = state.copyWith(clearError: true, clearSuccess: true);
 
     final result = await _createAssignment(params);
     result.fold(
       (failure) =>
           state = state.copyWith(
-            isLoading: false,
             error: AppErrorMapper.fromFailure(failure),
-            assignments: previousAssignments,
-            currentAssignment: previousCurrentAssignment,
           ),
-      (assignment) {
+      (mutationResult) {
+        final assignment = mutationResult.entity;
         state = state.copyWith(
-          isLoading: false,
-          assignments: _upsertAssignmentInList(
-            state.assignments,
-            assignment,
-            matchId: tempId,
-          ),
-          currentAssignment: assignment,
           successMessage: 'Assignment created',
         );
         // Auto-create linked grade item when component + gradingPeriodNumber are set

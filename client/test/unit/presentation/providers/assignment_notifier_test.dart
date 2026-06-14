@@ -5,6 +5,8 @@ import 'package:mocktail/mocktail.dart';
 
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/events/data_event_bus.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/grading/repositories/grading_repository.dart';
 import 'package:likha/domain/assignments/usecases/create_assignment.dart';
 import 'package:likha/domain/assignments/usecases/delete_assignment.dart';
@@ -144,7 +146,7 @@ void main() {
           createAssignment: mockCreate,
         );
 
-        when(() => mockCreate(any())).thenAnswer((_) async => Right(tAssignment));
+        when(() => mockCreate(any())).thenAnswer((_) async => Right(MutationResult(entity: tAssignment, status: SyncStatus.pending)));
         when(() => mockGet(any(), publishedOnly: any(named: 'publishedOnly'), skipBackgroundRefresh: any(named: 'skipBackgroundRefresh'))).thenAnswer((_) async => Right([tAssignment]));
 
         await notifier.createAssignment(CreateAssignmentParams(

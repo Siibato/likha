@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/domain/assignments/repositories/assignment_repository.dart';
@@ -7,7 +8,7 @@ class CreateAssignment {
 
   CreateAssignment(this._repository);
 
-  ResultFuture<Assignment> call(CreateAssignmentParams params) {
+  ResultFuture<MutationResult<Assignment>> call(CreateAssignmentParams params) {
     return _repository.createAssignment(
       classId: params.classId,
       title: params.title,

@@ -7,10 +7,13 @@ import 'package:likha/data/models/assignments/submission_file_model.dart';
 import 'operations/assignments.dart' as ops;
 
 abstract class AssignmentLocalDataSource {
+  LocalDatabase get localDatabase;
+
   Future<List<AssignmentModel>> getCachedAssignments(String classId, {bool publishedOnly = false, String? studentId});
   Future<AssignmentModel> getCachedAssignmentDetail(String assignmentId);
   Future<void> cacheAssignments(List<AssignmentModel> assignments);
   Future<void> cacheAssignmentDetail(AssignmentModel assignment);
+  Future<void> insertAssignment(AssignmentModel assignment, {Transaction? txn});
   Future<String> createSubmission({
     required String assignmentId,
     required String studentId,
@@ -67,6 +70,7 @@ abstract class AssignmentLocalDataSource {
 }
 
 class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
+  @override
   final LocalDatabase localDatabase;
   final SyncQueue syncQueue;
 
@@ -91,6 +95,10 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
   @override
   Future<void> cacheAssignmentDetail(AssignmentModel assignment) =>
       ops.cacheAssignmentDetail(localDatabase, assignment);
+
+  @override
+  Future<void> insertAssignment(AssignmentModel assignment, {Transaction? txn}) =>
+      ops.insertAssignment(localDatabase, assignment, txn: txn);
 
   @override
   Future<String> createSubmission({

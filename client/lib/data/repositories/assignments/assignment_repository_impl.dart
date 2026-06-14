@@ -1,5 +1,6 @@
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
@@ -34,7 +35,7 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
         _dataEventBus = dataEventBus;
 
   @override
-  ResultFuture<Assignment> createAssignment({
+  ResultFuture<MutationResult<Assignment>> createAssignment({
     required String classId,
     required String title,
     required String instructions,
@@ -50,9 +51,7 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
     bool? noSubmissionRequired,
   }) =>
       ops.createAssignment(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         classId: classId,
         title: title,

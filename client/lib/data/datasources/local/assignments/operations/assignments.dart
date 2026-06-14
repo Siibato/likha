@@ -11,6 +11,7 @@ export 'delete_assignment.dart';
 export 'get_cached_assignment_detail.dart';
 export 'get_cached_assignments.dart';
 export 'get_cached_file_bytes.dart';
+export 'insert_assignment.dart';
 export 'get_cached_submission.dart';
 export 'get_cached_submission_files.dart';
 export 'get_cached_submissions.dart';

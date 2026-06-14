@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
@@ -5,7 +6,7 @@ import 'package:likha/domain/assignments/entities/submission_file.dart'; // Stud
 
 abstract class AssignmentRepository {
   // Teacher: Assignment CRUD
-  ResultFuture<Assignment> createAssignment({
+  ResultFuture<MutationResult<Assignment>> createAssignment({
     required String classId,
     required String title,
     required String instructions,

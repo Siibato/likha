@@ -293,6 +293,13 @@ class OutboundSyncHandler {
                 where: '${GradeScoresCols.gradeItemId} = ?',
                 whereArgs: [payloadId],
               );
+            } else if (entityType == SyncEntityType.assignment.serverValue) {
+              await db.update(
+                DbTables.assignments,
+                {CommonCols.id: serverId},
+                where: '${CommonCols.id} = ?',
+                whereArgs: [payloadId],
+              );
             }
           }
         }
