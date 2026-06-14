@@ -50,21 +50,6 @@ class Formatters {
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
-  static String questionTypeLabel(String type) {
-    switch (type) {
-      case 'multiple_choice':
-        return 'Multiple Choice';
-      case 'identification':
-        return 'Identification';
-      case 'enumeration':
-        return 'Enumeration';
-      case 'essay':
-        return 'Essay';
-      default:
-        return type;
-    }
-  }
-
   static String submissionTypeLabel(String type) {
     switch (type) {
       case 'text':

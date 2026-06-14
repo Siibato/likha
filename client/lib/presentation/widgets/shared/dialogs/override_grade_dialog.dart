@@ -4,7 +4,10 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 
-/// Dialog for a teacher to override the auto-graded result of a single answer.
+/// Dialog for overriding a student's answer grade.
+///
+/// Allows the teacher to mark an answer as correct (with custom points)
+/// or incorrect (0 points).
 class OverrideGradeDialog extends StatefulWidget {
   final SubmissionAnswer answer;
   final void Function(bool isCorrect, double points) onConfirm;
@@ -95,7 +98,8 @@ class _OverrideGradeDialogState extends State<OverrideGradeDialog> {
             const SizedBox(height: 12),
             TextField(
               controller: _pointsController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
               ],
@@ -107,11 +111,13 @@ class _OverrideGradeDialogState extends State<OverrideGradeDialog> {
                 fillColor: AppColors.backgroundSecondary,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppColors.borderLight),
+                  borderSide:
+                      const BorderSide(color: AppColors.borderLight),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppColors.borderLight),
+                  borderSide:
+                      const BorderSide(color: AppColors.borderLight),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -151,3 +157,4 @@ class _OverrideGradeDialogState extends State<OverrideGradeDialog> {
     );
   }
 }
+

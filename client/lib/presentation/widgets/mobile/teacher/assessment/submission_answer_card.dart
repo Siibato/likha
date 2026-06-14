@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
-import 'package:likha/presentation/widgets/mobile/teacher/assessment/override_grade_dialog.dart';
+import 'package:likha/core/utils/labels.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/override_grade_dialog.dart';
 import 'package:likha/presentation/widgets/shared/cards/base_card.dart';
 import 'package:likha/presentation/widgets/shared/primitives/status_badge.dart';
 import 'package:likha/presentation/widgets/shared/tokens/app_text_styles.dart';
@@ -31,21 +32,6 @@ class SubmissionAnswerCard extends StatelessWidget {
     required this.onOverride,
     required this.onValidationError,
   });
-
-  String _questionTypeLabel(String type) {
-    switch (type) {
-      case 'multiple_choice':
-        return 'Multiple Choice';
-      case 'identification':
-        return 'Identification';
-      case 'enumeration':
-        return 'Enumeration';
-      case 'essay':
-        return 'Essay';
-      default:
-        return type;
-    }
-  }
 
   void _confirmOverride(BuildContext context) {
     showDialog(
@@ -116,7 +102,7 @@ class SubmissionAnswerCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${_questionTypeLabel(answer.questionType)} - ${answer.points} pt${answer.points != 1 ? 's' : ''}',
+                      '${questionTypeLabel(answer.questionType)} - ${answer.points} pt${answer.points != 1 ? 's' : ''}',
                       style: AppTextStyles.cardSubtitleSm,
                     ),
                   ],

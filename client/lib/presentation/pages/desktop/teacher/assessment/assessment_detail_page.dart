@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/core/utils/formatters.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
@@ -9,7 +10,7 @@ import 'package:likha/presentation/pages/desktop/teacher/assessment/assessment_s
 import 'package:likha/presentation/pages/desktop/teacher/assessment/assessment_statistics_page.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
-import 'package:likha/core/utils/formatters.dart';
+import 'package:likha/core/utils/labels.dart';
 import 'package:likha/presentation/widgets/shared/feedback/content_state_builder.dart';
 
 class AssessmentDetailPage extends ConsumerStatefulWidget {
@@ -455,7 +456,7 @@ class _AssessmentDetailPageState
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        Formatters.questionTypeLabel(type),
+        questionTypeLabel(type),
         style: const TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w500,
