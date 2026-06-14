@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
-import 'package:likha/presentation/pages/desktop/teacher/grade/class_grading_setup_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/grade/class_grading_setup_page.dart';
 import 'package:likha/presentation/widgets/shared/teacher/grade/grade_spreadsheet.dart';
 import 'package:likha/presentation/widgets/shared/teacher/grade/grade_spreadsheet_cells.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/add_grade_item_dialog.dart';
@@ -342,7 +342,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
                           onPressed: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => ClassGradingSetupDesktop(
+                              builder: (_) => ClassGradingSetupPage(
                                 classId: widget.classId,
                               ),
                             ),
@@ -544,7 +544,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
                   context,
                   MaterialPageRoute(
                     builder: (_) =>
-                        ClassGradingSetupDesktop(classId: widget.classId),
+                        ClassGradingSetupPage(classId: widget.classId),
                   ),
                 ).then((_) {
                   ref

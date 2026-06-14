@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/pages/mobile/admin/dashboard_page.dart';
-import 'package:likha/presentation/pages/desktop/admin/shell_desktop.dart';
+import 'package:likha/presentation/pages/desktop/admin/shell_page.dart';
 import 'package:likha/core/utils/platform_detector.dart';
-import 'package:likha/presentation/pages/desktop/teacher/shell_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/shell_page.dart';
 import 'package:likha/presentation/pages/mobile/student/shell_page.dart';
 import 'package:likha/presentation/pages/mobile/teacher/shell_page.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';

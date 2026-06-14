@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
-import 'package:likha/presentation/pages/desktop/teacher/assessment/assessment_create_desktop.dart';
-import 'package:likha/presentation/pages/desktop/teacher/assessment/assessment_detail_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/assessment/assessment_create_page.dart';
+import 'package:likha/presentation/pages/desktop/teacher/assessment/assessment_detail_page.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_data_table.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 
@@ -28,7 +28,7 @@ class AssessmentsSection extends ConsumerWidget {
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => CreateAssessmentDesktop(classId: classId),
+              builder: (_) => CreateAssessmentPage(classId: classId),
             ),
           ).then((result) {
             if (result == true) {
@@ -65,7 +65,7 @@ class AssessmentsSection extends ConsumerWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) =>
-                      AssessmentDetailDesktop(assessmentId: assessment.id),
+                      AssessmentDetailPage(assessmentId: assessment.id),
                 ),
               ).then((_) => ref
                   .read(teacherAssessmentProvider.notifier)

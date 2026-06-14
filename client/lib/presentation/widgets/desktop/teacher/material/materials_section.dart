@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
-import 'package:likha/presentation/pages/desktop/teacher/material/material_create_desktop.dart';
-import 'package:likha/presentation/pages/desktop/teacher/material/material_detail_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/material/material_create_page.dart';
+import 'package:likha/presentation/pages/desktop/teacher/material/material_detail_page.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/material/material_data_table.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 
@@ -28,7 +28,7 @@ class MaterialsSection extends ConsumerWidget {
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => CreateMaterialDesktop(classId: classId),
+              builder: (_) => CreateMaterialPage(classId: classId),
             ),
           ).then((result) {
             if (result == true) {
@@ -65,7 +65,7 @@ class MaterialsSection extends ConsumerWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) =>
-                      MaterialDetailDesktop(materialId: material.id),
+                      MaterialDetailPage(materialId: material.id),
                 ),
               ).then((_) => ref
                   .read(learningMaterialProvider.notifier)

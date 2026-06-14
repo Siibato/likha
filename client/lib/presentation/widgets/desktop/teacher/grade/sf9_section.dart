@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
-import 'package:likha/presentation/pages/desktop/teacher/grade/sf9_detail_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/grade/sf9_detail_page.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/base_data_table.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/empty_state.dart';
 import 'package:likha/presentation/providers/sf9_provider.dart';
@@ -29,7 +29,7 @@ class Sf9Section extends ConsumerWidget {
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => Sf9DetailDesktop(
+              builder: (_) => Sf9DetailPage(
               classId: classId,
               studentId: '', // Will be updated when student is selected
               studentName: '', // Will be updated when student is selected
@@ -141,7 +141,7 @@ class Sf9Section extends ConsumerWidget {
                   onTap: (student) => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => Sf9DetailDesktop(
+                      builder: (_) => Sf9DetailPage(
                         classId: classId,
                         studentId: student.studentId,
                         studentName: student.studentName,
