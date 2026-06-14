@@ -10,6 +10,19 @@ String submissionTypeFromBools(bool allowsText, bool allowsFile) {
   }
 }
 
+String componentLabel(String value) {
+  switch (value) {
+    case 'ww':
+      return 'Written Work';
+    case 'pt':
+      return 'Performance Task';
+    case 'qa':
+      return 'Quarterly Assessment';
+    default:
+      return value;
+  }
+}
+
 String questionTypeLabel(String type) {
   switch (type) {
     case 'multiple_choice':

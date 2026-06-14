@@ -950,6 +950,8 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     state = state.copyWith(clearSubmission: true);
   }
 
+  String? get currentError => state.error;
+
   AssignmentState get currentState => state;
 
   @override

@@ -50,6 +50,10 @@ class Formatters {
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
+  static String formatDateShort(DateTime dt) {
+    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+  }
+
   static String submissionTypeLabel(String type) {
     switch (type) {
       case 'text':
@@ -86,6 +90,22 @@ String formatDateTimeDisplay(DateTime utcDt) {
   final minute = local.minute.toString().padLeft(2, '0');
   final period = local.hour >= 12 ? 'PM' : 'AM';
   return '${months[local.month - 1]} ${local.day}, ${local.year} · $hour:$minute $period';
+}
+
+/// Formats a DateTime for user display as "Jan 01, 2025  3:00 PM"
+String formatDateTimeLabel(DateTime dt) {
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  final hour = dt.hour > 12
+      ? dt.hour - 12
+      : dt.hour == 0
+          ? 12
+          : dt.hour;
+  final minute = dt.minute.toString().padLeft(2, '0');
+  final period = dt.hour >= 12 ? 'PM' : 'AM';
+  return '${months[dt.month - 1]} ${dt.day.toString().padLeft(2, '0')}, ${dt.year}  $hour:$minute $period';
 }
 
 /// Formats a DateTime as UTC ISO8601 without timezone suffix (for API params)
