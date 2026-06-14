@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
-import 'package:likha/presentation/pages/desktop/teacher/assessment/create_assessment_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/assessment/assessment_create_desktop.dart';
 import 'package:likha/presentation/pages/desktop/teacher/assessment/assessment_detail_desktop.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_data_table.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';

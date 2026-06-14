@@ -5,7 +5,7 @@ import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/class/empty_student_state.dart';
-import 'package:likha/presentation/pages/mobile/teacher/student_detail_page.dart';
+import 'package:likha/presentation/pages/mobile/teacher/class/student_detail_page.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
 class ClassStudentListPage extends ConsumerStatefulWidget {

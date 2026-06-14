@@ -6,7 +6,7 @@ import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/presentation/widgets/shared/primitives/class_section_header.dart';
 import 'package:likha/presentation/pages/mobile/teacher/assessment/assessment_detail_page.dart';
-import 'package:likha/presentation/pages/mobile/teacher/assessment/create_assessment_page.dart';
+import 'package:likha/presentation/pages/mobile/teacher/assessment/assessment_create_page.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/empty_assessment_list_state.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/dashboard/reorder_position_dialog.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/teacher_assessment_card.dart';

@@ -5,7 +5,7 @@ import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/domain/learning_materials/entities/learning_material.dart';
 import 'package:likha/presentation/widgets/shared/primitives/class_section_header.dart';
-import 'package:likha/presentation/pages/mobile/teacher/material/create_material_page.dart';
+import 'package:likha/presentation/pages/mobile/teacher/material/material_create_page.dart';
 import 'package:likha/presentation/pages/mobile/teacher/material/material_detail_page.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/dashboard/reorder_position_dialog.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';

@@ -5,7 +5,7 @@ import 'package:likha/presentation/widgets/shared/primitives/class_section_heade
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
-import 'package:likha/presentation/pages/mobile/teacher/tos/edit_tos_page.dart';
+import 'package:likha/presentation/pages/mobile/teacher/tos/tos_edit_page.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/bulk_paste_sheet.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/melcs_search_sheet.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_competency_row.dart';

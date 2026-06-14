@@ -10,14 +10,14 @@ import 'package:likha/presentation/widgets/shared/cards/class_card.dart';
 import 'package:likha/presentation/widgets/shared/primitives/class_section_header.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
-class TeacherClassesPage extends ConsumerStatefulWidget {
-  const TeacherClassesPage({super.key});
+class TeacherClassListPage extends ConsumerStatefulWidget {
+  const TeacherClassListPage({super.key});
 
   @override
-  ConsumerState<TeacherClassesPage> createState() => _TeacherClassesPageState();
+  ConsumerState<TeacherClassListPage> createState() => _TeacherClassListPageState();
 }
 
-class _TeacherClassesPageState extends ConsumerState<TeacherClassesPage> {
+class _TeacherClassListPageState extends ConsumerState<TeacherClassListPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 

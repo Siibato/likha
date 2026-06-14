@@ -11,14 +11,14 @@ import 'package:likha/presentation/widgets/shared/cards/class_card.dart';
 import 'package:likha/presentation/widgets/shared/feedback/content_state_builder.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
-class AdminClassesPage extends ConsumerStatefulWidget {
-  const AdminClassesPage({super.key});
+class AdminClassListPage extends ConsumerStatefulWidget {
+  const AdminClassListPage({super.key});
 
   @override
-  ConsumerState<AdminClassesPage> createState() => _AdminClassesPageState();
+  ConsumerState<AdminClassListPage> createState() => _AdminClassListPageState();
 }
 
-class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
+class _AdminClassListPageState extends ConsumerState<AdminClassListPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
