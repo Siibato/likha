@@ -49,7 +49,7 @@ ResultFuture<AssignmentSubmission> createSubmission(
         gradedAt: null,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        needsSync: true,
+        syncStatus: SyncStatus.pending,
         cachedAt: DateTime.now(),
       ));
     }
@@ -71,7 +71,7 @@ ResultFuture<AssignmentSubmission> createSubmission(
       gradedAt: null,
       createdAt: now,
       updatedAt: now,
-      needsSync: true,
+      syncStatus: SyncStatus.pending,
       cachedAt: now,
     );
 
@@ -135,7 +135,7 @@ ResultFuture<AssignmentSubmission> createSubmission(
         gradedAt: null,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        needsSync: true,
+        syncStatus: SyncStatus.pending,
         cachedAt: DateTime.now(),
       ));
     } catch (cacheErr) {

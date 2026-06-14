@@ -95,7 +95,7 @@ class AssignmentDetailController extends ChangeNotifier {
 
     final state = notifier.currentState;
     PageLogger.instance.warn(
-        '[CREATE] after createSubmission — currentSubmission=${state.currentSubmission?.id} needsSync=${state.currentSubmission?.needsSync} error=${state.error}');
+        '[CREATE] after createSubmission — currentSubmission=${state.currentSubmission?.id} syncStatus=${state.currentSubmission?.syncStatus} error=${state.error}');
     if (state.currentSubmission != null && state.error == null) {
       _submissionId = state.currentSubmission!.id;
       _isCreatingSubmission = false;

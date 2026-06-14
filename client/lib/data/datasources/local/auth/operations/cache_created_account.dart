@@ -15,7 +15,7 @@ Future<void> cacheCreatedAccount(
     final now = DateTime.now();
     final map = account.toMap();
     map['cached_at'] = now.toIso8601String();
-    map['needs_sync'] = 1;
+    map['sync_status'] = SyncStatus.pending.dbValue;
     await db.transaction((txn) async {
       await txn.insert('users', map, conflictAlgorithm: ConflictAlgorithm.replace);
       await syncQueue.enqueue(SyncQueueEntry(

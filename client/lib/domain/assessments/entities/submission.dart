@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 
 class SubmissionSummary extends Equatable {
   final String id;
@@ -15,7 +16,7 @@ class SubmissionSummary extends Equatable {
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final DateTime? cachedAt;
-  final bool needsSync;
+  final SyncStatus syncStatus;
 
   const SubmissionSummary({
     required this.id,
@@ -32,11 +33,11 @@ class SubmissionSummary extends Equatable {
     this.createdAt,
     this.updatedAt,
     this.cachedAt,
-    this.needsSync = false,
+    this.syncStatus = SyncStatus.synced,
   });
 
   @override
-  List<Object?> get props => [id, assessmentId, studentId, totalPoints, isSubmitted, needsSync, cachedAt];
+  List<Object?> get props => [id, assessmentId, studentId, totalPoints, isSubmitted, syncStatus, cachedAt];
 }
 
 class SubmissionDetail extends Equatable {

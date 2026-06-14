@@ -87,7 +87,7 @@ void main() {
       expect(rows.length, 1);
       expect(rows.first['status'], 'draft');
       expect(rows.first['text_content'], 'My answer');
-      expect(rows.first['needs_sync'], 1);
+      expect(rows.first['sync_status'], 'pending');
     });
 
     test('gradeSubmission updates score and feedback', () async {

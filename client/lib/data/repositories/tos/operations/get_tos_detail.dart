@@ -29,7 +29,7 @@ ResultFuture<(TableOfSpecifications, List<TosCompetency>)> getTosDetail(
               final currentCompetencies = await localDataSource.getCompetenciesByTos(tosId);
               if (_tosDetailHasChanged(currentTos, currentCompetencies, freshTos, freshCompetencies)) {
                 await localDataSource.cacheTosList([freshTos]);
-                // Safe cache: never overwrites locally-modified rows (needs_sync = 1)
+                // Safe cache: never overwrites locally-modified rows (sync_status != 'synced')
                 await localDataSource.cacheCompetencies(tosId, freshCompetencies);
                 dataEventBus.notifyTosDetailChanged(tosId);
               }

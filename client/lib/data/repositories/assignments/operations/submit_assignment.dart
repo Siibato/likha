@@ -52,7 +52,7 @@ ResultFuture<AssignmentSubmission> submitAssignment(
         gradedAt: cached?.gradedAt,
         createdAt: cached?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
-        needsSync: true,
+        syncStatus: SyncStatus.pending,
         cachedAt: DateTime.now(),
       ));
     }
@@ -73,7 +73,7 @@ ResultFuture<AssignmentSubmission> submitAssignment(
       gradedAt: cached?.gradedAt,
       createdAt: cached?.createdAt ?? DateTime.now(),
       updatedAt: DateTime.now(),
-      needsSync: true,
+      syncStatus: SyncStatus.pending,
       cachedAt: DateTime.now(),
     );
     await localDataSource.cacheSubmissionDetail(
@@ -153,7 +153,7 @@ ResultFuture<AssignmentSubmission> submitAssignment(
         gradedAt: cached?.gradedAt,
         createdAt: cached?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
-        needsSync: true,
+        syncStatus: SyncStatus.pending,
         cachedAt: DateTime.now(),
       ));
     } catch (e) {

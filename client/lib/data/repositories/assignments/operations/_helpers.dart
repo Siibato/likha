@@ -85,7 +85,7 @@ AssignmentSubmissionModel toSubmissionModel(AssignmentSubmission submission) {
     createdAt: submission.createdAt,
     updatedAt: submission.updatedAt,
     cachedAt: submission.cachedAt,
-    needsSync: submission.needsSync,
+    syncStatus: submission.syncStatus,
   );
 }
 

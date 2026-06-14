@@ -1,6 +1,7 @@
 import 'package:likha/core/database/local_database.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:likha/core/errors/exceptions.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/assessments/submission_model.dart';
 
 Future<void> cacheSubmissions(
@@ -25,7 +26,7 @@ Future<void> cacheSubmissions(
             'created_at': submission.startedAt.toIso8601String(),
             'updated_at': DateTime.now().toIso8601String(),
             'cached_at': DateTime.now().toIso8601String(),
-            'needs_sync': 0,
+            'sync_status': SyncStatus.synced.dbValue,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );

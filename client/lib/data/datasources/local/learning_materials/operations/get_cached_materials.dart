@@ -1,6 +1,7 @@
 import 'package:likha/core/logging/cache_logger.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/core/database/db_schema.dart';
 
@@ -41,7 +42,10 @@ Future<List<LearningMaterialModel>> getCachedMaterials(
         createdAt: DateTime.parse(result['created_at'] as String),
         updatedAt: DateTime.parse(result['updated_at'] as String),
         cachedAt: result['cached_at'] != null ? DateTime.parse(result['cached_at'] as String) : null,
-        needsSync: (result['needs_sync'] as int?) == 1,
+        syncStatus: SyncStatus.values.firstWhere(
+          (e) => e.dbValue == (result['sync_status'] as String?),
+          orElse: () => SyncStatus.synced,
+        ),
         deletedAt: result['deleted_at'] != null ? DateTime.parse(result['deleted_at'] as String) : null,
       ));
     }

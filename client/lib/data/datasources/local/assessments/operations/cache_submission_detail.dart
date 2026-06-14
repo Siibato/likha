@@ -1,6 +1,7 @@
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/logging/repo_logger.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/assessments/submission_model.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:uuid/uuid.dart';
@@ -28,7 +29,7 @@ Future<void> cacheSubmissionDetail(
           'created_at': submission.startedAt.toIso8601String(),
           'updated_at': submission.submittedAt?.toIso8601String() ?? submission.startedAt.toIso8601String(),
           'cached_at': now,
-          'needs_sync': 0,
+          'sync_status': SyncStatus.synced.dbValue,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -66,7 +67,7 @@ Future<void> cacheSubmissionDetail(
             'question_id': answer.questionId,
             'points': answer.pointsAwarded,
             'cached_at': now,
-            'needs_sync': 0,
+            'sync_status': SyncStatus.synced.dbValue,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
@@ -82,7 +83,7 @@ Future<void> cacheSubmissionDetail(
                 'answer_text': null,
                 'is_correct': choice.isCorrect ? 1 : 0,
                 'cached_at': now,
-                'needs_sync': 0,
+                'sync_status': SyncStatus.synced.dbValue,
               },
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
@@ -98,7 +99,7 @@ Future<void> cacheSubmissionDetail(
                 'answer_text': enumAnswer.answerText,
                 'is_correct': enumAnswer.isCorrect ? 1 : 0,
                 'cached_at': now,
-                'needs_sync': 0,
+                'sync_status': SyncStatus.synced.dbValue,
               },
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
@@ -113,7 +114,7 @@ Future<void> cacheSubmissionDetail(
               'answer_text': answer.answerText,
               'is_correct': answer.pointsAwarded > 0 ? 1 : 0,
               'cached_at': now,
-              'needs_sync': 0,
+              'sync_status': SyncStatus.synced.dbValue,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );

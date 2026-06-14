@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/core/errors/error_messages.dart';
@@ -260,7 +261,7 @@ class AssignmentDetailBody extends ConsumerWidget {
       controller.clearFormError();
       ref.read(assignmentProvider.notifier).clearMessages();
       if (next.successMessage == 'Assignment submitted') {
-        final isOffline = next.currentSubmission?.needsSync == true;
+        final isOffline = next.currentSubmission?.syncStatus != SyncStatus.synced;
         if (isOffline && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

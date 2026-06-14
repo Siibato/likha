@@ -29,6 +29,7 @@ AssignmentModel _fakeModel({String id = 'a-1', String classId = 'c-1'}) =>
       gradedCount: 0,
       createdAt: DateTime(2024, 1, 1),
       updatedAt: DateTime(2024, 1, 1),
+      syncStatus: SyncStatus.synced,
     );
 
 AssignmentRepositoryImpl _buildRepo({
@@ -171,6 +172,15 @@ void main() {
     });
 
     group('createAssignment — online', () {
+      setUp(() async {
+        await openFreshTestDatabase();
+        when(() => local.localDatabase).thenReturn(LocalDatabase());
+      });
+
+      tearDown(() async {
+        await closeTestDatabase();
+      });
+
       test('calls remote and caches locally when server reachable', () async {
         final repo = _buildRepo(
           local: local,

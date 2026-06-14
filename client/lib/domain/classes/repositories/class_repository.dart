@@ -20,7 +20,7 @@ abstract class ClassRepository {
 
   ResultFuture<ClassDetail> getClassDetail({required String classId});
 
-  ResultFuture<ClassEntity> updateClass({
+  ResultFuture<MutationResult<ClassEntity>> updateClass({
     required String classId,
     String? title,
     String? description,
@@ -28,7 +28,7 @@ abstract class ClassRepository {
     bool? isAdvisory,
   });
 
-  ResultFuture<Participant> addStudent({
+  ResultFuture<MutationResult<Participant>> addStudent({
     required String classId,
     required String studentId,
   });

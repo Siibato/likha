@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
 import 'package:likha/domain/classes/repositories/class_repository.dart';
@@ -7,7 +8,7 @@ class UpdateClass {
 
   UpdateClass(this._repository);
 
-  ResultFuture<ClassEntity> call(UpdateClassParams params) {
+  ResultFuture<MutationResult<ClassEntity>> call(UpdateClassParams params) {
     return _repository.updateClass(
       classId: params.classId,
       title: params.title,

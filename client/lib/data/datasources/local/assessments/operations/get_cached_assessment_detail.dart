@@ -127,7 +127,7 @@ Future<(AssessmentModel, List<QuestionModel>)> getCachedAssessmentDetail(
       createdAt: assessment.createdAt,
       updatedAt: assessment.updatedAt,
       cachedAt: assessment.cachedAt,
-      needsSync: assessment.needsSync,
+      syncStatus: assessment.syncStatus,
       deletedAt: assessment.deletedAt,
     );
 

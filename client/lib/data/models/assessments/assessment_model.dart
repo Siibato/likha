@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 
 /// Server sends datetime strings in various formats. Normalize to UTC.
@@ -40,7 +41,7 @@ class AssessmentModel extends Assessment {
     required super.createdAt,
     required super.updatedAt,
     super.cachedAt,
-    super.needsSync = false,
+    super.syncStatus = SyncStatus.synced,
     this.deletedAt,
   });
 
@@ -107,7 +108,10 @@ class AssessmentModel extends Assessment {
       cachedAt: map['cached_at'] != null
           ? DateTime.parse(map['cached_at'] as String)
           : null,
-      needsSync: (map['needs_sync'] as int?) == 1,
+      syncStatus: SyncStatus.values.firstWhere(
+        (e) => e.dbValue == (map['sync_status'] as String?),
+        orElse: () => SyncStatus.synced,
+      ),
     );
   }
 
@@ -134,7 +138,7 @@ class AssessmentModel extends Assessment {
       'updated_at': updatedAt.toIso8601String(),
       'deleted_at': deletedAt?.toIso8601String(),
       'cached_at': cachedAt?.toIso8601String(),
-      'needs_sync': needsSync ? 1 : 0,
+      'sync_status': syncStatus.dbValue,
     };
   }
 }

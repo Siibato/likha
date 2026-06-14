@@ -26,23 +26,21 @@ ClassModel _fakeClass({String id = 'cl-1', String teacherId = 't-1'}) =>
       teacherFullName: 'Teacher One',
       isArchived: false,
       studentCount: 0,
+      gradingPeriodType: 'quarter',
       createdAt: DateTime(2024, 1, 1),
       updatedAt: DateTime(2024, 1, 1),
+      syncStatus: SyncStatus.synced,
     );
 
 ClassRepositoryImpl _buildRepo({
   required MockClassLocalDataSource local,
   required MockClassRemoteDataSource remote,
   required MockSyncQueue syncQueue,
-  required MockServerReachabilityService reachability,
   required MockDataEventBus eventBus,
-  bool isServerReachable = true,
 }) {
-  when(() => reachability.isServerReachable).thenReturn(isServerReachable);
   return ClassRepositoryImpl(
     remoteDataSource: remote,
     localDataSource: local,
-    serverReachabilityService: reachability,
     syncQueue: syncQueue,
     dataEventBus: eventBus,
   );
@@ -54,17 +52,14 @@ void main() {
   late MockClassLocalDataSource local;
   late MockClassRemoteDataSource remote;
   late MockSyncQueue syncQueue;
-  late MockServerReachabilityService reachability;
   late MockDataEventBus eventBus;
 
   setUp(() {
     local = MockClassLocalDataSource();
     remote = MockClassRemoteDataSource();
     syncQueue = MockSyncQueue();
-    reachability = MockServerReachabilityService();
     eventBus = MockDataEventBus();
     dotenv.testLoad(fileInput: '');
-    when(() => reachability.isServerReachable).thenReturn(true);
 
     registerFallbackValue(_fakeClass());
     registerFallbackValue(SyncQueueEntry(
@@ -90,7 +85,6 @@ void main() {
           local: local,
           remote: remote,
           syncQueue: syncQueue,
-          reachability: reachability,
           eventBus: eventBus,
         );
 
@@ -112,7 +106,6 @@ void main() {
           local: local,
           remote: remote,
           syncQueue: syncQueue,
-          reachability: reachability,
           eventBus: eventBus,
         );
 
@@ -144,7 +137,6 @@ void main() {
           local: local,
           remote: remote,
           syncQueue: syncQueue,
-          reachability: reachability,
           eventBus: eventBus,
         );
 
@@ -180,9 +172,7 @@ void main() {
           local: local,
           remote: remote,
           syncQueue: syncQueue,
-          reachability: reachability,
           eventBus: eventBus,
-          isServerReachable: true,
         );
 
         when(() => local.getCachedClasses())

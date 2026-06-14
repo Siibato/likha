@@ -23,17 +23,25 @@ abstract class ClassLocalDataSource {
   Future<void> insertClass(ClassModel classModel, {Transaction? txn});
   Future<void> updateClassLocally({
     required String classId,
-    required String title,
-    required String description,
+    String? title,
+    String? description,
     bool? isAdvisory,
+    Transaction? txn,
+  });
+
+  Future<void> deleteClassLocally({
+    required String classId,
+    Transaction? txn,
   });
   Future<String> addStudentLocally({
     required String classId,
     required UserModel student,
+    Transaction? txn,
   });
   Future<void> removeStudentLocally({
     required String classId,
     required String studentId,
+    Transaction? txn,
   });
   Future<UserModel?> getStudentById(String studentId);
   Future<void> cacheSearchStudents(List<UserModel> students);
@@ -87,32 +95,46 @@ class ClassLocalDataSourceImpl implements ClassLocalDataSource {
   @override
   Future<void> updateClassLocally({
     required String classId,
-    required String title,
-    required String description,
+    String? title,
+    String? description,
     bool? isAdvisory,
+    Transaction? txn,
   }) =>
       ops.updateClassLocally(
         localDatabase,
-        syncQueue,
         classId,
-        title,
-        description,
-        isAdvisory,
+        title: title,
+        description: description,
+        isAdvisory: isAdvisory,
+        txn: txn,
+      );
+
+  @override
+  Future<void> deleteClassLocally({
+    required String classId,
+    Transaction? txn,
+  }) =>
+      ops.deleteClassLocally(
+        localDatabase,
+        classId,
+        txn: txn,
       );
 
   @override
   Future<String> addStudentLocally({
     required String classId,
     required UserModel student,
+    Transaction? txn,
   }) =>
-      ops.addStudentLocally(localDatabase, classId, student);
+      ops.addStudentLocally(localDatabase, classId, student, txn: txn);
 
   @override
   Future<void> removeStudentLocally({
     required String classId,
     required String studentId,
+    Transaction? txn,
   }) =>
-      ops.removeStudentLocally(localDatabase, classId, studentId);
+      ops.removeStudentLocally(localDatabase, classId, studentId, txn: txn);
 
   @override
   Future<UserModel?> getStudentById(String studentId) =>

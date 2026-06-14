@@ -315,7 +315,6 @@ Future<void> init() async {
     () => ClassRepositoryImpl(
       remoteDataSource: sl<ClassRemoteDataSource>(),
       localDataSource: sl<ClassLocalDataSource>(),
-      serverReachabilityService: sl<ServerReachabilityService>(),
       syncQueue: sl<SyncQueue>(),
       dataEventBus: sl<DataEventBus>(),
     ),

@@ -1,5 +1,4 @@
 import 'package:likha/core/events/data_event_bus.dart';
-import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -14,19 +13,16 @@ import 'operations/classes.dart' as ops;
 class ClassRepositoryImpl implements ClassRepository {
   final ClassRemoteDataSource _remoteDataSource;
   final ClassLocalDataSource _localDataSource;
-  final ServerReachabilityService _serverReachabilityService;
   final SyncQueue _syncQueue;
   final DataEventBus _dataEventBus;
 
   ClassRepositoryImpl({
     required ClassRemoteDataSource remoteDataSource,
     required ClassLocalDataSource localDataSource,
-    required ServerReachabilityService serverReachabilityService,
     required SyncQueue syncQueue,
     required DataEventBus dataEventBus,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
-        _serverReachabilityService = serverReachabilityService,
         _syncQueue = syncQueue,
         _dataEventBus = dataEventBus;
 
@@ -53,15 +49,13 @@ class ClassRepositoryImpl implements ClassRepository {
   @override
   ResultVoid deleteClass({required String classId}) =>
       ops.deleteClass(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         classId: classId,
       );
 
   @override
-  ResultFuture<ClassEntity> updateClass({
+  ResultFuture<MutationResult<ClassEntity>> updateClass({
     required String classId,
     String? title,
     String? description,
@@ -69,9 +63,7 @@ class ClassRepositoryImpl implements ClassRepository {
     bool? isAdvisory,
   }) =>
       ops.updateClass(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         classId: classId,
         title: title,
@@ -108,14 +100,12 @@ class ClassRepositoryImpl implements ClassRepository {
       );
 
   @override
-  ResultFuture<Participant> addStudent({
+  ResultFuture<MutationResult<Participant>> addStudent({
     required String classId,
     required String studentId,
   }) =>
       ops.addStudent(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         classId: classId,
         studentId: studentId,
@@ -127,9 +117,7 @@ class ClassRepositoryImpl implements ClassRepository {
     required String studentId,
   }) =>
       ops.removeStudent(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         classId: classId,
         studentId: studentId,

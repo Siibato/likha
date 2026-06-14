@@ -1,6 +1,7 @@
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/assignments/assignment_model.dart';
 
 Future<void> cacheAssignmentDetail(
@@ -11,7 +12,7 @@ Future<void> cacheAssignmentDetail(
     final db = await localDatabase.database;
     final map = assignment.toMap();
     map['cached_at'] = DateTime.now().toIso8601String();
-    map['needs_sync'] = 0;
+    map['sync_status'] = SyncStatus.synced.dbValue;
     // Use update-first pattern to avoid CASCADE DELETE on assignment_submissions
     final updated = await db.update(DbTables.assignments, map, where: '${CommonCols.id} = ?', whereArgs: [map[CommonCols.id]]);
     if (updated == 0) {

@@ -25,7 +25,7 @@ Future<void> cacheCompetencies(
       conflictAlgorithm: ConflictAlgorithm.ignore,
     );
     // Update existing rows ONLY if they have no pending local edits.
-    // Rows with needs_sync = 1 have unsent changes — don't overwrite them
+    // Rows with sync_status != 'synced' have unsent changes — don't overwrite them
     // with potentially stale server data.
     await db.update(
       DbTables.tosCompetencies,

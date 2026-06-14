@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/events/data_event_bus.dart';
@@ -137,7 +138,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
       createdAt: a.createdAt,
       updatedAt: DateTime.now(),
       cachedAt: a.cachedAt,
-      needsSync: true,
+      syncStatus: SyncStatus.pending,
     );
   }
 
@@ -463,7 +464,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
                 createdAt: state.currentAssessment!.createdAt,
                 updatedAt: state.currentAssessment!.updatedAt,
                 cachedAt: state.currentAssessment!.cachedAt,
-                needsSync: state.currentAssessment!.needsSync,
+                syncStatus: state.currentAssessment!.syncStatus,
               )
             : null;
         state = state.copyWith(
@@ -567,7 +568,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
         createdAt: existingQ.createdAt,
         updatedAt: DateTime.now(),
         cachedAt: existingQ.cachedAt,
-        needsSync: true,
+        syncStatus: SyncStatus.pending,
       );
       Assessment? updatedAssessment;
       if (state.currentAssessment != null && newPoints != oldPoints) {
@@ -594,7 +595,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
           createdAt: state.currentAssessment!.createdAt,
           updatedAt: state.currentAssessment!.updatedAt,
           cachedAt: state.currentAssessment!.cachedAt,
-          needsSync: state.currentAssessment!.needsSync,
+          syncStatus: state.currentAssessment!.syncStatus,
         );
       }
       if (updatedAssessment != null) {
@@ -662,7 +663,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
         createdAt: state.currentAssessment!.createdAt,
         updatedAt: state.currentAssessment!.updatedAt,
         cachedAt: state.currentAssessment!.cachedAt,
-        needsSync: state.currentAssessment!.needsSync,
+        syncStatus: state.currentAssessment!.syncStatus,
       );
     }
     if (updatedAssessment != null) {

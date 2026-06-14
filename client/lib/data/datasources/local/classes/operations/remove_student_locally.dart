@@ -1,3 +1,4 @@
+import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/database/local_database.dart';
@@ -5,14 +6,15 @@ import 'package:likha/core/database/local_database.dart';
 Future<void> removeStudentLocally(
   LocalDatabase localDatabase,
   String classId,
-  String studentId,
-) async {
+  String studentId, {
+  Transaction? txn,
+}) async {
   try {
-    final db = await localDatabase.database;
     final now = DateTime.now();
-    await db.transaction((txn) async {
+
+    Future<void> performRemove(Transaction t) async {
       // Soft delete: set removed_at instead of hard delete
-      await txn.update(
+      await t.update(
         DbTables.classParticipants,
         {
           ClassParticipantsCols.removedAt: now.toIso8601String(),
@@ -23,11 +25,20 @@ Future<void> removeStudentLocally(
         whereArgs: [classId, studentId],
       );
 
-      await txn.rawUpdate(
+      await t.rawUpdate(
         'UPDATE ${DbTables.classes} SET student_count = (SELECT COUNT(*) FROM ${DbTables.classParticipants} WHERE class_id = ? AND removed_at IS NULL), updated_at = ? WHERE id = ?',
         [classId, now.toIso8601String(), classId],
       );
-    });
+    }
+
+    if (txn != null) {
+      await performRemove(txn);
+    } else {
+      final db = await localDatabase.database;
+      await db.transaction((t) async {
+        await performRemove(t);
+      });
+    }
   } catch (e) {
     throw CacheException('Failed to remove student locally: $e');
   }

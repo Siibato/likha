@@ -21,6 +21,7 @@ ClassModel _sampleClass({String id = 'class-001'}) {
     teacherFullName: 'Mr. Teacher',
     isArchived: false,
     studentCount: 0,
+    gradingPeriodType: 'quarter',
     createdAt: now,
     updatedAt: now,
   );
@@ -83,6 +84,7 @@ void main() {
         teacherFullName: 'Mr. Teacher',
         isArchived: false,
         studentCount: 0,
+        gradingPeriodType: 'quarter',
         createdAt: DateTime(2026, 4, 19),
         updatedAt: DateTime(2026, 4, 19),
         syncStatus: SyncStatus.pending,
@@ -115,7 +117,7 @@ void main() {
         'account_status': student.accountStatus,
         'created_at': now,
         'updated_at': now,
-        'needs_sync': 0,
+        'sync_status': SyncStatus.synced.dbValue,
       });
 
       await datasource.addStudentLocally(classId: 'class-001', student: student);

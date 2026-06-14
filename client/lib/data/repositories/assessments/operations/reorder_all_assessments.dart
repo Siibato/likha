@@ -59,7 +59,7 @@ SyncQueue syncQueue, {
             createdAt: cached.createdAt,
             updatedAt: cached.updatedAt,
             cachedAt: cached.cachedAt,
-            needsSync: cached.needsSync,
+            syncStatus: cached.syncStatus,
           ),
         ]);
       } catch (_) {}

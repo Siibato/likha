@@ -42,7 +42,7 @@ ResultFuture<SubmissionFile> uploadFile(
         fileSize: size,
         uploadedAt: DateTime.now(),
         localPath: filePath,
-        needsSync: true,
+        syncStatus: SyncStatus.pending,
         cachedAt: DateTime.now(),
       ));
     }
@@ -56,7 +56,7 @@ ResultFuture<SubmissionFile> uploadFile(
       fileSize: size,
       uploadedAt: DateTime.now(),
       localPath: filePath,
-      needsSync: true,
+      syncStatus: SyncStatus.pending,
       cachedAt: DateTime.now(),
     );
     await localDataSource.cacheSubmissionFile(submissionId, optimisticFile);

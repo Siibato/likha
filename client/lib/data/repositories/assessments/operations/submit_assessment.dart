@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:likha/data/models/assessments/submission_model.dart';
@@ -48,7 +49,7 @@ AssessmentRemoteDataSource remoteDataSource, {
         finalScore: cached?.finalScore ?? 0.0,
         totalPoints: totalPoints,
         isSubmitted: true,
-        needsSync: true,
+        syncStatus: SyncStatus.pending,
         submittedAt: DateTime.now(),
         cachedAt: DateTime.now(),
       ));

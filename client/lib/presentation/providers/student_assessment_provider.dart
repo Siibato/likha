@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/logging/provider_logger.dart';
@@ -164,7 +165,7 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
         createdAt: s.createdAt,
         updatedAt: s.updatedAt,
         cachedAt: s.cachedAt,
-        needsSync: true,
+        syncStatus: SyncStatus.pending,
       );
     }
 
@@ -193,7 +194,7 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
                 createdAt: a.createdAt,
                 updatedAt: a.updatedAt,
                 cachedAt: a.cachedAt,
-                needsSync: a.needsSync,
+                syncStatus: a.syncStatus,
               );
             }
             return a;

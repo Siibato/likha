@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/logging/provider_logger.dart';
@@ -196,7 +197,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     List<SubmissionFile>? files,
     DateTime? updatedAt,
     DateTime? cachedAt,
-    bool? needsSync,
+    SyncStatus? syncStatus,
   }) {
     return AssignmentSubmission(
       id: source.id,
@@ -214,7 +215,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
       createdAt: source.createdAt,
       updatedAt: updatedAt ?? source.updatedAt,
       cachedAt: cachedAt ?? source.cachedAt,
-      needsSync: needsSync ?? source.needsSync,
+      syncStatus: syncStatus ?? source.syncStatus,
     );
   }
 
@@ -227,7 +228,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     DateTime? uploadedAt,
     String? localPath,
     DateTime? cachedAt,
-    bool? needsSync,
+    SyncStatus? syncStatus,
   }) {
     return SubmissionFile(
       id: id ?? source.id,
@@ -237,7 +238,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
       uploadedAt: uploadedAt ?? source.uploadedAt,
       localPath: localPath ?? source.localPath,
       cachedAt: cachedAt ?? source.cachedAt,
-      needsSync: needsSync ?? source.needsSync,
+      syncStatus: syncStatus ?? source.syncStatus,
     );
   }
 
@@ -697,7 +698,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
       createdAt: now,
       updatedAt: now,
       cachedAt: now,
-      needsSync: true,
+      syncStatus: SyncStatus.pending,
     );
 
     state = state.copyWith(
@@ -734,7 +735,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
       uploadedAt: DateTime.now(),
       localPath: params.filePath,
       cachedAt: DateTime.now(),
-      needsSync: true,
+      syncStatus: SyncStatus.pending,
     );
 
     final currentSubmission = state.currentSubmission;

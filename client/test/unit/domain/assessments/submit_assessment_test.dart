@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
@@ -34,7 +35,7 @@ void main() {
       createdAt: DateTime(2024, 1, 15),
       updatedAt: DateTime(2024, 1, 15),
       cachedAt: null,
-      needsSync: false,
+      syncStatus: SyncStatus.synced,
     );
 
     test('should submit assessment successfully', () async {

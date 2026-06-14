@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
 
 class MaterialDetail extends Equatable {
@@ -12,7 +13,7 @@ class MaterialDetail extends Equatable {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? cachedAt;
-  final bool needsSync;
+  final SyncStatus syncStatus;
 
   const MaterialDetail({
     required this.id,
@@ -25,7 +26,7 @@ class MaterialDetail extends Equatable {
     required this.createdAt,
     required this.updatedAt,
     this.cachedAt,
-    this.needsSync = false,
+    this.syncStatus = SyncStatus.synced,
   });
 
   @override
@@ -40,6 +41,6 @@ class MaterialDetail extends Equatable {
         createdAt,
         updatedAt,
         cachedAt,
-        needsSync,
+        syncStatus,
       ];
 }

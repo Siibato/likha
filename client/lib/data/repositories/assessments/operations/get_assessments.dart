@@ -75,7 +75,7 @@ ResultFuture<List<Assessment>> getAssessments(
               createdAt: assessment.createdAt,
               updatedAt: assessment.updatedAt,
               cachedAt: assessment.cachedAt,
-              needsSync: assessment.needsSync,
+              syncStatus: assessment.syncStatus,
             ));
           } else {
             assessmentsWithDynamicCounts.add(assessment);

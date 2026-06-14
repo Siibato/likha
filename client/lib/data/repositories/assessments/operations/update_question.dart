@@ -52,7 +52,7 @@ SyncQueue syncQueue, {
             data['order_index'] as int? ?? currentQuestion.orderIndex,
         isMultiSelect:
             data['is_multi_select'] as bool? ?? currentQuestion.isMultiSelect,
-        needsSync: true,
+        syncStatus: SyncStatus.pending,
         cachedAt: DateTime.now(),
       ));
     }

@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/events/data_event_bus.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
@@ -45,7 +46,6 @@ ResultFuture<MaterialDetail> getMaterialDetail(
         createdAt: cachedMaterial.createdAt,
         updatedAt: cachedMaterial.updatedAt,
         cachedAt: cachedMaterial.cachedAt,
-        needsSync: cachedMaterial.needsSync,
       );
 
       if (!skipBackgroundRefresh) {
@@ -66,7 +66,6 @@ ResultFuture<MaterialDetail> getMaterialDetail(
               createdAt: currentMaterial.createdAt,
               updatedAt: currentMaterial.updatedAt,
               cachedAt: currentMaterial.cachedAt,
-              needsSync: currentMaterial.needsSync,
             );
             if (_materialDetailHasChanged(currentDetail, fresh)) {
               await localDataSource.cacheMaterialDetail(
@@ -81,7 +80,7 @@ ResultFuture<MaterialDetail> getMaterialDetail(
                   createdAt: fresh.createdAt,
                   updatedAt: fresh.updatedAt,
                   cachedAt: DateTime.now(),
-                  needsSync: false,
+                  syncStatus: SyncStatus.synced,
                 ),
               );
               await localDataSource.cacheMaterialFiles(materialId, fresh.files);
@@ -111,7 +110,7 @@ ResultFuture<MaterialDetail> getMaterialDetail(
             createdAt: freshMaterial.createdAt,
             updatedAt: freshMaterial.updatedAt,
             cachedAt: DateTime.now(),
-            needsSync: false,
+            syncStatus: SyncStatus.synced,
           ),
         );
         if (freshMaterial.files.isNotEmpty) {
@@ -132,7 +131,6 @@ ResultFuture<MaterialDetail> getMaterialDetail(
         createdAt: freshMaterial.createdAt,
         updatedAt: freshMaterial.updatedAt,
         cachedAt: null,
-        needsSync: false,
       );
       return Right(detail);
     }

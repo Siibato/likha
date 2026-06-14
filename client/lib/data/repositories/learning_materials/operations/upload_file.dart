@@ -3,6 +3,7 @@ import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
 import 'package:likha/data/datasources/remote/learning_materials/learning_material_remote_datasource.dart';
@@ -40,7 +41,7 @@ ResultFuture<MaterialFile> uploadFile(
         fileSize: size,
         uploadedAt: DateTime.now(),
         localPath: filePath,
-        needsSync: true,
+        syncStatus: SyncStatus.pending,
         cachedAt: DateTime.now(),
       ));
     }

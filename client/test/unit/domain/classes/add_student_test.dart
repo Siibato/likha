@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/classes/usecases/add_student.dart';
@@ -38,11 +40,21 @@ void main() {
       when(() => mockRepository.addStudent(
         classId: any(named: 'classId'),
         studentId: any(named: 'studentId'),
-      )).thenAnswer((_) async => Right(tParticipant));
+      )).thenAnswer((_) async => Right(MutationResult(
+        entity: tParticipant,
+        status: SyncStatus.pending,
+      )));
 
       final result = await useCase(tParams);
 
-      expect(result, Right(tParticipant));
+      expect(result, isA<Right<Failure, MutationResult<Participant>>>());
+      result.fold(
+        (failure) => fail('should not be left'),
+        (mutationResult) {
+          expect(mutationResult.entity, tParticipant);
+          expect(mutationResult.status, SyncStatus.pending);
+        },
+      );
       verify(() => mockRepository.addStudent(
         classId: 'class-1',
         studentId: 'student-1',

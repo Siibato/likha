@@ -22,7 +22,7 @@ void main() {
   tearDown(() => closeTestDatabase());
 
   group('AssessmentLocalDataSource', () {
-    test('createAssessment inserts assessment with needsSync=1', () async {
+    test('createAssessment inserts assessment with sync_status=pending', () async {
       final id = await datasource.createAssessment(
         classId: _classId,
         title: 'Quiz 1',
@@ -41,7 +41,7 @@ void main() {
       );
       expect(rows.length, 1);
       expect(rows.first['title'], 'Quiz 1');
-      expect(rows.first['needs_sync'], 1);
+      expect(rows.first['sync_status'], 'pending');
     });
 
     test('cacheAssessments and getCachedAssessments returns list for class', () async {

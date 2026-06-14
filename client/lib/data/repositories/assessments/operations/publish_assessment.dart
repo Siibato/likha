@@ -67,7 +67,7 @@ SyncQueue syncQueue, {
           component: cached.component,
           createdAt: cached.createdAt,
           updatedAt: DateTime.now(),
-          needsSync: true,
+          syncStatus: SyncStatus.pending,
           cachedAt: cached.cachedAt,
         ));
       } catch (_) {

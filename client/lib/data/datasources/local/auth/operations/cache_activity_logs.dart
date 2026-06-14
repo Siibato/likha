@@ -1,5 +1,6 @@
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/database/local_database.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/auth/activity_log_model.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
@@ -21,7 +22,7 @@ Future<void> cacheActivityLogs(
             'details': log.details,
             'created_at': log.createdAt.toIso8601String(),
             'cached_at': DateTime.now().toIso8601String(),
-            'needs_sync': 0,
+            'sync_status': SyncStatus.synced.dbValue,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );

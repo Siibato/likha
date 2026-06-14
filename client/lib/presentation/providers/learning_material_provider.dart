@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/logging/provider_logger.dart';
 import 'package:likha/core/events/data_event_bus.dart';
@@ -400,7 +401,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
       uploadedAt: DateTime.now(),
       localPath: filePath,
       cachedAt: DateTime.now(),
-      needsSync: true,
+      syncStatus: SyncStatus.pending,
     );
 
     if (state.currentMaterial != null) {

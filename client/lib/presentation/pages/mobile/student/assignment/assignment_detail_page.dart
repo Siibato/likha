@@ -60,7 +60,10 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       isNewAttempt: widget.isNewAttempt,
       notifier: ref.read(assignmentProvider.notifier),
     );
-    _controller.init();
+    // Delay provider modification until after widget tree is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _controller.init();
+    });
   }
 
   @override

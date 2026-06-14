@@ -50,7 +50,7 @@ SyncQueue syncQueue, {
           component: component ?? cachedModel.component,
           createdAt: cachedModel.createdAt,
           updatedAt: DateTime.now(),
-          needsSync: true,
+          syncStatus: SyncStatus.pending,
           cachedAt: cachedModel.cachedAt,
         );
       } catch (_) {}

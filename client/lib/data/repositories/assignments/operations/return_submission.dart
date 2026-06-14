@@ -39,7 +39,7 @@ ResultFuture<AssignmentSubmission> returnSubmission(
         gradedAt: null,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        needsSync: true,
+        syncStatus: SyncStatus.pending,
         cachedAt: DateTime.now(),
       ));
     }
@@ -62,7 +62,7 @@ ResultFuture<AssignmentSubmission> returnSubmission(
             createdAt: cached.createdAt,
             updatedAt: DateTime.now(),
             cachedAt: DateTime.now(),
-            needsSync: true,
+            syncStatus: SyncStatus.pending,
           )
         : AssignmentSubmission(
             id: submissionId,
@@ -78,7 +78,7 @@ ResultFuture<AssignmentSubmission> returnSubmission(
             gradedAt: null,
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
-            needsSync: true,
+            syncStatus: SyncStatus.pending,
             cachedAt: DateTime.now(),
           );
 

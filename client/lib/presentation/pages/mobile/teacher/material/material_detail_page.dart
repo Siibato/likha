@@ -131,7 +131,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                         description: material.description,
                         fileCount: material.files.length,
                         updatedAt: material.updatedAt,
-                        needsSync: material.needsSync,
+                        syncStatus: material.syncStatus,
                       ),
                       const SizedBox(height: 16),
                       if (material.contentText != null &&

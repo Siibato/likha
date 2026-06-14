@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 
 class UserModel extends User {
@@ -13,7 +14,7 @@ class UserModel extends User {
     super.updatedAt,
     super.deletedAt,
     super.cachedAt,
-    super.needsSync = false,
+    super.syncStatus = SyncStatus.synced,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -68,7 +69,10 @@ class UserModel extends User {
       cachedAt: map['cached_at'] != null
           ? DateTime.parse(map['cached_at'] as String)
           : null,
-      needsSync: (map['needs_sync'] as int?) == 1,
+      syncStatus: SyncStatus.values.firstWhere(
+        (e) => e.dbValue == (map['sync_status'] as String?),
+        orElse: () => SyncStatus.synced,
+      ),
     );
   }
 
@@ -96,7 +100,7 @@ class UserModel extends User {
       'updated_at': updatedAt?.toIso8601String() ?? createdAt.toIso8601String(),
       'deleted_at': deletedAt?.toIso8601String(),
       'cached_at': cachedAt?.toIso8601String(),
-      'needs_sync': needsSync ? 1 : 0,
+      'sync_status': syncStatus.dbValue,
     };
   }
 
@@ -112,7 +116,7 @@ class UserModel extends User {
     DateTime? deletedAt,
     DateTime? updatedAt,
     DateTime? cachedAt,
-    bool? needsSync,
+    SyncStatus? syncStatus,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -126,7 +130,7 @@ class UserModel extends User {
       deletedAt: deletedAt ?? this.deletedAt,
       updatedAt: updatedAt ?? this.updatedAt,
       cachedAt: cachedAt ?? this.cachedAt,
-      needsSync: needsSync ?? this.needsSync,
+      syncStatus: syncStatus ?? this.syncStatus,
     );
   }
 }
