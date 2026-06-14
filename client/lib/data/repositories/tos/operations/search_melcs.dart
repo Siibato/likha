@@ -2,12 +2,12 @@ import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/utils/typedef.dart';
+import 'package:likha/injection_container.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/data/datasources/remote/tos/tos_remote_datasource.dart';
 import 'package:likha/data/models/tos/melcs_model.dart';
 
 ResultFuture<List<MelcEntryModel>> searchMelcs(
-  ServerReachabilityService serverReachabilityService,
   TosLocalDataSource localDataSource,
   TosRemoteDataSource remoteDataSource, {
   String? subject,
@@ -19,7 +19,7 @@ ResultFuture<List<MelcEntryModel>> searchMelcs(
 }) async {
   try {
     // Try remote first
-    if (serverReachabilityService.isServerReachable) {
+    if (sl<ServerReachabilityService>().isServerReachable) {
       final remote = await remoteDataSource.searchMelcs(
         subject: subject,
         gradeLevel: gradeLevel,

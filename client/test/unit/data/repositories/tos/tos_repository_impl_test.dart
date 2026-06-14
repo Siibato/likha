@@ -1,8 +1,10 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/tos/tos_model.dart';
 import 'package:likha/data/repositories/tos/tos_repository_impl.dart';
@@ -27,15 +29,13 @@ TosRepositoryImpl _buildRepo({
   required MockTosLocalDataSource local,
   required MockTosRemoteDataSource remote,
   required MockSyncQueue syncQueue,
-  required MockServerReachabilityService reachability,
-  bool isServerReachable = true,
+  MockDataEventBus? eventBus,
 }) {
-  when(() => reachability.isServerReachable).thenReturn(isServerReachable);
   return TosRepositoryImpl(
     remoteDataSource: remote,
     localDataSource: local,
-    serverReachabilityService: reachability,
     syncQueue: syncQueue,
+    dataEventBus: eventBus ?? MockDataEventBus(),
   );
 }
 
@@ -45,14 +45,21 @@ void main() {
   late MockTosLocalDataSource local;
   late MockTosRemoteDataSource remote;
   late MockSyncQueue syncQueue;
-  late MockServerReachabilityService reachability;
 
   setUp(() {
     local = MockTosLocalDataSource();
     remote = MockTosRemoteDataSource();
     syncQueue = MockSyncQueue();
-    reachability = MockServerReachabilityService();
     dotenv.testLoad(fileInput: '');
+
+    final reachability = MockServerReachabilityService();
+    when(() => reachability.isServerReachable).thenReturn(true);
+    when(() => reachability.checkNow()).thenAnswer((_) async => true);
+    final getIt = GetIt.instance;
+    if (getIt.isRegistered<ServerReachabilityService>()) {
+      getIt.unregister<ServerReachabilityService>();
+    }
+    getIt.registerSingleton<ServerReachabilityService>(reachability);
 
     registerFallbackValue(_fakeTos());
     registerFallbackValue(SyncQueueEntry(
@@ -67,6 +74,10 @@ void main() {
     ));
   });
 
+  tearDown(() {
+    GetIt.instance.reset();
+  });
+
   group('TosRepositoryImpl', () {
     group('getTosList — cache hit', () {
       test('returns cached TOS list without hitting remote', () async {
@@ -74,7 +85,6 @@ void main() {
           local: local,
           remote: remote,
           syncQueue: syncQueue,
-          reachability: reachability,
         );
 
         when(() => local.getTosByClass('c-1'))
@@ -96,8 +106,6 @@ void main() {
           local: local,
           remote: remote,
           syncQueue: syncQueue,
-          reachability: reachability,
-          isServerReachable: true,
         );
 
         when(() => local.getTosByClass('c-1')).thenAnswer((_) async => []);
@@ -115,12 +123,15 @@ void main() {
 
     group('getTosList — offline, empty cache', () {
       test('returns empty list when offline and nothing cached', () async {
+        final getIt = GetIt.instance;
+        final reachability = getIt<ServerReachabilityService>() as MockServerReachabilityService;
+        when(() => reachability.isServerReachable).thenReturn(false);
+        when(() => reachability.checkNow()).thenAnswer((_) async => false);
+
         final repo = _buildRepo(
           local: local,
           remote: remote,
           syncQueue: syncQueue,
-          reachability: reachability,
-          isServerReachable: false,
         );
 
         when(() => local.getTosByClass('c-1')).thenAnswer((_) async => []);
@@ -138,12 +149,15 @@ void main() {
 
     group('createTos — offline', () {
       test('saves locally and enqueues sync op', () async {
+        final getIt = GetIt.instance;
+        final reachability = getIt<ServerReachabilityService>() as MockServerReachabilityService;
+        when(() => reachability.isServerReachable).thenReturn(false);
+        when(() => reachability.checkNow()).thenAnswer((_) async => false);
+
         final repo = _buildRepo(
           local: local,
           remote: remote,
           syncQueue: syncQueue,
-          reachability: reachability,
-          isServerReachable: false,
         );
 
         when(() => local.saveTos(any())).thenAnswer((_) async {});
@@ -170,12 +184,15 @@ void main() {
 
     group('createTos — online', () {
       test('calls remote and saves result locally', () async {
+        final getIt = GetIt.instance;
+        final reachability = getIt<ServerReachabilityService>() as MockServerReachabilityService;
+        when(() => reachability.isServerReachable).thenReturn(true);
+        when(() => reachability.checkNow()).thenAnswer((_) async => true);
+
         final repo = _buildRepo(
           local: local,
           remote: remote,
           syncQueue: syncQueue,
-          reachability: reachability,
-          isServerReachable: true,
         );
 
         when(() => remote.createTos(
@@ -209,7 +226,6 @@ void main() {
           local: local,
           remote: remote,
           syncQueue: syncQueue,
-          reachability: reachability,
         );
 
         when(() => local.getTosByClass(any()))

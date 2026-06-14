@@ -50,12 +50,14 @@ ResultFuture<List<Map<String, dynamic>>> getGradeSummary(
       await localDataSource.cacheGradeSummary(classId, gradingPeriodNumber, fresh);
       return Right(fresh);
     }
-  } on ServerFailure catch (e) {
-    return Left(e);
-  } on Failure {
-    return const Right([]);
-  } catch (_) {
-    return const Right([]);
+  } on ServerException catch (e) {
+    return Left(ServerFailure(e.message, statusCode: e.statusCode));
+  } on NetworkException catch (e) {
+    return Left(NetworkFailure(e.message));
+  } on CacheException catch (e) {
+    return Left(CacheFailure(e.message));
+  } catch (e) {
+    return Left(ServerFailure(e.toString()));
   }
 }
 

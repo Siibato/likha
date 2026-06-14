@@ -6,6 +6,8 @@ import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/grading/grade_item_model.dart';
 import 'package:likha/data/models/grading/grade_config_model.dart';
 import 'package:likha/data/models/grading/grade_score_model.dart';
+import 'package:likha/data/models/grading/general_average_model.dart';
+import 'package:likha/data/models/grading/sf9_model.dart';
 import 'package:likha/data/repositories/grading/grading_repository_impl.dart';
 
 import '../../../../helpers/mock_datasources.dart';
@@ -290,6 +292,101 @@ void main() {
         expect(result, const Right(null));
         verify(() => local.updateScoreOverride('sc-1', 95.0)).called(1);
         verify(() => syncQueue.enqueue(any())).called(1);
+      });
+    });
+
+    // ── getFinalGrades ──────────────────────────────────────────────────
+
+    group('getFinalGrades — cache-first', () {
+      test('returns cached data immediately and refreshes in background', () async {
+        final repo = _buildRepo(
+          local: local, remote: remote, syncQueue: syncQueue,
+          reachability: reachability, isServerReachable: true,
+        );
+
+        when(() => local.getCachedFinalGrades('c-1'))
+            .thenAnswer((_) async => [{'student_id': 's-1', 'finalGrade': 88}]);
+        when(() => remote.getFinalGrades(classId: any(named: 'classId')))
+            .thenAnswer((_) async => [{'student_id': 's-1', 'finalGrade': 90}]);
+        when(() => local.cacheFinalGrades(any(), any())).thenAnswer((_) async {});
+
+        final result = await repo.getFinalGrades(classId: 'c-1');
+
+        expect(result.isRight(), isTrue);
+        result.fold((f) => fail('Expected Right'), (data) {
+          expect(data.length, 1);
+          expect(data.first['finalGrade'], 88);
+        });
+      });
+
+    });
+
+    // ── getGeneralAverages ──────────────────────────────────────────────
+
+    group('getGeneralAverages — cache-first', () {
+      test('returns cached data immediately', () async {
+        final repo = _buildRepo(
+          local: local, remote: remote, syncQueue: syncQueue,
+          reachability: reachability, isServerReachable: true,
+        );
+
+        when(() => local.getCachedGeneralAverages('c-1'))
+            .thenAnswer((_) async => {'class_id': 'c-1', 'students': []});
+        when(() => remote.getGeneralAverages(classId: any(named: 'classId')))
+            .thenAnswer((_) async => const GeneralAverageResponseModel(
+              classId: 'c-1',
+              students: [],
+            ));
+
+        final result = await repo.getGeneralAverages(classId: 'c-1');
+
+        expect(result.isRight(), isTrue);
+      });
+    });
+
+    // ── getMyGradeDetail ────────────────────────────────────────────────
+
+    group('getMyGradeDetail — cache-first', () {
+      test('returns cached data immediately', () async {
+        final repo = _buildRepo(
+          local: local, remote: remote, syncQueue: syncQueue,
+          reachability: reachability, isServerReachable: true,
+        );
+
+        when(() => local.getCachedMyGradeDetail('c-1', 1))
+            .thenAnswer((_) async => {'initial_grade': 88.5});
+        when(() => remote.getMyGradeDetail(
+          classId: any(named: 'classId'),
+          gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        )).thenAnswer((_) async => {'initial_grade': 88.5});
+
+        final result = await repo.getMyGradeDetail(classId: 'c-1', gradingPeriodNumber: 1);
+
+        expect(result.isRight(), isTrue);
+      });
+    });
+
+    // ── getSf9 / getSf10 ────────────────────────────────────────────────
+
+    group('getSf9 — cache-first', () {
+      test('returns cached data immediately', () async {
+        final repo = _buildRepo(
+          local: local, remote: remote, syncQueue: syncQueue,
+          reachability: reachability, isServerReachable: true,
+        );
+
+        when(() => local.getCachedSf9('c-1', 's-1'))
+            .thenAnswer((_) async => {'student_id': 's-1', 'student_name': 'Student'});
+        when(() => remote.getSf9(classId: any(named: 'classId'), studentId: any(named: 'studentId')))
+            .thenAnswer((_) async => const Sf9ResponseModel(
+              studentId: 's-1',
+              studentName: 'Student',
+              subjects: [],
+            ));
+
+        final result = await repo.getSf9(classId: 'c-1', studentId: 's-1');
+
+        expect(result.isRight(), isTrue);
       });
     });
   });

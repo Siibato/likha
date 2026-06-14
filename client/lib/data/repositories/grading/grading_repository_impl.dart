@@ -236,7 +236,9 @@ class GradingRepositoryImpl implements GradingRepository {
     required String classId,
   }) =>
       ops.getFinalGrades(
+        _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         classId: classId,
       );
 
@@ -259,7 +261,9 @@ class GradingRepositoryImpl implements GradingRepository {
     required int gradingPeriodNumber,
   }) =>
       ops.getMyGradeDetail(
+        _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         classId: classId,
         gradingPeriodNumber: gradingPeriodNumber,
       );
@@ -271,7 +275,9 @@ class GradingRepositoryImpl implements GradingRepository {
     required String classId,
   }) =>
       ops.getGeneralAverages(
+        _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         classId: classId,
       );
 
@@ -283,7 +289,9 @@ class GradingRepositoryImpl implements GradingRepository {
     required String studentId,
   }) =>
       ops.getSf9(
+        _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         classId: classId,
         studentId: studentId,
       );
@@ -294,7 +302,9 @@ class GradingRepositoryImpl implements GradingRepository {
     required String studentId,
   }) =>
       ops.getSf10(
+        _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         classId: classId,
         studentId: studentId,
       );

@@ -4,13 +4,13 @@ import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
+import 'package:likha/injection_container.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/data/datasources/remote/tos/tos_remote_datasource.dart';
 import 'package:likha/data/models/tos/tos_model.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 
 ResultFuture<TableOfSpecifications> createTos(
-  ServerReachabilityService serverReachabilityService,
   TosLocalDataSource localDataSource,
   TosRemoteDataSource remoteDataSource,
   SyncQueue syncQueue, {
@@ -18,7 +18,7 @@ ResultFuture<TableOfSpecifications> createTos(
   required Map<String, dynamic> data,
 }) async {
   try {
-    if (serverReachabilityService.isServerReachable) {
+    if (sl<ServerReachabilityService>().isServerReachable) {
       // Online: call server directly so the TOS exists on the server immediately
       final serverTos = await remoteDataSource.createTos(
         classId: classId,

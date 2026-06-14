@@ -29,6 +29,14 @@ ResultFuture<List<SubmissionListItem>> getSubmissions(
               await localDataSource.cacheSubmissions(
                 assignmentId, fresh.cast<SubmissionListItemModel>());
             }
+            String? classId;
+            try {
+              final assignment = await localDataSource.getCachedAssignmentDetail(assignmentId);
+              classId = assignment.classId;
+            } catch (_) {}
+            if (classId != null) {
+              dataEventBus.notifyAssignmentsChanged(classId);
+            }
           } catch (_) {
             await localDataSource.cacheSubmissions(
               assignmentId, fresh.cast<SubmissionListItemModel>());

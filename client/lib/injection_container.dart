@@ -301,7 +301,6 @@ Future<void> init() async {
     () => AuthRepositoryImpl(
       remoteDataSource: sl<AuthRemoteDataSource>(),
       localDataSource: sl<AuthLocalDataSource>(),
-      serverReachabilityService: sl<ServerReachabilityService>(),
       storageService: sl<StorageService>(),
       syncQueue: sl<SyncQueue>(),
       classLocalDataSource: sl<ClassLocalDataSource>(),
@@ -536,8 +535,8 @@ Future<void> init() async {
     () => TosRepositoryImpl(
       remoteDataSource: sl<TosRemoteDataSource>(),
       localDataSource: sl<TosLocalDataSource>(),
-      serverReachabilityService: sl<ServerReachabilityService>(),
       syncQueue: sl<SyncQueue>(),
+      dataEventBus: sl<DataEventBus>(),
     ),
   );
 

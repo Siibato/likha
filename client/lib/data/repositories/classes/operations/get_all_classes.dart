@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/events/data_event_bus.dart';
+import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/data/datasources/remote/classes/class_remote_datasource.dart';
@@ -17,14 +18,25 @@ ResultFuture<List<ClassEntity>> getAllClasses(
   try {
     try {
       final cachedClasses = await localDataSource.getCachedClasses();
-      // Cache hit: return immediately, fire background refresh
       if (!skipBackgroundRefresh) {
-        helpers.backgroundFetchAllClasses(remoteDataSource, localDataSource, dataEventBus);
+        fireRemoteFetch(
+          dedupKey: 'classes/allClasses/bg',
+          remote: remoteDataSource.getAllClasses,
+          onSuccess: (fresh) async {
+            final current = await localDataSource.getCachedClasses();
+            if (helpers.classesHaveChanged(current, fresh)) {
+              await localDataSource.cacheClasses(fresh);
+              dataEventBus.notifyClassesChanged();
+            }
+          },
+        );
       }
       return Right(cachedClasses);
     } on CacheException {
-      // Cache miss: blocking remote fetch (avoids empty-state flash)
-      final freshClasses = await remoteDataSource.getAllClasses();
+      final freshClasses = await remoteFetch(
+        dedupKey: 'classes/allClasses',
+        remote: remoteDataSource.getAllClasses,
+      );
       await localDataSource.cacheClasses(freshClasses);
       return Right(freshClasses);
     }

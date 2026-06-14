@@ -299,6 +299,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.getStatistics(
         _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         assessmentId: assessmentId,
       );
 
@@ -361,6 +362,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.getStudentResults(
         _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         submissionId: submissionId,
       );
 }

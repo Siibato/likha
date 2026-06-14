@@ -32,6 +32,28 @@ class DataEventBus {
       StreamController<String>.broadcast();
   final StreamController<String> _gradeSummary =
       StreamController<String>.broadcast();
+  final StreamController<String> _activityLogs =
+      StreamController<String>.broadcast();
+  final StreamController<String> _statistics =
+      StreamController<String>.broadcast();
+  final StreamController<String> _studentResults =
+      StreamController<String>.broadcast();
+  final StreamController<String> _tosList =
+      StreamController<String>.broadcast();
+  final StreamController<String> _tosDetail =
+      StreamController<String>.broadcast();
+  final StreamController<void> _accounts =
+      StreamController<void>.broadcast();
+  final StreamController<String> _finalGrades =
+      StreamController<String>.broadcast();
+  final StreamController<String> _generalAverages =
+      StreamController<String>.broadcast();
+  final StreamController<String> _myGradeDetail =
+      StreamController<String>.broadcast();
+  final StreamController<String> _sf9 =
+      StreamController<String>.broadcast();
+  final StreamController<String> _sf10 =
+      StreamController<String>.broadcast();
 
   Stream<String?> get onAssessmentsChanged => _assessments.stream;
   Stream<String?> get onAssessmentDetailChanged => _assessmentDetail.stream;
@@ -44,6 +66,17 @@ class DataEventBus {
   Stream<String>  get onGradeItemsChanged   => _gradeItems.stream;
   Stream<String>  get onGradesChanged       => _grades.stream;
   Stream<String>  get onGradeSummaryChanged => _gradeSummary.stream;
+  Stream<String>  get onActivityLogsChanged => _activityLogs.stream;
+  Stream<String>  get onStatisticsChanged   => _statistics.stream;
+  Stream<String>  get onStudentResultsChanged => _studentResults.stream;
+  Stream<String>  get onTosListChanged      => _tosList.stream;
+  Stream<String>  get onTosDetailChanged    => _tosDetail.stream;
+  Stream<void>    get onAccountsChanged      => _accounts.stream;
+  Stream<String>  get onFinalGradesChanged   => _finalGrades.stream;
+  Stream<String>  get onGeneralAveragesChanged => _generalAverages.stream;
+  Stream<String>  get onMyGradeDetailChanged  => _myGradeDetail.stream;
+  Stream<String>  get onSf9Changed            => _sf9.stream;
+  Stream<String>  get onSf10Changed           => _sf10.stream;
 
   void notifyAssessmentsChanged(String classId) => _assessments.add(classId);
   void notifyAssessmentDetailChanged(String assessmentId) => _assessmentDetail.add(assessmentId);
@@ -62,6 +95,17 @@ class DataEventBus {
   void notifyGradeItemsChanged(String classId)  => _gradeItems.add(classId);
   void notifyGradesChanged(String classId)      => _grades.add(classId);
   void notifyGradeSummaryChanged(String classId) => _gradeSummary.add(classId);
+  void notifyActivityLogsChanged(String userId)  => _activityLogs.add(userId);
+  void notifyStatisticsChanged(String assessmentId) => _statistics.add(assessmentId);
+  void notifyStudentResultsChanged(String submissionId) => _studentResults.add(submissionId);
+  void notifyTosListChanged(String classId)       => _tosList.add(classId);
+  void notifyTosDetailChanged(String tosId)       => _tosDetail.add(tosId);
+  void notifyAccountsChanged()                      => _accounts.add(null);
+  void notifyFinalGradesChanged(String classId)     => _finalGrades.add(classId);
+  void notifyGeneralAveragesChanged(String classId) => _generalAverages.add(classId);
+  void notifyMyGradeDetailChanged(String classId)   => _myGradeDetail.add(classId);
+  void notifySf9Changed(String classId)             => _sf9.add(classId);
+  void notifySf10Changed(String classId)            => _sf10.add(classId);
 
   void dispose() {
     _assessments.close();
@@ -75,5 +119,16 @@ class DataEventBus {
     _gradeItems.close();
     _grades.close();
     _gradeSummary.close();
+    _activityLogs.close();
+    _statistics.close();
+    _studentResults.close();
+    _tosList.close();
+    _tosDetail.close();
+    _accounts.close();
+    _finalGrades.close();
+    _generalAverages.close();
+    _myGradeDetail.close();
+    _sf9.close();
+    _sf10.close();
   }
 }

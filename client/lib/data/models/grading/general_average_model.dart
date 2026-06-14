@@ -14,6 +14,13 @@ class GeneralAverageResponseModel extends GeneralAverageResponse {
           .toList(),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'class_id': classId,
+      'students': students.map((s) => (s as StudentGeneralAverageModel).toJson()).toList(),
+    };
+  }
 }
 
 class StudentGeneralAverageModel extends StudentGeneralAverage {
@@ -36,6 +43,16 @@ class StudentGeneralAverageModel extends StudentGeneralAverage {
           .toList(),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'student_id': studentId,
+      'student_name': studentName,
+      'general_average': generalAverage,
+      'subject_count': subjectCount,
+      'subjects': subjects.map((s) => (s as SubjectGradeModel).toJson()).toList(),
+    };
+  }
 }
 
 class SubjectGradeModel extends SubjectGrade {
@@ -51,5 +68,13 @@ class SubjectGradeModel extends SubjectGrade {
       classTitle: json['class_title'] as String,
       finalGrade: json['final_grade'] as int?,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'class_id': classId,
+      'class_title': classTitle,
+      'final_grade': finalGrade,
+    };
   }
 }

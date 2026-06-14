@@ -59,6 +59,33 @@ abstract class GradingLocalDataSource {
     List<Map<String, dynamic>> summary,
   );
 
+  // Final Grades Cache
+  Future<List<Map<String, dynamic>>> getCachedFinalGrades(String classId);
+  Future<void> cacheFinalGrades(String classId, List<Map<String, dynamic>> data);
+
+  // General Averages Cache
+  Future<Map<String, dynamic>> getCachedGeneralAverages(String classId);
+  Future<void> cacheGeneralAverages(String classId, Map<String, dynamic> data);
+
+  // My Grade Detail Cache
+  Future<Map<String, dynamic>> getCachedMyGradeDetail(
+    String classId,
+    int gradingPeriodNumber,
+  );
+  Future<void> cacheMyGradeDetail(
+    String classId,
+    int gradingPeriodNumber,
+    Map<String, dynamic> data,
+  );
+
+  // SF9 Cache
+  Future<Map<String, dynamic>> getCachedSf9(String classId, String studentId);
+  Future<void> cacheSf9(String classId, String studentId, Map<String, dynamic> data);
+
+  // SF10 Cache
+  Future<Map<String, dynamic>> getCachedSf10(String classId, String studentId);
+  Future<void> cacheSf10(String classId, String studentId, Map<String, dynamic> data);
+
   Future<void> clearAllCache();
 }
 
@@ -171,6 +198,53 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
     List<Map<String, dynamic>> summary,
   ) =>
       ops.cacheGradeSummary(localDatabase, classId, gradingPeriodNumber, summary);
+
+  @override
+  Future<List<Map<String, dynamic>>> getCachedFinalGrades(String classId) =>
+      ops.getCachedFinalGrades(localDatabase, classId);
+
+  @override
+  Future<void> cacheFinalGrades(String classId, List<Map<String, dynamic>> data) =>
+      ops.cacheFinalGrades(localDatabase, classId, data);
+
+  @override
+  Future<Map<String, dynamic>> getCachedGeneralAverages(String classId) =>
+      ops.getCachedGeneralAverages(localDatabase, classId);
+
+  @override
+  Future<void> cacheGeneralAverages(String classId, Map<String, dynamic> data) =>
+      ops.cacheGeneralAverages(localDatabase, classId, data);
+
+  @override
+  Future<Map<String, dynamic>> getCachedMyGradeDetail(
+    String classId,
+    int gradingPeriodNumber,
+  ) =>
+      ops.getCachedMyGradeDetail(localDatabase, classId, gradingPeriodNumber);
+
+  @override
+  Future<void> cacheMyGradeDetail(
+    String classId,
+    int gradingPeriodNumber,
+    Map<String, dynamic> data,
+  ) =>
+      ops.cacheMyGradeDetail(localDatabase, classId, gradingPeriodNumber, data);
+
+  @override
+  Future<Map<String, dynamic>> getCachedSf9(String classId, String studentId) =>
+      ops.getCachedSf9(localDatabase, classId, studentId);
+
+  @override
+  Future<void> cacheSf9(String classId, String studentId, Map<String, dynamic> data) =>
+      ops.cacheSf9(localDatabase, classId, studentId, data);
+
+  @override
+  Future<Map<String, dynamic>> getCachedSf10(String classId, String studentId) =>
+      ops.getCachedSf10(localDatabase, classId, studentId);
+
+  @override
+  Future<void> cacheSf10(String classId, String studentId, Map<String, dynamic> data) =>
+      ops.cacheSf10(localDatabase, classId, studentId, data);
 
   @override
   Future<void> clearAllCache() =>

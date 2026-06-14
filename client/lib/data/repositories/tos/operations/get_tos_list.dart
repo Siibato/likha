@@ -1,50 +1,57 @@
 import 'package:dartz/dartz.dart';
+import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/core/events/data_event_bus.dart';
+import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/data/datasources/remote/tos/tos_remote_datasource.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 
 ResultFuture<List<TableOfSpecifications>> getTosList(
-  ServerReachabilityService serverReachabilityService,
   TosLocalDataSource localDataSource,
-  TosRemoteDataSource remoteDataSource, {
+  TosRemoteDataSource remoteDataSource,
+  DataEventBus dataEventBus, {
   required String classId,
 }) async {
   try {
-    final cached = await localDataSource.getTosByClass(classId);
+    try {
+      final cached = await localDataSource.getTosByClass(classId);
 
-    if (cached.isNotEmpty) {
-      // Has local data — return it immediately and background-refresh.
-      if (serverReachabilityService.isServerReachable) {
-        _backgroundFetchTosList(serverReachabilityService, localDataSource, remoteDataSource, classId);
-      }
+      fireRemoteFetch(
+        dedupKey: 'tos/tosList/$classId/bg',
+        remote: () => remoteDataSource.getTosByClass(classId: classId),
+        onSuccess: (fresh) async {
+          try {
+            final current = await localDataSource.getTosByClass(classId);
+            if (current.length != fresh.length ||
+                current.any((c) => !fresh.any((f) => f.id == c.id))) {
+              await localDataSource.cacheTosList(fresh);
+              dataEventBus.notifyTosListChanged(classId);
+            }
+          } on CacheException {
+            await localDataSource.cacheTosList(fresh);
+            dataEventBus.notifyTosListChanged(classId);
+          }
+        },
+      );
+
       return Right(cached);
+    } on CacheException {
+      final fresh = await remoteFetch(
+        dedupKey: 'tos/tosList/$classId',
+        remote: () => remoteDataSource.getTosByClass(classId: classId),
+      );
+      await localDataSource.cacheTosList(fresh);
+      return Right(fresh);
     }
-
-    if (serverReachabilityService.isServerReachable) {
-      final models = await remoteDataSource.getTosByClass(classId: classId);
-      await localDataSource.cacheTosList(models);
-      return Right(models);
-    }
-
-    return const Right([]);
+  } on ServerException catch (e) {
+    return Left(ServerFailure(e.message, statusCode: e.statusCode));
+  } on NetworkException catch (e) {
+    return Left(NetworkFailure(e.message));
+  } on CacheException catch (e) {
+    return Left(CacheFailure(e.message));
   } catch (e) {
-    return Left(CacheFailure(e.toString()));
-  }
-}
-
-void _backgroundFetchTosList(
-  ServerReachabilityService serverReachabilityService,
-  TosLocalDataSource localDataSource,
-  TosRemoteDataSource remoteDataSource,
-  String classId,
-) async {
-  try {
-    final models = await remoteDataSource.getTosByClass(classId: classId);
-    await localDataSource.cacheTosList(models);
-  } catch (_) {
-    // Non-fatal: background refresh failure
+    return Left(ServerFailure(e.toString()));
   }
 }

@@ -5,6 +5,7 @@ import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
+import 'package:likha/injection_container.dart';
 import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
 import 'package:likha/data/datasources/remote/auth/auth_remote_datasource.dart';
 import 'package:likha/data/models/auth/user_model.dart';
@@ -13,7 +14,6 @@ import 'package:uuid/uuid.dart';
 import '_helpers.dart' as helpers;
 
 ResultFuture<User> createAccount(
-  ServerReachabilityService serverReachabilityService,
   AuthLocalDataSource localDataSource,
   AuthRemoteDataSource remoteDataSource,
   SyncQueue syncQueue, {
@@ -23,7 +23,7 @@ ResultFuture<User> createAccount(
 }) async {
   RepoLogger.instance.log('createAccount START: username=$username, fullName=$fullName, role=$role');
   try {
-    final isServerReachable = serverReachabilityService.isServerReachable;
+    final isServerReachable = sl<ServerReachabilityService>().isServerReachable;
     RepoLogger.instance.log('Server reachable: $isServerReachable');
     
     if (!isServerReachable) {

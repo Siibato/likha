@@ -26,6 +26,20 @@ class Sf9ResponseModel extends Sf9Response {
           : null,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'student_id': studentId,
+      'student_name': studentName,
+      'grade_level': gradeLevel,
+      'school_year': schoolYear,
+      'section': section,
+      'subjects': subjects.map((s) => (s as Sf9SubjectRowModel).toJson()).toList(),
+      'general_average': generalAverage != null
+          ? (generalAverage as Sf9QuarterlyAveragesModel).toJson()
+          : null,
+    };
+  }
 }
 
 class Sf9SubjectRowModel extends Sf9SubjectRow {
@@ -52,6 +66,19 @@ class Sf9SubjectRowModel extends Sf9SubjectRow {
       descriptor: json['descriptor'] as String?,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'class_title': classTitle,
+      'subject_group': subjectGroup,
+      'q1': q1,
+      'q2': q2,
+      'q3': q3,
+      'q4': q4,
+      'final_grade': finalGrade,
+      'descriptor': descriptor,
+    };
+  }
 }
 
 class Sf9QuarterlyAveragesModel extends Sf9QuarterlyAverages {
@@ -73,5 +100,16 @@ class Sf9QuarterlyAveragesModel extends Sf9QuarterlyAverages {
       finalAverage: json['final_average'] as int?,
       descriptor: json['descriptor'] as String?,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'q1': q1,
+      'q2': q2,
+      'q3': q3,
+      'q4': q4,
+      'final_average': finalAverage,
+      'descriptor': descriptor,
+    };
   }
 }

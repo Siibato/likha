@@ -1,4 +1,4 @@
-import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
@@ -11,18 +11,18 @@ import 'operations/tos.dart' as ops;
 class TosRepositoryImpl implements TosRepository {
   final TosRemoteDataSource _remoteDataSource;
   final TosLocalDataSource _localDataSource;
-  final ServerReachabilityService _serverReachabilityService;
   final SyncQueue _syncQueue;
+  final DataEventBus _dataEventBus;
 
   TosRepositoryImpl({
     required TosRemoteDataSource remoteDataSource,
     required TosLocalDataSource localDataSource,
-    required ServerReachabilityService serverReachabilityService,
     required SyncQueue syncQueue,
+    required DataEventBus dataEventBus,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
-        _serverReachabilityService = serverReachabilityService,
-        _syncQueue = syncQueue;
+        _syncQueue = syncQueue,
+        _dataEventBus = dataEventBus;
 
   @override
   ResultFuture<TableOfSpecifications> createTos({
@@ -30,7 +30,6 @@ class TosRepositoryImpl implements TosRepository {
     required Map<String, dynamic> data,
   }) =>
       ops.createTos(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
         _syncQueue,
@@ -63,9 +62,9 @@ class TosRepositoryImpl implements TosRepository {
     required String classId,
   }) =>
       ops.getTosList(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         classId: classId,
       );
 
@@ -74,9 +73,9 @@ class TosRepositoryImpl implements TosRepository {
     required String tosId,
   }) =>
       ops.getTosDetail(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         tosId: tosId,
       );
 
@@ -90,7 +89,6 @@ class TosRepositoryImpl implements TosRepository {
     int offset = 0,
   }) =>
       ops.searchMelcs(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
         subject: subject,

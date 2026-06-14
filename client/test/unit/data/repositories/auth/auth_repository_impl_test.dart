@@ -1,10 +1,12 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/data/models/auth/auth_response_model.dart';
 import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/data/repositories/auth/auth_repository_impl.dart';
@@ -34,7 +36,6 @@ AuthResponseModel _fakeAuthResponse({String userId = 'u-1'}) => AuthResponseMode
 AuthRepositoryImpl _buildRepo({
   required MockAuthLocalDataSource local,
   required MockAuthRemoteDataSource remote,
-  required MockServerReachabilityService reachability,
   required MockStorageService storage,
   MockClassLocalDataSource? classLocal,
   MockAssignmentLocalDataSource? assignmentLocal,
@@ -42,13 +43,10 @@ AuthRepositoryImpl _buildRepo({
   MockLearningMaterialLocalDataSource? materialLocal,
   MockGradingLocalDataSource? gradingLocal,
   MockDataEventBus? eventBus,
-  bool isServerReachable = true,
 }) {
-  when(() => reachability.isServerReachable).thenReturn(isServerReachable);
   return AuthRepositoryImpl(
     remoteDataSource: remote,
     localDataSource: local,
-    serverReachabilityService: reachability,
     storageService: storage,
     syncQueue: MockSyncQueue(),
     classLocalDataSource: classLocal ?? MockClassLocalDataSource(),
@@ -65,7 +63,6 @@ AuthRepositoryImpl _buildRepo({
 void main() {
   late MockAuthLocalDataSource local;
   late MockAuthRemoteDataSource remote;
-  late MockServerReachabilityService reachability;
   late MockStorageService storage;
 
   setUpAll(() {
@@ -76,13 +73,25 @@ void main() {
   setUp(() {
     local = MockAuthLocalDataSource();
     remote = MockAuthRemoteDataSource();
-    reachability = MockServerReachabilityService();
     storage = MockStorageService();
     dotenv.testLoad(fileInput: '');
     when(() => storage.getUserId()).thenAnswer((_) async => null);
     when(() => storage.isAuthenticated()).thenAnswer((_) async => false);
     when(() => local.cacheCurrentUser(any())).thenAnswer((_) async {});
     when(() => storage.saveUserRole(any())).thenAnswer((_) async {});
+
+    final reachability = MockServerReachabilityService();
+    when(() => reachability.isServerReachable).thenReturn(true);
+    when(() => reachability.checkNow()).thenAnswer((_) async => true);
+    final getIt = GetIt.instance;
+    if (getIt.isRegistered<ServerReachabilityService>()) {
+      getIt.unregister<ServerReachabilityService>();
+    }
+    getIt.registerSingleton<ServerReachabilityService>(reachability);
+  });
+
+  tearDown(() {
+    GetIt.instance.reset();
   });
 
   group('AuthRepositoryImpl', () {
@@ -91,7 +100,6 @@ void main() {
         final repo = _buildRepo(
           local: local,
           remote: remote,
-          reachability: reachability,
           storage: storage,
         );
         when(() => remote.login(
@@ -115,7 +123,6 @@ void main() {
         final repo = _buildRepo(
           local: local,
           remote: remote,
-          reachability: reachability,
           storage: storage,
         );
         when(() => remote.login(
@@ -137,7 +144,6 @@ void main() {
         final repo = _buildRepo(
           local: local,
           remote: remote,
-          reachability: reachability,
           storage: storage,
         );
         when(() => remote.login(
@@ -161,7 +167,6 @@ void main() {
         final repo = _buildRepo(
           local: local,
           remote: remote,
-          reachability: reachability,
           storage: storage,
         );
         when(() => storage.getUserId()).thenAnswer((_) async => 'u-1');
@@ -182,9 +187,7 @@ void main() {
         final repo = _buildRepo(
           local: local,
           remote: remote,
-          reachability: reachability,
           storage: storage,
-          isServerReachable: false,
         );
         when(() => storage.getUserId()).thenAnswer((_) async => 'u-1');
         when(() => local.getCachedCurrentUser('u-1'))
@@ -200,7 +203,6 @@ void main() {
         final repo = _buildRepo(
           local: local,
           remote: remote,
-          reachability: reachability,
           storage: storage,
         );
         when(() => storage.getUserId()).thenAnswer((_) async => null);
@@ -226,7 +228,6 @@ void main() {
         final repo = _buildRepo(
           local: local,
           remote: remote,
-          reachability: reachability,
           storage: storage,
           classLocal: classLocal,
           assignmentLocal: assignmentLocal,

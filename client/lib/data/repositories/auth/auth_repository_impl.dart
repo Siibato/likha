@@ -11,7 +11,6 @@ import 'package:likha/domain/auth/entities/activity_log.dart';
 import 'package:likha/domain/auth/entities/check_username_result.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/domain/auth/repositories/auth_repository.dart';
-import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/services/storage_service.dart';
 import 'operations/auth.dart' as ops;
@@ -19,7 +18,6 @@ import 'operations/auth.dart' as ops;
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource _remoteDataSource;
   final AuthLocalDataSource _localDataSource;
-  final ServerReachabilityService _serverReachabilityService;
   final StorageService _storageService;
   final SyncQueue _syncQueue;
   final ClassLocalDataSource _classLocalDataSource;
@@ -32,7 +30,6 @@ class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl({
     required AuthRemoteDataSource remoteDataSource,
     required AuthLocalDataSource localDataSource,
-    required ServerReachabilityService serverReachabilityService,
     required StorageService storageService,
     required SyncQueue syncQueue,
     required ClassLocalDataSource classLocalDataSource,
@@ -43,7 +40,6 @@ class AuthRepositoryImpl implements AuthRepository {
     required DataEventBus dataEventBus,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
-        _serverReachabilityService = serverReachabilityService,
         _storageService = storageService,
         _syncQueue = syncQueue,
         _classLocalDataSource = classLocalDataSource,
@@ -129,7 +125,6 @@ class AuthRepositoryImpl implements AuthRepository {
     required String role,
   }) =>
       ops.createAccount(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
         _syncQueue,
@@ -141,16 +136,15 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   ResultFuture<List<User>> getAllAccounts() =>
       ops.getAllAccounts(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
         _syncQueue,
+        _dataEventBus,
       );
 
   @override
   ResultFuture<User> resetAccount({required String userId}) =>
       ops.resetAccount(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
         _syncQueue,
@@ -164,7 +158,6 @@ class AuthRepositoryImpl implements AuthRepository {
     String? reason,
   }) =>
       ops.lockAccount(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
         _syncQueue,
@@ -180,7 +173,6 @@ class AuthRepositoryImpl implements AuthRepository {
     String? role,
   }) =>
       ops.updateAccount(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
         _syncQueue,
@@ -192,7 +184,6 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   ResultVoid deleteAccount({required String userId}) =>
       ops.deleteAccount(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
         _syncQueue,
@@ -202,9 +193,9 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   ResultFuture<List<ActivityLog>> getActivityLogs({required String userId}) =>
       ops.getActivityLogs(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         userId: userId,
       );
 }

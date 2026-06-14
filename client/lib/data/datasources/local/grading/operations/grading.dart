@@ -1,6 +1,16 @@
+export 'cache_final_grades.dart';
+export 'cache_general_averages.dart';
 export 'cache_grade_summary.dart';
+export 'cache_my_grade_detail.dart';
+export 'cache_sf10.dart';
+export 'cache_sf9.dart';
 export 'clear_all_cache.dart';
+export 'get_cached_final_grades.dart';
+export 'get_cached_general_averages.dart';
 export 'get_cached_grade_summary.dart';
+export 'get_cached_my_grade_detail.dart';
+export 'get_cached_sf10.dart';
+export 'get_cached_sf9.dart';
 export 'get_config_by_class.dart';
 export 'save_configs.dart';
 export 'get_item_by_source_id.dart';

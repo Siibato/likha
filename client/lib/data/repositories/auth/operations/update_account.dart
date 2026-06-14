@@ -4,6 +4,7 @@ import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
+import 'package:likha/injection_container.dart';
 import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
 import 'package:likha/data/datasources/remote/auth/auth_remote_datasource.dart';
 import 'package:likha/data/models/auth/user_model.dart';
@@ -11,7 +12,6 @@ import 'package:likha/domain/auth/entities/user.dart';
 import 'package:uuid/uuid.dart';
 
 ResultFuture<User> updateAccount(
-  ServerReachabilityService serverReachabilityService,
   AuthLocalDataSource localDataSource,
   AuthRemoteDataSource remoteDataSource,
   SyncQueue syncQueue, {
@@ -20,7 +20,7 @@ ResultFuture<User> updateAccount(
   String? role,
 }) async {
   try {
-    if (!serverReachabilityService.isServerReachable) {
+    if (!sl<ServerReachabilityService>().isServerReachable) {
       await syncQueue.enqueue(SyncQueueEntry(
         id: const Uuid().v4(),
         entityType: SyncEntityType.adminUser,
