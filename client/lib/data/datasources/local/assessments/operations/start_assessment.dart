@@ -26,7 +26,7 @@ Future<String> startAssessment(
         CommonCols.createdAt: now.toIso8601String(),
         CommonCols.updatedAt: now.toIso8601String(),
         CommonCols.cachedAt: now.toIso8601String(),
-        CommonCols.needsSync: 1,
+        CommonCols.syncStatus: 'pending',
       });
       await syncQueue.enqueue(SyncQueueEntry(
         id: const Uuid().v4(),

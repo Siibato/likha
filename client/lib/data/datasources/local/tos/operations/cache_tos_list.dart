@@ -15,7 +15,7 @@ Future<void> cacheTosList(
       DbTables.tableOfSpecifications,
       {
         ...tos.toMap(),
-        CommonCols.needsSync: 0,
+        CommonCols.syncStatus: 'synced',
         CommonCols.cachedAt: DateTime.now().toIso8601String(),
       },
       conflictAlgorithm: ConflictAlgorithm.replace,

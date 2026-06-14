@@ -11,7 +11,7 @@ Future<void> updateQuestion(
   try {
     final db = await localDatabase.database;
     updates[CommonCols.updatedAt] = DateTime.now().toIso8601String();
-    updates[CommonCols.needsSync] = isOfflineMutation ? 1 : 0;
+    updates[CommonCols.syncStatus] = isOfflineMutation ? 'pending' : 'synced';
     await db.update(DbTables.assessmentQuestions, updates, where: '${CommonCols.id} = ? AND ${CommonCols.deletedAt} IS NULL', whereArgs: [questionId]);
   } catch (e) {
     throw CacheException('Failed to update question locally: $e');

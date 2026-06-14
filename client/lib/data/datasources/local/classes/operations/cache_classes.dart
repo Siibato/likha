@@ -14,7 +14,7 @@ Future<void> cacheClasses(
       for (final classModel in classes) {
         final map = classModel.toMap();
         map[CommonCols.cachedAt] = DateTime.now().toIso8601String();
-        map[CommonCols.needsSync] = 0;
+        map[CommonCols.syncStatus] = 'synced';
         await txn.insert(DbTables.classes, map, conflictAlgorithm: ConflictAlgorithm.replace);
       }
     });

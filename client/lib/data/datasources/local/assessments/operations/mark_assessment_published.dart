@@ -14,7 +14,7 @@ Future<void> markAssessmentPublished(
         AssessmentsCols.isPublished: 1,
         CommonCols.updatedAt: DateTime.now().toIso8601String(),
         CommonCols.cachedAt: DateTime.now().toIso8601String(),
-        CommonCols.needsSync: 1,
+        CommonCols.syncStatus: 'pending',
       },
       where: '${CommonCols.id} = ?',
       whereArgs: [assessmentId],

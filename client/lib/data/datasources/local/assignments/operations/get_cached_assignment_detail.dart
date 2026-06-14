@@ -51,7 +51,7 @@ Future<AssignmentModel> getCachedAssignmentDetail(
       createdAt: base.createdAt,
       updatedAt: base.updatedAt,
       cachedAt: base.cachedAt,
-      needsSync: base.needsSync,
+      syncStatus: base.syncStatus,
       deletedAt: base.deletedAt,
     );
   } catch (e) {

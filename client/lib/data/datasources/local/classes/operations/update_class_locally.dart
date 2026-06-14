@@ -23,7 +23,7 @@ Future<void> updateClassLocally(
           ClassesCols.description: description,
           if (isAdvisory != null) ClassesCols.isAdvisory: isAdvisory ? 1 : 0,
           CommonCols.updatedAt: now.toIso8601String(),
-          CommonCols.needsSync: 1,
+          CommonCols.syncStatus: 'pending',
           CommonCols.cachedAt: now.toIso8601String(),
         },
         where: '${CommonCols.id} = ?',

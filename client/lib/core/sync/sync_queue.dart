@@ -63,8 +63,9 @@ enum SyncOperation {
 
 enum SyncStatus {
   pending,
-  failed,
-  succeeded;
+  syncing,
+  synced,
+  failed;
 
   /// DB-stored value — matches Dart .name.
   String get dbValue => name;
@@ -217,7 +218,7 @@ class SyncQueueImpl implements SyncQueue {
     final db = await _localDatabase.database;
     await db.update(
       DbTables.syncQueue,
-      {SyncQueueCols.status: 'succeeded'},
+      {SyncQueueCols.status: SyncStatus.synced.dbValue},
       where: '${CommonCols.id} = ?',
       whereArgs: [id],
     );

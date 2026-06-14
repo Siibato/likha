@@ -12,7 +12,7 @@ Future<void> deleteAssessment(
       DbTables.assessments,
       {
         CommonCols.deletedAt: DateTime.now().toIso8601String(),
-        CommonCols.needsSync: 1,
+        CommonCols.syncStatus: 'pending',
         CommonCols.updatedAt: DateTime.now().toIso8601String(),
       },
       where: '${CommonCols.id} = ?',

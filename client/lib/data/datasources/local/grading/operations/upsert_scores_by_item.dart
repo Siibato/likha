@@ -48,7 +48,7 @@ Future<void> upsertScoresByItem(
               if (incomingIsManual) GradeScoresCols.overrideScore: score.overrideScore,
               CommonCols.updatedAt: score.updatedAt,
               CommonCols.cachedAt: now.toIso8601String(),
-              CommonCols.needsSync: 1,
+              CommonCols.syncStatus: 'pending',
             },
             where: '${CommonCols.id} = ?',
             whereArgs: [existingRow[CommonCols.id]],
@@ -58,7 +58,7 @@ Future<void> upsertScoresByItem(
       } else {
         // Insert new score with needsSync = 1
         final map = score.toMap();
-        map[CommonCols.needsSync] = 1;
+        map[CommonCols.syncStatus] = 'pending';
         map[CommonCols.cachedAt] = now.toIso8601String();
         await txn.insert(
           DbTables.gradeScores,

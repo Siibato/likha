@@ -61,7 +61,7 @@ Future<List<AssignmentModel>> getCachedAssignments(
           createdAt: base.createdAt,
           updatedAt: base.updatedAt,
           cachedAt: base.cachedAt,
-          needsSync: base.needsSync,
+          syncStatus: base.syncStatus,
           deletedAt: base.deletedAt,
         ));
       }
@@ -108,7 +108,7 @@ Future<List<AssignmentModel>> getCachedAssignments(
         createdAt: base.createdAt,
         updatedAt: base.updatedAt,
         cachedAt: base.cachedAt,
-        needsSync: base.needsSync,
+        syncStatus: base.syncStatus,
         deletedAt: base.deletedAt,
       ));
     }

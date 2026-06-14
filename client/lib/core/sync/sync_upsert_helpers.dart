@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/logging/sync_logger.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 class SyncUpsertHelpers {
@@ -55,7 +56,7 @@ class SyncUpsertHelpers {
           CommonCols.createdAt: record['created_at'],
           CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
           CommonCols.cachedAt: DateTime.now().toIso8601String(),
-          CommonCols.needsSync: 0,
+          CommonCols.syncStatus: SyncStatus.synced.dbValue,
         };
         final existing = await db.query(
           DbTables.classes,
@@ -172,7 +173,7 @@ class SyncUpsertHelpers {
           CommonCols.updatedAt: e['joined_at'] ?? e['enrolled_at'],
           ClassParticipantsCols.removedAt: e['removed_at'],
           CommonCols.cachedAt: DateTime.now().toIso8601String(),
-          CommonCols.needsSync: 0,
+          CommonCols.syncStatus: SyncStatus.synced.dbValue,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -216,7 +217,7 @@ class SyncUpsertHelpers {
           CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
           CommonCols.deletedAt: record['deleted_at'],
           CommonCols.cachedAt: DateTime.now().toIso8601String(),
-          CommonCols.needsSync: 0,
+          CommonCols.syncStatus: SyncStatus.synced.dbValue,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -253,7 +254,7 @@ class SyncUpsertHelpers {
         CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
         CommonCols.deletedAt: data['deleted_at'],
         CommonCols.cachedAt: DateTime.now().toIso8601String(),
-        CommonCols.needsSync: 0,
+        CommonCols.syncStatus: SyncStatus.synced.dbValue,
       };
       // Use update-first pattern to avoid CASCADE DELETE on assessment_submissions
       final updated = await db.update(DbTables.assessments, map, where: '${CommonCols.id} = ?', whereArgs: [assessmentId]);
@@ -294,7 +295,7 @@ class SyncUpsertHelpers {
           CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
           CommonCols.deletedAt: data['deleted_at'],
           CommonCols.cachedAt: DateTime.now().toIso8601String(),
-          CommonCols.needsSync: 0,
+          CommonCols.syncStatus: SyncStatus.synced.dbValue,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -317,7 +318,7 @@ class SyncUpsertHelpers {
               QuestionChoicesCols.isCorrect: (choice['is_correct'] == true) ? 1 : 0,
               QuestionChoicesCols.orderIndex: choice['order_index'] ?? 0,
               CommonCols.cachedAt: DateTime.now().toIso8601String(),
-              CommonCols.needsSync: 0,
+              CommonCols.syncStatus: SyncStatus.synced.dbValue,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
@@ -342,7 +343,7 @@ class SyncUpsertHelpers {
               AnswerKeysCols.questionId: data['id'],
               AnswerKeysCols.itemType: answer['item_type'] as String? ?? DbValues.itemTypeCorrectAnswer,
               CommonCols.cachedAt: DateTime.now().toIso8601String(),
-              CommonCols.needsSync: 0,
+              CommonCols.syncStatus: SyncStatus.synced.dbValue,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
@@ -359,7 +360,7 @@ class SyncUpsertHelpers {
                   AnswerKeyAcceptableAnswersCols.answerKeyId: answer['id'],
                   AnswerKeyAcceptableAnswersCols.answerText: acceptable['answer_text'],
                   CommonCols.cachedAt: DateTime.now().toIso8601String(),
-                  CommonCols.needsSync: 0,
+                  CommonCols.syncStatus: SyncStatus.synced.dbValue,
                 },
                 conflictAlgorithm: ConflictAlgorithm.replace,
               );
@@ -380,7 +381,7 @@ class SyncUpsertHelpers {
               AnswerKeysCols.questionId: data['id'],
               AnswerKeysCols.itemType: DbValues.itemTypeEnumerationItem,
               CommonCols.cachedAt: DateTime.now().toIso8601String(),
-              CommonCols.needsSync: 0,
+              CommonCols.syncStatus: SyncStatus.synced.dbValue,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
@@ -395,7 +396,7 @@ class SyncUpsertHelpers {
                   AnswerKeyAcceptableAnswersCols.answerKeyId: item['id'],
                   AnswerKeyAcceptableAnswersCols.answerText: acceptable['answer_text'],
                   CommonCols.cachedAt: DateTime.now().toIso8601String(),
-                  CommonCols.needsSync: 0,
+                  CommonCols.syncStatus: SyncStatus.synced.dbValue,
                 },
                 conflictAlgorithm: ConflictAlgorithm.replace,
               );
@@ -438,7 +439,7 @@ class SyncUpsertHelpers {
         CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
         CommonCols.deletedAt: data['deleted_at'],
         CommonCols.cachedAt: DateTime.now().toIso8601String(),
-        CommonCols.needsSync: 0,
+        CommonCols.syncStatus: SyncStatus.synced.dbValue,
       };
       // Use update-first pattern to avoid CASCADE DELETE on assignment_submissions
       final updated = await db.update(DbTables.assignments, map, where: '${CommonCols.id} = ?', whereArgs: [assignmentId]);
@@ -468,7 +469,7 @@ class SyncUpsertHelpers {
           CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
           CommonCols.deletedAt: data['deleted_at'],
           CommonCols.cachedAt: DateTime.now().toIso8601String(),
-          CommonCols.needsSync: 0,
+          CommonCols.syncStatus: SyncStatus.synced.dbValue,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -514,7 +515,7 @@ class SyncUpsertHelpers {
             CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
             CommonCols.deletedAt: data['deleted_at'],
             CommonCols.cachedAt: DateTime.now().toIso8601String(),
-            CommonCols.needsSync: 0,
+            CommonCols.syncStatus: SyncStatus.synced.dbValue,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
@@ -573,7 +574,7 @@ class SyncUpsertHelpers {
             SubmissionAnswersCols.overriddenBy: answerData['overridden_by'],
             SubmissionAnswersCols.overriddenAt: answerData['overridden_at'],
             CommonCols.cachedAt: DateTime.now().toIso8601String(),
-            CommonCols.needsSync: 0,
+            CommonCols.syncStatus: SyncStatus.synced.dbValue,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
@@ -612,7 +613,7 @@ class SyncUpsertHelpers {
                 SubmissionAnswerItemsCols.answerText: itemData['answer_text'],
                 SubmissionAnswerItemsCols.isCorrect: (itemData['is_correct'] == true) ? 1 : 0,
                 CommonCols.cachedAt: DateTime.now().toIso8601String(),
-                CommonCols.needsSync: 0,
+                CommonCols.syncStatus: SyncStatus.synced.dbValue,
               },
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
@@ -652,7 +653,7 @@ class SyncUpsertHelpers {
           CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
           CommonCols.deletedAt: data['deleted_at'],
           CommonCols.cachedAt: DateTime.now().toIso8601String(),
-          CommonCols.needsSync: 0,
+          CommonCols.syncStatus: SyncStatus.synced.dbValue,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -677,7 +678,7 @@ class SyncUpsertHelpers {
         SubmissionFilesCols.localPath: '',
         SubmissionFilesCols.uploadedAt: data['uploaded_at'] ?? DateTime.now().toIso8601String(),
         CommonCols.cachedAt: DateTime.now().toIso8601String(),
-        CommonCols.needsSync: 0,
+        CommonCols.syncStatus: SyncStatus.synced.dbValue,
       }, conflictAlgorithm: ConflictAlgorithm.ignore);
     } else {
       await db.update(table, {
@@ -747,7 +748,7 @@ class SyncUpsertHelpers {
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
             CommonCols.deletedAt: record['deleted_at'],
             CommonCols.cachedAt: DateTime.now().toIso8601String(),
-            CommonCols.needsSync: 0,
+            CommonCols.syncStatus: SyncStatus.synced.dbValue,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
@@ -792,7 +793,7 @@ class SyncUpsertHelpers {
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
             CommonCols.deletedAt: record['deleted_at'],
             CommonCols.cachedAt: DateTime.now().toIso8601String(),
-            CommonCols.needsSync: 0,
+            CommonCols.syncStatus: SyncStatus.synced.dbValue,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
@@ -833,12 +834,12 @@ class SyncUpsertHelpers {
 
         if (existing.isNotEmpty) {
           final localOverride = existing.first[GradeScoresCols.overrideScore];
-          final localNeedsSync = existing.first[CommonCols.needsSync] as int?;
+          final localSyncStatus = existing.first[CommonCols.syncStatus] as String?;
 
           // If local has a pending override AND server score is auto-populated,
           // update base score but preserve local override
           if (localOverride != null &&
-              localNeedsSync == 1 &&
+              localSyncStatus == SyncStatus.pending.dbValue &&
               record['is_auto_populated'] == true) {
             await db.update(
               DbTables.gradeScores,
@@ -848,7 +849,7 @@ class SyncUpsertHelpers {
                     : null,
                 GradeScoresCols.isAutoPopulated: 1,
                 CommonCols.cachedAt: DateTime.now().toIso8601String(),
-                // DO NOT overwrite override_score or needsSync
+                // DO NOT overwrite override_score or syncStatus
               },
               where: '${CommonCols.id} = ?',
               whereArgs: [id],
@@ -878,7 +879,7 @@ class SyncUpsertHelpers {
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
             CommonCols.deletedAt: record['deleted_at'],
             CommonCols.cachedAt: DateTime.now().toIso8601String(),
-            CommonCols.needsSync: 0,
+            CommonCols.syncStatus: SyncStatus.synced.dbValue,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
@@ -925,7 +926,7 @@ class SyncUpsertHelpers {
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
             CommonCols.deletedAt: record['deleted_at'],
             CommonCols.cachedAt: DateTime.now().toIso8601String(),
-            CommonCols.needsSync: 0,
+            CommonCols.syncStatus: SyncStatus.synced.dbValue,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
@@ -971,7 +972,7 @@ class SyncUpsertHelpers {
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
             CommonCols.deletedAt: record['deleted_at'],
             CommonCols.cachedAt: DateTime.now().toIso8601String(),
-            CommonCols.needsSync: 0,
+            CommonCols.syncStatus: SyncStatus.synced.dbValue,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
@@ -1022,7 +1023,7 @@ class SyncUpsertHelpers {
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
             CommonCols.deletedAt: record['deleted_at'],
             CommonCols.cachedAt: DateTime.now().toIso8601String(),
-            CommonCols.needsSync: 0,
+            CommonCols.syncStatus: SyncStatus.synced.dbValue,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
@@ -1074,7 +1075,7 @@ class SyncUpsertHelpers {
             ActivityLogsCols.details: record['details'],
             CommonCols.createdAt: record['created_at'],
             CommonCols.cachedAt: DateTime.now().toIso8601String(),
-            CommonCols.needsSync: 0,
+            CommonCols.syncStatus: SyncStatus.synced.dbValue,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
@@ -1127,7 +1128,7 @@ class SyncUpsertHelpers {
         CommonCols.updatedAt: userData['updated_at'] ?? userData['created_at'],
         CommonCols.deletedAt: userData['deleted_at'],
         CommonCols.cachedAt: DateTime.now().toIso8601String(),
-        CommonCols.needsSync: 0,
+        CommonCols.syncStatus: SyncStatus.synced.dbValue,
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );

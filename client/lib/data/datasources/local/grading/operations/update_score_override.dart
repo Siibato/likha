@@ -19,7 +19,7 @@ Future<void> updateScoreOverride(
         GradeScoresCols.overrideScore: overrideScore,
         CommonCols.updatedAt: now.toIso8601String(),
         CommonCols.cachedAt: now.toIso8601String(),
-        CommonCols.needsSync: 1,
+        CommonCols.syncStatus: 'pending',
       },
       where: '${CommonCols.id} = ?',
       whereArgs: [scoreId],

@@ -7,7 +7,7 @@ import 'package:likha/core/logging/core_logger.dart';
 
 /// Local SQLite Database for offline-first functionality
 ///
-/// SCHEMA VERSION: 2 (v1 → v2: removed per-field AES encryption, migrated to SQLCipher db-level encryption)
+/// SCHEMA VERSION: 3 (v2 → v3: replaced boolean needs_sync with four-state sync_status TEXT)
 /// TOTAL TABLES: 32
 ///
 /// This database was consolidated from 12 historical versions into a single
@@ -80,7 +80,7 @@ class LocalDatabase {
       return openDatabase(
         dbFilePath,
         password: kIsWeb ? null : _dbPassword,
-        version: 2,
+        version: 3,
         onCreate: _createTables,
         onUpgrade: _upgradeDatabase,
         onDowngrade: _downgradeDatabase,
@@ -138,7 +138,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0
+          sync_status TEXT NOT NULL DEFAULT 'synced'
         )
       ''');
 
@@ -175,7 +175,7 @@ class LocalDatabase {
           details TEXT,
           created_at TEXT NOT NULL,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
         )
       ''');
@@ -199,7 +199,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0
+          sync_status TEXT NOT NULL DEFAULT 'synced'
         )
       ''');
 
@@ -213,7 +213,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           removed_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
           FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
         )
@@ -243,7 +243,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
         )
       ''');
@@ -265,7 +265,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(assessment_id) REFERENCES assessments(id) ON DELETE CASCADE
         )
       ''');
@@ -277,7 +277,7 @@ class LocalDatabase {
           question_id TEXT NOT NULL,
           item_type TEXT NOT NULL DEFAULT 'correct_answer',
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(question_id) REFERENCES assessment_questions(id) ON DELETE CASCADE
         )
       ''');
@@ -289,7 +289,7 @@ class LocalDatabase {
           answer_key_id TEXT NOT NULL,
           answer_text TEXT NOT NULL,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(answer_key_id) REFERENCES answer_keys(id) ON DELETE CASCADE
         )
       ''');
@@ -303,7 +303,7 @@ class LocalDatabase {
           is_correct INTEGER NOT NULL DEFAULT 0,
           order_index INTEGER NOT NULL DEFAULT 0,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(question_id) REFERENCES assessment_questions(id) ON DELETE CASCADE
         )
       ''');
@@ -322,7 +322,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(assessment_id) REFERENCES assessments(id) ON DELETE CASCADE,
           FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
           UNIQUE(assessment_id, user_id)
@@ -339,7 +339,7 @@ class LocalDatabase {
           overridden_by TEXT,
           overridden_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(submission_id) REFERENCES assessment_submissions(id) ON DELETE CASCADE,
           FOREIGN KEY(question_id) REFERENCES assessment_questions(id) ON DELETE CASCADE,
           FOREIGN KEY(overridden_by) REFERENCES users(id) ON DELETE SET NULL
@@ -356,7 +356,7 @@ class LocalDatabase {
           answer_text TEXT,
           is_correct INTEGER NOT NULL DEFAULT 0,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(submission_answer_id) REFERENCES submission_answers(id) ON DELETE CASCADE,
           FOREIGN KEY(answer_key_id) REFERENCES answer_keys(id) ON DELETE SET NULL,
           FOREIGN KEY(choice_id) REFERENCES question_choices(id) ON DELETE SET NULL
@@ -389,7 +389,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
         )
       ''');
@@ -411,7 +411,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(assignment_id) REFERENCES assignments(id) ON DELETE CASCADE,
           FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
           FOREIGN KEY(graded_by) REFERENCES users(id) ON DELETE SET NULL,
@@ -430,7 +430,7 @@ class LocalDatabase {
           local_path TEXT NOT NULL DEFAULT '',
           uploaded_at TEXT NOT NULL,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(submission_id) REFERENCES assignment_submissions(id) ON DELETE CASCADE
         )
       ''');
@@ -448,7 +448,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
         )
       ''');
@@ -464,7 +464,7 @@ class LocalDatabase {
           local_path TEXT NOT NULL DEFAULT '',
           uploaded_at TEXT NOT NULL,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(material_id) REFERENCES learning_materials(id) ON DELETE CASCADE
         )
       ''');
@@ -516,7 +516,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
           UNIQUE(class_id, grading_period_number)
         )
@@ -538,7 +538,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
         )
       ''');
@@ -556,7 +556,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(grade_item_id) REFERENCES grade_items(id) ON DELETE CASCADE,
           FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
           UNIQUE(grade_item_id, student_id)
@@ -578,7 +578,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
           FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
           UNIQUE(class_id, student_id, grading_period_number)
@@ -608,7 +608,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           UNIQUE(class_id, grading_period_number)
         )
       ''');
@@ -635,7 +635,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY (tos_id) REFERENCES table_of_specifications(id)
         )
       ''');

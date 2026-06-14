@@ -44,7 +44,7 @@ Future<void> cacheQuestions(
             CommonCols.createdAt: question.createdAt?.toIso8601String() ?? now,
             CommonCols.updatedAt: question.updatedAt?.toIso8601String() ?? now,
             CommonCols.cachedAt: now,
-            CommonCols.needsSync: isServerConfirmed ? 0 : 1,
+            CommonCols.syncStatus: isServerConfirmed ? 'synced' : 'pending',
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
@@ -60,7 +60,7 @@ Future<void> cacheQuestions(
                 QuestionChoicesCols.isCorrect: choice.isCorrect ? 1 : 0,
                 QuestionChoicesCols.orderIndex: choice.orderIndex,
                 CommonCols.cachedAt: now,
-                CommonCols.needsSync: 0,
+                CommonCols.syncStatus: 'synced',
               },
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
@@ -76,7 +76,7 @@ Future<void> cacheQuestions(
               AnswerKeysCols.questionId: question.id,
               AnswerKeysCols.itemType: DbValues.itemTypeCorrectAnswer,
               CommonCols.cachedAt: now,
-              CommonCols.needsSync: 0,
+              CommonCols.syncStatus: 'synced',
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
@@ -89,7 +89,7 @@ Future<void> cacheQuestions(
                 AnswerKeyAcceptableAnswersCols.answerKeyId: answerKeyId,
                 AnswerKeyAcceptableAnswersCols.answerText: answer.answerText,
                 CommonCols.cachedAt: now,
-                CommonCols.needsSync: 0,
+                CommonCols.syncStatus: 'synced',
               },
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
@@ -106,7 +106,7 @@ Future<void> cacheQuestions(
                 AnswerKeysCols.questionId: question.id,
                 AnswerKeysCols.itemType: DbValues.itemTypeEnumerationItem,
                 CommonCols.cachedAt: now,
-                CommonCols.needsSync: 0,
+                CommonCols.syncStatus: 'synced',
               },
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
@@ -119,7 +119,7 @@ Future<void> cacheQuestions(
                   AnswerKeyAcceptableAnswersCols.answerKeyId: answerKeyId,
                   AnswerKeyAcceptableAnswersCols.answerText: acceptableAnswer.answerText,
                   CommonCols.cachedAt: now,
-                  CommonCols.needsSync: 0,
+                  CommonCols.syncStatus: 'synced',
                 },
                 conflictAlgorithm: ConflictAlgorithm.replace,
               );

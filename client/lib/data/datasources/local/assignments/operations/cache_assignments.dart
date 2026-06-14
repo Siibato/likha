@@ -13,7 +13,7 @@ Future<void> cacheAssignments(
       for (final assignment in assignments) {
         final map = assignment.toMap();
         map[CommonCols.cachedAt] = DateTime.now().toIso8601String();
-        map[CommonCols.needsSync] = 0;
+        map[CommonCols.syncStatus] = 'synced';
         // Use update-first pattern to avoid CASCADE DELETE on assignment_submissions
         final updated = await txn.update(DbTables.assignments, map, where: '${CommonCols.id} = ?', whereArgs: [map[CommonCols.id]]);
         if (updated == 0) {

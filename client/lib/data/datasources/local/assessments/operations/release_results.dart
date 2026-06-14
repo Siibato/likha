@@ -17,7 +17,7 @@ Future<void> releaseResults(
         DbTables.assessments,
         {
           AssessmentsCols.resultsReleased: 1,
-          CommonCols.needsSync: 1,
+          CommonCols.syncStatus: 'pending',
           CommonCols.updatedAt: now.toIso8601String(),
           CommonCols.cachedAt: now.toIso8601String(),
         },

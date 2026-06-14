@@ -17,7 +17,7 @@ Future<void> deleteMaterialLocally(
         DbTables.learningMaterials,
         {
           CommonCols.deletedAt: now.toIso8601String(),
-          CommonCols.needsSync: 1,
+          CommonCols.syncStatus: 'pending',
           CommonCols.updatedAt: now.toIso8601String(),
         },
         where: '${CommonCols.id} = ?',

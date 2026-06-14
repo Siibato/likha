@@ -17,7 +17,7 @@ Future<void> returnSubmission(
         DbTables.assignmentSubmissions,
         {
           AssignmentSubmissionsCols.status: DbValues.statusReturned,
-          CommonCols.needsSync: 1,
+          CommonCols.syncStatus: 'pending',
           CommonCols.updatedAt: now.toIso8601String(),
           CommonCols.cachedAt: now.toIso8601String(),
         },

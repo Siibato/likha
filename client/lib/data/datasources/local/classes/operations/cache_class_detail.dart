@@ -43,7 +43,7 @@ Future<void> cacheClassDetail(
         updatedAt: classDetail.updatedAt,
       ).toMap();
       classMap[CommonCols.cachedAt] = DateTime.now().toIso8601String();
-      classMap[CommonCols.needsSync] = 0;
+      classMap[CommonCols.syncStatus] = 'synced';
       await txn.insert(DbTables.classes, classMap, conflictAlgorithm: ConflictAlgorithm.replace);
 
       // Cache students as class_participants (v18 - no user detail columns)
@@ -58,7 +58,7 @@ Future<void> cacheClassDetail(
             CommonCols.updatedAt: DateTime.now().toIso8601String(),
             ClassParticipantsCols.removedAt: null,
             CommonCols.cachedAt: DateTime.now().toIso8601String(),
-            CommonCols.needsSync: 0,
+            CommonCols.syncStatus: 'synced',
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );

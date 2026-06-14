@@ -13,7 +13,7 @@ Future<void> cacheAssessments(
       for (final assessment in assessments) {
         final map = assessment.toMap();
         map[CommonCols.cachedAt] = DateTime.now().toIso8601String();
-        map[CommonCols.needsSync] = 0;
+        map[CommonCols.syncStatus] = 'synced';
         final assessmentId = map[CommonCols.id] as String;
         final updated = await txn.update(DbTables.assessments, map, where: '${CommonCols.id} = ?', whereArgs: [assessmentId]);
         if (updated == 0) {

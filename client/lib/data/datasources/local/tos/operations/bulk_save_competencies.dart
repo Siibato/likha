@@ -19,7 +19,7 @@ Future<void> bulkSaveCompetencies(
         DbTables.tosCompetencies,
         {
           ...comp.toMap(),
-          CommonCols.needsSync: 1,
+          CommonCols.syncStatus: 'pending',
           CommonCols.cachedAt: now.toIso8601String(),
         },
         conflictAlgorithm: ConflictAlgorithm.replace,

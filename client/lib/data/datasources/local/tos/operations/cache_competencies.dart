@@ -15,7 +15,7 @@ Future<void> cacheCompetencies(
   for (final comp in competencies) {
     final row = {
       ...comp.toMap(),
-      CommonCols.needsSync: 0,
+      CommonCols.syncStatus: 'synced',
       CommonCols.cachedAt: now,
     };
     // Insert new rows that don't exist locally yet.
@@ -30,7 +30,7 @@ Future<void> cacheCompetencies(
     await db.update(
       DbTables.tosCompetencies,
       row,
-      where: '${CommonCols.id} = ? AND ${CommonCols.needsSync} = 0',
+      where: "${CommonCols.id} = ? AND ${CommonCols.syncStatus} = 'synced'",
       whereArgs: [comp.id],
     );
   }

@@ -30,7 +30,7 @@ Future<void> submitAssignment(
           AssignmentSubmissionsCols.status: DbValues.statusSubmitted,
           AssignmentSubmissionsCols.submittedAt: now.toIso8601String(),
           CommonCols.updatedAt: now.toIso8601String(),
-          CommonCols.needsSync: 1,
+          CommonCols.syncStatus: 'pending',
           CommonCols.cachedAt: now.toIso8601String(),
         },
         where: '${CommonCols.id} = ?',

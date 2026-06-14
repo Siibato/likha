@@ -44,7 +44,7 @@ Future<void> stageFileForUpload(
           SubmissionFilesCols.uploadedAt: now.toIso8601String(),
           SubmissionFilesCols.localPath: stagedPath,
           CommonCols.cachedAt: now.toIso8601String(),
-          CommonCols.needsSync: 1,
+          CommonCols.syncStatus: 'pending',
         },
       );
       await syncQueue.enqueue(SyncQueueEntry(

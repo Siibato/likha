@@ -37,7 +37,7 @@ ResultFuture<Assignment> updateAssignment(
       maxFileSizeMb: maxFileSizeMb,
       dueAt: dueAt != null ? DateTime.parse(dueAt) : null,
       updatedAt: DateTime.now(),
-      needsSync: true,
+      syncStatus: SyncStatus.pending,
     );
 
     await localDataSource.cacheAssignmentDetail(
@@ -64,7 +64,7 @@ ResultFuture<Assignment> updateAssignment(
         createdAt: optimisticAssignment.createdAt,
         updatedAt: optimisticAssignment.updatedAt,
         cachedAt: optimisticAssignment.cachedAt,
-        needsSync: true,
+        syncStatus: SyncStatus.pending,
       ),
     );
 

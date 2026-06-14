@@ -15,7 +15,7 @@ Future<void> updateItemFields(
   final updates = <String, dynamic>{
     CommonCols.updatedAt: now.toIso8601String(),
     CommonCols.cachedAt: now.toIso8601String(),
-    CommonCols.needsSync: 1,
+    CommonCols.syncStatus: 'pending',
   };
   if (data.containsKey('title')) {
     updates[GradeItemsCols.title] = data['title'];

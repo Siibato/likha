@@ -50,7 +50,7 @@ Future<void> overrideAnswer(
         await txn.update(
           'assessment_submissions',
           {
-            CommonCols.needsSync: 1,
+            CommonCols.syncStatus: 'pending',
             CommonCols.updatedAt: now.toIso8601String(),
           },
           where: 'id = ?',

@@ -1,5 +1,4 @@
 import 'package:dartz/dartz.dart';
-import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
@@ -49,29 +48,7 @@ ResultFuture<MutationResult<Assignment>> createAssignment(
       component: component,
       createdAt: now,
       updatedAt: now,
-      needsSync: true,
-    );
-
-    final optimisticEntity = Assignment(
-      id: assignmentId,
-      classId: classId,
-      title: title,
-      instructions: instructions,
-      totalPoints: totalPoints,
-      allowsTextSubmission: allowsTextSubmission,
-      allowsFileSubmission: allowsFileSubmission,
-      allowedFileTypes: allowedFileTypes,
-      maxFileSizeMb: maxFileSizeMb,
-      dueAt: DateTime.parse(dueAt),
-      isPublished: isPublished,
-      orderIndex: 0,
-      submissionCount: 0,
-      gradedCount: 0,
-      gradingPeriodNumber: gradingPeriodNumber,
-      component: component,
-      createdAt: now,
-      updatedAt: now,
-      needsSync: true,
+      syncStatus: SyncStatus.pending,
     );
 
     final db = await localDataSource.localDatabase.database;
@@ -83,19 +60,7 @@ ResultFuture<MutationResult<Assignment>> createAssignment(
           entityType: SyncEntityType.assignment,
           operation: SyncOperation.create,
           payload: {
-            'id': assignmentId,
-            'class_id': classId,
-            'title': title,
-            'instructions': instructions,
-            'total_points': totalPoints,
-            'allows_text_submission': allowsTextSubmission,
-            'allows_file_submission': allowsFileSubmission,
-            if (allowedFileTypes != null) 'allowed_file_types': allowedFileTypes,
-            if (maxFileSizeMb != null) 'max_file_size_mb': maxFileSizeMb,
-            'due_at': dueAt,
-            'is_published': isPublished,
-            if (gradingPeriodNumber != null) 'grading_period_number': gradingPeriodNumber,
-            if (component != null) 'component': component,
+            ...optimisticModel.toPayload(),
             if (noSubmissionRequired != null) 'no_submission_required': noSubmissionRequired,
           },
           status: SyncStatus.pending,
@@ -107,9 +72,7 @@ ResultFuture<MutationResult<Assignment>> createAssignment(
       );
     });
 
-    return Right(MutationResult(entity: optimisticEntity, status: SyncStatus.pending));
-  } on ServerException catch (e) {
-    return Left(ServerFailure(e.message, statusCode: e.statusCode));
+    return Right(MutationResult(entity: optimisticModel, status: SyncStatus.pending));
   } catch (e) {
     return Left(ServerFailure(e.toString()));
   }

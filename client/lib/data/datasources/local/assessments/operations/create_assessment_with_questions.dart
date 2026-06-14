@@ -47,7 +47,7 @@ Future<String> createAssessmentWithQuestions(
           CommonCols.createdAt: now.toIso8601String(),
           CommonCols.updatedAt: now.toIso8601String(),
           CommonCols.cachedAt: now.toIso8601String(),
-          CommonCols.needsSync: 1,
+          CommonCols.syncStatus: 'pending',
         },
       );
 
@@ -65,7 +65,7 @@ Future<String> createAssessmentWithQuestions(
             CommonCols.createdAt: now.toIso8601String(),
             CommonCols.updatedAt: now.toIso8601String(),
             CommonCols.cachedAt: now.toIso8601String(),
-            CommonCols.needsSync: 1,
+            CommonCols.syncStatus: 'pending',
           },
         );
 
@@ -80,7 +80,7 @@ Future<String> createAssessmentWithQuestions(
                 QuestionChoicesCols.isCorrect: choice.isCorrect ? 1 : 0,
                 QuestionChoicesCols.orderIndex: choice.orderIndex,
                 CommonCols.cachedAt: now.toIso8601String(),
-                CommonCols.needsSync: 0,
+                CommonCols.syncStatus: 'synced',
               },
             );
           }
@@ -95,7 +95,7 @@ Future<String> createAssessmentWithQuestions(
               AnswerKeysCols.questionId: question.id,
               AnswerKeysCols.itemType: DbValues.itemTypeCorrectAnswer,
               CommonCols.cachedAt: now.toIso8601String(),
-              CommonCols.needsSync: 0,
+              CommonCols.syncStatus: 'synced',
             },
           );
 
@@ -107,7 +107,7 @@ Future<String> createAssessmentWithQuestions(
                 AnswerKeyAcceptableAnswersCols.answerKeyId: answerKeyId,
                 AnswerKeyAcceptableAnswersCols.answerText: answer.answerText,
                 CommonCols.cachedAt: now.toIso8601String(),
-                CommonCols.needsSync: 0,
+                CommonCols.syncStatus: 'synced',
               },
             );
           }
@@ -123,7 +123,7 @@ Future<String> createAssessmentWithQuestions(
                 AnswerKeysCols.questionId: question.id,
                 AnswerKeysCols.itemType: DbValues.itemTypeEnumerationItem,
                 CommonCols.cachedAt: now.toIso8601String(),
-                CommonCols.needsSync: 0,
+                CommonCols.syncStatus: 'synced',
               },
             );
 
@@ -135,7 +135,7 @@ Future<String> createAssessmentWithQuestions(
                   AnswerKeyAcceptableAnswersCols.answerKeyId: answerKeyId,
                   AnswerKeyAcceptableAnswersCols.answerText: acceptableAnswer.answerText,
                   CommonCols.cachedAt: now.toIso8601String(),
-                  CommonCols.needsSync: 0,
+                  CommonCols.syncStatus: 'synced',
                 },
               );
             }

@@ -16,7 +16,7 @@ Future<void> removeStudentLocally(
         DbTables.classParticipants,
         {
           ClassParticipantsCols.removedAt: now.toIso8601String(),
-          CommonCols.needsSync: 1,
+          CommonCols.syncStatus: 'pending',
           CommonCols.updatedAt: now.toIso8601String(),
         },
         where: '${ClassParticipantsCols.classId} = ? AND ${ClassParticipantsCols.userId} = ? AND ${ClassParticipantsCols.removedAt} IS NULL',

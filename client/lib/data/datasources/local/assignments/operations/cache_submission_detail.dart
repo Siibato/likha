@@ -29,7 +29,7 @@ Future<void> cacheSubmissionDetail(
           CommonCols.createdAt: submission.createdAt.toIso8601String(),
           CommonCols.updatedAt: submission.updatedAt.toIso8601String(),
           CommonCols.cachedAt: now,
-          CommonCols.needsSync: 0,
+          CommonCols.syncStatus: 'synced',
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );

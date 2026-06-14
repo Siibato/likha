@@ -20,7 +20,7 @@ Future<void> updateTransmutedGrade(
       {
         PeriodGradesCols.transmutedGrade: transmutedGrade,
         CommonCols.updatedAt: now.toIso8601String(),
-        CommonCols.needsSync: 1,
+        CommonCols.syncStatus: 'pending',
         CommonCols.cachedAt: now.toIso8601String(),
       },
       where: '${PeriodGradesCols.classId} = ? AND '

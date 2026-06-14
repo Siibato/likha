@@ -44,7 +44,7 @@ abstract final class DbTables {
 abstract final class CommonCols {
   static const String id = 'id';
   static const String cachedAt = 'cached_at';
-  static const String needsSync = 'needs_sync';
+  static const String syncStatus = 'sync_status';
   static const String createdAt = 'created_at';
   static const String updatedAt = 'updated_at';
   static const String deletedAt = 'deleted_at';

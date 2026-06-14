@@ -19,7 +19,7 @@ Future<void> updateSubmissionText(
         {
           AssignmentSubmissionsCols.textContent: textContent,
           CommonCols.updatedAt: now.toIso8601String(),
-          CommonCols.needsSync: 1,
+          CommonCols.syncStatus: 'pending',
           CommonCols.cachedAt: now.toIso8601String(),
         },
         where: '${CommonCols.id} = ?',

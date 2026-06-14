@@ -89,6 +89,6 @@ class GradeItemModel {
     CommonCols.createdAt: createdAt.toIso8601String(),
     CommonCols.updatedAt: updatedAt.toIso8601String(),
     CommonCols.cachedAt: DateTime.now().toIso8601String(),
-    CommonCols.needsSync: 0,
+    CommonCols.syncStatus: 'synced',
   };
 }

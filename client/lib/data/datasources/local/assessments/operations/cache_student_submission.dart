@@ -35,7 +35,7 @@ Future<void> cacheStudentSubmission(
         CommonCols.createdAt: submission.createdAt?.toIso8601String(),
         CommonCols.updatedAt: DateTime.now().toIso8601String(),
         CommonCols.cachedAt: DateTime.now().toIso8601String(),
-        CommonCols.needsSync: 0,
+        CommonCols.syncStatus: 'synced',
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );

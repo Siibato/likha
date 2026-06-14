@@ -78,6 +78,6 @@ class GradeConfigModel {
     CommonCols.createdAt: createdAt,
     CommonCols.updatedAt: updatedAt,
     CommonCols.cachedAt: DateTime.now().toIso8601String(),
-    CommonCols.needsSync: 0,
+    CommonCols.syncStatus: 'synced',
   };
 }

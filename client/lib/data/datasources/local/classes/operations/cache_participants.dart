@@ -28,7 +28,7 @@ Future<void> cacheParticipants(
             CommonCols.createdAt: user.createdAt.toIso8601String(),
             CommonCols.updatedAt: now.toIso8601String(),
             CommonCols.cachedAt: now.toIso8601String(),
-            CommonCols.needsSync: 0,
+            CommonCols.syncStatus: 'synced',
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
@@ -45,7 +45,7 @@ Future<void> cacheParticipants(
             ClassParticipantsCols.removedAt: null,
             CommonCols.updatedAt: now.toIso8601String(),
             CommonCols.cachedAt: now.toIso8601String(),
-            CommonCols.needsSync: 0,
+            CommonCols.syncStatus: 'synced',
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );

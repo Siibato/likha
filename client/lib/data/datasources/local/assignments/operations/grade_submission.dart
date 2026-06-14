@@ -22,7 +22,7 @@ Future<void> gradeSubmission(
           AssignmentSubmissionsCols.feedback: feedback,
           AssignmentSubmissionsCols.gradedAt: now.toIso8601String(),
           AssignmentSubmissionsCols.status: DbValues.statusGraded,
-          CommonCols.needsSync: 1,
+          CommonCols.syncStatus: 'pending',
           CommonCols.updatedAt: now.toIso8601String(),
           CommonCols.cachedAt: now.toIso8601String(),
         },

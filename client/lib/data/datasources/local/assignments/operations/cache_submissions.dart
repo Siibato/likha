@@ -24,7 +24,7 @@ Future<void> cacheSubmissions(
           CommonCols.createdAt: now.toIso8601String(),
           CommonCols.updatedAt: now.toIso8601String(),
           CommonCols.cachedAt: now.toIso8601String(),
-          CommonCols.needsSync: 0,
+          CommonCols.syncStatus: 'synced',
         };
         // Update-first pattern: only touch columns in the list API response, preserve text_content
         final updated = await txn.update(DbTables.assignmentSubmissions, map, where: '${CommonCols.id} = ?', whereArgs: [map[CommonCols.id]]);

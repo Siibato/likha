@@ -18,7 +18,7 @@ Future<void> saveCompetency(
       DbTables.tosCompetencies,
       {
         ...competency.toMap(),
-        CommonCols.needsSync: 1,
+        CommonCols.syncStatus: 'pending',
         CommonCols.cachedAt: now.toIso8601String(),
       },
       conflictAlgorithm: ConflictAlgorithm.replace,

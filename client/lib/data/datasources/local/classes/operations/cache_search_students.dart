@@ -27,7 +27,7 @@ Future<void> cacheSearchStudents(
             CommonCols.updatedAt: DateTime.now().toIso8601String(),
             CommonCols.deletedAt: student.deletedAt?.toIso8601String(),
             CommonCols.cachedAt: DateTime.now().toIso8601String(),
-            CommonCols.needsSync: 0,
+            CommonCols.syncStatus: 'synced',
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );

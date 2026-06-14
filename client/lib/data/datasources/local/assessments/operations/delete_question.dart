@@ -13,7 +13,7 @@ Future<void> deleteQuestion(
       {
         CommonCols.deletedAt: DateTime.now().toIso8601String(),
         CommonCols.updatedAt: DateTime.now().toIso8601String(),
-        CommonCols.needsSync: 1,
+        CommonCols.syncStatus: 'pending',
       },
       where: '${CommonCols.id} = ?',
       whereArgs: [questionId],

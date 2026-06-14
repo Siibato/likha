@@ -19,7 +19,7 @@ Future<void> markAssignmentPublished(
           AssignmentsCols.isPublished: 1,
           CommonCols.updatedAt: now.toIso8601String(),
           CommonCols.cachedAt: now.toIso8601String(),
-          CommonCols.needsSync: 1,
+          CommonCols.syncStatus: 'pending',
         },
         where: '${CommonCols.id} = ?',
         whereArgs: [assignmentId],

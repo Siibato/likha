@@ -15,7 +15,7 @@ Future<void> cacheAssessmentDetail(
     await db.transaction((txn) async {
       final assessmentMap = assessment.toMap();
       assessmentMap[CommonCols.cachedAt] = DateTime.now().toIso8601String();
-      assessmentMap[CommonCols.needsSync] = 0;
+      assessmentMap[CommonCols.syncStatus] = 'synced';
       final assessmentId = assessmentMap[CommonCols.id] as String;
       final updated = await txn.update(DbTables.assessments, assessmentMap, where: '${CommonCols.id} = ?', whereArgs: [assessmentId]);
       if (updated == 0) {
@@ -40,7 +40,7 @@ Future<void> cacheAssessmentDetail(
             CommonCols.createdAt: question.createdAt?.toIso8601String() ?? now,
             CommonCols.updatedAt: question.updatedAt?.toIso8601String() ?? now,
             CommonCols.cachedAt: now,
-            CommonCols.needsSync: 0,
+            CommonCols.syncStatus: 'synced',
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
@@ -56,7 +56,7 @@ Future<void> cacheAssessmentDetail(
                 QuestionChoicesCols.isCorrect: choice.isCorrect ? 1 : 0,
                 QuestionChoicesCols.orderIndex: choice.orderIndex,
                 CommonCols.cachedAt: now,
-                CommonCols.needsSync: 0,
+                CommonCols.syncStatus: 'synced',
               },
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
@@ -72,7 +72,7 @@ Future<void> cacheAssessmentDetail(
               AnswerKeysCols.questionId: question.id,
               AnswerKeysCols.itemType: DbValues.itemTypeCorrectAnswer,
               CommonCols.cachedAt: now,
-              CommonCols.needsSync: 0,
+              CommonCols.syncStatus: 'synced',
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
@@ -85,7 +85,7 @@ Future<void> cacheAssessmentDetail(
                 AnswerKeyAcceptableAnswersCols.answerKeyId: answerKeyId,
                 AnswerKeyAcceptableAnswersCols.answerText: answer.answerText,
                 CommonCols.cachedAt: now,
-                CommonCols.needsSync: 0,
+                CommonCols.syncStatus: 'synced',
               },
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
@@ -102,7 +102,7 @@ Future<void> cacheAssessmentDetail(
                 AnswerKeysCols.questionId: question.id,
                 AnswerKeysCols.itemType: DbValues.itemTypeEnumerationItem,
                 CommonCols.cachedAt: now,
-                CommonCols.needsSync: 0,
+                CommonCols.syncStatus: 'synced',
               },
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
@@ -115,7 +115,7 @@ Future<void> cacheAssessmentDetail(
                   AnswerKeyAcceptableAnswersCols.answerKeyId: answerKeyId,
                   AnswerKeyAcceptableAnswersCols.answerText: acceptableAnswer.answerText,
                   CommonCols.cachedAt: now,
-                  CommonCols.needsSync: 0,
+                  CommonCols.syncStatus: 'synced',
                 },
                 conflictAlgorithm: ConflictAlgorithm.replace,
               );

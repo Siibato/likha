@@ -24,7 +24,7 @@ Future<String> addStudentLocally(
           CommonCols.updatedAt: now.toIso8601String(),
           ClassParticipantsCols.removedAt: null,
           CommonCols.cachedAt: now.toIso8601String(),
-          CommonCols.needsSync: 1,
+          CommonCols.syncStatus: 'pending',
         },
       );
 

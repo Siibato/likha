@@ -23,7 +23,7 @@ Future<void> cacheStudentParticipation(
         CommonCols.updatedAt: now.toIso8601String(),
         ClassParticipantsCols.removedAt: null,
         CommonCols.cachedAt: now.toIso8601String(),
-        CommonCols.needsSync: 0,
+        CommonCols.syncStatus: 'synced',
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );

@@ -31,7 +31,7 @@ Future<void> saveAnswers(
             SubmissionAnswersCols.questionId: answer['question_id'] as String,
             SubmissionAnswersCols.points: 0,
             CommonCols.cachedAt: now.toIso8601String(),
-            CommonCols.needsSync: 1,
+            CommonCols.syncStatus: 'pending',
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
@@ -48,7 +48,7 @@ Future<void> saveAnswers(
                 SubmissionAnswerItemsCols.answerText: null,
                 SubmissionAnswerItemsCols.isCorrect: 0,
                 CommonCols.cachedAt: now.toIso8601String(),
-                CommonCols.needsSync: 1,
+                CommonCols.syncStatus: 'pending',
               },
             );
           }
@@ -62,7 +62,7 @@ Future<void> saveAnswers(
               SubmissionAnswerItemsCols.answerText: answer['answer_text'] as String,
               SubmissionAnswerItemsCols.isCorrect: 0,
               CommonCols.cachedAt: now.toIso8601String(),
-              CommonCols.needsSync: 1,
+              CommonCols.syncStatus: 'pending',
             },
           );
         }
@@ -71,7 +71,7 @@ Future<void> saveAnswers(
       await txn.update(
         DbTables.assessmentSubmissions,
         {
-          CommonCols.needsSync: 1,
+          CommonCols.syncStatus: 'pending',
           CommonCols.updatedAt: now.toIso8601String(),
           CommonCols.cachedAt: now.toIso8601String(),
         },

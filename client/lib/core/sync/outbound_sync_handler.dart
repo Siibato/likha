@@ -7,6 +7,28 @@ import 'package:likha/core/sync/sync_state.dart';
 import 'package:likha/data/datasources/remote/sync/sync_remote_datasource.dart';
 import 'package:likha/data/models/sync/push_response_model.dart';
 
+/// Maps a [SyncEntityType.serverValue] string to its local DB table name.
+/// Returns null for entity types that do not have a standalone table row to update.
+String? _entityTypeToTable(String entityType) {
+  switch (entityType) {
+    case 'assignment': return DbTables.assignments;
+    case 'class': return DbTables.classes;
+    case 'assessment': return DbTables.assessments;
+    case 'question': return DbTables.assessmentQuestions;
+    case 'assignment_submission': return DbTables.assignmentSubmissions;
+    case 'assessment_submission': return DbTables.assessmentSubmissions;
+    case 'submission_file': return DbTables.submissionFiles;
+    case 'material_file': return DbTables.materialFiles;
+    case 'learning_material': return DbTables.learningMaterials;
+    case 'grade_item': return DbTables.gradeItems;
+    case 'grade_score': return DbTables.gradeScores;
+    case 'grade_config': return DbTables.gradeRecord;
+    case 'table_of_specifications': return DbTables.tableOfSpecifications;
+    case 'tos_competency': return DbTables.tosCompetencies;
+    default: return null;
+  }
+}
+
 class OutboundSyncHandler {
   final SyncQueue _syncQueue;
   final SyncRemoteDataSource _syncRemoteDataSource;
@@ -197,7 +219,7 @@ class OutboundSyncHandler {
           await db.update(
             DbTables.submissionFiles,
             {SubmissionFilesCols.submissionId: serverId},
-            where: '${SubmissionFilesCols.submissionId} = ? AND ${CommonCols.needsSync} = 1',
+            where: "${SubmissionFilesCols.submissionId} = ? AND ${CommonCols.syncStatus} = '${SyncStatus.pending.dbValue}'",
             whereArgs: [localId],
           );
 
@@ -304,13 +326,36 @@ class OutboundSyncHandler {
           }
         }
 
+        // Update entity row sync_status → synced
+        final entityId = serverId ?? entry?.payload['id'] as String?;
+        final table = _entityTypeToTable(entityType);
+        if (table != null && entityId != null) {
+          await db.update(
+            table,
+            {CommonCols.syncStatus: SyncStatus.synced.dbValue},
+            where: '${CommonCols.id} = ?',
+            whereArgs: [entityId],
+          );
+        }
+
         // Mark as succeeded and remove from queue
         await _syncQueue.markSucceeded(opId);
       } else {
         failedByType[entityType] = (failedByType[entityType] ?? 0) + 1;
 
-        // Mark as failed
+        // Mark as failed and write sync_status → failed on entity row
         final error = result.error ?? 'Unknown error';
+        final failEntry = await _syncQueue.getById(opId);
+        final failEntityId = failEntry?.payload['id'] as String?;
+        final failTable = _entityTypeToTable(entityType);
+        if (failTable != null && failEntityId != null) {
+          await db.update(
+            failTable,
+            {CommonCols.syncStatus: SyncStatus.failed.dbValue},
+            where: '${CommonCols.id} = ?',
+            whereArgs: [failEntityId],
+          );
+        }
         await _syncQueue.markFailed(opId, error);
       }
     }

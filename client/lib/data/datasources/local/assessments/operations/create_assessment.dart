@@ -42,7 +42,7 @@ Future<String> createAssessment(
         CommonCols.createdAt: now.toIso8601String(),
         CommonCols.updatedAt: now.toIso8601String(),
         CommonCols.cachedAt: now.toIso8601String(),
-        CommonCols.needsSync: 1,
+        CommonCols.syncStatus: 'pending',
       });
 
       await syncQueue.enqueue(

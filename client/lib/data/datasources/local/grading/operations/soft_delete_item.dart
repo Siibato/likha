@@ -16,7 +16,7 @@ Future<void> softDeleteItem(
       DbTables.gradeItems,
       {
         CommonCols.deletedAt: now.toIso8601String(),
-        CommonCols.needsSync: 1,
+        CommonCols.syncStatus: 'pending',
         CommonCols.cachedAt: now.toIso8601String(),
       },
       where: '${CommonCols.id} = ?',

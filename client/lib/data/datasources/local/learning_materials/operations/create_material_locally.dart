@@ -33,7 +33,7 @@ Future<LearningMaterialModel> createMaterialLocally(
     await db.transaction((txn) async {
       final map = material.toMap();
       map[CommonCols.cachedAt] = now.toIso8601String();
-      map[CommonCols.needsSync] = 1;
+      map[CommonCols.syncStatus] = 'pending';
       await txn.insert(DbTables.learningMaterials, map);
 
       await syncQueue.enqueue(SyncQueueEntry(

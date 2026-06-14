@@ -35,7 +35,7 @@ Future<ClassModel> createClassLocally(
     await db.transaction((txn) async {
       final map = classModel.toMap();
       map[CommonCols.cachedAt] = now.toIso8601String();
-      map[CommonCols.needsSync] = 1;
+      map[CommonCols.syncStatus] = 'pending';
       await txn.insert(DbTables.classes, map);
 
       await syncQueue.enqueue(SyncQueueEntry(
