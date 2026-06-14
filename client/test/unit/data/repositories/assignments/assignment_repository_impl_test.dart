@@ -188,6 +188,8 @@ void main() {
         )).thenAnswer((_) async => _fakeModel());
         when(() => local.cacheAssignmentDetail(any())).thenAnswer((_) async {});
         when(() => local.cacheAssignments(any())).thenAnswer((_) async {});
+        when(() => local.deleteAssignment(assignmentId: any(named: 'assignmentId')))
+            .thenAnswer((_) async {});
         when(() => local.getCachedAssignments(any(), publishedOnly: any(named: 'publishedOnly'), studentId: any(named: 'studentId')))
             .thenAnswer((_) async => [_fakeModel()]);
 

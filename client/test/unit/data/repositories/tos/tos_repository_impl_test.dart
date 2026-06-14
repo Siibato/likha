@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
@@ -108,7 +109,7 @@ void main() {
           syncQueue: syncQueue,
         );
 
-        when(() => local.getTosByClass('c-1')).thenAnswer((_) async => []);
+        when(() => local.getTosByClass('c-1')).thenThrow(CacheException('empty'));
         when(() => remote.getTosByClass(classId: 'c-1'))
             .thenAnswer((_) async => [_fakeTos()]);
         when(() => local.cacheTosList(any())).thenAnswer((_) async {});
@@ -229,7 +230,9 @@ void main() {
         );
 
         when(() => local.getTosByClass(any()))
-            .thenThrow(Exception('DB error'));
+            .thenThrow(CacheException('DB error'));
+        when(() => remote.getTosByClass(classId: any(named: 'classId')))
+            .thenThrow(CacheException('remote cache miss'));
 
         final result = await repo.getTosList(classId: 'c-1');
 

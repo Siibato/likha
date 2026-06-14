@@ -73,6 +73,8 @@ void main() {
     dotenv.testLoad(fileInput: '');
     when(() => storage.getUserId()).thenAnswer((_) async => null);
     when(() => eventBus.onAssessmentsChanged).thenAnswer((_) => const Stream.empty());
+    when(() => local.getCachedSubmissionCount(any())).thenAnswer((_) async => 0);
+    when(() => local.hasStudentSubmittedAssessment(any(), any())).thenAnswer((_) async => false);
 
     registerFallbackValue(SyncQueueEntry(
       id: 'fallback',

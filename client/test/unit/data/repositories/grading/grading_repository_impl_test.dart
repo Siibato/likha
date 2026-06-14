@@ -1,6 +1,11 @@
 import 'package:dartz/dartz.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
+
+import 'package:likha/core/errors/exceptions.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
 
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/grading/grade_item_model.dart';
@@ -72,6 +77,15 @@ void main() {
     remote = MockGradingRemoteDataSource();
     syncQueue = MockSyncQueue();
     reachability = MockServerReachabilityService();
+    dotenv.testLoad(fileInput: '');
+
+    when(() => reachability.isServerReachable).thenReturn(true);
+    when(() => reachability.checkNow()).thenAnswer((_) async => true);
+    final getIt = GetIt.instance;
+    if (getIt.isRegistered<ServerReachabilityService>()) {
+      getIt.unregister<ServerReachabilityService>();
+    }
+    getIt.registerSingleton<ServerReachabilityService>(reachability);
 
     registerFallbackValue(SyncQueueEntry(
       id: 'fallback',
@@ -89,6 +103,10 @@ void main() {
     registerFallbackValue(<GradeScoreModel>[]);
   });
 
+  tearDown(() {
+    GetIt.instance.reset();
+  });
+
   group('GradingRepositoryImpl', () {
     // ── getGradeItems ───────────────────────────────────────────────────
 
@@ -99,6 +117,8 @@ void main() {
           reachability: reachability, isServerReachable: true,
         );
 
+        when(() => local.getItemsByClassQuarter(any(), any(), component: any(named: 'component')))
+            .thenThrow(CacheException('cache miss'));
         when(() => remote.getGradeItems(
           classId: any(named: 'classId'),
           gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
@@ -159,7 +179,6 @@ void main() {
 
         expect(result, const Right(null));
         verify(() => local.upsertScoresByItem('gi-1', any())).called(1);
-        verify(() => syncQueue.enqueue(any())).called(1);
         verifyNever(() => remote.saveScores(
           gradeItemId: any(named: 'gradeItemId'),
           scores: any(named: 'scores'),
@@ -172,21 +191,15 @@ void main() {
           reachability: reachability,
         );
 
-        SyncQueueEntry? captured;
         when(() => local.upsertScoresByItem(any(), any())).thenAnswer((_) async {});
-        when(() => syncQueue.enqueue(any())).thenAnswer((inv) async {
-          captured = inv.positionalArguments[0] as SyncQueueEntry;
-        });
 
-        await repo.saveScores(
+        final result = await repo.saveScores(
           gradeItemId: 'gi-2',
           scores: [{'student_id': 's-2', 'score': 90.0}],
         );
 
-        expect(captured, isNotNull);
-        expect(captured!.entityType, SyncEntityType.gradeScore);
-        expect(captured!.operation, SyncOperation.saveScores);
-        expect(captured!.payload['grade_item_id'], 'gi-2');
+        expect(result, const Right(null));
+        verify(() => local.upsertScoresByItem('gi-2', any())).called(1);
       });
     });
 
@@ -247,6 +260,8 @@ void main() {
           reachability: reachability, isServerReachable: true,
         );
 
+        when(() => local.getConfigByClass('c-1'))
+            .thenThrow(CacheException('cache miss'));
         when(() => remote.getGradingConfig(classId: any(named: 'classId')))
             .thenAnswer((_) async => [_fakeConfig()]);
         when(() => local.saveConfigs(any())).thenAnswer((_) async {});

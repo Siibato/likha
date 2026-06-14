@@ -1,6 +1,9 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
+
+import 'package:likha/core/network/server_reachability_service.dart';
 
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
@@ -66,6 +69,14 @@ void main() {
     dotenv.testLoad(fileInput: '');
     when(() => storage.getUserId()).thenAnswer((_) async => 't-1');
 
+    when(() => reachability.isServerReachable).thenReturn(true);
+    when(() => reachability.checkNow()).thenAnswer((_) async => true);
+    final getIt = GetIt.instance;
+    if (getIt.isRegistered<ServerReachabilityService>()) {
+      getIt.unregister<ServerReachabilityService>();
+    }
+    getIt.registerSingleton<ServerReachabilityService>(reachability);
+
     registerFallbackValue(_fakeClass());
     registerFallbackValue(SyncQueueEntry(
       id: 'fallback',
@@ -77,6 +88,10 @@ void main() {
       maxRetries: 5,
       createdAt: DateTime.now(),
     ));
+  });
+
+  tearDown(() {
+    GetIt.instance.reset();
   });
 
   group('ClassRepositoryImpl', () {
