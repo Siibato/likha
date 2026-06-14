@@ -53,8 +53,13 @@ impl CacheInvalidator {
         self.cache.del_keys(keys).await;
     }
 
+    pub async fn invalidate_class_participants(&self, class_id: Uuid) {
+        self.cache.del(&CacheKey::ClassParticipants(class_id).as_str()).await;
+    }
+
     pub async fn invalidate_class_and_enrolled(&self, class_id: Uuid) {
         self.invalidate_class(class_id).await;
+        self.invalidate_class_participants(class_id).await;
     }
 
     // ─── Grading ──────────────────────────────────────────────────────────────
@@ -113,6 +118,10 @@ impl CacheInvalidator {
 
     pub async fn invalidate_student_results(&self, submission_id: Uuid) {
         self.cache.del(&CacheKey::StudentResults(submission_id).as_str()).await;
+    }
+
+    pub async fn invalidate_assessment_student_submission(&self, assessment_id: Uuid, student_id: Uuid) {
+        self.cache.del(&CacheKey::AssessmentStudentSubmission(assessment_id, student_id).as_str()).await;
     }
 
     pub async fn invalidate_student_assessment_submissions(&self, class_id: Uuid, student_id: Uuid) {

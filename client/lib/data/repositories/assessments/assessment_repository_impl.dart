@@ -327,6 +327,8 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
   }) =>
       ops.getStudentSubmission(
         _localDataSource,
+        _remoteDataSource,
+        _dataEventBus,
         assessmentId: assessmentId,
         studentId: studentId,
       );

@@ -69,6 +69,11 @@ abstract class AssignmentRemoteDataSource {
 
   Future<List<int>> downloadFile({required String fileId});
 
+  Future<AssignmentSubmissionModel?> getStudentAssignmentSubmission({
+    required String assignmentId,
+    required String studentId,
+  });
+
   Future<List<StudentAssignmentSubmissionItemModel>> getStudentAssignmentSubmissions({
     required String classId,
     required String studentId,
@@ -241,6 +246,17 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
       ops.downloadFile(
         _dioClient,
         fileId: fileId,
+      );
+
+  @override
+  Future<AssignmentSubmissionModel?> getStudentAssignmentSubmission({
+    required String assignmentId,
+    required String studentId,
+  }) =>
+      ops.getStudentAssignmentSubmission(
+        _dioClient,
+        assignmentId: assignmentId,
+        studentId: studentId,
       );
 
   @override

@@ -2,6 +2,7 @@ export 'add_student_locally.dart';
 export 'build_class_detail_from_participants.dart';
 export 'cache_class_detail.dart';
 export 'cache_classes.dart';
+export 'cache_participants.dart';
 export 'cache_search_students.dart';
 export 'cache_student_participation.dart';
 export 'clear_all_cache.dart';

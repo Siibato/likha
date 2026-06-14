@@ -108,6 +108,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   bool _currentPublishedOnly = false;
   late StreamSubscription<String?> _refreshSub;
   late StreamSubscription<String> _submissionDetailRefreshSub;
+  late StreamSubscription<String> _studentAssignmentSubmissionsSub;
 
   AssignmentNotifier(
     this._createAssignment,
@@ -137,6 +138,12 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     _submissionDetailRefreshSub = sl<DataEventBus>().onSubmissionDetailChanged.listen((submissionId) {
       if (state.currentSubmission?.id == submissionId) {
         loadSubmissionDetail(submissionId);
+      }
+    });
+
+    _studentAssignmentSubmissionsSub = sl<DataEventBus>().onStudentAssignmentSubmissionsChanged.listen((assignmentId) {
+      if (state.currentAssignment?.id == assignmentId) {
+        unawaited(_refreshAssignmentCounts(assignmentId));
       }
     });
   }
@@ -947,6 +954,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   void dispose() {
     _refreshSub.cancel();
     _submissionDetailRefreshSub.cancel();
+    _studentAssignmentSubmissionsSub.cancel();
     super.dispose();
   }
 }

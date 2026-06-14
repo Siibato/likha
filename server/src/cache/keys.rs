@@ -5,6 +5,7 @@ pub enum CacheKey {
     ClassListStudent(Uuid),
     ClassListTeacher(Uuid),
     ClassDetail(Uuid),
+    ClassParticipants(Uuid),
     ClassMetadata(Uuid, String),
 
     // Assignment
@@ -18,6 +19,7 @@ pub enum CacheKey {
     AssessmentList(Uuid, Uuid),
     AssessmentDetail(Uuid, String),
     AssessmentSubmissions(Uuid),
+    AssessmentStudentSubmission(Uuid, Uuid),
     AssessmentSubmissionDetail(Uuid),
     AssessmentStatistics(Uuid),
     StudentResults(Uuid),
@@ -61,6 +63,7 @@ impl CacheKey {
             CacheKey::ClassListStudent(id) => format!("class:list:student:{}", id),
             CacheKey::ClassListTeacher(id) => format!("class:list:teacher:{}", id),
             CacheKey::ClassDetail(id) => format!("class:detail:{}", id),
+            CacheKey::ClassParticipants(id) => format!("class:participants:{}", id),
             CacheKey::ClassMetadata(id, role) => format!("metadata:classes:{}:{}", id, role),
 
             // Assignment
@@ -74,6 +77,7 @@ impl CacheKey {
             CacheKey::AssessmentList(user_id, class_id) => format!("assessment:list:{}:{}", user_id, class_id),
             CacheKey::AssessmentDetail(id, role) => format!("assessment:detail:{}:{}", id, role),
             CacheKey::AssessmentSubmissions(id) => format!("assessment:submissions:{}", id),
+            CacheKey::AssessmentStudentSubmission(assessment_id, student_id) => format!("assessment:student_submission:{}:{}", assessment_id, student_id),
             CacheKey::AssessmentSubmissionDetail(id) => format!("assessment:submission:{}", id),
             CacheKey::AssessmentStatistics(id) => format!("assessment:statistics:{}", id),
             CacheKey::StudentResults(id) => format!("assessment:results:{}", id),

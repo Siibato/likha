@@ -82,6 +82,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
   final DeleteClass _deleteClass;
 
   late StreamSubscription<void> _refreshSub;
+  late StreamSubscription<String> _participantsSub;
   bool _isAdminMode = false;
 
   ClassNotifier(
@@ -101,6 +102,12 @@ class ClassNotifier extends StateNotifier<ClassState> {
         loadAllClasses(skipBackgroundRefresh: true);
       } else {
         loadClasses(skipBackgroundRefresh: true);
+      }
+    });
+
+    _participantsSub = sl<DataEventBus>().onParticipantsChanged.listen((classId) {
+      if (state.currentClassDetail?.id == classId) {
+        loadParticipants(classId);
       }
     });
   }
@@ -540,6 +547,44 @@ class ClassNotifier extends StateNotifier<ClassState> {
     );
   }
 
+  Future<void> loadParticipants(String classId) async {
+    final result = await _getParticipants(classId: classId);
+    result.fold(
+      (failure) {}, // silent: background refresh should not show errors
+      (students) {
+        final ids = students.map((e) => e.id).toSet();
+        state = state.copyWith(
+          participantIds: ids,
+          searchResults: students,
+        );
+        // Also update currentClassDetail.students if available
+        final currentDetail = state.currentClassDetail;
+        if (currentDetail != null) {
+          final updatedStudents = students.map((user) {
+            return Participant(
+              id: 'local_${classId}_${user.id}',
+              student: user,
+              joinedAt: user.createdAt,
+            );
+          }).toList();
+          state = state.copyWith(
+            currentClassDetail: ClassDetail(
+              id: currentDetail.id,
+              title: currentDetail.title,
+              description: currentDetail.description,
+              teacherId: currentDetail.teacherId,
+              isArchived: currentDetail.isArchived,
+              isAdvisory: currentDetail.isAdvisory,
+              students: updatedStudents,
+              createdAt: currentDetail.createdAt,
+              updatedAt: currentDetail.updatedAt,
+            ),
+          );
+        }
+      },
+    );
+  }
+
   Future<void> deleteClass(String classId) async {
     final previousClasses = List<ClassEntity>.from(state.classes);
 
@@ -575,6 +620,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
   @override
   void dispose() {
     _refreshSub.cancel();
+    _participantsSub.cancel();
     super.dispose();
   }
 }

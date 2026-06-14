@@ -368,6 +368,23 @@ impl AssignmentService {
         ).await
     }
 
+    pub async fn get_student_assignment_submission(
+        &self,
+        assignment_id: uuid::Uuid,
+        student_id: uuid::Uuid,
+        user_id: uuid::Uuid,
+        role: &str,
+    ) -> AppResult<Option<crate::modules::assignment::schema::AssignmentSubmissionResponse>> {
+        ops::get_student_assignment_submission(
+            &self.assignment_repo,
+            &self.class_repo,
+            assignment_id,
+            student_id,
+            user_id,
+            role,
+        ).await
+    }
+
     pub async fn get_student_assignment_submissions(
         &self,
         assignment_id: uuid::Uuid,

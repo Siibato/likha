@@ -151,6 +151,27 @@ impl AssessmentService {
         Ok(result)
     }
 
+    pub async fn get_student_submission_cached(
+        &self,
+        assessment_id: Uuid,
+        student_id: Uuid,
+        user_id: Uuid,
+        role: &str,
+    ) -> crate::utils::AppResult<Option<crate::modules::assessment::schema::SubmissionSummaryResponse>> {
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::AssessmentStudentSubmission(assessment_id, student_id).as_str();
+            if let Some(cached) = cache.get::<crate::modules::assessment::schema::SubmissionSummaryResponse>(&key).await {
+                return Ok(Some(cached));
+            }
+        }
+        let result = self.get_student_submission(assessment_id, student_id, user_id, role).await?;
+        if let (Some(ref cache), Some(ref data)) = (self.cache.clone(), &result) {
+            let key = CacheKey::AssessmentStudentSubmission(assessment_id, student_id).as_str();
+            cache.set(&key, data, cache.ttl.detail_seconds).await;
+        }
+        Ok(result)
+    }
+
     pub async fn get_student_assessment_submissions_cached(
         &self,
         class_id: Uuid,

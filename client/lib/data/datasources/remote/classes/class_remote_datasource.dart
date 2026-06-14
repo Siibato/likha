@@ -38,6 +38,8 @@ abstract class ClassRemoteDataSource {
 
   Future<List<UserModel>> searchStudents({String? query});
 
+  Future<List<UserModel>> getParticipants({required String classId});
+
   Future<void> deleteClass({required String classId});
 }
 
@@ -131,5 +133,12 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
       ops.searchStudents(
         _dioClient,
         query: query,
+      );
+
+  @override
+  Future<List<UserModel>> getParticipants({required String classId}) =>
+      ops.getParticipants(
+        _dioClient,
+        classId: classId,
       );
 }

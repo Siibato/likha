@@ -153,6 +153,8 @@ class ClassRepositoryImpl implements ClassRepository {
   ResultFuture<List<User>> getParticipants({required String classId}) =>
       ops.getParticipants(
         _localDataSource,
+        _remoteDataSource,
+        _dataEventBus,
         classId: classId,
       );
 }

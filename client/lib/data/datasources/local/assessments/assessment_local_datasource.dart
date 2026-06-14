@@ -55,6 +55,11 @@ abstract class AssessmentLocalDataSource {
     String assessmentId,
     String studentId,
   );
+  Future<void> cacheStudentSubmission(
+    String assessmentId,
+    String studentId,
+    SubmissionSummaryModel? submission,
+  );
   Future<void> submitAssessment({
     required String submissionId,
     required String assessmentId,
@@ -247,6 +252,14 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
     String studentId,
   ) =>
       ops.getCachedStudentSubmission(localDatabase, assessmentId, studentId);
+
+  @override
+  Future<void> cacheStudentSubmission(
+    String assessmentId,
+    String studentId,
+    SubmissionSummaryModel? submission,
+  ) =>
+      ops.cacheStudentSubmission(localDatabase, assessmentId, studentId, submission);
 
   @override
   Future<void> submitAssessment({

@@ -4,6 +4,7 @@ export 'cache_file_bytes.dart';
 export 'cache_submission_detail.dart';
 export 'cache_submission_file.dart';
 export 'cache_submissions.dart';
+export 'clear_student_assignment_submission.dart';
 export 'clear_all_cache.dart';
 export 'create_submission.dart';
 export 'delete_assignment.dart';

@@ -16,4 +16,5 @@ export 'upload_file.dart';
 export 'delete_file.dart';
 export 'submit_assignment.dart';
 export 'download_file.dart';
+export 'get_student_assignment_submission.dart';
 export 'get_student_assignment_submissions.dart';

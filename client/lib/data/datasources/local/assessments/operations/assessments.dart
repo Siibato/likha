@@ -4,6 +4,7 @@ export 'cache_questions.dart';
 export 'cache_start_submission_result.dart';
 export 'cache_statistics.dart';
 export 'cache_student_results.dart';
+export 'cache_student_submission.dart';
 export 'cache_submission_detail.dart';
 export 'cache_submissions.dart';
 export 'clear_all_cache.dart';

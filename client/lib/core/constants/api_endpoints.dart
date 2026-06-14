@@ -294,6 +294,13 @@ class ApiEndpoints {
     (json) => json as Map<String, dynamic>,
   );
 
+  static ApiEndpoint<SubmissionSummaryModel> assessmentStudentSubmission(
+          String assessmentId, String studentId) =>
+      ApiEndpoint<SubmissionSummaryModel>.fromModel(
+        '/api/v1/assessments/$assessmentId/students/$studentId/submission',
+        SubmissionSummaryModel.fromJson,
+      );
+
   // ===== Assignment Endpoints =====
   static ApiEndpoint<AssignmentModel> classAssignments(String classId) =>
       ApiEndpoint<AssignmentModel>.fromModel(

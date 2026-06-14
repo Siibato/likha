@@ -54,6 +54,12 @@ class DataEventBus {
       StreamController<String>.broadcast();
   final StreamController<String> _sf10 =
       StreamController<String>.broadcast();
+  final StreamController<String> _participants =
+      StreamController<String>.broadcast();
+  final StreamController<String> _studentSubmissions =
+      StreamController<String>.broadcast();
+  final StreamController<String> _studentAssignmentSubmissions =
+      StreamController<String>.broadcast();
 
   Stream<String?> get onAssessmentsChanged => _assessments.stream;
   Stream<String?> get onAssessmentDetailChanged => _assessmentDetail.stream;
@@ -77,6 +83,9 @@ class DataEventBus {
   Stream<String>  get onMyGradeDetailChanged  => _myGradeDetail.stream;
   Stream<String>  get onSf9Changed            => _sf9.stream;
   Stream<String>  get onSf10Changed           => _sf10.stream;
+  Stream<String>  get onParticipantsChanged   => _participants.stream;
+  Stream<String>  get onStudentSubmissionsChanged => _studentSubmissions.stream;
+  Stream<String>  get onStudentAssignmentSubmissionsChanged => _studentAssignmentSubmissions.stream;
 
   void notifyAssessmentsChanged(String classId) => _assessments.add(classId);
   void notifyAssessmentDetailChanged(String assessmentId) => _assessmentDetail.add(assessmentId);
@@ -106,6 +115,9 @@ class DataEventBus {
   void notifyMyGradeDetailChanged(String classId)   => _myGradeDetail.add(classId);
   void notifySf9Changed(String classId)             => _sf9.add(classId);
   void notifySf10Changed(String classId)            => _sf10.add(classId);
+  void notifyParticipantsChanged(String classId)  => _participants.add(classId);
+  void notifyStudentSubmissionsChanged(String assessmentId) => _studentSubmissions.add(assessmentId);
+  void notifyStudentAssignmentSubmissionsChanged(String assignmentId) => _studentAssignmentSubmissions.add(assignmentId);
 
   void dispose() {
     _assessments.close();
@@ -130,5 +142,8 @@ class DataEventBus {
     _myGradeDetail.close();
     _sf9.close();
     _sf10.close();
+    _participants.close();
+    _studentSubmissions.close();
+    _studentAssignmentSubmissions.close();
   }
 }

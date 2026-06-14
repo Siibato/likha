@@ -218,6 +218,7 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       ops.getStudentAssignmentSubmission(
         _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         assignmentId: assignmentId,
         studentId: studentId,
       );

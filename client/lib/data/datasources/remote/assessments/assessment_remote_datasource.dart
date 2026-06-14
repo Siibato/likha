@@ -93,6 +93,11 @@ abstract class AssessmentRemoteDataSource {
     required String submissionId,
   });
 
+  Future<SubmissionSummaryModel?> getStudentSubmission({
+    required String assessmentId,
+    required String studentId,
+  });
+
   Future<List<StudentAssessmentSubmissionItemModel>> getStudentAssessmentSubmissions({
     required String classId,
     required String studentId,
@@ -318,6 +323,17 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
       ops.getStudentResults(
         _dioClient,
         submissionId: submissionId,
+      );
+
+  @override
+  Future<SubmissionSummaryModel?> getStudentSubmission({
+    required String assessmentId,
+    required String studentId,
+  }) =>
+      ops.getStudentSubmission(
+        _dioClient,
+        assessmentId: assessmentId,
+        studentId: studentId,
       );
 
   @override

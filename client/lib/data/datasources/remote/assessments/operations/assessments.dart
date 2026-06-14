@@ -21,4 +21,5 @@ export 'start_assessment.dart';
 export 'save_answers.dart';
 export 'submit_assessment.dart';
 export 'get_student_results.dart';
+export 'get_student_submission.dart';
 export 'get_student_assessment_submissions.dart';

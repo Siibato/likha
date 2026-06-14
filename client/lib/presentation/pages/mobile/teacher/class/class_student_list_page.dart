@@ -25,8 +25,8 @@ class _ClassStudentListPageState extends ConsumerState<ClassStudentListPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Load class detail to get enrolled students
       ref.read(classProvider.notifier).loadClassDetail(widget.classId);
-      // Also load cached students immediately for offline display
-      ref.read(classProvider.notifier).loadParticipantsOffline(widget.classId);
+      // Cache-first + background refresh for participants
+      ref.read(classProvider.notifier).loadParticipants(widget.classId);
     });
   }
 
@@ -40,7 +40,7 @@ class _ClassStudentListPageState extends ConsumerState<ClassStudentListPage> {
       if (currentClassDetail == null &&
           next.error != null &&
           prev?.error != next.error) {
-        ref.read(classProvider.notifier).loadParticipantsOffline(widget.classId);
+        ref.read(classProvider.notifier).loadParticipants(widget.classId);
       }
       // Show error messages
       if (next.error != null && prev?.error != next.error) {

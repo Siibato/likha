@@ -25,6 +25,7 @@ pub mod submissions;
 
 // grading
 pub mod get_student_assessment_submissions;
+pub mod get_student_submission;
 pub mod get_submission_detail;
 pub mod get_submissions;
 pub mod grade_essay_answer;

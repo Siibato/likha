@@ -43,6 +43,7 @@ impl crate::modules::assessment::service::AssessmentService {
             inv.invalidate_assessment_submissions(submission.assessment_id).await;
             inv.invalidate_assessment_submission_detail(submission_id).await;
             inv.invalidate_student_results(submission_id).await;
+            inv.invalidate_assessment_student_submission(submission.assessment_id, submission.user_id).await;
         }
 
         let response = SubmissionSummaryResponse {

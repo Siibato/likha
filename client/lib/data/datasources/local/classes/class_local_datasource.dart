@@ -43,6 +43,7 @@ abstract class ClassLocalDataSource {
   Future<void> cacheSearchStudents(List<UserModel> students);
   Future<List<UserModel>> searchCachedStudents(String query);
   Future<List<UserModel>> getCachedParticipants(String classId);
+  Future<void> cacheParticipants(String classId, List<UserModel> participants);
   Future<Set<String>> getParticipantIds(String classId);
   Future<ClassDetailModel?> buildClassDetailFromParticipants(String classId);
   Future<void> clearAllCache();
@@ -145,6 +146,10 @@ class ClassLocalDataSourceImpl implements ClassLocalDataSource {
   @override
   Future<List<UserModel>> getCachedParticipants(String classId) =>
       ops.getCachedParticipants(localDatabase, classId);
+
+  @override
+  Future<void> cacheParticipants(String classId, List<UserModel> participants) =>
+      ops.cacheParticipants(localDatabase, classId, participants);
 
   @override
   Future<Set<String>> getParticipantIds(String classId) =>

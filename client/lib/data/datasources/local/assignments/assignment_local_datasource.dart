@@ -60,6 +60,10 @@ abstract class AssignmentLocalDataSource {
     String assignmentId,
     String studentId,
   );
+  Future<void> clearStudentAssignmentSubmission(
+    String assignmentId,
+    String studentId,
+  );
 }
 
 class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
@@ -223,6 +227,17 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
     String studentId,
   ) =>
       ops.getStudentSubmissionForAssignment(
+        localDatabase,
+        assignmentId,
+        studentId,
+      );
+
+  @override
+  Future<void> clearStudentAssignmentSubmission(
+    String assignmentId,
+    String studentId,
+  ) =>
+      ops.clearStudentAssignmentSubmission(
         localDatabase,
         assignmentId,
         studentId,

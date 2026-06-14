@@ -8,3 +8,4 @@ export 'add_student.dart';
 export 'remove_student.dart';
 export 'search_students.dart';
 export 'delete_class.dart';
+export 'get_participants.dart';
