@@ -928,6 +928,8 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     );
   }
 
+  String? get currentError => state.error;
+
   void clearMessages() {
     state = state.copyWith(error: null, successMessage: null);
   }

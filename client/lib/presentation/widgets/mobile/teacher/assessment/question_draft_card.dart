@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/widgets/shared/cards/base_card.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_answer_preview.dart';
-import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_draft.dart';
+import 'package:likha/domain/assessments/entities/question_draft.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_edit_panel.dart';
 
 /// Card for a draft (not-yet-published) question with inline editing.

@@ -3,7 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/utils/snackbar_utils.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_question_type_editors.dart';
-import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_draft.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_decorators.dart';
+import 'package:likha/domain/assessments/entities/question_draft.dart';
 
 /// "New Question" inline form for the desktop assessment builder.
 ///

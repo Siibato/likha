@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/controllers/teacher/assessment/assessment_create_controller.dart';
+import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
-import 'package:likha/presentation/utils/date_time_pickers.dart';
 import 'package:likha/presentation/utils/snackbar_utils.dart';
+import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_create_actions.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_draft_resume_banner.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_questions_panel.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_settings_panel.dart';
-import 'package:likha/presentation/widgets/shared/dialogs/move_question_dialog.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 
 class CreateAssessmentPage extends ConsumerStatefulWidget {
@@ -29,7 +29,10 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
   @override
   void initState() {
     super.initState();
-    _controller = AssessmentCreateController(classId: widget.classId);
+    _controller = AssessmentCreateController(
+      classId: widget.classId,
+      notifier: ref.read(teacherAssessmentProvider.notifier),
+    );
     _controller.init();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(tosProvider.notifier).loadTosList(widget.classId);
@@ -40,49 +43,6 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
   void dispose() {
     _controller.dispose();
     super.dispose();
-  }
-
-  Future<void> _handleSave() async {
-    if (!_detailsFormKey.currentState!.validate()) return;
-
-    final assessment = await _controller.performSave(ref);
-    if (assessment != null && mounted) {
-      Navigator.pop(context, true);
-    }
-  }
-
-  Future<void> _handleSaveDraft() async {
-    await _controller.saveDraftWithFeedback();
-    if (mounted) {
-      context.showSuccessSnackBar('Draft saved', durationMs: 1500);
-    }
-  }
-
-  void _showQuestionMoveDialog(int currentIndex) {
-    showDialog(
-      context: context,
-      builder: (_) => MoveQuestionDialog(
-        currentIndex: currentIndex,
-        questionCount: _controller.questions.length,
-        onMove: _controller.reorderQuestion,
-      ),
-    );
-  }
-
-  Future<void> _pickOpenAt() async {
-    final dt = await pickDateTime(context, current: _controller.openAt);
-    if (dt != null) {
-      _controller.setOpenAt(dt);
-      _controller.scheduleAutoSave();
-    }
-  }
-
-  Future<void> _pickCloseAt() async {
-    final dt = await pickDateTime(context, current: _controller.closeAt);
-    if (dt != null) {
-      _controller.setCloseAt(dt);
-      _controller.scheduleAutoSave();
-    }
   }
 
   @override
@@ -102,55 +62,26 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
               tooltip: 'Back',
             ),
             actions: [
-              OutlinedButton(
-                onPressed:
-                    _controller.isSaving ? null : _handleSaveDraft,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.accentCharcoal,
-                  side: const BorderSide(color: AppColors.borderLight),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Save Draft',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                ),
-              ),
-              const SizedBox(width: 12),
-              ElevatedButton(
-                onPressed: _controller.isSaving ||
-                        _controller.isQuestionReorderMode
-                    ? null
-                    : _handleSave,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accentCharcoal,
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: AppColors.borderLight,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
-                child: _controller.isSaving
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : const Text(
-                        'Save Assessment',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 14),
-                      ),
+              AssessmentCreateActions(
+                isSaving: _controller.isSaving,
+                isDisabled: _controller.isQuestionReorderMode,
+                onSaveDraft: () async {
+                  await _controller.saveDraftWithFeedback();
+                  if (!mounted) return;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+                    context.showSuccessSnackBar('Draft saved', durationMs: 1500);
+                  });
+                },
+                onSave: () async {
+                  if (!_detailsFormKey.currentState!.validate()) return;
+                  final assessment = await _controller.performSave();
+                  if (!mounted || assessment == null) return;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+                    Navigator.pop(context, true);
+                  });
+                },
               ),
             ],
             body: Column(
@@ -183,9 +114,15 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                             _controller.isDepartmentalExam,
                         linkedTosId: _controller.linkedTosId,
                         isSaving: _controller.isSaving,
-                        tosState: tosState,
-                        onPickOpenAt: _pickOpenAt,
-                        onPickCloseAt: _pickCloseAt,
+                        tosList: tosState.tosList,
+                        onOpenAtChanged: (dt) {
+                          _controller.setOpenAt(dt);
+                          _controller.scheduleAutoSave();
+                        },
+                        onCloseAtChanged: (dt) {
+                          _controller.setCloseAt(dt);
+                          _controller.scheduleAutoSave();
+                        },
                         onShowResultsChanged: (v) {
                           _controller.setShowResultsImmediately(v);
                           _controller.scheduleAutoSave();
@@ -233,7 +170,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                         onEditQuestion: (i) =>
                             _controller.setEditingQuestionIndex(i),
                         onDeleteQuestion: _controller.removeQuestion,
-                        onMoveQuestion: _showQuestionMoveDialog,
+                        onReorderQuestion: _controller.reorderQuestion,
                         onConfirmAdd: _controller.confirmAddQuestion,
                         onSaveEdit: _controller.saveEdit,
                         onCancelEdit: () =>

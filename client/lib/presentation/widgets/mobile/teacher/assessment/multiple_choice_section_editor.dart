@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
-import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_draft.dart';
+import 'package:likha/domain/assessments/entities/question_draft.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_editor_body.dart';
 
 /// Editor section for multiple-choice questions.
