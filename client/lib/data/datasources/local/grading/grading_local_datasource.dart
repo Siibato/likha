@@ -49,6 +49,16 @@ abstract class GradingLocalDataSource {
     int transmutedGrade,
   );
 
+  Future<List<Map<String, dynamic>>> getCachedGradeSummary(
+    String classId,
+    int gradingPeriodNumber,
+  );
+  Future<void> cacheGradeSummary(
+    String classId,
+    int gradingPeriodNumber,
+    List<Map<String, dynamic>> summary,
+  );
+
   Future<void> clearAllCache();
 }
 
@@ -146,6 +156,21 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
         gradingPeriodNumber,
         transmutedGrade,
       );
+
+  @override
+  Future<List<Map<String, dynamic>>> getCachedGradeSummary(
+    String classId,
+    int gradingPeriodNumber,
+  ) =>
+      ops.getCachedGradeSummary(localDatabase, classId, gradingPeriodNumber);
+
+  @override
+  Future<void> cacheGradeSummary(
+    String classId,
+    int gradingPeriodNumber,
+    List<Map<String, dynamic>> summary,
+  ) =>
+      ops.cacheGradeSummary(localDatabase, classId, gradingPeriodNumber, summary);
 
   @override
   Future<void> clearAllCache() =>

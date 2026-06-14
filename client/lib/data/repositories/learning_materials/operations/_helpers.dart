@@ -1,14 +1,7 @@
 import 'dart:io';
 
-import 'package:likha/core/events/data_event_bus.dart';
-import 'package:likha/core/errors/exceptions.dart';
-import 'package:likha/core/logging/repo_logger.dart';
-import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
-import 'package:likha/data/datasources/remote/learning_materials/learning_material_remote_datasource.dart';
 import 'package:likha/domain/learning_materials/entities/learning_material.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
-
-final Map<String, DateTime> lastBackgroundFetchTime = {};
 
 String mimeType(String filePath) {
   final extension = filePath.split('.').last.toLowerCase();
@@ -48,62 +41,6 @@ Future<int> fileSize(String filePath) async {
   }
 }
 
-void backgroundFetchMaterials(
-  LearningMaterialLocalDataSource localDataSource,
-  LearningMaterialRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus,
-  String classId,
-) {
-  Future.microtask(() async {
-    try {
-      RepoLogger.instance.log('_backgroundFetchMaterials() - Background fetch starting for classId=$classId');
-      final fresh = await remoteDataSource.getMaterials(classId: classId);
-      final List<LearningMaterial> cached;
-      try {
-        cached = await localDataSource.getCachedMaterials(classId);
-      } on CacheException {
-        await localDataSource.cacheMaterials(fresh);
-        await localDataSource.reconcileDeletedMaterials(classId, fresh.map((m) => m.id).toList());
-        for (final material in fresh) {
-          if (material.fileCount > 0) {
-            RepoLogger.instance.log('_backgroundFetchMaterials() - Fetching files for new material: ${material.id}');
-            try {
-              final detail = await remoteDataSource.getMaterialDetail(materialId: material.id);
-              if (detail.files.isNotEmpty) {
-                await localDataSource.cacheMaterialFiles(material.id, detail.files);
-              }
-            } catch (e) {
-              RepoLogger.instance.warn('_backgroundFetchMaterials() - Failed to cache files for ${material.id}', e);
-            }
-          }
-        }
-        dataEventBus.notifyMaterialsChanged(classId);
-        return;
-      }
-      if (materialsHaveChanged(cached, fresh)) {
-        await localDataSource.cacheMaterials(fresh);
-        await localDataSource.reconcileDeletedMaterials(classId, fresh.map((m) => m.id).toList());
-        for (final material in fresh) {
-          if (material.fileCount > 0) {
-            RepoLogger.instance.log('_backgroundFetchMaterials() - Fetching files for updated material: ${material.id}');
-            try {
-              final detail = await remoteDataSource.getMaterialDetail(materialId: material.id);
-              if (detail.files.isNotEmpty) {
-                await localDataSource.cacheMaterialFiles(material.id, detail.files);
-              }
-            } catch (e) {
-              RepoLogger.instance.warn('_backgroundFetchMaterials() - Failed to cache files for ${material.id}', e);
-            }
-          }
-        }
-        dataEventBus.notifyMaterialsChanged(classId);
-      }
-    } catch (e) {
-      RepoLogger.instance.error('_backgroundFetchMaterials() - Error', e);
-    }
-  });
-}
-
 bool materialsHaveChanged(
   List<LearningMaterial> local,
   List<LearningMaterial> remote,
@@ -116,35 +53,6 @@ bool materialsHaveChanged(
     if (l.updatedAt.isBefore(r.updatedAt)) return true;
   }
   return false;
-}
-
-void backgroundRefreshMaterialFiles(
-  LearningMaterialLocalDataSource localDataSource,
-  LearningMaterialRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus,
-  String materialId,
-  String classId,
-) {
-  Future.microtask(() async {
-    try {
-      RepoLogger.instance.log('_backgroundRefreshMaterialFiles() - Starting background refresh for materialId=$materialId, classId=$classId');
-      final fresh = await remoteDataSource.getMaterialDetail(materialId: materialId);
-      final cached = await localDataSource.getCachedMaterialFiles(materialId);
-
-      RepoLogger.instance.log('_backgroundRefreshMaterialFiles() - cached files=${cached.length}, fresh files=${fresh.files.length}');
-
-      if (materialFilesHaveChanged(cached, fresh.files)) {
-        RepoLogger.instance.log('_backgroundRefreshMaterialFiles() - Files changed! Caching and notifying...');
-        await localDataSource.cacheMaterialFiles(materialId, fresh.files);
-        RepoLogger.instance.log('_backgroundRefreshMaterialFiles() - Calling dataEventBus.notifyMaterialsChanged($classId)');
-        dataEventBus.notifyMaterialsChanged(classId);
-      } else {
-        RepoLogger.instance.log('_backgroundRefreshMaterialFiles() - Files unchanged, no notification');
-      }
-    } catch (e) {
-      RepoLogger.instance.error('_backgroundRefreshMaterialFiles() - Error in background refresh', e);
-    }
-  });
 }
 
 bool materialFilesHaveChanged(

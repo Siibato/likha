@@ -1,10 +1,5 @@
 import 'dart:io';
 
-import 'package:likha/core/errors/exceptions.dart';
-import 'package:likha/core/events/data_event_bus.dart';
-import 'package:likha/core/logging/repo_logger.dart';
-import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
-import 'package:likha/data/datasources/remote/assignments/assignment_remote_datasource.dart';
 import 'package:likha/data/models/assignments/assignment_submission_model.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
@@ -48,38 +43,6 @@ Future<int> fileSize(String filePath) async {
   }
 }
 
-void backgroundFetchAssignments(
-  AssignmentLocalDataSource localDataSource,
-  AssignmentRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus,
-  String classId, {
-  bool publishedOnly = false,
-}) {
-  Future.microtask(() async {
-    try {
-      final fresh = await remoteDataSource.getAssignments(classId: classId);
-      final List<Assignment> cached;
-      try {
-        cached = await localDataSource.getCachedAssignments(classId, publishedOnly: publishedOnly);
-      } on CacheException {
-        await localDataSource.cacheAssignments(fresh);
-        dataEventBus.notifyAssignmentsChanged(classId);
-        return;
-      }
-      if (assignmentsHaveChanged(cached, fresh)) {
-        await localDataSource.cacheAssignments(fresh);
-        dataEventBus.notifyAssignmentsChanged(classId);
-      }
-    } on NetworkException {
-      // silent fail
-    } on ServerException {
-      // silent fail
-    } catch (_) {
-      // silent fail
-    }
-  });
-}
-
 bool assignmentsHaveChanged(List<Assignment> local, List<Assignment> remote) {
   if (local.length != remote.length) return true;
   final localById = {for (final a in local) a.id: a};
@@ -89,30 +52,6 @@ bool assignmentsHaveChanged(List<Assignment> local, List<Assignment> remote) {
     if (l.updatedAt.isBefore(r.updatedAt)) return true;
   }
   return false;
-}
-
-void backgroundRefreshSubmission(
-  AssignmentLocalDataSource localDataSource,
-  AssignmentRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus,
-  String submissionId,
-) {
-  Future.microtask(() async {
-    try {
-      RepoLogger.instance.log('backgroundRefreshSubmission() - Starting background refresh for submissionId=$submissionId');
-      final fresh = await remoteDataSource.getSubmissionDetail(submissionId: submissionId);
-      final cached = await localDataSource.getCachedSubmission(submissionId);
-      if (submissionDataHasChanged(cached, fresh)) {
-        RepoLogger.instance.log('backgroundRefreshSubmission() - Data changed! Caching and notifying...');
-        await localDataSource.cacheSubmissionDetail(fresh);
-        dataEventBus.notifySubmissionDetailChanged(submissionId);
-      } else {
-        RepoLogger.instance.log('backgroundRefreshSubmission() - Data unchanged, no notification');
-      }
-    } catch (e) {
-      RepoLogger.instance.error('backgroundRefreshSubmission() - Error in background refresh', e);
-    }
-  });
 }
 
 bool submissionDataHasChanged(

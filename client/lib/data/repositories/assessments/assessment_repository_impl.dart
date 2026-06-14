@@ -2,7 +2,6 @@ import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/connectivity_service.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/core/logging/sync_logger.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
@@ -26,7 +25,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
   final ServerReachabilityService _serverReachabilityService;
   final StorageService _storageService;
   final DataEventBus _dataEventBus;
-  final SyncLogger _syncLogger;
 
   AssessmentRepositoryImpl({
     required AssessmentRemoteDataSource remoteDataSource,
@@ -37,7 +35,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required ServerReachabilityService serverReachabilityService,
     required StorageService storageService,
     required DataEventBus dataEventBus,
-    required SyncLogger syncLogger,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
         _validationService = validationService,
@@ -45,8 +42,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
         _syncQueue = syncQueue,
         _serverReachabilityService = serverReachabilityService,
         _storageService = storageService,
-        _dataEventBus = dataEventBus,
-        _syncLogger = syncLogger;
+        _dataEventBus = dataEventBus;
 
   @override
   ResultFuture<Assessment> createAssessment({
@@ -102,11 +98,9 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required String assessmentId,
   }) =>
       ops.getAssessmentDetail(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
         _dataEventBus,
-        _syncLogger,
         assessmentId: assessmentId,
       );
 
@@ -253,9 +247,9 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required String assessmentId,
   }) =>
       ops.getSubmissions(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         assessmentId: assessmentId,
       );
 
@@ -264,9 +258,9 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required String submissionId,
   }) =>
       ops.getSubmissionDetail(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         submissionId: submissionId,
       );
 

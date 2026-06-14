@@ -88,9 +88,9 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
   @override
   ResultFuture<Assignment> getAssignmentDetail({required String assignmentId}) =>
       ops.getAssignmentDetail(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         assignmentId: assignmentId,
       );
 
@@ -169,16 +169,15 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
   @override
   ResultFuture<List<SubmissionListItem>> getSubmissions({required String assignmentId}) =>
       ops.getSubmissions(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         assignmentId: assignmentId,
       );
 
   @override
   ResultFuture<AssignmentSubmission> getSubmissionDetail({required String submissionId}) =>
       ops.getSubmissionDetail(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
         _dataEventBus,

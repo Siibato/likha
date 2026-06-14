@@ -10,6 +10,10 @@ Future<void> clearAllCache(LocalDatabase localDatabase) async {
     await db.delete(DbTables.gradeRecord);
     await db.delete(DbTables.periodGrades);
     await db.delete(DbTables.studentResultsCache);
+    await db.delete(
+      DbTables.syncMetadata,
+      where: "${SyncMetadataCols.key} LIKE 'grade_summary:%'",
+    );
   } catch (e) {
     throw CacheException('Failed to clear grading cache: $e');
   }

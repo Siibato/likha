@@ -28,7 +28,9 @@ ResultFuture<Map<String, dynamic>> getGradeDataBatch(
     );
     
     final gradeSummaryResult = await getGradeSummary(
+      localDataSource,
       remoteDataSource,
+      dataEventBus,
       classId: classId,
       gradingPeriodNumber: gradingPeriodNumber,
     );

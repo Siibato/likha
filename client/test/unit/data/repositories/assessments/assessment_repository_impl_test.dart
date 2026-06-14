@@ -38,7 +38,6 @@ AssessmentRepositoryImpl _buildRepo({
   required MockServerReachabilityService reachability,
   required MockStorageService storage,
   required MockDataEventBus eventBus,
-  required MockSyncLogger syncLogger,
   bool isServerReachable = true,
 }) {
   when(() => reachability.isServerReachable).thenReturn(isServerReachable);
@@ -51,7 +50,6 @@ AssessmentRepositoryImpl _buildRepo({
     serverReachabilityService: reachability,
     storageService: storage,
     dataEventBus: eventBus,
-    syncLogger: syncLogger,
   );
 }
 
@@ -64,7 +62,6 @@ void main() {
   late MockServerReachabilityService reachability;
   late MockStorageService storage;
   late MockDataEventBus eventBus;
-  late MockSyncLogger syncLogger;
 
   setUp(() {
     local = MockAssessmentLocalDataSource();
@@ -73,7 +70,6 @@ void main() {
     reachability = MockServerReachabilityService();
     storage = MockStorageService();
     eventBus = MockDataEventBus();
-    syncLogger = MockSyncLogger();
     dotenv.testLoad(fileInput: '');
     when(() => storage.getUserId()).thenAnswer((_) async => null);
     when(() => eventBus.onAssessmentsChanged).thenAnswer((_) => const Stream.empty());
@@ -98,7 +94,7 @@ void main() {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
           reachability: reachability, storage: storage,
-          eventBus: eventBus, syncLogger: syncLogger, isServerReachable: true,
+          eventBus: eventBus, isServerReachable: true,
         );
 
         when(() => local.getCachedAssessments(any(), publishedOnly: any(named: 'publishedOnly')))
@@ -118,7 +114,7 @@ void main() {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
           reachability: reachability, storage: storage,
-          eventBus: eventBus, syncLogger: syncLogger, isServerReachable: false,
+          eventBus: eventBus, isServerReachable: false,
         );
 
         when(() => local.getCachedAssessments(any(), publishedOnly: any(named: 'publishedOnly')))
@@ -136,7 +132,7 @@ void main() {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
           reachability: reachability, storage: storage,
-          eventBus: eventBus, syncLogger: syncLogger, isServerReachable: false,
+          eventBus: eventBus, isServerReachable: false,
         );
 
         when(() => local.createAssessment(
@@ -175,7 +171,7 @@ void main() {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
           reachability: reachability, storage: storage,
-          eventBus: eventBus, syncLogger: syncLogger, isServerReachable: true,
+          eventBus: eventBus, isServerReachable: true,
         );
 
         when(() => remote.createAssessment(
@@ -208,7 +204,7 @@ void main() {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
           reachability: reachability, storage: storage,
-          eventBus: eventBus, syncLogger: syncLogger, isServerReachable: false,
+          eventBus: eventBus, isServerReachable: false,
         );
 
         when(() => local.deleteAssessment(assessmentId: any(named: 'assessmentId')))
@@ -228,7 +224,7 @@ void main() {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
           reachability: reachability, storage: storage,
-          eventBus: eventBus, syncLogger: syncLogger, isServerReachable: false,
+          eventBus: eventBus, isServerReachable: false,
         );
 
         const fakeQ = QuestionModel(

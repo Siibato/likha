@@ -106,7 +106,6 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
   @override
   ResultFuture<List<LearningMaterial>> getMaterials({required String classId}) =>
       ops.getMaterials(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
         _dataEventBus,
@@ -116,7 +115,6 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
   @override
   ResultFuture<MaterialDetail> getMaterialDetail({required String materialId}) =>
       ops.getMaterialDetail(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
         _dataEventBus,

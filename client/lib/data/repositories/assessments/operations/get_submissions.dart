@@ -1,113 +1,77 @@
-import 'dart:async';
-
 import 'package:dartz/dartz.dart';
-import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/events/data_event_bus.dart';
+import 'package:likha/core/logging/repo_logger.dart';
+import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
-import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
 
 ResultFuture<List<SubmissionSummary>> getSubmissions(
-  ServerReachabilityService serverReachabilityService,
   AssessmentLocalDataSource localDataSource,
-  AssessmentRemoteDataSource remoteDataSource, {
+  AssessmentRemoteDataSource remoteDataSource,
+  DataEventBus dataEventBus, {
   required String assessmentId,
 }) async {
   try {
-    List<SubmissionSummary>? cachedSubmissions;
     try {
-      cachedSubmissions = await localDataSource.getCachedSubmissions(assessmentId);
-      RepoLogger.instance.log('getSubmissions: Loaded ${cachedSubmissions.length} cached submissions for assessment $assessmentId');
-    } on CacheException catch (e) {
-      RepoLogger.instance.log('getSubmissions: No cached submissions available: $e');
-    }
+      final cached = await localDataSource.getCachedSubmissions(assessmentId);
+      RepoLogger.instance.log('getSubmissions: Loaded ${cached.length} cached submissions for assessment $assessmentId');
 
-    if (cachedSubmissions != null && cachedSubmissions.isNotEmpty) {
-      if (serverReachabilityService.isServerReachable) {
-        unawaited(_refreshSubmissionsFromNetwork(serverReachabilityService, localDataSource, remoteDataSource, assessmentId));
+      fireRemoteFetch(
+        dedupKey: 'assessments/submissions/$assessmentId/bg',
+        remote: () => remoteDataSource.getSubmissions(assessmentId: assessmentId),
+        onSuccess: (fresh) async {
+          try {
+            await localDataSource.cacheSubmissions(assessmentId, fresh);
+            RepoLogger.instance.log('getSubmissions: Background refresh cached ${fresh.length} submissions');
+
+            // Pre-cache submission details
+            for (final submission in fresh) {
+              try {
+                final detail = await remoteDataSource.getSubmissionDetail(submissionId: submission.id);
+                await localDataSource.cacheSubmissionDetail(detail);
+              } catch (e) {
+                RepoLogger.instance.log('getSubmissions: Detail pre-cache failed for ${submission.id}: $e');
+              }
+            }
+            dataEventBus.notifyAssessmentDetailChanged(assessmentId);
+          } catch (e) {
+            RepoLogger.instance.log('getSubmissions: Background refresh failed: $e');
+          }
+        },
+      );
+
+      return Right(cached);
+    } on CacheException {
+      final fresh = await remoteFetch(
+        dedupKey: 'assessments/submissions/$assessmentId',
+        remote: () => remoteDataSource.getSubmissions(assessmentId: assessmentId),
+      );
+      try {
+        await localDataSource.cacheSubmissions(assessmentId, fresh);
+      } catch (e) {
+        RepoLogger.instance.log('getSubmissions: Caching failed (non-fatal): $e');
       }
-      return Right(cachedSubmissions);
+
+      for (final submission in fresh) {
+        try {
+          final detail = await remoteDataSource.getSubmissionDetail(submissionId: submission.id);
+          await localDataSource.cacheSubmissionDetail(detail);
+        } catch (e) {
+          RepoLogger.instance.log('getSubmissions: Detail pre-cache failed for ${submission.id}: $e');
+        }
+      }
+
+      return Right(fresh);
     }
-
-    if (!serverReachabilityService.isServerReachable) {
-      return const Left(NetworkFailure('No network connection and no cached submissions'));
-    }
-
-    return await _fetchAndCacheSubmissions(serverReachabilityService, localDataSource, remoteDataSource, assessmentId);
-  } catch (e) {
-    return Left(ServerFailure(e.toString()));
-  }
-}
-
-Future<void> _refreshSubmissionsFromNetwork(
-  ServerReachabilityService serverReachabilityService,
-  AssessmentLocalDataSource localDataSource,
-  AssessmentRemoteDataSource remoteDataSource,
-  String assessmentId,
-) async {
-  try {
-    RepoLogger.instance.log('_refreshSubmissionsFromNetwork: START for assessmentId=$assessmentId');
-    final result = await remoteDataSource.getSubmissions(assessmentId: assessmentId);
-    RepoLogger.instance.log('_refreshSubmissionsFromNetwork: fetched ${result.length} summaries from remote');
-    await localDataSource.cacheSubmissions(assessmentId, result);
-    RepoLogger.instance.log('getSubmissions: Background refresh cached ${result.length} submissions');
-
-    RepoLogger.instance.log('_refreshSubmissionsFromNetwork: pre-caching ${result.length} submission details');
-    for (final submission in result) {
-      unawaited(_backgroundFetchAndCacheSubmissionDetail(serverReachabilityService, localDataSource, remoteDataSource, submission.id));
-    }
-    RepoLogger.instance.log('_refreshSubmissionsFromNetwork: DONE');
-  } catch (e) {
-    RepoLogger.instance.log('getSubmissions: Background refresh failed: $e');
-  }
-}
-
-Future<void> _backgroundFetchAndCacheSubmissionDetail(
-  ServerReachabilityService serverReachabilityService,
-  AssessmentLocalDataSource localDataSource,
-  AssessmentRemoteDataSource remoteDataSource,
-  String submissionId,
-) async {
-  try {
-    RepoLogger.instance.log('_backgroundFetchAndCacheSubmissionDetail: START for $submissionId');
-    final detail = await remoteDataSource.getSubmissionDetail(submissionId: submissionId);
-    RepoLogger.instance.log('_backgroundFetchAndCacheSubmissionDetail: fetched detail with ${detail.answers.length} answers');
-    await localDataSource.cacheSubmissionDetail(detail);
-    RepoLogger.instance.log('_backgroundFetchAndCacheSubmissionDetail: cached OK for $submissionId');
-  } catch (e) {
-    RepoLogger.instance.log('getSubmissions: Detail pre-cache failed for $submissionId: $e');
-  }
-}
-
-Future<Either<Failure, List<SubmissionSummary>>> _fetchAndCacheSubmissions(
-  ServerReachabilityService serverReachabilityService,
-  AssessmentLocalDataSource localDataSource,
-  AssessmentRemoteDataSource remoteDataSource,
-  String assessmentId,
-) async {
-  try {
-    RepoLogger.instance.log('_fetchAndCacheSubmissions: START for assessmentId=$assessmentId');
-    final result = await remoteDataSource.getSubmissions(assessmentId: assessmentId);
-    RepoLogger.instance.log('_fetchAndCacheSubmissions: fetched ${result.length} summaries from remote');
-    try {
-      await localDataSource.cacheSubmissions(assessmentId, result);
-      RepoLogger.instance.log('getSubmissions: Fetched and cached ${result.length} submissions from network');
-    } catch (e) {
-      RepoLogger.instance.log('getSubmissions: Caching failed (non-fatal): $e');
-    }
-
-    RepoLogger.instance.log('_fetchAndCacheSubmissions: pre-caching ${result.length} submission details');
-    for (final submission in result) {
-      unawaited(_backgroundFetchAndCacheSubmissionDetail(serverReachabilityService, localDataSource, remoteDataSource, submission.id));
-    }
-    RepoLogger.instance.log('_fetchAndCacheSubmissions: DONE');
-    return Right(result);
-  } on NetworkException catch (e) {
-    return Left(NetworkFailure(e.message));
   } on ServerException catch (e) {
     return Left(ServerFailure(e.message, statusCode: e.statusCode));
+  } on NetworkException catch (e) {
+    return Left(NetworkFailure(e.message));
+  } catch (e) {
+    return Left(ServerFailure(e.toString()));
   }
 }

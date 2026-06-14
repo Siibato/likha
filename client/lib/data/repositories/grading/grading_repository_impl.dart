@@ -39,9 +39,9 @@ class GradingRepositoryImpl implements GradingRepository {
     required String classId,
   }) =>
       ops.getGradingConfig(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         classId: classId,
       );
 
@@ -140,9 +140,9 @@ class GradingRepositoryImpl implements GradingRepository {
     required String gradeItemId,
   }) =>
       ops.getScoresByItem(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         gradeItemId: gradeItemId,
       );
 
@@ -185,9 +185,9 @@ class GradingRepositoryImpl implements GradingRepository {
     required int gradingPeriodNumber,
   }) =>
       ops.getPeriodGrades(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         classId: classId,
         gradingPeriodNumber: gradingPeriodNumber,
       );
@@ -224,7 +224,9 @@ class GradingRepositoryImpl implements GradingRepository {
     required int gradingPeriodNumber,
   }) =>
       ops.getGradeSummary(
+        _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         classId: classId,
         gradingPeriodNumber: gradingPeriodNumber,
       );
@@ -245,9 +247,9 @@ class GradingRepositoryImpl implements GradingRepository {
     required String classId,
   }) =>
       ops.getMyGrades(
-        _serverReachabilityService,
         _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         classId: classId,
       );
 

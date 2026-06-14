@@ -1,4 +1,6 @@
+export 'cache_grade_summary.dart';
 export 'clear_all_cache.dart';
+export 'get_cached_grade_summary.dart';
 export 'get_config_by_class.dart';
 export 'save_configs.dart';
 export 'get_item_by_source_id.dart';
