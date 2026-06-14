@@ -5,6 +5,8 @@ import 'package:mocktail/mocktail.dart';
 
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/events/data_event_bus.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/classes/usecases/add_student.dart';
 import 'package:likha/domain/classes/usecases/create_class.dart';
 import 'package:likha/domain/classes/usecases/delete_class.dart';
@@ -58,6 +60,7 @@ ClassNotifier _buildNotifier({
 
 void main() {
   final tClass = FakeEntities.classEntity();
+  final tMutationResult = MutationResult(entity: tClass, status: SyncStatus.pending);
 
   setUpAll(() {
     GetIt.instance.registerSingleton<DataEventBus>(DataEventBus());
@@ -129,7 +132,7 @@ void main() {
         final mockCreate = MockCreateClass();
         final notifier = _buildNotifier(createClass: mockCreate);
 
-        when(() => mockCreate(any())).thenAnswer((_) async => Right(tClass));
+        when(() => mockCreate(any())).thenAnswer((_) async => Right(tMutationResult));
 
         final states = <ClassState>[];
         notifier.addListener((s) => states.add(s), fireImmediately: false);

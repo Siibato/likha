@@ -1,5 +1,6 @@
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
@@ -8,7 +9,6 @@ import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
 import 'package:likha/domain/classes/repositories/class_repository.dart';
-import 'package:likha/services/storage_service.dart';
 import 'operations/classes.dart' as ops;
 
 class ClassRepositoryImpl implements ClassRepository {
@@ -16,7 +16,6 @@ class ClassRepositoryImpl implements ClassRepository {
   final ClassLocalDataSource _localDataSource;
   final ServerReachabilityService _serverReachabilityService;
   final SyncQueue _syncQueue;
-  final StorageService _storageService;
   final DataEventBus _dataEventBus;
 
   ClassRepositoryImpl({
@@ -24,17 +23,15 @@ class ClassRepositoryImpl implements ClassRepository {
     required ClassLocalDataSource localDataSource,
     required ServerReachabilityService serverReachabilityService,
     required SyncQueue syncQueue,
-    required StorageService storageService,
     required DataEventBus dataEventBus,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
         _serverReachabilityService = serverReachabilityService,
         _syncQueue = syncQueue,
-        _storageService = storageService,
         _dataEventBus = dataEventBus;
 
   @override
-  ResultFuture<ClassEntity> createClass({
+  ResultFuture<MutationResult<ClassEntity>> createClass({
     required String title,
     String? description,
     String? teacherId,
@@ -43,11 +40,8 @@ class ClassRepositoryImpl implements ClassRepository {
     bool isAdvisory = false,
   }) =>
       ops.createClass(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
-        _storageService,
         title: title,
         description: description,
         teacherId: teacherId,

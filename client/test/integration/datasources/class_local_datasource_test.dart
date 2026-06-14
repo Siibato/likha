@@ -73,15 +73,22 @@ void main() {
       }
     });
 
-    test('createClassLocally inserts class with needsSync=1', () async {
-      final classModel = await datasource.createClassLocally(
+    test('insertClass inserts class with sync_status=pending', () async {
+      final classModel = ClassModel(
+        id: 'class-local-001',
         title: 'Science 101',
         description: 'Basic Science',
         teacherId: _teacherId,
         teacherUsername: 'teacher01',
         teacherFullName: 'Mr. Teacher',
+        isArchived: false,
+        studentCount: 0,
+        createdAt: DateTime(2026, 4, 19),
+        updatedAt: DateTime(2026, 4, 19),
+        syncStatus: SyncStatus.pending,
       );
-      expect(classModel.id, isNotEmpty);
+
+      await datasource.insertClass(classModel);
 
       final db = await LocalDatabase().database;
       final rows = await db.query(
@@ -91,7 +98,7 @@ void main() {
       );
       expect(rows.length, 1);
       expect(rows.first['title'], 'Science 101');
-      expect(rows.first['needs_sync'], 1);
+      expect(rows.first['sync_status'], 'pending');
     });
 
     test('addStudentLocally and getCachedParticipants returns enrolled student', () async {

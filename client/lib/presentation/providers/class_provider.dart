@@ -160,30 +160,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
     String? teacherFullName,
     bool isAdvisory = false,
   }) async {
-    final previousClasses = List<ClassEntity>.from(state.classes);
-
-    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
-    final tempClass = ClassEntity(
-      id: tempId,
-      title: title,
-      description: description,
-      teacherId: teacherId ?? '',
-      teacherUsername: teacherUsername ?? '',
-      teacherFullName: teacherFullName ?? '',
-      isArchived: false,
-      isAdvisory: isAdvisory,
-      studentCount: 0,
-      gradingPeriodType: null,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      classes: [tempClass, ...state.classes],
-    );
+    state = state.copyWith(clearError: true, clearSuccess: true);
 
     final result = await _createClass(CreateClassParams(
       title: title,
@@ -196,13 +173,10 @@ class ClassNotifier extends StateNotifier<ClassState> {
 
     result.fold(
       (failure) => state = state.copyWith(
-        isLoading: false,
-        classes: previousClasses,
         error: AppErrorMapper.fromFailure(failure),
       ),
-      (newClass) => state = state.copyWith(
-        isLoading: false,
-        classes: state.classes.map((c) => c.id == tempId ? newClass : c).toList(),
+      (mutationResult) => state = state.copyWith(
+        classes: [mutationResult.entity, ...state.classes],
         successMessage: 'Class created successfully',
       ),
     );

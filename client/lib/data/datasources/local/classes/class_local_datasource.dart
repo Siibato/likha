@@ -6,6 +6,8 @@ import 'package:likha/data/models/classes/class_model.dart';
 import 'operations/classes.dart' as ops;
 
 abstract class ClassLocalDataSource {
+  LocalDatabase get localDatabase;
+
   Future<List<ClassModel>> getCachedClasses({String? teacherId});
   Future<List<ClassModel>> getCachedClassesForUser(String userId);
   Future<ClassDetailModel> getCachedClassDetail(String classId);
@@ -18,13 +20,7 @@ abstract class ClassLocalDataSource {
   });
 
   Future<void> cacheClassDetail(ClassDetailModel classDetail);
-  Future<ClassModel> createClassLocally({
-    required String title,
-    required String description,
-    required String teacherId,
-    required String teacherUsername,
-    required String teacherFullName,
-  });
+  Future<void> insertClass(ClassModel classModel, {Transaction? txn});
   Future<void> updateClassLocally({
     required String classId,
     required String title,
@@ -50,6 +46,7 @@ abstract class ClassLocalDataSource {
 }
 
 class ClassLocalDataSourceImpl implements ClassLocalDataSource {
+  @override
   final LocalDatabase localDatabase;
   final SyncQueue syncQueue;
 
@@ -84,22 +81,8 @@ class ClassLocalDataSourceImpl implements ClassLocalDataSource {
       ops.cacheClassDetail(localDatabase, classDetail);
 
   @override
-  Future<ClassModel> createClassLocally({
-    required String title,
-    required String description,
-    required String teacherId,
-    required String teacherUsername,
-    required String teacherFullName,
-  }) =>
-      ops.createClassLocally(
-        localDatabase,
-        syncQueue,
-        title,
-        description,
-        teacherId,
-        teacherUsername,
-        teacherFullName,
-      );
+  Future<void> insertClass(ClassModel classModel, {Transaction? txn}) =>
+      ops.insertClass(localDatabase, classModel, txn: txn);
 
   @override
   Future<void> updateClassLocally({

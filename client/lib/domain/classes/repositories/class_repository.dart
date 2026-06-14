@@ -1,10 +1,11 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
 
 abstract class ClassRepository {
-  ResultFuture<ClassEntity> createClass({
+  ResultFuture<MutationResult<ClassEntity>> createClass({
     required String title,
     String? description,
     String? teacherId,

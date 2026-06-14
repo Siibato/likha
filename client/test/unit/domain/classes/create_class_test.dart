@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
 import 'package:likha/domain/classes/usecases/create_class.dart';
 import 'package:likha/domain/classes/repositories/class_repository.dart';
@@ -30,6 +32,7 @@ void main() {
       createdAt: DateTime(2024, 1, 1),
       updatedAt: DateTime(2024, 1, 1),
     );
+    final tMutationResult = MutationResult(entity: tClass, status: SyncStatus.pending);
 
     test('should create class successfully', () async {
       when(() => mockRepository.createClass(
@@ -39,12 +42,12 @@ void main() {
         teacherUsername: any(named: 'teacherUsername'),
         teacherFullName: any(named: 'teacherFullName'),
         isAdvisory: any(named: 'isAdvisory'),
-      )).thenAnswer((_) async => Right(tClass));
+      )).thenAnswer((_) async => Right(tMutationResult));
 
       final result = await useCase(tParams);
 
-      expect(result, Right(tClass));
-      expect(result.getOrElse(() => throw Exception()).title, 'Science 7');
+      expect(result, Right(tMutationResult));
+      expect(result.getOrElse(() => throw Exception()).entity.title, 'Science 7');
       verify(() => mockRepository.createClass(
         title: 'Science 7',
         description: null,

@@ -3,8 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
 
-import 'package:likha/core/network/server_reachability_service.dart';
-
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/sync/sync_queue.dart';
@@ -13,6 +11,9 @@ import 'package:likha/data/repositories/classes/class_repository_impl.dart';
 
 import '../../../../helpers/mock_datasources.dart';
 import '../../../../helpers/mock_repositories.dart';
+import '../../../../helpers/test_database.dart';
+
+import 'package:likha/core/database/local_database.dart';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -34,7 +35,6 @@ ClassRepositoryImpl _buildRepo({
   required MockClassRemoteDataSource remote,
   required MockSyncQueue syncQueue,
   required MockServerReachabilityService reachability,
-  required MockStorageService storage,
   required MockDataEventBus eventBus,
   bool isServerReachable = true,
 }) {
@@ -44,7 +44,6 @@ ClassRepositoryImpl _buildRepo({
     localDataSource: local,
     serverReachabilityService: reachability,
     syncQueue: syncQueue,
-    storageService: storage,
     dataEventBus: eventBus,
   );
 }
@@ -56,7 +55,6 @@ void main() {
   late MockClassRemoteDataSource remote;
   late MockSyncQueue syncQueue;
   late MockServerReachabilityService reachability;
-  late MockStorageService storage;
   late MockDataEventBus eventBus;
 
   setUp(() {
@@ -64,18 +62,9 @@ void main() {
     remote = MockClassRemoteDataSource();
     syncQueue = MockSyncQueue();
     reachability = MockServerReachabilityService();
-    storage = MockStorageService();
     eventBus = MockDataEventBus();
     dotenv.testLoad(fileInput: '');
-    when(() => storage.getUserId()).thenAnswer((_) async => 't-1');
-
     when(() => reachability.isServerReachable).thenReturn(true);
-    when(() => reachability.checkNow()).thenAnswer((_) async => true);
-    final getIt = GetIt.instance;
-    if (getIt.isRegistered<ServerReachabilityService>()) {
-      getIt.unregister<ServerReachabilityService>();
-    }
-    getIt.registerSingleton<ServerReachabilityService>(reachability);
 
     registerFallbackValue(_fakeClass());
     registerFallbackValue(SyncQueueEntry(
@@ -102,7 +91,6 @@ void main() {
           remote: remote,
           syncQueue: syncQueue,
           reachability: reachability,
-          storage: storage,
           eventBus: eventBus,
         );
 
@@ -125,7 +113,6 @@ void main() {
           remote: remote,
           syncQueue: syncQueue,
           reachability: reachability,
-          storage: storage,
           eventBus: eventBus,
         );
 
@@ -142,65 +129,48 @@ void main() {
       });
     });
 
-    group('createClass — offline', () {
-      test('enqueues sync op and returns optimistic entity', () async {
+    group('createClass', () {
+      setUp(() async {
+        await openFreshTestDatabase();
+        when(() => local.localDatabase).thenReturn(LocalDatabase());
+      });
+
+      tearDown(() async {
+        await closeTestDatabase();
+      });
+
+      test('inserts locally, enqueues sync op, and returns MutationResult', () async {
         final repo = _buildRepo(
           local: local,
           remote: remote,
           syncQueue: syncQueue,
           reachability: reachability,
-          storage: storage,
           eventBus: eventBus,
-          isServerReachable: false,
         );
 
-        when(() => local.getCachedClasses()).thenAnswer((_) async => []);
-        when(() => local.cacheClasses(any())).thenAnswer((_) async {});
-        when(() => syncQueue.enqueue(any())).thenAnswer((_) async {});
+        when(() => local.insertClass(any(), txn: any(named: 'txn')))
+            .thenAnswer((_) async {});
+        when(() => syncQueue.enqueue(any(), txn: any(named: 'txn')))
+            .thenAnswer((_) async {});
 
         final result = await repo.createClass(title: 'New Class');
 
         expect(result.isRight(), isTrue);
-        verify(() => syncQueue.enqueue(any())).called(1);
+        result.fold(
+          (f) => fail('Expected Right, got $f'),
+          (mutationResult) {
+            expect(mutationResult.entity.title, 'New Class');
+            expect(mutationResult.status, SyncStatus.pending);
+          },
+        );
+        verify(() => local.insertClass(any(), txn: any(named: 'txn'))).called(1);
+        verify(() => syncQueue.enqueue(any(), txn: any(named: 'txn'))).called(1);
         verifyNever(() => remote.createClass(
           title: any(named: 'title'),
           description: any(named: 'description'),
           teacherId: any(named: 'teacherId'),
           isAdvisory: any(named: 'isAdvisory'),
         ));
-      });
-    });
-
-    group('createClass — online', () {
-      test('calls remote and caches locally', () async {
-        final repo = _buildRepo(
-          local: local,
-          remote: remote,
-          syncQueue: syncQueue,
-          reachability: reachability,
-          storage: storage,
-          eventBus: eventBus,
-          isServerReachable: true,
-        );
-
-        when(() => local.getCachedClasses()).thenAnswer((_) async => []);
-        when(() => remote.createClass(
-              title: any(named: 'title'),
-              description: any(named: 'description'),
-              teacherId: any(named: 'teacherId'),
-              isAdvisory: any(named: 'isAdvisory'),
-            )).thenAnswer((_) async => _fakeClass());
-        when(() => local.cacheClasses(any())).thenAnswer((_) async {});
-
-        final result = await repo.createClass(title: 'New Class');
-
-        expect(result.isRight(), isTrue);
-        verify(() => remote.createClass(
-          title: any(named: 'title'),
-          description: any(named: 'description'),
-          teacherId: any(named: 'teacherId'),
-          isAdvisory: any(named: 'isAdvisory'),
-        )).called(1);
       });
     });
 
@@ -211,7 +181,6 @@ void main() {
           remote: remote,
           syncQueue: syncQueue,
           reachability: reachability,
-          storage: storage,
           eventBus: eventBus,
           isServerReachable: true,
         );

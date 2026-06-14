@@ -6,7 +6,7 @@ export 'cache_participants.dart';
 export 'cache_search_students.dart';
 export 'cache_student_participation.dart';
 export 'clear_all_cache.dart';
-export 'create_class_locally.dart';
+export 'insert_class.dart';
 export 'get_cached_class_detail.dart';
 export 'get_cached_classes.dart';
 export 'get_cached_classes_for_user.dart';
