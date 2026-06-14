@@ -33,7 +33,7 @@ abstract class AuthRepository {
     required String role,
   });
 
-  ResultFuture<List<User>> getAllAccounts();
+  ResultFuture<List<User>> getAllAccounts({bool skipBackgroundRefresh = false});
 
   ResultFuture<User> resetAccount({required String userId});
 

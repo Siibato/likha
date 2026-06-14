@@ -113,12 +113,13 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
       );
 
   @override
-  ResultFuture<MaterialDetail> getMaterialDetail({required String materialId}) =>
+  ResultFuture<MaterialDetail> getMaterialDetail({required String materialId, bool skipBackgroundRefresh = false}) =>
       ops.getMaterialDetail(
         _localDataSource,
         _remoteDataSource,
         _dataEventBus,
         materialId: materialId,
+        skipBackgroundRefresh: skipBackgroundRefresh,
       );
 
   @override

@@ -142,19 +142,22 @@ class ClassRepositoryImpl implements ClassRepository {
       );
 
   @override
-  ResultFuture<List<User>> searchStudents({String? query}) =>
+  ResultFuture<List<User>> searchStudents({String? query, bool skipBackgroundRefresh = false}) =>
       ops.searchStudents(
         _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         query: query,
+        skipBackgroundRefresh: skipBackgroundRefresh,
       );
 
   @override
-  ResultFuture<List<User>> getParticipants({required String classId}) =>
+  ResultFuture<List<User>> getParticipants({required String classId, bool skipBackgroundRefresh = false}) =>
       ops.getParticipants(
         _localDataSource,
         _remoteDataSource,
         _dataEventBus,
         classId: classId,
+        skipBackgroundRefresh: skipBackgroundRefresh,
       );
 }

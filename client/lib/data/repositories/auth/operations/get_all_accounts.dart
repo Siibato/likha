@@ -11,35 +11,49 @@ import 'package:likha/data/datasources/remote/auth/auth_remote_datasource.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import '_helpers.dart' as helpers;
 
+bool _accountsHaveChanged(List<User> current, List<User> fresh) {
+  if (current.length != fresh.length) return true;
+  final currentById = {for (final u in current) u.id: u};
+  for (final f in fresh) {
+    final c = currentById[f.id];
+    if (c == null ||
+        c.username != f.username ||
+        c.fullName != f.fullName ||
+        c.role != f.role ||
+        c.accountStatus != f.accountStatus) {
+      return true;
+    }
+  }
+  return false;
+}
+
 ResultFuture<List<User>> getAllAccounts(
   AuthLocalDataSource localDataSource,
   AuthRemoteDataSource remoteDataSource,
   SyncQueue syncQueue,
-  DataEventBus dataEventBus,
-) async {
+  DataEventBus dataEventBus, {
+  bool skipBackgroundRefresh = false,
+}) async {
   RepoLogger.instance.log('getAllAccounts START');
   try {
     try {
       final cachedAccounts = await localDataSource.getCachedAccounts();
       RepoLogger.instance.log('getAllAccounts: Found ${cachedAccounts.length} cached accounts');
 
-      fireRemoteFetch(
-        dedupKey: 'auth/allAccounts/bg',
-        remote: remoteDataSource.getAllAccounts,
-        onSuccess: (freshAccounts) async {
-          RepoLogger.instance.log('getAllAccounts: Background fetch returned ${freshAccounts.length} accounts');
-          await localDataSource.cacheAccounts(freshAccounts);
-
-          final pendingAccounts = await helpers.buildPendingAccounts(syncQueue);
-          final serverUsernames = freshAccounts.map((a) => a.username).toSet();
-          final deduped = pendingAccounts
-              .where((p) => !serverUsernames.contains(p.username))
-              .toList();
-          final result = [...freshAccounts, ...deduped];
-          RepoLogger.instance.log('getAllAccounts: Background cached ${result.length} total accounts');
-          dataEventBus.notifyAccountsChanged();
-        },
-      );
+      if (!skipBackgroundRefresh) {
+        fireRemoteFetch(
+          dedupKey: 'auth/allAccounts/bg',
+          remote: remoteDataSource.getAllAccounts,
+          onSuccess: (freshAccounts) async {
+            RepoLogger.instance.log('getAllAccounts: Background fetch returned ${freshAccounts.length} accounts');
+            final current = await localDataSource.getCachedAccounts();
+            if (_accountsHaveChanged(current, freshAccounts)) {
+              await localDataSource.cacheAccounts(freshAccounts);
+              dataEventBus.notifyAccountsChanged();
+            }
+          },
+        );
+      }
 
       final pendingAccounts = await helpers.buildPendingAccounts(syncQueue);
       final cachedUsernames = cachedAccounts.map((a) => a.username).toSet();

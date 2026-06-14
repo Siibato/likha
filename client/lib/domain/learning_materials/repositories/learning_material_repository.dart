@@ -14,7 +14,7 @@ abstract class LearningMaterialRepository {
 
   ResultFuture<List<LearningMaterial>> getMaterials({required String classId});
 
-  ResultFuture<MaterialDetail> getMaterialDetail({required String materialId});
+  ResultFuture<MaterialDetail> getMaterialDetail({required String materialId, bool skipBackgroundRefresh = false});
 
   ResultFuture<LearningMaterial> updateMaterial({
     required String materialId,

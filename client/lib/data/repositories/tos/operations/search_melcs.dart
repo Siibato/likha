@@ -1,49 +1,95 @@
 import 'package:dartz/dartz.dart';
+import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/core/events/data_event_bus.dart';
+import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
-import 'package:likha/injection_container.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/data/datasources/remote/tos/tos_remote_datasource.dart';
 import 'package:likha/data/models/tos/melcs_model.dart';
 
+bool _melcsHaveChanged(List<MelcEntryModel> current, List<MelcEntryModel> fresh) {
+  if (current.length != fresh.length) return true;
+  final currentIds = current.map((e) => e.id).toSet();
+  final freshIds = fresh.map((e) => e.id).toSet();
+  return !currentIds.containsAll(freshIds) || !freshIds.containsAll(currentIds);
+}
+
 ResultFuture<List<MelcEntryModel>> searchMelcs(
   TosLocalDataSource localDataSource,
-  TosRemoteDataSource remoteDataSource, {
+  TosRemoteDataSource remoteDataSource,
+  DataEventBus dataEventBus, {
   String? subject,
   String? gradeLevel,
   int? gradingPeriodNumber,
   String? query,
   int limit = 30,
   int offset = 0,
+  bool skipBackgroundRefresh = false,
 }) async {
   try {
-    // Try remote first
-    if (sl<ServerReachabilityService>().isServerReachable) {
-      final remote = await remoteDataSource.searchMelcs(
+    try {
+      final cached = await localDataSource.searchMelcs(
         subject: subject,
         gradeLevel: gradeLevel,
-        quarter: gradingPeriodNumber,
+        gradingPeriodNumber: gradingPeriodNumber,
         query: query,
         limit: limit,
         offset: offset,
       );
-      return Right(remote);
-    }
 
-    // Fallback to local
-    final local = await localDataSource.searchMelcs(
-      subject: subject,
-      gradeLevel: gradeLevel,
-      gradingPeriodNumber: gradingPeriodNumber,
-      query: query,
-      limit: limit,
-      offset: offset,
-    );
-    return Right(local);
-  } on ServerFailure catch (e) {
-    return Left(e);
+      if (!skipBackgroundRefresh) {
+        fireRemoteFetch(
+          dedupKey: 'tos/searchMelcs/${subject ?? 'all'}/${gradeLevel ?? 'all'}/${gradingPeriodNumber ?? 'all'}/${query ?? 'all'}/bg',
+          remote: () => remoteDataSource.searchMelcs(
+            subject: subject,
+            gradeLevel: gradeLevel,
+            quarter: gradingPeriodNumber,
+            query: query,
+            limit: limit,
+            offset: offset,
+          ),
+          onSuccess: (fresh) async {
+            final current = await localDataSource.searchMelcs(
+              subject: subject,
+              gradeLevel: gradeLevel,
+              gradingPeriodNumber: gradingPeriodNumber,
+              query: query,
+              limit: limit,
+              offset: offset,
+            );
+            if (_melcsHaveChanged(current, fresh)) {
+              await localDataSource.cacheMelcs(fresh);
+            }
+          },
+        );
+      }
+
+      return Right(cached);
+    } on CacheException {
+      final fresh = await remoteFetch(
+        dedupKey: 'tos/searchMelcs/${subject ?? 'all'}/${gradeLevel ?? 'all'}/${gradingPeriodNumber ?? 'all'}/${query ?? 'all'}',
+        remote: () => remoteDataSource.searchMelcs(
+          subject: subject,
+          gradeLevel: gradeLevel,
+          quarter: gradingPeriodNumber,
+          query: query,
+          limit: limit,
+          offset: offset,
+        ),
+      );
+      try {
+        await localDataSource.cacheMelcs(fresh);
+      } catch (_) {
+        // Caching failure must not block the online result
+      }
+      return Right(fresh);
+    }
+  } on ServerException catch (e) {
+    return Left(ServerFailure(e.message));
+  } on NetworkException catch (e) {
+    return Left(NetworkFailure(e.message));
   } catch (e) {
-    return Left(CacheFailure(e.toString()));
+    return Left(ServerFailure(e.toString()));
   }
 }

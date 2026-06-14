@@ -23,7 +23,7 @@ abstract class AssessmentRepository {
 
   ResultFuture<List<Assessment>> getAssessments({required String classId, bool publishedOnly = false, bool skipBackgroundRefresh = false});
 
-  ResultFuture<(Assessment, List<Question>)> getAssessmentDetail({required String assessmentId});
+  ResultFuture<(Assessment, List<Question>)> getAssessmentDetail({required String assessmentId, bool skipBackgroundRefresh = false});
 
   ResultFuture<Assessment> updateAssessment({
     required String assessmentId,
@@ -71,6 +71,7 @@ abstract class AssessmentRepository {
   // Teacher: Submissions & Grading
   ResultFuture<List<SubmissionSummary>> getSubmissions({
     required String assessmentId,
+    bool skipBackgroundRefresh = false,
   });
 
   ResultFuture<SubmissionDetail> getSubmissionDetail({

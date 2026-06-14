@@ -14,35 +14,46 @@ ResultFuture<List<SubmissionListItem>> getSubmissions(
   AssignmentRemoteDataSource remoteDataSource,
   DataEventBus dataEventBus, {
   required String assignmentId,
+  bool skipBackgroundRefresh = false,
 }) async {
   try {
     try {
       final cached = await localDataSource.getCachedSubmissions(assignmentId);
 
-      fireRemoteFetch(
-        dedupKey: 'assignments/submissions/$assignmentId/bg',
-        remote: () => remoteDataSource.getSubmissions(assignmentId: assignmentId),
-        onSuccess: (fresh) async {
-          try {
-            final current = await localDataSource.getCachedSubmissions(assignmentId);
-            if (_submissionsHaveChanged(current, fresh)) {
+      if (!skipBackgroundRefresh) {
+        fireRemoteFetch(
+          dedupKey: 'assignments/submissions/$assignmentId/bg',
+          remote: () => remoteDataSource.getSubmissions(assignmentId: assignmentId),
+          onSuccess: (fresh) async {
+            try {
+              final current = await localDataSource.getCachedSubmissions(assignmentId);
+              if (_submissionsHaveChanged(current, fresh)) {
+                await localDataSource.cacheSubmissions(
+                  assignmentId, fresh.cast<SubmissionListItemModel>());
+                String? classId;
+                try {
+                  final assignment = await localDataSource.getCachedAssignmentDetail(assignmentId);
+                  classId = assignment.classId;
+                } catch (_) {}
+                if (classId != null) {
+                  dataEventBus.notifyAssignmentsChanged(classId);
+                }
+              }
+            } on CacheException {
               await localDataSource.cacheSubmissions(
                 assignmentId, fresh.cast<SubmissionListItemModel>());
+              String? classId;
+              try {
+                final assignment = await localDataSource.getCachedAssignmentDetail(assignmentId);
+                classId = assignment.classId;
+              } catch (_) {}
+              if (classId != null) {
+                dataEventBus.notifyAssignmentsChanged(classId);
+              }
             }
-            String? classId;
-            try {
-              final assignment = await localDataSource.getCachedAssignmentDetail(assignmentId);
-              classId = assignment.classId;
-            } catch (_) {}
-            if (classId != null) {
-              dataEventBus.notifyAssignmentsChanged(classId);
-            }
-          } catch (_) {
-            await localDataSource.cacheSubmissions(
-              assignmentId, fresh.cast<SubmissionListItemModel>());
-          }
-        },
-      );
+          },
+        );
+      }
 
       return Right(cached);
     } on CacheException {

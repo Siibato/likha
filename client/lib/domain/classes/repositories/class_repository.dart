@@ -37,9 +37,9 @@ abstract class ClassRepository {
     required String studentId,
   });
 
-  ResultFuture<List<User>> searchStudents({String? query});
+  ResultFuture<List<User>> searchStudents({String? query, bool skipBackgroundRefresh = false});
 
-  ResultFuture<List<User>> getParticipants({required String classId});
+  ResultFuture<List<User>> getParticipants({required String classId, bool skipBackgroundRefresh = false});
 
   ResultVoid deleteClass({required String classId});
 }

@@ -47,5 +47,6 @@ abstract class TosRepository {
     String? query,
     int limit = 30,
     int offset = 0,
+    bool skipBackgroundRefresh = false,
   });
 }

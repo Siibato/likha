@@ -20,21 +20,25 @@ ResultFuture<List<User>> getParticipants(
   ClassRemoteDataSource remoteDataSource,
   DataEventBus dataEventBus, {
   required String classId,
+  bool skipBackgroundRefresh = false,
 }) async {
   try {
     try {
       final cached = await localDataSource.getCachedParticipants(classId);
 
-      fireRemoteFetch(
-        dedupKey: 'classes/participants/$classId/bg',
-        remote: () => remoteDataSource.getParticipants(classId: classId),
-        onSuccess: (fresh) async {
-          if (_participantsHaveChanged(cached, fresh)) {
-            await localDataSource.cacheParticipants(classId, fresh);
-            dataEventBus.notifyParticipantsChanged(classId);
-          }
-        },
-      );
+      if (!skipBackgroundRefresh) {
+        fireRemoteFetch(
+          dedupKey: 'classes/participants/$classId/bg',
+          remote: () => remoteDataSource.getParticipants(classId: classId),
+          onSuccess: (fresh) async {
+            final current = await localDataSource.getCachedParticipants(classId);
+            if (_participantsHaveChanged(current, fresh)) {
+              await localDataSource.cacheParticipants(classId, fresh);
+              dataEventBus.notifyParticipantsChanged(classId);
+            }
+          },
+        );
+      }
       return Right(cached.cast<User>());
     } on CacheException {
       final fresh = await remoteFetch(

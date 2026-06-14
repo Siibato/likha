@@ -1,4 +1,5 @@
 export 'cache_competencies.dart';
+export 'cache_melcs.dart';
 export 'cache_tos_list.dart';
 export 'bulk_save_competencies.dart';
 export 'save_competency.dart';

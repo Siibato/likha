@@ -87,16 +87,19 @@ class TosRepositoryImpl implements TosRepository {
     String? query,
     int limit = 30,
     int offset = 0,
+    bool skipBackgroundRefresh = false,
   }) =>
       ops.searchMelcs(
         _localDataSource,
         _remoteDataSource,
+        _dataEventBus,
         subject: subject,
         gradeLevel: gradeLevel,
         gradingPeriodNumber: gradingPeriodNumber,
         query: query,
         limit: limit,
         offset: offset,
+        skipBackgroundRefresh: skipBackgroundRefresh,
       );
 
   @override

@@ -8,6 +8,7 @@ abstract class TosLocalDataSource {
   // Cache (from sync)
   Future<void> cacheTosList(List<TosModel> tosList);
   Future<void> cacheCompetencies(String tosId, List<CompetencyModel> competencies);
+  Future<void> cacheMelcs(List<MelcEntryModel> melcs);
 
   // Queries
   Future<List<TosModel>> getTosByClass(String classId);
@@ -50,6 +51,10 @@ class TosLocalDataSourceImpl implements TosLocalDataSource {
     List<CompetencyModel> competencies,
   ) =>
       ops.cacheCompetencies(localDatabase, tosId, competencies);
+
+  @override
+  Future<void> cacheMelcs(List<MelcEntryModel> melcs) =>
+      ops.cacheMelcs(localDatabase, melcs);
 
   @override
   Future<List<TosModel>> getTosByClass(String classId) =>

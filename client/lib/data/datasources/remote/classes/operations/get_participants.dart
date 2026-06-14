@@ -1,6 +1,4 @@
 import 'package:dio/dio.dart';
-
-import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/api_types.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/models/auth/user_model.dart';

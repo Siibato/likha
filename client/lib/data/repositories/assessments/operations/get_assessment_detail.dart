@@ -14,42 +14,32 @@ ResultFuture<(Assessment, List<Question>)> getAssessmentDetail(
   AssessmentRemoteDataSource remoteDataSource,
   DataEventBus dataEventBus, {
   required String assessmentId,
+  bool skipBackgroundRefresh = false,
 }) async {
   try {
     try {
       final cached = await localDataSource.getCachedAssessmentDetail(assessmentId);
-      final (assessment, questions) = cached;
 
-      // Safety: if questions are empty, do a blocking fetch so the student
-      // can actually take the assessment.
-      if (questions.isEmpty) {
-        final fresh = await remoteFetch(
-          dedupKey: 'assessments/detail/$assessmentId',
+      if (!skipBackgroundRefresh) {
+        fireRemoteFetch(
+          dedupKey: 'assessments/detail/$assessmentId/bg',
           remote: () => remoteDataSource.getAssessmentDetail(assessmentId: assessmentId),
-        );
-        await localDataSource.cacheAssessmentDetail(fresh.assessment, fresh.questions);
-        return Right((fresh.assessment, fresh.questions));
-      }
-
-      // Normal cache-first path: return immediately, refresh in background
-      fireRemoteFetch(
-        dedupKey: 'assessments/detail/$assessmentId/bg',
-        remote: () => remoteDataSource.getAssessmentDetail(assessmentId: assessmentId),
-        onSuccess: (fresh) async {
-          try {
-            final result = await localDataSource.getCachedAssessmentDetail(assessmentId);
-            final cachedAssessment = result.$1;
-            final cachedQuestions = result.$2;
-            if (_assessmentDetailHasChanged(cachedAssessment, cachedQuestions, fresh.assessment, fresh.questions)) {
+          onSuccess: (fresh) async {
+            try {
+              final result = await localDataSource.getCachedAssessmentDetail(assessmentId);
+              final cachedAssessment = result.$1;
+              final cachedQuestions = result.$2;
+              if (_assessmentDetailHasChanged(cachedAssessment, cachedQuestions, fresh.assessment, fresh.questions)) {
+                await localDataSource.cacheAssessmentDetail(fresh.assessment, fresh.questions);
+                dataEventBus.notifyAssessmentDetailChanged(assessmentId);
+              }
+            } on CacheException {
               await localDataSource.cacheAssessmentDetail(fresh.assessment, fresh.questions);
               dataEventBus.notifyAssessmentDetailChanged(assessmentId);
             }
-          } on CacheException {
-            await localDataSource.cacheAssessmentDetail(fresh.assessment, fresh.questions);
-            dataEventBus.notifyAssessmentDetailChanged(assessmentId);
-          }
-        },
-      );
+          },
+        );
+      }
 
       return Right(cached);
     } on CacheException {

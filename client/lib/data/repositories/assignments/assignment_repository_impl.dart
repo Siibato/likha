@@ -167,12 +167,13 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       );
 
   @override
-  ResultFuture<List<SubmissionListItem>> getSubmissions({required String assignmentId}) =>
+  ResultFuture<List<SubmissionListItem>> getSubmissions({required String assignmentId, bool skipBackgroundRefresh = false}) =>
       ops.getSubmissions(
         _localDataSource,
         _remoteDataSource,
         _dataEventBus,
         assignmentId: assignmentId,
+        skipBackgroundRefresh: skipBackgroundRefresh,
       );
 
   @override

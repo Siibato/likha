@@ -9,40 +9,56 @@ import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
 
+bool _submissionsHaveChanged(List<SubmissionSummary> current, List<SubmissionSummary> fresh) {
+  if (current.length != fresh.length) return true;
+  final currentById = {for (final s in current) s.id: s};
+  for (final f in fresh) {
+    final c = currentById[f.id];
+    if (c == null ||
+        c.isSubmitted != f.isSubmitted ||
+        c.autoScore != f.autoScore ||
+        c.finalScore != f.finalScore ||
+        c.submittedAt != f.submittedAt) {
+      return true;
+    }
+  }
+  return false;
+}
+
 ResultFuture<List<SubmissionSummary>> getSubmissions(
   AssessmentLocalDataSource localDataSource,
   AssessmentRemoteDataSource remoteDataSource,
   DataEventBus dataEventBus, {
   required String assessmentId,
+  bool skipBackgroundRefresh = false,
 }) async {
   try {
     try {
       final cached = await localDataSource.getCachedSubmissions(assessmentId);
       RepoLogger.instance.log('getSubmissions: Loaded ${cached.length} cached submissions for assessment $assessmentId');
 
-      fireRemoteFetch(
-        dedupKey: 'assessments/submissions/$assessmentId/bg',
-        remote: () => remoteDataSource.getSubmissions(assessmentId: assessmentId),
-        onSuccess: (fresh) async {
-          try {
-            await localDataSource.cacheSubmissions(assessmentId, fresh);
-            RepoLogger.instance.log('getSubmissions: Background refresh cached ${fresh.length} submissions');
-
-            // Pre-cache submission details
-            for (final submission in fresh) {
-              try {
-                final detail = await remoteDataSource.getSubmissionDetail(submissionId: submission.id);
-                await localDataSource.cacheSubmissionDetail(detail);
-              } catch (e) {
-                RepoLogger.instance.log('getSubmissions: Detail pre-cache failed for ${submission.id}: $e');
+      if (!skipBackgroundRefresh) {
+        fireRemoteFetch(
+          dedupKey: 'assessments/submissions/$assessmentId/bg',
+          remote: () => remoteDataSource.getSubmissions(assessmentId: assessmentId),
+          onSuccess: (fresh) async {
+            try {
+              final current = await localDataSource.getCachedSubmissions(assessmentId);
+              if (_submissionsHaveChanged(current, fresh)) {
+                await localDataSource.cacheSubmissions(assessmentId, fresh);
+                RepoLogger.instance.log('getSubmissions: Background refresh cached ${fresh.length} submissions');
+                dataEventBus.notifyAssessmentDetailChanged(assessmentId);
               }
+            } on CacheException {
+              await localDataSource.cacheSubmissions(assessmentId, fresh);
+              RepoLogger.instance.log('getSubmissions: Background refresh cached ${fresh.length} submissions');
+              dataEventBus.notifyAssessmentDetailChanged(assessmentId);
+            } catch (e) {
+              RepoLogger.instance.log('getSubmissions: Background refresh failed: $e');
             }
-            dataEventBus.notifyAssessmentDetailChanged(assessmentId);
-          } catch (e) {
-            RepoLogger.instance.log('getSubmissions: Background refresh failed: $e');
-          }
-        },
-      );
+          },
+        );
+      }
 
       return Right(cached);
     } on CacheException {
@@ -54,15 +70,6 @@ ResultFuture<List<SubmissionSummary>> getSubmissions(
         await localDataSource.cacheSubmissions(assessmentId, fresh);
       } catch (e) {
         RepoLogger.instance.log('getSubmissions: Caching failed (non-fatal): $e');
-      }
-
-      for (final submission in fresh) {
-        try {
-          final detail = await remoteDataSource.getSubmissionDetail(submissionId: submission.id);
-          await localDataSource.cacheSubmissionDetail(detail);
-        } catch (e) {
-          RepoLogger.instance.log('getSubmissions: Detail pre-cache failed for ${submission.id}: $e');
-        }
       }
 
       return Right(fresh);

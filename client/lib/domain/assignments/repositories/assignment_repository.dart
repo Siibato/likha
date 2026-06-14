@@ -51,6 +51,7 @@ abstract class AssignmentRepository {
   // Teacher: Submissions & Grading
   ResultFuture<List<SubmissionListItem>> getSubmissions({
     required String assignmentId,
+    bool skipBackgroundRefresh = false,
   });
 
   ResultFuture<AssignmentSubmission> getSubmissionDetail({

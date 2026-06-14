@@ -134,12 +134,13 @@ class AuthRepositoryImpl implements AuthRepository {
       );
 
   @override
-  ResultFuture<List<User>> getAllAccounts() =>
+  ResultFuture<List<User>> getAllAccounts({bool skipBackgroundRefresh = false}) =>
       ops.getAllAccounts(
         _localDataSource,
         _remoteDataSource,
         _syncQueue,
         _dataEventBus,
+        skipBackgroundRefresh: skipBackgroundRefresh,
       );
 
   @override

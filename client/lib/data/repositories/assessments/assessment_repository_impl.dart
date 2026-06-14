@@ -96,12 +96,14 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
   @override
   ResultFuture<(Assessment, List<Question>)> getAssessmentDetail({
     required String assessmentId,
+    bool skipBackgroundRefresh = false,
   }) =>
       ops.getAssessmentDetail(
         _localDataSource,
         _remoteDataSource,
         _dataEventBus,
         assessmentId: assessmentId,
+        skipBackgroundRefresh: skipBackgroundRefresh,
       );
 
   @override
@@ -245,12 +247,14 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
   @override
   ResultFuture<List<SubmissionSummary>> getSubmissions({
     required String assessmentId,
+    bool skipBackgroundRefresh = false,
   }) =>
       ops.getSubmissions(
         _localDataSource,
         _remoteDataSource,
         _dataEventBus,
         assessmentId: assessmentId,
+        skipBackgroundRefresh: skipBackgroundRefresh,
       );
 
   @override
