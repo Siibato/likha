@@ -8,11 +8,13 @@ Future<QuestionModel> updateQuestion(
   DioClient dioClient, {
   required String questionId,
   required Map<String, dynamic> data,
+  String? idempotencyKey,
 }) async {
   try {
     return await dioClient.putTyped(
       ApiEndpoints.questionDetail(questionId),
       data: data,
+      headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
     );
   } on DioException catch (e) {
     throw dioClient.handleError(e);

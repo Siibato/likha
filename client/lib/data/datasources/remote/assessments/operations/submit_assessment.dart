@@ -8,11 +8,13 @@ import 'package:likha/data/models/assessments/submission_model.dart';
 Future<SubmissionSummaryModel> submitAssessment(
   DioClient dioClient, {
   required String submissionId,
+  String? idempotencyKey,
 }) async {
   RepoLogger.instance.log('submitAssessment() START - submissionId: $submissionId');
   try {
     final result = await dioClient.postTyped<SubmissionSummaryModel>(
       ApiEndpoints.submissionSubmit(submissionId),
+      headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
     );
     RepoLogger.instance.log('submitAssessment() SUCCESS - received: id=${result.id}, isSubmitted=${result.isSubmitted}, submittedAt=${result.submittedAt}');
     return result;

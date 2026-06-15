@@ -7,18 +7,30 @@ import 'package:likha/data/models/assessments/statistics_model.dart';
 import 'operations/assessments.dart' as ops;
 
 abstract class AssessmentLocalDataSource {
+  LocalDatabase get localDatabase;
+
   Future<List<AssessmentModel>> getCachedAssessments(String classId, {bool publishedOnly = false});
   Future<(AssessmentModel, List<QuestionModel>)> getCachedAssessmentDetail(String assessmentId);
-  Future<void> cacheAssessments(List<AssessmentModel> assessments);
+  Future<void> cacheAssessments(
+    List<AssessmentModel> assessments, {
+    bool isServerConfirmed = true,
+    Transaction? txn,
+  });
   Future<void> cacheAssessmentDetail(AssessmentModel assessment, List<QuestionModel> questions);
-  Future<void> cacheQuestions(String assessmentId, List<QuestionModel> questions, {bool isServerConfirmed = false});
+  Future<void> cacheQuestions(
+    String assessmentId,
+    List<QuestionModel> questions, {
+    bool isServerConfirmed = false,
+    Transaction? txn,
+  });
   Future<void> updateQuestion({
     required String questionId,
     required Map<String, dynamic> updates,
     bool isOfflineMutation = true,
+    Transaction? txn,
   });
-  Future<void> deleteQuestion({required String questionId});
-  Future<void> deleteAssessment({required String assessmentId});
+  Future<void> deleteQuestion({required String questionId, Transaction? txn});
+  Future<void> deleteAssessment({required String assessmentId, Transaction? txn});
   Future<QuestionModel?> getCachedQuestion(String questionId);
   Future<void> updateQuestionId({
     required String localId,
@@ -35,6 +47,7 @@ abstract class AssessmentLocalDataSource {
   Future<void> saveAnswers({
     required String submissionId,
     required String answersJson,
+    Transaction? txn,
   });
   Future<void> cacheStartSubmissionResult({
     required String submissionId,
@@ -43,12 +56,14 @@ abstract class AssessmentLocalDataSource {
     required String studentName,
     required String studentUsername,
     required DateTime startedAt,
+    Transaction? txn,
   });
   Future<String> startAssessment({
     required String assessmentId,
     required String studentId,
     required String studentName,
     required String studentUsername,
+    Transaction? txn,
   });
   Future<StartSubmissionResultModel?> getCachedStartResult(String submissionId);
   Future<SubmissionSummaryModel?> getCachedStudentSubmission(
@@ -63,10 +78,12 @@ abstract class AssessmentLocalDataSource {
   Future<void> submitAssessment({
     required String submissionId,
     required String assessmentId,
+    Transaction? txn,
   });
   Future<SubmissionDetailModel?> getCachedSubmissionDetail(String submissionId);
   Future<void> cacheSubmissionDetail(SubmissionDetailModel submission);
   Future<String> createAssessment({
+    String? id,
     required String classId,
     required String title,
     String? description,
@@ -78,8 +95,10 @@ abstract class AssessmentLocalDataSource {
     String? tosId,
     int? gradingPeriodNumber,
     String? component,
+    Transaction? txn,
   });
   Future<String> createAssessmentWithQuestions({
+    String? id,
     required String classId,
     required String title,
     String? description,
@@ -92,6 +111,7 @@ abstract class AssessmentLocalDataSource {
     String? linkedTosId,
     int? quarter,
     String? component,
+    Transaction? txn,
   });
   Future<List<SubmissionSummaryModel>> getCachedSubmissions(String assessmentId);
   Future<int> getCachedSubmissionCount(String assessmentId);
@@ -101,22 +121,35 @@ abstract class AssessmentLocalDataSource {
   Future<void> cacheStatistics(AssessmentStatisticsModel statistics);
   Future<StudentResultModel?> getCachedStudentResults(String submissionId);
   Future<void> cacheStudentResults(StudentResultModel result);
-  Future<void> releaseResults({required String assessmentId});
+  Future<void> releaseResults({required String assessmentId, Transaction? txn});
   Future<void> overrideAnswer({
     required String answerId,
     required bool isCorrect,
     double? points,
+    Transaction? txn,
   });
   Future<void> gradeEssay({
     required String answerId,
     required double points,
+    Transaction? txn,
   });
-  Future<void> markAssessmentPublished({required String assessmentId});
-  Future<void> markAssessmentUnpublished({required String assessmentId});
+  Future<void> markAssessmentPublished({required String assessmentId, Transaction? txn});
+  Future<void> markAssessmentUnpublished({required String assessmentId, Transaction? txn});
+  Future<void> updateAssessmentOrder({
+    required String assessmentId,
+    required int orderIndex,
+    Transaction? txn,
+  });
+  Future<void> updateQuestionOrder({
+    required String questionId,
+    required int orderIndex,
+    Transaction? txn,
+  });
   Future<void> clearAllCache();
 }
 
 class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
+  @override
   final LocalDatabase localDatabase;
   final SyncQueue syncQueue;
 
@@ -136,8 +169,17 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
       ops.getCachedAssessmentDetail(localDatabase, assessmentId);
 
   @override
-  Future<void> cacheAssessments(List<AssessmentModel> assessments) =>
-      ops.cacheAssessments(localDatabase, assessments);
+  Future<void> cacheAssessments(
+    List<AssessmentModel> assessments, {
+    bool isServerConfirmed = true,
+    Transaction? txn,
+  }) =>
+      ops.cacheAssessments(
+        localDatabase,
+        assessments,
+        isServerConfirmed: isServerConfirmed,
+        txn: txn,
+      );
 
   @override
   Future<void> cacheAssessmentDetail(
@@ -151,12 +193,14 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
     String assessmentId,
     List<QuestionModel> questions, {
     bool isServerConfirmed = false,
+    Transaction? txn,
   }) =>
       ops.cacheQuestions(
         localDatabase,
         assessmentId,
         questions,
         isServerConfirmed: isServerConfirmed,
+        txn: txn,
       );
 
   @override
@@ -164,16 +208,17 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
     required String questionId,
     required Map<String, dynamic> updates,
     bool isOfflineMutation = true,
+    Transaction? txn,
   }) =>
-      ops.updateQuestion(localDatabase, questionId, updates, isOfflineMutation);
+      ops.updateQuestion(localDatabase, questionId, updates, isOfflineMutation, txn: txn);
 
   @override
-  Future<void> deleteQuestion({required String questionId}) =>
-      ops.deleteQuestion(localDatabase, questionId);
+  Future<void> deleteQuestion({required String questionId, Transaction? txn}) =>
+      ops.deleteQuestion(localDatabase, questionId, txn: txn);
 
   @override
-  Future<void> deleteAssessment({required String assessmentId}) =>
-      ops.deleteAssessment(localDatabase, assessmentId);
+  Future<void> deleteAssessment({required String assessmentId, Transaction? txn}) =>
+      ops.deleteAssessment(localDatabase, assessmentId, txn: txn);
 
   @override
   Future<QuestionModel?> getCachedQuestion(String questionId) =>
@@ -204,8 +249,9 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
   Future<void> saveAnswers({
     required String submissionId,
     required String answersJson,
+    Transaction? txn,
   }) =>
-      ops.saveAnswers(localDatabase, syncQueue, submissionId, answersJson);
+      ops.saveAnswers(localDatabase, submissionId, answersJson, txn: txn);
 
   @override
   Future<void> cacheStartSubmissionResult({
@@ -215,6 +261,7 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
     required String studentName,
     required String studentUsername,
     required DateTime startedAt,
+    Transaction? txn,
   }) =>
       ops.cacheStartSubmissionResult(
         localDatabase,
@@ -224,6 +271,7 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
         studentName,
         studentUsername,
         startedAt,
+        txn: txn,
       );
 
   @override
@@ -232,14 +280,15 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
     required String studentId,
     required String studentName,
     required String studentUsername,
+    Transaction? txn,
   }) =>
       ops.startAssessment(
         localDatabase,
-        syncQueue,
         assessmentId,
         studentId,
         studentName,
         studentUsername,
+        txn: txn,
       );
 
   @override
@@ -265,8 +314,9 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
   Future<void> submitAssessment({
     required String submissionId,
     required String assessmentId,
+    Transaction? txn,
   }) =>
-      ops.submitAssessment(localDatabase, syncQueue, submissionId, assessmentId);
+      ops.submitAssessment(localDatabase, submissionId, assessmentId, txn: txn);
 
   @override
   Future<SubmissionDetailModel?> getCachedSubmissionDetail(String submissionId) =>
@@ -278,6 +328,7 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
 
   @override
   Future<String> createAssessment({
+    String? id,
     required String classId,
     required String title,
     String? description,
@@ -289,10 +340,10 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
     String? tosId,
     int? gradingPeriodNumber,
     String? component,
+    Transaction? txn,
   }) =>
       ops.createAssessment(
         localDatabase,
-        syncQueue,
         classId,
         title,
         description,
@@ -304,10 +355,13 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
         tosId,
         gradingPeriodNumber,
         component,
+        id: id,
+        txn: txn,
       );
 
   @override
   Future<String> createAssessmentWithQuestions({
+    String? id,
     required String classId,
     required String title,
     String? description,
@@ -320,10 +374,10 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
     String? linkedTosId,
     int? quarter,
     String? component,
+    Transaction? txn,
   }) =>
       ops.createAssessmentWithQuestions(
         localDatabase,
-        syncQueue,
         classId,
         title,
         description,
@@ -336,6 +390,8 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
         linkedTosId,
         quarter,
         component,
+        id: id,
+        txn: txn,
       );
 
   @override
@@ -374,31 +430,49 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
       ops.cacheStudentResults(localDatabase, result);
 
   @override
-  Future<void> releaseResults({required String assessmentId}) =>
-      ops.releaseResults(localDatabase, syncQueue, assessmentId);
+  Future<void> releaseResults({required String assessmentId, Transaction? txn}) =>
+      ops.releaseResults(localDatabase, assessmentId, txn: txn);
 
   @override
   Future<void> overrideAnswer({
     required String answerId,
     required bool isCorrect,
     double? points,
+    Transaction? txn,
   }) =>
-      ops.overrideAnswer(localDatabase, syncQueue, answerId, isCorrect, points);
+      ops.overrideAnswer(localDatabase, answerId, isCorrect, points, txn: txn);
 
   @override
   Future<void> gradeEssay({
     required String answerId,
     required double points,
+    Transaction? txn,
   }) =>
-      ops.gradeEssay(localDatabase, syncQueue, answerId, points);
+      ops.gradeEssay(localDatabase, answerId, points, txn: txn);
 
   @override
-  Future<void> markAssessmentPublished({required String assessmentId}) =>
-      ops.markAssessmentPublished(localDatabase, assessmentId);
+  Future<void> markAssessmentPublished({required String assessmentId, Transaction? txn}) =>
+      ops.markAssessmentPublished(localDatabase, assessmentId, txn: txn);
 
   @override
-  Future<void> markAssessmentUnpublished({required String assessmentId}) =>
-      ops.markAssessmentUnpublished(localDatabase, assessmentId);
+  Future<void> markAssessmentUnpublished({required String assessmentId, Transaction? txn}) =>
+      ops.markAssessmentUnpublished(localDatabase, assessmentId, txn: txn);
+
+  @override
+  Future<void> updateAssessmentOrder({
+    required String assessmentId,
+    required int orderIndex,
+    Transaction? txn,
+  }) =>
+      ops.updateAssessmentOrder(localDatabase, assessmentId, orderIndex, txn: txn);
+
+  @override
+  Future<void> updateQuestionOrder({
+    required String questionId,
+    required int orderIndex,
+    Transaction? txn,
+  }) =>
+      ops.updateQuestionOrder(localDatabase, questionId, orderIndex, txn: txn);
 
   @override
   Future<void> clearAllCache() =>

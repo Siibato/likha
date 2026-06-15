@@ -118,7 +118,7 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
     String studentName,
     String studentUsername,
   ) async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(error: null);
     final result = await _startAssessment(StartAssessmentParams(
       assessmentId: assessmentId,
       studentId: studentId,
@@ -126,8 +126,8 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
       studentUsername: studentUsername,
     ));
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
-      (startResult) => state = state.copyWith(isLoading: false, startResult: startResult),
+      (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
+      (mutationResult) => state = state.copyWith(startResult: mutationResult.entity),
     );
   }
 
@@ -203,7 +203,6 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
 
     if (optimisticSubmission != null) {
       state = state.copyWith(
-        isLoading: true,
         error: null,
         successMessage: null,
         startResult: null,
@@ -212,7 +211,6 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
       );
     } else {
       state = state.copyWith(
-        isLoading: true,
         error: null,
         successMessage: null,
         startResult: null,
@@ -223,16 +221,14 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
     final result = await _submitAssessment(submissionId);
     result.fold(
       (failure) => state = state.copyWith(
-        isLoading: false,
         error: AppErrorMapper.fromFailure(failure),
         startResult: previousStartResult,
         currentStudentSubmission: previousCurrentStudentSubmission,
         assessments: previousAssessments,
       ),
-      (submission) => state = state.copyWith(
-        isLoading: false,
+      (mutationResult) => state = state.copyWith(
         successMessage: 'Assessment submitted',
-        currentStudentSubmission: submission,
+        currentStudentSubmission: mutationResult.entity,
       ),
     );
   }

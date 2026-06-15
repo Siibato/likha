@@ -9,6 +9,7 @@ Future<SubmissionAnswerModel> overrideAnswer(
   required String answerId,
   required bool isCorrect,
   double? points,
+  String? idempotencyKey,
 }) async {
   try {
     final data = <String, dynamic>{'is_correct': isCorrect};
@@ -18,6 +19,7 @@ Future<SubmissionAnswerModel> overrideAnswer(
     return await dioClient.putTyped(
       ApiEndpoints.submissionAnswerOverride(answerId),
       data: data,
+      headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
     );
   } on DioException catch (e) {
     throw dioClient.handleError(e);

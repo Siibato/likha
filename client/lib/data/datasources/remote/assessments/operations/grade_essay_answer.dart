@@ -8,11 +8,13 @@ Future<SubmissionAnswerModel> gradeEssayAnswer(
   DioClient dioClient, {
   required String answerId,
   required double points,
+  String? idempotencyKey,
 }) async {
   try {
     return await dioClient.putTyped(
       ApiEndpoints.submissionAnswerGradeEssay(answerId),
       data: {'points': points},
+      headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
     );
   } on DioException catch (e) {
     throw dioClient.handleError(e);

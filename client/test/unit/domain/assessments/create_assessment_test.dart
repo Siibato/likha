@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/usecases/create_assessment.dart';
 import 'package:likha/domain/assessments/repositories/assessment_repository.dart';
@@ -63,12 +65,13 @@ void main() {
         gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
         component: any(named: 'component'),
         tosId: any(named: 'tosId'),
-      )).thenAnswer((_) async => Right(tCreatedAssessment));
+      )).thenAnswer((_) async => Right(MutationResult(entity: tCreatedAssessment, status: SyncStatus.pending)));
 
       final result = await useCase(params);
 
-      expect(result, Right(tCreatedAssessment));
-      expect(result.getOrElse(() => throw Exception()).title, 'New Assessment');
+      expect(result.isRight(), true);
+      final mutationResult = result.getOrElse(() => throw Exception());
+      expect(mutationResult.entity.title, 'New Assessment');
       verify(() => mockRepository.createAssessment(
         classId: tClassId,
         title: 'New Assessment',
@@ -110,7 +113,7 @@ void main() {
         gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
         component: any(named: 'component'),
         tosId: any(named: 'tosId'),
-      )).thenAnswer((_) async => Right(tCreatedAssessment));
+      )).thenAnswer((_) async => Right(MutationResult(entity: tCreatedAssessment, status: SyncStatus.pending)));
 
       final result = await useCase(params);
 

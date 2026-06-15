@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/usecases/publish_assessment.dart';
 import 'package:likha/domain/assessments/repositories/assessment_repository.dart';
@@ -40,12 +42,13 @@ void main() {
 
     test('should publish assessment successfully', () async {
       when(() => mockRepository.publishAssessment(assessmentId: any(named: 'assessmentId')))
-          .thenAnswer((_) async => Right(tPublishedAssessment));
+          .thenAnswer((_) async => Right(MutationResult(entity: tPublishedAssessment, status: SyncStatus.pending)));
 
       final result = await useCase(tAssessmentId);
 
-      expect(result, Right(tPublishedAssessment));
-      expect(result.getOrElse(() => throw Exception()).isPublished, true);
+      expect(result.isRight(), true);
+      final mutationResult = result.getOrElse(() => throw Exception());
+      expect(mutationResult.entity.isPublished, true);
       verify(() => mockRepository.publishAssessment(assessmentId: tAssessmentId)).called(1);
     });
 

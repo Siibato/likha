@@ -9,29 +9,32 @@ Future<void> cacheQuestions(
   String assessmentId,
   List<QuestionModel> questions, {
   bool isServerConfirmed = false,
+  Transaction? txn,
 }) async {
   try {
     final db = await localDatabase.database;
 
-    final assessmentExists = await db.rawQuery(
-      'SELECT id FROM ${DbTables.assessments} WHERE id = ? LIMIT 1',
-      [assessmentId],
-    );
-
-    if (assessmentExists.isEmpty) {
-      throw CacheException(
-        'Assessment with ID $assessmentId not found in database. '
-        'Cannot insert questions without a valid assessment reference.'
+    if (txn == null) {
+      final assessmentExists = await db.rawQuery(
+        'SELECT id FROM ${DbTables.assessments} WHERE id = ? LIMIT 1',
+        [assessmentId],
       );
+
+      if (assessmentExists.isEmpty) {
+        throw CacheException(
+          'Assessment with ID $assessmentId not found in database. '
+          'Cannot insert questions without a valid assessment reference.'
+        );
+      }
     }
 
-    await db.transaction((txn) async {
+    Future<void> doInsert(Transaction t) async {
       for (final question in questions) {
         final now = DateTime.now().toIso8601String();
-        await txn.delete(DbTables.answerKeys, where: '${AnswerKeysCols.questionId} = ?', whereArgs: [question.id]);
-        await txn.delete(DbTables.questionChoices, where: '${QuestionChoicesCols.questionId} = ?', whereArgs: [question.id]);
+        await t.delete(DbTables.answerKeys, where: '${AnswerKeysCols.questionId} = ?', whereArgs: [question.id]);
+        await t.delete(DbTables.questionChoices, where: '${QuestionChoicesCols.questionId} = ?', whereArgs: [question.id]);
 
-        await txn.insert(
+        await t.insert(
           DbTables.assessmentQuestions,
           {
             CommonCols.id: question.id,
@@ -51,7 +54,7 @@ Future<void> cacheQuestions(
 
         if (question.choices != null) {
           for (final choice in question.choices!) {
-            await txn.insert(
+            await t.insert(
               DbTables.questionChoices,
               {
                 CommonCols.id: choice.id,
@@ -69,7 +72,7 @@ Future<void> cacheQuestions(
 
         if (question.correctAnswers != null && question.correctAnswers!.isNotEmpty) {
           final answerKeyId = '${question.id}_correct_key';
-          await txn.insert(
+          await t.insert(
             DbTables.answerKeys,
             {
               CommonCols.id: answerKeyId,
@@ -82,7 +85,7 @@ Future<void> cacheQuestions(
           );
 
           for (final answer in question.correctAnswers!) {
-            await txn.insert(
+            await t.insert(
               DbTables.answerKeyAcceptableAnswers,
               {
                 CommonCols.id: answer.id,
@@ -99,7 +102,7 @@ Future<void> cacheQuestions(
         if (question.enumerationItems != null && question.enumerationItems!.isNotEmpty) {
           for (final enumItem in question.enumerationItems!) {
             final answerKeyId = enumItem.id;
-            await txn.insert(
+            await t.insert(
               DbTables.answerKeys,
               {
                 CommonCols.id: answerKeyId,
@@ -112,7 +115,7 @@ Future<void> cacheQuestions(
             );
 
             for (final acceptableAnswer in enumItem.acceptableAnswers) {
-              await txn.insert(
+              await t.insert(
                 DbTables.answerKeyAcceptableAnswers,
                 {
                   CommonCols.id: acceptableAnswer.id,
@@ -127,7 +130,15 @@ Future<void> cacheQuestions(
           }
         }
       }
-    });
+    }
+
+    if (txn != null) {
+      await doInsert(txn);
+    } else {
+      await db.transaction((innerTxn) async {
+        await doInsert(innerTxn);
+      });
+    }
   } catch (e) {
     throw CacheException('Failed to cache questions: $e');
   }

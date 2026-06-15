@@ -10,6 +10,7 @@ abstract class AssessmentRemoteDataSource {
   Future<AssessmentModel> createAssessment({
     required String classId,
     required Map<String, dynamic> data,
+    String? idempotencyKey,
   });
 
   Future<List<AssessmentModel>> getAssessments({required String classId});
@@ -21,36 +22,56 @@ abstract class AssessmentRemoteDataSource {
   Future<AssessmentModel> updateAssessment({
     required String assessmentId,
     required Map<String, dynamic> data,
+    String? idempotencyKey,
   });
 
-  Future<void> deleteAssessment({required String assessmentId});
+  Future<void> deleteAssessment({
+    required String assessmentId,
+    String? idempotencyKey,
+  });
 
-  Future<AssessmentModel> publishAssessment({required String assessmentId});
+  Future<AssessmentModel> publishAssessment({
+    required String assessmentId,
+    String? idempotencyKey,
+  });
 
-  Future<AssessmentModel> unpublishAssessment({required String assessmentId});
+  Future<AssessmentModel> unpublishAssessment({
+    required String assessmentId,
+    String? idempotencyKey,
+  });
 
-  Future<AssessmentModel> releaseResults({required String assessmentId});
+  Future<AssessmentModel> releaseResults({
+    required String assessmentId,
+    String? idempotencyKey,
+  });
 
   Future<void> reorderAllAssessments({
     required String classId,
     required List<String> assessmentIds,
+    String? idempotencyKey,
   });
 
   Future<List<QuestionModel>> addQuestions({
     required String assessmentId,
     required List<Map<String, dynamic>> questions,
+    String? idempotencyKey,
   });
 
   Future<QuestionModel> updateQuestion({
     required String questionId,
     required Map<String, dynamic> data,
+    String? idempotencyKey,
   });
 
-  Future<void> deleteQuestion({required String questionId});
+  Future<void> deleteQuestion({
+    required String questionId,
+    String? idempotencyKey,
+  });
 
   Future<void> reorderAllQuestions({
     required String assessmentId,
     required List<String> questionIds,
+    String? idempotencyKey,
   });
 
   Future<List<SubmissionSummaryModel>> getSubmissions({
@@ -65,11 +86,13 @@ abstract class AssessmentRemoteDataSource {
     required String answerId,
     required bool isCorrect,
     double? points,
+    String? idempotencyKey,
   });
 
   Future<SubmissionAnswerModel> gradeEssayAnswer({
     required String answerId,
     required double points,
+    String? idempotencyKey,
   });
 
   Future<AssessmentStatisticsModel> getStatistics({
@@ -78,15 +101,18 @@ abstract class AssessmentRemoteDataSource {
 
   Future<StartSubmissionResultModel> startAssessment({
     required String assessmentId,
+    String? idempotencyKey,
   });
 
   Future<void> saveAnswers({
     required String submissionId,
     required List<Map<String, dynamic>> answers,
+    String? idempotencyKey,
   });
 
   Future<SubmissionSummaryModel> submitAssessment({
     required String submissionId,
+    String? idempotencyKey,
   });
 
   Future<StudentResultModel> getStudentResults({
@@ -115,11 +141,13 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
   Future<AssessmentModel> createAssessment({
     required String classId,
     required Map<String, dynamic> data,
+    String? idempotencyKey,
   }) =>
       ops.createAssessment(
         _dioClient,
         classId: classId,
         data: data,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
@@ -144,96 +172,120 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
   Future<AssessmentModel> updateAssessment({
     required String assessmentId,
     required Map<String, dynamic> data,
+    String? idempotencyKey,
   }) =>
       ops.updateAssessment(
         _dioClient,
         assessmentId: assessmentId,
         data: data,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
-  Future<void> deleteAssessment({required String assessmentId}) =>
+  Future<void> deleteAssessment({
+    required String assessmentId,
+    String? idempotencyKey,
+  }) =>
       ops.deleteAssessment(
         _dioClient,
         assessmentId: assessmentId,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
   Future<AssessmentModel> publishAssessment({
     required String assessmentId,
+    String? idempotencyKey,
   }) =>
       ops.publishAssessment(
         _dioClient,
         assessmentId: assessmentId,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
   Future<AssessmentModel> unpublishAssessment({
     required String assessmentId,
+    String? idempotencyKey,
   }) =>
       ops.unpublishAssessment(
         _dioClient,
         assessmentId: assessmentId,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
   Future<AssessmentModel> releaseResults({
     required String assessmentId,
+    String? idempotencyKey,
   }) =>
       ops.releaseResults(
         _dioClient,
         assessmentId: assessmentId,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
   Future<void> reorderAllAssessments({
     required String classId,
     required List<String> assessmentIds,
+    String? idempotencyKey,
   }) =>
       ops.reorderAllAssessments(
         _dioClient,
         classId: classId,
         assessmentIds: assessmentIds,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
   Future<List<QuestionModel>> addQuestions({
     required String assessmentId,
     required List<Map<String, dynamic>> questions,
+    String? idempotencyKey,
   }) =>
       ops.addQuestions(
         _dioClient,
         assessmentId: assessmentId,
         questions: questions,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
   Future<QuestionModel> updateQuestion({
     required String questionId,
     required Map<String, dynamic> data,
+    String? idempotencyKey,
   }) =>
       ops.updateQuestion(
         _dioClient,
         questionId: questionId,
         data: data,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
-  Future<void> deleteQuestion({required String questionId}) =>
+  Future<void> deleteQuestion({
+    required String questionId,
+    String? idempotencyKey,
+  }) =>
       ops.deleteQuestion(
         _dioClient,
         questionId: questionId,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
   Future<void> reorderAllQuestions({
     required String assessmentId,
     required List<String> questionIds,
+    String? idempotencyKey,
   }) =>
       ops.reorderAllQuestions(
         _dioClient,
         assessmentId: assessmentId,
         questionIds: questionIds,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
@@ -259,23 +311,27 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
     required String answerId,
     required bool isCorrect,
     double? points,
+    String? idempotencyKey,
   }) =>
       ops.overrideAnswer(
         _dioClient,
         answerId: answerId,
         isCorrect: isCorrect,
         points: points,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
   Future<SubmissionAnswerModel> gradeEssayAnswer({
     required String answerId,
     required double points,
+    String? idempotencyKey,
   }) =>
       ops.gradeEssayAnswer(
         _dioClient,
         answerId: answerId,
         points: points,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
@@ -290,30 +346,36 @@ class AssessmentRemoteDataSourceImpl implements AssessmentRemoteDataSource {
   @override
   Future<StartSubmissionResultModel> startAssessment({
     required String assessmentId,
+    String? idempotencyKey,
   }) =>
       ops.startAssessment(
         _dioClient,
         assessmentId: assessmentId,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
   Future<void> saveAnswers({
     required String submissionId,
     required List<Map<String, dynamic>> answers,
+    String? idempotencyKey,
   }) =>
       ops.saveAnswers(
         _dioClient,
         submissionId: submissionId,
         answers: answers,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
   Future<SubmissionSummaryModel> submitAssessment({
     required String submissionId,
+    String? idempotencyKey,
   }) =>
       ops.submitAssessment(
         _dioClient,
         submissionId: submissionId,
+        idempotencyKey: idempotencyKey,
       );
 
   @override

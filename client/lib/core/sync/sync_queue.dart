@@ -43,6 +43,7 @@ enum SyncOperation {
   publish('publish'),
   unpublish('unpublish'),
   upload('upload'),
+  start('start'),
   saveAnswers('save_answers'),
   releaseResults('release_results'),
   overrideAnswer('override_answer'),
@@ -52,6 +53,7 @@ enum SyncOperation {
   setOverride('set_override'),
   clearOverride('clear_override'),
   gradeEssay('grade_essay'),
+  reorder('reorder'),
   setup('setup');
 
   const SyncOperation(this.serverValue);

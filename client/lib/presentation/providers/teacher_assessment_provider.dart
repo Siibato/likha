@@ -191,24 +191,22 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
   }
 
   Future<Assessment?> createAssessment(CreateAssessmentParams params) async {
-    final completer = Completer<Assessment?>();
     final previousAssessments = state.assessments;
     final previousCurrentAssessment = state.currentAssessment;
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    state = state.copyWith(error: null, successMessage: null);
     final result = await _createAssessment(params);
-    result.fold(
+    return result.fold<Assessment?>(
       (failure) {
         state = state.copyWith(
-          isLoading: false,
           error: AppErrorMapper.fromFailure(failure),
           assessments: previousAssessments,
           currentAssessment: previousCurrentAssessment,
         );
-        completer.complete(null);
+        return null;
       },
-      (assessment) {
+      (mutationResult) {
+        final assessment = mutationResult.entity;
         state = state.copyWith(
-          isLoading: false,
           assessments: [assessment, ...state.assessments],
           currentAssessment: assessment,
           successMessage: 'Assessment created',
@@ -228,10 +226,9 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
             },
           );
         }
-        completer.complete(assessment);
+        return assessment;
       },
     );
-    return completer.future;
   }
 
   Future<void> loadAssessmentDetail(String assessmentId) async {
@@ -260,7 +257,6 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     if (existing != null) {
       final optimistic = _withUpdatedAssessment(existing, isPublished: true);
       state = state.copyWith(
-        isLoading: true,
         error: null,
         successMessage: null,
         currentAssessment: optimistic,
@@ -269,18 +265,18 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
             .toList(),
       );
     } else {
-      state = state.copyWith(isLoading: true, error: null, successMessage: null);
+      state = state.copyWith(error: null, successMessage: null);
     }
 
     final result = await _publishAssessment(assessmentId);
     result.fold(
       (failure) => state = state.copyWith(
-        isLoading: false,
         error: AppErrorMapper.fromFailure(failure),
         assessments: previousAssessments,
         currentAssessment: previousCurrentAssessment,
       ),
-      (assessment) {
+      (mutationResult) {
+        final assessment = mutationResult.entity;
         final updatedList = assessment.classId.isEmpty
             ? state.assessments
                 .map((a) => a.id == assessmentId
@@ -294,7 +290,6 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
                 : assessment)
             : assessment;
         state = state.copyWith(
-          isLoading: false,
           currentAssessment: current,
           assessments: updatedList,
           successMessage: 'Assessment published',
@@ -313,7 +308,6 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     if (existing != null) {
       final optimistic = _withUpdatedAssessment(existing, isPublished: false);
       state = state.copyWith(
-        isLoading: true,
         error: null,
         successMessage: null,
         currentAssessment: optimistic,
@@ -322,18 +316,18 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
             .toList(),
       );
     } else {
-      state = state.copyWith(isLoading: true, error: null, successMessage: null);
+      state = state.copyWith(error: null, successMessage: null);
     }
 
     final result = await _unpublishAssessment(assessmentId);
     result.fold(
       (failure) => state = state.copyWith(
-        isLoading: false,
         error: AppErrorMapper.fromFailure(failure),
         assessments: previousAssessments,
         currentAssessment: previousCurrentAssessment,
       ),
-      (assessment) {
+      (mutationResult) {
+        final assessment = mutationResult.entity;
         final updatedList = assessment.classId.isEmpty
             ? state.assessments
                 .map((a) => a.id == assessmentId
@@ -347,7 +341,6 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
                 : assessment)
             : assessment;
         state = state.copyWith(
-          isLoading: false,
           currentAssessment: current,
           assessments: updatedList,
           successMessage: 'Assessment moved to draft',
@@ -360,7 +353,6 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     final previousAssessments = state.assessments;
     final previousCurrentAssessment = state.currentAssessment;
     state = state.copyWith(
-      isLoading: true,
       error: null,
       successMessage: null,
       assessments: state.assessments.where((a) => a.id != assessmentId).toList(),
@@ -369,14 +361,12 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     final result = await _deleteAssessment(assessmentId);
     result.fold(
       (failure) => state = state.copyWith(
-        isLoading: false,
         error: AppErrorMapper.fromFailure(failure),
         assessments: previousAssessments,
         currentAssessment: previousCurrentAssessment,
       ),
       (_) {
         state = state.copyWith(
-          isLoading: false,
           successMessage: 'Assessment deleted',
         );
         // Delete linked grade item if one exists
@@ -428,16 +418,16 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
   Future<void> addQuestions(AddQuestionsParams params) async {
     final previousQuestions = state.questions;
     final previousCurrentAssessment = state.currentAssessment;
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    state = state.copyWith(error: null, successMessage: null);
     final result = await _addQuestions(params);
     result.fold(
       (failure) => state = state.copyWith(
-        isLoading: false,
         error: AppErrorMapper.fromFailure(failure),
         questions: previousQuestions,
         currentAssessment: previousCurrentAssessment,
       ),
-      (questions) {
+      (mutationResult) {
+        final questions = mutationResult.entity;
         final newCount = (state.currentAssessment?.questionCount ?? 0) + questions.length;
         final newPoints = (state.currentAssessment?.totalPoints ?? 0) +
             questions.fold<int>(0, (sum, q) => sum + q.points);
@@ -468,7 +458,6 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
               )
             : null;
         state = state.copyWith(
-          isLoading: false,
           questions: [...state.questions, ...questions],
           currentAssessment: updatedAssessment,
           successMessage: 'Questions added',
@@ -498,7 +487,6 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
         component: params.component,
       );
       state = state.copyWith(
-        isLoading: true,
         error: null,
         successMessage: null,
         currentAssessment: optimistic,
@@ -507,20 +495,19 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
             .toList(),
       );
     } else {
-      state = state.copyWith(isLoading: true, error: null, successMessage: null);
+      state = state.copyWith(error: null, successMessage: null);
     }
 
     final result = await _updateAssessment(params);
     result.fold(
       (failure) => state = state.copyWith(
-        isLoading: false,
         error: AppErrorMapper.fromFailure(failure),
         assessments: previousAssessments,
         currentAssessment: previousCurrentAssessment,
       ),
-      (assessment) {
+      (mutationResult) {
+        final assessment = mutationResult.entity;
         state = state.copyWith(
-          isLoading: false,
           currentAssessment: assessment,
           assessments: state.assessments
               .map((a) => a.id == params.assessmentId ? assessment : a)
@@ -600,7 +587,6 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
       }
       if (updatedAssessment != null) {
         state = state.copyWith(
-          isLoading: true,
           error: null,
           successMessage: null,
           questions: state.questions.map((q) => q.id == params.questionId ? optimisticQ : q).toList(),
@@ -608,29 +594,29 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
         );
       } else {
         state = state.copyWith(
-          isLoading: true,
           error: null,
           successMessage: null,
           questions: state.questions.map((q) => q.id == params.questionId ? optimisticQ : q).toList(),
         );
       }
     } else {
-      state = state.copyWith(isLoading: true, error: null, successMessage: null);
+      state = state.copyWith(error: null, successMessage: null);
     }
 
     final result = await _updateQuestion(params);
     result.fold(
       (failure) => state = state.copyWith(
-        isLoading: false,
         error: AppErrorMapper.fromFailure(failure),
         questions: previousQuestions,
         currentAssessment: previousCurrentAssessment,
       ),
-      (question) => state = state.copyWith(
-        isLoading: false,
-        questions: state.questions.map((q) => q.id == question.id ? question : q).toList(),
-        successMessage: 'Question updated',
-      ),
+      (mutationResult) {
+        final question = mutationResult.entity;
+        state = state.copyWith(
+          questions: state.questions.map((q) => q.id == question.id ? question : q).toList(),
+          successMessage: 'Question updated',
+        );
+      },
     );
   }
 
@@ -668,7 +654,6 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     }
     if (updatedAssessment != null) {
       state = state.copyWith(
-        isLoading: true,
         error: null,
         successMessage: null,
         questions: state.questions.where((q) => q.id != questionId).toList(),
@@ -676,7 +661,6 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
       );
     } else {
       state = state.copyWith(
-        isLoading: true,
         error: null,
         successMessage: null,
         questions: state.questions.where((q) => q.id != questionId).toList(),
@@ -686,13 +670,11 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     final result = await _deleteQuestion(questionId);
     result.fold(
       (failure) => state = state.copyWith(
-        isLoading: false,
         error: AppErrorMapper.fromFailure(failure),
         questions: previousQuestions,
         currentAssessment: previousCurrentAssessment,
       ),
       (_) => state = state.copyWith(
-        isLoading: false,
         successMessage: 'Question deleted',
       ),
     );
@@ -708,7 +690,6 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     if (existing != null) {
       final optimistic = _withUpdatedAssessment(existing, resultsReleased: true);
       state = state.copyWith(
-        isLoading: true,
         error: null,
         successMessage: null,
         currentAssessment: optimistic,
@@ -717,18 +698,18 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
             .toList(),
       );
     } else {
-      state = state.copyWith(isLoading: true, error: null, successMessage: null);
+      state = state.copyWith(error: null, successMessage: null);
     }
 
     final result = await _releaseResults(assessmentId);
     result.fold(
       (failure) => state = state.copyWith(
-        isLoading: false,
         error: AppErrorMapper.fromFailure(failure),
         assessments: previousAssessments,
         currentAssessment: previousCurrentAssessment,
       ),
-      (assessment) {
+      (mutationResult) {
+        final assessment = mutationResult.entity;
         final updatedList = assessment.classId.isEmpty
             ? state.assessments
                 .map((a) => a.id == assessmentId
@@ -742,7 +723,6 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
                 : assessment)
             : assessment;
         state = state.copyWith(
-          isLoading: false,
           currentAssessment: current,
           assessments: updatedList,
           successMessage: 'Results released',
@@ -797,7 +777,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
 
   Future<void> overrideAnswer(OverrideAnswerParams params) async {
     final previousSubmission = state.currentSubmission;
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    state = state.copyWith(error: null, successMessage: null);
 
     if (previousSubmission != null) {
       final updatedAnswers = previousSubmission.answers.map((answer) {
@@ -844,14 +824,12 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     result.fold(
       (failure) {
         state = state.copyWith(
-          isLoading: false,
           error: AppErrorMapper.fromFailure(failure),
           currentSubmission: previousSubmission,
         );
       },
       (_) {
         state = state.copyWith(
-          isLoading: false,
           successMessage: 'Grade overridden',
         );
       },
@@ -860,7 +838,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
 
   Future<void> gradeEssayAnswer(GradeEssayParams params) async {
     final previousSubmission = state.currentSubmission;
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    state = state.copyWith(error: null, successMessage: null);
 
     if (previousSubmission != null) {
       final updatedAnswers = previousSubmission.answers.map((answer) {
@@ -906,14 +884,12 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     result.fold(
       (failure) {
         state = state.copyWith(
-          isLoading: false,
           error: AppErrorMapper.fromFailure(failure),
           currentSubmission: previousSubmission,
         );
       },
       (_) {
         state = state.copyWith(
-          isLoading: false,
           successMessage: 'Essay graded',
         );
       },

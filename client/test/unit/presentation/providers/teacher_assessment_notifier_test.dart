@@ -5,6 +5,8 @@ import 'package:mocktail/mocktail.dart';
 
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/events/data_event_bus.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/grading/repositories/grading_repository.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
@@ -105,6 +107,13 @@ void main() {
       openAt: '2025-01-01T00:00:00',
       closeAt: '2025-12-31T00:00:00',
     ));
+    registerFallbackValue(AddQuestionsParams(
+      assessmentId: 'a-1',
+      questions: [],
+    ));
+    registerFallbackValue(UpdateAssessmentParams(
+      assessmentId: 'a-1',
+    ));
   });
 
   tearDownAll(() async {
@@ -161,7 +170,7 @@ void main() {
         notifier.state = notifier.state.copyWith(assessments: [tAssessment]);
 
         when(() => mockDelete(any()))
-            .thenAnswer((_) async => const Right(null));
+            .thenAnswer((_) async => const Right(MutationResult(entity: null, status: SyncStatus.pending)));
 
         final states = <TeacherAssessmentState>[];
         notifier.addListener((s) => states.add(s), fireImmediately: false);
@@ -187,6 +196,215 @@ void main() {
         await notifier.deleteAssessment(tAssessment.id);
 
         expect(states.last.error, isNotNull);
+      });
+    });
+
+    group('createAssessment', () {
+      test('shows optimistic assessment immediately without loading spinner', () async {
+        final mockCreate = MockCreateAssessment();
+        final notifier = _buildNotifier(createAssessment: mockCreate);
+
+        final optimistic = FakeEntities.assessment(id: 'new-a', title: 'New');
+        when(() => mockCreate(any())).thenAnswer(
+          (_) async => Right(MutationResult(entity: optimistic, status: SyncStatus.pending)),
+        );
+
+        final states = <TeacherAssessmentState>[];
+        notifier.addListener((s) => states.add(s), fireImmediately: false);
+
+        final result = await notifier.createAssessment(CreateAssessmentParams(
+          classId: 'c-1',
+          title: 'New',
+          timeLimitMinutes: 60,
+          openAt: '2025-01-01T00:00:00',
+          closeAt: '2025-12-31T00:00:00',
+        ));
+
+        expect(result, isNotNull);
+        expect(states.last.assessments.length, 1);
+        expect(states.last.assessments.first.title, 'New');
+        expect(states.last.isLoading, isFalse);
+        expect(states.last.error, isNull);
+      });
+
+      test('rolls back state on failure', () async {
+        final mockCreate = MockCreateAssessment();
+        final notifier = _buildNotifier(createAssessment: mockCreate);
+
+        when(() => mockCreate(any())).thenAnswer(
+          (_) async => const Left(ServerFailure('create failed')),
+        );
+
+        final previous = notifier.state;
+        final states = <TeacherAssessmentState>[];
+        notifier.addListener((s) => states.add(s), fireImmediately: false);
+
+        await notifier.createAssessment(CreateAssessmentParams(
+          classId: 'c-1',
+          title: 'New',
+          timeLimitMinutes: 60,
+          openAt: '2025-01-01T00:00:00',
+          closeAt: '2025-12-31T00:00:00',
+        ));
+
+        expect(states.last.error, isNotNull);
+        expect(states.last.assessments, previous.assessments);
+        expect(states.last.isLoading, isFalse);
+      });
+    });
+
+    group('publishAssessment', () {
+      test('shows optimistic published state immediately without loading spinner', () async {
+        final mockPublish = MockPublishAssessment();
+        // Inject mock by building manually
+        final notifier2 = TeacherAssessmentNotifier(
+          MockCreateAssessment(),
+          MockGetAssessments(),
+          MockGetAssessmentDetail(),
+          mockPublish,
+          MockUnpublishAssessment(),
+          MockDeleteAssessment(),
+          MockAddQuestions(),
+          MockGetSubmissions(),
+          MockGetSubmissionDetail(),
+          MockOverrideAnswer(),
+          MockGradeEssay(),
+          MockReleaseResults(),
+          MockGetStatistics(),
+          MockUpdateAssessment(),
+          MockUpdateQuestion(),
+          MockDeleteQuestion(),
+          MockReorderAllQuestions(),
+          MockReorderAllAssessments(),
+        );
+
+        notifier2.state = notifier2.state.copyWith(
+          assessments: [tAssessment],
+          currentAssessment: tAssessment,
+        );
+
+        final published = FakeEntities.assessment(
+          id: tAssessment.id,
+          isPublished: true,
+        );
+        when(() => mockPublish(any())).thenAnswer(
+          (_) async => Right(MutationResult(entity: published, status: SyncStatus.pending)),
+        );
+
+        final states = <TeacherAssessmentState>[];
+        notifier2.addListener((s) => states.add(s), fireImmediately: false);
+
+        await notifier2.publishAssessment(tAssessment.id);
+
+        expect(states.last.currentAssessment?.isPublished, isTrue);
+        expect(states.last.assessments.first.isPublished, isTrue);
+        expect(states.last.isLoading, isFalse);
+        expect(states.last.error, isNull);
+      });
+    });
+
+    group('updateAssessment', () {
+      test('shows optimistic updated state immediately without loading spinner', () async {
+        final mockUpdate = MockUpdateAssessment();
+        final notifier = TeacherAssessmentNotifier(
+          MockCreateAssessment(),
+          MockGetAssessments(),
+          MockGetAssessmentDetail(),
+          MockPublishAssessment(),
+          MockUnpublishAssessment(),
+          MockDeleteAssessment(),
+          MockAddQuestions(),
+          MockGetSubmissions(),
+          MockGetSubmissionDetail(),
+          MockOverrideAnswer(),
+          MockGradeEssay(),
+          MockReleaseResults(),
+          MockGetStatistics(),
+          mockUpdate,
+          MockUpdateQuestion(),
+          MockDeleteQuestion(),
+          MockReorderAllQuestions(),
+          MockReorderAllAssessments(),
+        );
+
+        notifier.state = notifier.state.copyWith(
+          assessments: [tAssessment],
+          currentAssessment: tAssessment,
+        );
+
+        final updated = FakeEntities.assessment(
+          id: tAssessment.id,
+          title: 'Updated Title',
+        );
+        when(() => mockUpdate(any())).thenAnswer(
+          (_) async => Right(MutationResult(entity: updated, status: SyncStatus.pending)),
+        );
+
+        final states = <TeacherAssessmentState>[];
+        notifier.addListener((s) => states.add(s), fireImmediately: false);
+
+        await notifier.updateAssessment(UpdateAssessmentParams(
+          assessmentId: tAssessment.id,
+          title: 'Updated Title',
+        ));
+
+        expect(states.last.currentAssessment?.title, 'Updated Title');
+        expect(states.last.assessments.first.title, 'Updated Title');
+        expect(states.last.isLoading, isFalse);
+        expect(states.last.error, isNull);
+      });
+    });
+
+    group('addQuestions', () {
+      test('shows optimistic questions immediately without loading spinner', () async {
+        final mockAdd = MockAddQuestions();
+        final notifier = TeacherAssessmentNotifier(
+          MockCreateAssessment(),
+          MockGetAssessments(),
+          MockGetAssessmentDetail(),
+          MockPublishAssessment(),
+          MockUnpublishAssessment(),
+          MockDeleteAssessment(),
+          mockAdd,
+          MockGetSubmissions(),
+          MockGetSubmissionDetail(),
+          MockOverrideAnswer(),
+          MockGradeEssay(),
+          MockReleaseResults(),
+          MockGetStatistics(),
+          MockUpdateAssessment(),
+          MockUpdateQuestion(),
+          MockDeleteQuestion(),
+          MockReorderAllQuestions(),
+          MockReorderAllAssessments(),
+        );
+
+        notifier.state = notifier.state.copyWith(
+          currentAssessment: tAssessment,
+        );
+
+        final newQuestions = [
+          FakeEntities.multipleChoiceQuestion(id: 'q1'),
+          FakeEntities.essayQuestion(id: 'q2'),
+        ];
+        when(() => mockAdd(any())).thenAnswer(
+          (_) async => Right(MutationResult(entity: newQuestions, status: SyncStatus.pending)),
+        );
+
+        final states = <TeacherAssessmentState>[];
+        notifier.addListener((s) => states.add(s), fireImmediately: false);
+
+        await notifier.addQuestions(AddQuestionsParams(
+          assessmentId: tAssessment.id,
+          questions: [
+            {'question_type': 'multiple_choice', 'question_text': 'Q1', 'points': 1},
+            {'question_type': 'essay', 'question_text': 'Q2', 'points': 5},
+          ],
+        ));
+
+        expect(states.last.questions.length, 2);
+        expect(states.last.isLoading, isFalse);
+        expect(states.last.error, isNull);
       });
     });
   });

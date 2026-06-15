@@ -1,42 +1,50 @@
 import 'package:dartz/dartz.dart';
-import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
-import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:uuid/uuid.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
-import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
 
-ResultFuture<SubmissionAnswer> overrideAnswer(
-  ServerReachabilityService serverReachabilityService,
-AssessmentLocalDataSource localDataSource,
-AssessmentRemoteDataSource remoteDataSource, {
+ResultFuture<MutationResult<SubmissionAnswer>> overrideAnswer(
+  AssessmentLocalDataSource localDataSource,
+  SyncQueue syncQueue, {
   required String answerId,
   required bool isCorrect,
   double? points,
 }) async {
   try {
-    // Always write locally first (optimistic)
-    await localDataSource.overrideAnswer(
-      answerId: answerId,
-      isCorrect: isCorrect,
-      points: points,
-    );
+    final now = DateTime.now();
 
-    if (serverReachabilityService.isServerReachable) {
-      try {
-        final result = await remoteDataSource.overrideAnswer(
-          answerId: answerId,
-          isCorrect: isCorrect,
-          points: points,
-        );
-        return Right(result);
-      } on NetworkException catch (_) {
-        // Swallow – change is already persisted locally and sync-queued
-      }
-    }
+    final db = await localDataSource.localDatabase.database;
+    await db.transaction((txn) async {
+      await localDataSource.overrideAnswer(
+        answerId: answerId,
+        isCorrect: isCorrect,
+        points: points,
+        txn: txn,
+      );
+      await syncQueue.enqueue(
+        SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assessmentSubmission,
+          operation: SyncOperation.overrideAnswer,
+          payload: {
+            'answer_id': answerId,
+            'is_correct': isCorrect,
+            if (points != null) 'points': points,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: now,
+        ),
+        txn: txn,
+      );
+    });
 
-    return Right(SubmissionAnswer(
+    final optimisticModel = SubmissionAnswer(
       id: answerId,
       questionId: '',
       questionText: '',
@@ -44,9 +52,9 @@ AssessmentRemoteDataSource remoteDataSource, {
       points: 0,
       isOverrideCorrect: isCorrect,
       pointsAwarded: points ?? (isCorrect ? 0 : 0),
-    ));
-  } on ServerException catch (e) {
-    return Left(ServerFailure(e.message, statusCode: e.statusCode));
+    );
+
+    return Right(MutationResult(entity: optimisticModel, status: SyncStatus.pending));
   } catch (e) {
     return Left(ServerFailure(e.toString()));
   }

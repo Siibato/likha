@@ -10,26 +10,29 @@ Future<void> cacheStartSubmissionResult(
   String studentId,
   String studentName,
   String studentUsername,
-  DateTime startedAt,
-) async {
+  DateTime startedAt, {
+  Transaction? txn,
+}) async {
   try {
-    final db = await localDatabase.database;
     final now = DateTime.now();
-    await db.insert(
-      DbTables.assessmentSubmissions,
-      {
-        CommonCols.id: submissionId,
-        AssessmentSubmissionsCols.assessmentId: assessmentId,
-        AssessmentSubmissionsCols.userId: studentId,
-        AssessmentSubmissionsCols.startedAt: startedAt.toIso8601String(),
-        AssessmentSubmissionsCols.totalPoints: 0,
-        CommonCols.createdAt: now.toIso8601String(),
-        CommonCols.updatedAt: now.toIso8601String(),
-        CommonCols.cachedAt: now.toIso8601String(),
-        CommonCols.syncStatus: 'synced',
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    final data = {
+      CommonCols.id: submissionId,
+      AssessmentSubmissionsCols.assessmentId: assessmentId,
+      AssessmentSubmissionsCols.userId: studentId,
+      AssessmentSubmissionsCols.startedAt: startedAt.toIso8601String(),
+      AssessmentSubmissionsCols.totalPoints: 0,
+      CommonCols.createdAt: now.toIso8601String(),
+      CommonCols.updatedAt: now.toIso8601String(),
+      CommonCols.cachedAt: now.toIso8601String(),
+      CommonCols.syncStatus: 'synced',
+    };
+
+    if (txn != null) {
+      await txn.insert(DbTables.assessmentSubmissions, data, conflictAlgorithm: ConflictAlgorithm.replace);
+    } else {
+      final db = await localDatabase.database;
+      await db.insert(DbTables.assessmentSubmissions, data, conflictAlgorithm: ConflictAlgorithm.replace);
+    }
   } catch (e) {
     throw CacheException('Failed to cache start submission result: $e');
   }

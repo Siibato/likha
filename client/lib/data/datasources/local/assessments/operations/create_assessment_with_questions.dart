@@ -1,13 +1,12 @@
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
-import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/assessments/question_model.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 Future<String> createAssessmentWithQuestions(
   LocalDatabase localDatabase,
-  SyncQueue syncQueue,
   String classId,
   String title,
   String? description,
@@ -19,15 +18,17 @@ Future<String> createAssessmentWithQuestions(
   bool isPublished,
   String? linkedTosId,
   int? quarter,
-  String? component,
-) async {
+  String? component, {
+  String? id,
+  Transaction? txn,
+}) async {
   try {
     final db = await localDatabase.database;
-    final assessmentId = const Uuid().v4();
+    final assessmentId = id ?? const Uuid().v4();
     final now = DateTime.now();
 
-    await db.transaction((txn) async {
-      await txn.insert(
+    Future<void> doInsert(Transaction t) async {
+      await t.insert(
         DbTables.assessments,
         {
           CommonCols.id: assessmentId,
@@ -52,7 +53,7 @@ Future<String> createAssessmentWithQuestions(
       );
 
       for (final question in questions) {
-        await txn.insert(
+        await t.insert(
           DbTables.assessmentQuestions,
           {
             CommonCols.id: question.id,
@@ -71,7 +72,7 @@ Future<String> createAssessmentWithQuestions(
 
         if (question.choices != null) {
           for (final choice in question.choices!) {
-            await txn.insert(
+            await t.insert(
               DbTables.questionChoices,
               {
                 CommonCols.id: choice.id,
@@ -88,7 +89,7 @@ Future<String> createAssessmentWithQuestions(
 
         if (question.correctAnswers != null && question.correctAnswers!.isNotEmpty) {
           final answerKeyId = const Uuid().v4();
-          await txn.insert(
+          await t.insert(
             DbTables.answerKeys,
             {
               CommonCols.id: answerKeyId,
@@ -100,7 +101,7 @@ Future<String> createAssessmentWithQuestions(
           );
 
           for (final answer in question.correctAnswers!) {
-            await txn.insert(
+            await t.insert(
               DbTables.answerKeyAcceptableAnswers,
               {
                 CommonCols.id: answer.id,
@@ -116,7 +117,7 @@ Future<String> createAssessmentWithQuestions(
         if (question.enumerationItems != null && question.enumerationItems!.isNotEmpty) {
           for (final enumItem in question.enumerationItems!) {
             final answerKeyId = const Uuid().v4();
-            await txn.insert(
+            await t.insert(
               DbTables.answerKeys,
               {
                 CommonCols.id: answerKeyId,
@@ -128,7 +129,7 @@ Future<String> createAssessmentWithQuestions(
             );
 
             for (final acceptableAnswer in enumItem.acceptableAnswers) {
-              await txn.insert(
+              await t.insert(
                 DbTables.answerKeyAcceptableAnswers,
                 {
                   CommonCols.id: acceptableAnswer.id,
@@ -142,107 +143,14 @@ Future<String> createAssessmentWithQuestions(
           }
         }
       }
-
-      await syncQueue.enqueue(
-        SyncQueueEntry(
-          id: const Uuid().v4(),
-          entityType: SyncEntityType.assessment,
-          operation: SyncOperation.create,
-          payload: {
-            'id': assessmentId,
-            'class_id': classId,
-            'title': title,
-            if (description != null) 'description': description,
-            'time_limit_minutes': timeLimitMinutes,
-            'open_at': openAt,
-            'close_at': closeAt,
-            if (showResultsImmediately != null) 'show_results_immediately': showResultsImmediately,
-            'is_published': isPublished,
-            if (quarter != null) 'quarter': quarter,
-            if (component != null) 'component': component,
-          },
-          status: SyncStatus.pending,
-          retryCount: 0,
-          maxRetries: 3,
-          createdAt: now,
-        ),
-        txn: txn,
-      );
-
-      await syncQueue.enqueue(
-        SyncQueueEntry(
-          id: const Uuid().v4(),
-          entityType: SyncEntityType.question,
-          operation: SyncOperation.create,
-          payload: {
-            'assessment_id': assessmentId,
-            'questions': questions.map((q) {
-              final map = <String, dynamic>{
-                'id': q.id,
-                'question_type': q.questionType,
-                'question_text': q.questionText,
-                'points': q.points,
-                'order_index': q.orderIndex,
-              };
-              if (q.isMultiSelect) map['is_multi_select'] = true;
-              if (q.choices != null) {
-                map['choices'] = q.choices!.map((c) => {
-                      'id': c.id,
-                      'choice_text': c.choiceText,
-                      'is_correct': c.isCorrect,
-                      'order_index': c.orderIndex,
-                    }).toList();
-              }
-              if (q.correctAnswers != null) {
-                map['correct_answers'] = q.correctAnswers!.map((a) => {
-                      'id': a.id,
-                      'answer_text': a.answerText,
-                    }).toList();
-              }
-              if (q.enumerationItems != null) {
-                map['enumeration_items'] = q.enumerationItems!.map((e) => {
-                      'id': e.id,
-                      'order_index': e.orderIndex,
-                      'acceptable_answers': e.acceptableAnswers.map((a) => {
-                            'id': a.id,
-                            'answer_text': a.answerText,
-                          }).toList(),
-                    }).toList();
-              }
-              return map;
-            }).toList(),
-          },
-          status: SyncStatus.pending,
-          retryCount: 0,
-          maxRetries: 3,
-          createdAt: now.add(const Duration(milliseconds: 1)),
-        ),
-        txn: txn,
-      );
-    });
-
-    final assessmentVerify = await db.query(
-      'assessments',
-      where: '${CommonCols.id} = ?',
-      whereArgs: [assessmentId],
-      limit: 1,
-    );
-
-    if (assessmentVerify.isEmpty) {
-      throw CacheException('Failed to verify assessment creation: assessment not found in database');
     }
 
-    final questionsCount = await db.rawQuery(
-      'SELECT COUNT(*) as cnt FROM ${DbTables.assessmentQuestions} WHERE assessment_id = ?',
-      [assessmentId],
-    );
-    final insertedQuestionCount = (questionsCount.first['cnt'] as num).toInt();
-
-    if (insertedQuestionCount != questions.length) {
-      throw CacheException(
-        'Failed to verify question insertion: expected ${questions.length} questions, '
-        'but only found $insertedQuestionCount in database'
-      );
+    if (txn != null) {
+      await doInsert(txn);
+    } else {
+      await db.transaction((innerTxn) async {
+        await doInsert(innerTxn);
+      });
     }
 
     return assessmentId;

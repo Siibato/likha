@@ -8,12 +8,14 @@ Future<void> saveAnswers(
   DioClient dioClient, {
   required String submissionId,
   required List<Map<String, dynamic>> answers,
+  String? idempotencyKey,
 }) async {
   RepoLogger.instance.log('saveAnswers() START - submissionId: $submissionId, answerCount: ${answers.length}');
   try {
     await dioClient.putVoid(
       ApiEndpoints.submissionAnswers(submissionId),
       data: {'answers': answers},
+      headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
     );
     RepoLogger.instance.log('saveAnswers() SUCCESS');
   } on DioException catch (e) {

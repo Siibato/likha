@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/domain/assessments/repositories/assessment_repository.dart';
@@ -17,7 +18,7 @@ class UpdateQuestion {
 
   UpdateQuestion(this._repository);
 
-  ResultFuture<Question> call(UpdateQuestionParams params) {
+  ResultFuture<MutationResult<Question>> call(UpdateQuestionParams params) {
     return _repository.updateQuestion(
       questionId: params.questionId,
       data: params.data,

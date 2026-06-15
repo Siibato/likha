@@ -1,6 +1,6 @@
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/connectivity_service.dart';
-import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
@@ -22,7 +22,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
   // ignore: unused_field
   final ConnectivityService _connectivityService;
   final SyncQueue _syncQueue;
-  final ServerReachabilityService _serverReachabilityService;
   final StorageService _storageService;
   final DataEventBus _dataEventBus;
 
@@ -32,7 +31,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required ValidationService validationService,
     required ConnectivityService connectivityService,
     required SyncQueue syncQueue,
-    required ServerReachabilityService serverReachabilityService,
     required StorageService storageService,
     required DataEventBus dataEventBus,
   })  : _remoteDataSource = remoteDataSource,
@@ -40,12 +38,11 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
         _validationService = validationService,
         _connectivityService = connectivityService,
         _syncQueue = syncQueue,
-        _serverReachabilityService = serverReachabilityService,
         _storageService = storageService,
         _dataEventBus = dataEventBus;
 
   @override
-  ResultFuture<Assessment> createAssessment({
+  ResultFuture<MutationResult<Assessment>> createAssessment({
     required String classId,
     required String title,
     String? description,
@@ -60,9 +57,8 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     String? tosId,
   }) =>
       ops.createAssessment(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
+        _syncQueue,
         classId: classId,
         title: title,
         description: description,
@@ -107,7 +103,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       );
 
   @override
-  ResultFuture<Assessment> updateAssessment({
+  ResultFuture<MutationResult<Assessment>> updateAssessment({
     required String assessmentId,
     String? title,
     String? description,
@@ -119,9 +115,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     String? component,
   }) =>
       ops.updateAssessment(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         assessmentId: assessmentId,
         title: title,
@@ -135,110 +129,94 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       );
 
   @override
-  ResultVoid deleteAssessment({required String assessmentId}) =>
+  ResultFuture<MutationResult<void>> deleteAssessment({required String assessmentId}) =>
       ops.deleteAssessment(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         assessmentId: assessmentId,
       );
 
   @override
-  ResultFuture<Assessment> publishAssessment({
+  ResultFuture<MutationResult<Assessment>> publishAssessment({
     required String assessmentId,
   }) =>
       ops.publishAssessment(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         assessmentId: assessmentId,
       );
 
   @override
-  ResultFuture<Assessment> unpublishAssessment({
+  ResultFuture<MutationResult<Assessment>> unpublishAssessment({
     required String assessmentId,
   }) =>
       ops.unpublishAssessment(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
+        _syncQueue,
         assessmentId: assessmentId,
       );
 
   @override
-  ResultFuture<Assessment> releaseResults({
+  ResultFuture<MutationResult<Assessment>> releaseResults({
     required String assessmentId,
   }) =>
       ops.releaseResults(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
+        _syncQueue,
         assessmentId: assessmentId,
       );
 
   @override
-  ResultVoid reorderAllAssessments({
+  ResultFuture<MutationResult<void>> reorderAllAssessments({
     required String classId,
     required List<String> assessmentIds,
   }) =>
       ops.reorderAllAssessments(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         classId: classId,
         assessmentIds: assessmentIds,
       );
 
   @override
-  ResultFuture<List<Question>> addQuestions({
+  ResultFuture<MutationResult<List<Question>>> addQuestions({
     required String assessmentId,
     required List<Map<String, dynamic>> questions,
   }) =>
       ops.addQuestions(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         assessmentId: assessmentId,
         questions: questions,
       );
 
   @override
-  ResultFuture<Question> updateQuestion({
+  ResultFuture<MutationResult<Question>> updateQuestion({
     required String questionId,
     required Map<String, dynamic> data,
   }) =>
       ops.updateQuestion(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         questionId: questionId,
         data: data,
       );
 
   @override
-  ResultVoid deleteQuestion({required String questionId}) =>
+  ResultFuture<MutationResult<void>> deleteQuestion({required String questionId}) =>
       ops.deleteQuestion(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         questionId: questionId,
       );
 
   @override
-  ResultVoid reorderQuestions({
+  ResultFuture<MutationResult<void>> reorderQuestions({
     required String assessmentId,
     required List<String> questionIds,
   }) =>
       ops.reorderQuestions(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         assessmentId: assessmentId,
         questionIds: questionIds,
@@ -269,29 +247,27 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       );
 
   @override
-  ResultFuture<SubmissionAnswer> overrideAnswer({
+  ResultFuture<MutationResult<SubmissionAnswer>> overrideAnswer({
     required String answerId,
     required bool isCorrect,
     double? points,
   }) =>
       ops.overrideAnswer(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
+        _syncQueue,
         answerId: answerId,
         isCorrect: isCorrect,
         points: points,
       );
 
   @override
-  ResultFuture<SubmissionAnswer> gradeEssayAnswer({
+  ResultFuture<MutationResult<SubmissionAnswer>> gradeEssayAnswer({
     required String answerId,
     required double points,
   }) =>
       ops.gradeEssayAnswer(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
+        _syncQueue,
         answerId: answerId,
         points: points,
       );
@@ -308,16 +284,15 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       );
 
   @override
-  ResultFuture<StartSubmissionResult> startAssessment({
+  ResultFuture<MutationResult<StartSubmissionResult>> startAssessment({
     required String assessmentId,
     required String studentId,
     required String studentName,
     required String studentUsername,
   }) =>
       ops.startAssessment(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
+        _syncQueue,
         assessmentId: assessmentId,
         studentId: studentId,
         studentName: studentName,
@@ -338,26 +313,24 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       );
 
   @override
-  ResultVoid saveAnswers({
+  ResultFuture<MutationResult<void>> saveAnswers({
     required String submissionId,
     required List<Map<String, dynamic>> answers,
   }) =>
       ops.saveAnswers(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
+        _syncQueue,
         submissionId: submissionId,
         answers: answers,
       );
 
   @override
-  ResultFuture<SubmissionSummary> submitAssessment({
+  ResultFuture<MutationResult<SubmissionSummary>> submitAssessment({
     required String submissionId,
   }) =>
       ops.submitAssessment(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
+        _syncQueue,
         submissionId: submissionId,
       );
 

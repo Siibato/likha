@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/logging/sync_logger.dart';
+import 'package:likha/core/sync/handlers/assessment_sync_handler.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/sync_state.dart';
 import 'package:likha/data/datasources/remote/sync/sync_remote_datasource.dart';
@@ -35,14 +36,16 @@ class OutboundSyncHandler {
   final LocalDatabase _localDatabase;
   final SyncLogger _log;
   final SyncStateUpdater _updateState;
+  final AssessmentSyncHandler? _assessmentHandler;
 
   OutboundSyncHandler(
     this._syncQueue,
     this._syncRemoteDataSource,
     this._localDatabase,
     this._log,
-    this._updateState,
-  );
+    this._updateState, {
+    AssessmentSyncHandler? assessmentHandler,
+  }) : _assessmentHandler = assessmentHandler;
 
   Future<void> outboundSync() async {
     _log.log('outboundSync() - START');
@@ -107,10 +110,32 @@ class OutboundSyncHandler {
         .where((e) => e.operation != SyncOperation.upload)
         .toList();
 
-    _log.log('Found ${regularOps.length} regular operations');
-    
+    // Route assessment operations to the dedicated handler.
+    final assessmentOps = regularOps
+        .where((e) => e.entityType == SyncEntityType.assessment)
+        .toList();
+    if (assessmentOps.isNotEmpty && _assessmentHandler != null) {
+      _log.log('Processing ${assessmentOps.length} assessment ops via handler');
+      for (final op in assessmentOps) {
+        final result = await _assessmentHandler.handle(op);
+        if (result.success) {
+          await _syncQueue.markSucceeded(op.id);
+        } else if (result.shouldRetry) {
+          await _syncQueue.incrementRetry(op.id);
+        } else {
+          await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
+        }
+      }
+    }
+
+    final nonAssessmentOps = regularOps
+        .where((e) => e.entityType != SyncEntityType.assessment)
+        .toList();
+
+    _log.log('Found ${nonAssessmentOps.length} regular operations');
+
     final opsByType = <String, int>{};
-    for (final op in regularOps) {
+    for (final op in nonAssessmentOps) {
       opsByType[op.entityType.serverValue] = (opsByType[op.entityType.serverValue] ?? 0) + 1;
       if (op.entityType == SyncEntityType.gradeScore) {
         _log.log('Grade score operation: ${op.operation} (${op.id})');
@@ -121,7 +146,7 @@ class OutboundSyncHandler {
 
     _log.pushStarting(
       uploadOpsCount: nonMaterialFileUploads.length + materialFileUploads.length,
-      regularOpsCount: regularOps.length,
+      regularOpsCount: nonAssessmentOps.length,
       operationsByType: opsByType,
     );
 
@@ -133,8 +158,8 @@ class OutboundSyncHandler {
     }
 
     // Step 2: Run all regular operations in one batch
-    if (regularOps.isNotEmpty) {
-      await syncRegularBatch(regularOps, pushStartTime);
+    if (nonAssessmentOps.isNotEmpty) {
+      await syncRegularBatch(nonAssessmentOps, pushStartTime);
     }
 
     // Step 3: Run material file uploads AFTER regular ops (material now exists on server)

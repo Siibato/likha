@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assessments/repositories/assessment_repository.dart';
 
@@ -6,7 +7,7 @@ class SaveAnswers {
 
   SaveAnswers(this._repository);
 
-  ResultVoid call(SaveAnswersParams params) {
+  ResultFuture<MutationResult<void>> call(SaveAnswersParams params) {
     return _repository.saveAnswers(
       submissionId: params.submissionId,
       answers: params.answers,

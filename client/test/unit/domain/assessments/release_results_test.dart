@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/usecases/release_results.dart';
 import 'package:likha/domain/assessments/repositories/assessment_repository.dart';
@@ -40,12 +42,13 @@ void main() {
 
     test('should release results successfully', () async {
       when(() => mockRepository.releaseResults(assessmentId: any(named: 'assessmentId')))
-          .thenAnswer((_) async => Right(tAssessmentWithReleasedResults));
+          .thenAnswer((_) async => Right(MutationResult(entity: tAssessmentWithReleasedResults, status: SyncStatus.pending)));
 
       final result = await useCase(tAssessmentId);
 
-      expect(result, Right(tAssessmentWithReleasedResults));
-      expect(result.getOrElse(() => throw Exception()).resultsReleased, true);
+      expect(result.isRight(), true);
+      final mutationResult = result.getOrElse(() => throw Exception());
+      expect(mutationResult.entity.resultsReleased, true);
       verify(() => mockRepository.releaseResults(assessmentId: tAssessmentId)).called(1);
     });
 

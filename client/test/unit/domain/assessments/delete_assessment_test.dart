@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/assessments/usecases/delete_assessment.dart';
 import 'package:likha/domain/assessments/repositories/assessment_repository.dart';
 
@@ -21,7 +23,7 @@ void main() {
 
     test('should delete assessment successfully', () async {
       when(() => mockRepository.deleteAssessment(assessmentId: any(named: 'assessmentId')))
-          .thenAnswer((_) async => const Right(null));
+          .thenAnswer((_) async => const Right(MutationResult(entity: null, status: SyncStatus.pending)));
 
       final result = await useCase(tAssessmentId);
 

@@ -1,21 +1,19 @@
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
-import 'package:likha/core/sync/sync_queue.dart';
-import 'package:uuid/uuid.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 Future<void> gradeEssay(
   LocalDatabase localDatabase,
-  SyncQueue syncQueue,
   String answerId,
-  double points,
-) async {
+  double points, {
+  Transaction? txn,
+}) async {
   try {
-    final db = await localDatabase.database;
     final now = DateTime.now();
 
-    await db.transaction((txn) async {
-      final answerResults = await txn.query(
+    Future<void> doUpdate(Transaction t) async {
+      final answerResults = await t.query(
         'submission_answers',
         where: 'id = ?',
         whereArgs: [answerId],
@@ -24,7 +22,7 @@ Future<void> gradeEssay(
       if (answerResults.isNotEmpty) {
         final submissionId = answerResults.first['submission_id'] as String;
 
-        await txn.update(
+        await t.update(
           'submission_answers',
           {
             SubmissionAnswersCols.points: points,
@@ -34,7 +32,7 @@ Future<void> gradeEssay(
           whereArgs: [answerId],
         );
 
-        await txn.update(
+        await t.update(
           'assessment_submissions',
           {
             CommonCols.syncStatus: 'pending',
@@ -44,21 +42,16 @@ Future<void> gradeEssay(
           whereArgs: [submissionId],
         );
       }
+    }
 
-      await syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
-        entityType: SyncEntityType.assessmentSubmission,
-        operation: SyncOperation.gradeEssay,
-        payload: {
-          'answer_id': answerId,
-          'points': points,
-        },
-        status: SyncStatus.pending,
-        retryCount: 0,
-        maxRetries: 3,
-        createdAt: now,
-      ), txn: txn);
-    });
+    if (txn != null) {
+      await doUpdate(txn);
+    } else {
+      final db = await localDatabase.database;
+      await db.transaction((innerTxn) async {
+        await doUpdate(innerTxn);
+      });
+    }
   } catch (e) {
     throw CacheException('Failed to grade essay locally: $e');
   }

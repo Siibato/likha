@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/services/server_clock_service.dart';
+import 'package:likha/core/sync/handlers/assessment_sync_handler.dart';
 import 'package:likha/core/sync/inbound_sync_handler.dart';
 import 'package:likha/core/sync/outbound_sync_handler.dart';
 import 'package:likha/core/logging/sync_logger.dart';
@@ -21,9 +22,7 @@ class SyncManager {
   final SyncQueue _syncQueue;
   final SyncRemoteDataSource _syncRemoteDataSource;
   final LocalDatabase _localDatabase;
-  // ignore: unused_field
   final AssessmentRemoteDataSource _assessmentRemoteDataSource;
-  // ignore: unused_field
   final AssessmentLocalDataSource _assessmentLocalDataSource;
   final SyncLogger _log;
   final StorageService _storageService;
@@ -64,6 +63,12 @@ class SyncManager {
       _localDatabase,
       _log,
       _updateState,
+      assessmentHandler: AssessmentSyncHandler(
+        _assessmentRemoteDataSource,
+        _assessmentLocalDataSource,
+        _localDatabase,
+        _log,
+      ),
     );
     _inboundHandler = InboundSyncHandler(
       _syncRemoteDataSource,

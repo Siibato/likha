@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:likha/domain/assessments/usecases/start_assessment.dart';
 import 'package:likha/domain/assessments/repositories/assessment_repository.dart';
@@ -36,12 +38,13 @@ void main() {
         studentId: any(named: 'studentId'),
         studentName: any(named: 'studentName'),
         studentUsername: any(named: 'studentUsername'),
-      )).thenAnswer((_) async => Right(tResult));
+      )).thenAnswer((_) async => Right(MutationResult(entity: tResult, status: SyncStatus.pending)));
 
       final result = await useCase(tParams);
 
-      expect(result, Right(tResult));
-      expect(result.getOrElse(() => throw Exception()).submissionId, 'submission-1');
+      expect(result.isRight(), true);
+      final mutationResult = result.getOrElse(() => throw Exception());
+      expect(mutationResult.entity.submissionId, 'submission-1');
       verify(() => mockRepository.startAssessment(
         assessmentId: 'assessment-1',
         studentId: 'student-1',

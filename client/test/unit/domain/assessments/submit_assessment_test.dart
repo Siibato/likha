@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
@@ -40,12 +41,13 @@ void main() {
 
     test('should submit assessment successfully', () async {
       when(() => mockRepository.submitAssessment(submissionId: any(named: 'submissionId')))
-          .thenAnswer((_) async => Right(tSubmissionSummary));
+          .thenAnswer((_) async => Right(MutationResult(entity: tSubmissionSummary, status: SyncStatus.pending)));
 
       final result = await useCase(tSubmissionId);
 
-      expect(result, Right(tSubmissionSummary));
-      expect(result.getOrElse(() => throw Exception()).isSubmitted, true);
+      expect(result.isRight(), true);
+      final mutationResult = result.getOrElse(() => throw Exception());
+      expect(mutationResult.entity.isSubmitted, true);
       verify(() => mockRepository.submitAssessment(submissionId: tSubmissionId)).called(1);
     });
 
