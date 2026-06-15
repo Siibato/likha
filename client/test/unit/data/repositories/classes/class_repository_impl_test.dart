@@ -5,6 +5,7 @@ import 'package:mocktail/mocktail.dart';
 
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/classes/class_model.dart';
 import 'package:likha/data/repositories/classes/class_repository_impl.dart';
@@ -53,13 +54,23 @@ void main() {
   late MockClassRemoteDataSource remote;
   late MockSyncQueue syncQueue;
   late MockDataEventBus eventBus;
+  late MockServerReachabilityService reachability;
 
   setUp(() {
     local = MockClassLocalDataSource();
     remote = MockClassRemoteDataSource();
     syncQueue = MockSyncQueue();
     eventBus = MockDataEventBus();
+    reachability = MockServerReachabilityService();
     dotenv.testLoad(fileInput: '');
+
+    when(() => reachability.isServerReachable).thenReturn(true);
+    when(() => reachability.checkNow()).thenAnswer((_) async => true);
+    final getIt = GetIt.instance;
+    if (getIt.isRegistered<ServerReachabilityService>()) {
+      getIt.unregister<ServerReachabilityService>();
+    }
+    getIt.registerSingleton<ServerReachabilityService>(reachability);
 
     registerFallbackValue(_fakeClass());
     registerFallbackValue(SyncQueueEntry(
