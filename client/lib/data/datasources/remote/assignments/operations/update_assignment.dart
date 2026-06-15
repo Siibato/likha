@@ -8,11 +8,13 @@ Future<AssignmentModel> updateAssignment(
   DioClient dioClient, {
   required String assignmentId,
   required Map<String, dynamic> data,
+  String? idempotencyKey,
 }) async {
   try {
     return await dioClient.putTyped(
       ApiEndpoints.assignmentDetail(assignmentId),
       data: data,
+      headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
     );
   } on DioException catch (e) {
     throw dioClient.handleError(e);

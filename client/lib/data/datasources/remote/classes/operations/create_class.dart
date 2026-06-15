@@ -10,6 +10,7 @@ Future<ClassModel> createClass(
   String? description,
   String? teacherId,
   bool isAdvisory = false,
+  String? idempotencyKey,
 }) async {
   try {
     return await dioClient.postTyped(
@@ -20,6 +21,7 @@ Future<ClassModel> createClass(
         if (teacherId != null) 'teacher_id': teacherId,
         'is_advisory': isAdvisory,
       },
+      headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
     );
   } on DioException catch (e) {
     throw dioClient.handleError(e);

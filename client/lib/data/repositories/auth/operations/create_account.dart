@@ -1,10 +1,13 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/database/db_schema.dart';
+import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
+import 'package:likha/core/utils/remote_write.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
+import 'package:likha/data/datasources/remote/auth/auth_remote_datasource.dart';
 import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
@@ -12,7 +15,8 @@ import 'package:uuid/uuid.dart';
 
 ResultFuture<MutationResult<User>> createAccount(
   AuthLocalDataSource localDataSource,
-  SyncQueue syncQueue, {
+  SyncQueue syncQueue,
+  AuthRemoteDataSource remoteDataSource, {
   required String username,
   required String fullName,
   required String role,
@@ -20,6 +24,7 @@ ResultFuture<MutationResult<User>> createAccount(
   try {
     final now = DateTime.now();
     final userId = const Uuid().v4();
+    final queueEntryId = const Uuid().v4();
 
     final optimisticUser = UserModel(
       id: userId,
@@ -48,15 +53,10 @@ ResultFuture<MutationResult<User>> createAccount(
 
       await syncQueue.enqueue(
         SyncQueueEntry(
-          id: const Uuid().v4(),
+          id: queueEntryId,
           entityType: SyncEntityType.adminUser,
           operation: SyncOperation.create,
-          payload: {
-            'id': userId,
-            'username': username,
-            'full_name': fullName,
-            'role': role,
-          },
+          payload: optimisticUser.toPayload(),
           status: SyncStatus.pending,
           retryCount: 0,
           maxRetries: 5,
@@ -65,6 +65,49 @@ ResultFuture<MutationResult<User>> createAccount(
         txn: txn,
       );
     });
+
+    fireRemoteWrite<UserModel>(
+      remote: () => remoteDataSource.createAccount(
+        username: username,
+        fullName: fullName,
+        role: role,
+        idempotencyKey: queueEntryId,
+      ),
+      onSuccess: (serverModel) async {
+        final db = await localDataSource.localDatabase.database;
+
+        if (serverModel.id != userId) {
+          await db.update(
+            DbTables.users,
+            {CommonCols.id: serverModel.id},
+            where: '${CommonCols.id} = ?',
+            whereArgs: [userId],
+          );
+        }
+
+        await db.update(
+          DbTables.users,
+          {CommonCols.syncStatus: SyncStatus.synced.dbValue},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [serverModel.id],
+        );
+        await syncQueue.markSucceeded(queueEntryId);
+      },
+      onError: (error) async {
+        if (error is NetworkException) {
+          return;
+        }
+
+        final db = await localDataSource.localDatabase.database;
+        await db.update(
+          DbTables.users,
+          {CommonCols.syncStatus: SyncStatus.failed.dbValue},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [userId],
+        );
+        await syncQueue.markFailed(queueEntryId, error.toString());
+      },
+    );
 
     return Right(MutationResult(entity: optimisticUser, status: SyncStatus.pending));
   } catch (e) {

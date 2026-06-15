@@ -1,10 +1,14 @@
 import 'package:dartz/dartz.dart';
 import 'package:uuid/uuid.dart';
+import 'package:likha/core/database/db_schema.dart';
+import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
+import 'package:likha/core/utils/remote_write.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
+import 'package:likha/data/datasources/remote/grading/grading_remote_datasource.dart';
 import 'package:likha/data/models/grading/grade_config_model.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 
@@ -12,7 +16,8 @@ import '_helpers.dart' as helpers;
 
 ResultFuture<MutationResult<List<GradeConfig>>> setupGrading(
   GradingLocalDataSource localDataSource,
-  SyncQueue syncQueue, {
+  SyncQueue syncQueue,
+  GradingRemoteDataSource remoteDataSource, {
   required String classId,
   required String gradeLevel,
   required String subjectGroup,
@@ -22,6 +27,7 @@ ResultFuture<MutationResult<List<GradeConfig>>> setupGrading(
   try {
     final weights = helpers.weightPresets[subjectGroup];
     final now = DateTime.now();
+    final queueEntryId = const Uuid().v4();
     final configs = <GradeConfigModel>[];
 
     if (weights != null) {
@@ -45,7 +51,7 @@ ResultFuture<MutationResult<List<GradeConfig>>> setupGrading(
       await localDataSource.saveConfigs(configs, txn: txn);
       await syncQueue.enqueue(
         SyncQueueEntry(
-          id: const Uuid().v4(),
+          id: queueEntryId,
           entityType: SyncEntityType.gradeConfig,
           operation: SyncOperation.setup,
           payload: {
@@ -57,16 +63,54 @@ ResultFuture<MutationResult<List<GradeConfig>>> setupGrading(
           },
           status: SyncStatus.pending,
           retryCount: 0,
-          maxRetries: 3,
+          maxRetries: 5,
           createdAt: now,
         ),
         txn: txn,
       );
     });
 
+    fireRemoteWrite<void>(
+      remote: () => remoteDataSource.setupGrading(
+        classId: classId,
+        data: {
+          'class_id': classId,
+          'grade_level': gradeLevel,
+          'subject_group': subjectGroup,
+          'school_year': schoolYear,
+          if (semester != null) 'semester': semester,
+        },
+        idempotencyKey: queueEntryId,
+      ),
+      onSuccess: (_) async {
+        final db = await localDataSource.localDatabase.database;
+        await db.update(
+          DbTables.gradeRecord,
+          {CommonCols.syncStatus: SyncStatus.synced.dbValue},
+          where: '${GradeRecordCols.classId} = ?',
+          whereArgs: [classId],
+        );
+        await syncQueue.markSucceeded(queueEntryId);
+      },
+      onError: (error) async {
+        if (error is NetworkException) {
+          return;
+        }
+
+        final db = await localDataSource.localDatabase.database;
+        await db.update(
+          DbTables.gradeRecord,
+          {CommonCols.syncStatus: SyncStatus.failed.dbValue},
+          where: '${GradeRecordCols.classId} = ?',
+          whereArgs: [classId],
+        );
+        await syncQueue.markFailed(queueEntryId, error.toString());
+      },
+    );
+
     final entities = configs.map(helpers.configToEntity).toList();
     return Right(MutationResult(entity: entities, status: SyncStatus.pending));
   } catch (e) {
-    return Left(CacheFailure(e.toString()));
+    return Left(ServerFailure(e.toString()));
   }
 }

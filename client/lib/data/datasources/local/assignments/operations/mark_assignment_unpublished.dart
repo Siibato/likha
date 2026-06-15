@@ -7,8 +7,9 @@ import 'package:uuid/uuid.dart';
 Future<void> markAssignmentUnpublished(
   LocalDatabase localDatabase,
   SyncQueue syncQueue,
-  String assignmentId,
-) async {
+  String assignmentId, {
+  String? queueEntryId,
+}) async {
   try {
     final db = await localDatabase.database;
     final now = DateTime.now();
@@ -25,7 +26,7 @@ Future<void> markAssignmentUnpublished(
         whereArgs: [assignmentId],
       );
       await syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
+        id: queueEntryId ?? const Uuid().v4(),
         entityType: SyncEntityType.assignment,
         operation: SyncOperation.unpublish,
         payload: {'id': assignmentId},

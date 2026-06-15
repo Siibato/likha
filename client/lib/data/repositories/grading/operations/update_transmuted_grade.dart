@@ -15,6 +15,9 @@ ResultFuture<MutationResult<void>> updateTransmutedGrade(
   required int transmutedGrade,
 }) async {
   try {
+    final queueEntryId = const Uuid().v4();
+    final now = DateTime.now();
+
     final db = await localDataSource.localDatabase.database;
     await db.transaction((txn) async {
       await localDataSource.updateTransmutedGrade(
@@ -26,7 +29,7 @@ ResultFuture<MutationResult<void>> updateTransmutedGrade(
       );
       await syncQueue.enqueue(
         SyncQueueEntry(
-          id: const Uuid().v4(),
+          id: queueEntryId,
           entityType: SyncEntityType.gradeScore,
           operation: SyncOperation.update,
           payload: {
@@ -37,14 +40,14 @@ ResultFuture<MutationResult<void>> updateTransmutedGrade(
           },
           status: SyncStatus.pending,
           retryCount: 0,
-          maxRetries: 3,
-          createdAt: DateTime.now(),
+          maxRetries: 5,
+          createdAt: now,
         ),
         txn: txn,
       );
     });
     return const Right(MutationResult(entity: null, status: SyncStatus.pending));
   } catch (e) {
-    return Left(CacheFailure(e.toString()));
+    return Left(ServerFailure(e.toString()));
   }
 }

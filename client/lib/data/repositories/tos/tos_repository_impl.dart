@@ -33,6 +33,7 @@ class TosRepositoryImpl implements TosRepository {
       ops.createTos(
         _localDataSource,
         _syncQueue,
+        _remoteDataSource,
         classId: classId,
         data: data,
       );
@@ -45,6 +46,7 @@ class TosRepositoryImpl implements TosRepository {
       ops.updateTos(
         _localDataSource,
         _syncQueue,
+        _remoteDataSource,
         tosId: tosId,
         data: data,
       );
@@ -54,6 +56,7 @@ class TosRepositoryImpl implements TosRepository {
       ops.deleteTos(
         _localDataSource,
         _syncQueue,
+        _remoteDataSource,
         tosId: tosId,
       );
 
@@ -110,6 +113,7 @@ class TosRepositoryImpl implements TosRepository {
       ops.addCompetency(
         _localDataSource,
         _syncQueue,
+        _remoteDataSource,
         tosId: tosId,
         data: data,
       );
@@ -122,6 +126,7 @@ class TosRepositoryImpl implements TosRepository {
       ops.updateCompetency(
         _localDataSource,
         _syncQueue,
+        _remoteDataSource,
         competencyId: competencyId,
         data: data,
       );
@@ -131,6 +136,7 @@ class TosRepositoryImpl implements TosRepository {
       ops.deleteCompetency(
         _localDataSource,
         _syncQueue,
+        _remoteDataSource,
         competencyId: competencyId,
       );
 
@@ -142,6 +148,7 @@ class TosRepositoryImpl implements TosRepository {
       ops.bulkAddCompetencies(
         _localDataSource,
         _syncQueue,
+        _remoteDataSource,
         tosId: tosId,
         competencies: competencies,
       );

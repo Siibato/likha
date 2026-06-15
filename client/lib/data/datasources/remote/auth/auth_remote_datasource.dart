@@ -13,6 +13,7 @@ abstract class AuthRemoteDataSource {
     required String username,
     required String password,
     required String confirmPassword,
+    String? idempotencyKey,
   });
 
   Future<AuthResponseModel> login({
@@ -32,13 +33,14 @@ abstract class AuthRemoteDataSource {
     required String username,
     required String fullName,
     required String role,
+    String? idempotencyKey,
   });
 
   Future<List<UserModel>> getAllAccounts();
 
-  Future<UserModel> resetAccount({required String userId});
+  Future<UserModel> resetAccount({required String userId, String? idempotencyKey});
 
-  Future<UserModel> lockAccount({required String userId, required bool locked, String? reason});
+  Future<UserModel> lockAccount({required String userId, required bool locked, String? reason, String? idempotencyKey});
 
   Future<List<ActivityLogModel>> getActivityLogs({required String userId});
 
@@ -46,9 +48,10 @@ abstract class AuthRemoteDataSource {
     required String userId,
     String? fullName,
     String? role,
+    String? idempotencyKey,
   });
 
-  Future<void> deleteAccount({required String userId});
+  Future<void> deleteAccount({required String userId, String? idempotencyKey});
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -70,6 +73,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String username,
     required String password,
     required String confirmPassword,
+    String? idempotencyKey,
   }) =>
       ops.activateAccount(
         _dioClient,
@@ -77,6 +81,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         username: username,
         password: password,
         confirmPassword: confirmPassword,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
@@ -122,12 +127,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String username,
     required String fullName,
     required String role,
+    String? idempotencyKey,
   }) =>
       ops.createAccount(
         _dioClient,
         username: username,
         fullName: fullName,
         role: role,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
@@ -137,10 +144,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       );
 
   @override
-  Future<UserModel> resetAccount({required String userId}) =>
+  Future<UserModel> resetAccount({required String userId, String? idempotencyKey}) =>
       ops.resetAccount(
         _dioClient,
         userId: userId,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
@@ -148,12 +156,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String userId,
     required bool locked,
     String? reason,
+    String? idempotencyKey,
   }) =>
       ops.lockAccount(
         _dioClient,
         userId: userId,
         locked: locked,
         reason: reason,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
@@ -169,18 +179,21 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String userId,
     String? fullName,
     String? role,
+    String? idempotencyKey,
   }) =>
       ops.updateAccount(
         _dioClient,
         userId: userId,
         fullName: fullName,
         role: role,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
-  Future<void> deleteAccount({required String userId}) =>
+  Future<void> deleteAccount({required String userId, String? idempotencyKey}) =>
       ops.deleteAccount(
         _dioClient,
         userId: userId,
+        idempotencyKey: idempotencyKey,
       );
 }

@@ -22,6 +22,7 @@ import 'package:likha/data/repositories/grading/operations/update_grade_item.dar
 import 'package:likha/data/repositories/grading/operations/update_grading_config.dart';
 import 'package:likha/data/repositories/grading/operations/update_transmuted_grade.dart';
 
+import '../../../../../helpers/mock_datasources.dart';
 import '../../../../../helpers/test_database.dart';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -191,11 +192,13 @@ void _assertSyncQueueEntry(
 void main() {
   late GradingLocalDataSourceImpl local;
   late SyncQueueImpl syncQueue;
+  late MockGradingRemoteDataSource remote;
 
   setUp(() async {
     await openFreshTestDatabase();
     syncQueue = SyncQueueImpl(LocalDatabase());
     local = GradingLocalDataSourceImpl(LocalDatabase(), syncQueue);
+    remote = MockGradingRemoteDataSource();
   });
 
   tearDown(() async {
@@ -207,6 +210,7 @@ void main() {
       final result = await setupGrading(
         local,
         syncQueue,
+        remote,
         classId: 'class-1',
         gradeLevel: '7',
         subjectGroup: 'language',
@@ -231,6 +235,7 @@ void main() {
       final result = await updateGradingConfig(
         local,
         syncQueue,
+        remote,
         classId: 'class-1',
         configs: [
           {'id': 'c1', 'quarter': 1, 'ww_weight': 35.0, 'pt_weight': 45.0, 'qa_weight': 20.0},
@@ -249,6 +254,7 @@ void main() {
       final result = await createGradeItem(
         local,
         syncQueue,
+        remote,
         classId: 'class-1',
         data: {
           'title': 'New Item',
@@ -280,6 +286,7 @@ void main() {
       final result = await updateGradeItem(
         local,
         syncQueue,
+        remote,
         id: 'i1',
         data: {'title': 'New Title'},
       );
@@ -304,6 +311,7 @@ void main() {
       final result = await deleteGradeItem(
         local,
         syncQueue,
+        remote,
         id: 'i1',
       );
 
@@ -325,6 +333,8 @@ void main() {
 
       final result = await saveScores(
         local,
+        syncQueue,
+        remote,
         gradeItemId: 'item-1',
         scores: [
           {'student_id': 'student-1', 'score': 85.0},
@@ -349,6 +359,7 @@ void main() {
       final result = await setScoreOverride(
         local,
         syncQueue,
+        remote,
         scoreId: 's1',
         overrideScore: 95.0,
       );
@@ -374,6 +385,7 @@ void main() {
       final result = await clearScoreOverride(
         local,
         syncQueue,
+        remote,
         scoreId: 's1',
       );
 

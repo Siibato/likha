@@ -11,6 +11,7 @@ Future<ClassModel> updateClass(
   String? description,
   String? teacherId,
   bool? isAdvisory,
+  String? idempotencyKey,
 }) async {
   try {
     return await dioClient.putTyped(
@@ -21,6 +22,7 @@ Future<ClassModel> updateClass(
         if (teacherId != null) 'teacher_id': teacherId,
         if (isAdvisory != null) 'is_advisory': isAdvisory,
       },
+      headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
     );
   } on DioException catch (e) {
     throw dioClient.handleError(e);

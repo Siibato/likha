@@ -126,30 +126,26 @@ class GradingSyncHandler {
         return const SyncResult.success();
 
       case SyncOperation.update:
+        final configsPayload = payload['configs'] as List<dynamic>?;
+        final List<Map<String, dynamic>> configs;
+        if (configsPayload != null) {
+          configs = configsPayload.cast<Map<String, dynamic>>();
+        } else {
+          // Fallback for legacy single-config payloads
+          configs = [payload];
+        }
         await _remote.updateGradingConfig(
           classId: classId,
-          configs: [payload],
+          configs: configs,
           idempotencyKey: entry.id,
         );
-        final quarter = (payload['grading_period_number'] as num?)?.toInt() ??
-            (payload['quarter'] as num?)?.toInt();
         final db = await _localDatabase.database;
-        if (quarter != null) {
-          await db.update(
-            DbTables.gradeRecord,
-            {CommonCols.syncStatus: SyncStatus.synced.dbValue},
-            where:
-                '${GradeRecordCols.classId} = ? AND ${GradeRecordCols.gradingPeriodNumber} = ?',
-            whereArgs: [classId, quarter],
-          );
-        } else {
-          await db.update(
-            DbTables.gradeRecord,
-            {CommonCols.syncStatus: SyncStatus.synced.dbValue},
-            where: '${GradeRecordCols.classId} = ?',
-            whereArgs: [classId],
-          );
-        }
+        await db.update(
+          DbTables.gradeRecord,
+          {CommonCols.syncStatus: SyncStatus.synced.dbValue},
+          where: '${GradeRecordCols.classId} = ?',
+          whereArgs: [classId],
+        );
         return const SyncResult.success();
 
       default:

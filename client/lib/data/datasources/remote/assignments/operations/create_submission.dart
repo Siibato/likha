@@ -8,11 +8,13 @@ Future<AssignmentSubmissionModel> createSubmission(
   DioClient dioClient, {
   required String assignmentId,
   String? textContent,
+  String? idempotencyKey,
 }) async {
   try {
     return await dioClient.postTyped(
       ApiEndpoints.assignmentSubmit(assignmentId),
       data: {'text_content': textContent},
+      headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
     );
   } on DioException catch (e) {
     throw dioClient.handleError(e);

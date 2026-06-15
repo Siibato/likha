@@ -7,8 +7,9 @@ import 'package:uuid/uuid.dart';
 Future<void> returnSubmission(
   LocalDatabase localDatabase,
   SyncQueue syncQueue,
-  String submissionId,
-) async {
+  String submissionId, {
+  String? queueEntryId,
+}) async {
   try {
     final db = await localDatabase.database;
     final now = DateTime.now();
@@ -25,7 +26,7 @@ Future<void> returnSubmission(
         whereArgs: [submissionId],
       );
       await syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
+        id: queueEntryId ?? const Uuid().v4(),
         entityType: SyncEntityType.assignmentSubmission,
         operation: SyncOperation.update,
         payload: {'id': submissionId, 'action': 'return'},

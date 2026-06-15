@@ -128,6 +128,7 @@ class AuthRepositoryImpl implements AuthRepository {
       ops.createAccount(
         _localDataSource,
         _syncQueue,
+        _remoteDataSource,
         username: username,
         fullName: fullName,
         role: role,
@@ -148,6 +149,7 @@ class AuthRepositoryImpl implements AuthRepository {
       ops.resetAccount(
         _localDataSource,
         _syncQueue,
+        _remoteDataSource,
         userId: userId,
       );
 
@@ -160,6 +162,7 @@ class AuthRepositoryImpl implements AuthRepository {
       ops.lockAccount(
         _localDataSource,
         _syncQueue,
+        _remoteDataSource,
         userId: userId,
         locked: locked,
         reason: reason,
@@ -174,6 +177,7 @@ class AuthRepositoryImpl implements AuthRepository {
       ops.updateAccount(
         _localDataSource,
         _syncQueue,
+        _remoteDataSource,
         userId: userId,
         fullName: fullName,
         role: role,
@@ -184,6 +188,7 @@ class AuthRepositoryImpl implements AuthRepository {
       ops.deleteAccount(
         _localDataSource,
         _syncQueue,
+        _remoteDataSource,
         userId: userId,
       );
 

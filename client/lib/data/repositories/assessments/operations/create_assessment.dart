@@ -1,18 +1,23 @@
 import 'package:dartz/dartz.dart';
+import 'package:likha/core/database/db_schema.dart';
+import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
+import 'package:likha/core/utils/remote_write.dart';
 import 'package:likha/core/utils/typedef.dart';
+import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
+import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
 import 'package:likha/data/models/assessments/assessment_model.dart';
 import 'package:likha/data/models/assessments/question_model.dart'
     show QuestionModel, ChoiceModel, CorrectAnswerModel, EnumerationItemModel, EnumerationItemAnswerModel;
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:uuid/uuid.dart';
-import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 
 ResultFuture<MutationResult<Assessment>> createAssessment(
   AssessmentLocalDataSource localDataSource,
-  SyncQueue syncQueue, {
+  SyncQueue syncQueue,
+  AssessmentRemoteDataSource remoteDataSource, {
   required String classId,
   required String title,
   String? description,
@@ -29,6 +34,7 @@ ResultFuture<MutationResult<Assessment>> createAssessment(
   try {
     final now = DateTime.now();
     final assessmentId = const Uuid().v4();
+    final queueEntryId = const Uuid().v4();
 
     int totalPoints = 0;
     int questionCount = 0;
@@ -78,6 +84,22 @@ ResultFuture<MutationResult<Assessment>> createAssessment(
         totalPoints += q['points'] as int? ?? 0;
       }
 
+      final payload = {
+        'id': assessmentId,
+        'class_id': classId,
+        'title': title,
+        if (description != null) 'description': description,
+        'time_limit_minutes': timeLimitMinutes,
+        'open_at': openAt,
+        'close_at': closeAt,
+        if (showResultsImmediately != null) 'show_results_immediately': showResultsImmediately,
+        'is_published': isPublished,
+        if (gradingPeriodNumber != null) 'grading_period_number': gradingPeriodNumber,
+        if (component != null) 'component': component,
+        if (tosId != null) 'tos_id': tosId,
+        'questions': questions,
+      };
+
       final optimisticModel = AssessmentModel(
         id: assessmentId,
         classId: classId,
@@ -121,24 +143,10 @@ ResultFuture<MutationResult<Assessment>> createAssessment(
         );
         await syncQueue.enqueue(
           SyncQueueEntry(
-            id: const Uuid().v4(),
+            id: queueEntryId,
             entityType: SyncEntityType.assessment,
             operation: SyncOperation.create,
-            payload: {
-              'id': assessmentId,
-              'class_id': classId,
-              'title': title,
-              if (description != null) 'description': description,
-              'time_limit_minutes': timeLimitMinutes,
-              'open_at': openAt,
-              'close_at': closeAt,
-              if (showResultsImmediately != null) 'show_results_immediately': showResultsImmediately,
-              'is_published': isPublished,
-              if (gradingPeriodNumber != null) 'grading_period_number': gradingPeriodNumber,
-              if (component != null) 'component': component,
-              if (tosId != null) 'tos_id': tosId,
-              'questions': questions,
-            },
+            payload: payload,
             status: SyncStatus.pending,
             retryCount: 0,
             maxRetries: 5,
@@ -148,8 +156,71 @@ ResultFuture<MutationResult<Assessment>> createAssessment(
         );
       });
 
+      fireRemoteWrite<AssessmentModel>(
+        remote: () => remoteDataSource.createAssessment(
+          classId: classId,
+          data: payload,
+          idempotencyKey: queueEntryId,
+        ),
+        onSuccess: (serverModel) async {
+          final db = await localDataSource.localDatabase.database;
+
+          if (serverModel.id != assessmentId) {
+            await db.update(
+              DbTables.assessments,
+              {CommonCols.id: serverModel.id},
+              where: '${CommonCols.id} = ?',
+              whereArgs: [assessmentId],
+            );
+            await db.update(
+              DbTables.assessmentQuestions,
+              {AssessmentQuestionsCols.assessmentId: serverModel.id},
+              where: '${AssessmentQuestionsCols.assessmentId} = ?',
+              whereArgs: [assessmentId],
+            );
+          }
+
+          await db.update(
+            DbTables.assessments,
+            {CommonCols.syncStatus: SyncStatus.synced.dbValue},
+            where: '${CommonCols.id} = ?',
+            whereArgs: [serverModel.id],
+          );
+          await syncQueue.markSucceeded(queueEntryId);
+        },
+        onError: (error) async {
+          if (error is NetworkException) {
+            return;
+          }
+
+          final db = await localDataSource.localDatabase.database;
+          await db.update(
+            DbTables.assessments,
+            {CommonCols.syncStatus: SyncStatus.failed.dbValue},
+            where: '${CommonCols.id} = ?',
+            whereArgs: [assessmentId],
+          );
+          await syncQueue.markFailed(queueEntryId, error.toString());
+        },
+      );
+
       return Right(MutationResult(entity: optimisticModel, status: SyncStatus.pending));
     }
+
+    final payload = {
+      'id': assessmentId,
+      'class_id': classId,
+      'title': title,
+      if (description != null) 'description': description,
+      'time_limit_minutes': timeLimitMinutes,
+      'open_at': openAt,
+      'close_at': closeAt,
+      if (showResultsImmediately != null) 'show_results_immediately': showResultsImmediately,
+      'is_published': isPublished,
+      if (gradingPeriodNumber != null) 'grading_period_number': gradingPeriodNumber,
+      if (component != null) 'component': component,
+      if (tosId != null) 'tos_id': tosId,
+    };
 
     final optimisticModel = AssessmentModel(
       id: assessmentId,
@@ -193,23 +264,10 @@ ResultFuture<MutationResult<Assessment>> createAssessment(
       );
       await syncQueue.enqueue(
         SyncQueueEntry(
-          id: const Uuid().v4(),
+          id: queueEntryId,
           entityType: SyncEntityType.assessment,
           operation: SyncOperation.create,
-          payload: {
-            'id': assessmentId,
-            'class_id': classId,
-            'title': title,
-            if (description != null) 'description': description,
-            'time_limit_minutes': timeLimitMinutes,
-            'open_at': openAt,
-            'close_at': closeAt,
-            if (showResultsImmediately != null) 'show_results_immediately': showResultsImmediately,
-            'is_published': isPublished,
-            if (gradingPeriodNumber != null) 'grading_period_number': gradingPeriodNumber,
-            if (component != null) 'component': component,
-            if (tosId != null) 'tos_id': tosId,
-          },
+          payload: payload,
           status: SyncStatus.pending,
           retryCount: 0,
           maxRetries: 5,
@@ -218,6 +276,48 @@ ResultFuture<MutationResult<Assessment>> createAssessment(
         txn: txn,
       );
     });
+
+    fireRemoteWrite<AssessmentModel>(
+      remote: () => remoteDataSource.createAssessment(
+        classId: classId,
+        data: payload,
+        idempotencyKey: queueEntryId,
+      ),
+      onSuccess: (serverModel) async {
+        final db = await localDataSource.localDatabase.database;
+
+        if (serverModel.id != assessmentId) {
+          await db.update(
+            DbTables.assessments,
+            {CommonCols.id: serverModel.id},
+            where: '${CommonCols.id} = ?',
+            whereArgs: [assessmentId],
+          );
+        }
+
+        await db.update(
+          DbTables.assessments,
+          {CommonCols.syncStatus: SyncStatus.synced.dbValue},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [serverModel.id],
+        );
+        await syncQueue.markSucceeded(queueEntryId);
+      },
+      onError: (error) async {
+        if (error is NetworkException) {
+          return;
+        }
+
+        final db = await localDataSource.localDatabase.database;
+        await db.update(
+          DbTables.assessments,
+          {CommonCols.syncStatus: SyncStatus.failed.dbValue},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [assessmentId],
+        );
+        await syncQueue.markFailed(queueEntryId, error.toString());
+      },
+    );
 
     return Right(MutationResult(entity: optimisticModel, status: SyncStatus.pending));
   } catch (e) {

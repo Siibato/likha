@@ -7,10 +7,12 @@ Future<void> removeStudent(
   DioClient dioClient, {
   required String classId,
   required String studentId,
+  String? idempotencyKey,
 }) async {
   try {
     await dioClient.deleteTyped(
       ApiEndpoints.classStudent(classId, studentId),
+      headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
     );
   } on DioException catch (e) {
     throw dioClient.handleError(e);

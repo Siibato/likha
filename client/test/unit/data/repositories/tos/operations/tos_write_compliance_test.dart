@@ -10,6 +10,7 @@ import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/data/models/tos/tos_model.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:likha/data/repositories/tos/operations/add_competency.dart';
 import 'package:likha/data/repositories/tos/operations/bulk_add_competencies.dart';
 import 'package:likha/data/repositories/tos/operations/create_tos.dart';
@@ -18,6 +19,7 @@ import 'package:likha/data/repositories/tos/operations/delete_tos.dart';
 import 'package:likha/data/repositories/tos/operations/update_competency.dart';
 import 'package:likha/data/repositories/tos/operations/update_tos.dart';
 
+import '../../../../../helpers/mock_datasources.dart';
 import '../../../../../helpers/test_database.dart';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -140,11 +142,18 @@ void _assertSyncQueueEntry(
 void main() {
   late TosLocalDataSourceImpl local;
   late SyncQueueImpl syncQueue;
+  late MockTosRemoteDataSource remote;
 
   setUp(() async {
     await openFreshTestDatabase();
     syncQueue = SyncQueueImpl(LocalDatabase());
     local = TosLocalDataSourceImpl(LocalDatabase(), syncQueue);
+    remote = MockTosRemoteDataSource();
+    when(() => remote.createTos(
+      classId: any(named: 'classId'),
+      data: any(named: 'data'),
+      idempotencyKey: any(named: 'idempotencyKey'),
+    )).thenAnswer((_) async => _fakeTos(id: 'tos-remote'));
   });
 
   tearDown(() async {
@@ -156,6 +165,7 @@ void main() {
       final result = await createTos(
         local,
         syncQueue,
+        remote,
         classId: 'class-1',
         data: {
           'grading_period_number': 1,
@@ -189,6 +199,7 @@ void main() {
       final result = await updateTos(
         local,
         syncQueue,
+        remote,
         tosId: 't1',
         data: {'title': 'New Title'},
       );
@@ -215,6 +226,7 @@ void main() {
       final result = await deleteTos(
         local,
         syncQueue,
+        remote,
         tosId: 't1',
       );
 
@@ -237,6 +249,7 @@ void main() {
       final result = await addCompetency(
         local,
         syncQueue,
+        remote,
         tosId: 't1',
         data: {
           'competency_text': 'New Competency',
@@ -263,6 +276,7 @@ void main() {
       final result = await updateCompetency(
         local,
         syncQueue,
+        remote,
         competencyId: 'c1',
         data: {'competency_text': 'New Text'},
       );
@@ -290,6 +304,7 @@ void main() {
       final result = await deleteCompetency(
         local,
         syncQueue,
+        remote,
         competencyId: 'c1',
       );
 
@@ -312,6 +327,7 @@ void main() {
       final result = await bulkAddCompetencies(
         local,
         syncQueue,
+        remote,
         tosId: 't1',
         competencies: [
           {'competency_text': 'Comp 1', 'time_units_taught': 3},
@@ -324,7 +340,7 @@ void main() {
       expect(entities.length, 2);
 
       final queue = await _getSyncQueueRows();
-      _assertSyncQueueEntry(queue, count: 2, entityType: SyncEntityType.tosCompetency, operation: SyncOperation.create);
+      _assertSyncQueueEntry(queue, count: 1, entityType: SyncEntityType.tosCompetency, operation: SyncOperation.create);
       final payload = _decodePayload(queue.first);
       expect(payload['tos_id'], 't1');
     });

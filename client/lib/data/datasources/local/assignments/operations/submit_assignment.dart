@@ -10,6 +10,7 @@ Future<void> submitAssignment(
   String submissionId,
   String assignmentId, {
   Transaction? txn,
+  String? queueEntryId,
 }) async {
   try {
     final now = DateTime.now();
@@ -36,7 +37,7 @@ Future<void> submitAssignment(
         whereArgs: [submissionId],
       );
       await syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
+        id: queueEntryId ?? const Uuid().v4(),
         entityType: SyncEntityType.assignmentSubmission,
         operation: SyncOperation.submit,
         payload: {

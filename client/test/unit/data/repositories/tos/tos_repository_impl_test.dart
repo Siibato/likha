@@ -7,11 +7,13 @@ import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
+import 'package:likha/core/database/local_database.dart';
 import 'package:likha/data/models/tos/tos_model.dart';
 import 'package:likha/data/repositories/tos/tos_repository_impl.dart';
 
 import '../../../../helpers/mock_datasources.dart';
 import '../../../../helpers/mock_repositories.dart';
+import '../../../../helpers/test_database.dart';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -148,12 +150,9 @@ void main() {
       });
     });
 
-    group('createTos — offline', () {
-      test('saves locally and enqueues sync op', () async {
-        final getIt = GetIt.instance;
-        final reachability = getIt<ServerReachabilityService>() as MockServerReachabilityService;
-        when(() => reachability.isServerReachable).thenReturn(false);
-        when(() => reachability.checkNow()).thenAnswer((_) async => false);
+    group('createTos', () {
+      test('inserts locally, enqueues sync op, and returns MutationResult', () async {
+        await openFreshTestDatabase();
 
         final repo = _buildRepo(
           local: local,
@@ -161,8 +160,16 @@ void main() {
           syncQueue: syncQueue,
         );
 
-        when(() => local.saveTos(any())).thenAnswer((_) async {});
-        when(() => syncQueue.enqueue(any())).thenAnswer((_) async {});
+        when(() => local.localDatabase).thenReturn(LocalDatabase());
+        when(() => local.saveTos(any(), txn: any(named: 'txn')))
+            .thenAnswer((_) async {});
+        when(() => syncQueue.enqueue(any(), txn: any(named: 'txn')))
+            .thenAnswer((_) async {});
+        when(() => remote.createTos(
+          classId: any(named: 'classId'),
+          data: any(named: 'data'),
+          idempotencyKey: any(named: 'idempotencyKey'),
+        )).thenThrow(NetworkException('offline'));
 
         final result = await repo.createTos(
           classId: 'c-1',
@@ -175,49 +182,22 @@ void main() {
         );
 
         expect(result.isRight(), isTrue);
-        verify(() => syncQueue.enqueue(any())).called(1);
+        result.fold(
+          (f) => fail('Expected Right, got $f'),
+          (mutationResult) {
+            expect(mutationResult.entity.title, 'Q1 TOS');
+            expect(mutationResult.status, SyncStatus.pending);
+          },
+        );
+        verify(() => local.saveTos(any(), txn: any(named: 'txn'))).called(1);
+        verify(() => syncQueue.enqueue(any(), txn: any(named: 'txn'))).called(1);
         verifyNever(() => remote.createTos(
           classId: any(named: 'classId'),
           data: any(named: 'data'),
+          idempotencyKey: any(named: 'idempotencyKey'),
         ));
-      });
-    });
 
-    group('createTos — online', () {
-      test('calls remote and saves result locally', () async {
-        final getIt = GetIt.instance;
-        final reachability = getIt<ServerReachabilityService>() as MockServerReachabilityService;
-        when(() => reachability.isServerReachable).thenReturn(true);
-        when(() => reachability.checkNow()).thenAnswer((_) async => true);
-
-        final repo = _buildRepo(
-          local: local,
-          remote: remote,
-          syncQueue: syncQueue,
-        );
-
-        when(() => remote.createTos(
-              classId: any(named: 'classId'),
-              data: any(named: 'data'),
-            )).thenAnswer((_) async => _fakeTos());
-        when(() => local.saveTos(any())).thenAnswer((_) async {});
-
-        final result = await repo.createTos(
-          classId: 'c-1',
-          data: {
-            'title': 'Q1 TOS',
-            'grading_period_number': 1,
-            'classification_mode': 'difficulty',
-            'total_items': 40,
-          },
-        );
-
-        expect(result.isRight(), isTrue);
-        verify(() => remote.createTos(
-          classId: any(named: 'classId'),
-          data: any(named: 'data'),
-        )).called(1);
-        verify(() => local.saveTos(any())).called(1);
+        await closeTestDatabase();
       });
     });
 

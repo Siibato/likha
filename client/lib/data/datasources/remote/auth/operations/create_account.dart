@@ -9,6 +9,7 @@ Future<UserModel> createAccount(
   required String username,
   required String fullName,
   required String role,
+  String? idempotencyKey,
 }) async {
   try {
     return await dioClient.postTyped(
@@ -18,6 +19,7 @@ Future<UserModel> createAccount(
         'full_name': fullName,
         'role': role,
       },
+      headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
     );
   } on DioException catch (e) {
     throw dioClient.handleError(e);

@@ -1,18 +1,23 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/database/db_schema.dart';
+import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/sync/sync_queue.dart';
+import 'package:likha/core/utils/remote_write.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
+import 'package:likha/data/datasources/remote/auth/auth_remote_datasource.dart';
 import 'package:uuid/uuid.dart';
 
 ResultVoid deleteAccount(
   AuthLocalDataSource localDataSource,
-  SyncQueue syncQueue, {
+  SyncQueue syncQueue,
+  AuthRemoteDataSource remoteDataSource, {
   required String userId,
 }) async {
   try {
     final now = DateTime.now();
+    final queueEntryId = const Uuid().v4();
 
     final db = await localDataSource.localDatabase.database;
     await db.transaction((txn) async {
@@ -24,7 +29,7 @@ ResultVoid deleteAccount(
 
       await syncQueue.enqueue(
         SyncQueueEntry(
-          id: const Uuid().v4(),
+          id: queueEntryId,
           entityType: SyncEntityType.adminUser,
           operation: SyncOperation.delete,
           payload: {'id': userId},
@@ -36,6 +41,22 @@ ResultVoid deleteAccount(
         txn: txn,
       );
     });
+
+    fireRemoteWrite<void>(
+      remote: () => remoteDataSource.deleteAccount(
+        userId: userId,
+        idempotencyKey: queueEntryId,
+      ),
+      onSuccess: (_) async {
+        await syncQueue.markSucceeded(queueEntryId);
+      },
+      onError: (error) async {
+        if (error is NetworkException) {
+          return;
+        }
+        await syncQueue.markFailed(queueEntryId, error.toString());
+      },
+    );
 
     return const Right(null);
   } catch (e) {

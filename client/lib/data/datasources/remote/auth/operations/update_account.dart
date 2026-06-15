@@ -9,6 +9,7 @@ Future<UserModel> updateAccount(
   required String userId,
   String? fullName,
   String? role,
+  String? idempotencyKey,
 }) async {
   try {
     final data = <String, dynamic>{};
@@ -18,6 +19,7 @@ Future<UserModel> updateAccount(
     return await dioClient.putTyped(
       ApiEndpoints.accountUpdate(userId),
       data: data,
+      headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
     );
   } on DioException catch (e) {
     throw dioClient.handleError(e);

@@ -11,6 +11,7 @@ Future<AuthResponseModel> activateAccount(
   required String username,
   required String password,
   required String confirmPassword,
+  String? idempotencyKey,
 }) async {
   try {
     final authResponse = await dioClient.postTyped(
@@ -20,6 +21,7 @@ Future<AuthResponseModel> activateAccount(
         'password': password,
         'confirm_password': confirmPassword,
       },
+      headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
     );
 
     await storageService.saveAuthData(

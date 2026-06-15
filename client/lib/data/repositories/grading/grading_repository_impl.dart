@@ -53,6 +53,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.setupGrading(
         _localDataSource,
         _syncQueue,
+        _remoteDataSource,
         classId: classId,
         gradeLevel: gradeLevel,
         subjectGroup: subjectGroup,
@@ -68,6 +69,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.updateGradingConfig(
         _localDataSource,
         _syncQueue,
+        _remoteDataSource,
         classId: classId,
         configs: configs,
       );
@@ -97,6 +99,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.createGradeItem(
         _localDataSource,
         _syncQueue,
+        _remoteDataSource,
         classId: classId,
         data: data,
       );
@@ -109,6 +112,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.updateGradeItem(
         _localDataSource,
         _syncQueue,
+        _remoteDataSource,
         id: id,
         data: data,
       );
@@ -118,6 +122,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.deleteGradeItem(
         _localDataSource,
         _syncQueue,
+        _remoteDataSource,
         id: id,
       );
 
@@ -148,6 +153,8 @@ class GradingRepositoryImpl implements GradingRepository {
   }) =>
       ops.saveScores(
         _localDataSource,
+        _syncQueue,
+        _remoteDataSource,
         gradeItemId: gradeItemId,
         scores: scores,
       );
@@ -160,6 +167,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.setScoreOverride(
         _localDataSource,
         _syncQueue,
+        _remoteDataSource,
         scoreId: scoreId,
         overrideScore: overrideScore,
       );
@@ -169,6 +177,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.clearScoreOverride(
         _localDataSource,
         _syncQueue,
+        _remoteDataSource,
         scoreId: scoreId,
       );
 

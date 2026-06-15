@@ -567,8 +567,23 @@ class ApiEndpoints {
         },
       );
 
+  static ApiEndpoint<TosModel> tosCreate(String classId) => ApiEndpoint.fromModel(
+        '/api/v1/classes/$classId/tos',
+        TosModel.fromJson,
+      );
+
   static ApiEndpoint<Map<String, dynamic>> tosDetail(String id) =>
       ApiEndpoint('/api/v1/tos/$id', (json) => json);
+
+  static ApiEndpoint<TosModel> tosUpdate(String tosId) => ApiEndpoint.fromModel(
+        '/api/v1/tos/$tosId',
+        TosModel.fromJson,
+      );
+
+  static ApiEndpoint<CompetencyModel> tosCompetencyCreate(String tosId) => ApiEndpoint.fromModel(
+        '/api/v1/tos/$tosId/competencies',
+        CompetencyModel.fromJson,
+      );
 
   static ApiEndpoint<List<CompetencyModel>> tosCompetencies(String tosId) =>
       ApiEndpoint(

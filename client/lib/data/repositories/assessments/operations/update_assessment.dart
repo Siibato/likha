@@ -1,16 +1,21 @@
 import 'package:dartz/dartz.dart';
+import 'package:likha/core/database/db_schema.dart';
+import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
+import 'package:likha/core/utils/remote_write.dart';
 import 'package:likha/core/utils/typedef.dart';
+import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
+import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
 import 'package:likha/data/models/assessments/assessment_model.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:uuid/uuid.dart';
-import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 
 ResultFuture<MutationResult<Assessment>> updateAssessment(
   AssessmentLocalDataSource localDataSource,
-  SyncQueue syncQueue, {
+  SyncQueue syncQueue,
+  AssessmentRemoteDataSource remoteDataSource, {
   required String assessmentId,
   String? title,
   String? description,
@@ -25,6 +30,21 @@ ResultFuture<MutationResult<Assessment>> updateAssessment(
     final (cachedModel, _) = await localDataSource.getCachedAssessmentDetail(assessmentId);
 
     final now = DateTime.now();
+    final queueEntryId = const Uuid().v4();
+
+    final payload = {
+      'id': assessmentId,
+      if (title != null) 'title': title,
+      if (description != null) 'description': description,
+      if (timeLimitMinutes != null) 'time_limit_minutes': timeLimitMinutes,
+      if (openAt != null) 'open_at': openAt,
+      if (closeAt != null) 'close_at': closeAt,
+      if (showResultsImmediately != null)
+        'show_results_immediately': showResultsImmediately,
+      if (gradingPeriodNumber != null) 'grading_period_number': gradingPeriodNumber,
+      if (component != null) 'component': component,
+    };
+
     final optimisticModel = AssessmentModel(
       id: assessmentId,
       classId: cachedModel.classId,
@@ -58,21 +78,10 @@ ResultFuture<MutationResult<Assessment>> updateAssessment(
       );
       await syncQueue.enqueue(
         SyncQueueEntry(
-          id: const Uuid().v4(),
+          id: queueEntryId,
           entityType: SyncEntityType.assessment,
           operation: SyncOperation.update,
-          payload: {
-            'id': assessmentId,
-            if (title != null) 'title': title,
-            if (description != null) 'description': description,
-            if (timeLimitMinutes != null) 'time_limit_minutes': timeLimitMinutes,
-            if (openAt != null) 'open_at': openAt,
-            if (closeAt != null) 'close_at': closeAt,
-            if (showResultsImmediately != null)
-              'show_results_immediately': showResultsImmediately,
-            if (gradingPeriodNumber != null) 'grading_period_number': gradingPeriodNumber,
-            if (component != null) 'component': component,
-          },
+          payload: payload,
           status: SyncStatus.pending,
           retryCount: 0,
           maxRetries: 5,
@@ -81,6 +90,38 @@ ResultFuture<MutationResult<Assessment>> updateAssessment(
         txn: txn,
       );
     });
+
+    fireRemoteWrite<AssessmentModel>(
+      remote: () => remoteDataSource.updateAssessment(
+        assessmentId: assessmentId,
+        data: payload,
+        idempotencyKey: queueEntryId,
+      ),
+      onSuccess: (_) async {
+        final db = await localDataSource.localDatabase.database;
+        await db.update(
+          DbTables.assessments,
+          {CommonCols.syncStatus: SyncStatus.synced.dbValue},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [assessmentId],
+        );
+        await syncQueue.markSucceeded(queueEntryId);
+      },
+      onError: (error) async {
+        if (error is NetworkException) {
+          return;
+        }
+
+        final db = await localDataSource.localDatabase.database;
+        await db.update(
+          DbTables.assessments,
+          {CommonCols.syncStatus: SyncStatus.failed.dbValue},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [assessmentId],
+        );
+        await syncQueue.markFailed(queueEntryId, error.toString());
+      },
+    );
 
     return Right(MutationResult(entity: optimisticModel, status: SyncStatus.pending));
   } catch (e) {

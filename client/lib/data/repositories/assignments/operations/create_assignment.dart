@@ -1,16 +1,21 @@
 import 'package:dartz/dartz.dart';
+import 'package:likha/core/database/db_schema.dart';
+import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
+import 'package:likha/core/utils/remote_write.dart';
 import 'package:likha/core/utils/typedef.dart';
+import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
+import 'package:likha/data/datasources/remote/assignments/assignment_remote_datasource.dart';
 import 'package:likha/data/models/assignments/assignment_model.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:uuid/uuid.dart';
-import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
 
 ResultFuture<MutationResult<Assignment>> createAssignment(
   AssignmentLocalDataSource localDataSource,
-  SyncQueue syncQueue, {
+  SyncQueue syncQueue,
+  AssignmentRemoteDataSource remoteDataSource, {
   required String classId,
   required String title,
   required String instructions,
@@ -27,6 +32,7 @@ ResultFuture<MutationResult<Assignment>> createAssignment(
 }) async {
   try {
     final assignmentId = const Uuid().v4();
+    final queueEntryId = const Uuid().v4();
     final now = DateTime.now();
 
     final optimisticModel = AssignmentModel(
@@ -51,18 +57,20 @@ ResultFuture<MutationResult<Assignment>> createAssignment(
       syncStatus: SyncStatus.pending,
     );
 
+    final data = {
+      ...optimisticModel.toPayload(),
+      if (noSubmissionRequired != null) 'no_submission_required': noSubmissionRequired,
+    };
+
     final db = await localDataSource.localDatabase.database;
     await db.transaction((txn) async {
       await localDataSource.insertAssignment(optimisticModel, txn: txn);
       await syncQueue.enqueue(
         SyncQueueEntry(
-          id: const Uuid().v4(),
+          id: queueEntryId,
           entityType: SyncEntityType.assignment,
           operation: SyncOperation.create,
-          payload: {
-            ...optimisticModel.toPayload(),
-            if (noSubmissionRequired != null) 'no_submission_required': noSubmissionRequired,
-          },
+          payload: data,
           status: SyncStatus.pending,
           retryCount: 0,
           maxRetries: 5,
@@ -71,6 +79,48 @@ ResultFuture<MutationResult<Assignment>> createAssignment(
         txn: txn,
       );
     });
+
+    fireRemoteWrite<AssignmentModel>(
+      remote: () => remoteDataSource.createAssignment(
+        classId: classId,
+        data: data,
+        idempotencyKey: queueEntryId,
+      ),
+      onSuccess: (serverModel) async {
+        final db = await localDataSource.localDatabase.database;
+
+        if (serverModel.id != assignmentId) {
+          await db.update(
+            DbTables.assignments,
+            {CommonCols.id: serverModel.id},
+            where: '${CommonCols.id} = ?',
+            whereArgs: [assignmentId],
+          );
+        }
+
+        await db.update(
+          DbTables.assignments,
+          {CommonCols.syncStatus: SyncStatus.synced.dbValue},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [serverModel.id],
+        );
+        await syncQueue.markSucceeded(queueEntryId);
+      },
+      onError: (error) async {
+        if (error is NetworkException) {
+          return;
+        }
+
+        final db = await localDataSource.localDatabase.database;
+        await db.update(
+          DbTables.assignments,
+          {CommonCols.syncStatus: SyncStatus.failed.dbValue},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [assignmentId],
+        );
+        await syncQueue.markFailed(queueEntryId, error.toString());
+      },
+    );
 
     return Right(MutationResult(entity: optimisticModel, status: SyncStatus.pending));
   } catch (e) {

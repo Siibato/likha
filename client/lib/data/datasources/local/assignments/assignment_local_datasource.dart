@@ -19,6 +19,7 @@ abstract class AssignmentLocalDataSource {
     required String studentId,
     String studentName = '',
     String? textContent,
+    String? queueEntryId,
   });
   Future<void> updateSubmissionText({
     required String submissionId,
@@ -35,6 +36,7 @@ abstract class AssignmentLocalDataSource {
     required String submissionId,
     required String assignmentId,
     Transaction? txn,
+    String? queueEntryId,
   });
   Future<AssignmentSubmissionModel?> getCachedSubmission(String submissionId);
   Future<List<SubmissionListItemModel>> getCachedSubmissions(String assignmentId);
@@ -47,13 +49,14 @@ abstract class AssignmentLocalDataSource {
     required String submissionId,
     required int score,
     String? feedback,
+    String? queueEntryId,
   });
-  Future<void> returnSubmission({required String submissionId});
+  Future<void> returnSubmission({required String submissionId, String? queueEntryId});
   Future<void> cacheSubmissionDetail(AssignmentSubmissionModel submission, {Transaction? txn});
   Future<void> cacheSubmissionFile(String submissionId, SubmissionFileModel file, {Transaction? txn});
   Future<void> softDeleteSubmissionFile(String fileId, {Transaction? txn});
-  Future<void> markAssignmentPublished({required String assignmentId});
-  Future<void> markAssignmentUnpublished({required String assignmentId});
+  Future<void> markAssignmentPublished({required String assignmentId, String? queueEntryId});
+  Future<void> markAssignmentUnpublished({required String assignmentId, String? queueEntryId});
   Future<void> updateAssignmentOrder({
     required String assignmentId,
     required int orderIndex,
@@ -108,6 +111,7 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
     required String studentId,
     String studentName = '',
     String? textContent,
+    String? queueEntryId,
   }) =>
       ops.createSubmission(
         localDatabase,
@@ -116,6 +120,7 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
         studentId,
         studentName,
         textContent,
+        queueEntryId: queueEntryId,
       );
 
   @override
@@ -148,8 +153,9 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
     required String submissionId,
     required String assignmentId,
     Transaction? txn,
+    String? queueEntryId,
   }) =>
-      ops.submitAssignment(localDatabase, syncQueue, submissionId, assignmentId, txn: txn);
+      ops.submitAssignment(localDatabase, syncQueue, submissionId, assignmentId, txn: txn, queueEntryId: queueEntryId);
 
   @override
   Future<AssignmentSubmissionModel?> getCachedSubmission(String submissionId) =>
@@ -189,12 +195,13 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
     required String submissionId,
     required int score,
     String? feedback,
+    String? queueEntryId,
   }) =>
-      ops.gradeSubmission(localDatabase, syncQueue, submissionId, score, feedback);
+      ops.gradeSubmission(localDatabase, syncQueue, submissionId, score, feedback, queueEntryId: queueEntryId);
 
   @override
-  Future<void> returnSubmission({required String submissionId}) =>
-      ops.returnSubmission(localDatabase, syncQueue, submissionId);
+  Future<void> returnSubmission({required String submissionId, String? queueEntryId}) =>
+      ops.returnSubmission(localDatabase, syncQueue, submissionId, queueEntryId: queueEntryId);
 
   @override
   Future<void> cacheSubmissionDetail(AssignmentSubmissionModel submission, {Transaction? txn}) =>
@@ -209,12 +216,12 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
       ops.softDeleteSubmissionFile(localDatabase, fileId, txn: txn);
 
   @override
-  Future<void> markAssignmentPublished({required String assignmentId}) =>
-      ops.markAssignmentPublished(localDatabase, syncQueue, assignmentId);
+  Future<void> markAssignmentPublished({required String assignmentId, String? queueEntryId}) =>
+      ops.markAssignmentPublished(localDatabase, syncQueue, assignmentId, queueEntryId: queueEntryId);
 
   @override
-  Future<void> markAssignmentUnpublished({required String assignmentId}) =>
-      ops.markAssignmentUnpublished(localDatabase, syncQueue, assignmentId);
+  Future<void> markAssignmentUnpublished({required String assignmentId, String? queueEntryId}) =>
+      ops.markAssignmentUnpublished(localDatabase, syncQueue, assignmentId, queueEntryId: queueEntryId);
 
   @override
   Future<void> updateAssignmentOrder({

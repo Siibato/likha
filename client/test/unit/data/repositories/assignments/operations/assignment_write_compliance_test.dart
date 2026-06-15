@@ -23,12 +23,15 @@ import 'package:likha/data/repositories/assignments/operations/submit_assignment
 import 'package:likha/data/repositories/assignments/operations/unpublish_assignment.dart';
 import 'package:likha/data/repositories/assignments/operations/update_assignment.dart';
 import 'package:likha/data/repositories/assignments/operations/upload_file.dart';
+import 'package:likha/data/datasources/remote/assignments/assignment_remote_datasource.dart';
 import 'package:likha/services/storage_service.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../../../helpers/test_database.dart';
 
 class MockStorageService extends Mock implements StorageService {}
+
+class MockAssignmentRemoteDataSource extends Mock implements AssignmentRemoteDataSource {}
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -179,11 +182,13 @@ void _assertSyncQueueEntry(
 void main() {
   late AssignmentLocalDataSourceImpl local;
   late SyncQueueImpl syncQueue;
+  late MockAssignmentRemoteDataSource remote;
 
   setUp(() async {
     await openFreshTestDatabase();
     syncQueue = SyncQueueImpl(LocalDatabase());
     local = AssignmentLocalDataSourceImpl(LocalDatabase(), syncQueue);
+    remote = MockAssignmentRemoteDataSource();
   });
 
   tearDown(() async {
@@ -198,6 +203,7 @@ void main() {
       final result = await createAssignment(
         local,
         syncQueue,
+        remote,
         classId: 'class-1',
         title: 'New Assignment',
         instructions: 'Do this',
@@ -235,6 +241,7 @@ void main() {
       final result = await updateAssignment(
         local,
         syncQueue,
+        remote,
         assignmentId: 'a1',
         title: 'New Title',
       );
@@ -262,6 +269,7 @@ void main() {
       final result = await deleteAssignment(
         local,
         syncQueue,
+        remote,
         assignmentId: 'a1',
       );
 
@@ -284,6 +292,7 @@ void main() {
       final result = await publishAssignment(
         local,
         syncQueue,
+        remote,
         assignmentId: 'a1',
       );
 
@@ -309,6 +318,7 @@ void main() {
       final result = await unpublishAssignment(
         local,
         syncQueue,
+        remote,
         assignmentId: 'a1',
       );
 
@@ -335,6 +345,7 @@ void main() {
       final result = await reorderAllAssignments(
         local,
         syncQueue,
+        remote,
         classId: 'class-1',
         assignmentIds: ['a2', 'a1'],
       );
@@ -369,6 +380,7 @@ void main() {
         local,
         syncQueue,
         mockStorage,
+        remote,
         assignmentId: 'a1',
         textContent: 'My answer',
       );
@@ -405,6 +417,7 @@ void main() {
       final result = await submitAssignment(
         local,
         syncQueue,
+        remote,
         submissionId: 's1',
       );
 
@@ -436,6 +449,7 @@ void main() {
       final result = await gradeSubmission(
         local,
         syncQueue,
+        remote,
         submissionId: 's1',
         score: 85,
         feedback: 'Good work',
@@ -472,6 +486,7 @@ void main() {
       final result = await returnSubmission(
         local,
         syncQueue,
+        remote,
         submissionId: 's1',
       );
 
@@ -505,6 +520,7 @@ void main() {
         final result = await uploadFile(
           local,
           syncQueue,
+          remote,
           submissionId: 's1',
           filePath: '/tmp/test.pdf',
           fileName: 'test.pdf',
@@ -541,6 +557,7 @@ void main() {
       final result = await deleteFile(
         local,
         syncQueue,
+        remote,
         fileId: 'f1',
       );
 

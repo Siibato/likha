@@ -8,11 +8,13 @@ Future<AssignmentSubmissionModel> gradeSubmission(
   DioClient dioClient, {
   required String submissionId,
   required Map<String, dynamic> data,
+  String? idempotencyKey,
 }) async {
   try {
     return await dioClient.postTyped(
       ApiEndpoints.assignmentSubmissionGrade(submissionId),
       data: data,
+      headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
     );
   } on DioException catch (e) {
     throw dioClient.handleError(e);

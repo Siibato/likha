@@ -10,6 +10,7 @@ abstract class ClassRemoteDataSource {
     String? description,
     String? teacherId,
     bool isAdvisory = false,
+    String? idempotencyKey,
   });
 
   Future<List<ClassModel>> getMyClasses();
@@ -24,23 +25,29 @@ abstract class ClassRemoteDataSource {
     String? description,
     String? teacherId,
     bool? isAdvisory,
+    String? idempotencyKey,
   });
 
   Future<ParticipantModel> addStudent({
     required String classId,
     required String studentId,
+    String? idempotencyKey,
   });
 
   Future<void> removeStudent({
     required String classId,
     required String studentId,
+    String? idempotencyKey,
   });
 
   Future<List<UserModel>> searchStudents({String? query});
 
   Future<List<UserModel>> getParticipants({required String classId});
 
-  Future<void> deleteClass({required String classId});
+  Future<void> deleteClass({
+    required String classId,
+    String? idempotencyKey,
+  });
 }
 
 class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
@@ -54,6 +61,7 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
     String? description,
     String? teacherId,
     bool isAdvisory = false,
+    String? idempotencyKey,
   }) =>
       ops.createClass(
         _dioClient,
@@ -61,6 +69,7 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
         description: description,
         teacherId: teacherId,
         isAdvisory: isAdvisory,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
@@ -89,6 +98,7 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
     String? description,
     String? teacherId,
     bool? isAdvisory,
+    String? idempotencyKey,
   }) =>
       ops.updateClass(
         _dioClient,
@@ -97,35 +107,44 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
         description: description,
         teacherId: teacherId,
         isAdvisory: isAdvisory,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
   Future<ParticipantModel> addStudent({
     required String classId,
     required String studentId,
+    String? idempotencyKey,
   }) =>
       ops.addStudent(
         _dioClient,
         classId: classId,
         studentId: studentId,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
   Future<void> removeStudent({
     required String classId,
     required String studentId,
+    String? idempotencyKey,
   }) =>
       ops.removeStudent(
         _dioClient,
         classId: classId,
         studentId: studentId,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
-  Future<void> deleteClass({required String classId}) =>
+  Future<void> deleteClass({
+    required String classId,
+    String? idempotencyKey,
+  }) =>
       ops.deleteClass(
         _dioClient,
         classId: classId,
+        idempotencyKey: idempotencyKey,
       );
 
   @override

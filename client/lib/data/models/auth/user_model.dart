@@ -88,6 +88,15 @@ class UserModel extends User {
     };
   }
 
+  Map<String, dynamic> toPayload() {
+    return {
+      'id': id,
+      'username': username,
+      'full_name': fullName,
+      'role': role,
+    };
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,

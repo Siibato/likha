@@ -11,6 +11,7 @@ Future<SubmissionFileModel> uploadFile(
   required String filePath,
   required String fileName,
   void Function(int sent, int total)? onSendProgress,
+  String? idempotencyKey,
 }) async {
   try {
     final formData = FormData.fromMap({
@@ -26,6 +27,7 @@ Future<SubmissionFileModel> uploadFile(
       options: Options(
         sendTimeout: Duration(seconds: timeoutSeconds),
         receiveTimeout: const Duration(seconds: 60),
+        headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
       ),
     );
     final responseData = response.data['data'] ?? response.data;

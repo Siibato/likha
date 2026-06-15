@@ -10,8 +10,9 @@ Future<String> createSubmission(
   String assignmentId,
   String studentId,
   String studentName,
-  String? textContent,
-) async {
+  String? textContent, {
+  String? queueEntryId,
+}) async {
   try {
     final db = await localDatabase.database;
     final now = DateTime.now();
@@ -42,7 +43,7 @@ Future<String> createSubmission(
           whereArgs: [existingId],
         );
         await syncQueue.enqueue(SyncQueueEntry(
-          id: const Uuid().v4(),
+          id: queueEntryId ?? const Uuid().v4(),
           entityType: SyncEntityType.assignmentSubmission,
           operation: SyncOperation.update,
           payload: {'submission_id': existingId, 'text_content': textContent ?? ''},
@@ -73,7 +74,7 @@ Future<String> createSubmission(
         },
       );
       await syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
+        id: queueEntryId ?? const Uuid().v4(),
         entityType: SyncEntityType.assignmentSubmission,
         operation: SyncOperation.create,
         payload: {'id': submissionId, 'assignment_id': assignmentId, 'student_id': studentId},

@@ -9,8 +9,9 @@ Future<void> gradeSubmission(
   SyncQueue syncQueue,
   String submissionId,
   int score,
-  String? feedback,
-) async {
+  String? feedback, {
+  String? queueEntryId,
+}) async {
   try {
     final db = await localDatabase.database;
     final now = DateTime.now();
@@ -30,7 +31,7 @@ Future<void> gradeSubmission(
         whereArgs: [submissionId],
       );
       await syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
+        id: queueEntryId ?? const Uuid().v4(),
         entityType: SyncEntityType.assignmentSubmission,
         operation: SyncOperation.grade,
         payload: {

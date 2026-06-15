@@ -1,22 +1,28 @@
 import 'package:dartz/dartz.dart';
+import 'package:likha/core/database/db_schema.dart';
+import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
+import 'package:likha/core/utils/remote_write.dart';
 import 'package:likha/core/utils/typedef.dart';
+import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
+import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/data/models/assessments/question_model.dart'
     show QuestionModel, ChoiceModel, CorrectAnswerModel, EnumerationItemModel, EnumerationItemAnswerModel;
 import 'package:uuid/uuid.dart';
-import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 
 ResultFuture<MutationResult<List<Question>>> addQuestions(
   AssessmentLocalDataSource localDataSource,
-  SyncQueue syncQueue, {
+  SyncQueue syncQueue,
+  AssessmentRemoteDataSource remoteDataSource, {
   required String assessmentId,
   required List<Map<String, dynamic>> questions,
 }) async {
   try {
     final now = DateTime.now();
+    final queueEntryId = const Uuid().v4();
 
     final questionModels = questions.map((q) {
       final id = const Uuid().v4();
@@ -99,18 +105,20 @@ ResultFuture<MutationResult<List<Question>>> addQuestions(
       return payload;
     });
 
+    final payload = {
+      'assessment_id': assessmentId,
+      'questions': payloadQuestions,
+    };
+
     final db = await localDataSource.localDatabase.database;
     await db.transaction((txn) async {
       await localDataSource.cacheQuestions(assessmentId, questionModels, txn: txn);
       await syncQueue.enqueue(
         SyncQueueEntry(
-          id: const Uuid().v4(),
+          id: queueEntryId,
           entityType: SyncEntityType.question,
           operation: SyncOperation.create,
-          payload: {
-            'assessment_id': assessmentId,
-            'questions': payloadQuestions,
-          },
+          payload: payload,
           status: SyncStatus.pending,
           retryCount: 0,
           maxRetries: 5,
@@ -119,6 +127,41 @@ ResultFuture<MutationResult<List<Question>>> addQuestions(
         txn: txn,
       );
     });
+
+    fireRemoteWrite<List<QuestionModel>>(
+      remote: () => remoteDataSource.addQuestions(
+        assessmentId: assessmentId,
+        questions: payloadQuestions,
+        idempotencyKey: queueEntryId,
+      ),
+      onSuccess: (serverQuestions) async {
+        final db = await localDataSource.localDatabase.database;
+        for (final q in questionModels) {
+          await db.update(
+            DbTables.assessmentQuestions,
+            {CommonCols.syncStatus: SyncStatus.synced.dbValue},
+            where: '${CommonCols.id} = ?',
+            whereArgs: [q.id],
+          );
+        }
+        await syncQueue.markSucceeded(queueEntryId);
+      },
+      onError: (error) async {
+        if (error is NetworkException) {
+          return;
+        }
+        final db = await localDataSource.localDatabase.database;
+        for (final q in questionModels) {
+          await db.update(
+            DbTables.assessmentQuestions,
+            {CommonCols.syncStatus: SyncStatus.failed.dbValue},
+            where: '${CommonCols.id} = ?',
+            whereArgs: [q.id],
+          );
+        }
+        await syncQueue.markFailed(queueEntryId, error.toString());
+      },
+    );
 
     return Right(MutationResult(entity: questionModels, status: SyncStatus.pending));
   } catch (e) {

@@ -9,6 +9,7 @@ Future<UserModel> lockAccount(
   required String userId,
   required bool locked,
   String? reason,
+  String? idempotencyKey,
 }) async {
   try {
     final data = <String, dynamic>{'user_id': userId, 'locked': locked};
@@ -16,6 +17,7 @@ Future<UserModel> lockAccount(
     return await dioClient.postTyped(
       ApiEndpoints.accountsLock,
       data: data,
+      headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
     );
   } on DioException catch (e) {
     throw dioClient.handleError(e);
