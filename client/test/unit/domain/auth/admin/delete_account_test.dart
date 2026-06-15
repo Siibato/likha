@@ -17,13 +17,15 @@ void main() {
   });
 
   group('DeleteAccount', () {
+    const tResult = Right<Failure, void>(null);
+
     test('should delete account successfully', () async {
       when(() => mockRepository.deleteAccount(userId: any(named: 'userId')))
-          .thenAnswer((_) async => const Right(null));
+          .thenAnswer((_) async => tResult);
 
       final result = await useCase(userId: 'user-1');
 
-      expect(result, const Right(null));
+      expect(result, tResult);
       verify(() => mockRepository.deleteAccount(userId: 'user-1')).called(1);
     });
 

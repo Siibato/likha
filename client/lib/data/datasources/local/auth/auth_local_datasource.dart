@@ -5,20 +5,23 @@ import 'package:likha/data/models/auth/activity_log_model.dart';
 import 'operations/auth.dart' as ops;
 
 abstract class AuthLocalDataSource {
+  LocalDatabase get localDatabase;
+
   Future<UserModel> getCachedCurrentUser([String? userId]);
   Future<void> cacheCurrentUser(UserModel user);
   Future<List<UserModel>> getCachedAccounts();
-  Future<void> cacheAccounts(List<UserModel> accounts);
-  Future<void> cacheCreatedAccount(UserModel account);
+  Future<void> cacheAccounts(List<UserModel> accounts, {Transaction? txn});
+  Future<void> cacheCreatedAccount(UserModel account, {Transaction? txn});
   Future<UserModel> getCachedUser(String userId);
   Future<List<ActivityLogModel>> getCachedActivityLogs(String userId);
   Future<void> cacheActivityLogs(List<ActivityLogModel> logs, String userId);
   Future<void> clearActivityLogsForUser(String userId);
-  Future<void> deleteAccountLocally(String userId);
+  Future<void> deleteAccountLocally(String userId, {Transaction? txn});
   Future<void> clearAllCache();
 }
 
 class AuthLocalDataSourceImpl implements AuthLocalDataSource {
+  @override
   final LocalDatabase localDatabase;
   final SyncQueue syncQueue;
 
@@ -37,12 +40,12 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
       ops.getCachedAccounts(localDatabase);
 
   @override
-  Future<void> cacheAccounts(List<UserModel> accounts) =>
-      ops.cacheAccounts(localDatabase, accounts);
+  Future<void> cacheAccounts(List<UserModel> accounts, {Transaction? txn}) =>
+      ops.cacheAccounts(localDatabase, accounts, txn: txn);
 
   @override
-  Future<void> cacheCreatedAccount(UserModel account) =>
-      ops.cacheCreatedAccount(localDatabase, syncQueue, account);
+  Future<void> cacheCreatedAccount(UserModel account, {Transaction? txn}) =>
+      ops.cacheCreatedAccount(localDatabase, syncQueue, account, txn: txn);
 
   @override
   Future<UserModel> getCachedUser(String userId) =>
@@ -61,8 +64,8 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
       ops.clearActivityLogsForUser(localDatabase, userId);
 
   @override
-  Future<void> deleteAccountLocally(String userId) =>
-      ops.deleteAccountLocally(localDatabase, userId);
+  Future<void> deleteAccountLocally(String userId, {Transaction? txn}) =>
+      ops.deleteAccountLocally(localDatabase, userId, txn: txn);
 
   @override
   Future<void> clearAllCache() =>

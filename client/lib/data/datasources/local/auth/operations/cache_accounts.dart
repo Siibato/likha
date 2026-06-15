@@ -6,18 +6,28 @@ import 'package:sqflite_sqlcipher/sqflite.dart';
 
 Future<void> cacheAccounts(
   LocalDatabase localDatabase,
-  List<UserModel> accounts,
-) async {
+  List<UserModel> accounts, {
+  Transaction? txn,
+}) async {
   try {
-    final db = await localDatabase.database;
-    await db.transaction((txn) async {
+    if (txn != null) {
       for (final account in accounts) {
         final map = account.toMap();
         map['cached_at'] = DateTime.now().toIso8601String();
         map['sync_status'] = SyncStatus.synced.dbValue;
         await txn.insert('users', map, conflictAlgorithm: ConflictAlgorithm.replace);
       }
-    });
+    } else {
+      final db = await localDatabase.database;
+      await db.transaction((innerTxn) async {
+        for (final account in accounts) {
+          final map = account.toMap();
+          map['cached_at'] = DateTime.now().toIso8601String();
+          map['sync_status'] = SyncStatus.synced.dbValue;
+          await innerTxn.insert('users', map, conflictAlgorithm: ConflictAlgorithm.replace);
+        }
+      });
+    }
   } catch (e) {
     throw CacheException('Failed to cache accounts: $e');
   }

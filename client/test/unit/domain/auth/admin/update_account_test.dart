@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/auth/usecases/update_account.dart';
 import 'package:likha/domain/auth/repositories/auth_repository.dart';
 import 'package:likha/domain/auth/entities/user.dart';
@@ -29,6 +31,8 @@ void main() {
       updatedAt: DateTime(2024, 1, 15),
     );
 
+    final tMutationResult = MutationResult(entity: tUpdatedUser, status: SyncStatus.pending);
+
     test('should update full name successfully', () async {
       final updateParams = UpdateAccountParams(
         userId: 'user-1',
@@ -39,12 +43,12 @@ void main() {
         userId: any(named: 'userId'),
         fullName: any(named: 'fullName'),
         role: any(named: 'role'),
-      )).thenAnswer((_) async => Right(tUpdatedUser));
+      )).thenAnswer((_) async => Right(tMutationResult));
 
       final result = await useCase(updateParams);
 
-      expect(result, Right(tUpdatedUser));
-      expect(result.getOrElse(() => throw Exception()).fullName, 'Updated Name');
+      expect(result, Right(tMutationResult));
+      expect(result.getOrElse(() => throw Exception()).entity.fullName, 'Updated Name');
       verify(() => mockRepository.updateAccount(
         userId: 'user-1',
         fullName: 'Updated Name',
@@ -62,11 +66,11 @@ void main() {
         userId: any(named: 'userId'),
         fullName: any(named: 'fullName'),
         role: any(named: 'role'),
-      )).thenAnswer((_) async => Right(tUpdatedUser));
+      )).thenAnswer((_) async => Right(tMutationResult));
 
       final result = await useCase(updateParams);
 
-      expect(result.getOrElse(() => throw Exception()).role, 'teacher');
+      expect(result.getOrElse(() => throw Exception()).entity.role, 'teacher');
     });
 
     test('should update both name and role successfully', () async {
@@ -80,7 +84,7 @@ void main() {
         userId: any(named: 'userId'),
         fullName: any(named: 'fullName'),
         role: any(named: 'role'),
-      )).thenAnswer((_) async => Right(tUpdatedUser));
+      )).thenAnswer((_) async => Right(tMutationResult));
 
       final result = await useCase(updateParams);
 

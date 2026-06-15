@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/domain/auth/repositories/auth_repository.dart';
@@ -7,7 +8,7 @@ class UpdateAccount {
 
   UpdateAccount(this._repository);
 
-  ResultFuture<User> call(UpdateAccountParams params) {
+  ResultFuture<MutationResult<User>> call(UpdateAccountParams params) {
     return _repository.updateAccount(
       userId: params.userId,
       fullName: params.fullName,

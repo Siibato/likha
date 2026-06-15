@@ -26,6 +26,7 @@ String? _entityTypeToTable(String entityType) {
     case 'grade_config': return DbTables.gradeRecord;
     case 'table_of_specifications': return DbTables.tableOfSpecifications;
     case 'tos_competency': return DbTables.tosCompetencies;
+    case 'admin_user': return DbTables.users;
     default: return null;
   }
 }

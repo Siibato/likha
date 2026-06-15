@@ -1,4 +1,6 @@
 import 'package:likha/core/events/data_event_bus.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
@@ -11,7 +13,6 @@ import 'package:likha/domain/auth/entities/activity_log.dart';
 import 'package:likha/domain/auth/entities/check_username_result.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/domain/auth/repositories/auth_repository.dart';
-import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/services/storage_service.dart';
 import 'operations/auth.dart' as ops;
 
@@ -119,14 +120,13 @@ class AuthRepositoryImpl implements AuthRepository {
       ops.isAuthenticated(_storageService);
 
   @override
-  ResultFuture<User> createAccount({
+  ResultFuture<MutationResult<User>> createAccount({
     required String username,
     required String fullName,
     required String role,
   }) =>
       ops.createAccount(
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         username: username,
         fullName: fullName,
@@ -144,23 +144,21 @@ class AuthRepositoryImpl implements AuthRepository {
       );
 
   @override
-  ResultFuture<User> resetAccount({required String userId}) =>
+  ResultFuture<MutationResult<User>> resetAccount({required String userId}) =>
       ops.resetAccount(
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         userId: userId,
       );
 
   @override
-  ResultFuture<User> lockAccount({
+  ResultFuture<MutationResult<User>> lockAccount({
     required String userId,
     required bool locked,
     String? reason,
   }) =>
       ops.lockAccount(
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         userId: userId,
         locked: locked,
@@ -168,14 +166,13 @@ class AuthRepositoryImpl implements AuthRepository {
       );
 
   @override
-  ResultFuture<User> updateAccount({
+  ResultFuture<MutationResult<User>> updateAccount({
     required String userId,
     String? fullName,
     String? role,
   }) =>
       ops.updateAccount(
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         userId: userId,
         fullName: fullName,
@@ -186,7 +183,6 @@ class AuthRepositoryImpl implements AuthRepository {
   ResultVoid deleteAccount({required String userId}) =>
       ops.deleteAccount(
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         userId: userId,
       );

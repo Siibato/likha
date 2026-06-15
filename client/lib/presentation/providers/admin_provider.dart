@@ -111,7 +111,6 @@ class AdminNotifier extends StateNotifier<AdminState> {
     );
 
     state = state.copyWith(
-      isLoading: true,
       clearError: true,
       clearSuccess: true,
       accounts: [tempUser, ...state.accounts],
@@ -129,15 +128,14 @@ class AdminNotifier extends StateNotifier<AdminState> {
         final userMessage = AppErrorMapper.fromFailure(failure);
         ProviderLogger.instance.log('User message: $userMessage');
         state = state.copyWith(
-          isLoading: false,
           accounts: previousAccounts,
           error: userMessage,
         );
       },
-      (user) {
+      (mutationResult) {
+        final user = mutationResult.entity;
         ProviderLogger.instance.log('createAccount SUCCESS: user id=${user.id}, username=${user.username}');
         state = state.copyWith(
-          isLoading: false,
           accounts: state.accounts.map((a) => a.id == tempId ? user : a).toList(),
           successMessage: 'Account created successfully',
         );
@@ -165,7 +163,6 @@ class AdminNotifier extends StateNotifier<AdminState> {
     }).toList();
 
     state = state.copyWith(
-      isLoading: true,
       clearError: true,
       clearSuccess: true,
       accounts: optimisticAccounts,
@@ -175,13 +172,12 @@ class AdminNotifier extends StateNotifier<AdminState> {
 
     result.fold(
       (failure) => state = state.copyWith(
-        isLoading: false,
         accounts: previousAccounts,
         error: AppErrorMapper.fromFailure(failure),
       ),
-      (updatedUser) {
+      (mutationResult) {
+        final updatedUser = mutationResult.entity;
         state = state.copyWith(
-          isLoading: false,
           accounts: state.accounts.map((a) => a.id == updatedUser.id ? updatedUser : a).toList(),
           successMessage: 'Account reset successfully',
         );
@@ -209,7 +205,6 @@ class AdminNotifier extends StateNotifier<AdminState> {
     }).toList();
 
     state = state.copyWith(
-      isLoading: true,
       clearError: true,
       clearSuccess: true,
       accounts: optimisticAccounts,
@@ -223,13 +218,12 @@ class AdminNotifier extends StateNotifier<AdminState> {
 
     result.fold(
       (failure) => state = state.copyWith(
-        isLoading: false,
         accounts: previousAccounts,
         error: AppErrorMapper.fromFailure(failure),
       ),
-      (updatedUser) {
+      (mutationResult) {
+        final updatedUser = mutationResult.entity;
         state = state.copyWith(
-          isLoading: false,
           accounts: state.accounts.map((a) => a.id == updatedUser.id ? updatedUser : a).toList(),
           successMessage: locked ? 'Account locked' : 'Account unlocked',
         );
@@ -282,7 +276,6 @@ class AdminNotifier extends StateNotifier<AdminState> {
     }).toList();
 
     state = state.copyWith(
-      isLoading: true,
       clearError: true,
       clearSuccess: true,
       accounts: optimisticAccounts,
@@ -296,13 +289,12 @@ class AdminNotifier extends StateNotifier<AdminState> {
 
     result.fold(
       (failure) => state = state.copyWith(
-        isLoading: false,
         accounts: previousAccounts,
         error: AppErrorMapper.fromFailure(failure),
       ),
-      (updatedUser) {
+      (mutationResult) {
+        final updatedUser = mutationResult.entity;
         state = state.copyWith(
-          isLoading: false,
           accounts: state.accounts.map((a) => a.id == updatedUser.id ? updatedUser : a).toList(),
           successMessage: 'Account updated successfully',
         );
@@ -314,7 +306,6 @@ class AdminNotifier extends StateNotifier<AdminState> {
     final previousAccounts = List<User>.from(state.accounts);
 
     state = state.copyWith(
-      isLoading: true,
       clearError: true,
       clearSuccess: true,
       accounts: state.accounts.where((a) => a.id != userId).toList(),
@@ -324,12 +315,10 @@ class AdminNotifier extends StateNotifier<AdminState> {
 
     result.fold(
       (failure) => state = state.copyWith(
-        isLoading: false,
         accounts: previousAccounts,
         error: AppErrorMapper.fromFailure(failure),
       ),
       (_) => state = state.copyWith(
-        isLoading: false,
         successMessage: 'Account deleted successfully',
       ),
     );

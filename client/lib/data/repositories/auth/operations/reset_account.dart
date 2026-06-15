@@ -1,99 +1,85 @@
 import 'package:dartz/dartz.dart';
-import 'package:likha/core/errors/exceptions.dart';
+import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
-import 'package:likha/injection_container.dart';
 import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
-import 'package:likha/data/datasources/remote/auth/auth_remote_datasource.dart';
 import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:uuid/uuid.dart';
 
-ResultFuture<User> resetAccount(
+ResultFuture<MutationResult<User>> resetAccount(
   AuthLocalDataSource localDataSource,
-  AuthRemoteDataSource remoteDataSource,
   SyncQueue syncQueue, {
   required String userId,
 }) async {
   try {
-    if (!sl<ServerReachabilityService>().isServerReachable) {
-      await syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
-        entityType: SyncEntityType.adminUser,
-        operation: SyncOperation.update,
-        payload: {'id': userId, 'action': 'reset'},
-        status: SyncStatus.pending,
-        retryCount: 0,
-        maxRetries: 5,
-        createdAt: DateTime.now(),
-      ));
+    final now = DateTime.now();
 
-      // Read existing user to preserve all fields
-      UserModel? existingUser;
-      try {
-        existingUser = await localDataSource.getCachedUser(userId);
-      } on CacheException {
-        // User not in cache — fall back to minimal optimistic
-      }
-
-      final optimisticUser = existingUser != null
-          ? UserModel(
-              id: existingUser.id,
-              username: existingUser.username,
-              fullName: existingUser.fullName,
-              role: existingUser.role,
-              accountStatus: 'pending_activation',
-              isActive: false,
-              activatedAt: null,
-              createdAt: existingUser.createdAt,
-            )
-          : UserModel(
-              id: userId,
-              username: '',
-              fullName: '(Unknown)',
-              role: '',
-              accountStatus: 'pending_activation',
-              isActive: false,
-              activatedAt: null,
-              createdAt: DateTime.now(),
-            );
-
-      try {
-        await localDataSource.cacheAccounts([optimisticUser]);
-      } catch (_) {}
-
-      return Right(optimisticUser);
+    UserModel? existingUser;
+    try {
+      existingUser = await localDataSource.getCachedUser(userId);
+    } catch (_) {
+      // User not in cache — fall back to minimal optimistic
     }
 
-    final result = await remoteDataSource.resetAccount(userId: userId);
-
-    try {
-      final cached = await localDataSource.getCachedAccounts();
-      final updated = cached.map((a) {
-        if (a.id == userId) {
-          return UserModel(
-            id: a.id,
-            username: a.username,
-            fullName: a.fullName,
-            role: a.role,
+    final optimisticUser = existingUser != null
+        ? UserModel(
+            id: existingUser.id,
+            username: existingUser.username,
+            fullName: existingUser.fullName,
+            role: existingUser.role,
             accountStatus: 'pending_activation',
             isActive: false,
             activatedAt: null,
-            createdAt: a.createdAt,
+            createdAt: existingUser.createdAt,
+            updatedAt: now,
+            cachedAt: now,
+            syncStatus: SyncStatus.pending,
+          )
+        : UserModel(
+            id: userId,
+            username: '',
+            fullName: '(Unknown)',
+            role: '',
+            accountStatus: 'pending_activation',
+            isActive: false,
+            activatedAt: null,
+            createdAt: now,
+            updatedAt: now,
+            cachedAt: now,
+            syncStatus: SyncStatus.pending,
           );
-        }
-        return a;
-      }).toList();
-      await localDataSource.cacheAccounts(updated);
-    } catch (_) {}
 
-    return Right(result);
-  } on ServerException catch (e) {
-    return Left(ServerFailure(e.message, statusCode: e.statusCode));
-  } on NetworkException catch (e) {
-    return Left(NetworkFailure(e.message));
+    final db = await localDataSource.localDatabase.database;
+    await db.transaction((txn) async {
+      final map = optimisticUser.toMap();
+      map[CommonCols.cachedAt] = now.toIso8601String();
+      map[CommonCols.syncStatus] = SyncStatus.pending.dbValue;
+      await txn.update(
+        DbTables.users,
+        map,
+        where: '${CommonCols.id} = ?',
+        whereArgs: [userId],
+      );
+
+      await syncQueue.enqueue(
+        SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.adminUser,
+          operation: SyncOperation.update,
+          payload: {'id': userId, 'action': 'reset'},
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: now,
+        ),
+        txn: txn,
+      );
+    });
+
+    return Right(MutationResult(entity: optimisticUser, status: SyncStatus.pending));
   } catch (e) {
     return Left(ServerFailure(e.toString()));
   }
