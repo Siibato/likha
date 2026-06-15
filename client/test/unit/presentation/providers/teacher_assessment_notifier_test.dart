@@ -98,7 +98,7 @@ void main() {
     when(() => mockGradingRepo.createGradeItem(
           classId: any(named: 'classId'),
           data: any(named: 'data'),
-        )).thenAnswer((_) async => Right(FakeEntities.gradeItem()));
+        )).thenAnswer((_) async => Right(MutationResult(entity: FakeEntities.gradeItem(), status: SyncStatus.pending)));
     GetIt.instance.registerSingleton<GradingRepository>(mockGradingRepo);
     registerFallbackValue(CreateAssessmentParams(
       classId: 'c-1',

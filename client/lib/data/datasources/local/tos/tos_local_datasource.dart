@@ -1,5 +1,3 @@
-import 'package:sqflite_sqlcipher/sqflite.dart';
-
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/tos/tos_model.dart';

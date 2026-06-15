@@ -5,8 +5,6 @@ import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:likha/core/errors/exceptions.dart';
-import 'package:likha/core/network/server_reachability_service.dart';
-
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/grading/grade_item_model.dart';
 import 'package:likha/data/models/grading/grade_config_model.dart';
@@ -50,15 +48,11 @@ GradingRepositoryImpl _buildRepo({
   required MockGradingLocalDataSource local,
   required MockGradingRemoteDataSource remote,
   required MockSyncQueue syncQueue,
-  required MockServerReachabilityService reachability,
   MockDataEventBus? eventBus,
-  bool isServerReachable = true,
 }) {
-  when(() => reachability.isServerReachable).thenReturn(isServerReachable);
   return GradingRepositoryImpl(
     remoteDataSource: remote,
     localDataSource: local,
-    serverReachabilityService: reachability,
     syncQueue: syncQueue,
     dataEventBus: eventBus ?? MockDataEventBus(),
   );
@@ -70,22 +64,12 @@ void main() {
   late MockGradingLocalDataSource local;
   late MockGradingRemoteDataSource remote;
   late MockSyncQueue syncQueue;
-  late MockServerReachabilityService reachability;
 
   setUp(() {
     local = MockGradingLocalDataSource();
     remote = MockGradingRemoteDataSource();
     syncQueue = MockSyncQueue();
-    reachability = MockServerReachabilityService();
     dotenv.testLoad(fileInput: '');
-
-    when(() => reachability.isServerReachable).thenReturn(true);
-    when(() => reachability.checkNow()).thenAnswer((_) async => true);
-    final getIt = GetIt.instance;
-    if (getIt.isRegistered<ServerReachabilityService>()) {
-      getIt.unregister<ServerReachabilityService>();
-    }
-    getIt.registerSingleton<ServerReachabilityService>(reachability);
 
     registerFallbackValue(SyncQueueEntry(
       id: 'fallback',
@@ -114,7 +98,7 @@ void main() {
       test('fetches from remote and saves to local when server reachable', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-          reachability: reachability, isServerReachable: true,
+           
         );
 
         when(() => local.getItemsByClassQuarter(any(), any(), component: any(named: 'component')))
@@ -143,7 +127,7 @@ void main() {
       test('reads from local cache when offline', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-          reachability: reachability, isServerReachable: false,
+           
         );
 
         when(() => local.getItemsByClassQuarter('c-1', 1, component: null))
@@ -166,7 +150,7 @@ void main() {
       test('saves locally and enqueues sync op', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-          reachability: reachability,
+          
         );
 
         when(() => local.upsertScoresByItem(any(), any())).thenAnswer((_) async {});
@@ -188,7 +172,7 @@ void main() {
       test('enqueues with correct entity type and operation', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-          reachability: reachability,
+          
         );
 
         when(() => local.upsertScoresByItem(any(), any())).thenAnswer((_) async {});
@@ -209,7 +193,7 @@ void main() {
       test('saves locally and enqueues sync op', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-          reachability: reachability,
+          
         );
 
         when(() => local.saveItem(any())).thenAnswer((_) async {});
@@ -237,7 +221,7 @@ void main() {
       test('soft-deletes locally and enqueues delete op', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-          reachability: reachability,
+          
         );
 
         when(() => local.softDeleteItem(any())).thenAnswer((_) async {});
@@ -257,7 +241,7 @@ void main() {
       test('fetches from remote and caches locally', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-          reachability: reachability, isServerReachable: true,
+           
         );
 
         when(() => local.getConfigByClass('c-1'))
@@ -278,7 +262,7 @@ void main() {
       test('reads from local cache when offline', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-          reachability: reachability, isServerReachable: false,
+           
         );
 
         when(() => local.getConfigByClass('c-1')).thenAnswer((_) async => [_fakeConfig()]);
@@ -296,7 +280,7 @@ void main() {
       test('updates locally and enqueues set_override op', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-          reachability: reachability,
+          
         );
 
         when(() => local.updateScoreOverride(any(), any())).thenAnswer((_) async {});
@@ -316,7 +300,7 @@ void main() {
       test('returns cached data immediately and refreshes in background', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-          reachability: reachability, isServerReachable: true,
+           
         );
 
         when(() => local.getCachedFinalGrades('c-1'))
@@ -342,7 +326,7 @@ void main() {
       test('returns cached data immediately', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-          reachability: reachability, isServerReachable: true,
+           
         );
 
         when(() => local.getCachedGeneralAverages('c-1'))
@@ -365,7 +349,7 @@ void main() {
       test('returns cached data immediately', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-          reachability: reachability, isServerReachable: true,
+           
         );
 
         when(() => local.getCachedMyGradeDetail('c-1', 1))
@@ -387,7 +371,7 @@ void main() {
       test('returns cached data immediately', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-          reachability: reachability, isServerReachable: true,
+           
         );
 
         when(() => local.getCachedSf9('c-1', 's-1'))

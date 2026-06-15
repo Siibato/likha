@@ -5,7 +5,6 @@ import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:uuid/uuid.dart';
 
 Future<String> stageMaterialFileForUpload(
   LocalDatabase localDatabase,

@@ -34,7 +34,7 @@ ResultFuture<MutationResult<void>> updateGradeItem(
       );
     });
 
-    return Right(MutationResult(entity: null, status: SyncStatus.pending));
+    return const Right(MutationResult(entity: null, status: SyncStatus.pending));
   } catch (e) {
     return Left(CacheFailure(e.toString()));
   }

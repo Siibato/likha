@@ -18,7 +18,7 @@ ResultFuture<MutationResult<void>> saveScores(
     // Basic validation of grade item ID format
     if (gradeItemId.isEmpty) {
       RepoLogger.instance.warn('saveScores() - Empty grade item ID, skipping sync enqueue');
-      return Right(MutationResult(entity: null, status: SyncStatus.pending));
+      return const Right(MutationResult(entity: null, status: SyncStatus.pending));
     }
 
     final now = DateTime.now().toIso8601String();
@@ -45,7 +45,7 @@ ResultFuture<MutationResult<void>> saveScores(
     // upsertScoresByItem enqueues the sync operation transactionally — no second enqueue needed.
     await localDataSource.upsertScoresByItem(gradeItemId, models);
 
-    return Right(MutationResult(entity: null, status: SyncStatus.pending));
+    return const Right(MutationResult(entity: null, status: SyncStatus.pending));
   } catch (e) {
     return Left(CacheFailure(e.toString()));
   }

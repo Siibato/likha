@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/tos/usecases/delete_tos.dart';
 import 'package:likha/domain/tos/repositories/tos_repository.dart';
 
@@ -21,7 +23,7 @@ void main() {
 
     test('should delete TOS successfully', () async {
       when(() => mockRepository.deleteTos(tosId: any(named: 'tosId')))
-          .thenAnswer((_) async => const Right(null));
+          .thenAnswer((_) async => const Right(MutationResult(entity: null, status: SyncStatus.pending)));
 
       final result = await useCase(tTosId);
 

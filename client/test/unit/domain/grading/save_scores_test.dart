@@ -29,7 +29,7 @@ void main() {
       when(() => mockRepository.saveScores(
         gradeItemId: any(named: 'gradeItemId'),
         scores: any(named: 'scores'),
-      )).thenAnswer((_) async => Right(MutationResult(entity: null, status: SyncStatus.pending)));
+      )).thenAnswer((_) async => const Right(MutationResult(entity: null, status: SyncStatus.pending)));
 
       final result = await useCase(gradeItemId: tGradeItemId, scores: tScores);
 

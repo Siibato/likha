@@ -44,7 +44,6 @@ LearningMaterialRepositoryImpl _buildRepo({
     remoteDataSource: remote,
     localDataSource: local,
     syncQueue: syncQueue,
-    serverReachabilityService: reachability,
     dataEventBus: eventBus,
   );
 }

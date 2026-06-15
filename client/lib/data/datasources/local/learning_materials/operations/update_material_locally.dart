@@ -2,7 +2,6 @@ import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/database/db_schema.dart';
-import 'package:uuid/uuid.dart';
 
 Future<void> updateMaterialLocally(
   LocalDatabase localDatabase,

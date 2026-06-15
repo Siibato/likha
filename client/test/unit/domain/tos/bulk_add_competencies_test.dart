@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/domain/tos/usecases/bulk_add_competencies.dart';
 import 'package:likha/domain/tos/repositories/tos_repository.dart';
@@ -48,12 +50,12 @@ void main() {
       when(() => mockRepository.bulkAddCompetencies(
         tosId: any(named: 'tosId'),
         competencies: any(named: 'competencies'),
-      )).thenAnswer((_) async => Right(tCreated));
+      )).thenAnswer((_) async => Right(MutationResult(entity: tCreated, status: SyncStatus.pending)));
 
       final result = await useCase(tosId: tTosId, competencies: tCompetenciesData);
 
-      expect(result, Right(tCreated));
-      expect(result.getOrElse(() => []).length, 2);
+      expect(result, Right(MutationResult(entity: tCreated, status: SyncStatus.pending)));
+      expect(result.getOrElse(() => throw Exception()).entity.length, 2);
       verify(() => mockRepository.bulkAddCompetencies(
         tosId: tTosId,
         competencies: tCompetenciesData,

@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/learning_materials/entities/learning_material.dart';
 import 'package:likha/domain/learning_materials/usecases/update_material.dart';
 import 'package:likha/domain/learning_materials/repositories/learning_material_repository.dart';
@@ -35,11 +37,11 @@ void main() {
         title: any(named: 'title'),
         description: any(named: 'description'),
         contentText: any(named: 'contentText'),
-      )).thenAnswer((_) async => Right(tUpdated));
+      )).thenAnswer((_) async => Right(MutationResult(entity: tUpdated, status: SyncStatus.pending)));
 
       final result = await useCase(materialId: tMaterialId, title: 'Updated Chapter 1');
 
-      expect(result, Right(tUpdated));
+      expect(result, Right(MutationResult(entity: tUpdated, status: SyncStatus.pending)));
     });
 
     test('should return ValidationFailure when title is empty', () async {
