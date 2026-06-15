@@ -199,7 +199,7 @@ void main() {
         when(() => mockGet(any(), publishedOnly: any(named: 'publishedOnly'), skipBackgroundRefresh: any(named: 'skipBackgroundRefresh'))).thenAnswer((_) async => Right([tAssignment]));
         await notifier.loadAssignments('c-1');
 
-        when(() => mockDelete(any())).thenAnswer((_) async => const Right(null));
+        when(() => mockDelete(any())).thenAnswer((_) async => const Right(MutationResult(entity: null, status: SyncStatus.pending)));
 
         await notifier.deleteAssignment(tAssignment.id);
 

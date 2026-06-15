@@ -1,5 +1,4 @@
 import 'package:likha/core/events/data_event_bus.dart';
-import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -16,7 +15,6 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
   final AssignmentRemoteDataSource _remoteDataSource;
   final AssignmentLocalDataSource _localDataSource;
   final SyncQueue _syncQueue;
-  final ServerReachabilityService _serverReachabilityService;
   final StorageService _storageService;
   final DataEventBus _dataEventBus;
 
@@ -24,13 +22,11 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
     required AssignmentRemoteDataSource remoteDataSource,
     required AssignmentLocalDataSource localDataSource,
     required SyncQueue syncQueue,
-    required ServerReachabilityService serverReachabilityService,
     required StorageService storageService,
     required DataEventBus dataEventBus,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
         _syncQueue = syncQueue,
-        _serverReachabilityService = serverReachabilityService,
         _storageService = storageService,
         _dataEventBus = dataEventBus;
 
@@ -94,7 +90,7 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       );
 
   @override
-  ResultFuture<Assignment> updateAssignment({
+  ResultFuture<MutationResult<Assignment>> updateAssignment({
     required String assignmentId,
     String? title,
     String? instructions,
@@ -106,9 +102,7 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
     String? dueAt,
   }) =>
       ops.updateAssignment(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         assignmentId: assignmentId,
         title: title,
@@ -122,44 +116,36 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       );
 
   @override
-  ResultVoid deleteAssignment({required String assignmentId}) =>
+  ResultFuture<MutationResult<void>> deleteAssignment({required String assignmentId}) =>
       ops.deleteAssignment(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         assignmentId: assignmentId,
       );
 
   @override
-  ResultFuture<Assignment> publishAssignment({required String assignmentId}) =>
+  ResultFuture<MutationResult<Assignment>> publishAssignment({required String assignmentId}) =>
       ops.publishAssignment(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         assignmentId: assignmentId,
       );
 
   @override
-  ResultFuture<Assignment> unpublishAssignment({required String assignmentId}) =>
+  ResultFuture<MutationResult<Assignment>> unpublishAssignment({required String assignmentId}) =>
       ops.unpublishAssignment(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         assignmentId: assignmentId,
       );
 
   @override
-  ResultVoid reorderAllAssignments({
+  ResultFuture<MutationResult<void>> reorderAllAssignments({
     required String classId,
     required List<String> assignmentIds,
   }) =>
       ops.reorderAllAssignments(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         classId: classId,
         assignmentIds: assignmentIds,
@@ -185,15 +171,13 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       );
 
   @override
-  ResultFuture<AssignmentSubmission> gradeSubmission({
+  ResultFuture<MutationResult<AssignmentSubmission>> gradeSubmission({
     required String submissionId,
     required int score,
     String? feedback,
   }) =>
       ops.gradeSubmission(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         submissionId: submissionId,
         score: score,
@@ -201,11 +185,9 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       );
 
   @override
-  ResultFuture<AssignmentSubmission> returnSubmission({required String submissionId}) =>
+  ResultFuture<MutationResult<AssignmentSubmission>> returnSubmission({required String submissionId}) =>
       ops.returnSubmission(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         submissionId: submissionId,
       );
@@ -224,14 +206,12 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       );
 
   @override
-  ResultFuture<AssignmentSubmission> createSubmission({
+  ResultFuture<MutationResult<AssignmentSubmission>> createSubmission({
     required String assignmentId,
     String? textContent,
   }) =>
       ops.createSubmission(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         _storageService,
         assignmentId: assignmentId,
@@ -239,39 +219,31 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       );
 
   @override
-  ResultFuture<SubmissionFile> uploadFile({
+  ResultFuture<MutationResult<SubmissionFile>> uploadFile({
     required String submissionId,
     required String filePath,
     required String fileName,
-    void Function(int sent, int total)? onSendProgress,
   }) =>
       ops.uploadFile(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         submissionId: submissionId,
         filePath: filePath,
         fileName: fileName,
-        onSendProgress: onSendProgress,
       );
 
   @override
-  ResultVoid deleteFile({required String fileId}) =>
+  ResultFuture<MutationResult<void>> deleteFile({required String fileId}) =>
       ops.deleteFile(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         fileId: fileId,
       );
 
   @override
-  ResultFuture<AssignmentSubmission> submitAssignment({required String submissionId}) =>
+  ResultFuture<MutationResult<AssignmentSubmission>> submitAssignment({required String submissionId}) =>
       ops.submitAssignment(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         submissionId: submissionId,
       );

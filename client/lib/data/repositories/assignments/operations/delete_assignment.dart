@@ -1,55 +1,36 @@
 import 'package:dartz/dartz.dart';
-import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:uuid/uuid.dart';
-import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
-import 'package:likha/data/datasources/remote/assignments/assignment_remote_datasource.dart';
 
-ResultVoid deleteAssignment(
-  ServerReachabilityService serverReachabilityService,
+ResultFuture<MutationResult<void>> deleteAssignment(
   AssignmentLocalDataSource localDataSource,
-  AssignmentRemoteDataSource remoteDataSource,
-  SyncQueue syncQueue, {required String assignmentId}) async {
+  SyncQueue syncQueue, {
+  required String assignmentId,
+}) async {
   try {
-    await localDataSource.deleteAssignment(assignmentId: assignmentId);
+    final db = await localDataSource.localDatabase.database;
+    await db.transaction((txn) async {
+      await localDataSource.deleteAssignment(assignmentId: assignmentId, txn: txn);
+      await syncQueue.enqueue(
+        SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.assignment,
+          operation: SyncOperation.delete,
+          payload: {'id': assignmentId},
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: DateTime.now(),
+        ),
+        txn: txn,
+      );
+    });
 
-    if (!serverReachabilityService.isServerReachable) {
-      await syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
-        entityType: SyncEntityType.assignment,
-        operation: SyncOperation.delete,
-        payload: {'id': assignmentId},
-        status: SyncStatus.pending,
-        retryCount: 0,
-        maxRetries: 5,
-        createdAt: DateTime.now(),
-      ));
-      return const Right(null);
-    }
-
-    try {
-      await remoteDataSource.deleteAssignment(assignmentId: assignmentId);
-      return const Right(null);
-    } on NetworkException {
-      await syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
-        entityType: SyncEntityType.assignment,
-        operation: SyncOperation.delete,
-        payload: {'id': assignmentId},
-        status: SyncStatus.pending,
-        retryCount: 0,
-        maxRetries: 5,
-        createdAt: DateTime.now(),
-      ));
-      return const Right(null);
-    }
-  } on ServerException catch (e) {
-    return Left(ServerFailure(e.message, statusCode: e.statusCode));
-  } on NetworkException catch (e) {
-    return Left(NetworkFailure(e.message));
+    return const Right(MutationResult(entity: null, status: SyncStatus.pending));
   } catch (e) {
     return Left(ServerFailure(e.toString()));
   }

@@ -336,7 +336,6 @@ Future<void> init() async {
       remoteDataSource: sl<AssignmentRemoteDataSource>(),
       localDataSource: sl<AssignmentLocalDataSource>(),
       syncQueue: sl<SyncQueue>(),
-      serverReachabilityService: sl<ServerReachabilityService>(),
       storageService: sl<StorageService>(),
       dataEventBus: sl<DataEventBus>(),
     ),

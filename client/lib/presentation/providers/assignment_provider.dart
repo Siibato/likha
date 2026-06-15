@@ -171,20 +171,6 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     }
   }
 
-  List<Assignment> _upsertAssignmentInList(
-    List<Assignment> assignments,
-    Assignment assignment, {
-    String? matchId,
-  }) {
-    final targetId = matchId ?? assignment.id;
-    final index = assignments.indexWhere((a) => a.id == targetId);
-    if (index == -1) return [assignment, ...assignments];
-
-    final updated = [...assignments];
-    updated[index] = assignment;
-    return updated;
-  }
-
   AssignmentSubmission _copySubmission(
     AssignmentSubmission source, {
     String? status,
@@ -214,29 +200,6 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
       files: files ?? source.files,
       createdAt: source.createdAt,
       updatedAt: updatedAt ?? source.updatedAt,
-      cachedAt: cachedAt ?? source.cachedAt,
-      syncStatus: syncStatus ?? source.syncStatus,
-    );
-  }
-
-  SubmissionFile _copySubmissionFile(
-    SubmissionFile source, {
-    String? id,
-    String? fileName,
-    String? fileType,
-    int? fileSize,
-    DateTime? uploadedAt,
-    String? localPath,
-    DateTime? cachedAt,
-    SyncStatus? syncStatus,
-  }) {
-    return SubmissionFile(
-      id: id ?? source.id,
-      fileName: fileName ?? source.fileName,
-      fileType: fileType ?? source.fileType,
-      fileSize: fileSize ?? source.fileSize,
-      uploadedAt: uploadedAt ?? source.uploadedAt,
-      localPath: localPath ?? source.localPath,
       cachedAt: cachedAt ?? source.cachedAt,
       syncStatus: syncStatus ?? source.syncStatus,
     );
@@ -290,61 +253,13 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   }
 
   Future<void> updateAssignment(UpdateAssignmentParams params) async {
-    final previousAssignments = state.assignments;
-    final previousCurrentAssignment = state.currentAssignment;
-    final existingAssignment = state.currentAssignment?.id == params.assignmentId
-        ? state.currentAssignment
-        : state.assignments
-            .where((a) => a.id == params.assignmentId)
-            .cast<Assignment?>()
-            .firstWhere((a) => a != null, orElse: () => null);
-
-    final optimisticDueAt =
-        params.dueAt != null ? DateTime.tryParse(params.dueAt!) : null;
-
-    final optimisticAssignment = existingAssignment?.copyWith(
-      title: params.title,
-      instructions: params.instructions,
-      totalPoints: params.totalPoints,
-      allowsTextSubmission: params.allowsTextSubmission,
-      allowsFileSubmission: params.allowsFileSubmission,
-      allowedFileTypes: params.allowedFileTypes,
-      maxFileSizeMb: params.maxFileSizeMb,
-      dueAt: optimisticDueAt,
-      updatedAt: DateTime.now(),
-    );
-
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      assignments: optimisticAssignment != null
-          ? state.assignments
-              .map((a) => a.id == params.assignmentId ? optimisticAssignment : a)
-              .toList()
-          : state.assignments,
-      currentAssignment:
-          state.currentAssignment?.id == params.assignmentId && optimisticAssignment != null
-              ? optimisticAssignment
-              : state.currentAssignment,
-    );
-
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await _updateAssignment(params);
     result.fold(
       (failure) =>
-          state = state.copyWith(
-            isLoading: false,
-            error: AppErrorMapper.fromFailure(failure),
-            assignments: previousAssignments,
-            currentAssignment: previousCurrentAssignment,
-          ),
-      (assignment) {
-        state = state.copyWith(
-          isLoading: false,
-          assignments: _upsertAssignmentInList(state.assignments, assignment),
-          currentAssignment: assignment,
-          successMessage: 'Assignment updated',
-        );
+          state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
+      (mutationResult) {
+        state = state.copyWith(successMessage: 'Assignment updated');
         // Sync title/total_points to linked grade item if one exists
         sl<GradingRepository>().findGradeItemBySourceId(params.assignmentId).then((res) {
           res.fold((_) {}, (item) {
@@ -363,106 +278,33 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   }
 
   Future<void> publishAssignment(String assignmentId) async {
-    final previousAssignments = state.assignments;
-    final previousCurrentAssignment = state.currentAssignment;
-
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      assignments: state.assignments
-          .map((a) => a.id == assignmentId ? a.copyWith(isPublished: true) : a)
-          .toList(),
-      currentAssignment: state.currentAssignment?.id == assignmentId
-          ? state.currentAssignment?.copyWith(isPublished: true)
-          : state.currentAssignment,
-    );
-
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await _publishAssignment(assignmentId);
     result.fold(
       (failure) =>
-          state = state.copyWith(
-            isLoading: false,
-            error: AppErrorMapper.fromFailure(failure),
-            assignments: previousAssignments,
-            currentAssignment: previousCurrentAssignment,
-          ),
-      (assignment) {
-        state = state.copyWith(
-          isLoading: false,
-          assignments: _upsertAssignmentInList(state.assignments, assignment),
-          currentAssignment: state.currentAssignment?.id == assignmentId
-              ? assignment
-              : state.currentAssignment,
-          successMessage: 'Assignment published',
-        );
-      },
+          state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
+      (mutationResult) => state = state.copyWith(successMessage: 'Assignment published'),
     );
   }
 
   Future<void> unpublishAssignment(String assignmentId) async {
-    final previousAssignments = state.assignments;
-    final previousCurrentAssignment = state.currentAssignment;
-
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      assignments: state.assignments
-          .map((a) => a.id == assignmentId ? a.copyWith(isPublished: false) : a)
-          .toList(),
-      currentAssignment: state.currentAssignment?.id == assignmentId
-          ? state.currentAssignment?.copyWith(isPublished: false)
-          : state.currentAssignment,
-    );
-
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await _unpublishAssignment(assignmentId);
     result.fold(
       (failure) =>
-          state = state.copyWith(
-            isLoading: false,
-            error: AppErrorMapper.fromFailure(failure),
-            assignments: previousAssignments,
-            currentAssignment: previousCurrentAssignment,
-          ),
-      (assignment) {
-        state = state.copyWith(
-          isLoading: false,
-          assignments: _upsertAssignmentInList(state.assignments, assignment),
-          currentAssignment: state.currentAssignment?.id == assignmentId
-              ? assignment
-              : state.currentAssignment,
-          successMessage: 'Assignment moved to draft',
-        );
-      },
+          state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
+      (mutationResult) => state = state.copyWith(successMessage: 'Assignment moved to draft'),
     );
   }
 
   Future<void> deleteAssignment(String assignmentId) async {
-    final previousAssignments = state.assignments;
-    final previousCurrentAssignment = state.currentAssignment;
-
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      assignments: state.assignments.where((a) => a.id != assignmentId).toList(),
-      currentAssignment:
-          state.currentAssignment?.id == assignmentId ? null : state.currentAssignment,
-    );
-
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await _deleteAssignment(assignmentId);
     result.fold(
       (failure) =>
-          state = state.copyWith(
-            isLoading: false,
-            error: AppErrorMapper.fromFailure(failure),
-            assignments: previousAssignments,
-            currentAssignment: previousCurrentAssignment,
-          ),
+          state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
       (_) {
         state = state.copyWith(
-          isLoading: false,
           successMessage: 'Assignment deleted',
           clearAssignment: true,
         );
@@ -483,19 +325,15 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     required List<String> assignmentIds,
     required List<Assignment> orderedAssignments,
   }) async {
-    final previousAssignments = state.assignments;
-    state = state.copyWith(assignments: orderedAssignments, clearError: true);
+    state = state.copyWith(clearError: true);
     final result = await _reorderAllAssignments(
       classId: classId,
       assignmentIds: assignmentIds,
     );
     result.fold(
       (failure) =>
-          state = state.copyWith(
-            assignments: previousAssignments,
-            error: AppErrorMapper.fromFailure(failure),
-          ),
-      (_) => state = state.copyWith(successMessage: 'Assignments reordered'),
+          state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
+      (mutationResult) => state = state.copyWith(successMessage: 'Assignments reordered'),
     );
   }
 
@@ -596,83 +434,26 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   }
 
   Future<void> gradeSubmission(GradeSubmissionParams params) async {
-    final previousCurrentSubmission = state.currentSubmission;
-    final previousAssignments = state.assignments;
-    final current = state.currentSubmission;
-    final isGradeTransition =
-        current != null && current.status != 'graded' && current.assignmentId.isNotEmpty;
-    final now = DateTime.now();
-
-    final optimisticSubmission = current != null
-        ? _copySubmission(
-            current,
-            status: 'graded',
-            score: params.score,
-            feedback: params.feedback,
-            gradedAt: now,
-            updatedAt: now,
-          )
-        : null;
-
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      currentSubmission: optimisticSubmission ?? state.currentSubmission,
-      assignments: isGradeTransition
-          ? state.assignments
-              .map((a) => a.id == current.assignmentId
-                  ? a.copyWith(gradedCount: a.gradedCount + 1)
-                  : a)
-              .toList()
-          : state.assignments,
-    );
-
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await _gradeSubmission(params);
     result.fold(
       (failure) =>
-          state = state.copyWith(
-            isLoading: false,
-            error: AppErrorMapper.fromFailure(failure),
-            currentSubmission: previousCurrentSubmission,
-            assignments: previousAssignments,
-          ),
-      (submission) => state = state.copyWith(
-        isLoading: false,
-        currentSubmission: submission,
+          state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
+      (mutationResult) => state = state.copyWith(
+        currentSubmission: mutationResult.entity,
         successMessage: 'Submission graded',
       ),
     );
   }
 
   Future<void> returnSubmission(String submissionId) async {
-    final previousCurrentSubmission = state.currentSubmission;
-    final current = state.currentSubmission;
-
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      currentSubmission: current != null && current.id == submissionId
-          ? _copySubmission(
-              current,
-              status: 'returned',
-              updatedAt: DateTime.now(),
-            )
-          : current,
-    );
-
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await _returnSubmission(submissionId);
     result.fold(
       (failure) =>
-          state = state.copyWith(
-            isLoading: false,
-            error: AppErrorMapper.fromFailure(failure),
-            currentSubmission: previousCurrentSubmission,
-          ),
-      (submission) => state = state.copyWith(
-        isLoading: false,
-        currentSubmission: submission,
+          state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
+      (mutationResult) => state = state.copyWith(
+        currentSubmission: mutationResult.entity,
         successMessage: 'Submission returned for revision',
       ),
     );
@@ -680,208 +461,82 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
 
   // Student: Submission flow
   Future<void> createSubmission(CreateSubmissionParams params) async {
-    final previousCurrentSubmission = state.currentSubmission;
-    final now = DateTime.now();
-    final optimisticSubmission = AssignmentSubmission(
-      id: 'temp-${now.microsecondsSinceEpoch}',
-      assignmentId: params.assignmentId,
-      studentId: '',
-      studentName: '',
-      status: 'draft',
-      textContent: params.textContent,
-      submittedAt: null,
-      score: null,
-      feedback: null,
-      gradedAt: null,
-      gradedBy: null,
-      files: const [],
-      createdAt: now,
-      updatedAt: now,
-      cachedAt: now,
-      syncStatus: SyncStatus.pending,
-    );
-
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      currentSubmission: optimisticSubmission,
-    );
-
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await _createSubmission(params);
     result.fold(
       (failure) =>
-          state = state.copyWith(
-            isLoading: false,
-            error: AppErrorMapper.fromFailure(failure),
-            currentSubmission: previousCurrentSubmission,
-          ),
-      (submission) => state = state.copyWith(
-        isLoading: false,
-        currentSubmission: submission,
+          state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
+      (mutationResult) => state = state.copyWith(
+        currentSubmission: mutationResult.entity,
         successMessage: 'Submission created',
       ),
     );
   }
 
   Future<void> uploadFile(UploadFileParams params) async {
-    final previousCurrentSubmission = state.currentSubmission;
-    final tempFileId = 'temp-file-${DateTime.now().microsecondsSinceEpoch}';
-    final optimisticFile = SubmissionFile(
-      id: tempFileId,
-      fileName: params.fileName,
-      fileType: 'application/octet-stream',
-      fileSize: 0,
-      uploadedAt: DateTime.now(),
-      localPath: params.filePath,
-      cachedAt: DateTime.now(),
-      syncStatus: SyncStatus.pending,
-    );
-
-    final currentSubmission = state.currentSubmission;
-    final optimisticSubmission = currentSubmission != null &&
-            currentSubmission.id == params.submissionId
-        ? _copySubmission(
-            currentSubmission,
-            files: [...currentSubmission.files, optimisticFile],
-            updatedAt: DateTime.now(),
-          )
-        : currentSubmission;
-
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      clearUploadProgress: true,
-      currentUploadFileName: params.fileName,
-      currentSubmission: optimisticSubmission,
-    );
-
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await _uploadFile(
       UploadFileParams(
         submissionId: params.submissionId,
         filePath: params.filePath,
         fileName: params.fileName,
-        onSendProgress: (sent, total) {
-          if (total > 0) {
-            state = state.copyWith(uploadProgress: sent / total);
-          }
-        },
       ),
     );
-
     result.fold(
       (failure) => state = state.copyWith(
-        isLoading: false,
         error: AppErrorMapper.fromFailure(failure),
-        clearUploadProgress: true,
-        currentSubmission: previousCurrentSubmission,
       ),
-      (file) {
+      (mutationResult) {
+        final file = mutationResult.entity;
         final submission = state.currentSubmission;
-        final updatedSubmission = submission != null
-            ? _copySubmission(
-                submission,
-                files: submission.files
-                    .map(
-                      (f) => f.id == tempFileId
-                          ? _copySubmissionFile(
-                              file,
-                              localPath: file.localPath ?? params.filePath,
-                            )
-                          : f,
-                    )
-                    .toList(),
-                updatedAt: DateTime.now(),
-              )
-            : submission;
-
-        state = state.copyWith(
-          isLoading: false,
-          currentSubmission: updatedSubmission,
-          successMessage: 'File uploaded',
-          clearUploadProgress: true,
-        );
+        if (submission != null && submission.id == params.submissionId) {
+          state = state.copyWith(
+            currentSubmission: _copySubmission(
+              submission,
+              files: [...submission.files, file],
+              updatedAt: DateTime.now(),
+            ),
+            successMessage: 'File uploaded',
+          );
+        } else {
+          state = state.copyWith(successMessage: 'File uploaded');
+        }
       },
     );
   }
 
   Future<void> deleteSubmissionFile(String fileId) async {
-    final previousCurrentSubmission = state.currentSubmission;
-    final currentSubmission = state.currentSubmission;
-    final optimisticSubmission = currentSubmission != null
-        ? _copySubmission(
-            currentSubmission,
-            files: currentSubmission.files.where((f) => f.id != fileId).toList(),
-            updatedAt: DateTime.now(),
-          )
-        : null;
-
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      currentSubmission: optimisticSubmission,
-    );
-
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await _deleteFile(fileId);
     result.fold(
       (failure) =>
+          state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
+      (mutationResult) {
+        final submission = state.currentSubmission;
+        if (submission != null) {
           state = state.copyWith(
-            isLoading: false,
-            error: AppErrorMapper.fromFailure(failure),
-            currentSubmission: previousCurrentSubmission,
-          ),
-      (_) => state = state.copyWith(
-        isLoading: false,
-        successMessage: 'File deleted',
-      ),
+            currentSubmission: _copySubmission(
+              submission,
+              files: submission.files.where((f) => f.id != fileId).toList(),
+              updatedAt: DateTime.now(),
+            ),
+            successMessage: 'File deleted',
+          );
+        } else {
+          state = state.copyWith(successMessage: 'File deleted');
+        }
+      },
     );
   }
 
   Future<void> submitAssignment(String submissionId) async {
-    final previousCurrentSubmission = state.currentSubmission;
-    final previousAssignments = state.assignments;
-    final current = state.currentSubmission;
-    final now = DateTime.now();
-
-    final optimisticSubmission = current != null && current.id == submissionId
-        ? _copySubmission(
-            current,
-            status: 'submitted',
-            submittedAt: now,
-            updatedAt: now,
-          )
-        : current;
-
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      currentSubmission: optimisticSubmission,
-      assignments: current != null && current.assignmentId.isNotEmpty
-          ? state.assignments
-              .map(
-                (a) => a.id == current.assignmentId
-                    ? a.copyWith(submissionStatus: 'submitted')
-                    : a,
-              )
-              .toList()
-          : state.assignments,
-    );
-
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await _submitAssignment(submissionId);
     result.fold(
       (failure) =>
-          state = state.copyWith(
-            isLoading: false,
-            error: AppErrorMapper.fromFailure(failure),
-            currentSubmission: previousCurrentSubmission,
-            assignments: previousAssignments,
-          ),
-      (submission) => state = state.copyWith(
-        isLoading: false,
-        currentSubmission: submission,
+          state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
+      (mutationResult) => state = state.copyWith(
+        currentSubmission: mutationResult.entity,
         successMessage: 'Assignment submitted',
       ),
     );

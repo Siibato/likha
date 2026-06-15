@@ -26,7 +26,7 @@ abstract class AssignmentRepository {
 
   ResultFuture<Assignment> getAssignmentDetail({required String assignmentId});
 
-  ResultFuture<Assignment> updateAssignment({
+  ResultFuture<MutationResult<Assignment>> updateAssignment({
     required String assignmentId,
     String? title,
     String? instructions,
@@ -38,13 +38,13 @@ abstract class AssignmentRepository {
     String? dueAt,
   });
 
-  ResultVoid deleteAssignment({required String assignmentId});
+  ResultFuture<MutationResult<void>> deleteAssignment({required String assignmentId});
 
-  ResultFuture<Assignment> publishAssignment({required String assignmentId});
+  ResultFuture<MutationResult<Assignment>> publishAssignment({required String assignmentId});
 
-  ResultFuture<Assignment> unpublishAssignment({required String assignmentId});
+  ResultFuture<MutationResult<Assignment>> unpublishAssignment({required String assignmentId});
 
-  ResultVoid reorderAllAssignments({
+  ResultFuture<MutationResult<void>> reorderAllAssignments({
     required String classId,
     required List<String> assignmentIds,
   });
@@ -59,13 +59,13 @@ abstract class AssignmentRepository {
     required String submissionId,
   });
 
-  ResultFuture<AssignmentSubmission> gradeSubmission({
+  ResultFuture<MutationResult<AssignmentSubmission>> gradeSubmission({
     required String submissionId,
     required int score,
     String? feedback,
   });
 
-  ResultFuture<AssignmentSubmission> returnSubmission({
+  ResultFuture<MutationResult<AssignmentSubmission>> returnSubmission({
     required String submissionId,
   });
 
@@ -75,21 +75,20 @@ abstract class AssignmentRepository {
   });
 
   // Student: Submission flow
-  ResultFuture<AssignmentSubmission> createSubmission({
+  ResultFuture<MutationResult<AssignmentSubmission>> createSubmission({
     required String assignmentId,
     String? textContent,
   });
 
-  ResultFuture<SubmissionFile> uploadFile({
+  ResultFuture<MutationResult<SubmissionFile>> uploadFile({
     required String submissionId,
     required String filePath,
     required String fileName,
-    void Function(int sent, int total)? onSendProgress,
   });
 
-  ResultVoid deleteFile({required String fileId});
+  ResultFuture<MutationResult<void>> deleteFile({required String fileId});
 
-  ResultFuture<AssignmentSubmission> submitAssignment({
+  ResultFuture<MutationResult<AssignmentSubmission>> submitAssignment({
     required String submissionId,
   });
 

@@ -8,23 +8,22 @@ Future<void> submitAssignment(
   LocalDatabase localDatabase,
   SyncQueue syncQueue,
   String submissionId,
-  String assignmentId,
-) async {
+  String assignmentId, {
+  Transaction? txn,
+}) async {
   try {
-    final db = await localDatabase.database;
     final now = DateTime.now();
 
-    // Fetch current text_content before closing transaction
-    final result = await db.query(
-      DbTables.assignmentSubmissions,
-      columns: [AssignmentSubmissionsCols.textContent],
-      where: '${CommonCols.id} = ?',
-      whereArgs: [submissionId],
-    );
-    final textContent = result.isNotEmpty ? result.first[AssignmentSubmissionsCols.textContent] as String? : null;
+    Future<void> execute(Transaction t) async {
+      final result = await t.query(
+        DbTables.assignmentSubmissions,
+        columns: [AssignmentSubmissionsCols.textContent],
+        where: '${CommonCols.id} = ?',
+        whereArgs: [submissionId],
+      );
+      final textContent = result.isNotEmpty ? result.first[AssignmentSubmissionsCols.textContent] as String? : null;
 
-    await db.transaction((txn) async {
-      await txn.update(
+      await t.update(
         DbTables.assignmentSubmissions,
         {
           AssignmentSubmissionsCols.status: DbValues.statusSubmitted,
@@ -49,8 +48,15 @@ Future<void> submitAssignment(
         retryCount: 0,
         maxRetries: 3,
         createdAt: now,
-      ), txn: txn);
-    });
+      ), txn: t);
+    }
+
+    if (txn != null) {
+      await execute(txn);
+    } else {
+      final db = await localDatabase.database;
+      await db.transaction((innerTxn) => execute(innerTxn));
+    }
   } catch (e) {
     throw CacheException('Failed to submit assignment locally: $e');
   }

@@ -6,13 +6,14 @@ import 'package:sqflite_sqlcipher/sqflite.dart';
 
 Future<void> cacheSubmissionDetail(
   LocalDatabase localDatabase,
-  AssignmentSubmissionModel submission,
-) async {
+  AssignmentSubmissionModel submission, {
+  Transaction? txn,
+}) async {
   try {
-    final db = await localDatabase.database;
     final now = DateTime.now().toIso8601String();
-    await db.transaction((txn) async {
-      await txn.insert(
+
+    Future<void> execute(Transaction t) async {
+      await t.insert(
         DbTables.assignmentSubmissions,
         {
           CommonCols.id: submission.id,
@@ -36,13 +37,13 @@ Future<void> cacheSubmissionDetail(
       // Clear stale file metadata for this submission, then re-insert fresh list.
       // Actual file bytes on disk are untouched; getCachedSubmissionFilesOp
       // auto-repairs local_path from disk on the next read.
-      await txn.delete(
+      await t.delete(
         DbTables.submissionFiles,
         where: '${SubmissionFilesCols.submissionId} = ?',
         whereArgs: [submission.id],
       );
       for (final file in submission.files) {
-        await txn.insert(DbTables.submissionFiles, {
+        await t.insert(DbTables.submissionFiles, {
           CommonCols.id: file.id,
           SubmissionFilesCols.submissionId: submission.id,
           SubmissionFilesCols.fileName: file.fileName,
@@ -53,7 +54,14 @@ Future<void> cacheSubmissionDetail(
           CommonCols.cachedAt: now,
         }, conflictAlgorithm: ConflictAlgorithm.ignore);
       }
-    });
+    }
+
+    if (txn != null) {
+      await execute(txn);
+    } else {
+      final db = await localDatabase.database;
+      await db.transaction((innerTxn) => execute(innerTxn));
+    }
   } catch (e) {
     throw CacheException('Failed to cache submission detail: $e');
   }

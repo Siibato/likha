@@ -12,7 +12,7 @@ abstract class AssignmentLocalDataSource {
   Future<List<AssignmentModel>> getCachedAssignments(String classId, {bool publishedOnly = false, String? studentId});
   Future<AssignmentModel> getCachedAssignmentDetail(String assignmentId);
   Future<void> cacheAssignments(List<AssignmentModel> assignments);
-  Future<void> cacheAssignmentDetail(AssignmentModel assignment);
+  Future<void> cacheAssignmentDetail(AssignmentModel assignment, {Transaction? txn});
   Future<void> insertAssignment(AssignmentModel assignment, {Transaction? txn});
   Future<String> createSubmission({
     required String assignmentId,
@@ -34,6 +34,7 @@ abstract class AssignmentLocalDataSource {
   Future<void> submitAssignment({
     required String submissionId,
     required String assignmentId,
+    Transaction? txn,
   });
   Future<AssignmentSubmissionModel?> getCachedSubmission(String submissionId);
   Future<List<SubmissionListItemModel>> getCachedSubmissions(String assignmentId);
@@ -48,16 +49,17 @@ abstract class AssignmentLocalDataSource {
     String? feedback,
   });
   Future<void> returnSubmission({required String submissionId});
-  Future<void> cacheSubmissionDetail(AssignmentSubmissionModel submission);
-  Future<void> cacheSubmissionFile(String submissionId, SubmissionFileModel file);
-  Future<void> softDeleteSubmissionFile(String fileId);
+  Future<void> cacheSubmissionDetail(AssignmentSubmissionModel submission, {Transaction? txn});
+  Future<void> cacheSubmissionFile(String submissionId, SubmissionFileModel file, {Transaction? txn});
+  Future<void> softDeleteSubmissionFile(String fileId, {Transaction? txn});
   Future<void> markAssignmentPublished({required String assignmentId});
   Future<void> markAssignmentUnpublished({required String assignmentId});
   Future<void> updateAssignmentOrder({
     required String assignmentId,
     required int orderIndex,
+    Transaction? txn,
   });
-  Future<void> deleteAssignment({required String assignmentId});
+  Future<void> deleteAssignment({required String assignmentId, Transaction? txn});
   Future<void> clearAllCache();
   Future<(String submissionId, String status, int? score)?> getStudentSubmissionForAssignment(
     String assignmentId,
@@ -93,8 +95,8 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
       ops.cacheAssignments(localDatabase, assignments);
 
   @override
-  Future<void> cacheAssignmentDetail(AssignmentModel assignment) =>
-      ops.cacheAssignmentDetail(localDatabase, assignment);
+  Future<void> cacheAssignmentDetail(AssignmentModel assignment, {Transaction? txn}) =>
+      ops.cacheAssignmentDetail(localDatabase, assignment, txn: txn);
 
   @override
   Future<void> insertAssignment(AssignmentModel assignment, {Transaction? txn}) =>
@@ -145,8 +147,9 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
   Future<void> submitAssignment({
     required String submissionId,
     required String assignmentId,
+    Transaction? txn,
   }) =>
-      ops.submitAssignment(localDatabase, syncQueue, submissionId, assignmentId);
+      ops.submitAssignment(localDatabase, syncQueue, submissionId, assignmentId, txn: txn);
 
   @override
   Future<AssignmentSubmissionModel?> getCachedSubmission(String submissionId) =>
@@ -194,16 +197,16 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
       ops.returnSubmission(localDatabase, syncQueue, submissionId);
 
   @override
-  Future<void> cacheSubmissionDetail(AssignmentSubmissionModel submission) =>
-      ops.cacheSubmissionDetail(localDatabase, submission);
+  Future<void> cacheSubmissionDetail(AssignmentSubmissionModel submission, {Transaction? txn}) =>
+      ops.cacheSubmissionDetail(localDatabase, submission, txn: txn);
 
   @override
-  Future<void> cacheSubmissionFile(String submissionId, SubmissionFileModel file) =>
-      ops.cacheSubmissionFile(localDatabase, submissionId, file);
+  Future<void> cacheSubmissionFile(String submissionId, SubmissionFileModel file, {Transaction? txn}) =>
+      ops.cacheSubmissionFile(localDatabase, submissionId, file, txn: txn);
 
   @override
-  Future<void> softDeleteSubmissionFile(String fileId) =>
-      ops.softDeleteSubmissionFile(localDatabase, fileId);
+  Future<void> softDeleteSubmissionFile(String fileId, {Transaction? txn}) =>
+      ops.softDeleteSubmissionFile(localDatabase, fileId, txn: txn);
 
   @override
   Future<void> markAssignmentPublished({required String assignmentId}) =>
@@ -217,12 +220,13 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
   Future<void> updateAssignmentOrder({
     required String assignmentId,
     required int orderIndex,
+    Transaction? txn,
   }) =>
-      ops.updateAssignmentOrder(localDatabase, assignmentId, orderIndex);
+      ops.updateAssignmentOrder(localDatabase, assignmentId, orderIndex, txn: txn);
 
   @override
-  Future<void> deleteAssignment({required String assignmentId}) =>
-      ops.deleteAssignment(localDatabase, assignmentId);
+  Future<void> deleteAssignment({required String assignmentId, Transaction? txn}) =>
+      ops.deleteAssignment(localDatabase, assignmentId, txn: txn);
 
   @override
   Future<void> clearAllCache() =>
