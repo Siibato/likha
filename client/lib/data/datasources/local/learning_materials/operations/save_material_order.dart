@@ -2,6 +2,7 @@ import 'package:sqflite_sqlcipher/sqflite.dart';
 
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 
 Future<void> saveMaterialOrder(
   LocalDatabase localDatabase,
@@ -18,7 +19,7 @@ Future<void> saveMaterialOrder(
       {
         LearningMaterialsCols.orderIndex: i,
         CommonCols.updatedAt: now,
-        CommonCols.syncStatus: 'pending',
+        CommonCols.syncStatus: SyncStatus.pending.dbValue,
         CommonCols.cachedAt: now,
       },
       where: '${CommonCols.id} = ?',

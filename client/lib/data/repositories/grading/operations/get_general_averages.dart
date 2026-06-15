@@ -19,6 +19,11 @@ ResultFuture<GeneralAverageResponse> getGeneralAverages(
     try {
       final cached = await localDataSource.getCachedGeneralAverages(classId);
 
+      // Treat empty map as cache miss
+      if (cached.isEmpty) {
+        throw CacheException('No cached general averages found');
+      }
+
       fireRemoteFetch(
         dedupKey: 'grading/generalAverages/$classId/bg',
         remote: () => remoteDataSource.getGeneralAverages(classId: classId),

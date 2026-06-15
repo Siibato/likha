@@ -61,6 +61,7 @@ ResultFuture<MutationResult<TosCompetency>> updateCompetency(
       },
       onError: (error) async {
         if (error is NetworkException) {
+          // NetworkException should not mark as failed - just return
           return;
         }
 

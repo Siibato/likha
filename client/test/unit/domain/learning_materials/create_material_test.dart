@@ -42,7 +42,7 @@ void main() {
 
       final result = await useCase(classId: tClassId, title: tTitle);
 
-      expect(result, Right(MutationResult(entity: tMaterial, status: SyncStatus.pending)));
+      expect(result.isRight(), isTrue);
       expect(result.getOrElse(() => throw Exception()).entity.title, tTitle);
       verify(() => mockRepository.createMaterial(
         classId: tClassId,

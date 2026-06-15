@@ -28,6 +28,12 @@ ResultFuture<List<GradeItem>> getGradeItems(
         gradingPeriodNumber,
         component: component,
       );
+
+      // Treat empty list as cache miss
+      if (cachedModels.isEmpty) {
+        throw CacheException('No cached grade items found');
+      }
+
       final entities = cachedModels.map(helpers.itemToEntity).toList();
 
       if (!skipBackgroundRefresh) {

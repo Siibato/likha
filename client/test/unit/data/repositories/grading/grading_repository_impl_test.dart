@@ -1,11 +1,14 @@
-import 'package:dartz/dartz.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
 
-import 'package:likha/core/errors/exceptions.dart';
+import 'package:likha/core/database/local_database.dart';
+import 'package:likha/core/events/data_event_bus.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
+import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
+import 'package:likha/data/datasources/remote/grading/grading_remote_datasource.dart';
 import 'package:likha/data/models/grading/grade_item_model.dart';
 import 'package:likha/data/models/grading/grade_config_model.dart';
 import 'package:likha/data/models/grading/grade_score_model.dart';
@@ -14,7 +17,7 @@ import 'package:likha/data/models/grading/sf9_model.dart';
 import 'package:likha/data/repositories/grading/grading_repository_impl.dart';
 
 import '../../../../helpers/mock_datasources.dart';
-import '../../../../helpers/mock_repositories.dart';
+import '../../../../helpers/test_database.dart';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -45,10 +48,10 @@ GradeConfigModel _fakeConfig({String id = 'cfg-1', String classId = 'c-1'}) =>
     );
 
 GradingRepositoryImpl _buildRepo({
-  required MockGradingLocalDataSource local,
-  required MockGradingRemoteDataSource remote,
-  required MockSyncQueue syncQueue,
-  MockDataEventBus? eventBus,
+  required GradingLocalDataSource local,
+  required GradingRemoteDataSource remote,
+  required SyncQueue syncQueue,
+  DataEventBus? eventBus,
 }) {
   return GradingRepositoryImpl(
     remoteDataSource: remote,
@@ -61,15 +64,26 @@ GradingRepositoryImpl _buildRepo({
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 void main() {
-  late MockGradingLocalDataSource local;
+  late GradingLocalDataSourceImpl local;
+  late SyncQueueImpl syncQueue;
   late MockGradingRemoteDataSource remote;
-  late MockSyncQueue syncQueue;
+  late MockServerReachabilityService reachability;
 
-  setUp(() {
-    local = MockGradingLocalDataSource();
+  setUp(() async {
+    await openFreshTestDatabase();
+    syncQueue = SyncQueueImpl(LocalDatabase());
+    local = GradingLocalDataSourceImpl(LocalDatabase(), syncQueue);
     remote = MockGradingRemoteDataSource();
-    syncQueue = MockSyncQueue();
+    reachability = MockServerReachabilityService();
     dotenv.testLoad(fileInput: '');
+
+    when(() => reachability.isServerReachable).thenReturn(true);
+    when(() => reachability.checkNow()).thenAnswer((_) async => true);
+    final getIt = GetIt.instance;
+    if (getIt.isRegistered<ServerReachabilityService>()) {
+      getIt.unregister<ServerReachabilityService>();
+    }
+    getIt.registerSingleton<ServerReachabilityService>(reachability);
 
     registerFallbackValue(SyncQueueEntry(
       id: 'fallback',
@@ -87,8 +101,9 @@ void main() {
     registerFallbackValue(<GradeScoreModel>[]);
   });
 
-  tearDown(() {
+  tearDown(() async {
     GetIt.instance.reset();
+    await closeTestDatabase();
   });
 
   group('GradingRepositoryImpl', () {
@@ -98,40 +113,31 @@ void main() {
       test('fetches from remote and saves to local when server reachable', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-           
+
         );
 
-        when(() => local.getItemsByClassQuarter(any(), any(), component: any(named: 'component')))
-            .thenThrow(CacheException('cache miss'));
         when(() => remote.getGradeItems(
           classId: any(named: 'classId'),
           gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
           component: any(named: 'component'),
         )).thenAnswer((_) async => [_fakeItem()]);
-        when(() => local.saveItems(any())).thenAnswer((_) async {});
 
         final result = await repo.getGradeItems(classId: 'c-1', gradingPeriodNumber: 1);
 
         expect(result.isRight(), isTrue);
         result.fold((f) => fail('Expected Right'), (list) => expect(list.length, 1));
-        verify(() => remote.getGradeItems(
-          classId: 'c-1',
-          gradingPeriodNumber: 1,
-          component: null,
-        )).called(1);
-        verify(() => local.saveItems(any())).called(1);
       });
     });
 
     group('getGradeItems — offline', () {
       test('reads from local cache when offline', () async {
+        // Pre-populate database
+        await local.saveItems([_fakeItem()]);
+
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-           
-        );
 
-        when(() => local.getItemsByClassQuarter('c-1', 1, component: null))
-            .thenAnswer((_) async => [_fakeItem()]);
+        );
 
         final result = await repo.getGradeItems(classId: 'c-1', gradingPeriodNumber: 1);
 
@@ -150,19 +156,22 @@ void main() {
       test('saves locally and enqueues sync op', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-          
+
         );
 
-        when(() => local.upsertScoresByItem(any(), any())).thenAnswer((_) async {});
-        when(() => syncQueue.enqueue(any())).thenAnswer((_) async {});
 
         final result = await repo.saveScores(
           gradeItemId: 'gi-1',
           scores: [{'student_id': 's-1', 'score': 45.0}],
         );
 
-        expect(result, const Right(null));
-        verify(() => local.upsertScoresByItem('gi-1', any())).called(1);
+        expect(result.isRight(), isTrue);
+        result.fold(
+          (f) => fail('Expected Right, got $f'),
+          (mr) => {
+            expect(mr.status, SyncStatus.pending),
+          },
+        );
         verifyNever(() => remote.saveScores(
           gradeItemId: any(named: 'gradeItemId'),
           scores: any(named: 'scores'),
@@ -172,18 +181,21 @@ void main() {
       test('enqueues with correct entity type and operation', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-          
-        );
 
-        when(() => local.upsertScoresByItem(any(), any())).thenAnswer((_) async {});
+        );
 
         final result = await repo.saveScores(
           gradeItemId: 'gi-2',
           scores: [{'student_id': 's-2', 'score': 90.0}],
         );
 
-        expect(result, const Right(null));
-        verify(() => local.upsertScoresByItem('gi-2', any())).called(1);
+        expect(result.isRight(), isTrue);
+        result.fold(
+          (f) => fail('Expected Right, got $f'),
+          (mr) => {
+            expect(mr.status, SyncStatus.pending),
+          },
+        );
       });
     });
 
@@ -196,9 +208,6 @@ void main() {
           
         );
 
-        when(() => local.saveItem(any())).thenAnswer((_) async {});
-        when(() => syncQueue.enqueue(any())).thenAnswer((_) async {});
-
         final result = await repo.createGradeItem(
           classId: 'c-1',
           data: {
@@ -210,8 +219,12 @@ void main() {
         );
 
         expect(result.isRight(), isTrue);
-        verify(() => local.saveItem(any())).called(1);
-        verify(() => syncQueue.enqueue(any())).called(1);
+        result.fold(
+          (f) => fail('Expected Right, got $f'),
+          (mr) => {
+            expect(mr.status, SyncStatus.pending),
+          },
+        );
       });
     });
 
@@ -221,17 +234,18 @@ void main() {
       test('soft-deletes locally and enqueues delete op', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-          
-        );
 
-        when(() => local.softDeleteItem(any())).thenAnswer((_) async {});
-        when(() => syncQueue.enqueue(any())).thenAnswer((_) async {});
+        );
 
         final result = await repo.deleteGradeItem(id: 'gi-1');
 
-        expect(result, const Right(null));
-        verify(() => local.softDeleteItem('gi-1')).called(1);
-        verify(() => syncQueue.enqueue(any())).called(1);
+        expect(result.isRight(), isTrue);
+        result.fold(
+          (f) => fail('Expected Right, got $f'),
+          (mr) => {
+            expect(mr.status, SyncStatus.pending),
+          },
+        );
       });
     });
 
@@ -241,31 +255,28 @@ void main() {
       test('fetches from remote and caches locally', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-           
+
         );
 
-        when(() => local.getConfigByClass('c-1'))
-            .thenThrow(CacheException('cache miss'));
         when(() => remote.getGradingConfig(classId: any(named: 'classId')))
             .thenAnswer((_) async => [_fakeConfig()]);
-        when(() => local.saveConfigs(any())).thenAnswer((_) async {});
 
         final result = await repo.getGradingConfig(classId: 'c-1');
 
         expect(result.isRight(), isTrue);
         result.fold((f) => fail('Expected Right'), (list) => expect(list.isNotEmpty, isTrue));
-        verify(() => local.saveConfigs(any())).called(1);
       });
     });
 
     group('getGradingConfig — offline', () {
       test('reads from local cache when offline', () async {
+        // Pre-populate cache
+        await local.saveConfigs([_fakeConfig()]);
+
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-           
-        );
 
-        when(() => local.getConfigByClass('c-1')).thenAnswer((_) async => [_fakeConfig()]);
+        );
 
         final result = await repo.getGradingConfig(classId: 'c-1');
 
@@ -280,17 +291,18 @@ void main() {
       test('updates locally and enqueues set_override op', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-          
-        );
 
-        when(() => local.updateScoreOverride(any(), any())).thenAnswer((_) async {});
-        when(() => syncQueue.enqueue(any())).thenAnswer((_) async {});
+        );
 
         final result = await repo.setScoreOverride(scoreId: 'sc-1', overrideScore: 95.0);
 
-        expect(result, const Right(null));
-        verify(() => local.updateScoreOverride('sc-1', 95.0)).called(1);
-        verify(() => syncQueue.enqueue(any())).called(1);
+        expect(result.isRight(), isTrue);
+        result.fold(
+          (f) => fail('Expected Right, got $f'),
+          (mr) => {
+            expect(mr.status, SyncStatus.pending),
+          },
+        );
       });
     });
 
@@ -298,16 +310,16 @@ void main() {
 
     group('getFinalGrades — cache-first', () {
       test('returns cached data immediately and refreshes in background', () async {
+        // Pre-populate cache
+        await local.cacheFinalGrades('c-1', [{'student_id': 's-1', 'finalGrade': 88}]);
+
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-           
+
         );
 
-        when(() => local.getCachedFinalGrades('c-1'))
-            .thenAnswer((_) async => [{'student_id': 's-1', 'finalGrade': 88}]);
         when(() => remote.getFinalGrades(classId: any(named: 'classId')))
             .thenAnswer((_) async => [{'student_id': 's-1', 'finalGrade': 90}]);
-        when(() => local.cacheFinalGrades(any(), any())).thenAnswer((_) async {});
 
         final result = await repo.getFinalGrades(classId: 'c-1');
 
@@ -324,13 +336,14 @@ void main() {
 
     group('getGeneralAverages — cache-first', () {
       test('returns cached data immediately', () async {
+        // Pre-populate cache
+        await local.cacheGeneralAverages('c-1', {'class_id': 'c-1', 'students': []});
+
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-           
+
         );
 
-        when(() => local.getCachedGeneralAverages('c-1'))
-            .thenAnswer((_) async => {'class_id': 'c-1', 'students': []});
         when(() => remote.getGeneralAverages(classId: any(named: 'classId')))
             .thenAnswer((_) async => const GeneralAverageResponseModel(
               classId: 'c-1',
@@ -347,13 +360,14 @@ void main() {
 
     group('getMyGradeDetail — cache-first', () {
       test('returns cached data immediately', () async {
+        // Pre-populate cache
+        await local.cacheMyGradeDetail('c-1', 1, {'initial_grade': 88.5});
+
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-           
+
         );
 
-        when(() => local.getCachedMyGradeDetail('c-1', 1))
-            .thenAnswer((_) async => {'initial_grade': 88.5});
         when(() => remote.getMyGradeDetail(
           classId: any(named: 'classId'),
           gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
@@ -369,13 +383,14 @@ void main() {
 
     group('getSf9 — cache-first', () {
       test('returns cached data immediately', () async {
+        // Pre-populate cache
+        await local.cacheSf9('c-1', 's-1', {'student_id': 's-1', 'student_name': 'Student'});
+
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-           
+
         );
 
-        when(() => local.getCachedSf9('c-1', 's-1'))
-            .thenAnswer((_) async => {'student_id': 's-1', 'student_name': 'Student'});
         when(() => remote.getSf9(classId: any(named: 'classId'), studentId: any(named: 'studentId')))
             .thenAnswer((_) async => const Sf9ResponseModel(
               studentId: 's-1',

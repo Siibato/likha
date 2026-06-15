@@ -14,14 +14,13 @@ Future<void> updateQuestionOrder(
     final updateMap = {
       AssessmentQuestionsCols.orderIndex: orderIndex,
       CommonCols.updatedAt: now.toIso8601String(),
-      CommonCols.cachedAt: now.toIso8601String(),
       CommonCols.syncStatus: SyncStatus.pending.dbValue,
     };
     if (txn != null) {
       await txn.update(
         DbTables.assessmentQuestions,
         updateMap,
-        where: '${CommonCols.id} = ? AND ${CommonCols.deletedAt} IS NULL',
+        where: '${CommonCols.id} = ?',
         whereArgs: [questionId],
       );
     } else {
@@ -29,7 +28,7 @@ Future<void> updateQuestionOrder(
       await db.update(
         DbTables.assessmentQuestions,
         updateMap,
-        where: '${CommonCols.id} = ? AND ${CommonCols.deletedAt} IS NULL',
+        where: '${CommonCols.id} = ?',
         whereArgs: [questionId],
       );
     }

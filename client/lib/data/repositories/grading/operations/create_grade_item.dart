@@ -69,38 +69,50 @@ ResultFuture<MutationResult<GradeItem>> createGradeItem(
         idempotencyKey: queueEntryId,
       ),
       onSuccess: (serverModel) async {
-        final db = await localDataSource.localDatabase.database;
+        try {
+          final db = await localDataSource.localDatabase.database;
 
-        if (serverModel.id != id) {
+          if (serverModel.id != id) {
+            await db.update(
+              DbTables.gradeItems,
+              {CommonCols.id: serverModel.id},
+              where: '${CommonCols.id} = ?',
+              whereArgs: [id],
+            );
+          }
+
           await db.update(
             DbTables.gradeItems,
-            {CommonCols.id: serverModel.id},
+            {CommonCols.syncStatus: SyncStatus.synced.dbValue},
             where: '${CommonCols.id} = ?',
-            whereArgs: [id],
+            whereArgs: [serverModel.id],
           );
+          await syncQueue.markSucceeded(queueEntryId);
+        } catch (e) {
+          if (!e.toString().contains('database_closed')) {
+            rethrow;
+          }
         }
-
-        await db.update(
-          DbTables.gradeItems,
-          {CommonCols.syncStatus: SyncStatus.synced.dbValue},
-          where: '${CommonCols.id} = ?',
-          whereArgs: [serverModel.id],
-        );
-        await syncQueue.markSucceeded(queueEntryId);
       },
       onError: (error) async {
         if (error is NetworkException) {
           return;
         }
 
-        final db = await localDataSource.localDatabase.database;
-        await db.update(
-          DbTables.gradeItems,
-          {CommonCols.syncStatus: SyncStatus.failed.dbValue},
-          where: '${CommonCols.id} = ?',
-          whereArgs: [id],
-        );
-        await syncQueue.markFailed(queueEntryId, error.toString());
+        try {
+          final db = await localDataSource.localDatabase.database;
+          await db.update(
+            DbTables.gradeItems,
+            {CommonCols.syncStatus: SyncStatus.failed.dbValue},
+            where: '${CommonCols.id} = ?',
+            whereArgs: [id],
+          );
+          await syncQueue.markFailed(queueEntryId, error.toString());
+        } catch (e) {
+          if (!e.toString().contains('database_closed')) {
+            rethrow;
+          }
+        }
       },
     );
 

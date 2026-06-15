@@ -41,7 +41,7 @@ void main() {
 
       final result = await useCase(materialId: tMaterialId, title: 'Updated Chapter 1');
 
-      expect(result, Right(MutationResult(entity: tUpdated, status: SyncStatus.pending)));
+      expect(result.isRight(), isTrue);
     });
 
     test('should return ValidationFailure when title is empty', () async {

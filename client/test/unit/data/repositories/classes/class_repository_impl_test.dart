@@ -155,6 +155,8 @@ void main() {
             .thenAnswer((_) async {});
         when(() => syncQueue.enqueue(any(), txn: any(named: 'txn')))
             .thenAnswer((_) async {});
+        when(() => syncQueue.markSucceeded(any())).thenAnswer((_) async {});
+        when(() => syncQueue.markFailed(any(), any())).thenAnswer((_) async {});
 
         final result = await repo.createClass(title: 'New Class');
 

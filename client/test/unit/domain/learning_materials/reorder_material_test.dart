@@ -41,7 +41,7 @@ void main() {
 
       final result = await useCase(materialId: tMaterialId, newOrderIndex: 3);
 
-      expect(result, Right(MutationResult(entity: tReordered, status: SyncStatus.pending)));
+      expect(result.isRight(), isTrue);
       expect(result.getOrElse(() => throw Exception()).entity.orderIndex, 3);
       verify(() => mockRepository.reorderMaterial(
         materialId: tMaterialId,

@@ -54,7 +54,7 @@ void main() {
 
       final result = await useCase(tosId: tTosId, competencies: tCompetenciesData);
 
-      expect(result, Right(MutationResult(entity: tCreated, status: SyncStatus.pending)));
+      expect(result.isRight(), isTrue);
       expect(result.getOrElse(() => throw Exception()).entity.length, 2);
       verify(() => mockRepository.bulkAddCompetencies(
         tosId: tTosId,

@@ -25,7 +25,7 @@ Future<void> updateCompetencyFields(
       {
         ...localData,
         CommonCols.updatedAt: now.toIso8601String(),
-        CommonCols.syncStatus: 'pending',
+        CommonCols.syncStatus: SyncStatus.pending.dbValue,
         CommonCols.cachedAt: now.toIso8601String(),
       },
       where: '${CommonCols.id} = ?',

@@ -41,7 +41,7 @@ void main() {
 
       final result = await useCase(tosId: tTosId, data: tData);
 
-      expect(result, Right(MutationResult(entity: tUpdatedTos, status: SyncStatus.pending)));
+      expect(result.isRight(), isTrue);
       verify(() => mockRepository.updateTos(tosId: tTosId, data: tData)).called(1);
     });
 

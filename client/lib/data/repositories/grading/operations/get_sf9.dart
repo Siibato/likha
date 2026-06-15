@@ -20,6 +20,11 @@ ResultFuture<Sf9Response> getSf9(
     try {
       final cached = await localDataSource.getCachedSf9(classId, studentId);
 
+      // Treat empty map as cache miss
+      if (cached.isEmpty) {
+        throw CacheException('No cached SF9 found');
+      }
+
       fireRemoteFetch(
         dedupKey: 'grading/sf9/$classId/$studentId/bg',
         remote: () => remoteDataSource.getSf9(

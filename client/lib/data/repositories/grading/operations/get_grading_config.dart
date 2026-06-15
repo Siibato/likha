@@ -20,6 +20,11 @@ ResultFuture<List<GradeConfig>> getGradingConfig(
     try {
       final cached = await localDataSource.getConfigByClass(classId);
 
+      // Treat empty list as cache miss
+      if (cached.isEmpty) {
+        throw CacheException('No cached grading config found');
+      }
+
       fireRemoteFetch(
         dedupKey: 'grading/config/$classId/bg',
         remote: () => remoteDataSource.getGradingConfig(classId: classId),

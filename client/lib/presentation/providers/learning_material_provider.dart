@@ -145,6 +145,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
         error: AppErrorMapper.fromFailure(failure),
       ),
       (mutationResult) => state = state.copyWith(
+        materials: [...state.materials, mutationResult.entity],
         successMessage: 'Material created successfully',
       ),
     );
@@ -174,7 +175,10 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     final result = await _deleteMaterial(materialId);
     result.fold(
       (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
-      (_) => state = state.copyWith(successMessage: 'Material deleted successfully'),
+      (_) => state = state.copyWith(
+        materials: state.materials.where((m) => m.id != materialId).toList(),
+        successMessage: 'Material deleted successfully',
+      ),
     );
   }
 

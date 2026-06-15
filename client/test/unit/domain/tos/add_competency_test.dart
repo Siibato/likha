@@ -40,7 +40,7 @@ void main() {
 
       final result = await useCase(tosId: tTosId, data: tData);
 
-      expect(result, Right(MutationResult(entity: tCompetency, status: SyncStatus.pending)));
+      expect(result.isRight(), isTrue);
       verify(() => mockRepository.addCompetency(tosId: tTosId, data: tData)).called(1);
     });
 

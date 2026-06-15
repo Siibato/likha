@@ -23,6 +23,11 @@ ResultFuture<List<LearningMaterial>> getMaterials(
     try {
       final cachedMaterials = await localDataSource.getCachedMaterials(classId);
 
+      // Treat empty list as cache miss
+      if (cachedMaterials.isEmpty) {
+        throw CacheException('No cached materials found');
+      }
+
       if (!skipBackgroundRefresh) {
         final lastFetch = _lastFetch[classId];
         final now = DateTime.now();

@@ -43,13 +43,27 @@ ResultFuture<MutationResult<void>> deleteQuestion(
         idempotencyKey: queueEntryId,
       ),
       onSuccess: (_) async {
-        await syncQueue.markSucceeded(queueEntryId);
+        try {
+          await syncQueue.markSucceeded(queueEntryId);
+        } catch (e) {
+          // Ignore database_closed errors in fire-and-forget callbacks
+          if (!e.toString().contains('database_closed')) {
+            rethrow;
+          }
+        }
       },
       onError: (error) async {
         if (error is NetworkException) {
           return;
         }
-        await syncQueue.markFailed(queueEntryId, error.toString());
+        try {
+          await syncQueue.markFailed(queueEntryId, error.toString());
+        } catch (e) {
+          // Ignore database_closed errors in fire-and-forget callbacks
+          if (!e.toString().contains('database_closed')) {
+            rethrow;
+          }
+        }
       },
     );
 

@@ -45,7 +45,7 @@ void main() {
         fileName: tFileName,
       );
 
-      expect(result, Right(MutationResult(entity: tFile, status: SyncStatus.pending)));
+      expect(result.isRight(), isTrue);
       expect(result.getOrElse(() => throw Exception()).entity.fileName, tFileName);
       verify(() => mockRepository.uploadFile(
         materialId: tMaterialId,

@@ -76,28 +76,42 @@ ResultFuture<MutationResult<void>> saveScores(
         idempotencyKey: queueEntryId,
       ),
       onSuccess: (_) async {
-        final db = await localDataSource.localDatabase.database;
-        await db.update(
-          DbTables.gradeScores,
-          {CommonCols.syncStatus: SyncStatus.synced.dbValue},
-          where: '${GradeScoresCols.gradeItemId} = ?',
-          whereArgs: [gradeItemId],
-        );
-        await syncQueue.markSucceeded(queueEntryId);
+        try {
+          final db = await localDataSource.localDatabase.database;
+          await db.update(
+            DbTables.gradeScores,
+            {CommonCols.syncStatus: SyncStatus.synced.dbValue},
+            where: '${GradeScoresCols.gradeItemId} = ?',
+            whereArgs: [gradeItemId],
+          );
+          await syncQueue.markSucceeded(queueEntryId);
+        } catch (e) {
+          // Ignore database_closed errors in fire-and-forget callbacks
+          if (!e.toString().contains('database_closed')) {
+            rethrow;
+          }
+        }
       },
       onError: (error) async {
         if (error is NetworkException) {
           return;
         }
 
-        final db = await localDataSource.localDatabase.database;
-        await db.update(
-          DbTables.gradeScores,
-          {CommonCols.syncStatus: SyncStatus.failed.dbValue},
-          where: '${GradeScoresCols.gradeItemId} = ?',
-          whereArgs: [gradeItemId],
-        );
-        await syncQueue.markFailed(queueEntryId, error.toString());
+        try {
+          final db = await localDataSource.localDatabase.database;
+          await db.update(
+            DbTables.gradeScores,
+            {CommonCols.syncStatus: SyncStatus.failed.dbValue},
+            where: '${GradeScoresCols.gradeItemId} = ?',
+            whereArgs: [gradeItemId],
+          );
+          await syncQueue.markFailed(queueEntryId, error.toString());
+        } catch (e) {
+          // Ignore database_closed errors in fire-and-forget callbacks
+          if (!e.toString().contains('database_closed')) {
+            rethrow;
+          }
+        }
       },
     );
 

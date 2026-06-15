@@ -1,10 +1,14 @@
 import 'dart:convert';
 
 import 'package:dartz/dartz.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
+import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
@@ -27,6 +31,7 @@ import 'package:likha/data/repositories/assessments/operations/submit_assessment
 import 'package:likha/data/repositories/assessments/operations/unpublish_assessment.dart';
 import 'package:likha/data/repositories/assessments/operations/update_assessment.dart';
 import 'package:likha/data/repositories/assessments/operations/update_question.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../../../../helpers/mock_datasources.dart';
 import '../../../../../helpers/test_database.dart';
@@ -190,12 +195,53 @@ void main() {
   late AssessmentLocalDataSourceImpl local;
   late SyncQueueImpl syncQueue;
   late MockAssessmentRemoteDataSource remote;
+  late MockServerReachabilityService reachability;
 
   setUp(() async {
+    dotenv.testLoad(fileInput: '');
     await openFreshTestDatabase();
     syncQueue = SyncQueueImpl(LocalDatabase());
     local = AssessmentLocalDataSourceImpl(LocalDatabase(), syncQueue);
     remote = MockAssessmentRemoteDataSource();
+    reachability = MockServerReachabilityService();
+
+    when(() => reachability.isServerReachable).thenReturn(true);
+    when(() => reachability.checkNow()).thenAnswer((_) async => true);
+
+    final getIt = GetIt.instance;
+    if (getIt.isRegistered<ServerReachabilityService>()) {
+      getIt.unregister<ServerReachabilityService>();
+    }
+    getIt.registerSingleton<ServerReachabilityService>(reachability);
+
+    // Mock all remote calls to throw NetworkException to keep status as 'pending'
+    when(() => remote.deleteAssessment(
+      assessmentId: any(named: 'assessmentId'),
+      idempotencyKey: any(named: 'idempotencyKey'),
+    )).thenThrow(NetworkException('offline'));
+
+    when(() => remote.reorderAllAssessments(
+      classId: any(named: 'classId'),
+      assessmentIds: any(named: 'assessmentIds'),
+      idempotencyKey: any(named: 'idempotencyKey'),
+    )).thenThrow(NetworkException('offline'));
+
+    when(() => remote.addQuestions(
+      assessmentId: any(named: 'assessmentId'),
+      questions: any(named: 'questions'),
+      idempotencyKey: any(named: 'idempotencyKey'),
+    )).thenThrow(NetworkException('offline'));
+
+    when(() => remote.deleteQuestion(
+      questionId: any(named: 'questionId'),
+      idempotencyKey: any(named: 'idempotencyKey'),
+    )).thenThrow(NetworkException('offline'));
+
+    when(() => remote.reorderAllQuestions(
+      assessmentId: any(named: 'assessmentId'),
+      questionIds: any(named: 'questionIds'),
+      idempotencyKey: any(named: 'idempotencyKey'),
+    )).thenThrow(NetworkException('offline'));
   });
 
   tearDown(() async {

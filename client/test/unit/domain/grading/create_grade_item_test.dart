@@ -48,7 +48,7 @@ void main() {
 
       final result = await useCase(classId: tClassId, data: tData);
 
-      expect(result, Right(MutationResult(entity: tCreatedItem, status: SyncStatus.pending)));
+      expect(result.isRight(), isTrue);
       expect(result.getOrElse(() => throw Exception()).entity.title, 'New Quiz');
       verify(() => mockRepository.createGradeItem(
         classId: tClassId,

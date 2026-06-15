@@ -15,7 +15,7 @@ Future<void> updateAssignmentOrder(
       AssignmentsCols.orderIndex: orderIndex,
       CommonCols.updatedAt: now.toIso8601String(),
       CommonCols.cachedAt: now.toIso8601String(),
-      CommonCols.syncStatus: 'pending',
+      CommonCols.syncStatus: SyncStatus.pending.dbValue,
     };
     if (txn != null) {
       await txn.update(

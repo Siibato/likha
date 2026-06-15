@@ -117,7 +117,14 @@ class TosNotifier extends StateNotifier<TosState> {
       (failure) => state = state.copyWith(error: failure.message),
       (mutationResult) {
         created = mutationResult.entity;
-        state = state.copyWith(successMessage: 'TOS created');
+        if (created != null) {
+          state = state.copyWith(
+            tosList: [created!, ...state.tosList],
+            successMessage: 'TOS created',
+          );
+        } else {
+          state = state.copyWith(successMessage: 'TOS created');
+        }
       },
     );
     return created;
@@ -137,7 +144,10 @@ class TosNotifier extends StateNotifier<TosState> {
     final result = await sl<DeleteTos>().call(tosId);
     result.fold(
       (failure) => state = state.copyWith(error: failure.message),
-      (_) => state = state.copyWith(successMessage: 'TOS deleted'),
+      (_) => state = state.copyWith(
+        tosList: state.tosList.where((t) => t.id != tosId).toList(),
+        successMessage: 'TOS deleted',
+      ),
     );
   }
 

@@ -76,44 +76,58 @@ ResultFuture<MutationResult<LearningMaterial>> createMaterial(
         idempotencyKey: queueEntryId,
       ),
       onSuccess: (serverModel) async {
-        final db = await localDataSource.localDatabase.database;
+        try {
+          final db = await localDataSource.localDatabase.database;
 
-        if (serverModel.id != materialId) {
+          if (serverModel.id != materialId) {
+            await db.update(
+              DbTables.learningMaterials,
+              {CommonCols.id: serverModel.id},
+              where: '${CommonCols.id} = ?',
+              whereArgs: [materialId],
+            );
+            await db.update(
+              DbTables.materialFiles,
+              {MaterialFilesCols.materialId: serverModel.id},
+              where: '${MaterialFilesCols.materialId} = ?',
+              whereArgs: [materialId],
+            );
+          }
+
           await db.update(
             DbTables.learningMaterials,
-            {CommonCols.id: serverModel.id},
+            {CommonCols.syncStatus: SyncStatus.synced.dbValue},
             where: '${CommonCols.id} = ?',
-            whereArgs: [materialId],
+            whereArgs: [serverModel.id],
           );
-          await db.update(
-            DbTables.materialFiles,
-            {MaterialFilesCols.materialId: serverModel.id},
-            where: '${MaterialFilesCols.materialId} = ?',
-            whereArgs: [materialId],
-          );
+          await syncQueue.markSucceeded(queueEntryId);
+        } catch (e) {
+          // Ignore database_closed errors in fire-and-forget callbacks
+          if (!e.toString().contains('database_closed')) {
+            rethrow;
+          }
         }
-
-        await db.update(
-          DbTables.learningMaterials,
-          {CommonCols.syncStatus: SyncStatus.synced.dbValue},
-          where: '${CommonCols.id} = ?',
-          whereArgs: [serverModel.id],
-        );
-        await syncQueue.markSucceeded(queueEntryId);
       },
       onError: (error) async {
         if (error is NetworkException) {
           return;
         }
 
-        final db = await localDataSource.localDatabase.database;
-        await db.update(
-          DbTables.learningMaterials,
-          {CommonCols.syncStatus: SyncStatus.failed.dbValue},
-          where: '${CommonCols.id} = ?',
-          whereArgs: [materialId],
-        );
-        await syncQueue.markFailed(queueEntryId, error.toString());
+        try {
+          final db = await localDataSource.localDatabase.database;
+          await db.update(
+            DbTables.learningMaterials,
+            {CommonCols.syncStatus: SyncStatus.failed.dbValue},
+            where: '${CommonCols.id} = ?',
+            whereArgs: [materialId],
+          );
+          await syncQueue.markFailed(queueEntryId, error.toString());
+        } catch (e) {
+          // Ignore database_closed errors in fire-and-forget callbacks
+          if (!e.toString().contains('database_closed')) {
+            rethrow;
+          }
+        }
       },
     );
 

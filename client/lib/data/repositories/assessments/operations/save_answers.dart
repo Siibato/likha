@@ -57,27 +57,41 @@ ResultFuture<MutationResult<void>> saveAnswers(
         idempotencyKey: queueEntryId,
       ),
       onSuccess: (_) async {
-        final db = await localDataSource.localDatabase.database;
-        await db.update(
-          DbTables.assessmentSubmissions,
-          {CommonCols.syncStatus: SyncStatus.synced.dbValue},
-          where: '${CommonCols.id} = ?',
-          whereArgs: [submissionId],
-        );
-        await syncQueue.markSucceeded(queueEntryId);
+        try {
+          final db = await localDataSource.localDatabase.database;
+          await db.update(
+            DbTables.assessmentSubmissions,
+            {CommonCols.syncStatus: SyncStatus.synced.dbValue},
+            where: '${CommonCols.id} = ?',
+            whereArgs: [submissionId],
+          );
+          await syncQueue.markSucceeded(queueEntryId);
+        } catch (e) {
+          // Ignore database_closed errors in fire-and-forget callbacks
+          if (!e.toString().contains('database_closed')) {
+            rethrow;
+          }
+        }
       },
       onError: (error) async {
         if (error is NetworkException) {
           return;
         }
-        final db = await localDataSource.localDatabase.database;
-        await db.update(
-          DbTables.assessmentSubmissions,
-          {CommonCols.syncStatus: SyncStatus.failed.dbValue},
-          where: '${CommonCols.id} = ?',
-          whereArgs: [submissionId],
-        );
-        await syncQueue.markFailed(queueEntryId, error.toString());
+        try {
+          final db = await localDataSource.localDatabase.database;
+          await db.update(
+            DbTables.assessmentSubmissions,
+            {CommonCols.syncStatus: SyncStatus.failed.dbValue},
+            where: '${CommonCols.id} = ?',
+            whereArgs: [submissionId],
+          );
+          await syncQueue.markFailed(queueEntryId, error.toString());
+        } catch (e) {
+          // Ignore database_closed errors in fire-and-forget callbacks
+          if (!e.toString().contains('database_closed')) {
+            rethrow;
+          }
+        }
       },
     );
 

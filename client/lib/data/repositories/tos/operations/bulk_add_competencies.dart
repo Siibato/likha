@@ -70,40 +70,54 @@ ResultFuture<MutationResult<List<TosCompetency>>> bulkAddCompetencies(
         idempotencyKey: queueEntryId,
       ),
       onSuccess: (serverModels) async {
-        final db = await localDataSource.localDatabase.database;
-        for (var i = 0; i < serverModels.length && i < models.length; i++) {
-          if (serverModels[i].id != models[i].id) {
+        try {
+          final db = await localDataSource.localDatabase.database;
+          for (var i = 0; i < serverModels.length && i < models.length; i++) {
+            if (serverModels[i].id != models[i].id) {
+              await db.update(
+                DbTables.tosCompetencies,
+                {CommonCols.id: serverModels[i].id},
+                where: '${CommonCols.id} = ?',
+                whereArgs: [models[i].id],
+              );
+            }
             await db.update(
               DbTables.tosCompetencies,
-              {CommonCols.id: serverModels[i].id},
+              {CommonCols.syncStatus: SyncStatus.synced.dbValue},
               where: '${CommonCols.id} = ?',
-              whereArgs: [models[i].id],
+              whereArgs: [serverModels[i].id],
             );
           }
-          await db.update(
-            DbTables.tosCompetencies,
-            {CommonCols.syncStatus: SyncStatus.synced.dbValue},
-            where: '${CommonCols.id} = ?',
-            whereArgs: [serverModels[i].id],
-          );
+          await syncQueue.markSucceeded(queueEntryId);
+        } catch (e) {
+          // Ignore database_closed errors in fire-and-forget callbacks
+          if (!e.toString().contains('database_closed')) {
+            rethrow;
+          }
         }
-        await syncQueue.markSucceeded(queueEntryId);
       },
       onError: (error) async {
         if (error is NetworkException) {
           return;
         }
 
-        final db = await localDataSource.localDatabase.database;
-        for (final model in models) {
-          await db.update(
-            DbTables.tosCompetencies,
-            {CommonCols.syncStatus: SyncStatus.failed.dbValue},
-            where: '${CommonCols.id} = ?',
-            whereArgs: [model.id],
-          );
+        try {
+          final db = await localDataSource.localDatabase.database;
+          for (final model in models) {
+            await db.update(
+              DbTables.tosCompetencies,
+              {CommonCols.syncStatus: SyncStatus.failed.dbValue},
+              where: '${CommonCols.id} = ?',
+              whereArgs: [model.id],
+            );
+          }
+          await syncQueue.markFailed(queueEntryId, error.toString());
+        } catch (e) {
+          // Ignore database_closed errors in fire-and-forget callbacks
+          if (!e.toString().contains('database_closed')) {
+            rethrow;
+          }
         }
-        await syncQueue.markFailed(queueEntryId, error.toString());
       },
     );
 

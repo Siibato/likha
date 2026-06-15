@@ -21,15 +21,18 @@ ResultFuture<MutationResult<void>> reorderQuestions(
     final queueEntryId = const Uuid().v4();
     final now = DateTime.now();
 
-    final db = await localDataSource.localDatabase.database;
-    await db.transaction((txn) async {
+    try {
       for (int i = 0; i < questionIds.length; i++) {
         await localDataSource.updateQuestionOrder(
           questionId: questionIds[i],
           orderIndex: i,
-          txn: txn,
         );
       }
+    } catch (e) {
+      return Left(ServerFailure('Failed to update question order: $e'));
+    }
+
+    try {
       await syncQueue.enqueue(
         SyncQueueEntry(
           id: queueEntryId,
@@ -44,9 +47,10 @@ ResultFuture<MutationResult<void>> reorderQuestions(
           maxRetries: 5,
           createdAt: now,
         ),
-        txn: txn,
       );
-    });
+    } catch (e) {
+      return Left(ServerFailure('Failed to enqueue sync operation: $e'));
+    }
 
     fireRemoteWrite<void>(
       remote: () => remoteDataSource.reorderAllQuestions(
@@ -55,31 +59,45 @@ ResultFuture<MutationResult<void>> reorderQuestions(
         idempotencyKey: queueEntryId,
       ),
       onSuccess: (_) async {
-        final db = await localDataSource.localDatabase.database;
-        for (final id in questionIds) {
-          await db.update(
-            DbTables.assessmentQuestions,
-            {CommonCols.syncStatus: SyncStatus.synced.dbValue},
-            where: '${CommonCols.id} = ?',
-            whereArgs: [id],
-          );
+        try {
+          final db = await localDataSource.localDatabase.database;
+          for (final id in questionIds) {
+            await db.update(
+              DbTables.assessmentQuestions,
+              {CommonCols.syncStatus: SyncStatus.synced.dbValue},
+              where: '${CommonCols.id} = ?',
+              whereArgs: [id],
+            );
+          }
+          await syncQueue.markSucceeded(queueEntryId);
+        } catch (e) {
+          // Ignore database_closed errors in fire-and-forget callbacks
+          if (!e.toString().contains('database_closed')) {
+            rethrow;
+          }
         }
-        await syncQueue.markSucceeded(queueEntryId);
       },
       onError: (error) async {
         if (error is NetworkException) {
           return;
         }
-        final db = await localDataSource.localDatabase.database;
-        for (final id in questionIds) {
-          await db.update(
-            DbTables.assessmentQuestions,
-            {CommonCols.syncStatus: SyncStatus.failed.dbValue},
-            where: '${CommonCols.id} = ?',
-            whereArgs: [id],
-          );
+        try {
+          final db = await localDataSource.localDatabase.database;
+          for (final id in questionIds) {
+            await db.update(
+              DbTables.assessmentQuestions,
+              {CommonCols.syncStatus: SyncStatus.failed.dbValue},
+              where: '${CommonCols.id} = ?',
+              whereArgs: [id],
+            );
+          }
+          await syncQueue.markFailed(queueEntryId, error.toString());
+        } catch (e) {
+          // Ignore database_closed errors in fire-and-forget callbacks
+          if (!e.toString().contains('database_closed')) {
+            rethrow;
+          }
         }
-        await syncQueue.markFailed(queueEntryId, error.toString());
       },
     );
 

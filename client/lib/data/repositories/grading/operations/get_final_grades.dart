@@ -17,6 +17,11 @@ ResultFuture<List<Map<String, dynamic>>> getFinalGrades(
     try {
       final cached = await localDataSource.getCachedFinalGrades(classId);
 
+      // Treat empty list as cache miss
+      if (cached.isEmpty) {
+        throw CacheException('No cached final grades found');
+      }
+
       fireRemoteFetch(
         dedupKey: 'grading/finalGrades/$classId/bg',
         remote: () => remoteDataSource.getFinalGrades(classId: classId),

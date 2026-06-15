@@ -21,6 +21,11 @@ ResultFuture<Map<String, dynamic>> getMyGradeDetail(
         gradingPeriodNumber,
       );
 
+      // Treat empty map as cache miss
+      if (cached.isEmpty) {
+        throw CacheException('No cached my grade detail found');
+      }
+
       fireRemoteFetch(
         dedupKey: 'grading/myGradeDetail/$classId/$gradingPeriodNumber/bg',
         remote: () => remoteDataSource.getMyGradeDetail(
