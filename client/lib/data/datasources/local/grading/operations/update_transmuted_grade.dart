@@ -1,3 +1,4 @@
+import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:likha/core/database/db_schema.dart';
@@ -10,12 +11,13 @@ Future<void> updateTransmutedGrade(
   String classId,
   String studentId,
   int gradingPeriodNumber,
-  int transmutedGrade,
-) async {
-  final db = await localDatabase.database;
+  int transmutedGrade, {
+  Transaction? txn,
+}) async {
   final now = DateTime.now();
-  await db.transaction((txn) async {
-    await txn.update(
+
+  Future<void> doWrite(DatabaseExecutor executor) async {
+    await executor.update(
       DbTables.periodGrades,
       {
         PeriodGradesCols.transmutedGrade: transmutedGrade,
@@ -28,20 +30,29 @@ Future<void> updateTransmutedGrade(
           '${PeriodGradesCols.gradingPeriodNumber} = ?',
       whereArgs: [classId, studentId, gradingPeriodNumber],
     );
-    await syncQueue.enqueue(SyncQueueEntry(
-      id: const Uuid().v4(),
-      entityType: SyncEntityType.gradeScore,
-      operation: SyncOperation.update,
-      payload: {
-        'class_id': classId,
-        'student_id': studentId,
-        'grading_period_number': gradingPeriodNumber,
-        'transmuted_grade': transmutedGrade,
-      },
-      status: SyncStatus.pending,
-      retryCount: 0,
-      maxRetries: 3,
-      createdAt: now,
-    ), txn: txn);
-  });
+  }
+
+  if (txn != null) {
+    await doWrite(txn);
+  } else {
+    final db = await localDatabase.database;
+    await db.transaction((innerTxn) async {
+      await doWrite(innerTxn);
+      await syncQueue.enqueue(SyncQueueEntry(
+        id: const Uuid().v4(),
+        entityType: SyncEntityType.gradeScore,
+        operation: SyncOperation.update,
+        payload: {
+          'class_id': classId,
+          'student_id': studentId,
+          'grading_period_number': gradingPeriodNumber,
+          'transmuted_grade': transmutedGrade,
+        },
+        status: SyncStatus.pending,
+        retryCount: 0,
+        maxRetries: 3,
+        createdAt: now,
+      ), txn: innerTxn);
+    });
+  }
 }

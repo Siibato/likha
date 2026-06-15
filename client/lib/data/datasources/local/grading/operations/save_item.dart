@@ -6,12 +6,16 @@ import 'package:likha/data/models/grading/grade_item_model.dart';
 
 Future<void> saveItem(
   LocalDatabase localDatabase,
-  GradeItemModel item,
-) async {
-  final db = await localDatabase.database;
-  await db.insert(
+  GradeItemModel item, {
+  Transaction? txn,
+}) async {
+  final executor = txn ?? await localDatabase.database;
+  await executor.insert(
     DbTables.gradeItems,
-    item.toMap(),
+    {
+      ...item.toMap(),
+      CommonCols.syncStatus: 'pending',
+    },
     conflictAlgorithm: ConflictAlgorithm.replace,
   );
 }

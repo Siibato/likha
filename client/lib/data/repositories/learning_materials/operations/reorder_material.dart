@@ -1,79 +1,63 @@
 import 'package:dartz/dartz.dart';
-import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
-import 'package:likha/data/datasources/remote/learning_materials/learning_material_remote_datasource.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/domain/learning_materials/entities/learning_material.dart';
 import 'package:uuid/uuid.dart';
 
-ResultFuture<LearningMaterial> reorderMaterial(
-  ServerReachabilityService serverReachabilityService,
+ResultFuture<MutationResult<LearningMaterial>> reorderMaterial(
   LearningMaterialLocalDataSource localDataSource,
-  LearningMaterialRemoteDataSource remoteDataSource,
   SyncQueue syncQueue, {
   required String materialId,
   required int newOrderIndex,
 }) async {
   try {
-    if (!serverReachabilityService.isServerReachable) {
-      await syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
-        entityType: SyncEntityType.learningMaterial,
-        operation: SyncOperation.update,
-        payload: {
-          'id': materialId,
-          'order_index': newOrderIndex,
-        },
-        status: SyncStatus.pending,
-        retryCount: 0,
-        maxRetries: 5,
-        createdAt: DateTime.now(),
-      ));
+    final now = DateTime.now();
 
-      return Right(LearningMaterial(
-        id: materialId,
-        classId: '',
-        title: '',
-        description: null,
-        contentText: null,
-        orderIndex: newOrderIndex,
-        fileCount: 0,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ));
-    }
-
-    final result = await remoteDataSource.reorderMaterial(
-      materialId: materialId,
-      newOrderIndex: newOrderIndex,
+    final existing = await localDataSource.getCachedMaterialDetail(materialId);
+    final optimisticModel = LearningMaterialModel(
+      id: materialId,
+      classId: existing.classId,
+      title: existing.title,
+      description: existing.description,
+      contentText: existing.contentText,
+      orderIndex: newOrderIndex,
+      fileCount: existing.fileCount,
+      createdAt: existing.createdAt,
+      updatedAt: now,
+      syncStatus: SyncStatus.pending,
     );
 
-    try {
-      final existing = await localDataSource.getCachedMaterialDetail(materialId);
-      final updatedModel = LearningMaterialModel(
-        id: existing.id,
-        classId: existing.classId,
-        title: existing.title,
-        description: existing.description,
-        contentText: existing.contentText,
-        orderIndex: newOrderIndex,
-        fileCount: existing.fileCount,
-        createdAt: existing.createdAt,
-        updatedAt: DateTime.now(),
+    final db = await localDataSource.localDatabase.database;
+    await db.transaction((txn) async {
+      await localDataSource.updateMaterialFields(
+        materialId,
+        {'order_index': newOrderIndex},
+        txn: txn,
       );
-      await localDataSource.cacheMaterials([updatedModel]);
-    } catch (_) {}
+      await syncQueue.enqueue(
+        SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.learningMaterial,
+          operation: SyncOperation.update,
+          payload: {
+            'id': materialId,
+            'order_index': newOrderIndex,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: now,
+        ),
+        txn: txn,
+      );
+    });
 
-    return Right(result);
-  } on ServerException catch (e) {
-    return Left(ServerFailure(e.message, statusCode: e.statusCode));
-  } on NetworkException catch (e) {
-    return Left(NetworkFailure(e.message));
+    return Right(MutationResult(entity: optimisticModel, status: SyncStatus.pending));
   } catch (e) {
-    return Left(ServerFailure(e.toString()));
+    return Left(CacheFailure(e.toString()));
   }
 }

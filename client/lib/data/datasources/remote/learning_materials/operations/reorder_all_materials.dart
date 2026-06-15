@@ -7,11 +7,13 @@ Future<void> reorderAllMaterials(
   DioClient dioClient, {
   required String classId,
   required List<String> materialIds,
+  String? idempotencyKey,
 }) async {
   try {
     await dioClient.postVoid(
       ApiEndpoints.classMaterialsReorder(classId),
       data: {'material_ids': materialIds},
+      headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
     );
   } on DioException catch (e) {
     throw dioClient.handleError(e);

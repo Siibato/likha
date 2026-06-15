@@ -344,7 +344,6 @@ Future<void> init() async {
       remoteDataSource: sl<LearningMaterialRemoteDataSource>(),
       localDataSource: sl<LearningMaterialLocalDataSource>(),
       syncQueue: sl<SyncQueue>(),
-      serverReachabilityService: sl<ServerReachabilityService>(),
       dataEventBus: sl<DataEventBus>(),
     ),
   );
@@ -364,6 +363,12 @@ Future<void> init() async {
       sl<LocalDatabase>(), // LocalDatabase
       sl<AssessmentRemoteDataSource>(), // AssessmentRemoteDataSource
       sl<AssessmentLocalDataSource>(), // AssessmentLocalDataSource
+      sl<GradingRemoteDataSource>(), // GradingRemoteDataSource
+      sl<GradingLocalDataSource>(), // GradingLocalDataSource
+      sl<LearningMaterialRemoteDataSource>(), // LearningMaterialRemoteDataSource
+      sl<LearningMaterialLocalDataSource>(), // LearningMaterialLocalDataSource
+      sl<TosRemoteDataSource>(), // TosRemoteDataSource
+      sl<TosLocalDataSource>(), // TosLocalDataSource
       sl<SyncLogger>(), // SyncLogger
       sl<StorageService>(), // StorageService
       sl<ServerClockService>(), // ServerClockService
@@ -468,7 +473,6 @@ Future<void> init() async {
     () => GradingRepositoryImpl(
       remoteDataSource: sl<GradingRemoteDataSource>(),
       localDataSource: sl<GradingLocalDataSource>(),
-      serverReachabilityService: sl<ServerReachabilityService>(),
       syncQueue: sl<SyncQueue>(),
       dataEventBus: sl<DataEventBus>(),
     ),

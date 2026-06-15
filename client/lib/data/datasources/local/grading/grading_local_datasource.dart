@@ -1,3 +1,5 @@
+import 'package:sqflite_sqlcipher/sqflite.dart';
+
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/grading/grade_config_model.dart';
@@ -7,9 +9,11 @@ import 'package:likha/data/models/grading/period_grade_model.dart';
 import 'operations/grading.dart' as ops;
 
 abstract class GradingLocalDataSource {
+  LocalDatabase get localDatabase;
+
   // Config
   Future<List<GradeConfigModel>> getConfigByClass(String classId);
-  Future<void> saveConfigs(List<GradeConfigModel> configs);
+  Future<void> saveConfigs(List<GradeConfigModel> configs, {Transaction? txn});
 
   // Grade Items
   Future<List<GradeItemModel>> getItemsByClassQuarter(
@@ -18,19 +22,19 @@ abstract class GradingLocalDataSource {
     String? component,
   });
   Future<void> saveItems(List<GradeItemModel> items);
-  Future<void> saveItem(GradeItemModel item);
+  Future<void> saveItem(GradeItemModel item, {Transaction? txn});
 
   // Grade Item mutations
-  Future<void> updateItemFields(String id, Map<String, dynamic> data);
-  Future<void> softDeleteItem(String id);
+  Future<void> updateItemFields(String id, Map<String, dynamic> data, {Transaction? txn});
+  Future<void> softDeleteItem(String id, {Transaction? txn});
   Future<GradeItemModel?> getItemBySourceId(String sourceId);
 
   // Grade Scores
   Future<List<GradeScoreModel>> getScoresByItem(String gradeItemId);
   Future<void> saveScores(List<GradeScoreModel> scores);
   Future<void> upsertScoresByItem(
-      String gradeItemId, List<GradeScoreModel> scores);
-  Future<void> updateScoreOverride(String scoreId, double? overrideScore);
+      String gradeItemId, List<GradeScoreModel> scores, {Transaction? txn});
+  Future<void> updateScoreOverride(String scoreId, double? overrideScore, {Transaction? txn});
 
   // Period Grades
   Future<List<PeriodGradeModel>> getPeriodGradesByClass(
@@ -46,8 +50,9 @@ abstract class GradingLocalDataSource {
     String classId,
     String studentId,
     int gradingPeriodNumber,
-    int transmutedGrade,
-  );
+    int transmutedGrade, {
+    Transaction? txn,
+  });
 
   Future<List<Map<String, dynamic>>> getCachedGradeSummary(
     String classId,
@@ -90,6 +95,7 @@ abstract class GradingLocalDataSource {
 }
 
 class GradingLocalDataSourceImpl implements GradingLocalDataSource {
+  @override
   final LocalDatabase localDatabase;
   final SyncQueue syncQueue;
 
@@ -100,8 +106,8 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
       ops.getConfigByClass(localDatabase, classId);
 
   @override
-  Future<void> saveConfigs(List<GradeConfigModel> configs) =>
-      ops.saveConfigs(localDatabase, configs);
+  Future<void> saveConfigs(List<GradeConfigModel> configs, {Transaction? txn}) =>
+      ops.saveConfigs(localDatabase, configs, txn: txn);
 
   @override
   Future<List<GradeItemModel>> getItemsByClassQuarter(
@@ -116,16 +122,16 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
       ops.saveItems(localDatabase, items);
 
   @override
-  Future<void> saveItem(GradeItemModel item) =>
-      ops.saveItem(localDatabase, item);
+  Future<void> saveItem(GradeItemModel item, {Transaction? txn}) =>
+      ops.saveItem(localDatabase, item, txn: txn);
 
   @override
-  Future<void> updateItemFields(String id, Map<String, dynamic> data) =>
-      ops.updateItemFields(localDatabase, syncQueue, id, data);
+  Future<void> updateItemFields(String id, Map<String, dynamic> data, {Transaction? txn}) =>
+      ops.updateItemFields(localDatabase, syncQueue, id, data, txn: txn);
 
   @override
-  Future<void> softDeleteItem(String id) =>
-      ops.softDeleteItem(localDatabase, syncQueue, id);
+  Future<void> softDeleteItem(String id, {Transaction? txn}) =>
+      ops.softDeleteItem(localDatabase, syncQueue, id, txn: txn);
 
   @override
   Future<GradeItemModel?> getItemBySourceId(String sourceId) =>
@@ -142,13 +148,14 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
   @override
   Future<void> upsertScoresByItem(
     String gradeItemId,
-    List<GradeScoreModel> scores,
-  ) =>
-      ops.upsertScoresByItem(localDatabase, syncQueue, gradeItemId, scores);
+    List<GradeScoreModel> scores, {
+    Transaction? txn,
+  }) =>
+      ops.upsertScoresByItem(localDatabase, syncQueue, gradeItemId, scores, txn: txn);
 
   @override
-  Future<void> updateScoreOverride(String scoreId, double? overrideScore) =>
-      ops.updateScoreOverride(localDatabase, syncQueue, scoreId, overrideScore);
+  Future<void> updateScoreOverride(String scoreId, double? overrideScore, {Transaction? txn}) =>
+      ops.updateScoreOverride(localDatabase, syncQueue, scoreId, overrideScore, txn: txn);
 
   @override
   Future<List<PeriodGradeModel>> getPeriodGradesByClass(
@@ -173,8 +180,9 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
     String classId,
     String studentId,
     int gradingPeriodNumber,
-    int transmutedGrade,
-  ) =>
+    int transmutedGrade, {
+    Transaction? txn,
+  }) =>
       ops.updateTransmutedGrade(
         localDatabase,
         syncQueue,
@@ -182,6 +190,7 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
         studentId,
         gradingPeriodNumber,
         transmutedGrade,
+        txn: txn,
       );
 
   @override

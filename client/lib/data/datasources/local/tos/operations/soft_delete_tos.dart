@@ -1,3 +1,4 @@
+import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:likha/core/database/db_schema.dart';
@@ -7,12 +8,13 @@ import 'package:likha/core/sync/sync_queue.dart';
 Future<void> softDeleteTos(
   LocalDatabase localDatabase,
   SyncQueue syncQueue,
-  String tosId,
-) async {
-  final db = await localDatabase.database;
+  String tosId, {
+  Transaction? txn,
+}) async {
   final now = DateTime.now();
-  await db.transaction((txn) async {
-    await txn.update(
+
+  Future<void> doWrite(DatabaseExecutor executor) async {
+    await executor.update(
       DbTables.tableOfSpecifications,
       {
         CommonCols.deletedAt: now.toIso8601String(),
@@ -23,15 +25,24 @@ Future<void> softDeleteTos(
       where: '${CommonCols.id} = ?',
       whereArgs: [tosId],
     );
-    await syncQueue.enqueue(SyncQueueEntry(
-      id: const Uuid().v4(),
-      entityType: SyncEntityType.tableOfSpecifications,
-      operation: SyncOperation.delete,
-      payload: {'id': tosId},
-      status: SyncStatus.pending,
-      retryCount: 0,
-      maxRetries: 3,
-      createdAt: now,
-    ), txn: txn);
-  });
+  }
+
+  if (txn != null) {
+    await doWrite(txn);
+  } else {
+    final db = await localDatabase.database;
+    await db.transaction((innerTxn) async {
+      await doWrite(innerTxn);
+      await syncQueue.enqueue(SyncQueueEntry(
+        id: const Uuid().v4(),
+        entityType: SyncEntityType.tableOfSpecifications,
+        operation: SyncOperation.delete,
+        payload: {'id': tosId},
+        status: SyncStatus.pending,
+        retryCount: 0,
+        maxRetries: 3,
+        createdAt: now,
+      ), txn: innerTxn);
+    });
+  }
 }

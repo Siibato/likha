@@ -1,3 +1,5 @@
+import 'package:sqflite_sqlcipher/sqflite.dart';
+
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
@@ -6,10 +8,12 @@ import 'package:likha/domain/learning_materials/entities/material_file.dart';
 import 'operations/learning_materials.dart' as ops;
 
 abstract class LearningMaterialLocalDataSource {
+  LocalDatabase get localDatabase;
+
   Future<List<LearningMaterialModel>> getCachedMaterials(String classId);
   Future<LearningMaterialModel> getCachedMaterialDetail(String materialId);
   Future<List<MaterialFileModel>> getCachedMaterialFiles(String materialId);
-  Future<void> cacheMaterials(List<LearningMaterialModel> materials);
+  Future<void> cacheMaterials(List<LearningMaterialModel> materials, {Transaction? txn});
   Future<void> cacheMaterialDetail(LearningMaterialModel material);
   Future<void> cacheMaterialFiles(String materialId, List<MaterialFile> files);
   Future<void> reconcileDeletedMaterials(String classId, List<String> activeIds);
@@ -21,27 +25,38 @@ abstract class LearningMaterialLocalDataSource {
     required String title,
     required String description,
     required String contentText,
+    Transaction? txn,
   });
   Future<void> updateMaterialLocally({
     required String materialId,
     required String title,
     required String description,
     required String contentText,
+    Transaction? txn,
   });
-  Future<void> deleteMaterialLocally(String materialId);
-  Future<void> stageMaterialFileForUpload({
+  Future<void> deleteMaterialLocally(String materialId, {Transaction? txn});
+  Future<String> stageMaterialFileForUpload({
     required String materialId,
     required String fileName,
     required String fileType,
     required int fileSize,
     required String localPath,
+    required String fileId,
+    Transaction? txn,
   });
-  Future<void> deleteMaterialFileLocally(String fileId);
+  Future<void> deleteMaterialFileLocally(String fileId, {Transaction? txn});
+  Future<void> saveMaterial(LearningMaterialModel material, {Transaction? txn});
+  Future<void> updateMaterialFields(String materialId, Map<String, dynamic> data, {Transaction? txn});
+  Future<void> softDeleteMaterial(String materialId, {Transaction? txn});
+  Future<void> saveMaterialOrder(String classId, List<String> materialIds, {Transaction? txn});
+  Future<void> saveFile(MaterialFileModel file, {Transaction? txn});
+  Future<void> softDeleteFile(String fileId, {Transaction? txn});
   Future<void> clearAllCache();
 }
 
 class LearningMaterialLocalDataSourceImpl
     implements LearningMaterialLocalDataSource {
+  @override
   final LocalDatabase localDatabase;
   final SyncQueue syncQueue;
 
@@ -60,8 +75,8 @@ class LearningMaterialLocalDataSourceImpl
       ops.getCachedMaterialFiles(localDatabase, materialId);
 
   @override
-  Future<void> cacheMaterials(List<LearningMaterialModel> materials) =>
-      ops.cacheMaterials(localDatabase, materials);
+  Future<void> cacheMaterials(List<LearningMaterialModel> materials, {Transaction? txn}) =>
+      ops.cacheMaterials(localDatabase, materials, txn: txn);
 
   @override
   Future<void> cacheMaterialDetail(LearningMaterialModel material) =>
@@ -100,6 +115,7 @@ class LearningMaterialLocalDataSourceImpl
     required String title,
     required String description,
     required String contentText,
+    Transaction? txn,
   }) =>
       ops.createMaterialLocally(
         localDatabase,
@@ -108,6 +124,7 @@ class LearningMaterialLocalDataSourceImpl
         title,
         description,
         contentText,
+        txn: txn,
       );
 
   @override
@@ -116,6 +133,7 @@ class LearningMaterialLocalDataSourceImpl
     required String title,
     required String description,
     required String contentText,
+    Transaction? txn,
   }) =>
       ops.updateMaterialLocally(
         localDatabase,
@@ -124,19 +142,22 @@ class LearningMaterialLocalDataSourceImpl
         title,
         description,
         contentText,
+        txn: txn,
       );
 
   @override
-  Future<void> deleteMaterialLocally(String materialId) =>
-      ops.deleteMaterialLocally(localDatabase, syncQueue, materialId);
+  Future<void> deleteMaterialLocally(String materialId, {Transaction? txn}) =>
+      ops.deleteMaterialLocally(localDatabase, syncQueue, materialId, txn: txn);
 
   @override
-  Future<void> stageMaterialFileForUpload({
+  Future<String> stageMaterialFileForUpload({
     required String materialId,
     required String fileName,
     required String fileType,
     required int fileSize,
     required String localPath,
+    required String fileId,
+    Transaction? txn,
   }) =>
       ops.stageMaterialFileForUpload(
         localDatabase,
@@ -146,11 +167,37 @@ class LearningMaterialLocalDataSourceImpl
         fileType,
         fileSize,
         localPath,
+        fileId,
+        txn: txn,
       );
 
   @override
-  Future<void> deleteMaterialFileLocally(String fileId) =>
-      ops.deleteMaterialFileLocally(localDatabase, fileId);
+  Future<void> deleteMaterialFileLocally(String fileId, {Transaction? txn}) =>
+      ops.deleteMaterialFileLocally(localDatabase, fileId, txn: txn);
+
+  @override
+  Future<void> saveMaterial(LearningMaterialModel material, {Transaction? txn}) =>
+      ops.saveMaterial(localDatabase, material, txn: txn);
+
+  @override
+  Future<void> updateMaterialFields(String materialId, Map<String, dynamic> data, {Transaction? txn}) =>
+      ops.updateMaterialFields(localDatabase, materialId, data, txn: txn);
+
+  @override
+  Future<void> softDeleteMaterial(String materialId, {Transaction? txn}) =>
+      ops.softDeleteMaterial(localDatabase, materialId, txn: txn);
+
+  @override
+  Future<void> saveMaterialOrder(String classId, List<String> materialIds, {Transaction? txn}) =>
+      ops.saveMaterialOrder(localDatabase, classId, materialIds, txn: txn);
+
+  @override
+  Future<void> saveFile(MaterialFileModel file, {Transaction? txn}) =>
+      ops.saveFile(localDatabase, file, txn: txn);
+
+  @override
+  Future<void> softDeleteFile(String fileId, {Transaction? txn}) =>
+      ops.softDeleteFile(localDatabase, fileId, txn: txn);
 
   @override
   Future<void> clearAllCache() =>

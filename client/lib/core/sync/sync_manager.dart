@@ -3,6 +3,9 @@ import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/core/sync/handlers/assessment_sync_handler.dart';
+import 'package:likha/core/sync/handlers/grading_sync_handler.dart';
+import 'package:likha/core/sync/handlers/learning_material_sync_handler.dart';
+import 'package:likha/core/sync/handlers/tos_sync_handler.dart';
 import 'package:likha/core/sync/inbound_sync_handler.dart';
 import 'package:likha/core/sync/outbound_sync_handler.dart';
 import 'package:likha/core/logging/sync_logger.dart';
@@ -10,8 +13,14 @@ import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/sync_state.dart';
 import 'package:likha/core/sync/sync_upsert_helpers.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
+import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
+import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
+import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/grading/grading_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/learning_materials/learning_material_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/sync/sync_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/tos/tos_remote_datasource.dart';
 import 'package:likha/services/storage_service.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
@@ -24,6 +33,12 @@ class SyncManager {
   final LocalDatabase _localDatabase;
   final AssessmentRemoteDataSource _assessmentRemoteDataSource;
   final AssessmentLocalDataSource _assessmentLocalDataSource;
+  final GradingRemoteDataSource _gradingRemoteDataSource;
+  final GradingLocalDataSource _gradingLocalDataSource;
+  final LearningMaterialRemoteDataSource _learningMaterialRemoteDataSource;
+  final LearningMaterialLocalDataSource _learningMaterialLocalDataSource;
+  final TosRemoteDataSource _tosRemoteDataSource;
+  final TosLocalDataSource _tosLocalDataSource;
   final SyncLogger _log;
   final StorageService _storageService;
   final ServerClockService _serverClockService;
@@ -52,6 +67,12 @@ class SyncManager {
     this._localDatabase,
     this._assessmentRemoteDataSource,
     this._assessmentLocalDataSource,
+    this._gradingRemoteDataSource,
+    this._gradingLocalDataSource,
+    this._learningMaterialRemoteDataSource,
+    this._learningMaterialLocalDataSource,
+    this._tosRemoteDataSource,
+    this._tosLocalDataSource,
     this._log,
     this._storageService,
     this._serverClockService,
@@ -66,6 +87,24 @@ class SyncManager {
       assessmentHandler: AssessmentSyncHandler(
         _assessmentRemoteDataSource,
         _assessmentLocalDataSource,
+        _localDatabase,
+        _log,
+      ),
+      gradingHandler: GradingSyncHandler(
+        _gradingRemoteDataSource,
+        _gradingLocalDataSource,
+        _localDatabase,
+        _log,
+      ),
+      learningMaterialHandler: LearningMaterialSyncHandler(
+        _learningMaterialRemoteDataSource,
+        _learningMaterialLocalDataSource,
+        _localDatabase,
+        _log,
+      ),
+      tosHandler: TosSyncHandler(
+        _tosRemoteDataSource,
+        _tosLocalDataSource,
         _localDatabase,
         _log,
       ),

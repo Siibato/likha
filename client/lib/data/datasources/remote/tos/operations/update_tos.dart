@@ -8,11 +8,15 @@ Future<TosModel> updateTos(
   DioClient dioClient, {
   required String tosId,
   required Map<String, dynamic> data,
+  String? idempotencyKey,
 }) async {
   try {
     final response = await dioClient.dio.put(
       ApiEndpoints.tosDetail(tosId).path,
       data: data,
+      options: idempotencyKey != null
+          ? Options(headers: {'Idempotency-Key': idempotencyKey})
+          : null,
     );
     final responseData = response.data['data'] ?? response.data;
     return TosModel.fromJson(responseData as Map<String, dynamic>);

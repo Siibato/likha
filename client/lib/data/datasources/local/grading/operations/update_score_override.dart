@@ -1,3 +1,4 @@
+import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:likha/core/database/db_schema.dart';
@@ -8,12 +9,13 @@ Future<void> updateScoreOverride(
   LocalDatabase localDatabase,
   SyncQueue syncQueue,
   String scoreId,
-  double? overrideScore,
-) async {
-  final db = await localDatabase.database;
+  double? overrideScore, {
+  Transaction? txn,
+}) async {
   final now = DateTime.now();
-  await db.transaction((txn) async {
-    await txn.update(
+
+  Future<void> doWrite(DatabaseExecutor executor) async {
+    await executor.update(
       DbTables.gradeScores,
       {
         GradeScoresCols.overrideScore: overrideScore,
@@ -24,15 +26,24 @@ Future<void> updateScoreOverride(
       where: '${CommonCols.id} = ?',
       whereArgs: [scoreId],
     );
-    await syncQueue.enqueue(SyncQueueEntry(
-      id: const Uuid().v4(),
-      entityType: SyncEntityType.gradeScore,
-      operation: SyncOperation.setOverride,
-      payload: {'id': scoreId, 'override_score': overrideScore},
-      status: SyncStatus.pending,
-      retryCount: 0,
-      maxRetries: 3,
-      createdAt: now,
-    ), txn: txn);
-  });
+  }
+
+  if (txn != null) {
+    await doWrite(txn);
+  } else {
+    final db = await localDatabase.database;
+    await db.transaction((innerTxn) async {
+      await doWrite(innerTxn);
+      await syncQueue.enqueue(SyncQueueEntry(
+        id: const Uuid().v4(),
+        entityType: SyncEntityType.gradeScore,
+        operation: overrideScore == null ? SyncOperation.clearOverride : SyncOperation.setOverride,
+        payload: {'id': scoreId, if (overrideScore != null) 'override_score': overrideScore},
+        status: SyncStatus.pending,
+        retryCount: 0,
+        maxRetries: 3,
+        createdAt: now,
+      ), txn: innerTxn);
+    });
+  }
 }

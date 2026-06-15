@@ -8,8 +8,14 @@ import 'package:likha/core/logging/sync_logger.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
+import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
+import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
+import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/grading/grading_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/learning_materials/learning_material_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/sync/sync_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/tos/tos_remote_datasource.dart';
 import 'package:likha/services/storage_service.dart';
 
 class MockServerReachabilityService extends Mock implements ServerReachabilityService {}
@@ -18,6 +24,12 @@ class MockSyncRemoteDataSource extends Mock implements SyncRemoteDataSource {}
 class MockLocalDatabase extends Mock implements LocalDatabase {}
 class MockAssessmentRemoteDataSource extends Mock implements AssessmentRemoteDataSource {}
 class MockAssessmentLocalDataSource extends Mock implements AssessmentLocalDataSource {}
+class MockGradingRemoteDataSource extends Mock implements GradingRemoteDataSource {}
+class MockGradingLocalDataSource extends Mock implements GradingLocalDataSource {}
+class MockLearningMaterialRemoteDataSource extends Mock implements LearningMaterialRemoteDataSource {}
+class MockLearningMaterialLocalDataSource extends Mock implements LearningMaterialLocalDataSource {}
+class MockTosRemoteDataSource extends Mock implements TosRemoteDataSource {}
+class MockTosLocalDataSource extends Mock implements TosLocalDataSource {}
 class MockSyncLogger extends Mock implements SyncLogger {}
 class MockStorageService extends Mock implements StorageService {}
 
@@ -29,6 +41,12 @@ void main() {
   late MockLocalDatabase mockLocalDatabase;
   late MockAssessmentRemoteDataSource mockAssessmentRemote;
   late MockAssessmentLocalDataSource mockAssessmentLocal;
+  late MockGradingRemoteDataSource mockGradingRemote;
+  late MockGradingLocalDataSource mockGradingLocal;
+  late MockLearningMaterialRemoteDataSource mockLearningMaterialRemote;
+  late MockLearningMaterialLocalDataSource mockLearningMaterialLocal;
+  late MockTosRemoteDataSource mockTosRemote;
+  late MockTosLocalDataSource mockTosLocal;
   late MockSyncLogger mockSyncLogger;
   late MockStorageService mockStorageService;
   late ServerClockService serverClockService;
@@ -40,6 +58,12 @@ void main() {
     mockLocalDatabase = MockLocalDatabase();
     mockAssessmentRemote = MockAssessmentRemoteDataSource();
     mockAssessmentLocal = MockAssessmentLocalDataSource();
+    mockGradingRemote = MockGradingRemoteDataSource();
+    mockGradingLocal = MockGradingLocalDataSource();
+    mockLearningMaterialRemote = MockLearningMaterialRemoteDataSource();
+    mockLearningMaterialLocal = MockLearningMaterialLocalDataSource();
+    mockTosRemote = MockTosRemoteDataSource();
+    mockTosLocal = MockTosLocalDataSource();
     mockSyncLogger = MockSyncLogger();
     mockStorageService = MockStorageService();
     serverClockService = ServerClockService();
@@ -55,6 +79,12 @@ void main() {
       mockLocalDatabase,
       mockAssessmentRemote,
       mockAssessmentLocal,
+      mockGradingRemote,
+      mockGradingLocal,
+      mockLearningMaterialRemote,
+      mockLearningMaterialLocal,
+      mockTosRemote,
+      mockTosLocal,
       mockSyncLogger,
       mockStorageService,
       serverClockService,

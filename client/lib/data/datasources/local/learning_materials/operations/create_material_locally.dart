@@ -11,10 +11,11 @@ Future<LearningMaterialModel> createMaterialLocally(
   String classId,
   String title,
   String description,
-  String contentText,
-) async {
+  String contentText, {
+  Transaction? txn,
+}) async {
   try {
-    final db = await localDatabase.database;
+    final executor = txn ?? await localDatabase.database;
     final id = const Uuid().v4();
     final now = DateTime.now();
 
@@ -30,29 +31,10 @@ Future<LearningMaterialModel> createMaterialLocally(
       updatedAt: now,
     );
 
-    await db.transaction((txn) async {
-      final map = material.toMap();
-      map[CommonCols.cachedAt] = now.toIso8601String();
-      map[CommonCols.syncStatus] = 'pending';
-      await txn.insert(DbTables.learningMaterials, map);
-
-      await syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
-        entityType: SyncEntityType.learningMaterial,
-        operation: SyncOperation.create,
-        payload: {
-          'id': id,
-          'class_id': classId,
-          'title': title,
-          'description': description,
-          'content_text': contentText,
-        },
-        status: SyncStatus.pending,
-        retryCount: 0,
-        maxRetries: 3,
-        createdAt: now,
-      ), txn: txn);
-    });
+    final map = material.toMap();
+    map[CommonCols.cachedAt] = now.toIso8601String();
+    map[CommonCols.syncStatus] = 'pending';
+    await executor.insert(DbTables.learningMaterials, map);
 
     return material;
   } catch (e) {

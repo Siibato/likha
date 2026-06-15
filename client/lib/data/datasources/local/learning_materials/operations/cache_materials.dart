@@ -7,31 +7,30 @@ import 'package:likha/data/models/learning_materials/learning_material_model.dar
 
 Future<void> cacheMaterials(
   LocalDatabase localDatabase,
-  List<LearningMaterialModel> materials,
-) async {
+  List<LearningMaterialModel> materials, {
+  Transaction? txn,
+}) async {
   try {
-    final db = await localDatabase.database;
-    await db.transaction((txn) async {
-      for (final material in materials) {
-        final map = material.toMap();
-        map['cached_at'] = DateTime.now().toIso8601String();
-        map['sync_status'] = SyncStatus.synced.dbValue;
-        // Manual UPSERT: UPDATE first, INSERT if rowsUpdated == 0
-        final rowsUpdated = await txn.update(
+    final executor = txn ?? await localDatabase.database;
+    for (final material in materials) {
+      final map = material.toMap();
+      map['cached_at'] = DateTime.now().toIso8601String();
+      map['sync_status'] = SyncStatus.synced.dbValue;
+      // Manual UPSERT: UPDATE first, INSERT if rowsUpdated == 0
+      final rowsUpdated = await executor.update(
+        'learning_materials',
+        map,
+        where: 'id = ?',
+        whereArgs: [map['id']],
+      );
+      if (rowsUpdated == 0) {
+        await executor.insert(
           'learning_materials',
           map,
-          where: 'id = ?',
-          whereArgs: [map['id']],
+          conflictAlgorithm: ConflictAlgorithm.ignore,
         );
-        if (rowsUpdated == 0) {
-          await txn.insert(
-            'learning_materials',
-            map,
-            conflictAlgorithm: ConflictAlgorithm.ignore,
-          );
-        }
       }
-    });
+    }
   } catch (e) {
     throw CacheException('Failed to cache materials: $e');
   }

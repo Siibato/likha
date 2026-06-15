@@ -8,11 +8,13 @@ Future<List<CompetencyModel>> bulkAddCompetencies(
   DioClient dioClient, {
   required String tosId,
   required List<Map<String, dynamic>> competencies,
+  String? idempotencyKey,
 }) async {
   try {
     return await dioClient.postTyped(
       ApiEndpoints.tosBulkCompetencies(tosId),
       data: {'competencies': competencies},
+      headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
     );
   } on DioException catch (e) {
     throw dioClient.handleError(e);

@@ -1,4 +1,5 @@
 import 'package:likha/core/events/data_event_bus.dart';
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
@@ -25,20 +26,19 @@ class TosRepositoryImpl implements TosRepository {
         _dataEventBus = dataEventBus;
 
   @override
-  ResultFuture<TableOfSpecifications> createTos({
+  ResultFuture<MutationResult<TableOfSpecifications>> createTos({
     required String classId,
     required Map<String, dynamic> data,
   }) =>
       ops.createTos(
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         classId: classId,
         data: data,
       );
 
   @override
-  ResultFuture<TableOfSpecifications> updateTos({
+  ResultFuture<MutationResult<TableOfSpecifications>> updateTos({
     required String tosId,
     required Map<String, dynamic> data,
   }) =>
@@ -50,7 +50,7 @@ class TosRepositoryImpl implements TosRepository {
       );
 
   @override
-  ResultVoid deleteTos({required String tosId}) =>
+  ResultFuture<MutationResult<void>> deleteTos({required String tosId}) =>
       ops.deleteTos(
         _localDataSource,
         _syncQueue,
@@ -103,7 +103,7 @@ class TosRepositoryImpl implements TosRepository {
       );
 
   @override
-  ResultFuture<TosCompetency> addCompetency({
+  ResultFuture<MutationResult<TosCompetency>> addCompetency({
     required String tosId,
     required Map<String, dynamic> data,
   }) =>
@@ -115,7 +115,7 @@ class TosRepositoryImpl implements TosRepository {
       );
 
   @override
-  ResultFuture<TosCompetency> updateCompetency({
+  ResultFuture<MutationResult<TosCompetency>> updateCompetency({
     required String competencyId,
     required Map<String, dynamic> data,
   }) =>
@@ -127,7 +127,7 @@ class TosRepositoryImpl implements TosRepository {
       );
 
   @override
-  ResultVoid deleteCompetency({required String competencyId}) =>
+  ResultFuture<MutationResult<void>> deleteCompetency({required String competencyId}) =>
       ops.deleteCompetency(
         _localDataSource,
         _syncQueue,
@@ -135,7 +135,7 @@ class TosRepositoryImpl implements TosRepository {
       );
 
   @override
-  ResultFuture<List<TosCompetency>> bulkAddCompetencies({
+  ResultFuture<MutationResult<List<TosCompetency>>> bulkAddCompetencies({
     required String tosId,
     required List<Map<String, dynamic>> competencies,
   }) =>

@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
 import 'package:likha/domain/learning_materials/repositories/learning_material_repository.dart';
@@ -7,7 +8,7 @@ class UploadFile {
 
   UploadFile(this._repository);
 
-  ResultFuture<MaterialFile> call({
+  ResultFuture<MutationResult<MaterialFile>> call({
     required String materialId,
     required String filePath,
     required String fileName,

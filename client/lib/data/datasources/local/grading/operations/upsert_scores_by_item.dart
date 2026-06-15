@@ -10,14 +10,15 @@ Future<void> upsertScoresByItem(
   LocalDatabase localDatabase,
   SyncQueue syncQueue,
   String gradeItemId,
-  List<GradeScoreModel> scores,
-) async {
-  final db = await localDatabase.database;
+  List<GradeScoreModel> scores, {
+  Transaction? txn,
+}) async {
   final now = DateTime.now();
-  await db.transaction((txn) async {
+
+  Future<void> doWrite(DatabaseExecutor executor) async {
     for (final score in scores) {
       // Check for existing score by grade_item_id + student_id
-      final existing = await txn.query(
+      final existing = await executor.query(
         DbTables.gradeScores,
         where:
             '${GradeScoresCols.gradeItemId} = ? AND ${GradeScoresCols.studentId} = ?',
@@ -38,7 +39,7 @@ Future<void> upsertScoresByItem(
         // Skip when auto-populate tries to overwrite a row that has an override
         // or a row that the teacher manually edited (is_auto_populated = 0).
         if (incomingIsManual || ((wasAutoPopulated || hasNoScore) && !hasOverride)) {
-          await txn.update(
+          await executor.update(
             DbTables.gradeScores,
             {
               GradeScoresCols.score: score.score,
@@ -60,26 +61,35 @@ Future<void> upsertScoresByItem(
         final map = score.toMap();
         map[CommonCols.syncStatus] = 'pending';
         map[CommonCols.cachedAt] = now.toIso8601String();
-        await txn.insert(
+        await executor.insert(
           DbTables.gradeScores,
           map,
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
     }
-    // Enqueue a single bulk operation with all scores
-    await syncQueue.enqueue(SyncQueueEntry(
-      id: const Uuid().v4(),
-      entityType: SyncEntityType.gradeScore,
-      operation: SyncOperation.saveScores,
-      payload: {
-        'grade_item_id': gradeItemId,
-        'scores': scores.map((s) => s.toMap()).toList(),
-      },
-      status: SyncStatus.pending,
-      retryCount: 0,
-      maxRetries: 3,
-      createdAt: now,
-    ), txn: txn);
-  });
+  }
+
+  if (txn != null) {
+    await doWrite(txn);
+  } else {
+    final db = await localDatabase.database;
+    await db.transaction((innerTxn) async {
+      await doWrite(innerTxn);
+      // Enqueue a single bulk operation with all scores
+      await syncQueue.enqueue(SyncQueueEntry(
+        id: const Uuid().v4(),
+        entityType: SyncEntityType.gradeScore,
+        operation: SyncOperation.saveScores,
+        payload: {
+          'grade_item_id': gradeItemId,
+          'scores': scores.map((s) => s.toMap()).toList(),
+        },
+        status: SyncStatus.pending,
+        retryCount: 0,
+        maxRetries: 3,
+        createdAt: now,
+      ), txn: innerTxn);
+    });
+  }
 }

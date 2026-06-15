@@ -1,5 +1,5 @@
 import 'package:likha/core/events/data_event_bus.dart';
-import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
@@ -16,19 +16,16 @@ import 'operations/grading.dart' as ops;
 class GradingRepositoryImpl implements GradingRepository {
   final GradingRemoteDataSource _remoteDataSource;
   final GradingLocalDataSource _localDataSource;
-  final ServerReachabilityService _serverReachabilityService;
   final SyncQueue _syncQueue;
   final DataEventBus _dataEventBus;
 
   GradingRepositoryImpl({
     required GradingRemoteDataSource remoteDataSource,
     required GradingLocalDataSource localDataSource,
-    required ServerReachabilityService serverReachabilityService,
     required SyncQueue syncQueue,
     required DataEventBus dataEventBus,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
-        _serverReachabilityService = serverReachabilityService,
         _syncQueue = syncQueue,
         _dataEventBus = dataEventBus;
 
@@ -46,7 +43,7 @@ class GradingRepositoryImpl implements GradingRepository {
       );
 
   @override
-  ResultVoid setupGrading({
+  ResultFuture<MutationResult<List<GradeConfig>>> setupGrading({
     required String classId,
     required String gradeLevel,
     required String subjectGroup,
@@ -54,9 +51,7 @@ class GradingRepositoryImpl implements GradingRepository {
     int? semester,
   }) =>
       ops.setupGrading(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         classId: classId,
         gradeLevel: gradeLevel,
@@ -66,7 +61,7 @@ class GradingRepositoryImpl implements GradingRepository {
       );
 
   @override
-  ResultVoid updateGradingConfig({
+  ResultFuture<MutationResult<void>> updateGradingConfig({
     required String classId,
     required List<Map<String, dynamic>> configs,
   }) =>
@@ -95,7 +90,7 @@ class GradingRepositoryImpl implements GradingRepository {
       );
 
   @override
-  ResultFuture<GradeItem> createGradeItem({
+  ResultFuture<MutationResult<GradeItem>> createGradeItem({
     required String classId,
     required Map<String, dynamic> data,
   }) =>
@@ -107,7 +102,7 @@ class GradingRepositoryImpl implements GradingRepository {
       );
 
   @override
-  ResultVoid updateGradeItem({
+  ResultFuture<MutationResult<void>> updateGradeItem({
     required String id,
     required Map<String, dynamic> data,
   }) =>
@@ -119,7 +114,7 @@ class GradingRepositoryImpl implements GradingRepository {
       );
 
   @override
-  ResultVoid deleteGradeItem({required String id}) =>
+  ResultFuture<MutationResult<void>> deleteGradeItem({required String id}) =>
       ops.deleteGradeItem(
         _localDataSource,
         _syncQueue,
@@ -147,7 +142,7 @@ class GradingRepositoryImpl implements GradingRepository {
       );
 
   @override
-  ResultVoid saveScores({
+  ResultFuture<MutationResult<void>> saveScores({
     required String gradeItemId,
     required List<Map<String, dynamic>> scores,
   }) =>
@@ -158,7 +153,7 @@ class GradingRepositoryImpl implements GradingRepository {
       );
 
   @override
-  ResultVoid setScoreOverride({
+  ResultFuture<MutationResult<void>> setScoreOverride({
     required String scoreId,
     required double overrideScore,
   }) =>
@@ -170,7 +165,7 @@ class GradingRepositoryImpl implements GradingRepository {
       );
 
   @override
-  ResultVoid clearScoreOverride({required String scoreId}) =>
+  ResultFuture<MutationResult<void>> clearScoreOverride({required String scoreId}) =>
       ops.clearScoreOverride(
         _localDataSource,
         _syncQueue,
@@ -204,7 +199,7 @@ class GradingRepositoryImpl implements GradingRepository {
       );
 
   @override
-  ResultVoid updateTransmutedGrade({
+  ResultFuture<MutationResult<void>> updateTransmutedGrade({
     required String classId,
     required String studentId,
     required int gradingPeriodNumber,
@@ -212,6 +207,7 @@ class GradingRepositoryImpl implements GradingRepository {
   }) =>
       ops.updateTransmutedGrade(
         _localDataSource,
+        _syncQueue,
         classId: classId,
         studentId: studentId,
         gradingPeriodNumber: gradingPeriodNumber,

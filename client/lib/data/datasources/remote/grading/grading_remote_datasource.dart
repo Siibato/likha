@@ -13,10 +13,12 @@ abstract class GradingRemoteDataSource {
   Future<void> setupGrading({
     required String classId,
     required Map<String, dynamic> data,
+    String? idempotencyKey,
   });
   Future<void> updateGradingConfig({
     required String classId,
     required List<Map<String, dynamic>> configs,
+    String? idempotencyKey,
   });
 
   // Grade Items
@@ -28,24 +30,28 @@ abstract class GradingRemoteDataSource {
   Future<GradeItemModel> createGradeItem({
     required String classId,
     required Map<String, dynamic> data,
+    String? idempotencyKey,
   });
   Future<void> updateGradeItem({
     required String id,
     required Map<String, dynamic> data,
+    String? idempotencyKey,
   });
-  Future<void> deleteGradeItem({required String id});
+  Future<void> deleteGradeItem({required String id, String? idempotencyKey});
 
   // Scores
   Future<List<GradeScoreModel>> getScoresByItem({required String gradeItemId});
   Future<void> saveScores({
     required String gradeItemId,
     required List<Map<String, dynamic>> scores,
+    String? idempotencyKey,
   });
   Future<void> setScoreOverride({
     required String scoreId,
     required double overrideScore,
+    String? idempotencyKey,
   });
-  Future<void> clearScoreOverride({required String scoreId});
+  Future<void> clearScoreOverride({required String scoreId, String? idempotencyKey});
 
   // Computed Grades
   Future<List<PeriodGradeModel>> getPeriodGrades({
@@ -108,22 +114,26 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
   Future<void> setupGrading({
     required String classId,
     required Map<String, dynamic> data,
+    String? idempotencyKey,
   }) =>
       ops.setupGrading(
         _dioClient,
         classId: classId,
         data: data,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
   Future<void> updateGradingConfig({
     required String classId,
     required List<Map<String, dynamic>> configs,
+    String? idempotencyKey,
   }) =>
       ops.updateGradingConfig(
         _dioClient,
         classId: classId,
         configs: configs,
+        idempotencyKey: idempotencyKey,
       );
 
   // ===== Grade Items =====
@@ -145,29 +155,34 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
   Future<GradeItemModel> createGradeItem({
     required String classId,
     required Map<String, dynamic> data,
+    String? idempotencyKey,
   }) =>
       ops.createGradeItem(
         _dioClient,
         classId: classId,
         data: data,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
   Future<void> updateGradeItem({
     required String id,
     required Map<String, dynamic> data,
+    String? idempotencyKey,
   }) =>
       ops.updateGradeItem(
         _dioClient,
         id: id,
         data: data,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
-  Future<void> deleteGradeItem({required String id}) =>
+  Future<void> deleteGradeItem({required String id, String? idempotencyKey}) =>
       ops.deleteGradeItem(
         _dioClient,
         id: id,
+        idempotencyKey: idempotencyKey,
       );
 
   // ===== Scores =====
@@ -185,29 +200,34 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
   Future<void> saveScores({
     required String gradeItemId,
     required List<Map<String, dynamic>> scores,
+    String? idempotencyKey,
   }) =>
       ops.saveScores(
         _dioClient,
         gradeItemId: gradeItemId,
         scores: scores,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
   Future<void> setScoreOverride({
     required String scoreId,
     required double overrideScore,
+    String? idempotencyKey,
   }) =>
       ops.setScoreOverride(
         _dioClient,
         scoreId: scoreId,
         overrideScore: overrideScore,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
-  Future<void> clearScoreOverride({required String scoreId}) =>
+  Future<void> clearScoreOverride({required String scoreId, String? idempotencyKey}) =>
       ops.clearScoreOverride(
         _dioClient,
         scoreId: scoreId,
+        idempotencyKey: idempotencyKey,
       );
 
   // ===== Computed Grades =====

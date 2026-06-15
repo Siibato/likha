@@ -8,11 +8,15 @@ Future<CompetencyModel> addCompetency(
   DioClient dioClient, {
   required String tosId,
   required Map<String, dynamic> data,
+  String? idempotencyKey,
 }) async {
   try {
     final response = await dioClient.dio.post(
       ApiEndpoints.tosCompetencies(tosId).path,
       data: data,
+      options: idempotencyKey != null
+          ? Options(headers: {'Idempotency-Key': idempotencyKey})
+          : null,
     );
     final responseData = response.data['data'] ?? response.data;
     return CompetencyModel.fromJson(responseData as Map<String, dynamic>);

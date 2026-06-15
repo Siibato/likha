@@ -1,3 +1,5 @@
+import 'package:sqflite_sqlcipher/sqflite.dart';
+
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/tos/tos_model.dart';
@@ -5,6 +7,8 @@ import 'package:likha/data/models/tos/melcs_model.dart';
 import 'operations/tos.dart' as ops;
 
 abstract class TosLocalDataSource {
+  LocalDatabase get localDatabase;
+
   // Cache (from sync)
   Future<void> cacheTosList(List<TosModel> tosList);
   Future<void> cacheCompetencies(String tosId, List<CompetencyModel> competencies);
@@ -26,16 +30,17 @@ abstract class TosLocalDataSource {
   Future<void> seedMelcsIfEmpty();
 
   // Mutations (offline-first)
-  Future<void> saveTos(TosModel tos);
-  Future<void> updateTosFields(String tosId, Map<String, dynamic> data);
-  Future<void> softDeleteTos(String tosId);
-  Future<void> saveCompetency(CompetencyModel competency);
-  Future<void> updateCompetencyFields(String competencyId, Map<String, dynamic> data);
-  Future<void> softDeleteCompetency(String competencyId);
-  Future<void> bulkSaveCompetencies(List<CompetencyModel> competencies);
+  Future<void> saveTos(TosModel tos, {Transaction? txn});
+  Future<void> updateTosFields(String tosId, Map<String, dynamic> data, {Transaction? txn});
+  Future<void> softDeleteTos(String tosId, {Transaction? txn});
+  Future<void> saveCompetency(CompetencyModel competency, {Transaction? txn});
+  Future<void> updateCompetencyFields(String competencyId, Map<String, dynamic> data, {Transaction? txn});
+  Future<void> softDeleteCompetency(String competencyId, {Transaction? txn});
+  Future<void> bulkSaveCompetencies(List<CompetencyModel> competencies, {Transaction? txn});
 }
 
 class TosLocalDataSourceImpl implements TosLocalDataSource {
+  @override
   final LocalDatabase localDatabase;
   final SyncQueue syncQueue;
 
@@ -96,36 +101,38 @@ class TosLocalDataSourceImpl implements TosLocalDataSource {
       ops.seedMelcsIfEmpty(localDatabase);
 
   @override
-  Future<void> saveTos(TosModel tos) =>
-      ops.saveTos(localDatabase, syncQueue, tos);
+  Future<void> saveTos(TosModel tos, {Transaction? txn}) =>
+      ops.saveTos(localDatabase, syncQueue, tos, txn: txn);
 
   @override
   Future<void> updateTosFields(
     String tosId,
-    Map<String, dynamic> data,
-  ) =>
-      ops.updateTosFields(localDatabase, syncQueue, tosId, data);
+    Map<String, dynamic> data, {
+    Transaction? txn,
+  }) =>
+      ops.updateTosFields(localDatabase, syncQueue, tosId, data, txn: txn);
 
   @override
-  Future<void> softDeleteTos(String tosId) =>
-      ops.softDeleteTos(localDatabase, syncQueue, tosId);
+  Future<void> softDeleteTos(String tosId, {Transaction? txn}) =>
+      ops.softDeleteTos(localDatabase, syncQueue, tosId, txn: txn);
 
   @override
-  Future<void> saveCompetency(CompetencyModel competency) =>
-      ops.saveCompetency(localDatabase, syncQueue, competency);
+  Future<void> saveCompetency(CompetencyModel competency, {Transaction? txn}) =>
+      ops.saveCompetency(localDatabase, syncQueue, competency, txn: txn);
 
   @override
   Future<void> updateCompetencyFields(
     String competencyId,
-    Map<String, dynamic> data,
-  ) =>
-      ops.updateCompetencyFields(localDatabase, syncQueue, competencyId, data);
+    Map<String, dynamic> data, {
+    Transaction? txn,
+  }) =>
+      ops.updateCompetencyFields(localDatabase, syncQueue, competencyId, data, txn: txn);
 
   @override
-  Future<void> softDeleteCompetency(String competencyId) =>
-      ops.softDeleteCompetency(localDatabase, syncQueue, competencyId);
+  Future<void> softDeleteCompetency(String competencyId, {Transaction? txn}) =>
+      ops.softDeleteCompetency(localDatabase, syncQueue, competencyId, txn: txn);
 
   @override
-  Future<void> bulkSaveCompetencies(List<CompetencyModel> competencies) =>
-      ops.bulkSaveCompetencies(localDatabase, syncQueue, competencies);
+  Future<void> bulkSaveCompetencies(List<CompetencyModel> competencies, {Transaction? txn}) =>
+      ops.bulkSaveCompetencies(localDatabase, syncQueue, competencies, txn: txn);
 }

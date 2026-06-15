@@ -3,6 +3,9 @@ import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/logging/sync_logger.dart';
 import 'package:likha/core/sync/handlers/assessment_sync_handler.dart';
+import 'package:likha/core/sync/handlers/grading_sync_handler.dart';
+import 'package:likha/core/sync/handlers/learning_material_sync_handler.dart';
+import 'package:likha/core/sync/handlers/tos_sync_handler.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/sync_state.dart';
 import 'package:likha/data/datasources/remote/sync/sync_remote_datasource.dart';
@@ -38,6 +41,9 @@ class OutboundSyncHandler {
   final SyncLogger _log;
   final SyncStateUpdater _updateState;
   final AssessmentSyncHandler? _assessmentHandler;
+  final GradingSyncHandler? _gradingHandler;
+  final LearningMaterialSyncHandler? _learningMaterialHandler;
+  final TosSyncHandler? _tosHandler;
 
   OutboundSyncHandler(
     this._syncQueue,
@@ -46,7 +52,13 @@ class OutboundSyncHandler {
     this._log,
     this._updateState, {
     AssessmentSyncHandler? assessmentHandler,
-  }) : _assessmentHandler = assessmentHandler;
+    GradingSyncHandler? gradingHandler,
+    LearningMaterialSyncHandler? learningMaterialHandler,
+    TosSyncHandler? tosHandler,
+  })  : _assessmentHandler = assessmentHandler,
+        _gradingHandler = gradingHandler,
+        _learningMaterialHandler = learningMaterialHandler,
+        _tosHandler = tosHandler;
 
   Future<void> outboundSync() async {
     _log.log('outboundSync() - START');
@@ -129,8 +141,77 @@ class OutboundSyncHandler {
       }
     }
 
+    // Route grading operations to the dedicated handler.
+    final gradingOps = regularOps
+        .where((e) =>
+            e.entityType == SyncEntityType.gradeConfig ||
+            e.entityType == SyncEntityType.gradeItem ||
+            e.entityType == SyncEntityType.gradeScore)
+        .toList();
+    if (gradingOps.isNotEmpty && _gradingHandler != null) {
+      _log.log('Processing ${gradingOps.length} grading ops via handler');
+      for (final op in gradingOps) {
+        final result = await _gradingHandler.handle(op);
+        if (result.success) {
+          await _syncQueue.markSucceeded(op.id);
+        } else if (result.shouldRetry) {
+          await _syncQueue.incrementRetry(op.id);
+        } else {
+          await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
+        }
+      }
+    }
+
+    // Route learning material operations to the dedicated handler.
+    final learningMaterialOps = regularOps
+        .where((e) =>
+            e.entityType == SyncEntityType.learningMaterial ||
+            e.entityType == SyncEntityType.materialFile)
+        .toList();
+    if (learningMaterialOps.isNotEmpty && _learningMaterialHandler != null) {
+      _log.log('Processing ${learningMaterialOps.length} learning material ops via handler');
+      for (final op in learningMaterialOps) {
+        final result = await _learningMaterialHandler.handle(op);
+        if (result.success) {
+          await _syncQueue.markSucceeded(op.id);
+        } else if (result.shouldRetry) {
+          await _syncQueue.incrementRetry(op.id);
+        } else {
+          await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
+        }
+      }
+    }
+
+    // Route TOS operations to the dedicated handler.
+    final tosOps = regularOps
+        .where((e) =>
+            e.entityType == SyncEntityType.tableOfSpecifications ||
+            e.entityType == SyncEntityType.tosCompetency)
+        .toList();
+    if (tosOps.isNotEmpty && _tosHandler != null) {
+      _log.log('Processing ${tosOps.length} TOS ops via handler');
+      for (final op in tosOps) {
+        final result = await _tosHandler.handle(op);
+        if (result.success) {
+          await _syncQueue.markSucceeded(op.id);
+        } else if (result.shouldRetry) {
+          await _syncQueue.incrementRetry(op.id);
+        } else {
+          await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
+        }
+      }
+    }
+
     final nonAssessmentOps = regularOps
-        .where((e) => e.entityType != SyncEntityType.assessment)
+        .where((e) =>
+            e.entityType != SyncEntityType.assessment &&
+            e.entityType != SyncEntityType.gradeConfig &&
+            e.entityType != SyncEntityType.gradeItem &&
+            e.entityType != SyncEntityType.gradeScore &&
+            e.entityType != SyncEntityType.learningMaterial &&
+            e.entityType != SyncEntityType.materialFile &&
+            e.entityType != SyncEntityType.tableOfSpecifications &&
+            e.entityType != SyncEntityType.tosCompetency)
         .toList();
 
     _log.log('Found ${nonAssessmentOps.length} regular operations');

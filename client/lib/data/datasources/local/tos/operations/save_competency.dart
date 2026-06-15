@@ -9,12 +9,13 @@ import 'package:likha/data/models/tos/tos_model.dart';
 Future<void> saveCompetency(
   LocalDatabase localDatabase,
   SyncQueue syncQueue,
-  CompetencyModel competency,
-) async {
-  final db = await localDatabase.database;
+  CompetencyModel competency, {
+  Transaction? txn,
+}) async {
   final now = DateTime.now();
-  await db.transaction((txn) async {
-    await txn.insert(
+
+  Future<void> doWrite(DatabaseExecutor executor) async {
+    await executor.insert(
       DbTables.tosCompetencies,
       {
         ...competency.toMap(),
@@ -23,15 +24,24 @@ Future<void> saveCompetency(
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
-    await syncQueue.enqueue(SyncQueueEntry(
-      id: const Uuid().v4(),
-      entityType: SyncEntityType.tosCompetency,
-      operation: SyncOperation.create,
-      payload: competency.toMap(),
-      status: SyncStatus.pending,
-      retryCount: 0,
-      maxRetries: 3,
-      createdAt: now,
-    ), txn: txn);
-  });
+  }
+
+  if (txn != null) {
+    await doWrite(txn);
+  } else {
+    final db = await localDatabase.database;
+    await db.transaction((innerTxn) async {
+      await doWrite(innerTxn);
+      await syncQueue.enqueue(SyncQueueEntry(
+        id: const Uuid().v4(),
+        entityType: SyncEntityType.tosCompetency,
+        operation: SyncOperation.create,
+        payload: competency.toMap(),
+        status: SyncStatus.pending,
+        retryCount: 0,
+        maxRetries: 3,
+        createdAt: now,
+      ), txn: innerTxn);
+    });
+  }
 }

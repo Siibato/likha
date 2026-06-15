@@ -7,6 +7,7 @@ import 'package:likha/core/network/dio_client.dart';
 Future<void> deleteTos(
   DioClient dioClient, {
   required String tosId,
+  String? idempotencyKey,
 }) async {
   try {
     await dioClient.deleteTyped(
@@ -14,6 +15,7 @@ Future<void> deleteTos(
         ApiEndpoints.tosDetail(tosId).path,
         (_) {},
       ),
+      headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
     );
   } on DioException catch (e) {
     throw dioClient.handleError(e);

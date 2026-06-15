@@ -9,12 +9,13 @@ import 'package:likha/data/models/tos/tos_model.dart';
 Future<void> saveTos(
   LocalDatabase localDatabase,
   SyncQueue syncQueue,
-  TosModel tos,
-) async {
-  final db = await localDatabase.database;
+  TosModel tos, {
+  Transaction? txn,
+}) async {
   final now = DateTime.now();
-  await db.transaction((txn) async {
-    await txn.insert(
+
+  Future<void> doWrite(DatabaseExecutor executor) async {
+    await executor.insert(
       DbTables.tableOfSpecifications,
       {
         ...tos.toMap(),
@@ -23,15 +24,24 @@ Future<void> saveTos(
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
-    await syncQueue.enqueue(SyncQueueEntry(
-      id: const Uuid().v4(),
-      entityType: SyncEntityType.tableOfSpecifications,
-      operation: SyncOperation.create,
-      payload: tos.toMap(),
-      status: SyncStatus.pending,
-      retryCount: 0,
-      maxRetries: 3,
-      createdAt: now,
-    ), txn: txn);
-  });
+  }
+
+  if (txn != null) {
+    await doWrite(txn);
+  } else {
+    final db = await localDatabase.database;
+    await db.transaction((innerTxn) async {
+      await doWrite(innerTxn);
+      await syncQueue.enqueue(SyncQueueEntry(
+        id: const Uuid().v4(),
+        entityType: SyncEntityType.tableOfSpecifications,
+        operation: SyncOperation.create,
+        payload: tos.toMap(),
+        status: SyncStatus.pending,
+        retryCount: 0,
+        maxRetries: 3,
+        createdAt: now,
+      ), txn: innerTxn);
+    });
+  }
 }

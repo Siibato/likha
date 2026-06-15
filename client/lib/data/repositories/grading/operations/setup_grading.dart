@@ -1,19 +1,17 @@
 import 'package:dartz/dartz.dart';
 import 'package:uuid/uuid.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
-import 'package:likha/data/datasources/remote/grading/grading_remote_datasource.dart';
 import 'package:likha/data/models/grading/grade_config_model.dart';
+import 'package:likha/domain/grading/entities/grade_config.dart';
 
 import '_helpers.dart' as helpers;
 
-ResultVoid setupGrading(
-  ServerReachabilityService serverReachabilityService,
+ResultFuture<MutationResult<List<GradeConfig>>> setupGrading(
   GradingLocalDataSource localDataSource,
-  GradingRemoteDataSource remoteDataSource,
   SyncQueue syncQueue, {
   required String classId,
   required String gradeLevel,
@@ -22,70 +20,52 @@ ResultVoid setupGrading(
   int? semester,
 }) async {
   try {
-    // Save locally first (optimistic) — mirror server behaviour: Q1-Q4
     final weights = helpers.weightPresets[subjectGroup];
+    final now = DateTime.now();
+    final configs = <GradeConfigModel>[];
+
     if (weights != null) {
-      final now = DateTime.now().toIso8601String();
-      final configs = [
-        for (int q = 1; q <= 4; q++)
-          GradeConfigModel(
-            id: const Uuid().v4(),
-            classId: classId,
-            gradingPeriodNumber: q,
-            wwWeight: weights.ww,
-            ptWeight: weights.pt,
-            qaWeight: weights.qa,
-            createdAt: now,
-            updatedAt: now,
-          ),
-      ];
-      await localDataSource.saveConfigs(configs);
+      final nowStr = now.toIso8601String();
+      for (int q = 1; q <= 4; q++) {
+        configs.add(GradeConfigModel(
+          id: const Uuid().v4(),
+          classId: classId,
+          gradingPeriodNumber: q,
+          wwWeight: weights.ww,
+          ptWeight: weights.pt,
+          qaWeight: weights.qa,
+          createdAt: nowStr,
+          updatedAt: nowStr,
+        ));
+      }
     }
 
-    // If online, attempt direct remote call first.
-    // Only fall back to sync queue when the direct call fails so we avoid
-    // sending a duplicate "setup" operation that would hit the server's
-    // UNIQUE(class_id, quarter) constraint and be permanently marked failed.
-    bool remoteSucceeded = false;
-    if (serverReachabilityService.isServerReachable) {
-      try {
-        await remoteDataSource.setupGrading(
-          classId: classId,
-          data: {
+    final db = await localDataSource.localDatabase.database;
+    await db.transaction((txn) async {
+      await localDataSource.saveConfigs(configs, txn: txn);
+      await syncQueue.enqueue(
+        SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.gradeConfig,
+          operation: SyncOperation.setup,
+          payload: {
+            'class_id': classId,
             'grade_level': gradeLevel,
             'subject_group': subjectGroup,
             'school_year': schoolYear,
             if (semester != null) 'semester': semester,
           },
-        );
-        remoteSucceeded = true;
-        // Next getGradingConfig call will fetch server-assigned IDs
-        // automatically (server-first pattern).
-      } catch (_) {
-        // Direct call failed — sync queue will handle it below
-      }
-    }
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 3,
+          createdAt: now,
+        ),
+        txn: txn,
+      );
+    });
 
-    if (!remoteSucceeded) {
-      await syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
-        entityType: SyncEntityType.gradeConfig,
-        operation: SyncOperation.setup,
-        payload: {
-          'class_id': classId,
-          'grade_level': gradeLevel,
-          'subject_group': subjectGroup,
-          'school_year': schoolYear,
-          if (semester != null) 'semester': semester,
-        },
-        status: SyncStatus.pending,
-        retryCount: 0,
-        maxRetries: 3,
-        createdAt: DateTime.now(),
-      ));
-    }
-
-    return const Right(null);
+    final entities = configs.map(helpers.configToEntity).toList();
+    return Right(MutationResult(entity: entities, status: SyncStatus.pending));
   } catch (e) {
     return Left(CacheFailure(e.toString()));
   }

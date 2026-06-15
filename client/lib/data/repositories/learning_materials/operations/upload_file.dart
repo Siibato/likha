@@ -1,80 +1,76 @@
 import 'package:dartz/dartz.dart';
-import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/logging/repo_logger.dart';
-import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
-import 'package:likha/data/datasources/remote/learning_materials/learning_material_remote_datasource.dart';
+import 'package:likha/data/models/learning_materials/material_file_model.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
 import 'package:uuid/uuid.dart';
 import '_helpers.dart' as helpers;
 
-ResultFuture<MaterialFile> uploadFile(
-  ServerReachabilityService serverReachabilityService,
+ResultFuture<MutationResult<MaterialFile>> uploadFile(
   LearningMaterialLocalDataSource localDataSource,
-  LearningMaterialRemoteDataSource remoteDataSource, {
+  SyncQueue syncQueue, {
   required String materialId,
   required String filePath,
   required String fileName,
   void Function(int sent, int total)? onSendProgress,
 }) async {
   try {
-    if (!serverReachabilityService.isServerReachable) {
-      final mime = helpers.mimeType(filePath);
-      final size = await helpers.fileSize(filePath);
+    final mime = helpers.mimeType(filePath);
+    final size = await helpers.fileSize(filePath);
+    final now = DateTime.now();
+    final fileId = const Uuid().v4();
 
-      final localFileId = const Uuid().v4();
-      await localDataSource.stageMaterialFileForUpload(
-        materialId: materialId,
-        fileName: fileName,
-        fileType: mime,
-        fileSize: size,
-        localPath: filePath,
-      );
-
-      return Right(MaterialFile(
-        id: localFileId,
-        fileName: fileName,
-        fileType: mime,
-        fileSize: size,
-        uploadedAt: DateTime.now(),
-        localPath: filePath,
-        syncStatus: SyncStatus.pending,
-        cachedAt: DateTime.now(),
-      ));
-    }
-
-    final result = await remoteDataSource.uploadFile(
+    final stagedPath = await localDataSource.stageMaterialFileForUpload(
       materialId: materialId,
-      filePath: filePath,
       fileName: fileName,
-      onSendProgress: onSendProgress,
+      fileType: mime,
+      fileSize: size,
+      localPath: filePath,
+      fileId: fileId,
     );
 
-    try {
-      RepoLogger.instance.log('uploadFile() - File uploaded successfully, fetching material detail...');
-      final materialDetail = await remoteDataSource.getMaterialDetail(materialId: materialId);
-      RepoLogger.instance.log('uploadFile() - Got material detail: ${materialDetail.files.length} files');
+    final optimisticModel = MaterialFileModel(
+      id: fileId,
+      materialId: materialId,
+      fileName: fileName,
+      fileType: mime,
+      fileSize: size,
+      uploadedAt: now,
+      localPath: stagedPath,
+      syncStatus: SyncStatus.pending,
+      cachedAt: now,
+    );
 
-      if (materialDetail.files.isNotEmpty) {
-        RepoLogger.instance.log('uploadFile() - Caching ${materialDetail.files.length} files to local DB...');
-        await localDataSource.cacheMaterialFiles(materialId, materialDetail.files);
-        RepoLogger.instance.log('uploadFile() - Cache complete, notifying event bus...');
-      } else {
-        RepoLogger.instance.warn('uploadFile() - No files in response, skipping cache');
-      }
-    } catch (e) {
-      RepoLogger.instance.error('uploadFile() - Error during post-upload caching', e);
-    }
+    final db = await localDataSource.localDatabase.database;
+    await db.transaction((txn) async {
+      await localDataSource.saveFile(optimisticModel, txn: txn);
+      await syncQueue.enqueue(
+        SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.materialFile,
+          operation: SyncOperation.upload,
+          payload: {
+            'file_id': fileId,
+            'material_id': materialId,
+            'local_path': stagedPath,
+            'file_name': fileName,
+            'file_type': mime,
+            'file_size': size,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 5,
+          createdAt: now,
+        ),
+        txn: txn,
+      );
+    });
 
-    return Right(result);
-  } on ServerException catch (e) {
-    return Left(ServerFailure(e.message, statusCode: e.statusCode));
-  } on NetworkException catch (e) {
-    return Left(NetworkFailure(e.message));
+    return Right(MutationResult(entity: optimisticModel, status: SyncStatus.pending));
   } catch (e) {
-    return Left(ServerFailure(e.toString()));
+    return Left(CacheFailure(e.toString()));
   }
 }

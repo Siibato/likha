@@ -9,13 +9,14 @@ import 'package:likha/data/models/tos/tos_model.dart';
 Future<void> bulkSaveCompetencies(
   LocalDatabase localDatabase,
   SyncQueue syncQueue,
-  List<CompetencyModel> competencies,
-) async {
-  final db = await localDatabase.database;
+  List<CompetencyModel> competencies, {
+  Transaction? txn,
+}) async {
   final now = DateTime.now();
-  await db.transaction((txn) async {
+
+  Future<void> doWrite(DatabaseExecutor executor) async {
     for (final comp in competencies) {
-      await txn.insert(
+      await executor.insert(
         DbTables.tosCompetencies,
         {
           ...comp.toMap(),
@@ -25,18 +26,27 @@ Future<void> bulkSaveCompetencies(
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
     }
-    // Enqueue a single bulk operation with all competencies
-    await syncQueue.enqueue(SyncQueueEntry(
-      id: const Uuid().v4(),
-      entityType: SyncEntityType.tosCompetency,
-      operation: SyncOperation.create,
-      payload: {
-        'competencies': competencies.map((c) => c.toMap()).toList(),
-      },
-      status: SyncStatus.pending,
-      retryCount: 0,
-      maxRetries: 3,
-      createdAt: now,
-    ), txn: txn);
-  });
+  }
+
+  if (txn != null) {
+    await doWrite(txn);
+  } else {
+    final db = await localDatabase.database;
+    await db.transaction((innerTxn) async {
+      await doWrite(innerTxn);
+      // Enqueue a single bulk operation with all competencies
+      await syncQueue.enqueue(SyncQueueEntry(
+        id: const Uuid().v4(),
+        entityType: SyncEntityType.tosCompetency,
+        operation: SyncOperation.create,
+        payload: {
+          'competencies': competencies.map((c) => c.toMap()).toList(),
+        },
+        status: SyncStatus.pending,
+        retryCount: 0,
+        maxRetries: 3,
+        createdAt: now,
+      ), txn: innerTxn);
+    });
+  }
 }

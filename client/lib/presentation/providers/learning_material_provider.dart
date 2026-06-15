@@ -1,13 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/logging/provider_logger.dart';
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/domain/learning_materials/entities/learning_material.dart';
 import 'package:likha/domain/learning_materials/entities/material_detail.dart';
-import 'package:likha/domain/learning_materials/entities/material_file.dart';
 import 'package:likha/domain/learning_materials/usecases/create_material.dart';
 import 'package:likha/domain/learning_materials/usecases/delete_file.dart' as material;
 import 'package:likha/domain/learning_materials/usecases/delete_material.dart';
@@ -135,40 +133,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     String? description,
     String? contentText,
   }) async {
-    final previousMaterials = List<LearningMaterial>.from(state.materials);
-
-    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
-    final tempMaterial = LearningMaterial(
-      id: tempId,
-      classId: classId,
-      title: title,
-      description: description,
-      contentText: contentText,
-      orderIndex: state.materials.length,
-      fileCount: 0,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-    final tempDetail = MaterialDetail(
-      id: tempId,
-      classId: classId,
-      title: title,
-      description: description,
-      contentText: contentText,
-      orderIndex: state.materials.length,
-      files: const [],
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      materials: [...state.materials, tempMaterial],
-      currentMaterial: tempDetail,
-    );
-
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await _createMaterial(
       classId: classId,
       title: title,
@@ -177,29 +142,11 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     );
     result.fold(
       (failure) => state = state.copyWith(
-        isLoading: false,
-        materials: previousMaterials,
         error: AppErrorMapper.fromFailure(failure),
       ),
-      (material) {
-        final realDetail = MaterialDetail(
-          id: material.id,
-          classId: material.classId,
-          title: material.title,
-          description: material.description,
-          contentText: material.contentText,
-          orderIndex: material.orderIndex,
-          files: const [],
-          createdAt: material.createdAt,
-          updatedAt: material.updatedAt,
-        );
-        state = state.copyWith(
-          isLoading: false,
-          materials: state.materials.map((m) => m.id == tempId ? material : m).toList(),
-          currentMaterial: state.currentMaterial?.id == tempId ? realDetail : state.currentMaterial,
-          successMessage: 'Material created successfully',
-        );
-      },
+      (mutationResult) => state = state.copyWith(
+        successMessage: 'Material created successfully',
+      ),
     );
   }
 
@@ -209,59 +156,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     String? description,
     String? contentText,
   }) async {
-    final previousMaterials = List<LearningMaterial>.from(state.materials);
-    final previousCurrent = state.currentMaterial;
-
-    final existingMaterial = state.materials.firstWhere(
-      (m) => m.id == materialId,
-      orElse: () => LearningMaterial(
-        id: materialId,
-        classId: '',
-        title: title ?? '',
-        description: description,
-        contentText: contentText,
-        orderIndex: 0,
-        fileCount: 0,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-    );
-
-    final optimisticMaterial = LearningMaterial(
-      id: existingMaterial.id,
-      classId: existingMaterial.classId,
-      title: title ?? existingMaterial.title,
-      description: description ?? existingMaterial.description,
-      contentText: contentText ?? existingMaterial.contentText,
-      orderIndex: existingMaterial.orderIndex,
-      fileCount: existingMaterial.fileCount,
-      createdAt: existingMaterial.createdAt,
-      updatedAt: DateTime.now(),
-    );
-
-    MaterialDetail? optimisticCurrent;
-    if (previousCurrent != null && previousCurrent.id == materialId) {
-      optimisticCurrent = MaterialDetail(
-        id: previousCurrent.id,
-        classId: previousCurrent.classId,
-        title: title ?? previousCurrent.title,
-        description: description ?? previousCurrent.description,
-        contentText: contentText ?? previousCurrent.contentText,
-        orderIndex: previousCurrent.orderIndex,
-        files: previousCurrent.files,
-        createdAt: previousCurrent.createdAt,
-        updatedAt: DateTime.now(),
-      );
-    }
-
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      materials: state.materials.map((m) => m.id == materialId ? optimisticMaterial : m).toList(),
-      currentMaterial: optimisticCurrent ?? previousCurrent,
-    );
-
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await _updateMaterial(
       materialId: materialId,
       title: title,
@@ -269,95 +164,28 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
       contentText: contentText,
     );
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        materials: previousMaterials,
-        currentMaterial: previousCurrent,
-        error: AppErrorMapper.fromFailure(failure),
-      ),
-      (material) {
-        MaterialDetail? updatedCurrent = state.currentMaterial;
-        if (state.currentMaterial != null && state.currentMaterial!.id == materialId) {
-          updatedCurrent = MaterialDetail(
-            id: material.id,
-            classId: material.classId,
-            title: material.title,
-            description: material.description,
-            contentText: material.contentText,
-            orderIndex: material.orderIndex,
-            files: state.currentMaterial!.files,
-            createdAt: material.createdAt,
-            updatedAt: material.updatedAt,
-          );
-        }
-
-        state = state.copyWith(
-          isLoading: false,
-          materials: state.materials.map((m) => m.id == materialId ? material : m).toList(),
-          currentMaterial: updatedCurrent,
-          successMessage: 'Material updated successfully',
-        );
-      },
+      (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
+      (_) => state = state.copyWith(successMessage: 'Material updated successfully'),
     );
   }
 
   Future<void> deleteMaterial(String materialId) async {
-    final previousMaterials = List<LearningMaterial>.from(state.materials);
-
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      materials: state.materials.where((m) => m.id != materialId).toList(),
-      clearCurrent: state.currentMaterial?.id == materialId,
-    );
-
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await _deleteMaterial(materialId);
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        materials: previousMaterials,
-        error: AppErrorMapper.fromFailure(failure),
-      ),
-      (_) => state = state.copyWith(
-        isLoading: false,
-        successMessage: 'Material deleted successfully',
-      ),
+      (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
+      (_) => state = state.copyWith(successMessage: 'Material deleted successfully'),
     );
   }
 
   Future<void> reorderMaterial(String materialId, int newOrderIndex) async {
-    final previousMaterials = List<LearningMaterial>.from(state.materials);
-
-    final optimisticMaterials = state.materials.map((m) {
-      if (m.id == materialId) {
-        return LearningMaterial(
-          id: m.id,
-          classId: m.classId,
-          title: m.title,
-          description: m.description,
-          contentText: m.contentText,
-          orderIndex: newOrderIndex,
-          fileCount: m.fileCount,
-          createdAt: m.createdAt,
-          updatedAt: DateTime.now(),
-        );
-      }
-      return m;
-    }).toList()
-      ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
-
-    state = state.copyWith(materials: optimisticMaterials);
-
+    state = state.copyWith(clearError: true);
     final result = await _reorderMaterial(
       materialId: materialId,
       newOrderIndex: newOrderIndex,
     );
     result.fold(
-      (failure) => state = state.copyWith(
-        materials: previousMaterials,
-        error: AppErrorMapper.fromFailure(failure),
-      ),
+      (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
       (_) {},
     );
   }
@@ -367,19 +195,13 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     required List<String> materialIds,
     required List<LearningMaterial> orderedMaterials,
   }) async {
-    final previousMaterials = List<LearningMaterial>.from(state.materials);
-
-    state = state.copyWith(materials: orderedMaterials);
-
+    state = state.copyWith(clearError: true);
     final result = await _reorderAllMaterials(
       classId: classId,
       materialIds: materialIds,
     );
     result.fold(
-      (failure) => state = state.copyWith(
-        materials: previousMaterials,
-        error: failure.message,
-      ),
+      (failure) => state = state.copyWith(error: failure.message),
       (_) {},
     );
   }
@@ -389,50 +211,12 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     required String filePath,
     required String fileName,
   }) async {
-    final previousFiles = state.currentMaterial != null
-        ? List<MaterialFile>.from(state.currentMaterial!.files)
-        : null;
-    final tempFileId = 'temp-file-${DateTime.now().microsecondsSinceEpoch}';
-    final optimisticFile = MaterialFile(
-      id: tempFileId,
-      fileName: fileName,
-      fileType: 'application/octet-stream',
-      fileSize: 0,
-      uploadedAt: DateTime.now(),
-      localPath: filePath,
-      cachedAt: DateTime.now(),
-      syncStatus: SyncStatus.pending,
+    state = state.copyWith(
+      clearError: true,
+      clearSuccess: true,
+      clearUploadProgress: true,
+      currentUploadFileName: fileName,
     );
-
-    if (state.currentMaterial != null) {
-      final optimisticFiles = [...state.currentMaterial!.files, optimisticFile];
-      state = state.copyWith(
-        isLoading: true,
-        clearError: true,
-        clearSuccess: true,
-        clearUploadProgress: true,
-        currentUploadFileName: fileName,
-        currentMaterial: MaterialDetail(
-          id: state.currentMaterial!.id,
-          classId: state.currentMaterial!.classId,
-          title: state.currentMaterial!.title,
-          description: state.currentMaterial!.description,
-          contentText: state.currentMaterial!.contentText,
-          orderIndex: state.currentMaterial!.orderIndex,
-          files: optimisticFiles,
-          createdAt: state.currentMaterial!.createdAt,
-          updatedAt: DateTime.now(),
-        ),
-      );
-    } else {
-      state = state.copyWith(
-        isLoading: true,
-        clearError: true,
-        clearSuccess: true,
-        clearUploadProgress: true,
-        currentUploadFileName: fileName,
-      );
-    }
 
     final result = await _uploadFile(
       materialId: materialId,
@@ -446,119 +230,23 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     );
 
     result.fold(
-      (failure) {
-        if (previousFiles != null && state.currentMaterial != null) {
-          state = state.copyWith(
-            isLoading: false,
-            currentMaterial: MaterialDetail(
-              id: state.currentMaterial!.id,
-              classId: state.currentMaterial!.classId,
-              title: state.currentMaterial!.title,
-              description: state.currentMaterial!.description,
-              contentText: state.currentMaterial!.contentText,
-              orderIndex: state.currentMaterial!.orderIndex,
-              files: previousFiles,
-              createdAt: state.currentMaterial!.createdAt,
-              updatedAt: state.currentMaterial!.updatedAt,
-            ),
-            error: AppErrorMapper.fromFailure(failure),
-            clearUploadProgress: true,
-          );
-        } else {
-          state = state.copyWith(
-            isLoading: false,
-            error: AppErrorMapper.fromFailure(failure),
-            clearUploadProgress: true,
-          );
-        }
-      },
-      (file) {
-        if (state.currentMaterial != null) {
-          final updatedFiles = state.currentMaterial!.files
-              .map((f) => f.id == tempFileId ? file : f)
-              .toList();
-          final updatedDetail = MaterialDetail(
-            id: state.currentMaterial!.id,
-            classId: state.currentMaterial!.classId,
-            title: state.currentMaterial!.title,
-            description: state.currentMaterial!.description,
-            contentText: state.currentMaterial!.contentText,
-            orderIndex: state.currentMaterial!.orderIndex,
-            files: updatedFiles,
-            createdAt: state.currentMaterial!.createdAt,
-            updatedAt: state.currentMaterial!.updatedAt,
-          );
-          state = state.copyWith(
-            isLoading: false,
-            currentMaterial: updatedDetail,
-            successMessage: 'File uploaded successfully',
-            clearUploadProgress: true,
-          );
-        } else {
-          state = state.copyWith(
-            isLoading: false,
-            successMessage: 'File uploaded successfully',
-            clearUploadProgress: true,
-          );
-        }
-      },
+      (failure) => state = state.copyWith(
+        error: AppErrorMapper.fromFailure(failure),
+        clearUploadProgress: true,
+      ),
+      (_) => state = state.copyWith(
+        successMessage: 'File uploaded successfully',
+        clearUploadProgress: true,
+      ),
     );
   }
 
   Future<void> deleteFile(String fileId, String materialId) async {
-    final previousFiles = state.currentMaterial != null
-        ? List<MaterialFile>.from(state.currentMaterial!.files)
-        : null;
-
-    if (state.currentMaterial != null) {
-      final updatedFiles = state.currentMaterial!.files.where((f) => f.id != fileId).toList();
-      state = state.copyWith(
-        isLoading: true,
-        clearError: true,
-        clearSuccess: true,
-        currentMaterial: MaterialDetail(
-          id: state.currentMaterial!.id,
-          classId: state.currentMaterial!.classId,
-          title: state.currentMaterial!.title,
-          description: state.currentMaterial!.description,
-          contentText: state.currentMaterial!.contentText,
-          orderIndex: state.currentMaterial!.orderIndex,
-          files: updatedFiles,
-          createdAt: state.currentMaterial!.createdAt,
-          updatedAt: state.currentMaterial!.updatedAt,
-        ),
-      );
-    } else {
-      state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
-    }
-
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await _deleteFile(fileId);
     result.fold(
-      (failure) {
-        if (previousFiles != null && state.currentMaterial != null) {
-          state = state.copyWith(
-            isLoading: false,
-            currentMaterial: MaterialDetail(
-              id: state.currentMaterial!.id,
-              classId: state.currentMaterial!.classId,
-              title: state.currentMaterial!.title,
-              description: state.currentMaterial!.description,
-              contentText: state.currentMaterial!.contentText,
-              orderIndex: state.currentMaterial!.orderIndex,
-              files: previousFiles,
-              createdAt: state.currentMaterial!.createdAt,
-              updatedAt: state.currentMaterial!.updatedAt,
-            ),
-            error: AppErrorMapper.fromFailure(failure),
-          );
-        } else {
-          state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure));
-        }
-      },
-      (_) => state = state.copyWith(
-        isLoading: false,
-        successMessage: 'File deleted successfully',
-      ),
+      (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
+      (_) => state = state.copyWith(successMessage: 'File deleted successfully'),
     );
   }
 

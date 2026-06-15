@@ -8,11 +8,13 @@ Future<LearningMaterialModel> createMaterial(
   DioClient dioClient, {
   required String classId,
   required Map<String, dynamic> data,
+  String? idempotencyKey,
 }) async {
   try {
     return await dioClient.postTyped(
       ApiEndpoints.classMaterials(classId),
       data: data,
+      headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
     );
   } on DioException catch (e) {
     throw dioClient.handleError(e);

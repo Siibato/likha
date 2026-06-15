@@ -1,13 +1,14 @@
 import 'package:dartz/dartz.dart';
 import 'package:uuid/uuid.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/data/models/tos/tos_model.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 
-ResultFuture<List<TosCompetency>> bulkAddCompetencies(
+ResultFuture<MutationResult<List<TosCompetency>>> bulkAddCompetencies(
   TosLocalDataSource localDataSource,
   SyncQueue syncQueue, {
   required String tosId,
@@ -35,27 +36,31 @@ ResultFuture<List<TosCompetency>> bulkAddCompetencies(
       ));
     }
 
-    await localDataSource.bulkSaveCompetencies(models);
+    final db = await localDataSource.localDatabase.database;
+    await db.transaction((txn) async {
+      await localDataSource.bulkSaveCompetencies(models, txn: txn);
+      for (var i = 0; i < models.length; i++) {
+        await syncQueue.enqueue(
+          SyncQueueEntry(
+            id: const Uuid().v4(),
+            entityType: SyncEntityType.tosCompetency,
+            operation: SyncOperation.create,
+            payload: {
+              'id': models[i].id,
+              'tos_id': tosId,
+              ...competencies[i],
+            },
+            status: SyncStatus.pending,
+            retryCount: 0,
+            maxRetries: 3,
+            createdAt: DateTime.now(),
+          ),
+          txn: txn,
+        );
+      }
+    });
 
-    // Enqueue each competency for sync
-    for (var i = 0; i < models.length; i++) {
-      await syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
-        entityType: SyncEntityType.tosCompetency,
-        operation: SyncOperation.create,
-        payload: {
-          'id': models[i].id,
-          'tos_id': tosId,
-          ...competencies[i],
-        },
-        status: SyncStatus.pending,
-        retryCount: 0,
-        maxRetries: 3,
-        createdAt: DateTime.now(),
-      ));
-    }
-
-    return Right(models);
+    return Right(MutationResult(entity: models, status: SyncStatus.pending));
   } catch (e) {
     return Left(CacheFailure(e.toString()));
   }

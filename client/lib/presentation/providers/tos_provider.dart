@@ -110,363 +110,70 @@ class TosNotifier extends StateNotifier<TosState> {
   }
 
   Future<TableOfSpecifications?> createTos(String classId, Map<String, dynamic> data) async {
-    final previousTosList = List<TableOfSpecifications>.from(state.tosList);
-    final now = DateTime.now();
-    final tempId = 'temp-${now.microsecondsSinceEpoch}';
-    final optimistic = TableOfSpecifications(
-      id: tempId,
-      classId: classId,
-      gradingPeriodNumber: data['grading_period_number'] is int
-          ? data['grading_period_number']
-          : int.tryParse(data['grading_period_number']?.toString() ?? '') ?? 1,
-      title: data['title']?.toString() ?? '',
-      classificationMode: data['classification_mode']?.toString() ?? 'cognitive',
-      totalItems: data['total_items'] is int
-          ? data['total_items']
-          : int.tryParse(data['total_items']?.toString() ?? '') ?? 0,
-      timeUnit: data['time_unit']?.toString() ?? 'days',
-      easyPercentage: (data['easy_percentage'] as num?)?.toDouble() ?? 50.0,
-      mediumPercentage: (data['medium_percentage'] as num?)?.toDouble() ?? 30.0,
-      hardPercentage: (data['hard_percentage'] as num?)?.toDouble() ?? 20.0,
-      rememberingPercentage: (data['remembering_percentage'] as num?)?.toDouble() ?? 16.67,
-      understandingPercentage: (data['understanding_percentage'] as num?)?.toDouble() ?? 16.67,
-      applyingPercentage: (data['applying_percentage'] as num?)?.toDouble() ?? 16.67,
-      analyzingPercentage: (data['analyzing_percentage'] as num?)?.toDouble() ?? 16.67,
-      evaluatingPercentage: (data['evaluating_percentage'] as num?)?.toDouble() ?? 16.67,
-      creatingPercentage: (data['creating_percentage'] as num?)?.toDouble() ?? 16.67,
-      createdAt: now,
-      updatedAt: now,
-    );
-
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      tosList: [optimistic, ...state.tosList],
-    );
-
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await sl<CreateTos>().call(classId: classId, data: data);
     TableOfSpecifications? created;
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: failure.message,
-        tosList: previousTosList,
-      ),
-      (tos) {
-        created = tos;
-        final updatedList = state.tosList.map((t) => t.id == tempId ? tos : t).toList();
-        state = state.copyWith(
-          isLoading: false,
-          tosList: updatedList,
-          successMessage: 'TOS created',
-        );
+      (failure) => state = state.copyWith(error: failure.message),
+      (mutationResult) {
+        created = mutationResult.entity;
+        state = state.copyWith(successMessage: 'TOS created');
       },
     );
     return created;
   }
 
   Future<void> updateTos(String tosId, Map<String, dynamic> data) async {
-    final previousTosList = List<TableOfSpecifications>.from(state.tosList);
-    final previousCurrentTos = state.currentTos;
-    final existing = state.tosList.firstWhere(
-      (t) => t.id == tosId,
-      orElse: () => previousCurrentTos ?? state.tosList.firstWhere(
-        (t) => t.id == tosId,
-        orElse: () => TableOfSpecifications(
-          id: tosId,
-          classId: '',
-          gradingPeriodNumber: 1,
-          title: '',
-          classificationMode: 'cognitive',
-          totalItems: 0,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-      ),
-    );
-
-    final optimistic = TableOfSpecifications(
-      id: existing.id,
-      classId: existing.classId,
-      gradingPeriodNumber: data['grading_period_number'] is int
-          ? data['grading_period_number']
-          : existing.gradingPeriodNumber,
-      title: data['title']?.toString() ?? existing.title,
-      classificationMode: data['classification_mode']?.toString() ?? existing.classificationMode,
-      totalItems: data['total_items'] is int
-          ? data['total_items']
-          : (data['total_items'] != null
-              ? int.tryParse(data['total_items'].toString()) ?? existing.totalItems
-              : existing.totalItems),
-      timeUnit: data['time_unit']?.toString() ?? existing.timeUnit,
-      easyPercentage: (data['easy_percentage'] as num?)?.toDouble() ?? existing.easyPercentage,
-      mediumPercentage: (data['medium_percentage'] as num?)?.toDouble() ?? existing.mediumPercentage,
-      hardPercentage: (data['hard_percentage'] as num?)?.toDouble() ?? existing.hardPercentage,
-      rememberingPercentage: (data['remembering_percentage'] as num?)?.toDouble() ?? existing.rememberingPercentage,
-      understandingPercentage: (data['understanding_percentage'] as num?)?.toDouble() ?? existing.understandingPercentage,
-      applyingPercentage: (data['applying_percentage'] as num?)?.toDouble() ?? existing.applyingPercentage,
-      analyzingPercentage: (data['analyzing_percentage'] as num?)?.toDouble() ?? existing.analyzingPercentage,
-      evaluatingPercentage: (data['evaluating_percentage'] as num?)?.toDouble() ?? existing.evaluatingPercentage,
-      creatingPercentage: (data['creating_percentage'] as num?)?.toDouble() ?? existing.creatingPercentage,
-      createdAt: existing.createdAt,
-      updatedAt: DateTime.now(),
-    );
-
-    final updatedList = state.tosList.map((t) => t.id == tosId ? optimistic : t).toList();
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      tosList: updatedList,
-      currentTos: state.currentTos?.id == tosId ? optimistic : state.currentTos,
-    );
-
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await sl<UpdateTos>().call(tosId: tosId, data: data);
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: failure.message,
-        tosList: previousTosList,
-        currentTos: previousCurrentTos,
-      ),
-      (tos) {
-        final updated = state.tosList.map((t) => t.id == tosId ? tos : t).toList();
-        state = state.copyWith(
-          isLoading: false,
-          tosList: updated,
-          currentTos: tos,
-          successMessage: 'TOS updated',
-        );
-      },
+      (failure) => state = state.copyWith(error: failure.message),
+      (_) => state = state.copyWith(successMessage: 'TOS updated'),
     );
   }
 
   Future<void> deleteTos(String tosId) async {
-    final previousTosList = List<TableOfSpecifications>.from(state.tosList);
-    final previousCurrentTos = state.currentTos;
-    final filtered = state.tosList.where((t) => t.id != tosId).toList();
-
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      tosList: filtered,
-      clearTos: state.currentTos?.id == tosId,
-    );
-
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await sl<DeleteTos>().call(tosId);
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: failure.message,
-        tosList: previousTosList,
-        currentTos: previousCurrentTos,
-      ),
-      (_) => state = state.copyWith(
-        isLoading: false,
-        successMessage: 'TOS deleted',
-      ),
+      (failure) => state = state.copyWith(error: failure.message),
+      (_) => state = state.copyWith(successMessage: 'TOS deleted'),
     );
   }
 
   Future<void> addCompetency(String tosId, Map<String, dynamic> data) async {
-    final previousCompetencies = List<TosCompetency>.from(state.competencies);
-    final now = DateTime.now();
-    final tempId = 'temp-${now.microsecondsSinceEpoch}';
-    final optimistic = TosCompetency(
-      id: tempId,
-      tosId: tosId,
-      competencyCode: data['competency_code']?.toString(),
-      competencyText: data['competency_text']?.toString() ?? '',
-      timeUnitsTaught: data['time_units_taught'] is int
-          ? data['time_units_taught']
-          : int.tryParse(data['time_units_taught']?.toString() ?? '') ?? 0,
-      orderIndex: data['order_index'] is int
-          ? data['order_index']
-          : int.tryParse(data['order_index']?.toString() ?? '') ?? state.competencies.length,
-      easyCount: data['easy_count'] is int ? data['easy_count'] : null,
-      mediumCount: data['medium_count'] is int ? data['medium_count'] : null,
-      hardCount: data['hard_count'] is int ? data['hard_count'] : null,
-      rememberingCount: data['remembering_count'] is int ? data['remembering_count'] : null,
-      understandingCount: data['understanding_count'] is int ? data['understanding_count'] : null,
-      applyingCount: data['applying_count'] is int ? data['applying_count'] : null,
-      analyzingCount: data['analyzing_count'] is int ? data['analyzing_count'] : null,
-      evaluatingCount: data['evaluating_count'] is int ? data['evaluating_count'] : null,
-      creatingCount: data['creating_count'] is int ? data['creating_count'] : null,
-      createdAt: now,
-      updatedAt: now,
-    );
-
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      competencies: [...state.competencies, optimistic],
-    );
-
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await sl<AddCompetency>().call(tosId: tosId, data: data);
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: failure.message,
-        competencies: previousCompetencies,
-      ),
-      (comp) {
-        final updated = state.competencies.map((c) => c.id == tempId ? comp : c).toList();
-        state = state.copyWith(
-          isLoading: false,
-          competencies: updated,
-          successMessage: 'Competency added',
-        );
-      },
+      (failure) => state = state.copyWith(error: failure.message),
+      (_) => state = state.copyWith(successMessage: 'Competency added'),
     );
   }
 
   Future<void> updateCompetency(String competencyId, Map<String, dynamic> data) async {
-    final previousCompetencies = List<TosCompetency>.from(state.competencies);
-    final existing = state.competencies.firstWhere(
-      (c) => c.id == competencyId,
-      orElse: () => TosCompetency(
-        id: competencyId,
-        tosId: state.currentTos?.id ?? '',
-        competencyText: data['competency_text']?.toString() ?? '',
-        timeUnitsTaught: 0,
-        orderIndex: 0,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-    );
-
-    final optimistic = TosCompetency(
-      id: existing.id,
-      tosId: existing.tosId,
-      competencyCode: data['competency_code']?.toString() ?? existing.competencyCode,
-      competencyText: data['competency_text']?.toString() ?? existing.competencyText,
-      timeUnitsTaught: data['time_units_taught'] is int
-          ? data['time_units_taught']
-          : existing.timeUnitsTaught,
-      orderIndex: data['order_index'] is int
-          ? data['order_index']
-          : existing.orderIndex,
-      easyCount: data['easy_count'] is int ? data['easy_count'] : existing.easyCount,
-      mediumCount: data['medium_count'] is int ? data['medium_count'] : existing.mediumCount,
-      hardCount: data['hard_count'] is int ? data['hard_count'] : existing.hardCount,
-      rememberingCount: data['remembering_count'] is int ? data['remembering_count'] : existing.rememberingCount,
-      understandingCount: data['understanding_count'] is int ? data['understanding_count'] : existing.understandingCount,
-      applyingCount: data['applying_count'] is int ? data['applying_count'] : existing.applyingCount,
-      analyzingCount: data['analyzing_count'] is int ? data['analyzing_count'] : existing.analyzingCount,
-      evaluatingCount: data['evaluating_count'] is int ? data['evaluating_count'] : existing.evaluatingCount,
-      creatingCount: data['creating_count'] is int ? data['creating_count'] : existing.creatingCount,
-      createdAt: existing.createdAt,
-      updatedAt: DateTime.now(),
-    );
-
-    final updated = state.competencies.map((c) => c.id == competencyId ? optimistic : c).toList();
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      competencies: updated,
-    );
-
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await sl<UpdateCompetency>().call(competencyId: competencyId, data: data);
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: failure.message,
-        competencies: previousCompetencies,
-      ),
-      (comp) {
-        final updatedList = state.competencies.map((c) => c.id == competencyId ? comp : c).toList();
-        state = state.copyWith(
-          isLoading: false,
-          competencies: updatedList,
-          successMessage: 'Competency updated',
-        );
-      },
+      (failure) => state = state.copyWith(error: failure.message),
+      (_) => state = state.copyWith(successMessage: 'Competency updated'),
     );
   }
 
   Future<void> deleteCompetency(String competencyId) async {
-    final previousCompetencies = List<TosCompetency>.from(state.competencies);
-    final filtered = state.competencies.where((c) => c.id != competencyId).toList();
-
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      competencies: filtered,
-    );
-
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await sl<DeleteCompetency>().call(competencyId);
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: failure.message,
-        competencies: previousCompetencies,
-      ),
-      (_) => state = state.copyWith(
-        isLoading: false,
-        successMessage: 'Competency deleted',
-      ),
+      (failure) => state = state.copyWith(error: failure.message),
+      (_) => state = state.copyWith(successMessage: 'Competency deleted'),
     );
   }
 
   Future<void> bulkAddCompetencies(String tosId, List<Map<String, dynamic>> competencies) async {
-    final previousCompetencies = List<TosCompetency>.from(state.competencies);
-    final now = DateTime.now();
-    final optimisticList = competencies.asMap().entries.map((entry) {
-      final idx = entry.key;
-      final data = entry.value;
-      return TosCompetency(
-        id: 'temp-bulk-$tosId-$idx-${now.microsecondsSinceEpoch}',
-        tosId: tosId,
-        competencyCode: data['competency_code']?.toString(),
-        competencyText: data['competency_text']?.toString() ?? '',
-        timeUnitsTaught: data['time_units_taught'] is int
-            ? data['time_units_taught']
-            : int.tryParse(data['time_units_taught']?.toString() ?? '') ?? 0,
-        orderIndex: data['order_index'] is int
-            ? data['order_index']
-            : (previousCompetencies.length + idx),
-        easyCount: data['easy_count'] is int ? data['easy_count'] : null,
-        mediumCount: data['medium_count'] is int ? data['medium_count'] : null,
-        hardCount: data['hard_count'] is int ? data['hard_count'] : null,
-        rememberingCount: data['remembering_count'] is int ? data['remembering_count'] : null,
-        understandingCount: data['understanding_count'] is int ? data['understanding_count'] : null,
-        applyingCount: data['applying_count'] is int ? data['applying_count'] : null,
-        analyzingCount: data['analyzing_count'] is int ? data['analyzing_count'] : null,
-        evaluatingCount: data['evaluating_count'] is int ? data['evaluating_count'] : null,
-        creatingCount: data['creating_count'] is int ? data['creating_count'] : null,
-        createdAt: now,
-        updatedAt: now,
-      );
-    }).toList();
-
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      clearSuccess: true,
-      competencies: [...state.competencies, ...optimisticList],
-    );
-
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await sl<BulkAddCompetencies>().call(tosId: tosId, competencies: competencies);
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: failure.message,
-        competencies: previousCompetencies,
-      ),
-      (added) {
-        final tempIds = optimisticList.map((c) => c.id).toSet();
-        final withoutTemps = state.competencies.where((c) => !tempIds.contains(c.id)).toList();
-        state = state.copyWith(
-          isLoading: false,
-          competencies: [...withoutTemps, ...added],
-          successMessage: '${added.length} competencies added',
-        );
-      },
+      (failure) => state = state.copyWith(error: failure.message),
+      (mutationResult) => state = state.copyWith(successMessage: '${mutationResult.entity.length} competencies added'),
     );
   }
 

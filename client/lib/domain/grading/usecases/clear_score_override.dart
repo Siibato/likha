@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/grading/repositories/grading_repository.dart';
 
@@ -6,7 +7,7 @@ class ClearScoreOverride {
 
   ClearScoreOverride(this._repository);
 
-  ResultVoid call(String scoreId) {
+  ResultFuture<MutationResult<void>> call(String scoreId) {
     return _repository.clearScoreOverride(scoreId: scoreId);
   }
 }

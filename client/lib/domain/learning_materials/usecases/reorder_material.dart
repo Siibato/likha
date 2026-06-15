@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/learning_materials/entities/learning_material.dart';
 import 'package:likha/domain/learning_materials/repositories/learning_material_repository.dart';
@@ -7,7 +8,7 @@ class ReorderMaterial {
 
   ReorderMaterial(this._repository);
 
-  ResultFuture<LearningMaterial> call({
+  ResultFuture<MutationResult<LearningMaterial>> call({
     required String materialId,
     required int newOrderIndex,
   }) {
@@ -23,7 +24,7 @@ class ReorderAllMaterials {
 
   ReorderAllMaterials(this._repository);
 
-  ResultVoid call({
+  ResultFuture<MutationResult<void>> call({
     required String classId,
     required List<String> materialIds,
   }) {

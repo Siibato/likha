@@ -8,6 +8,7 @@ abstract class LearningMaterialRemoteDataSource {
   Future<LearningMaterialModel> createMaterial({
     required String classId,
     required Map<String, dynamic> data,
+    String? idempotencyKey,
   });
 
   Future<List<LearningMaterialModel>> getMaterials({required String classId});
@@ -17,18 +18,21 @@ abstract class LearningMaterialRemoteDataSource {
   Future<LearningMaterialModel> updateMaterial({
     required String materialId,
     required Map<String, dynamic> data,
+    String? idempotencyKey,
   });
 
-  Future<void> deleteMaterial({required String materialId});
+  Future<void> deleteMaterial({required String materialId, String? idempotencyKey});
 
   Future<LearningMaterialModel> reorderMaterial({
     required String materialId,
     required int newOrderIndex,
+    String? idempotencyKey,
   });
 
   Future<void> reorderAllMaterials({
     required String classId,
     required List<String> materialIds,
+    String? idempotencyKey,
   });
 
   Future<MaterialFileModel> uploadFile({
@@ -36,9 +40,10 @@ abstract class LearningMaterialRemoteDataSource {
     required String filePath,
     required String fileName,
     void Function(int sent, int total)? onSendProgress,
+    String? idempotencyKey,
   });
 
-  Future<void> deleteFile({required String fileId});
+  Future<void> deleteFile({required String fileId, String? idempotencyKey});
 
   Future<List<int>> downloadFile({required String fileId});
 }
@@ -52,11 +57,13 @@ class LearningMaterialRemoteDataSourceImpl implements LearningMaterialRemoteData
   Future<LearningMaterialModel> createMaterial({
     required String classId,
     required Map<String, dynamic> data,
+    String? idempotencyKey,
   }) =>
       ops.createMaterial(
         _dioClient,
         classId: classId,
         data: data,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
@@ -77,40 +84,47 @@ class LearningMaterialRemoteDataSourceImpl implements LearningMaterialRemoteData
   Future<LearningMaterialModel> updateMaterial({
     required String materialId,
     required Map<String, dynamic> data,
+    String? idempotencyKey,
   }) =>
       ops.updateMaterial(
         _dioClient,
         materialId: materialId,
         data: data,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
-  Future<void> deleteMaterial({required String materialId}) =>
+  Future<void> deleteMaterial({required String materialId, String? idempotencyKey}) =>
       ops.deleteMaterial(
         _dioClient,
         materialId: materialId,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
   Future<LearningMaterialModel> reorderMaterial({
     required String materialId,
     required int newOrderIndex,
+    String? idempotencyKey,
   }) =>
       ops.reorderMaterial(
         _dioClient,
         materialId: materialId,
         newOrderIndex: newOrderIndex,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
   Future<void> reorderAllMaterials({
     required String classId,
     required List<String> materialIds,
+    String? idempotencyKey,
   }) =>
       ops.reorderAllMaterials(
         _dioClient,
         classId: classId,
         materialIds: materialIds,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
@@ -119,6 +133,7 @@ class LearningMaterialRemoteDataSourceImpl implements LearningMaterialRemoteData
     required String filePath,
     required String fileName,
     void Function(int sent, int total)? onSendProgress,
+    String? idempotencyKey,
   }) =>
       ops.uploadFile(
         _dioClient,
@@ -126,13 +141,15 @@ class LearningMaterialRemoteDataSourceImpl implements LearningMaterialRemoteData
         filePath: filePath,
         fileName: fileName,
         onSendProgress: onSendProgress,
+        idempotencyKey: idempotencyKey,
       );
 
   @override
-  Future<void> deleteFile({required String fileId}) =>
+  Future<void> deleteFile({required String fileId, String? idempotencyKey}) =>
       ops.deleteFile(
         _dioClient,
         fileId: fileId,
+        idempotencyKey: idempotencyKey,
       );
 
   @override

@@ -1,34 +1,20 @@
 import 'package:dartz/dartz.dart';
 import 'package:uuid/uuid.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
-import 'package:likha/injection_container.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
-import 'package:likha/data/datasources/remote/tos/tos_remote_datasource.dart';
 import 'package:likha/data/models/tos/tos_model.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 
-ResultFuture<TableOfSpecifications> createTos(
+ResultFuture<MutationResult<TableOfSpecifications>> createTos(
   TosLocalDataSource localDataSource,
-  TosRemoteDataSource remoteDataSource,
   SyncQueue syncQueue, {
   required String classId,
   required Map<String, dynamic> data,
 }) async {
   try {
-    if (sl<ServerReachabilityService>().isServerReachable) {
-      // Online: call server directly so the TOS exists on the server immediately
-      final serverTos = await remoteDataSource.createTos(
-        classId: classId,
-        data: data,
-      );
-      await localDataSource.saveTos(serverTos);
-      return Right(serverTos);
-    }
-
-    // Offline: optimistic local create + sync queue
     final now = DateTime.now();
     final id = const Uuid().v4();
 
@@ -47,24 +33,29 @@ ResultFuture<TableOfSpecifications> createTos(
       updatedAt: now,
     );
 
-    await localDataSource.saveTos(model);
+    final db = await localDataSource.localDatabase.database;
+    await db.transaction((txn) async {
+      await localDataSource.saveTos(model, txn: txn);
+      await syncQueue.enqueue(
+        SyncQueueEntry(
+          id: const Uuid().v4(),
+          entityType: SyncEntityType.tableOfSpecifications,
+          operation: SyncOperation.create,
+          payload: {
+            'id': id,
+            'class_id': classId,
+            ...data,
+          },
+          status: SyncStatus.pending,
+          retryCount: 0,
+          maxRetries: 3,
+          createdAt: now,
+        ),
+        txn: txn,
+      );
+    });
 
-    await syncQueue.enqueue(SyncQueueEntry(
-      id: const Uuid().v4(),
-      entityType: SyncEntityType.tableOfSpecifications,
-      operation: SyncOperation.create,
-      payload: {
-        'id': id,
-        'class_id': classId,
-        ...data,
-      },
-      status: SyncStatus.pending,
-      retryCount: 0,
-      maxRetries: 3,
-      createdAt: DateTime.now(),
-    ));
-
-    return Right(model);
+    return Right(MutationResult(entity: model, status: SyncStatus.pending));
   } catch (e) {
     return Left(CacheFailure(e.toString()));
   }

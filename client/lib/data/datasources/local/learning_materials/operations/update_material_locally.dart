@@ -10,43 +10,26 @@ Future<void> updateMaterialLocally(
   String materialId,
   String title,
   String description,
-  String contentText,
-) async {
+  String contentText, {
+  Transaction? txn,
+}) async {
   try {
-    final db = await localDatabase.database;
+    final executor = txn ?? await localDatabase.database;
     final now = DateTime.now();
 
-    await db.transaction((txn) async {
-      await txn.update(
-        DbTables.learningMaterials,
-        {
-          LearningMaterialsCols.title: title,
-          LearningMaterialsCols.description: description,
-          LearningMaterialsCols.contentText: contentText,
-          CommonCols.updatedAt: now.toIso8601String(),
-          CommonCols.syncStatus: 'pending',
-          CommonCols.cachedAt: now.toIso8601String(),
-        },
-        where: '${CommonCols.id} = ?',
-        whereArgs: [materialId],
-      );
-
-      await syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
-        entityType: SyncEntityType.learningMaterial,
-        operation: SyncOperation.update,
-        payload: {
-          'id': materialId,
-          'title': title,
-          'description': description,
-          'content_text': contentText,
-        },
-        status: SyncStatus.pending,
-        retryCount: 0,
-        maxRetries: 3,
-        createdAt: now,
-      ), txn: txn);
-    });
+    await executor.update(
+      DbTables.learningMaterials,
+      {
+        LearningMaterialsCols.title: title,
+        LearningMaterialsCols.description: description,
+        LearningMaterialsCols.contentText: contentText,
+        CommonCols.updatedAt: now.toIso8601String(),
+        CommonCols.syncStatus: 'pending',
+        CommonCols.cachedAt: now.toIso8601String(),
+      },
+      where: '${CommonCols.id} = ?',
+      whereArgs: [materialId],
+    );
   } catch (e) {
     throw CacheException('Failed to update material locally: $e');
   }

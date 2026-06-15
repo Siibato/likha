@@ -11,6 +11,7 @@ Future<MaterialFileModel> uploadFile(
   required String filePath,
   required String fileName,
   void Function(int sent, int total)? onSendProgress,
+  String? idempotencyKey,
 }) async {
   try {
     final formData = FormData.fromMap({
@@ -26,6 +27,7 @@ Future<MaterialFileModel> uploadFile(
       options: Options(
         sendTimeout: Duration(seconds: timeoutSeconds),
         receiveTimeout: const Duration(seconds: 60),
+        headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
       ),
     );
     return MaterialFileModel.fromJson(response.data['data']);

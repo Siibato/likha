@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/learning_materials/repositories/learning_material_repository.dart';
 
@@ -6,7 +7,7 @@ class DeleteMaterial {
 
   DeleteMaterial(this._repository);
 
-  ResultVoid call(String materialId) {
+  ResultFuture<MutationResult<void>> call(String materialId) {
     return _repository.deleteMaterial(materialId: materialId);
   }
 }

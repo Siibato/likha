@@ -1,5 +1,4 @@
 import 'package:likha/core/events/data_event_bus.dart';
-import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
@@ -14,32 +13,27 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
   final LearningMaterialRemoteDataSource _remoteDataSource;
   final LearningMaterialLocalDataSource _localDataSource;
   final SyncQueue _syncQueue;
-  final ServerReachabilityService _serverReachabilityService;
   final DataEventBus _dataEventBus;
 
   LearningMaterialRepositoryImpl({
     required LearningMaterialRemoteDataSource remoteDataSource,
     required LearningMaterialLocalDataSource localDataSource,
     required SyncQueue syncQueue,
-    required ServerReachabilityService serverReachabilityService,
     required DataEventBus dataEventBus,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
         _syncQueue = syncQueue,
-        _serverReachabilityService = serverReachabilityService,
         _dataEventBus = dataEventBus;
 
   @override
-  ResultFuture<LearningMaterial> createMaterial({
+  ResultFuture<MutationResult<LearningMaterial>> createMaterial({
     required String classId,
     required String title,
     String? description,
     String? contentText,
   }) =>
       ops.createMaterial(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         classId: classId,
         title: title,
@@ -48,16 +42,14 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
       );
 
   @override
-  ResultFuture<LearningMaterial> updateMaterial({
+  ResultFuture<MutationResult<LearningMaterial>> updateMaterial({
     required String materialId,
     String? title,
     String? description,
     String? contentText,
   }) =>
       ops.updateMaterial(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         materialId: materialId,
         title: title,
@@ -66,38 +58,32 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
       );
 
   @override
-  ResultVoid deleteMaterial({required String materialId}) =>
+  ResultFuture<MutationResult<void>> deleteMaterial({required String materialId}) =>
       ops.deleteMaterial(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         materialId: materialId,
       );
 
   @override
-  ResultFuture<LearningMaterial> reorderMaterial({
+  ResultFuture<MutationResult<LearningMaterial>> reorderMaterial({
     required String materialId,
     required int newOrderIndex,
   }) =>
       ops.reorderMaterial(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         materialId: materialId,
         newOrderIndex: newOrderIndex,
       );
 
   @override
-  ResultVoid reorderAllMaterials({
+  ResultFuture<MutationResult<void>> reorderAllMaterials({
     required String classId,
     required List<String> materialIds,
   }) =>
       ops.reorderAllMaterials(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         classId: classId,
         materialIds: materialIds,
@@ -123,16 +109,15 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
       );
 
   @override
-  ResultFuture<MaterialFile> uploadFile({
+  ResultFuture<MutationResult<MaterialFile>> uploadFile({
     required String materialId,
     required String filePath,
     required String fileName,
     void Function(int sent, int total)? onSendProgress,
   }) =>
       ops.uploadFile(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
+        _syncQueue,
         materialId: materialId,
         filePath: filePath,
         fileName: fileName,
@@ -140,11 +125,9 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
       );
 
   @override
-  ResultVoid deleteFile({required String fileId}) =>
+  ResultFuture<MutationResult<void>> deleteFile({required String fileId}) =>
       ops.deleteFile(
-        _serverReachabilityService,
         _localDataSource,
-        _remoteDataSource,
         _syncQueue,
         fileId: fileId,
       );

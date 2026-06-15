@@ -1,4 +1,6 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
+import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/repositories/grading_repository.dart';
 
 class SetupGrading {
@@ -6,7 +8,7 @@ class SetupGrading {
 
   SetupGrading(this._repository);
 
-  ResultVoid call(SetupGradingParams params) {
+  ResultFuture<MutationResult<List<GradeConfig>>> call(SetupGradingParams params) {
     return _repository.setupGrading(
       classId: params.classId,
       gradeLevel: params.gradeLevel,
