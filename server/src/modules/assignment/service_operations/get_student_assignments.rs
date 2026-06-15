@@ -10,20 +10,32 @@ pub async fn get_student_assignments(
     student_id: Uuid,
 ) -> AppResult<AssignmentListResponse> {
     let classes = class_repo.find_classes_by_student_id(student_id).await?;
-    
-    let mut all_assignments = Vec::new();
-    for class in classes {
-        let assignments = assignment_repo.find_published_by_class_id(class.id).await?;
-        all_assignments.extend(assignments);
+
+    if classes.is_empty() {
+        return Ok(AssignmentListResponse { assignments: vec![] });
     }
 
-    let mut responses = Vec::new();
-    for a in all_assignments {
-        let submission = assignment_repo.find_student_submission(a.id, student_id).await?;
-        let submission_count = assignment_repo.count_submissions_by_assignment(a.id).await?;
-        let graded_count = assignment_repo.count_graded_by_assignment(a.id).await?;
+    let class_ids: Vec<Uuid> = classes.iter().map(|c| c.id).collect();
+    let all_assignments = assignment_repo.find_published_by_class_ids(&class_ids).await?;
 
-        responses.push(AssignmentResponse {
+    if all_assignments.is_empty() {
+        return Ok(AssignmentListResponse { assignments: vec![] });
+    }
+
+    let assignment_ids: Vec<Uuid> = all_assignments.iter().map(|a| a.id).collect();
+
+    let (submissions_map, submission_counts, graded_counts) = tokio::try_join!(
+        assignment_repo.find_student_submissions_for_assignments(&assignment_ids, student_id),
+        assignment_repo.count_submissions_by_assignments(&assignment_ids),
+        assignment_repo.count_graded_by_assignments(&assignment_ids),
+    )?;
+
+    let responses = all_assignments.into_iter().map(|a| {
+        let submission = submissions_map.get(&a.id);
+        let submission_count = submission_counts.get(&a.id).copied().unwrap_or(0);
+        let graded_count = graded_counts.get(&a.id).copied().unwrap_or(0);
+
+        AssignmentResponse {
             id: a.id,
             class_id: a.class_id,
             title: a.title,
@@ -39,14 +51,14 @@ pub async fn get_student_assignments(
             submission_count,
             graded_count,
             grading_period_number: a.grading_period_number,
-            component: a.component.clone(),
-            submission_status: submission.as_ref().map(|s| s.status.clone()),
-            submission_id: submission.as_ref().map(|s| s.id),
+            component: a.component,
+            submission_status: submission.map(|s| s.status.clone()),
+            submission_id: submission.map(|s| s.id),
             score: submission.and_then(|s| s.points),
             created_at: a.created_at.to_string(),
             updated_at: a.updated_at.to_string(),
-        });
-    }
+        }
+    }).collect();
 
     Ok(AssignmentListResponse { assignments: responses })
 }

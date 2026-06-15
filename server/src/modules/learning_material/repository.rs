@@ -88,6 +88,10 @@ impl LearningMaterialRepository {
         ops::count_files_by_material(&self.db, material_id).await
     }
 
+    pub async fn count_files_by_materials(&self, material_ids: &[Uuid]) -> AppResult<std::collections::HashMap<Uuid, usize>> {
+        ops::count_files_by_materials(&self.db, material_ids).await
+    }
+
     pub async fn find_all(&self) -> AppResult<Vec<learning_materials::Model>> {
         ops::find_all(&self.db).await
     }

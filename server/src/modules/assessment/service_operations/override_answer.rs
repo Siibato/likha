@@ -43,6 +43,12 @@ impl crate::modules::assessment::service::AssessmentService {
             &self.grade_computation_repo, "assessment", submission.assessment_id, submission.user_id, final_score,
         ).await;
 
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_assessment_submissions(submission.assessment_id).await;
+            inv.invalidate_assessment_submission_detail(submission.id).await;
+            inv.invalidate_student_results(submission.id).await;
+        }
+
         Ok(SubmissionAnswerResponse {
             id: updated.id,
             question_id: updated.question_id,

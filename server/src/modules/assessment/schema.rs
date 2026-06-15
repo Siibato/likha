@@ -121,7 +121,7 @@ pub struct ReorderQuestionsRequest {
 
 // ===== RESPONSE SCHEMAS =====
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AssessmentResponse {
     pub id: Uuid,
     pub class_id: Uuid,
@@ -144,12 +144,12 @@ pub struct AssessmentResponse {
     pub updated_at: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AssessmentListResponse {
     pub assessments: Vec<AssessmentResponse>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AssessmentDetailResponse {
     pub id: Uuid,
     pub class_id: Uuid,
@@ -171,7 +171,7 @@ pub struct AssessmentDetailResponse {
     pub updated_at: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct QuestionResponse {
     pub id: Uuid,
     pub question_type: String,
@@ -186,7 +186,7 @@ pub struct QuestionResponse {
     pub cognitive_level: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ChoiceResponse {
     pub id: Uuid,
     pub choice_text: String,
@@ -194,31 +194,31 @@ pub struct ChoiceResponse {
     pub order_index: i32,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CorrectAnswerResponse {
     pub id: Uuid,
     pub answer_text: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct EnumerationItemResponse {
     pub id: Uuid,
     pub order_index: i32,
     pub acceptable_answers: Vec<EnumerationItemAnswerResponse>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct EnumerationItemAnswerResponse {
     pub id: Uuid,
     pub answer_text: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SubmissionListResponse {
     pub submissions: Vec<SubmissionSummaryResponse>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SubmissionSummaryResponse {
     pub id: Uuid,
     pub student_id: Uuid,
@@ -231,7 +231,7 @@ pub struct SubmissionSummaryResponse {
     pub final_score: f64,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SubmissionDetailResponse {
     pub id: Uuid,
     pub assessment_id: Uuid,
@@ -245,7 +245,7 @@ pub struct SubmissionDetailResponse {
     pub answers: Vec<SubmissionAnswerResponse>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SubmissionAnswerResponse {
     pub id: Uuid,
     pub question_id: Uuid,
@@ -261,27 +261,27 @@ pub struct SubmissionAnswerResponse {
     pub is_pending_essay_grade: bool,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SelectedChoiceResponse {
     pub choice_id: Uuid,
     pub choice_text: String,
     pub is_correct: bool,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct EnumerationAnswerResponse {
     pub answer_text: String,
     pub is_correct: bool,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct StartSubmissionResponse {
     pub submission_id: Uuid,
     pub started_at: String,
     pub questions: Vec<StudentQuestionResponse>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct StudentQuestionResponse {
     pub id: Uuid,
     pub question_type: String,
@@ -294,27 +294,27 @@ pub struct StudentQuestionResponse {
     pub enumeration_items: Option<Vec<StudentEnumerationItemResponse>>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct StudentChoiceResponse {
     pub id: Uuid,
     pub choice_text: String,
     pub order_index: i32,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct StudentEnumerationItemResponse {
     pub id: Uuid,
     pub order_index: usize,
     pub acceptable_answers: Vec<StudentEnumerationAnswerResponse>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct StudentEnumerationAnswerResponse {
     pub id: Uuid,
     pub answer_text: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct StudentResultResponse {
     pub submission_id: Uuid,
     pub total_earned: f64,
@@ -323,7 +323,7 @@ pub struct StudentResultResponse {
     pub answers: Vec<StudentAnswerResultResponse>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct StudentAnswerResultResponse {
     pub question_id: Uuid,
     pub question_text: String,
@@ -338,13 +338,13 @@ pub struct StudentAnswerResultResponse {
     pub is_pending_essay_grade: Option<bool>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct StudentEnumAnswerResult {
     pub answer_text: String,
     pub is_correct: Option<bool>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AssessmentStatisticsResponse {
     pub assessment_id: Uuid,
     pub title: String,
@@ -356,7 +356,7 @@ pub struct AssessmentStatisticsResponse {
     pub test_summary: Option<TestSummary>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ClassStatistics {
     pub mean: f64,
     pub median: f64,
@@ -365,13 +365,13 @@ pub struct ClassStatistics {
     pub score_distribution: Vec<ScoreBucket>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ScoreBucket {
     pub score: i32,
     pub count: usize,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct QuestionStatistics {
     pub question_id: Uuid,
     pub question_text: String,
@@ -384,7 +384,7 @@ pub struct QuestionStatistics {
 
 // ===== ITEM ANALYSIS SCHEMAS =====
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ItemAnalysis {
     pub question_id: Uuid,
     pub question_text: String,
@@ -398,7 +398,7 @@ pub struct ItemAnalysis {
     pub distractors: Option<Vec<DistractorAnalysis>>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct DistractorAnalysis {
     pub choice_id: Uuid,
     pub choice_text: String,
@@ -409,7 +409,7 @@ pub struct DistractorAnalysis {
     pub is_effective: bool,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TestSummary {
     pub mean_difficulty: f64,
     pub mean_discrimination: f64,
@@ -423,7 +423,7 @@ pub struct TestSummary {
 
 // ===== STUDENT SUBMISSION STATUS SCHEMAS =====
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct StudentAssessmentSubmissionItem {
     pub assessment_id: Uuid,
     pub id: Uuid,                       // submission id
@@ -435,14 +435,14 @@ pub struct StudentAssessmentSubmissionItem {
     pub total_points: f64,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct StudentAssessmentSubmissionsResponse {
     pub submissions: Vec<StudentAssessmentSubmissionItem>,
 }
 
 // ===== METADATA SCHEMAS =====
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AssessmentMetadataResponse {
     pub last_modified: String,
     pub record_count: usize,

@@ -23,6 +23,11 @@ impl crate::modules::tos::service::TosService {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_tos_detail(tos.id).await;
+            inv.invalidate_tos_list(tos.class_id).await;
+        }
+
         let updated = self.tos_repo
             .update_competency(
                 competency_id,

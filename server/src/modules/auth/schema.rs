@@ -69,7 +69,7 @@ pub struct AuthResponse {
     pub user: UserResponse,
 }
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UserResponse {
     pub id: Uuid,
     pub username: String,

@@ -1,6 +1,7 @@
 use uuid::Uuid;
 use crate::utils::AppResult;
 use crate::modules::sync::manifest_repository::ManifestEntry;
+use crate::modules::sync::sync_scope::SyncScope;
 
 #[derive(Debug, Clone)]
 pub struct UserManifest {
@@ -12,7 +13,6 @@ pub struct UserManifest {
     pub assignments: Vec<ManifestEntry>,
     pub assignment_submissions: Vec<ManifestEntry>,
     pub learning_materials: Vec<ManifestEntry>,
-    #[allow(dead_code)]
     pub activity_logs: Vec<ManifestEntry>,
 }
 
@@ -22,6 +22,8 @@ impl crate::modules::entitlement::service::EntitlementService {
         user_id: Uuid,
         user_role: &str,
     ) -> AppResult<UserManifest> {
+        let scope = SyncScope::for_role(user_role);
+
         let accessible_class_ids = self
             .entitlement_repo
             .get_user_accessible_classes(user_id, user_role)
@@ -56,23 +58,24 @@ impl crate::modules::entitlement::service::EntitlementService {
             .get_enrollments_manifest(accessible_class_ids.clone(), user_id, user_role)
             .await?;
 
-        let assessments = if user_role == "student" {
-            self.manifest_repo
-                .get_published_assessments_manifest(accessible_class_ids.clone())
-                .await?
+        let assessments = if scope.include_assessments {
+            if user_role == "student" {
+                self.manifest_repo
+                    .get_published_assessments_manifest(accessible_class_ids.clone())
+                    .await?
+            } else {
+                self.manifest_repo
+                    .get_assessments_manifest(accessible_class_ids.clone())
+                    .await?
+            }
         } else {
-            self.manifest_repo
-                .get_assessments_manifest(accessible_class_ids.clone())
-                .await?
+            Vec::new()
         };
 
         let assessment_ids: Vec<Uuid> = assessments.iter().map(|a| a.id).collect();
         tracing::debug!("Manifest building: Found {} assessments", assessment_ids.len());
 
-        let assessment_questions = if assessment_ids.is_empty() {
-            tracing::debug!("Manifest building: No assessments found, skipping questions");
-            Vec::new()
-        } else {
+        let assessment_questions = if scope.include_questions && !assessment_ids.is_empty() {
             tracing::debug!("Manifest building: Fetching questions for {} assessments", assessment_ids.len());
             let questions = self.manifest_repo
                 .get_questions_manifest(assessment_ids.clone())
@@ -82,47 +85,60 @@ impl crate::modules::entitlement::service::EntitlementService {
                 tracing::debug!("Manifest building: No questions found for assessments");
             }
             questions
-        };
-
-        let assessment_submissions = if assessment_ids.is_empty() {
+        } else {
             Vec::new()
-        } else if user_role == "student" {
-            self.manifest_repo
-                .get_assessment_submissions_manifest(user_id, assessment_ids)
-                .await?
-        } else {
-            self.manifest_repo
-                .get_all_assessment_submissions_manifest(assessment_ids)
-                .await?
         };
 
-        let assignments = if user_role == "student" {
-            self.manifest_repo
-                .get_published_assignments_manifest(accessible_class_ids.clone())
-                .await?
+        let assessment_submissions = if scope.include_submissions && !assessment_ids.is_empty() {
+            if user_role == "student" {
+                self.manifest_repo
+                    .get_assessment_submissions_manifest(user_id, assessment_ids)
+                    .await?
+            } else {
+                self.manifest_repo
+                    .get_all_assessment_submissions_manifest(assessment_ids)
+                    .await?
+            }
         } else {
-            self.manifest_repo
-                .get_assignments_manifest(accessible_class_ids.clone())
-                .await?
+            Vec::new()
+        };
+
+        let assignments = if scope.include_assignments {
+            if user_role == "student" {
+                self.manifest_repo
+                    .get_published_assignments_manifest(accessible_class_ids.clone())
+                    .await?
+            } else {
+                self.manifest_repo
+                    .get_assignments_manifest(accessible_class_ids.clone())
+                    .await?
+            }
+        } else {
+            Vec::new()
         };
 
         let assignment_ids: Vec<Uuid> = assignments.iter().map(|a| a.id).collect();
-        let assignment_submissions = if assignment_ids.is_empty() {
-            Vec::new()
-        } else if user_role == "student" {
-            self.manifest_repo
-                .get_assignment_submissions_manifest(user_id, assignment_ids)
-                .await?
+        let assignment_submissions = if scope.include_submissions && !assignment_ids.is_empty() {
+            if user_role == "student" {
+                self.manifest_repo
+                    .get_assignment_submissions_manifest(user_id, assignment_ids)
+                    .await?
+            } else {
+                self.manifest_repo
+                    .get_all_assignment_submissions_manifest(assignment_ids)
+                    .await?
+            }
         } else {
-            self.manifest_repo
-                .get_all_assignment_submissions_manifest(assignment_ids)
-                .await?
+            Vec::new()
         };
 
-        let learning_materials = self
-            .manifest_repo
-            .get_materials_manifest(accessible_class_ids)
-            .await?;
+        let learning_materials = if scope.include_learning_materials {
+            self.manifest_repo
+                .get_materials_manifest(accessible_class_ids)
+                .await?
+        } else {
+            Vec::new()
+        };
 
         Ok(UserManifest {
             classes,

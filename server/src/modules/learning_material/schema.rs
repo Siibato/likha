@@ -29,7 +29,7 @@ pub struct ReorderMaterialsRequest {
 
 // ===== RESPONSE SCHEMAS =====
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct MaterialResponse {
     pub id: Uuid,
     pub class_id: Uuid,
@@ -42,12 +42,12 @@ pub struct MaterialResponse {
     pub updated_at: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct MaterialListResponse {
     pub materials: Vec<MaterialResponse>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct MaterialDetailResponse {
     pub id: Uuid,
     pub class_id: Uuid,
@@ -60,7 +60,7 @@ pub struct MaterialDetailResponse {
     pub updated_at: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct FileMetadataResponse {
     pub id: Uuid,
     pub file_name: String,

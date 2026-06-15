@@ -60,7 +60,7 @@ pub async fn get_current_user(
     State(auth_service): State<Arc<AuthService>>,
     auth_user: AuthUser,
 ) -> impl IntoResponse {
-    match auth_service.get_current_user(auth_user.user_id).await {
+    match auth_service.get_current_user_cached(auth_user.user_id).await {
         Ok(user) => success_response(user, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }

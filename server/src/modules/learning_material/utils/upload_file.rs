@@ -23,6 +23,11 @@ impl crate::modules::learning_material::service::LearningMaterialService {
         self.verify_teacher_owns_class(material.class_id, teacher_id)
             .await?;
 
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_material_detail(material_id).await;
+            inv.invalidate_material_list(material.class_id).await;
+        }
+
         let file_size = file_data.len() as i64;
         let file_size_mb = file_size / (1024 * 1024);
 

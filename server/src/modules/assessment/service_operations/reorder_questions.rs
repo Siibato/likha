@@ -28,6 +28,9 @@ impl crate::modules::assessment::service::AssessmentService {
         }
 
         self.assessment_repo.reorder_questions(assessment_id, request.question_ids).await?;
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_assessment_detail(assessment_id).await;
+        }
         Ok(())
     }
 }

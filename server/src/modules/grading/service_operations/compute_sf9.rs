@@ -1,4 +1,5 @@
 use uuid::Uuid;
+use crate::cache::CacheKey;
 use crate::modules::grading::schema::{Sf9Response, Sf9SubjectRow, Sf9QuarterlyAverages};
 use crate::utils::{AppError, AppResult};
 use crate::modules::grading::helpers::deped_weights;
@@ -12,6 +13,13 @@ impl crate::modules::grading::service::GradeComputationService {
     ) -> AppResult<Sf9Response> {
         if !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
             return Err(AppError::Forbidden("Access denied".to_string()));
+        }
+
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::SF9(class_id, student_id).as_str();
+            if let Some(cached) = cache.get::<Sf9Response>(&key).await {
+                return Ok(cached);
+            }
         }
 
         let class = self.class_repo.find_by_id(class_id).await?
@@ -99,7 +107,7 @@ impl crate::modules::grading::service::GradeComputationService {
             descriptor: ga_descriptor,
         });
 
-        Ok(Sf9Response {
+        let result = Sf9Response {
             student_id: student_id.to_string(),
             student_name,
             grade_level: class.grade_level.clone(),
@@ -107,7 +115,12 @@ impl crate::modules::grading::service::GradeComputationService {
             section: Some(class.title.clone()),
             subjects,
             general_average,
-        })
+        };
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::SF9(class_id, student_id).as_str();
+            cache.set(&key, &result, cache.ttl.detail_seconds).await;
+        }
+        Ok(result)
     }
 
     pub(crate) async fn get_student_name(&self, student_id: Uuid) -> AppResult<String> {

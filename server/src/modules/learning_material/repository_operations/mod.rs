@@ -1,5 +1,6 @@
 pub mod count_active_by_hash;
 pub mod count_files_by_material;
+pub mod count_files_by_materials;
 pub mod create_material;
 pub mod find_active_file_path_by_hash;
 pub mod find_all;
@@ -17,6 +18,7 @@ pub mod update_order_index;
 
 pub use count_active_by_hash::count_active_by_hash;
 pub use count_files_by_material::count_files_by_material;
+pub use count_files_by_materials::count_files_by_materials;
 pub use create_material::create_material;
 pub use find_active_file_path_by_hash::find_active_file_path_by_hash;
 pub use find_all::find_all;

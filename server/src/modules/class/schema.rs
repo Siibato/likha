@@ -28,7 +28,7 @@ pub struct AddStudentRequest {
 
 // ===== RESPONSE SCHEMAS =====
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ClassResponse {
     pub id: Uuid,
     pub title: String,
@@ -43,7 +43,7 @@ pub struct ClassResponse {
     pub updated_at: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ClassDetailResponse {
     pub id: Uuid,
     pub title: String,
@@ -56,21 +56,21 @@ pub struct ClassDetailResponse {
     pub updated_at: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct EnrollmentResponse {
     pub id: Uuid,
     pub student: UserResponse,
     pub joined_at: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ClassListResponse {
     pub classes: Vec<ClassResponse>,
 }
 
 // ===== METADATA SCHEMAS =====
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ClassMetadataResponse {
     pub last_modified: String,
     pub record_count: usize,

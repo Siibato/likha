@@ -44,6 +44,11 @@ impl crate::modules::assessment::service::AssessmentService {
         let question_count = questions.len();
         let submission_count = self.assessment_repo.count_submissions_by_assessment_id(assessment_id).await?;
 
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_assessment_detail(assessment_id).await;
+            inv.invalidate_assessments(teacher_id, assessment.class_id).await;
+        }
+
         Ok(AssessmentResponse {
             id: published.id,
             class_id: published.class_id,

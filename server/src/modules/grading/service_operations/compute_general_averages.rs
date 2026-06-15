@@ -1,4 +1,6 @@
+use futures::future::try_join_all;
 use uuid::Uuid;
+use crate::cache::CacheKey;
 use crate::modules::grading::schema::{GeneralAverageResponse, StudentGeneralAverage, SubjectGrade};
 use crate::utils::{AppError, AppResult};
 
@@ -12,24 +14,33 @@ impl crate::modules::grading::service::GradeComputationService {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::GeneralAverages(class_id).as_str();
+            if let Some(cached) = cache.get::<GeneralAverageResponse>(&key).await {
+                return Ok(cached);
+            }
+        }
+
         let class = self.class_repo.find_by_id(class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
         let student_ids = self.repo.get_enrolled_student_ids(class_id).await?;
-        let mut students = Vec::new();
+        let school_year = class.school_year.as_deref();
 
-        for student_id in student_ids {
-            let student_ga = self.compute_student_general_average(
-                student_id,
-                class.school_year.as_deref(),
-            ).await?;
-            students.push(student_ga);
-        }
+        let student_futures = student_ids
+            .iter()
+            .map(|&student_id| self.compute_student_general_average(student_id, school_year));
+        let students = try_join_all(student_futures).await?;
 
-        Ok(GeneralAverageResponse {
+        let result = GeneralAverageResponse {
             class_id: class_id.to_string(),
             students,
-        })
+        };
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::GeneralAverages(class_id).as_str();
+            cache.set(&key, &result, cache.ttl.list_seconds).await;
+        }
+        Ok(result)
     }
 
     pub(crate) async fn compute_student_general_average(

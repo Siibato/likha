@@ -56,5 +56,3 @@ pub use get_submissions::*;
 pub use get_student_assignment_submissions::*;
 pub use grade_submission::*;
 pub use return_submission::*;
-
-pub use build_submission_response::*;

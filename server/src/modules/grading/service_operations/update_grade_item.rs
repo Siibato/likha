@@ -8,10 +8,18 @@ impl crate::modules::grading::service::GradeComputationService {
         id: Uuid,
         request: UpdateGradeItemRequest,
     ) -> AppResult<GradeItemResponse> {
+        let existing = self.repo.find_item(id).await?;
         let item = self
             .repo
             .update_item(id, request.title, request.component, request.total_points, request.order_index, request.source_type, request.source_id)
             .await?;
+        if let Some(ref inv) = self.invalidator {
+            if let Some(ref existing) = existing {
+                let class_id = existing.class_id;
+                let quarter = existing.grading_period_number.unwrap_or(1);
+                inv.invalidate_class_grades(class_id, quarter).await;
+            }
+        }
         Ok(GradeItemResponse::from(item))
     }
 }

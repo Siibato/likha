@@ -99,6 +99,22 @@ impl ClassRepository {
         ops::find_teacher_of_class(&self.db, class_id).await
     }
 
+    pub async fn find_teachers_for_classes(&self, class_ids: Vec<Uuid>) -> AppResult<Vec<(Uuid, users::Model)>> {
+        ops::find_teachers_for_classes(&self.db, class_ids).await
+    }
+
+    pub async fn count_students_for_classes(&self, class_ids: Vec<Uuid>) -> AppResult<std::collections::HashMap<Uuid, usize>> {
+        ops::count_students_for_classes(&self.db, class_ids).await
+    }
+
+    pub async fn find_participants_with_users_by_class_id(
+        &self,
+        class_id: Uuid,
+        role: Option<&str>,
+    ) -> AppResult<Vec<(class_participants::Model, users::Model)>> {
+        ops::find_participants_with_users_by_class_id(&self.db, class_id, role).await
+    }
+
     pub async fn is_teacher_of_class(&self, user_id: Uuid, class_id: Uuid) -> AppResult<bool> {
         ops::is_teacher_of_class(&self.db, user_id, class_id).await
     }

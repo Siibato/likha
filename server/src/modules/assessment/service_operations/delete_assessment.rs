@@ -20,6 +20,10 @@ impl crate::modules::assessment::service::AssessmentService {
         self.assessment_repo.soft_delete_submissions_by_assessment(assessment_id).await?;
         self.assessment_repo.soft_delete(assessment_id).await?;
 
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_assessment_detail(assessment_id).await;
+            inv.invalidate_assessments(teacher_id, assessment.class_id).await;
+        }
         Ok(())
     }
 }

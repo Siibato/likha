@@ -1,3 +1,4 @@
+use futures::future::try_join_all;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
@@ -262,14 +263,13 @@ pub async fn get_final_grades(
         // Get final grades for all students
         match service.repo.get_enrolled_student_ids(class_id).await {
             Ok(student_ids) => {
-                let mut results = Vec::new();
-                for sid in student_ids {
-                    match service.compute_final_grade(class_id, sid).await {
-                        Ok(fg) => results.push(fg),
-                        Err(e) => return e.into_response(),
-                    }
+                let futures = student_ids
+                    .iter()
+                    .map(|&sid| service.compute_final_grade(class_id, sid));
+                match try_join_all(futures).await {
+                    Ok(results) => success_response(results, StatusCode::OK).into_response(),
+                    Err(e) => e.into_response(),
                 }
-                success_response(results, StatusCode::OK).into_response()
             }
             Err(e) => e.into_response(),
         }

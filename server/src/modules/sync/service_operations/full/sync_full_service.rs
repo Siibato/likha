@@ -11,6 +11,12 @@ pub struct FullSyncRequest {
     pub class_ids: Option<Vec<String>>,  // empty/null = base data only; non-empty = batch request
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct SyncPlan {
+    pub needs_entity_batches: bool,
+    pub total_classes: usize,
+}
+
 /// Response for full sync
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct FullSyncResponse {
@@ -36,6 +42,8 @@ pub struct FullSyncResponse {
     pub period_grades: Vec<serde_json::Value>,
     pub table_of_specifications: Vec<serde_json::Value>,
     pub tos_competencies: Vec<serde_json::Value>,
+    pub activity_logs: Vec<serde_json::Value>,
+    pub sync_plan: Option<SyncPlan>,
 }
 
 /// Service for full sync on login

@@ -14,6 +14,9 @@ impl crate::modules::learning_material::service::LearningMaterialService {
             return Ok(());
         }
         self.material_repo.reorder_materials(class_id, request.material_ids).await?;
+        if let Some(ref inv) = self.invalidator {
+            inv.invalidate_material_list(class_id).await;
+        }
         Ok(())
     }
 }

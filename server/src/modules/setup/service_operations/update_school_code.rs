@@ -1,4 +1,3 @@
-use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
 use crate::modules::admin::ActivityLogRepository;

@@ -18,13 +18,18 @@ type BoxFuture<T> = Pin<Box<dyn Future<Output = T> + Send + 'static>>;
 pub struct RateLimitLayer {
     store: Arc<RateLimitStore>,
     jwt_secret: Arc<String>,
+    disabled: bool,
 }
 
 impl RateLimitLayer {
     pub fn new(store: Arc<RateLimitStore>, jwt_secret: String) -> Self {
+        let disabled = std::env::var("DISABLE_RATE_LIMIT")
+            .map(|v| v == "true" || v == "1")
+            .unwrap_or(false);
         Self {
             store,
             jwt_secret: Arc::new(jwt_secret),
+            disabled,
         }
     }
 }
@@ -37,6 +42,7 @@ impl<S> Layer<S> for RateLimitLayer {
             inner,
             store: Arc::clone(&self.store),
             jwt_secret: Arc::clone(&self.jwt_secret),
+            disabled: self.disabled,
         }
     }
 }
@@ -46,6 +52,7 @@ pub struct RateLimitService<S> {
     inner: S,
     store: Arc<RateLimitStore>,
     jwt_secret: Arc<String>,
+    disabled: bool,
 }
 
 impl<S> Service<Request<Body>> for RateLimitService<S>
@@ -70,7 +77,12 @@ where
         // Clone before moving into async block — inner must be ready (poll_ready was called on self)
         let mut inner = self.inner.clone();
 
+        let disabled = self.disabled;
         Box::pin(async move {
+            if disabled {
+                return inner.call(req).await;
+            }
+
             let policy = resolve(req.method(), req.uri().path());
 
             if policy == RateLimitPolicy::Unrestricted {

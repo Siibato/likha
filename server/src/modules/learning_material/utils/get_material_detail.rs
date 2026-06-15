@@ -1,4 +1,5 @@
 use uuid::Uuid;
+use crate::cache::CacheKey;
 use crate::utils::error::{AppError, AppResult};
 use crate::modules::learning_material::schema::{MaterialDetailResponse, FileMetadataResponse};
 
@@ -9,6 +10,12 @@ impl crate::modules::learning_material::service::LearningMaterialService {
         user_id: Uuid,
         role: &str,
     ) -> AppResult<MaterialDetailResponse> {
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::MaterialDetail(material_id).as_str();
+            if let Some(cached) = cache.get::<MaterialDetailResponse>(&key).await {
+                return Ok(cached);
+            }
+        }
         let material = self
             .material_repo
             .find_by_id(material_id)
@@ -39,7 +46,7 @@ impl crate::modules::learning_material::service::LearningMaterialService {
             })
             .collect();
 
-        Ok(MaterialDetailResponse {
+        let result = MaterialDetailResponse {
             id: material.id,
             class_id: material.class_id,
             title: material.title,
@@ -49,6 +56,11 @@ impl crate::modules::learning_material::service::LearningMaterialService {
             files: file_responses,
             created_at: material.created_at.to_string(),
             updated_at: material.updated_at.to_string(),
-        })
+        };
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::MaterialDetail(material_id).as_str();
+            cache.set(&key, &result, cache.ttl.detail_seconds).await;
+        }
+        Ok(result)
     }
 }

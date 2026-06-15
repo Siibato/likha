@@ -10,9 +10,10 @@ pub async fn add_choice(
     choice_text: String,
     is_correct: bool,
     order_index: i32,
+    client_id: Option<Uuid>,
 ) -> AppResult<question_choices::Model> {
     let choice = question_choices::ActiveModel {
-        id: Set(Uuid::new_v4()),
+        id: Set(client_id.unwrap_or_else(Uuid::new_v4)),
         question_id: Set(question_id),
         choice_text: Set(choice_text),
         is_correct: Set(is_correct),

@@ -1,4 +1,5 @@
 use uuid::Uuid;
+use crate::cache::CacheKey;
 use crate::modules::tos::schema::*;
 use crate::utils::{AppError, AppResult};
 
@@ -10,6 +11,13 @@ impl crate::modules::tos::service::TosService {
     ) -> AppResult<TosListResponse> {
         if !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
             return Err(AppError::Forbidden("Access denied".to_string()));
+        }
+
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::TosList(class_id).as_str();
+            if let Some(cached) = cache.get::<TosListResponse>(&key).await {
+                return Ok(cached);
+            }
         }
 
         let tos_list = self.tos_repo.find_tos_by_class(class_id).await?;
@@ -58,6 +66,11 @@ impl crate::modules::tos::service::TosService {
             });
         }
 
-        Ok(TosListResponse { items })
+        let result = TosListResponse { items };
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::TosList(class_id).as_str();
+            cache.set(&key, &result, cache.ttl.list_seconds).await;
+        }
+        Ok(result)
     }
 }
