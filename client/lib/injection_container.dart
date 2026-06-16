@@ -245,6 +245,12 @@ Future<void> init() async {
   sl.registerLazySingleton<SyncRemoteDataSource>(
     () => SyncRemoteDataSourceImpl(dioClient: sl<DioClient>()),
   );
+  sl.registerLazySingleton<GradingRemoteDataSource>(
+    () => GradingRemoteDataSourceImpl(sl<DioClient>()),
+  );
+  sl.registerLazySingleton<TosRemoteDataSource>(
+    () => TosRemoteDataSourceImpl(sl<DioClient>()),
+  );
 
   // Local Data sources
   sl.registerLazySingleton<AuthLocalDataSource>(
@@ -264,6 +270,12 @@ Future<void> init() async {
       sl<LocalDatabase>(),
       sl<SyncQueue>(),
     ),
+  );
+  sl.registerLazySingleton<GradingLocalDataSource>(
+    () => GradingLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
+  );
+  sl.registerLazySingleton<TosLocalDataSource>(
+    () => TosLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
   );
 
   // Validation services
@@ -465,16 +477,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => material.DeleteFile(sl()));
   sl.registerLazySingleton(() => material.DownloadFile(sl()));
 
-  // Grading - Remote Data Source
-  sl.registerLazySingleton<GradingRemoteDataSource>(
-    () => GradingRemoteDataSourceImpl(sl<DioClient>()),
-  );
-
-  // Grading - Local Data Source
-  sl.registerLazySingleton<GradingLocalDataSource>(
-    () => GradingLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
-  );
-
   // Grading - Repository
   sl.registerLazySingleton<GradingRepository>(
     () => GradingRepositoryImpl(
@@ -526,16 +528,6 @@ Future<void> init() async {
   
   // Batch Operations
   sl.registerLazySingleton(() => GetGradeDataBatch(sl<GradingRepository>()));
-
-  // TOS - Remote Data Source
-  sl.registerLazySingleton<TosRemoteDataSource>(
-    () => TosRemoteDataSourceImpl(sl<DioClient>()),
-  );
-
-  // TOS - Local Data Source
-  sl.registerLazySingleton<TosLocalDataSource>(
-    () => TosLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
-  );
 
   // TOS - Repository
   sl.registerLazySingleton<TosRepository>(
