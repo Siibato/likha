@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
+import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/logging/core_logger.dart';
 
 /// Local SQLite Database for offline-first functionality
@@ -778,6 +779,36 @@ class LocalDatabase {
         // Table might not exist
       }
     }
+  }
+
+  /// Returns the persisted `last_sync_at` timestamp, or `null` if no sync has
+  /// completed yet. This is the single source of truth for reading the sync
+  /// token from `sync_metadata`.
+  Future<String?> getLastSyncAt() async {
+    final db = await database;
+    final rows = await db.query(
+      DbTables.syncMetadata,
+      columns: [SyncMetadataCols.value],
+      where: '${SyncMetadataCols.key} = ?',
+      whereArgs: [DbValues.metaLastSyncAt],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return rows.first[SyncMetadataCols.value] as String?;
+  }
+
+  /// Persists the `last_sync_at` timestamp. This is the single source of truth
+  /// for writing the sync token to `sync_metadata`.
+  Future<void> setLastSyncAt(String value) async {
+    final db = await database;
+    await db.insert(
+      DbTables.syncMetadata,
+      {
+        SyncMetadataCols.key: DbValues.metaLastSyncAt,
+        SyncMetadataCols.value: value,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<void> close() async {

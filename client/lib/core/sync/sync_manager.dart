@@ -32,7 +32,6 @@ import 'package:likha/data/datasources/remote/learning_materials/learning_materi
 import 'package:likha/data/datasources/remote/sync/sync_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/tos/tos_remote_datasource.dart';
 import 'package:likha/services/storage_service.dart';
-import 'package:sqflite_sqlcipher/sqflite.dart';
 
 export 'package:likha/core/sync/sync_state.dart';
 
@@ -164,10 +163,14 @@ class SyncManager {
   }
 
   /// Start sync manager - listen for server reachability changes
-  void start() {
+  Future<void> start() async {
     _log.log('start() - START');
     stop(); // cancel any existing subscription to prevent duplicates
-    
+
+    // Seed lastSyncAt from persisted metadata BEFORE triggering any sync so
+    // returning users don't briefly see the first-sync loading screen.
+    await _loadLastSyncTime();
+
     _log.log('start() - Setting up reachability listener');
     _reachabilitySubscription =
         _serverReachabilityService.onServerReachabilityChanged.listen((isReachable) {
@@ -237,6 +240,22 @@ class SyncManager {
     _stateListener = listener;
   }
 
+  /// Load the persisted last sync time from sync_metadata and seed the
+  /// in-memory state. This prevents the first-sync loading screen from showing
+  /// for returning users whose data was already synced in a prior session.
+  Future<void> _loadLastSyncTime() async {
+    if (_state.lastSyncAt != null) return;
+    try {
+      final value = await _localDatabase.getLastSyncAt();
+      final parsed = value == null ? null : DateTime.tryParse(value);
+      if (parsed != null) {
+        _updateState(lastSyncAt: parsed);
+      }
+    } catch (e) {
+      _log.log('_loadLastSyncTime() - ERROR: ${e.toString()}');
+    }
+  }
+
   /// Main sync orchestration: outbound then inbound
   Future<void> _runSync() async {
     _log.log('_runSync() - START');
@@ -272,28 +291,11 @@ class SyncManager {
 
       // STEP 3: Save last sync time (use server time, not device time)
       final syncTime = serverTime ?? DateTime.now().toIso8601String();
-      final db = await _localDatabase.database;
-      try {
-        await db.update(
-          'sync_metadata',
-          {'value': syncTime},
-          where: 'key = ?',
-          whereArgs: ['last_sync_at'],
-        );
-      } catch (e) {
-        // If row doesn't exist, insert it
-        await db.insert(
-          'sync_metadata',
-          {
-            'key': 'last_sync_at',
-            'value': syncTime,
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
-      }
+      await _localDatabase.setLastSyncAt(syncTime);
 
       _log.log('_runSync() - SUCCESS: Sync completed');
-      _updateState(phase: SyncPhase.idle);
+      final parsedSyncTime = DateTime.tryParse(syncTime);
+      _updateState(phase: SyncPhase.idle, lastSyncAt: parsedSyncTime);
     } catch (e) {
       _log.log('_runSync() - ERROR: ${e.toString()}');
       _updateState(phase: SyncPhase.failed, lastError: e.toString());
