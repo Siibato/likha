@@ -1,8 +1,12 @@
 import 'dart:io';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
+import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/logging/sync_logger.dart';
 import 'package:likha/core/sync/handlers/assessment_sync_handler.dart';
+import 'package:likha/core/sync/handlers/assignment_sync_handler.dart';
+import 'package:likha/core/sync/handlers/auth_sync_handler.dart';
+import 'package:likha/core/sync/handlers/class_sync_handler.dart';
 import 'package:likha/core/sync/handlers/grading_sync_handler.dart';
 import 'package:likha/core/sync/handlers/learning_material_sync_handler.dart';
 import 'package:likha/core/sync/handlers/tos_sync_handler.dart';
@@ -41,6 +45,9 @@ class OutboundSyncHandler {
   final SyncLogger _log;
   final SyncStateUpdater _updateState;
   final AssessmentSyncHandler? _assessmentHandler;
+  final AssignmentSyncHandler? _assignmentHandler;
+  final AuthSyncHandler? _authHandler;
+  final ClassSyncHandler? _classHandler;
   final GradingSyncHandler? _gradingHandler;
   final LearningMaterialSyncHandler? _learningMaterialHandler;
   final TosSyncHandler? _tosHandler;
@@ -52,10 +59,16 @@ class OutboundSyncHandler {
     this._log,
     this._updateState, {
     AssessmentSyncHandler? assessmentHandler,
+    AssignmentSyncHandler? assignmentHandler,
+    AuthSyncHandler? authHandler,
+    ClassSyncHandler? classHandler,
     GradingSyncHandler? gradingHandler,
     LearningMaterialSyncHandler? learningMaterialHandler,
     TosSyncHandler? tosHandler,
   })  : _assessmentHandler = assessmentHandler,
+        _assignmentHandler = assignmentHandler,
+        _authHandler = authHandler,
+        _classHandler = classHandler,
         _gradingHandler = gradingHandler,
         _learningMaterialHandler = learningMaterialHandler,
         _tosHandler = tosHandler;
@@ -202,9 +215,69 @@ class OutboundSyncHandler {
       }
     }
 
+    // Route class operations to the dedicated handler.
+    final classOps = regularOps
+        .where((e) => e.entityType == SyncEntityType.classEntity)
+        .toList();
+    if (classOps.isNotEmpty && _classHandler != null) {
+      _log.log('Processing ${classOps.length} class ops via handler');
+      for (final op in classOps) {
+        final result = await _classHandler.handle(op);
+        if (result.success) {
+          await _syncQueue.markSucceeded(op.id);
+        } else if (result.shouldRetry) {
+          await _syncQueue.incrementRetry(op.id);
+        } else {
+          await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
+        }
+      }
+    }
+
+    // Route auth operations to the dedicated handler.
+    final authOps = regularOps
+        .where((e) => e.entityType == SyncEntityType.adminUser)
+        .toList();
+    if (authOps.isNotEmpty && _authHandler != null) {
+      _log.log('Processing ${authOps.length} auth ops via handler');
+      for (final op in authOps) {
+        final result = await _authHandler.handle(op);
+        if (result.success) {
+          await _syncQueue.markSucceeded(op.id);
+        } else if (result.shouldRetry) {
+          await _syncQueue.incrementRetry(op.id);
+        } else {
+          await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
+        }
+      }
+    }
+
+    // Route assignment operations to the dedicated handler.
+    final assignmentOps = regularOps
+        .where((e) =>
+            e.entityType == SyncEntityType.assignment ||
+            e.entityType == SyncEntityType.assignmentSubmission)
+        .toList();
+    if (assignmentOps.isNotEmpty && _assignmentHandler != null) {
+      _log.log('Processing ${assignmentOps.length} assignment ops via handler');
+      for (final op in assignmentOps) {
+        final result = await _assignmentHandler.handle(op);
+        if (result.success) {
+          await _syncQueue.markSucceeded(op.id);
+        } else if (result.shouldRetry) {
+          await _syncQueue.incrementRetry(op.id);
+        } else {
+          await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
+        }
+      }
+    }
+
     final nonAssessmentOps = regularOps
         .where((e) =>
             e.entityType != SyncEntityType.assessment &&
+            e.entityType != SyncEntityType.assignment &&
+            e.entityType != SyncEntityType.assignmentSubmission &&
+            e.entityType != SyncEntityType.classEntity &&
+            e.entityType != SyncEntityType.adminUser &&
             e.entityType != SyncEntityType.gradeConfig &&
             e.entityType != SyncEntityType.gradeItem &&
             e.entityType != SyncEntityType.gradeScore &&
@@ -355,11 +428,17 @@ class OutboundSyncHandler {
       };
     }).toList();
 
-    final response = await _syncRemoteDataSource.pushOperations(
-      operations: operations,
-    );
-
-    await processPushResults(response, pushStartTime);
+    try {
+      final response = await _syncRemoteDataSource.pushOperations(
+        operations: operations,
+      );
+      await processPushResults(response, pushStartTime);
+    } on NetworkException catch (_) {
+      for (final op in regularOps) {
+        await _syncQueue.incrementRetry(op.id);
+      }
+      rethrow;
+    }
   }
 
   /// Process push results and update local state
@@ -555,6 +634,9 @@ class OutboundSyncHandler {
       }
 
       await _syncQueue.markSucceeded(op.id);
+    } on NetworkException catch (_) {
+      await _syncQueue.incrementRetry(op.id);
+      rethrow;
     } catch (e) {
       await _syncQueue.markFailed(op.id, e.toString());
     }

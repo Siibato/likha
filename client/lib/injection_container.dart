@@ -363,6 +363,12 @@ Future<void> init() async {
       sl<LocalDatabase>(), // LocalDatabase
       sl<AssessmentRemoteDataSource>(), // AssessmentRemoteDataSource
       sl<AssessmentLocalDataSource>(), // AssessmentLocalDataSource
+      sl<AssignmentRemoteDataSource>(), // AssignmentRemoteDataSource
+      sl<AssignmentLocalDataSource>(), // AssignmentLocalDataSource
+      sl<AuthRemoteDataSource>(), // AuthRemoteDataSource
+      sl<AuthLocalDataSource>(), // AuthLocalDataSource
+      sl<ClassRemoteDataSource>(), // ClassRemoteDataSource
+      sl<ClassLocalDataSource>(), // ClassLocalDataSource
       sl<GradingRemoteDataSource>(), // GradingRemoteDataSource
       sl<GradingLocalDataSource>(), // GradingLocalDataSource
       sl<LearningMaterialRemoteDataSource>(), // LearningMaterialRemoteDataSource

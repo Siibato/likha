@@ -3,6 +3,9 @@ import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/core/sync/handlers/assessment_sync_handler.dart';
+import 'package:likha/core/sync/handlers/assignment_sync_handler.dart';
+import 'package:likha/core/sync/handlers/auth_sync_handler.dart';
+import 'package:likha/core/sync/handlers/class_sync_handler.dart';
 import 'package:likha/core/sync/handlers/grading_sync_handler.dart';
 import 'package:likha/core/sync/handlers/learning_material_sync_handler.dart';
 import 'package:likha/core/sync/handlers/tos_sync_handler.dart';
@@ -13,10 +16,16 @@ import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/sync_state.dart';
 import 'package:likha/core/sync/sync_upsert_helpers.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
+import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
+import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
+import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
 import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/assignments/assignment_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/auth/auth_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/classes/class_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/grading/grading_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/learning_materials/learning_material_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/sync/sync_remote_datasource.dart';
@@ -33,6 +42,12 @@ class SyncManager {
   final LocalDatabase _localDatabase;
   final AssessmentRemoteDataSource _assessmentRemoteDataSource;
   final AssessmentLocalDataSource _assessmentLocalDataSource;
+  final AssignmentRemoteDataSource _assignmentRemoteDataSource;
+  final AssignmentLocalDataSource _assignmentLocalDataSource;
+  final AuthRemoteDataSource _authRemoteDataSource;
+  final AuthLocalDataSource _authLocalDataSource;
+  final ClassRemoteDataSource _classRemoteDataSource;
+  final ClassLocalDataSource _classLocalDataSource;
   final GradingRemoteDataSource _gradingRemoteDataSource;
   final GradingLocalDataSource _gradingLocalDataSource;
   final LearningMaterialRemoteDataSource _learningMaterialRemoteDataSource;
@@ -45,6 +60,7 @@ class SyncManager {
 
   bool _isSyncing = false;
   StreamSubscription<bool>? _reachabilitySubscription;
+  StreamSubscription<SyncQueueEntry>? _queueSubscription;
   void Function(SyncState)? _stateListener;
 
   SyncState _state = const SyncState(
@@ -67,6 +83,12 @@ class SyncManager {
     this._localDatabase,
     this._assessmentRemoteDataSource,
     this._assessmentLocalDataSource,
+    this._assignmentRemoteDataSource,
+    this._assignmentLocalDataSource,
+    this._authRemoteDataSource,
+    this._authLocalDataSource,
+    this._classRemoteDataSource,
+    this._classLocalDataSource,
     this._gradingRemoteDataSource,
     this._gradingLocalDataSource,
     this._learningMaterialRemoteDataSource,
@@ -87,6 +109,24 @@ class SyncManager {
       assessmentHandler: AssessmentSyncHandler(
         _assessmentRemoteDataSource,
         _assessmentLocalDataSource,
+        _localDatabase,
+        _log,
+      ),
+      assignmentHandler: AssignmentSyncHandler(
+        _assignmentRemoteDataSource,
+        _assignmentLocalDataSource,
+        _localDatabase,
+        _log,
+      ),
+      authHandler: AuthSyncHandler(
+        _authRemoteDataSource,
+        _authLocalDataSource,
+        _localDatabase,
+        _log,
+      ),
+      classHandler: ClassSyncHandler(
+        _classRemoteDataSource,
+        _classLocalDataSource,
         _localDatabase,
         _log,
       ),
@@ -133,6 +173,29 @@ class SyncManager {
       }
     });
 
+    _log.log('start() - Setting up queue entry listener');
+    _queueSubscription = _syncQueue.onEntryAdded.listen((entry) async {
+      _log.log('start() - Queue entry added: ${entry.entityType.dbValue}.${entry.operation.dbValue}');
+
+      if (_isSyncing) {
+        _log.log('start() - Already syncing, skipping immediate flush');
+        return;
+      }
+
+      if (!_serverReachabilityService.isServerReachable) {
+        _log.log('start() - Cached reachability false, performing live check');
+        final now = await _serverReachabilityService.checkNow();
+        if (!now) {
+          _log.log('start() - Live check confirms offline, deferring');
+          return;
+        }
+        _log.log('start() - Live check confirms online');
+      }
+
+      _log.log('start() - Triggering sync for new entry');
+      _runSync();
+    });
+
     _log.log('start() - Initial reachability check: ${_serverReachabilityService.isServerReachable}');
     if (_serverReachabilityService.isServerReachable && !_isSyncing) {
       _log.log('start() - Triggering initial sync');
@@ -148,13 +211,20 @@ class SyncManager {
   void stop() {
     _reachabilitySubscription?.cancel();
     _reachabilitySubscription = null;
+    _queueSubscription?.cancel();
+    _queueSubscription = null;
   }
 
   /// Manually trigger sync
   Future<void> sync() async {
-    if (_serverReachabilityService.isServerReachable) {
-      await _runSync();
+    if (_isSyncing) return;
+
+    if (!_serverReachabilityService.isServerReachable) {
+      final now = await _serverReachabilityService.checkNow();
+      if (!now) return;
     }
+
+    await _runSync();
   }
 
   /// Register listener for sync state changes
