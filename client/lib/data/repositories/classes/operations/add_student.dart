@@ -1,13 +1,9 @@
 import 'package:dartz/dartz.dart';
-import 'package:likha/core/database/db_schema.dart';
-import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/core/utils/remote_write.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
-import 'package:likha/data/datasources/remote/classes/class_remote_datasource.dart';
 import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:uuid/uuid.dart';
@@ -15,7 +11,7 @@ import 'package:uuid/uuid.dart';
 ResultFuture<MutationResult<Participant>> addStudent(
   ClassLocalDataSource localDataSource,
   SyncQueue syncQueue,
-  ClassRemoteDataSource remoteDataSource, {
+  {
   required String classId,
   required String studentId,
 }) async {
@@ -58,38 +54,6 @@ ResultFuture<MutationResult<Participant>> addStudent(
         txn: txn,
       );
     });
-
-    fireRemoteWrite(
-      remote: () => remoteDataSource.addStudent(
-        classId: classId,
-        studentId: studentId,
-        idempotencyKey: queueEntryId,
-      ),
-      onSuccess: (_) async {
-        final db = await localDataSource.localDatabase.database;
-        await db.update(
-          DbTables.classParticipants,
-          {CommonCols.syncStatus: SyncStatus.synced.dbValue},
-          where: '${ClassParticipantsCols.classId} = ? AND ${ClassParticipantsCols.userId} = ? AND ${ClassParticipantsCols.removedAt} IS NULL',
-          whereArgs: [classId, studentId],
-        );
-        await syncQueue.markSucceeded(queueEntryId);
-      },
-      onError: (error) async {
-        if (error is NetworkException) {
-          return;
-        }
-
-        final db = await localDataSource.localDatabase.database;
-        await db.update(
-          DbTables.classParticipants,
-          {CommonCols.syncStatus: SyncStatus.failed.dbValue},
-          where: '${ClassParticipantsCols.classId} = ? AND ${ClassParticipantsCols.userId} = ? AND ${ClassParticipantsCols.removedAt} IS NULL',
-          whereArgs: [classId, studentId],
-        );
-        await syncQueue.markFailed(queueEntryId, error.toString());
-      },
-    );
 
     final participant = Participant(
       id: participantId,

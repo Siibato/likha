@@ -217,11 +217,6 @@ void main() {
           isServerReachable: true,
         );
 
-        when(() => remote.createMaterial(
-              classId: any(named: 'classId'),
-              data: any(named: 'data'),
-            )).thenAnswer((_) async => _fakeMaterial());
-
         final result = await repo.createMaterial(
           classId: 'c-1',
           title: 'New Lesson',

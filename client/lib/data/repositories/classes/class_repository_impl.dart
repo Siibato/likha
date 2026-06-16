@@ -38,7 +38,6 @@ class ClassRepositoryImpl implements ClassRepository {
       ops.createClass(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         title: title,
         description: description,
         teacherId: teacherId,
@@ -52,7 +51,6 @@ class ClassRepositoryImpl implements ClassRepository {
       ops.deleteClass(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         classId: classId,
       );
 
@@ -67,7 +65,6 @@ class ClassRepositoryImpl implements ClassRepository {
       ops.updateClass(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         classId: classId,
         title: title,
         description: description,
@@ -110,7 +107,6 @@ class ClassRepositoryImpl implements ClassRepository {
       ops.addStudent(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         classId: classId,
         studentId: studentId,
       );
@@ -123,7 +119,6 @@ class ClassRepositoryImpl implements ClassRepository {
       ops.removeStudent(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         classId: classId,
         studentId: studentId,
       );

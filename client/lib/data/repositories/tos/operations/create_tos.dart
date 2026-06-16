@@ -1,21 +1,16 @@
 import 'package:dartz/dartz.dart';
-import 'package:likha/core/database/db_schema.dart';
-import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/core/utils/remote_write.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
-import 'package:likha/data/datasources/remote/tos/tos_remote_datasource.dart';
 import 'package:likha/data/models/tos/tos_model.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:uuid/uuid.dart';
 
 ResultFuture<MutationResult<TableOfSpecifications>> createTos(
   TosLocalDataSource localDataSource,
-  SyncQueue syncQueue,
-  TosRemoteDataSource remoteDataSource, {
+  SyncQueue syncQueue, {
   required String classId,
   required Map<String, dynamic> data,
 }) async {
@@ -57,51 +52,6 @@ ResultFuture<MutationResult<TableOfSpecifications>> createTos(
         txn: txn,
       );
     });
-
-    fireRemoteWrite<TosModel>(
-      remote: () => remoteDataSource.createTos(
-        classId: classId,
-        data: {
-          ...data,
-          'id': tosId,
-        },
-        idempotencyKey: queueEntryId,
-      ),
-      onSuccess: (serverModel) async {
-        final db = await localDataSource.localDatabase.database;
-
-        if (serverModel.id != tosId) {
-          await db.update(
-            DbTables.tableOfSpecifications,
-            {CommonCols.id: serverModel.id},
-            where: '${CommonCols.id} = ?',
-            whereArgs: [tosId],
-          );
-        }
-
-        await db.update(
-          DbTables.tableOfSpecifications,
-          {CommonCols.syncStatus: SyncStatus.synced.dbValue},
-          where: '${CommonCols.id} = ?',
-          whereArgs: [serverModel.id],
-        );
-        await syncQueue.markSucceeded(queueEntryId);
-      },
-      onError: (error) async {
-        if (error is NetworkException) {
-          return;
-        }
-
-        final db = await localDataSource.localDatabase.database;
-        await db.update(
-          DbTables.tableOfSpecifications,
-          {CommonCols.syncStatus: SyncStatus.failed.dbValue},
-          where: '${CommonCols.id} = ?',
-          whereArgs: [tosId],
-        );
-        await syncQueue.markFailed(queueEntryId, error.toString());
-      },
-    );
 
     return Right(MutationResult(entity: optimisticModel, status: SyncStatus.pending));
   } catch (e) {

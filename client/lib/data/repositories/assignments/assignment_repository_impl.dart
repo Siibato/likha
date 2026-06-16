@@ -49,7 +49,6 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       ops.createAssignment(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         classId: classId,
         title: title,
         instructions: instructions,
@@ -105,7 +104,6 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       ops.updateAssignment(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         assignmentId: assignmentId,
         title: title,
         instructions: instructions,
@@ -122,7 +120,6 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       ops.deleteAssignment(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         assignmentId: assignmentId,
       );
 
@@ -131,7 +128,6 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       ops.publishAssignment(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         assignmentId: assignmentId,
       );
 
@@ -140,7 +136,6 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       ops.unpublishAssignment(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         assignmentId: assignmentId,
       );
 
@@ -152,7 +147,6 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       ops.reorderAllAssignments(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         classId: classId,
         assignmentIds: assignmentIds,
       );
@@ -185,7 +179,6 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       ops.gradeSubmission(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         submissionId: submissionId,
         score: score,
         feedback: feedback,
@@ -196,7 +189,6 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       ops.returnSubmission(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         submissionId: submissionId,
       );
 
@@ -222,7 +214,6 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
         _localDataSource,
         _syncQueue,
         _storageService,
-        _remoteDataSource,
         assignmentId: assignmentId,
         textContent: textContent,
       );
@@ -236,7 +227,6 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       ops.uploadFile(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         submissionId: submissionId,
         filePath: filePath,
         fileName: fileName,
@@ -247,7 +237,6 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       ops.deleteFile(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         fileId: fileId,
       );
 
@@ -256,7 +245,6 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       ops.submitAssignment(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         submissionId: submissionId,
       );
 

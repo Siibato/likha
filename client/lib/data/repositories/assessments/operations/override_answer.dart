@@ -1,21 +1,16 @@
 import 'package:dartz/dartz.dart';
-import 'package:likha/core/database/db_schema.dart';
-import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/core/utils/remote_write.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
-import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
-import 'package:likha/data/models/assessments/submission_model.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:uuid/uuid.dart';
 
 ResultFuture<MutationResult<SubmissionAnswer>> overrideAnswer(
   AssessmentLocalDataSource localDataSource,
   SyncQueue syncQueue,
-  AssessmentRemoteDataSource remoteDataSource, {
+  {
   required String answerId,
   required bool isCorrect,
   double? points,
@@ -61,38 +56,6 @@ ResultFuture<MutationResult<SubmissionAnswer>> overrideAnswer(
       points: 0,
       isOverrideCorrect: isCorrect,
       pointsAwarded: points ?? (isCorrect ? 0 : 0),
-    );
-
-    fireRemoteWrite<SubmissionAnswerModel>(
-      remote: () => remoteDataSource.overrideAnswer(
-        answerId: answerId,
-        isCorrect: isCorrect,
-        points: points,
-        idempotencyKey: queueEntryId,
-      ),
-      onSuccess: (_) async {
-        final db = await localDataSource.localDatabase.database;
-        await db.update(
-          DbTables.submissionAnswers,
-          {CommonCols.syncStatus: SyncStatus.synced.dbValue},
-          where: '${CommonCols.id} = ?',
-          whereArgs: [answerId],
-        );
-        await syncQueue.markSucceeded(queueEntryId);
-      },
-      onError: (error) async {
-        if (error is NetworkException) {
-          return;
-        }
-        final db = await localDataSource.localDatabase.database;
-        await db.update(
-          DbTables.submissionAnswers,
-          {CommonCols.syncStatus: SyncStatus.failed.dbValue},
-          where: '${CommonCols.id} = ?',
-          whereArgs: [answerId],
-        );
-        await syncQueue.markFailed(queueEntryId, error.toString());
-      },
     );
 
     return Right(MutationResult(entity: optimisticModel, status: SyncStatus.pending));

@@ -253,7 +253,6 @@ void main() {
       final result = await createAssessment(
         local,
         syncQueue,
-        remote,
         classId: 'class-1',
         title: 'New Assessment',
         description: 'A test assessment',
@@ -287,7 +286,6 @@ void main() {
       final result = await updateAssessment(
         local,
         syncQueue,
-        remote,
         assessmentId: 'a1',
         title: 'New Title',
       );
@@ -315,7 +313,6 @@ void main() {
       final result = await deleteAssessment(
         local,
         syncQueue,
-        remote,
         assessmentId: 'a1',
       );
 
@@ -339,7 +336,6 @@ void main() {
       final result = await publishAssessment(
         local,
         syncQueue,
-        remote,
         assessmentId: 'a1',
       );
 
@@ -365,7 +361,6 @@ void main() {
       final result = await unpublishAssessment(
         local,
         syncQueue,
-        remote,
         assessmentId: 'a1',
       );
 
@@ -392,7 +387,6 @@ void main() {
       final result = await reorderAllAssessments(
         local,
         syncQueue,
-        remote,
         classId: 'class-1',
         assessmentIds: ['a2', 'a1'],
       );
@@ -421,7 +415,6 @@ void main() {
       final result = await addQuestions(
         local,
         syncQueue,
-        remote,
         assessmentId: 'a1',
         questions: [
           {
@@ -458,7 +451,6 @@ void main() {
       final result = await updateQuestion(
         local,
         syncQueue,
-        remote,
         questionId: 'q1',
         data: {'question_text': 'New Q', 'points': 2},
       );
@@ -487,7 +479,6 @@ void main() {
       final result = await deleteQuestion(
         local,
         syncQueue,
-        remote,
         questionId: 'q1',
       );
 
@@ -512,7 +503,6 @@ void main() {
       final result = await reorderQuestions(
         local,
         syncQueue,
-        remote,
         assessmentId: 'a1',
         questionIds: ['q2', 'q1'],
       );
@@ -541,7 +531,6 @@ void main() {
       final result = await startAssessment(
         local,
         syncQueue,
-        remote,
         assessmentId: 'a1',
         studentId: 'student-1',
         studentName: 'Test Student',
@@ -576,7 +565,6 @@ void main() {
       final result = await submitAssessment(
         local,
         syncQueue,
-        remote,
         submissionId: 's1',
       );
 
@@ -608,7 +596,6 @@ void main() {
       final result = await saveAnswers(
         local,
         syncQueue,
-        remote,
         submissionId: 's1',
         answers: [
           {
@@ -639,7 +626,6 @@ void main() {
       final result = await releaseResults(
         local,
         syncQueue,
-        remote,
         assessmentId: 'a1',
       );
 
@@ -678,7 +664,6 @@ void main() {
       final result = await gradeEssayAnswer(
         local,
         syncQueue,
-        remote,
         answerId: 'ans-1',
         points: 4.0,
       );
@@ -713,7 +698,6 @@ void main() {
       final result = await overrideAnswer(
         local,
         syncQueue,
-        remote,
         answerId: 'ans-1',
         isCorrect: true,
         points: 5.0,

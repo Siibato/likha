@@ -36,7 +36,6 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
       ops.createMaterial(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         classId: classId,
         title: title,
         description: description,
@@ -53,7 +52,6 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
       ops.updateMaterial(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         materialId: materialId,
         title: title,
         description: description,
@@ -65,7 +63,6 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
       ops.deleteMaterial(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         materialId: materialId,
       );
 
@@ -77,7 +74,6 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
       ops.reorderMaterial(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         materialId: materialId,
         newOrderIndex: newOrderIndex,
       );
@@ -90,7 +86,6 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
       ops.reorderAllMaterials(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         classId: classId,
         materialIds: materialIds,
       );
@@ -124,7 +119,6 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
       ops.uploadFile(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         materialId: materialId,
         filePath: filePath,
         fileName: fileName,
@@ -136,7 +130,6 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
       ops.deleteFile(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         fileId: fileId,
       );
 

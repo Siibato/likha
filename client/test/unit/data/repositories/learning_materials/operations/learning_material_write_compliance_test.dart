@@ -4,9 +4,7 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
-import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
@@ -19,7 +17,6 @@ import 'package:likha/data/repositories/learning_materials/operations/reorder_ma
 import 'package:likha/data/repositories/learning_materials/operations/update_material.dart';
 import 'package:likha/data/repositories/learning_materials/operations/upload_file.dart';
 
-import '../../../../../helpers/mock_datasources.dart';
 import '../../../../../helpers/test_database.dart';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -96,7 +93,6 @@ void _assertSyncQueueEntry(
   for (final row in rows) {
     expect(row[SyncQueueCols.entityType], entityType.dbValue);
     expect(row[SyncQueueCols.operation], operation.dbValue);
-    // Note: Don't check status in DB as fireRemoteWrite may update it asynchronously
     // The returned MutationResult.status is the authoritative value
   }
 }
@@ -106,48 +102,10 @@ void _assertSyncQueueEntry(
 void main() {
   late LearningMaterialLocalDataSourceImpl local;
   late SyncQueueImpl syncQueue;
-  late MockLearningMaterialRemoteDataSource remote;
-
   setUp(() async {
     await openFreshTestDatabase();
     syncQueue = SyncQueueImpl(LocalDatabase());
     local = LearningMaterialLocalDataSourceImpl(LocalDatabase(), syncQueue);
-    remote = MockLearningMaterialRemoteDataSource();
-    when(() => remote.createMaterial(
-      classId: any(named: 'classId'),
-      data: any(named: 'data'),
-      idempotencyKey: any(named: 'idempotencyKey'),
-    )).thenThrow(NetworkException('offline'));
-    when(() => remote.updateMaterial(
-      materialId: any(named: 'materialId'),
-      data: any(named: 'data'),
-      idempotencyKey: any(named: 'idempotencyKey'),
-    )).thenThrow(NetworkException('offline'));
-    when(() => remote.deleteMaterial(
-      materialId: any(named: 'materialId'),
-      idempotencyKey: any(named: 'idempotencyKey'),
-    )).thenThrow(NetworkException('offline'));
-    when(() => remote.reorderMaterial(
-      materialId: any(named: 'materialId'),
-      newOrderIndex: any(named: 'newOrderIndex'),
-      idempotencyKey: any(named: 'idempotencyKey'),
-    )).thenThrow(NetworkException('offline'));
-    when(() => remote.reorderAllMaterials(
-      classId: any(named: 'classId'),
-      materialIds: any(named: 'materialIds'),
-      idempotencyKey: any(named: 'idempotencyKey'),
-    )).thenThrow(NetworkException('offline'));
-    when(() => remote.uploadFile(
-      materialId: any(named: 'materialId'),
-      filePath: any(named: 'filePath'),
-      fileName: any(named: 'fileName'),
-      onSendProgress: any(named: 'onSendProgress'),
-      idempotencyKey: any(named: 'idempotencyKey'),
-    )).thenThrow(NetworkException('offline'));
-    when(() => remote.deleteFile(
-      fileId: any(named: 'fileId'),
-      idempotencyKey: any(named: 'idempotencyKey'),
-    )).thenThrow(NetworkException('offline'));
   });
 
   tearDown(() async {
@@ -159,7 +117,6 @@ void main() {
       final result = await createMaterial(
         local,
         syncQueue,
-        remote,
         classId: 'class-1',
         title: 'New Material',
         description: 'A test material',
@@ -190,7 +147,6 @@ void main() {
       final result = await updateMaterial(
         local,
         syncQueue,
-        remote,
         materialId: 'm1',
         title: 'New Title',
       );
@@ -217,7 +173,6 @@ void main() {
       final result = await deleteMaterial(
         local,
         syncQueue,
-        remote,
         materialId: 'm1',
       );
 
@@ -240,7 +195,6 @@ void main() {
       final result = await reorderMaterial(
         local,
         syncQueue,
-        remote,
         materialId: 'm1',
         newOrderIndex: 5,
       );
@@ -268,7 +222,6 @@ void main() {
       final result = await reorderAllMaterials(
         local,
         syncQueue,
-        remote,
         classId: 'class-1',
         materialIds: ['m2', 'm1'],
       );
@@ -279,7 +232,6 @@ void main() {
       final rowM2 = await _getMaterialRow('m2');
       expect(rowM1![LearningMaterialsCols.orderIndex], 1);
       expect(rowM2![LearningMaterialsCols.orderIndex], 0);
-      // Note: Don't check syncStatus in DB as fireRemoteWrite may update it asynchronously
       // The returned MutationResult.status is the authoritative value
 
       final queue = await _getSyncQueueRows();
@@ -298,7 +250,6 @@ void main() {
         final result = await uploadFile(
           local,
           syncQueue,
-          remote,
           materialId: 'm1',
           filePath: '/tmp/test.pdf',
           fileName: 'test.pdf',
@@ -347,7 +298,6 @@ void main() {
       final result = await deleteFile(
         local,
         syncQueue,
-        remote,
         fileId: 'f1',
       );
 

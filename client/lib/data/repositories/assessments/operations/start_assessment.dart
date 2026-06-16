@@ -1,21 +1,16 @@
 import 'package:dartz/dartz.dart';
-import 'package:likha/core/database/db_schema.dart';
-import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/core/utils/remote_write.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
-import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
-import 'package:likha/data/models/assessments/submission_model.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:uuid/uuid.dart';
 
 ResultFuture<MutationResult<StartSubmissionResult>> startAssessment(
   AssessmentLocalDataSource localDataSource,
   SyncQueue syncQueue,
-  AssessmentRemoteDataSource remoteDataSource, {
+  {
   required String assessmentId,
   required String studentId,
   required String studentName,
@@ -96,44 +91,6 @@ ResultFuture<MutationResult<StartSubmissionResult>> startAssessment(
       submissionId: localId,
       startedAt: now,
       questions: questionMaps,
-    );
-
-    fireRemoteWrite<StartSubmissionResultModel>(
-      remote: () => remoteDataSource.startAssessment(
-        assessmentId: assessmentId,
-        idempotencyKey: queueEntryId,
-      ),
-      onSuccess: (serverResult) async {
-        final db = await localDataSource.localDatabase.database;
-        if (serverResult.submissionId != localId) {
-          await db.update(
-            DbTables.assessmentSubmissions,
-            {CommonCols.id: serverResult.submissionId},
-            where: '${CommonCols.id} = ?',
-            whereArgs: [localId],
-          );
-        }
-        await db.update(
-          DbTables.assessmentSubmissions,
-          {CommonCols.syncStatus: SyncStatus.synced.dbValue},
-          where: '${CommonCols.id} = ?',
-          whereArgs: [serverResult.submissionId],
-        );
-        await syncQueue.markSucceeded(queueEntryId);
-      },
-      onError: (error) async {
-        if (error is NetworkException) {
-          return;
-        }
-        final db = await localDataSource.localDatabase.database;
-        await db.update(
-          DbTables.assessmentSubmissions,
-          {CommonCols.syncStatus: SyncStatus.failed.dbValue},
-          where: '${CommonCols.id} = ?',
-          whereArgs: [localId],
-        );
-        await syncQueue.markFailed(queueEntryId, error.toString());
-      },
     );
 
     return Right(MutationResult(entity: result, status: SyncStatus.pending));

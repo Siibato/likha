@@ -59,7 +59,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.createAssessment(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         classId: classId,
         title: title,
         description: description,
@@ -118,7 +117,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.updateAssessment(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         assessmentId: assessmentId,
         title: title,
         description: description,
@@ -135,7 +133,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.deleteAssessment(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         assessmentId: assessmentId,
       );
 
@@ -146,7 +143,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.publishAssessment(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         assessmentId: assessmentId,
       );
 
@@ -157,7 +153,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.unpublishAssessment(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         assessmentId: assessmentId,
       );
 
@@ -168,7 +163,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.releaseResults(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         assessmentId: assessmentId,
       );
 
@@ -180,7 +174,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.reorderAllAssessments(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         classId: classId,
         assessmentIds: assessmentIds,
       );
@@ -193,7 +186,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.addQuestions(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         assessmentId: assessmentId,
         questions: questions,
       );
@@ -206,7 +198,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.updateQuestion(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         questionId: questionId,
         data: data,
       );
@@ -216,7 +207,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.deleteQuestion(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         questionId: questionId,
       );
 
@@ -228,7 +218,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.reorderQuestions(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         assessmentId: assessmentId,
         questionIds: questionIds,
       );
@@ -266,7 +255,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.overrideAnswer(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         answerId: answerId,
         isCorrect: isCorrect,
         points: points,
@@ -280,7 +268,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.gradeEssayAnswer(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         answerId: answerId,
         points: points,
       );
@@ -306,7 +293,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.startAssessment(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         assessmentId: assessmentId,
         studentId: studentId,
         studentName: studentName,
@@ -334,7 +320,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.saveAnswers(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         submissionId: submissionId,
         answers: answers,
       );
@@ -346,7 +331,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.submitAssessment(
         _localDataSource,
         _syncQueue,
-        _remoteDataSource,
         submissionId: submissionId,
       );
 

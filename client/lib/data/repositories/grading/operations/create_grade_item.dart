@@ -1,14 +1,10 @@
 import 'package:dartz/dartz.dart';
 import 'package:uuid/uuid.dart';
-import 'package:likha/core/database/db_schema.dart';
-import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/core/utils/remote_write.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
-import 'package:likha/data/datasources/remote/grading/grading_remote_datasource.dart';
 import 'package:likha/data/models/grading/grade_item_model.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 
@@ -16,8 +12,7 @@ import '_helpers.dart' as helpers;
 
 ResultFuture<MutationResult<GradeItem>> createGradeItem(
   GradingLocalDataSource localDataSource,
-  SyncQueue syncQueue,
-  GradingRemoteDataSource remoteDataSource, {
+  SyncQueue syncQueue, {
   required String classId,
   required Map<String, dynamic> data,
 }) async {
@@ -61,60 +56,6 @@ ResultFuture<MutationResult<GradeItem>> createGradeItem(
         txn: txn,
       );
     });
-
-    fireRemoteWrite<GradeItemModel>(
-      remote: () => remoteDataSource.createGradeItem(
-        classId: classId,
-        data: data,
-        idempotencyKey: queueEntryId,
-      ),
-      onSuccess: (serverModel) async {
-        try {
-          final db = await localDataSource.localDatabase.database;
-
-          if (serverModel.id != id) {
-            await db.update(
-              DbTables.gradeItems,
-              {CommonCols.id: serverModel.id},
-              where: '${CommonCols.id} = ?',
-              whereArgs: [id],
-            );
-          }
-
-          await db.update(
-            DbTables.gradeItems,
-            {CommonCols.syncStatus: SyncStatus.synced.dbValue},
-            where: '${CommonCols.id} = ?',
-            whereArgs: [serverModel.id],
-          );
-          await syncQueue.markSucceeded(queueEntryId);
-        } catch (e) {
-          if (!e.toString().contains('database_closed')) {
-            rethrow;
-          }
-        }
-      },
-      onError: (error) async {
-        if (error is NetworkException) {
-          return;
-        }
-
-        try {
-          final db = await localDataSource.localDatabase.database;
-          await db.update(
-            DbTables.gradeItems,
-            {CommonCols.syncStatus: SyncStatus.failed.dbValue},
-            where: '${CommonCols.id} = ?',
-            whereArgs: [id],
-          );
-          await syncQueue.markFailed(queueEntryId, error.toString());
-        } catch (e) {
-          if (!e.toString().contains('database_closed')) {
-            rethrow;
-          }
-        }
-      },
-    );
 
     return Right(MutationResult(entity: helpers.itemToEntity(model), status: SyncStatus.pending));
   } catch (e) {
