@@ -200,11 +200,11 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
     final scoreLookup = _buildScoreLookup();
     final qgLookup = _buildQgLookup();
 
-    final wwItems = widget.allItems.where((i) => i.component == 'ww').toList()
+    final wwItems = widget.allItems.where((i) => i.component == 'ww' || i.component == 'written_work').toList()
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
-    final ptItems = widget.allItems.where((i) => i.component == 'pt').toList()
+    final ptItems = widget.allItems.where((i) => i.component == 'pt' || i.component == 'performance_task').toList()
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
-    final qaItems = widget.allItems.where((i) => i.component == 'qa').toList()
+    final qaItems = widget.allItems.where((i) => i.component == 'qa' || i.component == 'quarterly_assessment').toList()
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
 
     final wwW = widget.config?.wwWeight ?? 40.0;

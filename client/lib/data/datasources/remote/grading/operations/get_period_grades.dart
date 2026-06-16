@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/models/grading/period_grade_model.dart';
 
@@ -10,7 +11,7 @@ Future<List<PeriodGradeModel>> getPeriodGrades(
 }) async {
   try {
     final response = await dioClient.dio.get(
-      '${dioClient.dio.options.baseUrl}/classes/$classId/grades',
+      ApiEndpoints.classGrades(classId).path,
       queryParameters: {'grading_period_number': gradingPeriodNumber},
     );
     final data = response.data['data'] ?? response.data;

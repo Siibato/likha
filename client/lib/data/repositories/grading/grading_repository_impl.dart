@@ -4,6 +4,7 @@ import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
 import 'package:likha/data/datasources/remote/grading/grading_remote_datasource.dart';
+import 'package:likha/domain/grading/entities/class_grades.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
@@ -319,5 +320,22 @@ class GradingRepositoryImpl implements GradingRepository {
         _dataEventBus,
         classId: classId,
         gradingPeriodNumber: gradingPeriodNumber,
+      );
+
+  // ===== Unified Read =====
+
+  @override
+  ResultFuture<ClassGrades> getClassGrades({
+    required String classId,
+    required int gradingPeriodNumber,
+    bool skipBackgroundRefresh = false,
+  }) =>
+      ops.getClassGrades(
+        _localDataSource,
+        _remoteDataSource,
+        _dataEventBus,
+        classId: classId,
+        gradingPeriodNumber: gradingPeriodNumber,
+        skipBackgroundRefresh: skipBackgroundRefresh,
       );
 }

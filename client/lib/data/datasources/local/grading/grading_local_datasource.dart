@@ -29,6 +29,7 @@ abstract class GradingLocalDataSource {
 
   // Grade Scores
   Future<List<GradeScoreModel>> getScoresByItem(String gradeItemId);
+  Future<List<GradeScoreModel>> getScoresForClassQuarter(String classId, int quarter);
   Future<void> saveScores(List<GradeScoreModel> scores);
   Future<void> upsertScoresByItem(
       String gradeItemId, List<GradeScoreModel> scores, {Transaction? txn});
@@ -138,6 +139,13 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
   @override
   Future<List<GradeScoreModel>> getScoresByItem(String gradeItemId) =>
       ops.getScoresByItem(localDatabase, gradeItemId);
+
+  @override
+  Future<List<GradeScoreModel>> getScoresForClassQuarter(
+    String classId,
+    int quarter,
+  ) =>
+      ops.getScoresForClassQuarter(localDatabase, classId, quarter);
 
   @override
   Future<void> saveScores(List<GradeScoreModel> scores) =>

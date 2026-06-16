@@ -5,6 +5,7 @@ export 'delete_grade_item.dart';
 export 'find_grade_item_by_source_id.dart';
 export 'get_final_grades.dart';
 export 'get_general_averages.dart';
+export 'get_class_grades.dart';
 export 'get_grade_data_batch.dart';
 export 'get_grade_items.dart';
 export 'get_grade_summary.dart';

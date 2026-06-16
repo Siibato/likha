@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::modules::grading::helpers::deped_weights::get_descriptor;
@@ -292,4 +293,6 @@ pub struct AllGradeDataResponse {
     pub grade_items: Vec<GradeItemResponse>,
     pub grade_summary: GradeSummaryResponse,
     pub quarter: i32,
+    pub scores_by_item: HashMap<String, Vec<GradeScoreResponse>>,
+    pub config: Option<GradingConfigResponse>,
 }

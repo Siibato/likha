@@ -20,6 +20,7 @@ export 'save_items.dart';
 export 'soft_delete_item.dart';
 export 'update_item_fields.dart';
 export 'get_scores_by_item.dart';
+export 'get_scores_for_class_quarter.dart';
 export 'save_scores.dart';
 export 'update_score_override.dart';
 export 'upsert_scores_by_item.dart';

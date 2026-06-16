@@ -21,6 +21,12 @@ abstract class GradingRemoteDataSource {
     String? idempotencyKey,
   });
 
+  // Unified
+  Future<Map<String, dynamic>> getClassGrades({
+    required String classId,
+    required int gradingPeriodNumber,
+  });
+
   // Grade Items
   Future<List<GradeItemModel>> getGradeItems({
     required String classId,
@@ -134,6 +140,19 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
         classId: classId,
         configs: configs,
         idempotencyKey: idempotencyKey,
+      );
+
+  // ===== Unified =====
+
+  @override
+  Future<Map<String, dynamic>> getClassGrades({
+    required String classId,
+    required int gradingPeriodNumber,
+  }) =>
+      ops.getClassGrades(
+        _dioClient,
+        classId: classId,
+        gradingPeriodNumber: gradingPeriodNumber,
       );
 
   // ===== Grade Items =====

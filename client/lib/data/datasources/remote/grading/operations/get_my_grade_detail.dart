@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
 
 Future<Map<String, dynamic>> getMyGradeDetail(
@@ -9,7 +10,7 @@ Future<Map<String, dynamic>> getMyGradeDetail(
 }) async {
   try {
     final response = await dioClient.dio.get(
-      '${dioClient.dio.options.baseUrl}/classes/$classId/my-grades/$gradingPeriodNumber',
+      ApiEndpoints.myGradeDetail(classId, gradingPeriodNumber).path,
     );
     return (response.data['data'] ?? response.data) as Map<String, dynamic>;
   } on DioException catch (e) {

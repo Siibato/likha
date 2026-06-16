@@ -448,20 +448,8 @@ pub async fn get_all_grade_data(
         return r;
     }
     let quarter = query.grading_period_number.unwrap_or(1);
-    
-    // Fetch all grade-related data in parallel
-    let grade_items_result = service.get_grade_items(class_id, quarter).await;
-    let grade_summary_result = service.get_grade_summary(class_id, quarter).await;
-    
-    match (grade_items_result, grade_summary_result) {
-        (Ok(items), Ok(summary)) => {
-            let response = AllGradeDataResponse {
-                grade_items: items,
-                grade_summary: summary,
-                quarter,
-            };
-            success_response(response, StatusCode::OK).into_response()
-        }
-        (Err(e), _) | (_, Err(e)) => e.into_response(),
+    match service.get_all_grade_data(class_id, quarter).await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
     }
 }

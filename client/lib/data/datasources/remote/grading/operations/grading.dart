@@ -1,4 +1,5 @@
 // Barrel file for grading operations
+export 'get_class_grades.dart';
 export 'get_grading_config.dart';
 export 'setup_grading.dart';
 export 'update_grading_config.dart';

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
 
 Future<List<Map<String, dynamic>>> getFinalGrades(
@@ -8,7 +9,7 @@ Future<List<Map<String, dynamic>>> getFinalGrades(
 }) async {
   try {
     final response = await dioClient.dio.get(
-      '${dioClient.dio.options.baseUrl}/classes/$classId/grades/final',
+      ApiEndpoints.classGradesFinal(classId).path,
     );
     final data = response.data['data'] ?? response.data;
     final grades = data['grades'] as List<dynamic>? ?? [];

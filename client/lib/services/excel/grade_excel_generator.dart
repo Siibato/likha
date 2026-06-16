@@ -58,9 +58,9 @@ class GradeExcelGenerator {
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
 
     // Group items by component
-    final wwItems = quarterItems.where((i) => i.component == 'ww').toList();
-    final ptItems = quarterItems.where((i) => i.component == 'pt').toList();
-    final qaItems = quarterItems.where((i) => i.component == 'qa').toList();
+    final wwItems = quarterItems.where((i) => i.component == 'ww' || i.component == 'written_work').toList();
+    final ptItems = quarterItems.where((i) => i.component == 'pt' || i.component == 'performance_task').toList();
+    final qaItems = quarterItems.where((i) => i.component == 'qa' || i.component == 'quarterly_assessment').toList();
 
     // Build score lookup
     final scoreLookup = <String, Map<String, GradeScore>>{};

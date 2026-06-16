@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/models/grading/grade_item_model.dart';
 
@@ -14,7 +15,7 @@ Future<List<GradeItemModel>> getGradeItems(
     if (component != null) queryParams['component'] = component;
 
     final response = await dioClient.dio.get(
-      '${dioClient.dio.options.baseUrl}/classes/$classId/grade-items',
+      ApiEndpoints.gradeItems(classId).path,
       queryParameters: queryParams,
     );
     final data = response.data['data'] ?? response.data;

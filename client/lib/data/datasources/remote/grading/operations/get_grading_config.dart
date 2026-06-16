@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/logging/provider_logger.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/models/grading/grade_config_model.dart';
@@ -11,7 +12,7 @@ Future<List<GradeConfigModel>> getGradingConfig(
   try {
     ProviderLogger.instance.debug('getGradingConfig called for classId: $classId');
     final response = await dioClient.dio.get(
-      '${dioClient.dio.options.baseUrl}/classes/$classId/grading-config',
+      ApiEndpoints.gradingConfig(classId).path,
     );
     ProviderLogger.instance.debug('API response: ${response.data}');
     final raw = response.data['data'] ?? response.data;

@@ -27,3 +27,6 @@ pub mod compute_general_averages;
 pub mod compute_sf9;
 pub mod compute_student_quarterly;
 pub mod get_grade_summary;
+
+// aggregate
+pub mod get_all_grade_data;

@@ -1,5 +1,4 @@
-import 'package:dio/dio.dart';
-
+import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
 
 Future<void> computeGrades(
@@ -7,12 +6,8 @@ Future<void> computeGrades(
   required String classId,
   required int gradingPeriodNumber,
 }) async {
-  try {
-    await dioClient.dio.post(
-      '${dioClient.dio.options.baseUrl}/classes/$classId/grades/compute',
-      queryParameters: {'grading_period_number': gradingPeriodNumber},
-    );
-  } on DioException catch (e) {
-    throw dioClient.handleError(e);
-  }
+  await dioClient.postVoid(
+    ApiEndpoints.classGradesCompute(classId),
+    queryParameters: {'grading_period_number': gradingPeriodNumber},
+  );
 }

@@ -1,5 +1,4 @@
-import 'package:dio/dio.dart';
-
+import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/models/grading/sf9_model.dart';
 
@@ -8,13 +7,5 @@ Future<Sf9ResponseModel> getSf10(
   required String classId,
   required String studentId,
 }) async {
-  try {
-    final response = await dioClient.dio.get(
-      '${dioClient.dio.options.baseUrl}/classes/$classId/students/$studentId/sf10',
-    );
-    final data = response.data['data'] ?? response.data;
-    return Sf9ResponseModel.fromJson(data as Map<String, dynamic>);
-  } on DioException catch (e) {
-    throw dioClient.handleError(e);
-  }
+  return await dioClient.getTyped(ApiEndpoints.sf10(classId, studentId));
 }

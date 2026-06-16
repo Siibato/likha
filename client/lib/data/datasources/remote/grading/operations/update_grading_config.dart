@@ -1,5 +1,4 @@
-import 'package:dio/dio.dart';
-
+import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
 
 Future<void> updateGradingConfig(
@@ -8,15 +7,9 @@ Future<void> updateGradingConfig(
   required List<Map<String, dynamic>> configs,
   String? idempotencyKey,
 }) async {
-  try {
-    await dioClient.dio.put(
-      '${dioClient.dio.options.baseUrl}/classes/$classId/grading-config',
-      data: {'configs': configs},
-      options: idempotencyKey != null
-          ? Options(headers: {'Idempotency-Key': idempotencyKey})
-          : null,
-    );
-  } on DioException catch (e) {
-    throw dioClient.handleError(e);
-  }
+  await dioClient.putVoid(
+    ApiEndpoints.gradingConfig(classId),
+    data: {'configs': configs},
+    headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
+  );
 }

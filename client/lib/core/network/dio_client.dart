@@ -75,11 +75,12 @@ class DioClient {
 
   /// Typed POST request that validates the server's ApiResponse<T> envelope.
   /// Throws [ServerException] if success is false.
-  Future<T> postTyped<T>(ApiEndpoint<T> endpoint, {dynamic data, Map<String, dynamic>? headers}) async {
+  Future<T> postTyped<T>(ApiEndpoint<T> endpoint, {dynamic data, Map<String, dynamic>? headers, Map<String, dynamic>? queryParameters}) async {
     try {
       final response = await _dio.post(
         endpoint.path,
         data: data,
+        queryParameters: queryParameters,
         options: headers != null ? Options(headers: headers) : null,
       );
       return ApiResponse.fromJson(response.data, endpoint.fromJson).unwrap();
@@ -90,11 +91,12 @@ class DioClient {
 
   /// Typed PUT request that validates the server's ApiResponse<T> envelope.
   /// Throws [ServerException] if success is false.
-  Future<T> putTyped<T>(ApiEndpoint<T> endpoint, {dynamic data, Map<String, dynamic>? headers}) async {
+  Future<T> putTyped<T>(ApiEndpoint<T> endpoint, {dynamic data, Map<String, dynamic>? headers, Map<String, dynamic>? queryParameters}) async {
     try {
       final response = await _dio.put(
         endpoint.path,
         data: data,
+        queryParameters: queryParameters,
         options: headers != null ? Options(headers: headers) : null,
       );
       return ApiResponse.fromJson(response.data, endpoint.fromJson).unwrap();
@@ -106,10 +108,11 @@ class DioClient {
   /// Typed DELETE request that validates the server's ApiResponse envelope.
   /// For void responses, we check the success flag but don't deserialize data.
   /// Throws [ServerException] if success is false.
-  Future<void> deleteTyped(ApiEndpoint<void> endpoint, {Map<String, dynamic>? headers}) async {
+  Future<void> deleteTyped(ApiEndpoint<void> endpoint, {Map<String, dynamic>? headers, Map<String, dynamic>? queryParameters}) async {
     try {
       final response = await _dio.delete(
         endpoint.path,
+        queryParameters: queryParameters,
         options: headers != null ? Options(headers: headers) : null,
       );
       // Deserialize the envelope but ignore the data (it's void)
@@ -125,11 +128,12 @@ class DioClient {
   /// Void POST request — validates server's ApiResponse envelope but ignores data.
   /// Use when the server returns a success/error envelope but no meaningful body.
   /// Mirrors deleteTyped — does NOT call unwrap() to avoid "Response data is null".
-  Future<void> postVoid(ApiEndpoint<void> endpoint, {dynamic data, Map<String, dynamic>? headers}) async {
+  Future<void> postVoid(ApiEndpoint<void> endpoint, {dynamic data, Map<String, dynamic>? headers, Map<String, dynamic>? queryParameters}) async {
     try {
       final response = await _dio.post(
         endpoint.path,
         data: data,
+        queryParameters: queryParameters,
         options: headers != null ? Options(headers: headers) : null,
       );
       final apiResponse = ApiResponse.fromJson(response.data, (_) {});
@@ -144,11 +148,12 @@ class DioClient {
   /// Void PUT request — validates server's ApiResponse envelope but ignores data.
   /// Use when the server returns a success/error envelope but no meaningful body.
   /// Mirrors deleteTyped — does NOT call unwrap() to avoid "Response data is null".
-  Future<void> putVoid(ApiEndpoint<void> endpoint, {dynamic data, Map<String, dynamic>? headers}) async {
+  Future<void> putVoid(ApiEndpoint<void> endpoint, {dynamic data, Map<String, dynamic>? headers, Map<String, dynamic>? queryParameters}) async {
     try {
       final response = await _dio.put(
         endpoint.path,
         data: data,
+        queryParameters: queryParameters,
         options: headers != null ? Options(headers: headers) : null,
       );
       final apiResponse = ApiResponse.fromJson(response.data, (_) {});

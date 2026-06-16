@@ -1,5 +1,4 @@
-import 'package:dio/dio.dart';
-
+import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
 
 Future<void> clearScoreOverride(
@@ -7,14 +6,8 @@ Future<void> clearScoreOverride(
   required String scoreId,
   String? idempotencyKey,
 }) async {
-  try {
-    await dioClient.dio.delete(
-      '${dioClient.dio.options.baseUrl}/grade-scores/$scoreId/override',
-      options: idempotencyKey != null
-          ? Options(headers: {'Idempotency-Key': idempotencyKey})
-          : null,
-    );
-  } on DioException catch (e) {
-    throw dioClient.handleError(e);
-  }
+  await dioClient.deleteTyped(
+    ApiEndpoints.gradeScoreOverride(scoreId),
+    headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
+  );
 }

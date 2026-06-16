@@ -1,5 +1,6 @@
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
+import 'package:likha/domain/grading/entities/class_grades.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
@@ -117,5 +118,12 @@ abstract class GradingRepository {
   ResultFuture<Map<String, dynamic>> getGradeDataBatch({
     required String classId,
     required int gradingPeriodNumber,
+  });
+
+  // Unified read
+  ResultFuture<ClassGrades> getClassGrades({
+    required String classId,
+    required int gradingPeriodNumber,
+    bool skipBackgroundRefresh = false,
   });
 }

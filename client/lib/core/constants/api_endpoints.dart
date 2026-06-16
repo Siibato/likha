@@ -18,6 +18,8 @@ import 'package:likha/data/models/learning_materials/material_detail_model.dart'
 import 'package:likha/data/models/learning_materials/material_file_model.dart';
 import 'package:likha/data/models/tos/tos_model.dart';
 import 'package:likha/data/models/tos/melcs_model.dart';
+import 'package:likha/data/models/grading/general_average_model.dart';
+import 'package:likha/data/models/grading/sf9_model.dart';
 import 'package:likha/data/models/sync/push_response_model.dart';
 import 'package:likha/data/models/sync/conflict_model.dart';
 import 'package:likha/data/models/sync/full_sync_response_model.dart';
@@ -524,6 +526,9 @@ class ApiEndpoints {
   static ApiEndpoint<Map<String, dynamic>> gradeScoreOverride(String scoreId) =>
       ApiEndpoint('/api/v1/grade-scores/$scoreId/override', (json) => json as Map<String, dynamic>);
 
+  static ApiEndpoint<Map<String, dynamic>> gradeData(String classId) =>
+      ApiEndpoint('/api/v1/classes/$classId/grade-data', (json) => json as Map<String, dynamic>);
+
   static ApiEndpoint<Map<String, dynamic>> classGrades(String classId) =>
       ApiEndpoint('/api/v1/classes/$classId/grades', (json) => json as Map<String, dynamic>);
 
@@ -546,14 +551,14 @@ class ApiEndpoints {
       '/api/v1/grading/deped-presets', (json) => json as Map<String, dynamic>);
 
   // ===== General Average (GSA) =====
-  static ApiEndpoint<Map<String, dynamic>> generalAverage(String classId) =>
-      ApiEndpoint('/api/v1/classes/$classId/grades/general-average', (json) => json);
+  static ApiEndpoint<GeneralAverageResponseModel> generalAverage(String classId) =>
+      ApiEndpoint('/api/v1/classes/$classId/grades/general-average', (json) => GeneralAverageResponseModel.fromJson(json as Map<String, dynamic>));
 
   // ===== SF9/SF10 =====
-  static ApiEndpoint<Map<String, dynamic>> sf9(String classId, String studentId) =>
-      ApiEndpoint('/api/v1/classes/$classId/sf9/$studentId', (json) => json);
-  static ApiEndpoint<Map<String, dynamic>> sf10(String classId, String studentId) =>
-      ApiEndpoint('/api/v1/classes/$classId/sf10/$studentId', (json) => json);
+  static ApiEndpoint<Sf9ResponseModel> sf9(String classId, String studentId) =>
+      ApiEndpoint('/api/v1/classes/$classId/sf9/$studentId', (json) => Sf9ResponseModel.fromJson(json as Map<String, dynamic>));
+  static ApiEndpoint<Sf9ResponseModel> sf10(String classId, String studentId) =>
+      ApiEndpoint('/api/v1/classes/$classId/sf10/$studentId', (json) => Sf9ResponseModel.fromJson(json as Map<String, dynamic>));
 
   // ===== TOS CRUD =====
   static ApiEndpoint<List<TosModel>> tosList(String classId) =>

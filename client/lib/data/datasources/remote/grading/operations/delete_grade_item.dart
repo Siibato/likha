@@ -1,5 +1,4 @@
-import 'package:dio/dio.dart';
-
+import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
 
 Future<void> deleteGradeItem(
@@ -7,14 +6,8 @@ Future<void> deleteGradeItem(
   required String id,
   String? idempotencyKey,
 }) async {
-  try {
-    await dioClient.dio.delete(
-      '${dioClient.dio.options.baseUrl}/grade-items/$id',
-      options: idempotencyKey != null
-          ? Options(headers: {'Idempotency-Key': idempotencyKey})
-          : null,
-    );
-  } on DioException catch (e) {
-    throw dioClient.handleError(e);
-  }
+  await dioClient.deleteTyped(
+    ApiEndpoints.gradeItemDetail(id),
+    headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
+  );
 }
