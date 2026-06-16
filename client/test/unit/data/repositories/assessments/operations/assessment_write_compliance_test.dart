@@ -709,7 +709,7 @@ void main() {
       _assertSyncQueueEntry(
         queue,
         count: 1,
-        entityType: SyncEntityType.assessmentSubmission,
+        entityType: SyncEntityType.assessment,
         operation: SyncOperation.overrideAnswer,
       );
       final payload = _decodePayload(queue.first);

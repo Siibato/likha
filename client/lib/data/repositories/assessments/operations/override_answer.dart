@@ -36,7 +36,7 @@ ResultFuture<MutationResult<SubmissionAnswer>> overrideAnswer(
       await syncQueue.enqueue(
         SyncQueueEntry(
           id: queueEntryId,
-          entityType: SyncEntityType.assessmentSubmission,
+          entityType: SyncEntityType.assessment,
           operation: SyncOperation.overrideAnswer,
           payload: payload,
           status: SyncStatus.pending,

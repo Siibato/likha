@@ -49,15 +49,22 @@ impl crate::modules::assessment::service::AssessmentService {
 
         let final_score = self.recalculate_final_score(submission.id).await?;
 
-        let _ = auto_populate::auto_populate_score(
+        let grade_item_id = auto_populate::auto_populate_score(
             &self.grade_computation_repo, "assessment", submission.assessment_id, submission.user_id, final_score,
-        ).await;
+        ).await?;
 
         if let Some(ref inv) = self.invalidator {
             inv.invalidate_assessment_submissions(submission.assessment_id).await;
             inv.invalidate_assessment_submission_detail(submission.id).await;
             inv.invalidate_student_results(submission.id).await;
             inv.invalidate_assessment_student_submission(submission.assessment_id, submission.user_id).await;
+            if let Some(quarter) = assessment.grading_period_number {
+                inv.invalidate_class_grades(assessment.class_id, quarter).await;
+                inv.invalidate_student_grades(assessment.class_id, submission.user_id, quarter).await;
+            }
+            if let Some(item_id) = grade_item_id {
+                inv.invalidate_item_scores(item_id).await;
+            }
         }
 
         Ok(SubmissionAnswerResponse {

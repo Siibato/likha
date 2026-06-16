@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:likha/core/database/local_database.dart';
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/core/sync/handlers/assessment_sync_handler.dart';
@@ -57,6 +58,7 @@ class SyncManager {
   final SyncLogger _log;
   final StorageService _storageService;
   final ServerClockService _serverClockService;
+  final DataEventBus _dataEventBus;
 
   bool _isSyncing = false;
   StreamSubscription<bool>? _reachabilitySubscription;
@@ -98,6 +100,7 @@ class SyncManager {
     this._log,
     this._storageService,
     this._serverClockService,
+    this._dataEventBus,
   ) {
     _upsertHelpers = SyncUpsertHelpers(_log);
     _outboundHandler = OutboundSyncHandler(
@@ -117,6 +120,7 @@ class SyncManager {
         _assignmentLocalDataSource,
         _localDatabase,
         _log,
+        _dataEventBus,
       ),
       authHandler: AuthSyncHandler(
         _authRemoteDataSource,
@@ -155,6 +159,7 @@ class SyncManager {
       _log,
       _upsertHelpers,
       _updateState,
+      _dataEventBus,
     );
   }
 

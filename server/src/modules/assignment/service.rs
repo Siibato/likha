@@ -411,6 +411,7 @@ impl AssignmentService {
             &self.class_repo,
             &self.activity_log_repo,
             &self.grade_computation_repo,
+            self.invalidator.as_ref(),
             submission_id,
             request,
             teacher_id,

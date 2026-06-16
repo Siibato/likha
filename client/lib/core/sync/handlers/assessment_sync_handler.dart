@@ -267,25 +267,106 @@ class AssessmentSyncHandler {
 
   Future<SyncResult> _handleGradeEssay(SyncQueueEntry entry) async {
     final payload = entry.payload;
+    final answerId = payload['answer_id'] as String;
+    final points = (payload['points'] as num).toDouble();
     await _remote.gradeEssayAnswer(
-      answerId: payload['answer_id'] as String,
-      points: (payload['points'] as num).toDouble(),
+      answerId: answerId,
+      points: points,
       idempotencyKey: entry.id,
     );
+    final db = await _localDatabase.database;
+    await db.update(
+      DbTables.submissionAnswers,
+      {
+        SubmissionAnswersCols.points: points,
+        SubmissionAnswersCols.overriddenAt: DateTime.now().toIso8601String(),
+        CommonCols.syncStatus: SyncStatus.synced.dbValue,
+        CommonCols.cachedAt: DateTime.now().toIso8601String(),
+      },
+      where: '${CommonCols.id} = ?',
+      whereArgs: [answerId],
+    );
+    await _recalculateAndUpdateSubmissionScore(answerId);
     return const SyncResult.success();
   }
 
   Future<SyncResult> _handleOverrideAnswer(SyncQueueEntry entry) async {
     final payload = entry.payload;
+    final answerId = payload['answer_id'] as String;
+    final isCorrect = payload['is_correct'] as bool;
+    final points = payload['points'] != null
+        ? (payload['points'] as num).toDouble()
+        : null;
     await _remote.overrideAnswer(
-      answerId: payload['answer_id'] as String,
-      isCorrect: payload['is_correct'] as bool,
-      points: payload['points'] != null
-          ? (payload['points'] as num).toDouble()
-          : null,
+      answerId: answerId,
+      isCorrect: isCorrect,
+      points: points,
       idempotencyKey: entry.id,
     );
+    final db = await _localDatabase.database;
+    final answerUpdates = <String, dynamic>{
+      SubmissionAnswersCols.overriddenAt: DateTime.now().toIso8601String(),
+      CommonCols.syncStatus: SyncStatus.synced.dbValue,
+      CommonCols.cachedAt: DateTime.now().toIso8601String(),
+    };
+    if (points != null) {
+      answerUpdates[SubmissionAnswersCols.points] = points;
+    }
+    await db.update(
+      DbTables.submissionAnswers,
+      answerUpdates,
+      where: '${CommonCols.id} = ?',
+      whereArgs: [answerId],
+    );
+    await db.update(
+      DbTables.submissionAnswerItems,
+      {
+        SubmissionAnswerItemsCols.isCorrect: isCorrect ? 1 : 0,
+        CommonCols.cachedAt: DateTime.now().toIso8601String(),
+      },
+      where: '${SubmissionAnswerItemsCols.submissionAnswerId} = ?',
+      whereArgs: [answerId],
+    );
+    await _recalculateAndUpdateSubmissionScore(answerId);
     return const SyncResult.success();
+  }
+
+  /// Recalculates the total earned points for the submission that owns
+  /// [answerId] and updates the parent [assessment_submissions] row.
+  Future<void> _recalculateAndUpdateSubmissionScore(String answerId) async {
+    final db = await _localDatabase.database;
+    final rows = await db.query(
+      DbTables.submissionAnswers,
+      columns: [SubmissionAnswersCols.submissionId],
+      where: '${CommonCols.id} = ?',
+      whereArgs: [answerId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return;
+    final submissionId = rows.first[SubmissionAnswersCols.submissionId] as String;
+
+    final answerRows = await db.query(
+      DbTables.submissionAnswers,
+      columns: [SubmissionAnswersCols.points],
+      where: '${SubmissionAnswersCols.submissionId} = ?',
+      whereArgs: [submissionId],
+    );
+    double totalEarned = 0.0;
+    for (final row in answerRows) {
+      final p = row[SubmissionAnswersCols.points] as num?;
+      if (p != null) totalEarned += p.toDouble();
+    }
+
+    await db.update(
+      DbTables.assessmentSubmissions,
+      {
+        AssessmentSubmissionsCols.earnedPoints: totalEarned,
+        CommonCols.syncStatus: SyncStatus.synced.dbValue,
+        CommonCols.updatedAt: DateTime.now().toIso8601String(),
+      },
+      where: '${CommonCols.id} = ?',
+      whereArgs: [submissionId],
+    );
   }
 
   Future<SyncResult> _handleReorder(SyncQueueEntry entry) async {

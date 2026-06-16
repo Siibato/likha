@@ -7,12 +7,14 @@ use crate::modules::grading::repository::GradeComputationRepository;
 use crate::modules::assignment::repository::AssignmentRepository;
 use crate::modules::grading::helpers::auto_populate;
 use crate::modules::assignment::service_operations::build_submission_response::build_submission_response;
+use crate::cache::CacheInvalidator;
 
 pub async fn grade_submission(
     assignment_repo: &AssignmentRepository,
     class_repo: &ClassRepository,
     activity_log_repo: &ActivityLogRepository,
     grade_computation_repo: &GradeComputationRepository,
+    invalidator: Option<&CacheInvalidator>,
     submission_id: Uuid,
     request: GradeSubmissionRequest,
     teacher_id: Uuid,
@@ -56,9 +58,20 @@ pub async fn grade_submission(
         submission_id, request.score, request.feedback, Some(teacher_id),
     ).await?;
 
-    let _ = auto_populate::auto_populate_score(
+    let grade_item_id = auto_populate::auto_populate_score(
         grade_computation_repo, "assignment", submission.assignment_id, submission.student_id, request.score as f64,
-    ).await;
+    ).await?;
+
+    if let Some(inv) = invalidator {
+        inv.invalidate_assignment_detail(submission.assignment_id).await;
+        if let Some(quarter) = assignment.grading_period_number {
+            inv.invalidate_class_grades(assignment.class_id, quarter).await;
+            inv.invalidate_student_grades(assignment.class_id, submission.student_id, quarter).await;
+        }
+        if let Some(item_id) = grade_item_id {
+            inv.invalidate_item_scores(item_id).await;
+        }
+    }
 
     let _ = activity_log_repo.create_log(
         teacher_id,

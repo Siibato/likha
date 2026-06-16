@@ -378,6 +378,7 @@ Future<void> init() async {
       sl<SyncLogger>(), // SyncLogger
       sl<StorageService>(), // StorageService
       sl<ServerClockService>(), // ServerClockService
+      sl<DataEventBus>(), // DataEventBus
     ),
   );
 

@@ -33,7 +33,7 @@ ResultFuture<MutationResult<SubmissionAnswer>> gradeEssayAnswer(
       await syncQueue.enqueue(
         SyncQueueEntry(
           id: queueEntryId,
-          entityType: SyncEntityType.assessmentSubmission,
+          entityType: SyncEntityType.assessment,
           operation: SyncOperation.gradeEssay,
           payload: payload,
           status: SyncStatus.pending,

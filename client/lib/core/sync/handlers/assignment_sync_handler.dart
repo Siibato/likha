@@ -1,6 +1,7 @@
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/logging/sync_logger.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/sync_result.dart';
@@ -20,12 +21,14 @@ class AssignmentSyncHandler {
   final AssignmentLocalDataSource _local;
   final LocalDatabase _localDatabase;
   final SyncLogger _log;
+  final DataEventBus _dataEventBus;
 
   AssignmentSyncHandler(
     this._remote,
     this._local,
     this._localDatabase,
     this._log,
+    this._dataEventBus,
   );
 
   Future<SyncResult> handle(SyncQueueEntry entry) async {
@@ -275,6 +278,20 @@ class AssignmentSyncHandler {
       idempotencyKey: entry.id,
     );
     await _local.cacheSubmissionDetail(model);
+    final db = await _localDatabase.database;
+    final assignmentRows = await db.query(
+      DbTables.assignments,
+      columns: [AssignmentsCols.classId],
+      where: '${CommonCols.id} = ?',
+      whereArgs: [model.assignmentId],
+      limit: 1,
+    );
+    if (assignmentRows.isNotEmpty) {
+      final classId = assignmentRows.first[AssignmentsCols.classId] as String?;
+      if (classId != null && classId.isNotEmpty) {
+        _dataEventBus.notifyGradesChanged(classId);
+      }
+    }
     return const SyncResult.success();
   }
 

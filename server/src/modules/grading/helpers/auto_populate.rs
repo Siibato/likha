@@ -44,11 +44,12 @@ pub async fn auto_populate_score(
     source_id: Uuid,
     student_id: Uuid,
     score: f64,
-) -> AppResult<()> {
+) -> AppResult<Option<uuid::Uuid>> {
     let grade_item = repo.find_by_source(source_type, &source_id.to_string()).await?;
     if let Some(item) = grade_item {
         repo.upsert_score(item.id, student_id, Some(score), true).await?;
+        Ok(Some(item.id))
+    } else {
+        Ok(None)
     }
-
-    Ok(())
 }
