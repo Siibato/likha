@@ -34,7 +34,7 @@ dev-web:
 	@cd $(CLIENT_DIR) && flutter run -d chrome
 
 dev-desktop:
-	@if [ "$(shell uname)" = "Darwin" ]; then cd $(CLIENT_DIR) && flutter run -d macos; else cd $(CLIENT_DIR) && flutter run -d windows; fi
+	@cd $(CLIENT_DIR) && flutter run -d chrome
 
 db-reset:
 	@cd $(SERVER_DIR) && cargo run -- reset-db
@@ -49,7 +49,7 @@ db-seed-e2e:
 	@cd $(SERVER_DIR) && DATABASE_URL="$(TEST_DB_URL)" cargo run -- reset-db && DATABASE_URL="$(TEST_DB_URL)" cargo run -- seed-e2e
 
 db-seed-realistic:
-	@cd $(SERVER_DIR) && cargo run -- seed-realistic
+	@cd $(SERVER_DIR) && cargo run -- reset-db && cargo run -- seed-realistic
 
 db-delete:
 	@cd $(SERVER_DIR) && cargo run -- delete-db

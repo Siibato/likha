@@ -1,4 +1,4 @@
-use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
+use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
 
 use crate::seed::specs::SchoolSettingsSpec;
 use crate::utils::AppError;
@@ -8,15 +8,30 @@ pub async fn insert_school_settings(
     db: &DatabaseConnection,
     spec: &SchoolSettingsSpec,
 ) -> Result<(), AppError> {
-    let model = school_settings::ActiveModel {
-        id: Set(spec.id),
-        school_code: Set(spec.school_code.clone()),
-        school_name: Set(spec.school_name.clone()),
-        school_region: Set(spec.school_region.clone()),
-        school_division: Set(spec.school_division.clone()),
-        school_year: Set(spec.school_year.clone()),
-        updated_at: Set(spec.updated_at),
-    };
-    model.insert(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+    if let Some(existing) = school_settings::Entity::find_by_id(spec.id)
+        .one(db)
+        .await
+        .map_err(|e| AppError::InternalServerError(e.to_string()))?
+    {
+        let mut model: school_settings::ActiveModel = existing.into();
+        model.school_code = Set(spec.school_code.clone());
+        model.school_name = Set(spec.school_name.clone());
+        model.school_region = Set(spec.school_region.clone());
+        model.school_division = Set(spec.school_division.clone());
+        model.school_year = Set(spec.school_year.clone());
+        model.updated_at = Set(spec.updated_at);
+        model.update(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+    } else {
+        let model = school_settings::ActiveModel {
+            id: Set(spec.id),
+            school_code: Set(spec.school_code.clone()),
+            school_name: Set(spec.school_name.clone()),
+            school_region: Set(spec.school_region.clone()),
+            school_division: Set(spec.school_division.clone()),
+            school_year: Set(spec.school_year.clone()),
+            updated_at: Set(spec.updated_at),
+        };
+        model.insert(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+    }
     Ok(())
 }

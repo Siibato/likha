@@ -2,8 +2,9 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:sqflite_sqlcipher/sqflite.dart';
+import 'package:sqflite_common/sqflite.dart' hide openDatabase;
 import 'package:likha/core/database/db_schema.dart';
+import 'package:likha/core/database/open_database.dart';
 import 'package:likha/core/logging/core_logger.dart';
 
 /// Local SQLite Database for offline-first functionality
@@ -55,6 +56,7 @@ class LocalDatabase {
   static const _passwordStorageKey = 'db_cipher_key';
 
   Future<String> _getOrCreateDbPassword() async {
+    if (kIsWeb) return '';
     const storage = FlutterSecureStorage(
       aOptions: AndroidOptions(encryptedSharedPreferences: true),
     );
@@ -75,13 +77,35 @@ class LocalDatabase {
   }
 
   Future<Database> _initDatabase() async {
-    final dbPath = await getDatabasesPath();
+    final dbPath = await databaseFactory.getDatabasesPath();
     final dbFilePath = '$dbPath/likha.db';
 
     Future<Database> doOpen() async {
+      if (kIsWeb) {
+        return databaseFactory.openDatabase(
+          dbFilePath,
+          options: OpenDatabaseOptions(
+            version: 4,
+            onCreate: _createTables,
+            onUpgrade: _upgradeDatabase,
+            onDowngrade: _downgradeDatabase,
+            onOpen: (db) async {
+              try {
+                await db.execute('PRAGMA foreign_keys = ON');
+                await db.execute('PRAGMA synchronous = NORMAL');
+                await db.execute('PRAGMA cache_size = 10000');
+                await db.execute('PRAGMA temp_store = MEMORY');
+              } catch (e) {
+                CoreLogger.instance.warn('Failed to set database PRAGMA settings: $e');
+              }
+            },
+            singleInstance: true,
+          ),
+        );
+      }
       return openDatabase(
         dbFilePath,
-        password: kIsWeb ? null : _dbPassword,
+        password: _dbPassword,
         version: 4,
         onCreate: _createTables,
         onUpgrade: _upgradeDatabase,
@@ -98,7 +122,6 @@ class LocalDatabase {
           // MigrationRunner disabled - all migrations consolidated into _createTables
           // Future migrations will be handled via onUpgrade with version increments
         },
-        // Configure database for better performance
         singleInstance: true,
       );
     }
@@ -115,7 +138,7 @@ class LocalDatabase {
           'Deleting $dbFilePath and recreating.',
         );
         try {
-          await deleteDatabase(dbFilePath);
+          await databaseFactory.deleteDatabase(dbFilePath);
         } catch (_) {
           // ignore cleanup errors
         }

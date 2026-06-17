@@ -393,6 +393,7 @@ fn build_cors_layer(config: &server::config::ServerConfig) -> CorsLayer {
 
     if config.allowed_origins.is_empty() {
         return CorsLayer::new()
+            .allow_origin(tower_http::cors::AllowOrigin::mirror_request())
             .allow_methods(allowed_methods)
             .allow_headers(allowed_headers)
             .max_age(Duration::from_secs(3600));

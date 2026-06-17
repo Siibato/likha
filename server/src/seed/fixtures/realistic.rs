@@ -89,7 +89,7 @@ pub fn realistic_users(ctx: &SeedContext) -> Vec<UserSpec> {
 pub fn realistic_school_settings(ctx: &SeedContext) -> SchoolSettingsSpec {
     SchoolSettingsSpec {
         id: 1,
-        school_code: "LIKHA01".into(),
+        school_code: "LIKHA1".into(),
         school_name: Some("Likha National High School".into()),
         school_region: Some("NCR".into()),
         school_division: Some("Division of City Schools".into()),

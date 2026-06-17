@@ -19,6 +19,7 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
+  <meta name="grammarly-disable-editor" content="true">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -31,8 +32,63 @@
 
   <title>mobile</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    ::-webkit-spelling-error { text-decoration: none !important; }
+    ::-webkit-grammar-error { text-decoration: none !important; }
+    ::spelling-error { text-decoration: none !important; }
+    ::grammar-error { text-decoration: none !important; }
+    * { text-decoration: none !important; }
+    *::before { text-decoration: none !important; }
+    *::after { text-decoration: none !important; }
+    grammarly-extension,
+    grammarly-desktop-integration,
+    grammarly-popups,
+    grammarly-underlines,
+    grammarly-card,
+    data-grammarly-shadow-root,
+    [data-grammarly-part] { display: none !important; }
+    flt-text, flt-paragraph, flt-span { text-decoration: none !important; }
+  </style>
 </head>
-<body>
+<body spellcheck="false" data-gramm="false" data-lt-active="false">
+  <script>
+    (function () {
+      function disableSpellCheck(root) {
+        if (!root || !root.querySelectorAll) return;
+        var nodes = root.querySelectorAll('*');
+        for (var i = 0; i < nodes.length; i++) {
+          var el = nodes[i];
+          el.setAttribute('spellcheck', 'false');
+          el.setAttribute('autocorrect', 'off');
+          el.setAttribute('autocomplete', 'off');
+          el.setAttribute('autocapitalize', 'off');
+          el.setAttribute('data-gramm', 'false');
+          el.setAttribute('data-lt-active', 'false');
+          if (el.shadowRoot) {
+            disableSpellCheck(el.shadowRoot);
+          }
+        }
+      }
+      disableSpellCheck(document.body);
+      var mo = new MutationObserver(function (mutations) {
+        mutations.forEach(function (m) {
+          m.addedNodes.forEach(function (node) {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              disableSpellCheck(node);
+              if (node.shadowRoot) {
+                disableSpellCheck(node.shadowRoot);
+              }
+            }
+          });
+        });
+      });
+      mo.observe(document.body, { childList: true, subtree: true });
+      // Periodic fallback to catch anything MutationObserver misses
+      setInterval(function () {
+        disableSpellCheck(document.body);
+      }, 500);
+    })();
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

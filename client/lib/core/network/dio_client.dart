@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:dio/io.dart';
 import 'package:likha/core/config/app_config.dart';
 import 'package:likha/core/config/api_config.dart';
@@ -29,8 +30,14 @@ class DioClient {
       ..options.baseUrl = ApiConstants.baseUrl
       ..options.connectTimeout = ApiConstants.connectTimeout
       ..options.receiveTimeout = ApiConstants.receiveTimeout
-      ..options.responseType = ResponseType.json
-      ..httpClientAdapter = _buildHttpClientAdapter(AppConfig.isDev)
+      ..options.responseType = ResponseType.json;
+
+    final adapter = _buildHttpClientAdapter(AppConfig.isDev);
+    if (adapter != null) {
+      _dio.httpClientAdapter = adapter;
+    }
+
+    _dio
       ..interceptors.add(ServerReachabilityInterceptor(_serverReachabilityService))
       ..interceptors.add(LogInterceptor(
         request: true,
@@ -48,7 +55,9 @@ class DioClient {
   /// the local Raspberry Pi without installing the school CA on the device.
   /// In production, the OS performs normal certificate validation — the school
   /// CA must be installed on the device once via the setup instructions.
-  HttpClientAdapter _buildHttpClientAdapter(bool devMode) {
+  /// Returns null on web so Dio uses the browser's default fetch/XHR adapter.
+  HttpClientAdapter? _buildHttpClientAdapter(bool devMode) {
+    if (kIsWeb) return null;
     if (!devMode) return IOHttpClientAdapter();
     return IOHttpClientAdapter(
       createHttpClient: () => HttpClient()
