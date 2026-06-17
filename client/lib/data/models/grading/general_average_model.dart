@@ -10,7 +10,7 @@ class GeneralAverageResponseModel extends GeneralAverageResponse {
     return GeneralAverageResponseModel(
       classId: json['class_id'] as String,
       students: (json['students'] as List<dynamic>? ?? [])
-          .map((e) => StudentGeneralAverageModel.fromJson(e as Map<String, dynamic>))
+          .map((e) => StudentGeneralAverageModel.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList(),
     );
   }
@@ -39,7 +39,7 @@ class StudentGeneralAverageModel extends StudentGeneralAverage {
       generalAverage: json['general_average'] as int?,
       subjectCount: json['subject_count'] as int? ?? 0,
       subjects: (json['subjects'] as List<dynamic>? ?? [])
-          .map((e) => SubjectGradeModel.fromJson(e as Map<String, dynamic>))
+          .map((e) => SubjectGradeModel.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList(),
     );
   }

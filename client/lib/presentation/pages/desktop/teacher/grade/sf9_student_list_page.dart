@@ -21,13 +21,13 @@ class _Sf9StudentListPageState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(sf9Provider.notifier).loadStudents(widget.classId);
+      ref.read(generalAveragesProvider.notifier).loadStudents(widget.classId);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(sf9Provider);
+    final state = ref.watch(generalAveragesProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
@@ -43,7 +43,7 @@ class _Sf9StudentListPageState
     );
   }
 
-  Widget _buildBody(Sf9State state) {
+  Widget _buildBody(GeneralAveragesState state) {
     if (state.isLoading) {
       return const Center(
         child: CircularProgressIndicator(

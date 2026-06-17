@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_navigation_rail.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
-import 'package:likha/presentation/pages/desktop/teacher/class/class_student_list_page.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessments_section.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assignment/assignments_section.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/class/class_overview_panel.dart';
@@ -12,6 +11,7 @@ import 'package:likha/presentation/widgets/desktop/teacher/material/materials_se
 import 'package:likha/presentation/widgets/desktop/teacher/grade/sf9_section.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/class/student_data_table.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/tos/tos_section.dart';
+import 'package:likha/domain/classes/entities/class_entity.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
@@ -32,10 +32,9 @@ class TeacherClassDetailPage extends ConsumerStatefulWidget {
 class _TeacherClassDetailPageState
     extends ConsumerState<TeacherClassDetailPage> {
   int _selectedIndex = 0;
-  final Set<int> _loadedTabs = {0};
+  Set<int> _loadedTabs = {0};
 
   static const _baseSectionTitles = [
-    'Overview',
     'Students',
     'Assessments',
     'Assignments',
@@ -44,11 +43,6 @@ class _TeacherClassDetailPageState
   ];
 
   static const _baseDestinations = [
-    DesktopNavDestination(
-      icon: Icons.info_outline_rounded,
-      selectedIcon: Icons.info_rounded,
-      label: 'Overview',
-    ),
     DesktopNavDestination(
       icon: Icons.people_outline_rounded,
       selectedIcon: Icons.people_rounded,
@@ -84,6 +78,20 @@ class _TeacherClassDetailPageState
     });
   }
 
+  @override
+  void didUpdateWidget(TeacherClassDetailPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.classId != widget.classId) {
+      setState(() {
+        _selectedIndex = 0;
+        _loadedTabs = {0};
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(classProvider.notifier).loadClassDetail(widget.classId);
+      });
+    }
+  }
+
   void _onSectionChanged(int index) {
     setState(() => _selectedIndex = index);
 
@@ -91,31 +99,31 @@ class _TeacherClassDetailPageState
     _loadedTabs.add(index);
 
     switch (index) {
-      case 2:
+      case 1:
         ref
             .read(teacherAssessmentProvider.notifier)
             .loadAssessments(widget.classId);
         break;
-      case 3:
+      case 2:
         ref
             .read(assignmentProvider.notifier)
             .loadAssignments(widget.classId);
         break;
-      case 4:
+      case 3:
         ref
             .read(learningMaterialProvider.notifier)
             .loadMaterials(widget.classId);
         break;
-      case 5:
+      case 4:
         ref.read(tosProvider.notifier).loadTosList(widget.classId);
         break;
-      case 6:
+      case 5:
         // Grades tab (always present)
         // No additional loading needed - grades are loaded when needed
         break;
-      case 7:
+      case 6:
         // SF9 tab (only for advisory classes)
-        ref.read(sf9Provider.notifier).loadStudents(widget.classId);
+        ref.read(generalAveragesProvider.notifier).loadStudents(widget.classId);
         break;
     }
   }
@@ -125,7 +133,9 @@ class _TeacherClassDetailPageState
     final classState = ref.watch(classProvider);
     final detail = classState.currentClassDetail;
 
-    final classEntity = classState.classes.cast<dynamic>().firstWhere(
+    final classEntity = classState.classes
+        .cast<ClassEntity?>()
+        .firstWhere(
           (c) => c?.id == widget.classId,
           orElse: () => null,
         );
@@ -133,14 +143,14 @@ class _TeacherClassDetailPageState
 
     // Build dynamic destinations list
     final destinations = [..._baseDestinations];
-    
+
     // Always add Grades tab
     destinations.add(const DesktopNavDestination(
       icon: Icons.grading_outlined,
       selectedIcon: Icons.grading_rounded,
       label: 'Grades',
     ));
-    
+
     // Add SF9 tab for advisory classes
     if (isAdvisory) {
       destinations.add(const DesktopNavDestination(
@@ -150,13 +160,17 @@ class _TeacherClassDetailPageState
       ));
     }
 
+    // Clamp selected index to valid range in case isAdvisory flips while on SF9 tab
+    final maxIndex = destinations.length - 1;
+    final selectedIndex = _selectedIndex.clamp(0, maxIndex);
+
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
       body: Row(
         children: [
           // Left panel
           DesktopNavigationRail(
-            selectedIndex: _selectedIndex,
+            selectedIndex: selectedIndex,
             destinations: destinations,
             onDestinationSelected: _onSectionChanged,
             header: Padding(
@@ -202,29 +216,23 @@ class _TeacherClassDetailPageState
                     ),
                   )
                 : IndexedStack(
-                    index: _selectedIndex,
+                    index: selectedIndex,
                     children: [
-                      // Overview
+                      // Students (with overview panel above)
                       DesktopPageScaffold(
                         title: _baseSectionTitles[0],
-                        body: ClassOverviewPanel(
-                          detail: detail,
-                          classEntity: classEntity,
-                          onViewStudents: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ClassStudentListPage(
-                                  classId: widget.classId),
+                        body: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ClassOverviewPanel(
+                              detail: detail,
+                              classEntity: classEntity,
                             ),
-                          ),
-                        ),
-                      ),
-
-                      // Students
-                      DesktopPageScaffold(
-                        title: _baseSectionTitles[1],
-                        body: StudentDataTable(
-                          students: detail.students,
+                            const SizedBox(height: 24),
+                            StudentDataTable(
+                              students: detail.students,
+                            ),
+                          ],
                         ),
                       ),
 
@@ -241,7 +249,10 @@ class _TeacherClassDetailPageState
                       TosSection(classId: widget.classId),
 
                       // Grades (always present)
-                      GradesSection(classId: widget.classId),
+                      GradesSection(
+                        classId: widget.classId,
+                        isActive: selectedIndex == 5,
+                      ),
 
                       // SF9 (only for advisory classes)
                       if (isAdvisory)

@@ -1,1 +1,1 @@
-export 'package:sqflite_sqlcipher/sqflite.dart' show openDatabase;
+export 'package:sqflite_sqlcipher/sqflite.dart' show openDatabase, databaseFactory;

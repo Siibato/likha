@@ -75,7 +75,7 @@ class GradingConfigNotifier extends StateNotifier<GradingConfigState> {
 
   Future<void> loadConfig(String classId) async {
     ProviderLogger.instance.debug('loadConfig called for classId: $classId');
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: state.configs.isEmpty, error: null);
     ProviderLogger.instance.debug('Loading grading config...');
     final result = await _getGradingConfig(classId);
     result.fold(
@@ -191,7 +191,7 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
 
   Future<void> loadItems(String classId) async {
     ProviderLogger.instance.log('loadItems() - starting for classId: $classId, quarter: ${state.currentQuarter}, component: ${state.currentComponent}');
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: state.items.isEmpty, error: null);
     final result = await _getGradeItems(GetGradeItemsParams(
       classId: classId,
       gradingPeriodNumber: state.currentQuarter,
@@ -515,7 +515,7 @@ class GradeScoresNotifier extends StateNotifier<GradeScoresState> {
   }
 
   Future<void> loadScoresForItems(List<String> gradeItemIds) async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: state.scoresByItem.isEmpty, error: null);
     final Map<String, List<GradeScore>> allScores = {};
 
     for (final itemId in gradeItemIds) {
@@ -673,7 +673,7 @@ class PeriodGradesNotifier extends StateNotifier<PeriodGradesState> {
   }
 
   Future<void> loadSummary(String classId, int quarter) async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: state.summary == null || state.summary!.isEmpty, error: null);
     final result = await _getGradeSummary(classId: classId, gradingPeriodNumber: quarter);
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),

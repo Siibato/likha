@@ -5,7 +5,6 @@ import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/presentation/pages/mobile/teacher/tos/tos_edit_page.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_action_chip.dart';
-import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_print_preview.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 
 class TosDetailActionChips extends ConsumerWidget {
@@ -33,16 +32,6 @@ class TosDetailActionChips extends ConsumerWidget {
             MaterialPageRoute(
               builder: (_) => EditTosPage(tos: tos),
             ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        TosActionChip(
-          icon: Icons.print_outlined,
-          label: 'Print',
-          onTap: () => TosPrintService.printTos(
-            context,
-            tos,
-            competencies,
           ),
         ),
         const SizedBox(width: 8),

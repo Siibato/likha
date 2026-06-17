@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
@@ -69,7 +70,6 @@ class GradeSpreadsheet extends StatefulWidget {
 }
 
 class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
-  // Score inline editing
   String? _editingKey;
   String? _editingStudentId;
   String? _editingItemId;
@@ -77,10 +77,15 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
   final _scoreCtrl = TextEditingController();
   final _scoreFocus = FocusNode();
 
-  // QG inline editing
   String? _editingQgStudentId;
   final _qgCtrl = TextEditingController();
   final _qgFocus = FocusNode();
+
+  final _horizontalScrollCtrl = ScrollController();
+
+  final _verticalScrollCtrl = ScrollController();
+
+  bool _isPanning = false;
 
   GradeSpreadsheetDimensions get _d => widget.dimensions;
 
@@ -101,6 +106,8 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
     _scoreFocus.dispose();
     _qgCtrl.dispose();
     _qgFocus.dispose();
+    _horizontalScrollCtrl.dispose();
+    _verticalScrollCtrl.dispose();
     super.dispose();
   }
 
@@ -198,7 +205,6 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
     return lookup;
   }
 
-  // Section width = N score columns + Total + HS + % + WS
   double _secW(int n) =>
       n * _d.scoreColW + _d.sumColW * 2 + _d.pctColW * 2;
 
@@ -226,11 +232,15 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
     final summaryW = _d.initGradeW + _d.qgColW + _d.remarksW;
     final scrollW = wwSecW + ptSecW + qaSecW + summaryW;
 
-    return SingleChildScrollView(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Frozen name column ─────────────────────────────────────────────
+    final isDesktopOrWeb = defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.linux ||
+        kIsWeb;
+
+    Widget spreadsheet = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Frozen name column ─────────────────────────────────────────────
           SizedBox(
             width: _d.nameColW,
             child: Column(
@@ -298,6 +308,7 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
           // ── Scrollable columns ─────────────────────────────────────────────
           Expanded(
             child: SingleChildScrollView(
+              controller: _horizontalScrollCtrl,
               scrollDirection: Axis.horizontal,
               child: SizedBox(
                 width: scrollW,
@@ -423,7 +434,77 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
             ),
           ),
         ],
-      ),
+      );
+
+    if (isDesktopOrWeb) {
+      spreadsheet = GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onPanStart: (_) {
+          if (_editingKey != null || _editingQgStudentId != null) return;
+          setState(() => _isPanning = true);
+        },
+        onPanUpdate: (details) {
+          if (_editingKey != null || _editingQgStudentId != null) return;
+          if (_horizontalScrollCtrl.hasClients) {
+            final newOffset = (_horizontalScrollCtrl.offset - details.delta.dx).clamp(
+              _horizontalScrollCtrl.position.minScrollExtent,
+              _horizontalScrollCtrl.position.maxScrollExtent,
+            );
+            _horizontalScrollCtrl.jumpTo(newOffset);
+          }
+          if (_verticalScrollCtrl.hasClients) {
+            final newOffset = (_verticalScrollCtrl.offset - details.delta.dy).clamp(
+              _verticalScrollCtrl.position.minScrollExtent,
+              _verticalScrollCtrl.position.maxScrollExtent,
+            );
+            _verticalScrollCtrl.jumpTo(newOffset);
+          }
+        },
+        onPanEnd: (_) {
+          if (_isPanning) setState(() => _isPanning = false);
+        },
+        onPanCancel: () {
+          if (_isPanning) setState(() => _isPanning = false);
+        },
+        child: spreadsheet,
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final viewportW = constraints.maxWidth - _d.nameColW - 1;
+        return Column(
+          children: [
+            Expanded(
+              child: RawScrollbar(
+                controller: _verticalScrollCtrl,
+                thumbVisibility: true,
+                thickness: 12,
+                radius: const Radius.circular(6),
+                thumbColor: Colors.grey.withValues(alpha: 0.45),
+                trackColor: Colors.transparent,
+                child: SingleChildScrollView(
+                  controller: _verticalScrollCtrl,
+                  child: spreadsheet,
+                ),
+              ),
+            ),
+            if (scrollW > viewportW)
+              Row(
+                children: [
+                  SizedBox(width: _d.nameColW + 1),
+                  Expanded(
+                    child: _HorizontalScrollbar(
+                      controller: _horizontalScrollCtrl,
+                      contentWidth: scrollW,
+                      viewportWidth: viewportW,
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -481,5 +562,124 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
         bold: true,
       ),
     ];
+  }
+}
+
+/// A simple custom horizontal scrollbar track + thumb that's always visible.
+class _HorizontalScrollbar extends StatefulWidget {
+  final ScrollController controller;
+  final double contentWidth;
+  final double viewportWidth;
+
+  const _HorizontalScrollbar({
+    required this.controller,
+    required this.contentWidth,
+    required this.viewportWidth,
+  });
+
+  @override
+  State<_HorizontalScrollbar> createState() => _HorizontalScrollbarState();
+}
+
+class _HorizontalScrollbarState extends State<_HorizontalScrollbar> {
+  double _thumbLeft = 0;
+  double _thumbWidth = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateThumb());
+  }
+
+  @override
+  void didUpdateWidget(covariant _HorizontalScrollbar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.viewportWidth != widget.viewportWidth ||
+        oldWidget.contentWidth != widget.contentWidth) {
+      _updateThumb();
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onScroll);
+    super.dispose();
+  }
+
+  void _onScroll() => _updateThumb();
+
+  void _updateThumb() {
+    if (!mounted) return;
+    final maxScroll = widget.controller.position.maxScrollExtent;
+    final current = widget.controller.offset;
+    final ratio = maxScroll > 0 ? current / maxScroll : 0;
+    final thumbW = (widget.viewportWidth / widget.contentWidth).clamp(0.05, 1.0) * widget.viewportWidth;
+    final maxThumbLeft = widget.viewportWidth - thumbW;
+    final left = ratio * maxThumbLeft;
+    setState(() {
+      _thumbLeft = left;
+      _thumbWidth = thumbW;
+    });
+  }
+
+  void _onTrackTap(double localDx) {
+    final thumbCenter = _thumbLeft + _thumbWidth / 2;
+    final maxScroll = widget.controller.position.maxScrollExtent;
+    if (localDx > thumbCenter) {
+      widget.controller.jumpTo((widget.controller.offset + widget.viewportWidth * 0.8).clamp(0.0, maxScroll));
+    } else {
+      widget.controller.jumpTo((widget.controller.offset - widget.viewportWidth * 0.8).clamp(0.0, maxScroll));
+    }
+  }
+
+  void _onThumbDrag(double delta) {
+    final maxScroll = widget.controller.position.maxScrollExtent;
+    final maxThumbLeft = widget.viewportWidth - _thumbWidth;
+    final scrollDelta = maxScroll > 0 && maxThumbLeft > 0
+        ? delta * maxScroll / maxThumbLeft
+        : 0.0;
+    widget.controller.jumpTo((widget.controller.offset + scrollDelta).clamp(0.0, maxScroll));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapUp: (details) => _onTrackTap(details.localPosition.dx),
+      child: Container(
+        height: 12,
+        color: Colors.transparent,
+        child: Stack(
+          children: [
+            // Subtle track line
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: AppColors.borderLight.withValues(alpha: 0.5)),
+                  ),
+                ),
+              ),
+            ),
+            // Thumb
+            Positioned(
+              left: _thumbLeft,
+              top: 2,
+              bottom: 2,
+              child: GestureDetector(
+                onHorizontalDragUpdate: (details) => _onThumbDrag(details.delta.dx),
+                child: Container(
+                  width: _thumbWidth,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.45),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -88,7 +88,7 @@ class TosNotifier extends StateNotifier<TosState> {
   TosNotifier() : super(TosState());
 
   Future<void> loadTosList(String classId) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(isLoading: state.tosList.isEmpty, clearError: true);
     final result = await sl<GetTosList>().call(classId);
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: failure.message),

@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/widgets/shared/primitives/class_section_header.dart';
 import 'package:likha/presentation/widgets/shared/cards/info_panel.dart';
 import 'package:likha/presentation/widgets/shared/primitives/info_row.dart';
+import 'package:likha/domain/grading/entities/sf9.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/sf9_grade_table.dart';
-import 'package:likha/presentation/widgets/mobile/teacher/grade/sf9_print_service.dart';
 import 'package:likha/presentation/providers/sf9_provider.dart';
 
 class Sf9DetailPage extends ConsumerStatefulWidget {
@@ -30,15 +30,29 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
-          .read(sf9Provider.notifier)
+          .read(sf9DetailProvider.notifier)
           .loadSf9(widget.classId, widget.studentId);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(sf9Provider);
+    final state = ref.watch(sf9DetailProvider);
     final sf9 = state.currentSf9;
+    final displayName = sf9 != null && sf9.studentName == 'Unknown Student'
+        ? widget.studentName
+        : (sf9?.studentName ?? widget.studentName);
+    final displaySf9 = sf9 != null && sf9.studentName == 'Unknown Student'
+        ? Sf9Response(
+            studentId: sf9.studentId,
+            studentName: widget.studentName,
+            gradeLevel: sf9.gradeLevel,
+            schoolYear: sf9.schoolYear,
+            section: sf9.section,
+            subjects: sf9.subjects,
+            generalAverage: sf9.generalAverage,
+          )
+        : sf9;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
@@ -48,18 +62,10 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
             ClassSectionHeader(
               title: 'SF9: ${widget.studentName}',
               showBackButton: true,
-              trailing: sf9 != null
-                  ? IconButton(
-                      icon: const Icon(Icons.download_outlined),
-                      color: AppColors.foregroundSecondary,
-                      tooltip: 'Download SF9',
-                      onPressed: () =>
-                          Sf9PrintService.printSf9(context, sf9),
-                    )
-                  : null,
+              trailing: null,
             ),
             Expanded(
-              child: state.isLoading && sf9 == null
+              child: state.isLoading && displaySf9 == null
                   ? const Center(
                       child: CircularProgressIndicator(
                         color: AppColors.accentCharcoal,
@@ -80,7 +86,7 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
                             ),
                           ),
                         )
-                      : sf9 == null
+                      : displaySf9 == null
                           ? const Center(child: Text('No data available'))
                           : SingleChildScrollView(
                               padding: const EdgeInsets.all(24),
@@ -95,27 +101,27 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
                                       children: [
                                         InfoRow(
                                           label: 'Student',
-                                          value: sf9.studentName,
+                                          value: displayName,
                                         ),
-                                        if (sf9.gradeLevel != null) ...[
+                                        if (displaySf9.gradeLevel != null) ...[
                                           const SizedBox(height: 10),
                                           InfoRow(
                                             label: 'Grade Level',
-                                            value: sf9.gradeLevel!,
+                                            value: displaySf9.gradeLevel!,
                                           ),
                                         ],
-                                        if (sf9.schoolYear != null) ...[
+                                        if (displaySf9.schoolYear != null) ...[
                                           const SizedBox(height: 10),
                                           InfoRow(
                                             label: 'School Year',
-                                            value: sf9.schoolYear!,
+                                            value: displaySf9.schoolYear!,
                                           ),
                                         ],
-                                        if (sf9.section != null) ...[
+                                        if (displaySf9.section != null) ...[
                                           const SizedBox(height: 10),
                                           InfoRow(
                                             label: 'Section',
-                                            value: sf9.section!,
+                                            value: displaySf9.section!,
                                           ),
                                         ],
                                       ],
@@ -133,8 +139,8 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
                                   ),
                                   const SizedBox(height: 12),
                                   Sf9GradeTable(
-                                    subjects: sf9.subjects,
-                                    generalAverage: sf9.generalAverage,
+                                    subjects: displaySf9.subjects,
+                                    generalAverage: displaySf9.generalAverage,
                                   ),
                                   const SizedBox(height: 32),
                                 ],

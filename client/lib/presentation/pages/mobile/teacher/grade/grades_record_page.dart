@@ -98,13 +98,12 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
     );
   }
 
-  void _showExportDialog(BuildContext context, {required bool isDownload}) {
+  void _showExportDialog(BuildContext context) {
     showGradeExportDialog(
       context,
       ref,
       classId: widget.classId,
       quarter: _selectedQuarter,
-      isDownload: isDownload,
     );
   }
 
@@ -172,8 +171,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
                 ),
               ),
             ),
-            onDownload: () => _showExportDialog(context, isDownload: true),
-            onPrint: () => _showExportDialog(context, isDownload: false),
+            onDownload: () => _showExportDialog(context),
           ),
 
           // Content

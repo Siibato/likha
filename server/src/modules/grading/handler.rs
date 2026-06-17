@@ -262,10 +262,10 @@ pub async fn get_final_grades(
     } else if auth_user.role == "teacher" {
         // Get final grades for all students
         match service.repo.get_enrolled_student_ids(class_id).await {
-            Ok(student_ids) => {
-                let futures = student_ids
+            Ok(students) => {
+                let futures = students
                     .iter()
-                    .map(|&sid| service.compute_final_grade(class_id, sid));
+                    .map(|(sid, _)| service.compute_final_grade(class_id, *sid));
                 match try_join_all(futures).await {
                     Ok(results) => success_response(results, StatusCode::OK).into_response(),
                     Err(e) => e.into_response(),

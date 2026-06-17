@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
@@ -19,6 +21,14 @@ ResultFuture<Sf9Response> getSf10(
   try {
     try {
       final cached = await localDataSource.getCachedSf10(classId, studentId);
+
+      // Treat empty map or stale unknown-student as cache miss
+      if (cached.isEmpty) {
+        throw CacheException('No cached SF10 found');
+      }
+      if (cached['student_name'] == 'Unknown Student') {
+        throw CacheException('Cached SF10 has stale unknown student');
+      }
 
       fireRemoteFetch(
         dedupKey: 'grading/sf10/$classId/$studentId/bg',
@@ -67,6 +77,5 @@ bool _sf10HasChanged(
   Map<String, dynamic> current,
   Map<String, dynamic> fresh,
 ) {
-  return current.length != fresh.length ||
-      current.keys.any((k) => current[k].toString() != fresh[k].toString());
+  return jsonEncode(current) != jsonEncode(fresh);
 }

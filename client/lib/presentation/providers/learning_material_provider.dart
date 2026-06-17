@@ -106,7 +106,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
 
   Future<void> loadMaterials(String classId) async {
     _currentClassId = classId;
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(isLoading: state.materials.isEmpty, clearError: true);
     final result = await _getMaterials(classId);
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),

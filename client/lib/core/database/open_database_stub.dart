@@ -1,4 +1,5 @@
 import 'package:sqflite_common/sqflite.dart';
+export 'package:sqflite_common/sqflite.dart' show databaseFactory;
 
 Future<Database> openDatabase(
   String path, {

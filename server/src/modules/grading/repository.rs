@@ -110,7 +110,7 @@ impl GradeComputationRepository {
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
-    pub async fn get_enrolled_student_ids(&self, class_id: Uuid) -> AppResult<Vec<Uuid>> {
+    pub async fn get_enrolled_student_ids(&self, class_id: Uuid) -> AppResult<Vec<(Uuid, String)>> {
         ops::get_enrolled_student_ids(&self.db, class_id).await
     }
 

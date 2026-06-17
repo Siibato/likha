@@ -29,12 +29,12 @@ impl crate::modules::grading::service::GradeComputationService {
             return Err(AppError::BadRequest("Class is not an advisory class".to_string()));
         }
 
-        let enrolled_student_ids = self.repo.get_enrolled_student_ids(class_id).await?;
-        if !enrolled_student_ids.contains(&student_id) {
-            return Err(AppError::NotFound("Student not enrolled in this advisory class".to_string()));
-        }
-
-        let student_name = self.get_student_name(student_id).await?;
+        let enrolled_students = self.repo.get_enrolled_student_ids(class_id).await?;
+        let student_name = enrolled_students
+            .iter()
+            .find(|(id, _)| *id == student_id)
+            .map(|(_, name)| name.clone())
+            .ok_or_else(|| AppError::NotFound("Student not enrolled in this advisory class".to_string()))?;
         let enrolled_classes = self.repo.get_student_enrolled_classes(
             student_id,
             class.school_year.as_deref(),
@@ -117,22 +117,12 @@ impl crate::modules::grading::service::GradeComputationService {
             general_average,
         };
         if let Some(ref cache) = self.cache {
-            let key = CacheKey::SF9(class_id, student_id).as_str();
-            cache.set(&key, &result, cache.ttl.detail_seconds).await;
+            if !result.student_name.eq_ignore_ascii_case("Unknown Student") {
+                let key = CacheKey::SF9(class_id, student_id).as_str();
+                cache.set(&key, &result, cache.ttl.detail_seconds).await;
+            }
         }
         Ok(result)
     }
 
-    pub(crate) async fn get_student_name(&self, student_id: Uuid) -> AppResult<String> {
-        use sea_orm::EntityTrait;
-        use ::entity::users;
-        let user = users::Entity::find_by_id(student_id)
-            .one(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        Ok(user
-            .map(|u| u.full_name)
-            .unwrap_or_else(|| "Unknown Student".to_string()))
-    }
 }

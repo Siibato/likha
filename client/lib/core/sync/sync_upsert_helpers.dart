@@ -633,30 +633,74 @@ class SyncUpsertHelpers {
     List<dynamic> records,
     Map<String, dynamic> studentMap,
   ) async {
-    for (final record in records) {
-      final data = record as Map<String, dynamic>;
+    int successCount = 0;
+    int failedCount = 0;
+    int skippedCount = 0;
 
-      await db.insert(
-        DbTables.assignmentSubmissions,
-        {
-          CommonCols.id: data['id'],
-          AssignmentSubmissionsCols.assignmentId: data['assignment_id'],
-          AssignmentSubmissionsCols.studentId: data['student_id'],
-          AssignmentSubmissionsCols.status: data['status'] ?? 'pending',
-          AssignmentSubmissionsCols.textContent: data['text_content'],
-          AssignmentSubmissionsCols.submittedAt: data['submitted_at'],
-          AssignmentSubmissionsCols.points: data['points'] ?? data['score'],
-          AssignmentSubmissionsCols.feedback: data['feedback'],
-          AssignmentSubmissionsCols.gradedAt: data['graded_at'],
-          AssignmentSubmissionsCols.gradedBy: data['graded_by'],
-          CommonCols.createdAt: data['created_at'] ?? DateTime.now().toIso8601String(),
-          CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
-          CommonCols.deletedAt: data['deleted_at'],
-          CommonCols.cachedAt: DateTime.now().toIso8601String(),
-          CommonCols.syncStatus: SyncStatus.synced.dbValue,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+    _log.log('Upserting ${records.length} assignment submissions...');
+
+    for (final record in records) {
+      try {
+        final data = record as Map<String, dynamic>;
+        final assignmentId = data['assignment_id']?.toString() ?? '';
+        final studentId = data['student_id']?.toString() ?? '';
+        final gradedBy = data['graded_by']?.toString();
+
+        // DEFENSE: Skip if the referenced assignment wasn't synced
+        if (assignmentId.isEmpty || !await _fkExists(db, DbTables.assignments, assignmentId)) {
+          _log.warn('Skipping assignment submission ${data['id']}: assignment $assignmentId not found locally');
+          skippedCount++;
+          continue;
+        }
+
+        // DEFENSE: Skip if the referenced student wasn't synced
+        if (studentId.isEmpty || !await _fkExists(db, DbTables.users, studentId)) {
+          _log.warn('Skipping assignment submission ${data['id']}: student $studentId not found locally');
+          skippedCount++;
+          continue;
+        }
+
+        // DEFENSE: Skip if graded_by references a missing user (only if non-null)
+        if (gradedBy != null && gradedBy.isNotEmpty && !await _fkExists(db, DbTables.users, gradedBy)) {
+          _log.warn('Skipping assignment submission ${data['id']}: graded_by $gradedBy not found locally');
+          skippedCount++;
+          continue;
+        }
+
+        await db.insert(
+          DbTables.assignmentSubmissions,
+          {
+            CommonCols.id: data['id'],
+            AssignmentSubmissionsCols.assignmentId: assignmentId,
+            AssignmentSubmissionsCols.studentId: studentId,
+            AssignmentSubmissionsCols.status: data['status'] ?? 'pending',
+            AssignmentSubmissionsCols.textContent: data['text_content'],
+            AssignmentSubmissionsCols.submittedAt: data['submitted_at'],
+            AssignmentSubmissionsCols.points: data['points'] ?? data['score'],
+            AssignmentSubmissionsCols.feedback: data['feedback'],
+            AssignmentSubmissionsCols.gradedAt: data['graded_at'],
+            AssignmentSubmissionsCols.gradedBy: gradedBy,
+            CommonCols.createdAt: data['created_at'] ?? DateTime.now().toIso8601String(),
+            CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
+            CommonCols.deletedAt: data['deleted_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.syncStatus: SyncStatus.synced.dbValue,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert assignment submission', e);
+      }
+    }
+
+    _log.upsertSummary('assignment_submissions', successCount);
+    if (skippedCount > 0) {
+      _log.warn('Skipped $skippedCount assignment submissions (missing FKs)');
+    }
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert $failedCount assignment submissions');
     }
   }
 

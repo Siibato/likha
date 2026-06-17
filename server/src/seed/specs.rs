@@ -217,6 +217,8 @@ pub struct GradeScoreSpec {
     pub score: Option<f64>,
     pub is_auto_populated: bool,
     pub override_score: Option<f64>,
+    pub component: String,
+    pub grading_period_number: i32,
 }
 
 #[derive(Debug, Clone)]

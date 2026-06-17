@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
@@ -19,9 +21,19 @@ ResultFuture<GeneralAverageResponse> getGeneralAverages(
     try {
       final cached = await localDataSource.getCachedGeneralAverages(classId);
 
-      // Treat empty map as cache miss
       if (cached.isEmpty) {
         throw CacheException('No cached general averages found');
+      }
+
+      final students = cached['students'] as List<dynamic>? ?? [];
+      if (students.isEmpty) {
+        throw CacheException('Cached general averages has empty students');
+      }
+      final allUnknown = students.isNotEmpty && students.every(
+        (s) => (s as Map<String, dynamic>)['student_name'] == 'Unknown Student',
+      );
+      if (allUnknown) {
+        throw CacheException('Cached general averages has stale unknown students');
       }
 
       fireRemoteFetch(
@@ -65,6 +77,5 @@ bool _generalAveragesHaveChanged(
   Map<String, dynamic> current,
   Map<String, dynamic> fresh,
 ) {
-  return current.length != fresh.length ||
-      current.keys.any((k) => current[k].toString() != fresh[k].toString());
+  return jsonEncode(current) != jsonEncode(fresh);
 }

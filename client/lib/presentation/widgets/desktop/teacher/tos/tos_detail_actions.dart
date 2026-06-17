@@ -4,7 +4,6 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/presentation/pages/desktop/teacher/tos/tos_edit_page.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
-import 'package:likha/presentation/widgets/mobile/teacher/tos/tos_print_preview.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 
 class TosDetailActions extends ConsumerWidget {
@@ -37,13 +36,6 @@ class TosDetailActions extends ConsumerWidget {
           label: const Text('Edit'),
         ),
         const SizedBox(width: 8),
-        IconButton(
-          onPressed: () =>
-              TosPrintService.printTos(context, tos, competencies),
-          icon: const Icon(Icons.print_outlined),
-          tooltip: 'Print',
-        ),
-        const SizedBox(width: 4),
         IconButton(
           onPressed: () => AppDialogs.showDestructive(
             context: context,

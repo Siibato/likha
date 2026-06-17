@@ -22,29 +22,45 @@ Future<List<AssessmentModel>> getCachedAssessments(
     );
     if (results.isEmpty) return [];
 
-    final assessments = <AssessmentModel>[];
+    final assessmentIds = results.map((r) => r['id'] as String).toList();
+    final inClause = assessmentIds.map((_) => '?').join(',');
 
+    // Batch fetch question stats for all assessments in one query
+    final questionStatsResult = await db.rawQuery(
+      'SELECT assessment_id, COUNT(*) as count, COALESCE(SUM(points), 0) as total_points FROM ${DbTables.assessmentQuestions} WHERE assessment_id IN ($inClause) AND deleted_at IS NULL GROUP BY assessment_id',
+      assessmentIds,
+    );
+    final questionCounts = <String, int>{};
+    final questionTotalPoints = <String, int>{};
+    for (final row in questionStatsResult) {
+      final id = row['assessment_id'] as String;
+      questionCounts[id] = (row['count'] as int?) ?? 0;
+      questionTotalPoints[id] = (row['total_points'] as int?) ?? 0;
+    }
+
+    // Batch fetch submission counts for all assessments in one query
+    final submissionCountsResult = await db.rawQuery(
+      'SELECT assessment_id, COUNT(*) as count FROM ${DbTables.assessmentSubmissions} WHERE assessment_id IN ($inClause) AND deleted_at IS NULL GROUP BY assessment_id',
+      assessmentIds,
+    );
+    final submissionCounts = <String, int>{};
+    for (final row in submissionCountsResult) {
+      final id = row['assessment_id'] as String;
+      submissionCounts[id] = (row['count'] as int?) ?? 0;
+    }
+
+    final assessments = <AssessmentModel>[];
     for (final result in results) {
       final assessment = AssessmentModel.fromMap(result);
-      final statsResult = await db.rawQuery(
-        'SELECT COUNT(*) as count, SUM(points) as total_points FROM ${DbTables.assessmentQuestions} WHERE assessment_id = ? AND deleted_at IS NULL',
-        [assessment.id],
-      );
-      final actualCount = statsResult.first['count'] as int? ?? 0;
-      final computedTotalPoints = statsResult.first['total_points'] as int? ?? 0;
-
-      final subCountResult = await db.rawQuery(
-        'SELECT COUNT(*) as count FROM ${DbTables.assessmentSubmissions} WHERE assessment_id = ? AND deleted_at IS NULL',
-        [assessment.id],
-      );
-      final liveSubCount = subCountResult.first['count'] as int? ?? 0;
+      final actualCount = questionCounts[assessment.id] ?? 0;
+      final computedTotalPoints = questionTotalPoints[assessment.id] ?? 0;
+      final liveSubCount = submissionCounts[assessment.id] ?? 0;
       final effectiveSubCount = liveSubCount > 0 ? liveSubCount : assessment.submissionCount;
-
       final effectiveTotalPoints = computedTotalPoints > 0 ? computedTotalPoints : assessment.totalPoints;
 
       RepoLogger.instance.log('${assessment.title} | dbTotalPoints=${assessment.totalPoints} | computedFromQuestions=$computedTotalPoints | effectiveTotalPoints=$effectiveTotalPoints | gradingPeriod=${assessment.gradingPeriodNumber} | component=${assessment.component}');
 
-      final updatedAssessment = AssessmentModel(
+      assessments.add(AssessmentModel(
         id: assessment.id,
         classId: assessment.classId,
         title: assessment.title,
@@ -68,8 +84,7 @@ Future<List<AssessmentModel>> getCachedAssessments(
         cachedAt: assessment.cachedAt,
         syncStatus: assessment.syncStatus,
         deletedAt: assessment.deletedAt,
-      );
-      assessments.add(updatedAssessment);
+      ));
     }
 
     return assessments;

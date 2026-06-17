@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
+import 'package:likha/domain/classes/entities/class_entity.dart';
 import 'package:likha/presentation/pages/desktop/admin/class/class_edit_page.dart';
 import 'package:likha/presentation/pages/desktop/admin/class/manage_enrollment_page.dart';
 import 'package:likha/presentation/widgets/desktop/admin/class/class_info_panel.dart';
@@ -40,7 +41,9 @@ class _AdminClassDetailPageState
     final classState = ref.watch(classProvider);
     final detail = classState.currentClassDetail;
 
-    final classInfo = classState.classes.cast<dynamic>().firstWhere(
+    final classInfo = classState.classes
+        .cast<ClassEntity?>()
+        .firstWhere(
           (c) => c?.id == widget.classId,
           orElse: () => null,
         );
@@ -54,7 +57,7 @@ class _AdminClassDetailPageState
           color: AppColors.foregroundPrimary,
           onPressed: () => Navigator.pop(context),
         ),
-        body: detail == null
+        body: detail == null || classInfo == null
             ? const Center(
                 child: CircularProgressIndicator(
                   color: AppColors.foregroundPrimary,
@@ -67,12 +70,12 @@ class _AdminClassDetailPageState
                   // Class Info Panel
                   ClassInfoPanel.withClassInfo(
                     detail: detail,
-                    classInfo: classInfo!,
+                    classInfo: classInfo,
                     onEdit: () => Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => AdminEditClassPage(
-                          classEntity: classInfo!,
+                          classEntity: classInfo,
                         ),
                       ),
                     ).then((_) {

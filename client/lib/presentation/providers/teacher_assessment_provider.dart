@@ -172,8 +172,17 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
   }
 
   Future<void> loadAssessments(String classId, {bool publishedOnly = false, bool skipBackgroundRefresh = false}) async {
-    _currentClassId = classId;
-    state = state.copyWith(isLoading: true, error: null);
+    if (_currentClassId != classId) {
+      _currentClassId = classId;
+      state = state.copyWith(
+        isLoading: true,
+        error: null,
+        assessments: [],
+        currentAssessment: null,
+      );
+    } else {
+      state = state.copyWith(isLoading: state.assessments.isEmpty, error: null);
+    }
     final result = await _getAssessments(classId, publishedOnly: publishedOnly, skipBackgroundRefresh: skipBackgroundRefresh);
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),

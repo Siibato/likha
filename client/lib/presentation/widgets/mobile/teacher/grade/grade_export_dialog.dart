@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/presentation/providers/auth_provider.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
+import 'package:likha/presentation/providers/school_settings_provider.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 import 'package:likha/services/grade_export_service.dart';
 
@@ -10,13 +12,12 @@ void showGradeExportDialog(
   WidgetRef ref, {
   required String classId,
   required int quarter,
-  required bool isDownload,
 }) {
   showDialog(
     context: context,
     builder: (dialogContext) {
       return StyledDialog(
-        title: isDownload ? 'Export Grades' : 'Print Grades',
+        title: 'Export Grades',
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -24,31 +25,21 @@ void showGradeExportDialog(
             const Text('Choose export format:'),
             const SizedBox(height: 16),
             ListTile(
-              title: const Text('PDF'),
-              subtitle: const Text('DepEd-style class record'),
-              leading: const Icon(Icons.picture_as_pdf),
-              onTap: () {
-                Navigator.of(dialogContext).pop();
-                if (isDownload) {
-                  _exportToPdf(context, ref, classId: classId, quarter: quarter);
-                } else {
-                  _printGrades(context, ref, classId: classId, quarter: quarter);
-                }
-              },
-            ),
-            ListTile(
               title: const Text('Excel'),
-              subtitle: const Text('Editable spreadsheet'),
+              subtitle: const Text('Editable spreadsheet (.xlsx)'),
               leading: const Icon(Icons.table_chart),
               onTap: () {
                 Navigator.of(dialogContext).pop();
-                if (isDownload) {
-                  _exportToExcel(context, ref, classId: classId, quarter: quarter);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Excel export only available for download')),
-                  );
-                }
+                _exportToExcel(context, ref, classId: classId, quarter: quarter);
+              },
+            ),
+            ListTile(
+              title: const Text('PDF'),
+              subtitle: const Text('Printable document (.pdf)'),
+              leading: const Icon(Icons.picture_as_pdf),
+              onTap: () {
+                Navigator.of(dialogContext).pop();
+                _exportToPdf(context, ref, classId: classId, quarter: quarter);
               },
             ),
           ],
@@ -59,44 +50,6 @@ void showGradeExportDialog(
       );
     },
   );
-}
-
-Future<void> _exportToPdf(
-  BuildContext context,
-  WidgetRef ref, {
-  required String classId,
-  required int quarter,
-}) async {
-  try {
-    final configState = ref.read(gradingConfigProvider);
-    final itemsState = ref.read(gradeItemsProvider);
-    final scoresState = ref.read(gradeScoresProvider);
-    final gradesState = ref.read(quarterlyGradesProvider);
-    final classState = ref.read(classProvider);
-
-    await ref.read(gradeExportServiceProvider).exportToPdf(
-      classId: classId,
-      className: classState.currentClassDetail?.title ?? 'Unknown Class',
-      quarter: quarter,
-      students: classState.currentClassDetail?.students ?? [],
-      gradeItems: itemsState.items,
-      scoresByItem: scoresState.scoresByItem,
-      config: configState.configs.isNotEmpty ? configState.configs.first : null,
-      summary: gradesState.summary,
-    );
-
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('PDF exported successfully!')),
-      );
-    }
-  } catch (e) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to export PDF: $e')),
-      );
-    }
-  }
 }
 
 Future<void> _exportToExcel(
@@ -111,16 +64,24 @@ Future<void> _exportToExcel(
     final scoresState = ref.read(gradeScoresProvider);
     final gradesState = ref.read(quarterlyGradesProvider);
     final classState = ref.read(classProvider);
+    final authState = ref.read(authProvider);
+    final schoolState = ref.read(schoolSettingsProvider);
+    final detail = classState.currentClassDetail;
 
     await ref.read(gradeExportServiceProvider).exportToExcel(
       classId: classId,
-      className: classState.currentClassDetail?.title ?? 'Unknown Class',
+      className: detail?.title ?? 'Unknown Class',
       quarter: quarter,
-      students: classState.currentClassDetail?.students ?? [],
+      students: detail?.students ?? [],
       gradeItems: itemsState.items,
       scoresByItem: scoresState.scoresByItem,
       config: configState.configs.isNotEmpty ? configState.configs.first : null,
       summary: gradesState.summary,
+      schoolSettings: schoolState.settings,
+      teacherName: authState.user?.fullName,
+      gradeLevel: detail?.gradeLevel,
+      section: detail?.title,
+      subject: detail?.title,
     );
 
     if (context.mounted) {
@@ -137,7 +98,7 @@ Future<void> _exportToExcel(
   }
 }
 
-Future<void> _printGrades(
+Future<void> _exportToPdf(
   BuildContext context,
   WidgetRef ref, {
   required String classId,
@@ -149,27 +110,35 @@ Future<void> _printGrades(
     final scoresState = ref.read(gradeScoresProvider);
     final gradesState = ref.read(quarterlyGradesProvider);
     final classState = ref.read(classProvider);
+    final authState = ref.read(authProvider);
+    final schoolState = ref.read(schoolSettingsProvider);
+    final detail = classState.currentClassDetail;
 
-    await ref.read(gradeExportServiceProvider).printGrades(
+    await ref.read(gradeExportServiceProvider).exportToPdf(
       classId: classId,
-      className: classState.currentClassDetail?.title ?? 'Unknown Class',
+      className: detail?.title ?? 'Unknown Class',
       quarter: quarter,
-      students: classState.currentClassDetail?.students ?? [],
+      students: detail?.students ?? [],
       gradeItems: itemsState.items,
       scoresByItem: scoresState.scoresByItem,
       config: configState.configs.isNotEmpty ? configState.configs.first : null,
       summary: gradesState.summary,
+      schoolSettings: schoolState.settings,
+      teacherName: authState.user?.fullName,
+      gradeLevel: detail?.gradeLevel,
+      section: detail?.title,
+      subject: detail?.title,
     );
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Print dialog opened!')),
+        const SnackBar(content: Text('PDF exported successfully!')),
       );
     }
   } catch (e) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to print: $e')),
+        SnackBar(content: Text('Failed to export PDF: $e')),
       );
     }
   }

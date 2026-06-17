@@ -352,7 +352,6 @@ Future<void> init() async {
       validationService: sl<ValidationService>(),
       connectivityService: sl<ConnectivityService>(),
       syncQueue: sl<SyncQueue>(),
-      storageService: sl<StorageService>(),
       dataEventBus: sl<DataEventBus>(),
     ),
   );

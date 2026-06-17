@@ -19,10 +19,10 @@ class Sf9ResponseModel extends Sf9Response {
       schoolYear: json['school_year'] as String?,
       section: json['section'] as String?,
       subjects: (json['subjects'] as List<dynamic>? ?? [])
-          .map((e) => Sf9SubjectRowModel.fromJson(e as Map<String, dynamic>))
+          .map((e) => Sf9SubjectRowModel.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList(),
       generalAverage: json['general_average'] != null
-          ? Sf9QuarterlyAveragesModel.fromJson(json['general_average'] as Map<String, dynamic>)
+          ? Sf9QuarterlyAveragesModel.fromJson(Map<String, dynamic>.from(json['general_average'] as Map))
           : null,
     );
   }

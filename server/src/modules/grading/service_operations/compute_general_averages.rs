@@ -1,4 +1,3 @@
-use futures::future::try_join_all;
 use uuid::Uuid;
 use crate::cache::CacheKey;
 use crate::modules::grading::schema::{GeneralAverageResponse, StudentGeneralAverage, SubjectGrade};
@@ -24,13 +23,22 @@ impl crate::modules::grading::service::GradeComputationService {
         let class = self.class_repo.find_by_id(class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        let student_ids = self.repo.get_enrolled_student_ids(class_id).await?;
+        let enrolled_students = self.repo.get_enrolled_student_ids(class_id).await?;
         let school_year = class.school_year.as_deref();
 
-        let student_futures = student_ids
-            .iter()
-            .map(|&student_id| self.compute_student_general_average(student_id, school_year));
-        let students = try_join_all(student_futures).await?;
+        // Process sequentially to avoid SQLite contention with the 5-connection pool.
+        let mut students = Vec::new();
+        for (student_id, student_name) in &enrolled_students {
+            tracing::info!(student_id = %student_id, "Computing general average for student");
+            let sga = self
+                .compute_student_general_average(*student_id, student_name.clone(), school_year)
+                .await
+                .map_err(|e| {
+                    tracing::error!(student_id = %student_id, error = %e, "Failed to compute general average for student");
+                    e
+                })?;
+            students.push(sga);
+        }
 
         let result = GeneralAverageResponse {
             class_id: class_id.to_string(),
@@ -46,10 +54,10 @@ impl crate::modules::grading::service::GradeComputationService {
     pub(crate) async fn compute_student_general_average(
         &self,
         student_id: Uuid,
+        student_name: String,
         school_year: Option<&str>,
     ) -> AppResult<StudentGeneralAverage> {
         let enrolled_classes = self.repo.get_student_enrolled_classes(student_id, school_year).await?;
-        let student_name = self.get_student_name(student_id).await?;
 
         let mut subjects = Vec::new();
         let mut final_grades: Vec<i32> = Vec::new();

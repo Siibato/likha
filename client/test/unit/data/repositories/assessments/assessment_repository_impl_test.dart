@@ -35,7 +35,6 @@ AssessmentRepositoryImpl _buildRepo({
   required MockAssessmentLocalDataSource local,
   required MockAssessmentRemoteDataSource remote,
   required MockSyncQueue syncQueue,
-  required MockStorageService storage,
   required MockDataEventBus eventBus,
 }) {
   return AssessmentRepositoryImpl(
@@ -44,7 +43,6 @@ AssessmentRepositoryImpl _buildRepo({
     validationService: MockValidationService(),
     connectivityService: MockConnectivityService(),
     syncQueue: syncQueue,
-    storageService: storage,
     dataEventBus: eventBus,
   );
 }
@@ -55,20 +53,15 @@ void main() {
   late MockAssessmentLocalDataSource local;
   late MockAssessmentRemoteDataSource remote;
   late MockSyncQueue syncQueue;
-  late MockStorageService storage;
   late MockDataEventBus eventBus;
 
   setUp(() {
     local = MockAssessmentLocalDataSource();
     remote = MockAssessmentRemoteDataSource();
     syncQueue = MockSyncQueue();
-    storage = MockStorageService();
     eventBus = MockDataEventBus();
     dotenv.testLoad(fileInput: '');
-    when(() => storage.getUserId()).thenAnswer((_) async => null);
     when(() => eventBus.onAssessmentsChanged).thenAnswer((_) => const Stream.empty());
-    when(() => local.getCachedSubmissionCount(any())).thenAnswer((_) async => 0);
-    when(() => local.hasStudentSubmittedAssessment(any(), any())).thenAnswer((_) async => false);
 
     registerFallbackValue(SyncQueueEntry(
       id: 'fallback',
@@ -89,7 +82,7 @@ void main() {
       test('fetches from remote and caches locally', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-          storage: storage,          eventBus: eventBus,
+          eventBus: eventBus,
         );
 
         when(() => local.getCachedAssessments(any(), publishedOnly: any(named: 'publishedOnly')))
@@ -109,7 +102,7 @@ void main() {
       test('reads from local cache when offline', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-          storage: storage,          eventBus: eventBus,
+          eventBus: eventBus,
         );
 
         when(() => local.getCachedAssessments(any(), publishedOnly: any(named: 'publishedOnly')))

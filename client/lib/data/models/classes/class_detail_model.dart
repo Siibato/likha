@@ -9,6 +9,8 @@ class ClassDetailModel extends ClassDetail {
     required super.teacherId,
     required super.isArchived,
     super.isAdvisory,
+    super.gradeLevel,
+    super.schoolYear,
     required super.students,
     required super.createdAt,
     required super.updatedAt,
@@ -22,6 +24,8 @@ class ClassDetailModel extends ClassDetail {
       teacherId: json['teacher_id'] as String,
       isArchived: json['is_archived'] as bool,
       isAdvisory: json['is_advisory'] as bool? ?? false,
+      gradeLevel: json['grade_level'] as String?,
+      schoolYear: json['school_year'] as String?,
       students: (json['students'] as List<dynamic>?)
               ?.map((e) => ParticipantModel.fromJson(e as Map<String, dynamic>))
               .toList() ??

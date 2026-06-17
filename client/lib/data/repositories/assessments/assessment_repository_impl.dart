@@ -11,7 +11,6 @@ import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:likha/domain/assessments/repositories/assessment_repository.dart';
-import 'package:likha/services/storage_service.dart';
 import 'operations/assessments.dart' as ops;
 
 class AssessmentRepositoryImpl implements AssessmentRepository {
@@ -22,7 +21,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
   // ignore: unused_field
   final ConnectivityService _connectivityService;
   final SyncQueue _syncQueue;
-  final StorageService _storageService;
   final DataEventBus _dataEventBus;
 
   AssessmentRepositoryImpl({
@@ -31,14 +29,12 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required ValidationService validationService,
     required ConnectivityService connectivityService,
     required SyncQueue syncQueue,
-    required StorageService storageService,
     required DataEventBus dataEventBus,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
         _validationService = validationService,
         _connectivityService = connectivityService,
         _syncQueue = syncQueue,
-        _storageService = storageService,
         _dataEventBus = dataEventBus;
 
   @override
@@ -82,7 +78,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.getAssessments(
         _localDataSource,
         _remoteDataSource,
-        _storageService,
         _dataEventBus,
         classId: classId,
         publishedOnly: publishedOnly,

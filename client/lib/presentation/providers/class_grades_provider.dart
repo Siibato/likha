@@ -62,8 +62,11 @@ class ClassGradesNotifier extends StateNotifier<ClassGradesState> {
     required int gradingPeriodNumber,
     bool skipBackgroundRefresh = false,
   }) async {
+    final hasCached = state.grades != null &&
+        state.classId == classId &&
+        state.gradingPeriodNumber == gradingPeriodNumber;
     state = state.copyWith(
-      isLoading: true,
+      isLoading: !hasCached,
       clearError: true,
       classId: classId,
       gradingPeriodNumber: gradingPeriodNumber,

@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:sqflite_common/sqflite.dart' hide openDatabase;
+import 'package:sqflite_common/sqflite.dart' hide openDatabase, databaseFactory;
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/open_database.dart';
 import 'package:likha/core/logging/core_logger.dart';

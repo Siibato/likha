@@ -83,13 +83,8 @@ class _AssessmentSubmissionsPageState
                     cellBuilder: (value) => _buildStatusBadge(value == true),
                   ),
                   const SubmissionColumn(
-                    key: 'autoScore',
-                    label: 'Auto Score',
-                    numeric: true,
-                  ),
-                  const SubmissionColumn(
                     key: 'finalScore',
-                    label: 'Final Score',
+                    label: 'Score',
                     numeric: true,
                   ),
                   const SubmissionColumn(
@@ -103,10 +98,9 @@ class _AssessmentSubmissionsPageState
                           'studentName': s.studentName,
                           'studentUsername': s.studentUsername,
                           'isSubmitted': s.isSubmitted,
-                          'autoScore':
-                              '${s.autoScore}/${s.totalPoints}',
-                          'finalScore':
-                              '${s.finalScore}/${s.totalPoints}',
+                          'finalScore': s.isSubmitted
+                              ? '${s.finalScore % 1 == 0 ? s.finalScore.toInt() : s.finalScore.toStringAsFixed(1)} pts'
+                              : '—',
                           'submittedAt': _formatDate(s.submittedAt),
                         })
                     .toList(),

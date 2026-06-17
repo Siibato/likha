@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
@@ -20,9 +22,12 @@ ResultFuture<Sf9Response> getSf9(
     try {
       final cached = await localDataSource.getCachedSf9(classId, studentId);
 
-      // Treat empty map as cache miss
+      // Treat empty map or stale unknown-student as cache miss
       if (cached.isEmpty) {
         throw CacheException('No cached SF9 found');
+      }
+      if (cached['student_name'] == 'Unknown Student') {
+        throw CacheException('Cached SF9 has stale unknown student');
       }
 
       fireRemoteFetch(
@@ -72,6 +77,5 @@ bool _sf9HasChanged(
   Map<String, dynamic> current,
   Map<String, dynamic> fresh,
 ) {
-  return current.length != fresh.length ||
-      current.keys.any((k) => current[k].toString() != fresh[k].toString());
+  return jsonEncode(current) != jsonEncode(fresh);
 }
