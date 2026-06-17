@@ -26,7 +26,8 @@ enum SyncEntityType {
   gradeItem('grade_item'),
   gradeScore('grade_score'),
   tableOfSpecifications('table_of_specifications'),
-  tosCompetency('tos_competency');
+  tosCompetency('tos_competency'),
+  schoolSettings('school_settings');
 
   const SyncEntityType(this.serverValue);
   final String serverValue;

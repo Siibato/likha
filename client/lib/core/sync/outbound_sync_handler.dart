@@ -9,6 +9,7 @@ import 'package:likha/core/sync/handlers/auth_sync_handler.dart';
 import 'package:likha/core/sync/handlers/class_sync_handler.dart';
 import 'package:likha/core/sync/handlers/grading_sync_handler.dart';
 import 'package:likha/core/sync/handlers/learning_material_sync_handler.dart';
+import 'package:likha/core/sync/handlers/setup_sync_handler.dart';
 import 'package:likha/core/sync/handlers/tos_sync_handler.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/sync_state.dart';
@@ -34,6 +35,7 @@ String? _entityTypeToTable(String entityType) {
     case 'table_of_specifications': return DbTables.tableOfSpecifications;
     case 'tos_competency': return DbTables.tosCompetencies;
     case 'admin_user': return DbTables.users;
+    case 'school_settings': return DbTables.schoolSettings;
     default: return null;
   }
 }
@@ -51,6 +53,7 @@ class OutboundSyncHandler {
   final GradingSyncHandler? _gradingHandler;
   final LearningMaterialSyncHandler? _learningMaterialHandler;
   final TosSyncHandler? _tosHandler;
+  final SetupSyncHandler? _setupHandler;
 
   OutboundSyncHandler(
     this._syncQueue,
@@ -65,13 +68,15 @@ class OutboundSyncHandler {
     GradingSyncHandler? gradingHandler,
     LearningMaterialSyncHandler? learningMaterialHandler,
     TosSyncHandler? tosHandler,
+    SetupSyncHandler? setupHandler,
   })  : _assessmentHandler = assessmentHandler,
         _assignmentHandler = assignmentHandler,
         _authHandler = authHandler,
         _classHandler = classHandler,
         _gradingHandler = gradingHandler,
         _learningMaterialHandler = learningMaterialHandler,
-        _tosHandler = tosHandler;
+        _tosHandler = tosHandler,
+        _setupHandler = setupHandler;
 
   Future<void> outboundSync() async {
     _log.log('outboundSync() - START');
@@ -271,6 +276,24 @@ class OutboundSyncHandler {
       }
     }
 
+    // Route setup operations to the dedicated handler.
+    final setupOps = regularOps
+        .where((e) => e.entityType == SyncEntityType.schoolSettings)
+        .toList();
+    if (setupOps.isNotEmpty && _setupHandler != null) {
+      _log.log('Processing ${setupOps.length} setup ops via handler');
+      for (final op in setupOps) {
+        final result = await _setupHandler.handle(op);
+        if (result.success) {
+          await _syncQueue.markSucceeded(op.id);
+        } else if (result.shouldRetry) {
+          await _syncQueue.incrementRetry(op.id);
+        } else {
+          await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
+        }
+      }
+    }
+
     final nonAssessmentOps = regularOps
         .where((e) =>
             e.entityType != SyncEntityType.assessment &&
@@ -284,7 +307,8 @@ class OutboundSyncHandler {
             e.entityType != SyncEntityType.learningMaterial &&
             e.entityType != SyncEntityType.materialFile &&
             e.entityType != SyncEntityType.tableOfSpecifications &&
-            e.entityType != SyncEntityType.tosCompetency)
+            e.entityType != SyncEntityType.tosCompetency &&
+            e.entityType != SyncEntityType.schoolSettings)
         .toList();
 
     _log.log('Found ${nonAssessmentOps.length} regular operations');

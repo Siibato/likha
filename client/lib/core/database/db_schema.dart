@@ -37,6 +37,7 @@ abstract final class DbTables {
   static const String melcs = 'melcs';
   static const String assessmentStatisticsCache = 'assessment_statistics_cache';
   static const String validationMetadata = 'validation_metadata';
+  static const String schoolSettings = 'school_settings';
 }
 
 // ─── Common columns ───────────────────────────────────────────────────────────
@@ -349,6 +350,14 @@ abstract final class MelcsCols {
   static const String competencyCode = 'competency_code';
   static const String competencyText = 'competency_text';
   static const String domain = 'domain';
+}
+
+abstract final class SchoolSettingsCols {
+  static const String schoolName = 'school_name';
+  static const String schoolRegion = 'school_region';
+  static const String schoolDivision = 'school_division';
+  static const String schoolYear = 'school_year';
+  static const String schoolCode = 'school_code';
 }
 
 // ─── Domain value strings ─────────────────────────────────────────────────────

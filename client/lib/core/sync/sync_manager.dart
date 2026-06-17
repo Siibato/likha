@@ -9,6 +9,7 @@ import 'package:likha/core/sync/handlers/auth_sync_handler.dart';
 import 'package:likha/core/sync/handlers/class_sync_handler.dart';
 import 'package:likha/core/sync/handlers/grading_sync_handler.dart';
 import 'package:likha/core/sync/handlers/learning_material_sync_handler.dart';
+import 'package:likha/core/sync/handlers/setup_sync_handler.dart';
 import 'package:likha/core/sync/handlers/tos_sync_handler.dart';
 import 'package:likha/core/sync/inbound_sync_handler.dart';
 import 'package:likha/core/sync/outbound_sync_handler.dart';
@@ -29,6 +30,7 @@ import 'package:likha/data/datasources/remote/auth/auth_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/classes/class_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/grading/grading_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/learning_materials/learning_material_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/setup/setup_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/sync/sync_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/tos/tos_remote_datasource.dart';
 import 'package:likha/services/storage_service.dart';
@@ -52,6 +54,7 @@ class SyncManager {
   final GradingLocalDataSource _gradingLocalDataSource;
   final LearningMaterialRemoteDataSource _learningMaterialRemoteDataSource;
   final LearningMaterialLocalDataSource _learningMaterialLocalDataSource;
+  final SetupRemoteDataSource _setupRemoteDataSource;
   final TosRemoteDataSource _tosRemoteDataSource;
   final TosLocalDataSource _tosLocalDataSource;
   final SyncLogger _log;
@@ -94,6 +97,7 @@ class SyncManager {
     this._gradingLocalDataSource,
     this._learningMaterialRemoteDataSource,
     this._learningMaterialLocalDataSource,
+    this._setupRemoteDataSource,
     this._tosRemoteDataSource,
     this._tosLocalDataSource,
     this._log,
@@ -150,6 +154,10 @@ class SyncManager {
         _tosLocalDataSource,
         _localDatabase,
         _log,
+      ),
+      setupHandler: SetupSyncHandler(
+        _setupRemoteDataSource,
+        _localDatabase,
       ),
     );
     _inboundHandler = InboundSyncHandler(

@@ -157,6 +157,13 @@ import 'package:likha/domain/tos/usecases/update_competency.dart';
 import 'package:likha/domain/tos/usecases/delete_competency.dart';
 import 'package:likha/domain/tos/usecases/bulk_add_competencies.dart';
 import 'package:likha/domain/tos/usecases/search_melcs.dart';
+import 'package:likha/data/datasources/local/setup/setup_local_datasource.dart';
+import 'package:likha/data/datasources/remote/setup/setup_remote_datasource.dart';
+import 'package:likha/data/repositories/setup/setup_repository_impl.dart';
+import 'package:likha/domain/setup/repositories/setup_repository.dart';
+import 'package:likha/domain/setup/usecases/get_school_settings.dart';
+import 'package:likha/domain/setup/usecases/update_school_settings.dart';
+import 'package:likha/domain/setup/usecases/update_school_code.dart';
 import 'package:likha/services/storage_service.dart';
 final sl = GetIt.instance;
 
@@ -249,6 +256,9 @@ Future<void> init() async {
   sl.registerLazySingleton<GradingRemoteDataSource>(
     () => GradingRemoteDataSourceImpl(sl<DioClient>()),
   );
+  sl.registerLazySingleton<SetupRemoteDataSource>(
+    () => SetupRemoteDataSourceImpl(sl<DioClient>()),
+  );
   sl.registerLazySingleton<TosRemoteDataSource>(
     () => TosRemoteDataSourceImpl(sl<DioClient>()),
   );
@@ -271,6 +281,9 @@ Future<void> init() async {
       sl<LocalDatabase>(),
       sl<SyncQueue>(),
     ),
+  );
+  sl.registerLazySingleton<SetupLocalDataSource>(
+    () => SetupLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
   );
   sl.registerLazySingleton<GradingLocalDataSource>(
     () => GradingLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
@@ -386,6 +399,7 @@ Future<void> init() async {
       sl<GradingLocalDataSource>(), // GradingLocalDataSource
       sl<LearningMaterialRemoteDataSource>(), // LearningMaterialRemoteDataSource
       sl<LearningMaterialLocalDataSource>(), // LearningMaterialLocalDataSource
+      sl<SetupRemoteDataSource>(), // SetupRemoteDataSource
       sl<TosRemoteDataSource>(), // TosRemoteDataSource
       sl<TosLocalDataSource>(), // TosLocalDataSource
       sl<SyncLogger>(), // SyncLogger
@@ -534,6 +548,14 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetGradeDataBatch(sl<GradingRepository>()));
 
   // TOS - Repository
+  sl.registerLazySingleton<SetupRepository>(
+    () => SetupRepositoryImpl(
+      remoteDataSource: sl<SetupRemoteDataSource>(),
+      localDataSource: sl<SetupLocalDataSource>(),
+      syncQueue: sl<SyncQueue>(),
+      dataEventBus: sl<DataEventBus>(),
+    ),
+  );
   sl.registerLazySingleton<TosRepository>(
     () => TosRepositoryImpl(
       remoteDataSource: sl<TosRemoteDataSource>(),
@@ -542,6 +564,11 @@ Future<void> init() async {
       dataEventBus: sl<DataEventBus>(),
     ),
   );
+
+  // Setup use cases
+  sl.registerLazySingleton(() => GetSchoolSettings(sl()));
+  sl.registerLazySingleton(() => UpdateSchoolSettings(sl()));
+  sl.registerLazySingleton(() => UpdateSchoolCode(sl()));
 
   // TOS use cases
   sl.registerLazySingleton(() => GetTosList(sl()));

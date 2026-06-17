@@ -8,7 +8,7 @@ import 'package:likha/core/logging/core_logger.dart';
 
 /// Local SQLite Database for offline-first functionality
 ///
-/// SCHEMA VERSION: 3 (v2 → v3: replaced boolean needs_sync with four-state sync_status TEXT)
+/// SCHEMA VERSION: 4 (v3 → v4: added school_settings table)
 /// TOTAL TABLES: 32
 ///
 /// This database was consolidated from 12 historical versions into a single
@@ -27,6 +27,7 @@ import 'package:likha/core/logging/core_logger.dart';
 /// - Grading: grade_record, grade_items, grade_scores, period_grades
 /// - TOS: table_of_specifications, tos_competencies, melcs
 /// - Sync: sync_queue, sync_metadata, student_results_cache, validation_metadata
+/// - Setup: school_settings
 ///
 /// INDEXES: 40+ indexes for query performance on foreign keys and common filters
 class LocalDatabase {
@@ -81,7 +82,7 @@ class LocalDatabase {
       return openDatabase(
         dbFilePath,
         password: kIsWeb ? null : _dbPassword,
-        version: 3,
+        version: 4,
         onCreate: _createTables,
         onUpgrade: _upgradeDatabase,
         onDowngrade: _downgradeDatabase,
@@ -675,6 +676,20 @@ class LocalDatabase {
         )
       ''');
 
+      // School settings table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS school_settings (
+          id TEXT PRIMARY KEY,
+          school_name TEXT NOT NULL DEFAULT '',
+          school_region TEXT NOT NULL DEFAULT '',
+          school_division TEXT NOT NULL DEFAULT '',
+          school_year TEXT NOT NULL DEFAULT '',
+          school_code TEXT NOT NULL DEFAULT '',
+          cached_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'synced'
+        )
+      ''');
+
       // Create indexes
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_class_id ON class_participants(class_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_user_id ON class_participants(user_id)');
@@ -770,6 +785,7 @@ class LocalDatabase {
       'table_of_specifications',
       'melcs',
       'assessment_statistics_cache',
+      'school_settings',
     ];
 
     for (final table in tables) {

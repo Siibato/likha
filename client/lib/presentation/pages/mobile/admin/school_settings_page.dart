@@ -1,24 +1,27 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/config/api_config.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/core/services/school_setup_service.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/setup/entities/school_config.dart';
 import 'package:likha/injection_container.dart' as di;
+import 'package:likha/presentation/providers/school_settings_provider.dart';
 import 'package:likha/presentation/widgets/shared/cards/info_panel.dart';
 import 'package:likha/presentation/widgets/shared/forms/school_settings_form.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 
-class AdminSchoolSettingsPage extends StatefulWidget {
+class AdminSchoolSettingsPage extends ConsumerStatefulWidget {
   const AdminSchoolSettingsPage({super.key});
 
   @override
-  State<AdminSchoolSettingsPage> createState() =>
+  ConsumerState<AdminSchoolSettingsPage> createState() =>
       _AdminSchoolSettingsPageState();
 }
 
-class _AdminSchoolSettingsPageState extends State<AdminSchoolSettingsPage> {
+class _AdminSchoolSettingsPageState
+    extends ConsumerState<AdminSchoolSettingsPage> {
   final _formKey = GlobalKey<FormState>();
   final _schoolNameController = TextEditingController();
   final _regionController = TextEditingController();
@@ -26,13 +29,14 @@ class _AdminSchoolSettingsPageState extends State<AdminSchoolSettingsPage> {
   final _schoolYearController = TextEditingController();
   final _schoolCodeController = TextEditingController();
   late String _originalSchoolCode;
-  bool _isLoading = false;
-  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _loadSettings();
+    _originalSchoolCode = '';
+    Future.microtask(() {
+      ref.read(schoolSettingsProvider.notifier).loadSchoolSettings();
+    });
   }
 
   @override
@@ -45,30 +49,15 @@ class _AdminSchoolSettingsPageState extends State<AdminSchoolSettingsPage> {
     super.dispose();
   }
 
-  Future<void> _loadSettings() async {
-    setState(() => _isLoading = true);
-    try {
-      final response = await di.sl<DioClient>().dio.get(
-        '${ApiConstants.baseUrl}/api/v1/admin/setup/school-settings',
-      );
-      final data = response.data['data'] as Map<String, dynamic>?;
-      if (data != null) {
-        _schoolNameController.text = data['school_name'] as String? ?? '';
-        _regionController.text = data['school_region'] as String? ?? '';
-        _divisionController.text = data['school_division'] as String? ?? '';
-        _schoolYearController.text = data['school_year'] as String? ?? '';
-        final code = data['school_code'] as String? ?? '';
-        _schoolCodeController.text = code;
-        _originalSchoolCode = code;
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to load settings')),
-        );
-      }
-    }
-    if (mounted) setState(() => _isLoading = false);
+  void _syncControllersWithState(SchoolSettingsState state) {
+    final settings = state.settings;
+    if (settings == null) return;
+    _schoolNameController.text = settings.schoolName;
+    _regionController.text = settings.schoolRegion;
+    _divisionController.text = settings.schoolDivision;
+    _schoolYearController.text = settings.schoolYear;
+    _schoolCodeController.text = settings.schoolCode;
+    _originalSchoolCode = settings.schoolCode;
   }
 
   Future<void> _showQrCodeDialog() async {
@@ -105,7 +94,6 @@ class _AdminSchoolSettingsPageState extends State<AdminSchoolSettingsPage> {
     final newCode = _schoolCodeController.text.trim().toUpperCase();
     final codeChanged = newCode != _originalSchoolCode;
 
-    // Show confirmation dialog if code changed
     if (codeChanged) {
       final shouldProceed = await showDialog<bool>(
         context: context,
@@ -132,36 +120,34 @@ class _AdminSchoolSettingsPageState extends State<AdminSchoolSettingsPage> {
       if (shouldProceed != true) return;
     }
 
-    setState(() => _isSaving = true);
-    try {
-      // Update school code if it changed
-      if (codeChanged) {
-        await di.sl<DioClient>().dio.put(
-          '${ApiConstants.baseUrl}/api/v1/admin/setup/code',
-          data: {'code': newCode},
-        );
-        _originalSchoolCode = newCode;
+    final notifier = ref.read(schoolSettingsProvider.notifier);
+
+    // Update code first if changed
+    if (codeChanged) {
+      final codeOk = await notifier.updateSchoolCode(schoolCode: newCode);
+      if (!codeOk) {
+        if (mounted) {
+          final state = ref.read(schoolSettingsProvider);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.error ?? 'Failed to update code')),
+          );
+        }
+        return;
       }
+      _originalSchoolCode = newCode;
+    }
 
-      // Update school settings
-      final name = _schoolNameController.text.trim();
-      await di.sl<DioClient>().dio.put(
-        '${ApiConstants.baseUrl}/api/v1/admin/setup/school-settings',
-        data: {
-          'school_name': name,
-          'school_region': _regionController.text.trim().isEmpty
-              ? null
-              : _regionController.text.trim(),
-          'school_division': _divisionController.text.trim().isEmpty
-              ? null
-              : _divisionController.text.trim(),
-          'school_year': _schoolYearController.text.trim().isEmpty
-              ? null
-              : _schoolYearController.text.trim(),
-        },
-      );
+    // Update settings
+    final name = _schoolNameController.text.trim();
+    final ok = await notifier.updateSchoolSettings(
+      schoolName: name,
+      schoolRegion: _regionController.text.trim(),
+      schoolDivision: _divisionController.text.trim(),
+      schoolYear: _schoolYearController.text.trim(),
+      schoolCode: _schoolCodeController.text.trim(),
+    );
 
-      // Update SharedPreferences so login page shows the correct school name
+    if (ok) {
       if (name.isNotEmpty) {
         final setupService = di.sl<SchoolSetupService>();
         final config = await setupService.getSchoolConfig();
@@ -171,7 +157,6 @@ class _AdminSchoolSettingsPageState extends State<AdminSchoolSettingsPage> {
           );
         }
       }
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -180,18 +165,29 @@ class _AdminSchoolSettingsPageState extends State<AdminSchoolSettingsPage> {
           ),
         );
       }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to save settings')),
-        );
-      }
+    } else if (mounted) {
+      final state = ref.read(schoolSettingsProvider);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(state.error ?? 'Failed to save settings')),
+      );
     }
-    if (mounted) setState(() => _isSaving = false);
   }
 
   @override
   Widget build(BuildContext context) {
+    final providerState = ref.watch(schoolSettingsProvider);
+
+    // Sync controllers whenever settings change from external events
+    ref.listen(schoolSettingsProvider, (previous, next) {
+      if (previous?.settings?.schoolCode != next.settings?.schoolCode ||
+          previous?.settings?.schoolName != next.settings?.schoolName) {
+        _syncControllersWithState(next);
+      }
+    });
+
+    final isLoading = providerState.isLoading;
+    final isSaving = providerState.isSaving;
+
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
@@ -208,7 +204,7 @@ class _AdminSchoolSettingsPageState extends State<AdminSchoolSettingsPage> {
           ),
         ),
       ),
-      body: _isLoading
+      body: isLoading
           ? const Center(
               child: CircularProgressIndicator(
                 color: AppColors.accentCharcoal,
@@ -239,14 +235,14 @@ class _AdminSchoolSettingsPageState extends State<AdminSchoolSettingsPage> {
                       divisionController: _divisionController,
                       schoolYearController: _schoolYearController,
                       schoolCodeController: _schoolCodeController,
-                      enabled: !_isSaving,
+                      enabled: !isSaving,
                     ),
                   ),
                   const SizedBox(height: 32),
                   SizedBox(
                     height: 48,
                     child: ElevatedButton(
-                      onPressed: _isSaving ? null : _handleSave,
+                      onPressed: isSaving ? null : _handleSave,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.accentCharcoal,
                         foregroundColor: Colors.white,
@@ -255,7 +251,7 @@ class _AdminSchoolSettingsPageState extends State<AdminSchoolSettingsPage> {
                         ),
                         elevation: 0,
                       ),
-                      child: _isSaving
+                      child: isSaving
                           ? const SizedBox(
                               width: 20,
                               height: 20,
@@ -275,7 +271,7 @@ class _AdminSchoolSettingsPageState extends State<AdminSchoolSettingsPage> {
                   ),
                   const SizedBox(height: 16),
                   OutlinedButton.icon(
-                    onPressed: _isSaving ? null : _showQrCodeDialog,
+                    onPressed: isSaving ? null : _showQrCodeDialog,
                     icon: const Icon(Icons.qr_code),
                     label: const Text('View QR Code'),
                     style: OutlinedButton.styleFrom(

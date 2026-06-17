@@ -21,6 +21,7 @@ import 'package:likha/data/datasources/remote/auth/auth_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/classes/class_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/grading/grading_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/learning_materials/learning_material_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/setup/setup_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/sync/sync_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/tos/tos_remote_datasource.dart';
 import 'package:likha/services/storage_service.dart';
@@ -41,6 +42,7 @@ class MockGradingRemoteDataSource extends Mock implements GradingRemoteDataSourc
 class MockGradingLocalDataSource extends Mock implements GradingLocalDataSource {}
 class MockLearningMaterialRemoteDataSource extends Mock implements LearningMaterialRemoteDataSource {}
 class MockLearningMaterialLocalDataSource extends Mock implements LearningMaterialLocalDataSource {}
+class MockSetupRemoteDataSource extends Mock implements SetupRemoteDataSource {}
 class MockTosRemoteDataSource extends Mock implements TosRemoteDataSource {}
 class MockTosLocalDataSource extends Mock implements TosLocalDataSource {}
 class MockSyncLogger extends Mock implements SyncLogger {}
@@ -65,6 +67,7 @@ void main() {
   late MockGradingLocalDataSource mockGradingLocal;
   late MockLearningMaterialRemoteDataSource mockLearningMaterialRemote;
   late MockLearningMaterialLocalDataSource mockLearningMaterialLocal;
+  late MockSetupRemoteDataSource mockSetupRemote;
   late MockTosRemoteDataSource mockTosRemote;
   late MockTosLocalDataSource mockTosLocal;
   late MockSyncLogger mockSyncLogger;
@@ -89,6 +92,7 @@ void main() {
     mockGradingLocal = MockGradingLocalDataSource();
     mockLearningMaterialRemote = MockLearningMaterialRemoteDataSource();
     mockLearningMaterialLocal = MockLearningMaterialLocalDataSource();
+    mockSetupRemote = MockSetupRemoteDataSource();
     mockTosRemote = MockTosRemoteDataSource();
     mockTosLocal = MockTosLocalDataSource();
     mockSyncLogger = MockSyncLogger();
@@ -117,6 +121,7 @@ void main() {
       mockGradingLocal,
       mockLearningMaterialRemote,
       mockLearningMaterialLocal,
+      mockSetupRemote,
       mockTosRemote,
       mockTosLocal,
       mockSyncLogger,
