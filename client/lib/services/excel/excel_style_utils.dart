@@ -78,7 +78,6 @@ class ExcelStyleUtils {
     sheet.merge(
       CellIndex.indexByColumnRow(columnIndex: startCol, rowIndex: startRow),
       CellIndex.indexByColumnRow(columnIndex: endCol, rowIndex: endRow),
-      customValue: TextCellValue(''),
     );
   }
 }

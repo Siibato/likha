@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
@@ -166,7 +167,28 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     );
     result.fold(
       (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
-      (_) => state = state.copyWith(successMessage: 'Material updated successfully'),
+      (_) {
+        final current = state.currentMaterial;
+        final updatedMaterial = current != null && current.id == materialId
+            ? MaterialDetail(
+                id: current.id,
+                classId: current.classId,
+                title: title ?? current.title,
+                description: description ?? current.description,
+                contentText: contentText ?? current.contentText,
+                orderIndex: current.orderIndex,
+                files: current.files,
+                createdAt: current.createdAt,
+                updatedAt: DateTime.now(),
+                cachedAt: current.cachedAt,
+                syncStatus: current.syncStatus,
+              )
+            : null;
+        state = state.copyWith(
+          successMessage: 'Material updated successfully',
+          currentMaterial: updatedMaterial,
+        );
+      },
     );
   }
 
@@ -177,6 +199,9 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
       (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
       (_) => state = state.copyWith(
         materials: state.materials.where((m) => m.id != materialId).toList(),
+        currentMaterial: state.currentMaterial?.id == materialId
+            ? null
+            : state.currentMaterial,
         successMessage: 'Material deleted successfully',
       ),
     );
@@ -214,6 +239,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     required String materialId,
     required String filePath,
     required String fileName,
+    Uint8List? fileBytes,
   }) async {
     state = state.copyWith(
       clearError: true,
@@ -226,6 +252,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
       materialId: materialId,
       filePath: filePath,
       fileName: fileName,
+      fileBytes: fileBytes,
       onSendProgress: (sent, total) {
         if (total > 0) {
           state = state.copyWith(uploadProgress: sent / total);
@@ -238,10 +265,29 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
         error: AppErrorMapper.fromFailure(failure),
         clearUploadProgress: true,
       ),
-      (_) => state = state.copyWith(
-        successMessage: 'File uploaded successfully',
-        clearUploadProgress: true,
-      ),
+      (mutationResult) {
+        final current = state.currentMaterial;
+        final updatedMaterial = current != null
+            ? MaterialDetail(
+                id: current.id,
+                classId: current.classId,
+                title: current.title,
+                description: current.description,
+                contentText: current.contentText,
+                orderIndex: current.orderIndex,
+                files: [...current.files, mutationResult.entity],
+                createdAt: current.createdAt,
+                updatedAt: current.updatedAt,
+                cachedAt: current.cachedAt,
+                syncStatus: current.syncStatus,
+              )
+            : null;
+        state = state.copyWith(
+          successMessage: 'File uploaded successfully',
+          clearUploadProgress: true,
+          currentMaterial: updatedMaterial,
+        );
+      },
     );
   }
 
@@ -250,7 +296,28 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     final result = await _deleteFile(fileId);
     result.fold(
       (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
-      (_) => state = state.copyWith(successMessage: 'File deleted successfully'),
+      (_) {
+        final current = state.currentMaterial;
+        final updatedMaterial = current != null
+            ? MaterialDetail(
+                id: current.id,
+                classId: current.classId,
+                title: current.title,
+                description: current.description,
+                contentText: current.contentText,
+                orderIndex: current.orderIndex,
+                files: current.files.where((f) => f.id != fileId).toList(),
+                createdAt: current.createdAt,
+                updatedAt: current.updatedAt,
+                cachedAt: current.cachedAt,
+                syncStatus: current.syncStatus,
+              )
+            : null;
+        state = state.copyWith(
+          successMessage: 'File deleted successfully',
+          currentMaterial: updatedMaterial,
+        );
+      },
     );
   }
 

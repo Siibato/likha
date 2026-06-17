@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
@@ -114,14 +116,17 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
     required String materialId,
     required String filePath,
     required String fileName,
+    Uint8List? fileBytes,
     void Function(int sent, int total)? onSendProgress,
   }) =>
       ops.uploadFile(
         _localDataSource,
         _syncQueue,
+        _remoteDataSource,
         materialId: materialId,
         filePath: filePath,
         fileName: fileName,
+        fileBytes: fileBytes,
         onSendProgress: onSendProgress,
       );
 

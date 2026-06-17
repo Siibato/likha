@@ -40,13 +40,5 @@ pub fn realistic_assignments_q3(ctx: &SeedContext) -> Vec<AssignmentSpec> {
             due_at: now - chrono::Duration::days(73), component: "performance_task".into(),
             created_at: created, deleted_at: None, is_published: true, grading_period_number: 3,
         },
-        AssignmentSpec {
-            id: asid("adv_q3_assign1"), class_id: cid("advisory_9a"),
-            title: "Role-Play Script: Assertive Communication".into(),
-            instructions: "Write a 200-word dialogue script showing assertive communication in a peer pressure situation. Include the scenario, assertive response, and expected outcome.".into(),
-            total_points: 30, allows_text_submission: true, allows_file_submission: false,
-            due_at: now - chrono::Duration::days(74), component: "written_work".into(),
-            created_at: created, deleted_at: None, is_published: true, grading_period_number: 3,
-        },
     ]
 }

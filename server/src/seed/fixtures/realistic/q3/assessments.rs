@@ -49,15 +49,15 @@ pub fn realistic_assessments_q3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         ],
     });
 
-    // English 9 - Quiz 2 (5 items, performance task)
+    // English 9 - Quiz 2 (5 items, written work)
     assessments.push(AssessmentSpec {
         id: aid("eng_q3_quiz2"), class_id: cid("english_9a"),
         title: "Quiz 2: Media Literacy".into(),
         description: Some("5-item quiz on media analysis and persuasive techniques.".into()),
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(78), close_at: now - chrono::Duration::days(73),
-        show_results_immediately: false, total_points: 12, component: "performance_task".into(),
+        show_results_immediately: true, total_points: 12, component: "written_work".into(),
         tos_id: tid("english_9a_tos_q3"), created_at: created, deleted_at: None,
-        is_published: true, results_released: false, grading_period_number: 3,
+        is_published: true, results_released: true, grading_period_number: 3,
         questions: vec![
             QuestionSpec { id: qid("eng_q3_quiz2", 0), question_type: "multiple_choice".into(),
                 text: "Which media technique uses emotional music to influence viewers?".into(),
@@ -124,6 +124,46 @@ pub fn realistic_assessments_q3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         questions: eng_q3_exam_qs,
     });
 
+    // English 9 - Quiz 3 (5 items, written work)
+    assessments.push(AssessmentSpec {
+        id: aid("eng_q3_quiz3"), class_id: cid("english_9a"),
+        title: "Quiz 3: Research Methods".into(),
+        description: Some("5-item quiz on research techniques and source evaluation.".into()),
+        time_limit_minutes: 30, open_at: now - chrono::Duration::days(79), close_at: now - chrono::Duration::days(74),
+        show_results_immediately: true, total_points: 11, component: "written_work".into(),
+        tos_id: tid("english_9a_tos_q3"), created_at: created, deleted_at: None,
+        is_published: true, results_released: true, grading_period_number: 3,
+        questions: vec![
+            QuestionSpec { id: qid("eng_q3_quiz3", 0), question_type: "multiple_choice".into(),
+                text: "What is the first step in conducting research?".into(),
+                points: 1, order: 0, is_multi_select: false, tos_competency_id: Some(compid("e9q3_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()),
+                choices: mc_choices("eng_q3_quiz3_q0", 1),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["B".into()] }, },
+            QuestionSpec { id: qid("eng_q3_quiz3", 1), question_type: "multiple_choice".into(),
+                text: "Which search operator narrows search results?".into(),
+                points: 1, order: 1, is_multi_select: false, tos_competency_id: Some(compid("e9q3_comp_0")),
+                difficulty: Some("medium".into()), cognitive_level: Some("understanding".into()),
+                choices: mc_choices("eng_q3_quiz3_q1", 1),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["B".into()] }, },
+            QuestionSpec { id: qid("eng_q3_quiz3", 2), question_type: "identification".into(),
+                text: "What is the term for a source that interprets primary sources?".into(),
+                points: 1, order: 2, is_multi_select: false, tos_competency_id: Some(compid("e9q3_comp_1")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Secondary source".into()] }, },
+            QuestionSpec { id: qid("eng_q3_quiz3", 3), question_type: "identification".into(),
+                text: "What citation style is commonly used in English?".into(),
+                points: 1, order: 3, is_multi_select: false, tos_competency_id: Some(compid("e9q3_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["MLA".into()] }, },
+            QuestionSpec { id: qid("eng_q3_quiz3", 4), question_type: "essay".into(),
+                text: "Explain the difference between a primary source and a secondary source. Provide one example of each.".into(),
+                points: 5, order: 4, is_multi_select: false, tos_competency_id: Some(compid("e9q3_comp_1")),
+                difficulty: Some("hard".into()), cognitive_level: Some("analyzing".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec![] }, },
+        ],
+    });
+
     // Science 9 - Quiz 1 (5 items, written work)
     assessments.push(AssessmentSpec {
         id: aid("sci_q3_quiz1"), class_id: cid("science_9a"),
@@ -164,15 +204,15 @@ pub fn realistic_assessments_q3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         ],
     });
 
-    // Science 9 - Quiz 2 (5 items, performance task)
+    // Science 9 - Quiz 2 (5 items, written work)
     assessments.push(AssessmentSpec {
         id: aid("sci_q3_quiz2"), class_id: cid("science_9a"),
         title: "Quiz 2: Energy & Work".into(),
         description: Some("5-item quiz on kinetic energy, potential energy, and work.".into()),
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(79), close_at: now - chrono::Duration::days(74),
-        show_results_immediately: false, total_points: 12, component: "performance_task".into(),
+        show_results_immediately: true, total_points: 12, component: "written_work".into(),
         tos_id: tid("science_9a_tos_q3"), created_at: created, deleted_at: None,
-        is_published: true, results_released: false, grading_period_number: 3,
+        is_published: true, results_released: true, grading_period_number: 3,
         questions: vec![
             QuestionSpec { id: qid("sci_q3_quiz2", 0), question_type: "multiple_choice".into(),
                 text: "What type of energy does a moving car have?".into(),
@@ -239,7 +279,47 @@ pub fn realistic_assessments_q3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         questions: sci_q3_exam_qs,
     });
 
-    // Advisory 9-A - Quiz (5 items, written work)
+    // Science 9 - Quiz 3 (5 items, written work)
+    assessments.push(AssessmentSpec {
+        id: aid("sci_q3_quiz3"), class_id: cid("science_9a"),
+        title: "Quiz 3: Physics Fundamentals".into(),
+        description: Some("5-item quiz on basic physics concepts and calculations.".into()),
+        time_limit_minutes: 30, open_at: now - chrono::Duration::days(80), close_at: now - chrono::Duration::days(75),
+        show_results_immediately: true, total_points: 11, component: "written_work".into(),
+        tos_id: tid("science_9a_tos_q3"), created_at: created, deleted_at: None,
+        is_published: true, results_released: true, grading_period_number: 3,
+        questions: vec![
+            QuestionSpec { id: qid("sci_q3_quiz3", 0), question_type: "multiple_choice".into(),
+                text: "What is the SI unit of force?".into(),
+                points: 1, order: 0, is_multi_select: false, tos_competency_id: Some(compid("s9q3_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()),
+                choices: mc_choices("sci_q3_quiz3_q0", 0),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["A".into()] }, },
+            QuestionSpec { id: qid("sci_q3_quiz3", 1), question_type: "multiple_choice".into(),
+                text: "Which quantity has both magnitude and direction?".into(),
+                points: 1, order: 1, is_multi_select: false, tos_competency_id: Some(compid("s9q3_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()),
+                choices: mc_choices("sci_q3_quiz3_q1", 2),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["C".into()] }, },
+            QuestionSpec { id: qid("sci_q3_quiz3", 2), question_type: "identification".into(),
+                text: "What is the formula for work?".into(),
+                points: 1, order: 2, is_multi_select: false, tos_competency_id: Some(compid("s9q3_comp_3")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["W = Fd".into()] }, },
+            QuestionSpec { id: qid("sci_q3_quiz3", 3), question_type: "identification".into(),
+                text: "What is the unit of power?".into(),
+                points: 1, order: 3, is_multi_select: false, tos_competency_id: Some(compid("s9q3_comp_3")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Watt".into()] }, },
+            QuestionSpec { id: qid("sci_q3_quiz3", 4), question_type: "essay".into(),
+                text: "Explain the relationship between force, mass, and acceleration using Newton's second law. Provide a real-world example.".into(),
+                points: 5, order: 4, is_multi_select: false, tos_competency_id: Some(compid("s9q3_comp_0")),
+                difficulty: Some("hard".into()), cognitive_level: Some("applying".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec![] }, },
+        ],
+    });
+
+    // Advisory 9-A - Quiz 1 (5 items, written work)
     assessments.push(AssessmentSpec {
         id: aid("adv_q3_quiz1"), class_id: cid("advisory_9a"),
         title: "Quiz: Social Skills & Relationships".into(),
@@ -277,6 +357,121 @@ pub fn realistic_assessments_q3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
                 difficulty: Some("hard".into()), cognitive_level: Some("applying".into()), choices: vec![],
                 answer_key: AnswerKeySpec { acceptable_answers: vec![] }, },
         ],
+    });
+
+    // Advisory 9-A - Quiz 2 (5 items, written work)
+    assessments.push(AssessmentSpec {
+        id: aid("adv_q3_quiz2"), class_id: cid("advisory_9a"),
+        title: "Quiz 2: Communication Skills".into(),
+        description: Some("5-item quiz on effective communication techniques.".into()),
+        time_limit_minutes: 20, open_at: now - chrono::Duration::days(77), close_at: now - chrono::Duration::days(72),
+        show_results_immediately: true, total_points: 10, component: "written_work".into(),
+        tos_id: tid("advisory_9a_tos_q3"), created_at: created, deleted_at: None,
+        is_published: true, results_released: true, grading_period_number: 3,
+        questions: vec![
+            QuestionSpec { id: qid("adv_q3_quiz2", 0), question_type: "multiple_choice".into(),
+                text: "What is active listening?".into(),
+                points: 1, order: 0, is_multi_select: false, tos_competency_id: Some(compid("a9q3_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()),
+                choices: mc_choices("adv_q3_quiz2_q0", 1),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["B".into()] }, },
+            QuestionSpec { id: qid("adv_q3_quiz2", 1), question_type: "multiple_choice".into(),
+                text: "Which communication style respects both your own and others' rights?".into(),
+                points: 1, order: 1, is_multi_select: false, tos_competency_id: Some(compid("a9q3_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("understanding".into()),
+                choices: mc_choices("adv_q3_quiz2_q1", 0),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["A".into()] }, },
+            QuestionSpec { id: qid("adv_q3_quiz2", 2), question_type: "identification".into(),
+                text: "What is non-verbal communication?".into(),
+                points: 1, order: 2, is_multi_select: false, tos_competency_id: Some(compid("a9q3_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Communication without words".into()] }, },
+            QuestionSpec { id: qid("adv_q3_quiz2", 3), question_type: "identification".into(),
+                text: "What body language shows you are listening?".into(),
+                points: 1, order: 3, is_multi_select: false, tos_competency_id: Some(compid("a9q3_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Nodding".into(), "Eye contact".into()] }, },
+            QuestionSpec { id: qid("adv_q3_quiz2", 4), question_type: "essay".into(),
+                text: "Describe a situation where active listening helped resolve a conflict. Explain what you did and the outcome.".into(),
+                points: 5, order: 4, is_multi_select: false, tos_competency_id: Some(compid("a9q3_comp_0")),
+                difficulty: Some("hard".into()), cognitive_level: Some("applying".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec![] }, },
+        ],
+    });
+
+    // Advisory 9-A - Quiz 3 (5 items, written work)
+    assessments.push(AssessmentSpec {
+        id: aid("adv_q3_quiz3"), class_id: cid("advisory_9a"),
+        title: "Quiz 3: Decision Making".into(),
+        description: Some("5-item quiz on responsible decision-making.".into()),
+        time_limit_minutes: 20, open_at: now - chrono::Duration::days(76), close_at: now - chrono::Duration::days(71),
+        show_results_immediately: true, total_points: 10, component: "written_work".into(),
+        tos_id: tid("advisory_9a_tos_q3"), created_at: created, deleted_at: None,
+        is_published: true, results_released: true, grading_period_number: 3,
+        questions: vec![
+            QuestionSpec { id: qid("adv_q3_quiz3", 0), question_type: "multiple_choice".into(),
+                text: "What is the first step in decision-making?".into(),
+                points: 1, order: 0, is_multi_select: false, tos_competency_id: Some(compid("a9q3_comp_1")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()),
+                choices: mc_choices("adv_q3_quiz3_q0", 1),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["B".into()] }, },
+            QuestionSpec { id: qid("adv_q3_quiz3", 1), question_type: "multiple_choice".into(),
+                text: "What should you consider before making a decision?".into(),
+                points: 1, order: 1, is_multi_select: false, tos_competency_id: Some(compid("a9q3_comp_1")),
+                difficulty: Some("easy".into()), cognitive_level: Some("understanding".into()),
+                choices: mc_choices("adv_q3_quiz3_q1", 2),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["C".into()] }, },
+            QuestionSpec { id: qid("adv_q3_quiz3", 2), question_type: "identification".into(),
+                text: "What is the term for thinking about consequences before acting?".into(),
+                points: 1, order: 2, is_multi_select: false, tos_competency_id: Some(compid("a9q3_comp_1")),
+                difficulty: Some("medium".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Consequential thinking".into()] }, },
+            QuestionSpec { id: qid("adv_q3_quiz3", 3), question_type: "identification".into(),
+                text: "What is peer pressure?".into(),
+                points: 1, order: 3, is_multi_select: false, tos_competency_id: Some(compid("a9q3_comp_1")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Influence from friends".into()] }, },
+            QuestionSpec { id: qid("adv_q3_quiz3", 4), question_type: "essay".into(),
+                text: "Describe a difficult decision you had to make. Explain the process you used and the consequences of your choice.".into(),
+                points: 5, order: 4, is_multi_select: false, tos_competency_id: Some(compid("a9q3_comp_1")),
+                difficulty: Some("hard".into()), cognitive_level: Some("evaluating".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec![] }, },
+        ],
+    });
+
+    // Advisory 9-A - Q3 Quarter Exam
+    let adv_q3_exam_qs = build_questions_from_bank("adv_q3_exam",
+        &[
+            ("What is assertiveness?", &["Being aggressive", "Being passive", "Standing up for yourself respectfully", "Ignoring others"], 2, "easy", "remembering"),
+            ("What is the best way to handle peer pressure?", &["Give in", "Walk away", "Get angry", "Ignore it"], 1, "medium", "understanding"),
+            ("Which shows active listening?", &["Looking at phone", "Nodding and making eye contact", "Interrupting", "Daydreaming"], 1, "easy", "remembering"),
+            ("What is a consequence?", &["A reward", "A result of an action", "A punishment", "A game"], 1, "medium", "understanding"),
+            ("What helps build healthy relationships?", &["Dishonesty", "Trust and respect", "Ignoring others", "Being selfish"], 1, "easy", "remembering"),
+            ("What is the first step in conflict resolution?", &["Fight", "Identify the problem", "Blame others", "Walk away"], 1, "medium", "understanding"),
+            ("Which communication style is healthiest?", &["Passive", "Aggressive", "Assertive", "Manipulative"], 2, "easy", "remembering"),
+            ("What should you do if you make a bad decision?", &["Deny it", "Learn from it", "Blame others", "Repeat it"], 1, "medium", "understanding"),
+            ("What is empathy?", &["Feeling sorry for someone", "Understanding others' feelings", "Ignoring feelings", "Being critical"], 1, "medium", "understanding"),
+            ("What is the purpose of setting boundaries?", &["To control others", "To protect yourself", "To be rude", "No purpose"], 1, "easy", "remembering"),
+        ],
+        &[
+            ("What is the decision-making process?", "Steps to make thoughtful choices", "easy", "remembering"),
+            ("What is conflict resolution?", "Solving disagreements peacefully", "easy", "remembering"),
+            ("What are I-statements?", "Expressing feelings using 'I' instead of blaming", "medium", "remembering"),
+            ("What is self-reflection?", "Thinking about your own actions and feelings", "medium", "remembering"),
+        ],
+        &[("Develop a personal decision-making framework. Explain how you would approach a difficult choice involving peer pressure.".into(), 5, "hard", "creating")],
+        &[compid("a9q3_comp_0"), compid("a9q3_comp_1")],
+    );
+    let adv_q3_exam_points: i32 = adv_q3_exam_qs.iter().map(|q| q.points).sum();
+    assessments.push(AssessmentSpec {
+        id: aid("adv_q3_exam"), class_id: cid("advisory_9a"),
+        title: "Quarter 3 Exam: Advisory 9-A".into(),
+        description: Some("15-item quarterly assessment on social skills and decision-making.".into()),
+        time_limit_minutes: 45, open_at: now - chrono::Duration::days(83), close_at: now - chrono::Duration::days(77),
+        show_results_immediately: true, total_points: adv_q3_exam_points, component: "quarterly_assessment".into(),
+        tos_id: tid("advisory_9a_tos_q3"), created_at: created, deleted_at: None,
+        is_published: true, results_released: true, grading_period_number: 3,
+        questions: adv_q3_exam_qs,
     });
 
     assessments

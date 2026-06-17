@@ -1,4 +1,5 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
@@ -41,6 +42,7 @@ class _CreateMaterialPageState
         'pdf', 'doc', 'docx', 'ppt', 'pptx',
         'mp4', 'mp3', 'jpg', 'png', 'gif',
       ],
+      withData: true,
     );
     if (result != null) {
       setState(() => _selectedFiles.addAll(result.files));
@@ -92,17 +94,24 @@ class _CreateMaterialPageState
     // Step 2: Upload files sequentially
     bool anyUploadFailed = false;
     for (final file in _selectedFiles) {
-      if (file.path != null) {
+      if (kIsWeb && file.bytes != null) {
+        await ref.read(learningMaterialProvider.notifier).uploadFile(
+              materialId: material.id,
+              filePath: file.name,
+              fileName: file.name,
+              fileBytes: file.bytes,
+            );
+      } else if (file.path != null) {
         await ref.read(learningMaterialProvider.notifier).uploadFile(
               materialId: material.id,
               filePath: file.path!,
               fileName: file.name,
             );
+      }
 
-        final uploadState = ref.read(learningMaterialProvider);
-        if (uploadState.error != null) {
-          anyUploadFailed = true;
-        }
+      final uploadState = ref.read(learningMaterialProvider);
+      if (uploadState.error != null) {
+        anyUploadFailed = true;
       }
     }
 

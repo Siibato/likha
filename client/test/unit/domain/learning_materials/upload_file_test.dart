@@ -36,6 +36,7 @@ void main() {
         materialId: any(named: 'materialId'),
         filePath: any(named: 'filePath'),
         fileName: any(named: 'fileName'),
+        fileBytes: any(named: 'fileBytes'),
         onSendProgress: any(named: 'onSendProgress'),
       )).thenAnswer((_) async => Right(MutationResult(entity: tFile, status: SyncStatus.pending)));
 
@@ -51,6 +52,7 @@ void main() {
         materialId: tMaterialId,
         filePath: tFilePath,
         fileName: tFileName,
+        fileBytes: null,
         onSendProgress: null,
       )).called(1);
     });
@@ -60,6 +62,7 @@ void main() {
         materialId: any(named: 'materialId'),
         filePath: any(named: 'filePath'),
         fileName: any(named: 'fileName'),
+        fileBytes: any(named: 'fileBytes'),
         onSendProgress: any(named: 'onSendProgress'),
       )).thenAnswer((_) async => const Left(ServerFailure('Material not found')));
 
@@ -81,6 +84,7 @@ void main() {
         materialId: any(named: 'materialId'),
         filePath: any(named: 'filePath'),
         fileName: any(named: 'fileName'),
+        fileBytes: any(named: 'fileBytes'),
         onSendProgress: any(named: 'onSendProgress'),
       )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 

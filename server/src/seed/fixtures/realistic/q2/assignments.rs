@@ -40,13 +40,5 @@ pub fn realistic_assignments_q2(ctx: &SeedContext) -> Vec<AssignmentSpec> {
             due_at: now - chrono::Duration::days(33), component: "performance_task".into(),
             created_at: created, deleted_at: None, is_published: true, grading_period_number: 2,
         },
-        AssignmentSpec {
-            id: asid("adv_q2_assign1"), class_id: cid("advisory_9a"),
-            title: "Nutrition Plan: Balanced Diet for One Week".into(),
-            instructions: "Create a one-week meal plan that includes balanced nutrition. For each day, list breakfast, lunch, and dinner with their food groups. Write a 100-word explanation of how this plan meets nutritional needs.".into(),
-            total_points: 30, allows_text_submission: true, allows_file_submission: false,
-            due_at: now - chrono::Duration::days(34), component: "written_work".into(),
-            created_at: created, deleted_at: None, is_published: true, grading_period_number: 2,
-        },
     ]
 }

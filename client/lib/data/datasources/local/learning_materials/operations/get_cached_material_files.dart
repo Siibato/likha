@@ -15,7 +15,7 @@ Future<List<MaterialFileModel>> getCachedMaterialFiles(
     final db = await localDatabase.database;
     final results = await db.query(
       DbTables.materialFiles,
-      where: '${MaterialFilesCols.materialId} = ?',
+      where: '${MaterialFilesCols.materialId} = ? AND ${CommonCols.deletedAt} IS NULL',
       whereArgs: [materialId],
       orderBy: '${MaterialFilesCols.uploadedAt} ASC',
     );

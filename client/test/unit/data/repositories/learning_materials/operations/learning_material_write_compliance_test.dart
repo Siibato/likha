@@ -17,6 +17,7 @@ import 'package:likha/data/repositories/learning_materials/operations/reorder_ma
 import 'package:likha/data/repositories/learning_materials/operations/update_material.dart';
 import 'package:likha/data/repositories/learning_materials/operations/upload_file.dart';
 
+import '../../../../../helpers/mock_datasources.dart';
 import '../../../../../helpers/test_database.dart';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -102,10 +103,12 @@ void _assertSyncQueueEntry(
 void main() {
   late LearningMaterialLocalDataSourceImpl local;
   late SyncQueueImpl syncQueue;
+  late MockLearningMaterialRemoteDataSource remote;
   setUp(() async {
     await openFreshTestDatabase();
     syncQueue = SyncQueueImpl(LocalDatabase());
     local = LearningMaterialLocalDataSourceImpl(LocalDatabase(), syncQueue);
+    remote = MockLearningMaterialRemoteDataSource();
   });
 
   tearDown(() async {
@@ -250,6 +253,7 @@ void main() {
         final result = await uploadFile(
           local,
           syncQueue,
+          remote,
           materialId: 'm1',
           filePath: '/tmp/test.pdf',
           fileName: 'test.pdf',

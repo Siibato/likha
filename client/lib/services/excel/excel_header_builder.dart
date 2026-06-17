@@ -9,7 +9,7 @@ class ExcelHeaderBuilder {
 
     // Title row
     ExcelStyleUtils.setCell(sheet, row, 0, 'Class Record',
-        bold: true, fontSize: 14, hAlign: HorizontalAlign.Center);
+        bold: true, fontSize: 16, hAlign: HorizontalAlign.Center);
     ExcelStyleUtils.merge(sheet, row, 0, row, totalCols - 1);
     row++;
 
@@ -18,70 +18,141 @@ class ExcelHeaderBuilder {
         fontSize: 8, hAlign: HorizontalAlign.Center);
     ExcelStyleUtils.merge(sheet, row, 0, row, totalCols - 1);
     row++;
-    row++;
+    row++; // blank separator
 
     // Metadata row 1: REGION | DIVISION | DISTRICT
-    ExcelStyleUtils.setCell(sheet, row, 0, 'REGION:', bold: true, fontSize: 8);
-    ExcelStyleUtils.setCell(sheet, row, 1, ctx.region ?? '', fontSize: 8,
-        allBorders: true, hAlign: HorizontalAlign.Center);
-    ExcelStyleUtils.merge(sheet, row, 1, row, 2);
-
-    ExcelStyleUtils.setCell(sheet, row, 4, 'DIVISION:', bold: true, fontSize: 8);
-    ExcelStyleUtils.setCell(sheet, row, 5, ctx.division ?? '', fontSize: 8,
-        allBorders: true, hAlign: HorizontalAlign.Center);
-    ExcelStyleUtils.merge(sheet, row, 5, row, 6);
-
-    ExcelStyleUtils.setCell(sheet, row, 8, 'DISTRICT:', bold: true, fontSize: 8);
-    ExcelStyleUtils.setCell(sheet, row, 9, '', fontSize: 8,
-        allBorders: true, hAlign: HorizontalAlign.Center);
-    ExcelStyleUtils.merge(sheet, row, 9, row, 10);
+    final meta1Spans = _distributeSpans(totalCols, 3);
+    var col = 0;
+    _metaField(sheet, row, col, meta1Spans[0], 'REGION', ctx.region ?? '');
+    col += meta1Spans[0];
+    _metaField(sheet, row, col, meta1Spans[1], 'DIVISION', ctx.division ?? '');
+    col += meta1Spans[1];
+    _metaField(sheet, row, col, meta1Spans[2], 'DISTRICT', '');
     row++;
-    row++;
+    row++; // blank separator
 
-    // Metadata row 2: SCHOOL NAME | SCHOOL ID | SCHOOL YEAR
-    ExcelStyleUtils.setCell(sheet, row, 0, 'SCHOOL NAME:', bold: true, fontSize: 8);
-    ExcelStyleUtils.setCell(sheet, row, 1, ctx.schoolName ?? '', fontSize: 8,
-        allBorders: true);
-    ExcelStyleUtils.merge(sheet, row, 1, row, 5);
-
-    ExcelStyleUtils.setCell(sheet, row, 6, 'SCHOOL ID:', bold: true, fontSize: 8);
-    ExcelStyleUtils.setCell(sheet, row, 7, ctx.schoolId ?? '', fontSize: 8,
-        allBorders: true, hAlign: HorizontalAlign.Center);
-    ExcelStyleUtils.merge(sheet, row, 7, row, 8);
-
-    ExcelStyleUtils.setCell(sheet, row, 9, 'SCHOOL YEAR:', bold: true, fontSize: 8);
-    ExcelStyleUtils.setCell(sheet, row, 10, ctx.schoolYear ?? '', fontSize: 8,
-        allBorders: true, hAlign: HorizontalAlign.Center);
-    ExcelStyleUtils.merge(sheet, row, 10, row, 11);
+    // Metadata row 2: SCHOOL NAME | SCHOOL YEAR (no SCHOOL ID)
+    final meta2Spans = _distributeSpans(totalCols, 2);
+    col = 0;
+    _metaField(sheet, row, col, meta2Spans[0], 'SCHOOL NAME', ctx.schoolName ?? '');
+    col += meta2Spans[0];
+    _metaField(sheet, row, col, meta2Spans[1], 'SCHOOL YEAR', ctx.schoolYear ?? '');
     row++;
-    row++;
+    row++; // blank separator
 
     // Class info row
-    ExcelStyleUtils.setCell(sheet, row, 0, ctx.quarterLabel,
-        bold: true, fontSize: 8);
-    ExcelStyleUtils.setCell(sheet, row, 2, 'GRADE & SECTION:', bold: true, fontSize: 8);
-    ExcelStyleUtils.setCell(sheet, row, 3,
-        '${ctx.gradeLevel ?? ''} ${ctx.section ?? ctx.className}'.trim(),
-        fontSize: 8, underline: true);
-    ExcelStyleUtils.merge(sheet, row, 3, row, 5);
-
-    ExcelStyleUtils.setCell(sheet, row, 6, 'TEACHER:', bold: true, fontSize: 8);
-    ExcelStyleUtils.setCell(sheet, row, 7, ctx.teacherName ?? '', fontSize: 8,
-        underline: true);
-    ExcelStyleUtils.merge(sheet, row, 7, row, 8);
-
-    ExcelStyleUtils.setCell(sheet, row, 9, 'SUBJECT:', bold: true, fontSize: 8);
-    ExcelStyleUtils.setCell(sheet, row, 10, ctx.subject ?? '', fontSize: 8,
-        underline: true);
-    ExcelStyleUtils.merge(sheet, row, 10, row, 11);
-
-    ExcelStyleUtils.setCell(sheet, row, totalCols - 1, ctx.quarterLabel,
-        bold: true, fontSize: 9, bgColor: '#D9D9D9',
-        hAlign: HorizontalAlign.Center, allBorders: true);
+    _buildClassInfoRow(sheet, ctx, row, totalCols);
     row++;
-    row++;
+    row++; // blank separator
 
     return row;
+  }
+
+  void _metaField(Sheet sheet, int row, int startCol, int span,
+      String label, String value) {
+    ExcelStyleUtils.setCell(sheet, row, startCol, label,
+        bold: true, fontSize: 7);
+    final valueCol = startCol + 1;
+    final endCol = startCol + span - 1;
+    ExcelStyleUtils.setCell(
+      sheet, row, valueCol, value.isEmpty ? ' ' : value,
+      fontSize: 8,
+      allBorders: true,
+      hAlign: HorizontalAlign.Center,
+    );
+    if (endCol > valueCol) {
+      ExcelStyleUtils.merge(sheet, row, valueCol, row, endCol);
+    }
+  }
+
+  void _buildClassInfoRow(Sheet sheet, GradeExportContext ctx, int row, int totalCols) {
+    // Minimum columns needed: quarter(1) + gs_label(1) + gs_value(2) +
+    //   teacher_label(1) + teacher_value(2) + subject_label(1) + subject_value(2) + box(1) = 11
+    int gsValueSpan = 2;
+    int teacherValueSpan = 2;
+    int subjectValueSpan = 2;
+    int minCols = 1 + 1 + gsValueSpan + 1 + teacherValueSpan + 1 + subjectValueSpan + 1;
+
+    if (totalCols < minCols) {
+      final deficit = minCols - totalCols;
+      // Shrink value spans proportionally
+      for (int i = 0; i < deficit; i++) {
+        if (gsValueSpan > 1) {
+          gsValueSpan--;
+        } else if (teacherValueSpan > 1) {
+          teacherValueSpan--;
+        } else if (subjectValueSpan > 1) {
+          subjectValueSpan--;
+        }
+      }
+    }
+
+    var col = 0;
+
+    // Quarter label
+    ExcelStyleUtils.setCell(sheet, row, col, ctx.quarterLabel,
+        bold: true, fontSize: 8);
+    col += 1;
+
+    // GRADE & SECTION
+    ExcelStyleUtils.setCell(sheet, row, col, 'GRADE & SECTION:',
+        bold: true, fontSize: 7);
+    col += 1;
+    final gsValue = '${ctx.gradeLevel ?? ''} ${ctx.section ?? ctx.className}'.trim();
+    ExcelStyleUtils.setCell(sheet, row, col, gsValue.isEmpty ? ' ' : gsValue,
+        fontSize: 8, underline: true);
+    if (gsValueSpan > 1) {
+      ExcelStyleUtils.merge(sheet, row, col, row, col + gsValueSpan - 1);
+    }
+    col += gsValueSpan;
+
+    // TEACHER
+    ExcelStyleUtils.setCell(sheet, row, col, 'TEACHER:',
+        bold: true, fontSize: 7);
+    col += 1;
+    final teacherValue = ctx.teacherName?.isEmpty ?? true ? ' ' : ctx.teacherName!;
+    ExcelStyleUtils.setCell(sheet, row, col, teacherValue,
+        fontSize: 8, underline: true);
+    if (teacherValueSpan > 1) {
+      ExcelStyleUtils.merge(sheet, row, col, row, col + teacherValueSpan - 1);
+    }
+    col += teacherValueSpan;
+
+    // SUBJECT
+    ExcelStyleUtils.setCell(sheet, row, col, 'SUBJECT:',
+        bold: true, fontSize: 7);
+    col += 1;
+    final subjectValue = ctx.subject?.isEmpty ?? true ? ' ' : ctx.subject!;
+    ExcelStyleUtils.setCell(sheet, row, col, subjectValue,
+        fontSize: 8, underline: true);
+    if (subjectValueSpan > 1) {
+      ExcelStyleUtils.merge(sheet, row, col, row, col + subjectValueSpan - 1);
+    }
+    col += subjectValueSpan;
+
+    // Quarter box (remaining columns)
+    if (col < totalCols) {
+      ExcelStyleUtils.setCell(sheet, row, col, ctx.quarterLabel,
+          bold: true, fontSize: 9, bgColor: '#D9D9D9',
+          hAlign: HorizontalAlign.Center, allBorders: true);
+      if (col + 1 < totalCols) {
+        ExcelStyleUtils.merge(sheet, row, col, row, totalCols - 1);
+      }
+    }
+  }
+
+  /// Distribute total columns evenly across N fields.
+  /// Each field gets 1 column for its label plus a share of the remaining
+  /// columns for its value box.
+  List<int> _distributeSpans(int totalCols, int fieldCount) {
+    final available = totalCols - fieldCount; // columns left for values
+    final base = available ~/ fieldCount;
+    final extra = available % fieldCount;
+    final spans = <int>[];
+    for (int i = 0; i < fieldCount; i++) {
+      spans.add(1 + base + (i < extra ? 1 : 0));
+    }
+    return spans;
   }
 
   static int _totalColumns(GradeExportContext ctx) {

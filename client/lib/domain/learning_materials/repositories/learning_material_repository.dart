@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/learning_materials/entities/learning_material.dart';
@@ -41,6 +43,7 @@ abstract class LearningMaterialRepository {
     required String materialId,
     required String filePath,
     required String fileName,
+    Uint8List? fileBytes,
     void Function(int sent, int total)? onSendProgress,
   });
 

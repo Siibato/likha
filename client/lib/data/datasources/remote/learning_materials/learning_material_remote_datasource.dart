@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/data/models/learning_materials/material_detail_model.dart';
@@ -39,6 +41,7 @@ abstract class LearningMaterialRemoteDataSource {
     required String materialId,
     required String filePath,
     required String fileName,
+    Uint8List? fileBytes,
     void Function(int sent, int total)? onSendProgress,
     String? idempotencyKey,
   });
@@ -132,6 +135,7 @@ class LearningMaterialRemoteDataSourceImpl implements LearningMaterialRemoteData
     required String materialId,
     required String filePath,
     required String fileName,
+    Uint8List? fileBytes,
     void Function(int sent, int total)? onSendProgress,
     String? idempotencyKey,
   }) =>
@@ -140,6 +144,7 @@ class LearningMaterialRemoteDataSourceImpl implements LearningMaterialRemoteData
         materialId: materialId,
         filePath: filePath,
         fileName: fileName,
+        fileBytes: fileBytes,
         onSendProgress: onSendProgress,
         idempotencyKey: idempotencyKey,
       );

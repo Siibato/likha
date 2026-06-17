@@ -40,13 +40,5 @@ pub fn realistic_assignments_q4(ctx: &SeedContext) -> Vec<AssignmentSpec> {
             due_at: now - chrono::Duration::days(113), component: "performance_task".into(),
             created_at: created, deleted_at: None, is_published: true, grading_period_number: 4,
         },
-        AssignmentSpec {
-            id: asid("adv_q4_assign1"), class_id: cid("advisory_9a"),
-            title: "Career Portfolio: My Future Path".into(),
-            instructions: "Create a career portfolio including: (1) self-assessment of skills and interests, (2) three potential career paths with descriptions, (3) education requirements for each, and (4) a 150-word reflection on your top choice.".into(),
-            total_points: 30, allows_text_submission: true, allows_file_submission: false,
-            due_at: now - chrono::Duration::days(114), component: "written_work".into(),
-            created_at: created, deleted_at: None, is_published: true, grading_period_number: 4,
-        },
     ]
 }

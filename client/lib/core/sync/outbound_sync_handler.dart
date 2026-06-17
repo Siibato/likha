@@ -592,6 +592,8 @@ class OutboundSyncHandler {
       final submissionId = payload['submission_id'] as String?;
       var materialId     = payload['material_id']   as String?;
 
+      _log.log('handleFileUpload: op_id=${op.id.substring(0, 8)} file=$fileName file_id=${fileId?.substring(0, 8) ?? "none"}');
+
       // For material file uploads, look up the correct (reconciled) material_id from DB
       if (materialId != null && fileId != null) {
         try {
@@ -603,9 +605,14 @@ class OutboundSyncHandler {
             whereArgs: [fileId],
           );
           if (rows.isNotEmpty) {
-            materialId = rows.first[MaterialFilesCols.materialId] as String?;
+            final reconciledMaterialId = rows.first[MaterialFilesCols.materialId] as String?;
+            if (reconciledMaterialId != materialId) {
+              _log.log('handleFileUpload: reconciled material_id ${materialId.substring(0, 8)} → ${reconciledMaterialId?.substring(0, 8)}');
+              materialId = reconciledMaterialId;
+            }
           }
-        } catch (_) {
+        } catch (e) {
+          _log.error('handleFileUpload: failed to look up reconciled material_id - $e');
           // If DB lookup fails, fall back to payload value
         }
       }
@@ -640,28 +647,60 @@ class OutboundSyncHandler {
           }
         }
       } else if (materialId != null) {
-        await _syncRemoteDataSource.uploadMaterialFile(
+        _log.log('handleFileUpload: uploading material file material_id=${materialId.substring(0, 8)}');
+        final response = await _syncRemoteDataSource.uploadMaterialFile(
           materialId: materialId,
           localPath: localPath,
           fileName: fileName,
+          idempotencyKey: op.id,
         );
+
+        // Reconcile server file ID and clear local path
+        if (fileId != null) {
+          try {
+            final db = await _localDatabase.database;
+            final updates = <String, dynamic>{
+              MaterialFilesCols.localPath: '',
+              CommonCols.syncStatus: SyncStatus.synced.dbValue,
+            };
+            final serverId = response?['id'] as String?;
+            if (serverId != null && serverId != fileId) {
+              _log.log('handleFileUpload: reconciling file_id ${fileId.substring(0, 8)} → ${serverId.substring(0, 8)}');
+              updates[CommonCols.id] = serverId;
+            }
+            await db.update(
+              DbTables.materialFiles,
+              updates,
+              where: '${CommonCols.id} = ?',
+              whereArgs: [fileId],
+            );
+            _log.log('handleFileUpload: DB updated: syncStatus=synced, localPath cleared');
+          } catch (e) {
+            _log.error('handleFileUpload: failed to reconcile material file - $e');
+          }
+        }
       }
 
       // Clean up staged file after successful upload
       try {
         final stagedFile = File(localPath);
         if (await stagedFile.exists()) {
+          _log.log('handleFileUpload: deleting staged file $localPath');
           await stagedFile.delete();
         }
-      } catch (_) {
+      } catch (e) {
+        _log.warn('handleFileUpload: failed to delete staged file - $e');
         // Log but don't fail sync if cleanup fails
       }
 
+      _log.log('handleFileUpload: marking queue entry ${op.id.substring(0, 8)} as succeeded');
       await _syncQueue.markSucceeded(op.id);
-    } on NetworkException catch (_) {
+    } on NetworkException catch (e) {
+      _log.error('handleFileUpload: network error, incrementing retry - ${e.message}');
       await _syncQueue.incrementRetry(op.id);
       rethrow;
     } catch (e) {
+      _log.error('handleFileUpload: failed, marking as failed - $e');
       await _syncQueue.markFailed(op.id, e.toString());
     }
   }

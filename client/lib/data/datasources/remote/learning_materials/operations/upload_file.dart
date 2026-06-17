@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 
 import 'package:likha/core/constants/api_endpoints.dart';
@@ -10,15 +12,25 @@ Future<MaterialFileModel> uploadFile(
   required String materialId,
   required String filePath,
   required String fileName,
+  Uint8List? fileBytes,
   void Function(int sent, int total)? onSendProgress,
   String? idempotencyKey,
 }) async {
   try {
-    final formData = FormData.fromMap({
-      'file': await MultipartFile.fromFile(filePath, filename: fileName),
-    });
+    final MultipartFile multipartFile;
+    final int timeoutSeconds;
 
-    final timeoutSeconds = UploadTimeoutUtil.calculateTimeout(filePath);
+    if (fileBytes != null) {
+      multipartFile = MultipartFile.fromBytes(fileBytes, filename: fileName);
+      timeoutSeconds = UploadTimeoutUtil.calculateTimeoutFromBytes(fileBytes.length);
+    } else {
+      multipartFile = await MultipartFile.fromFile(filePath, filename: fileName);
+      timeoutSeconds = UploadTimeoutUtil.calculateTimeout(filePath);
+    }
+
+    final formData = FormData.fromMap({
+      'file': multipartFile,
+    });
 
     final response = await dioClient.dio.post(
       ApiEndpoints.materialUploadFile(materialId).path,

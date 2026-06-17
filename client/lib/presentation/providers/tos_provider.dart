@@ -156,7 +156,10 @@ class TosNotifier extends StateNotifier<TosState> {
     final result = await sl<AddCompetency>().call(tosId: tosId, data: data);
     result.fold(
       (failure) => state = state.copyWith(error: failure.message),
-      (_) => state = state.copyWith(successMessage: 'Competency added'),
+      (mutationResult) => state = state.copyWith(
+        competencies: [...state.competencies, mutationResult.entity],
+        successMessage: 'Competency added',
+      ),
     );
   }
 
@@ -165,7 +168,10 @@ class TosNotifier extends StateNotifier<TosState> {
     final result = await sl<UpdateCompetency>().call(competencyId: competencyId, data: data);
     result.fold(
       (failure) => state = state.copyWith(error: failure.message),
-      (_) => state = state.copyWith(successMessage: 'Competency updated'),
+      (mutationResult) => state = state.copyWith(
+        competencies: state.competencies.map((c) => c.id == competencyId ? mutationResult.entity : c).toList(),
+        successMessage: 'Competency updated',
+      ),
     );
   }
 
@@ -174,7 +180,10 @@ class TosNotifier extends StateNotifier<TosState> {
     final result = await sl<DeleteCompetency>().call(competencyId);
     result.fold(
       (failure) => state = state.copyWith(error: failure.message),
-      (_) => state = state.copyWith(successMessage: 'Competency deleted'),
+      (_) => state = state.copyWith(
+        competencies: state.competencies.where((c) => c.id != competencyId).toList(),
+        successMessage: 'Competency deleted',
+      ),
     );
   }
 
@@ -183,7 +192,10 @@ class TosNotifier extends StateNotifier<TosState> {
     final result = await sl<BulkAddCompetencies>().call(tosId: tosId, competencies: competencies);
     result.fold(
       (failure) => state = state.copyWith(error: failure.message),
-      (mutationResult) => state = state.copyWith(successMessage: '${mutationResult.entity.length} competencies added'),
+      (mutationResult) => state = state.copyWith(
+        competencies: [...state.competencies, ...mutationResult.entity],
+        successMessage: '${mutationResult.entity.length} competencies added',
+      ),
     );
   }
 

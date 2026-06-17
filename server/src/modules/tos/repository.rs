@@ -57,7 +57,7 @@ impl TosRepository {
         &self,
         class_id: Uuid,
         grading_period_number: i32,
-    ) -> AppResult<Option<table_of_specifications::Model>> {
+    ) -> AppResult<Vec<table_of_specifications::Model>> {
         ops::find_tos_by_class_and_period(&self.db, class_id, grading_period_number).await
     }
 

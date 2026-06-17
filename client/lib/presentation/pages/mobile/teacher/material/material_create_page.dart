@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -48,6 +49,7 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
       allowMultiple: true,
       type: FileType.custom,
       allowedExtensions: _allowedExtensions,
+      withData: true,
     );
     if (result != null) {
       setState(() => _selectedFiles.addAll(result.files));
@@ -102,17 +104,24 @@ class _CreateMaterialPageState extends ConsumerState<CreateMaterialPage> {
     bool anyUploadFailed = false;
     for (int i = 0; i < _selectedFiles.length; i++) {
       final file = _selectedFiles[i];
-      if (file.path != null) {
+      if (kIsWeb && file.bytes != null) {
+        await ref.read(learningMaterialProvider.notifier).uploadFile(
+              materialId: material.id,
+              filePath: file.name,
+              fileName: file.name,
+              fileBytes: file.bytes,
+            );
+      } else if (file.path != null) {
         await ref.read(learningMaterialProvider.notifier).uploadFile(
               materialId: material.id,
               filePath: file.path!,
               fileName: file.name,
             );
+      }
 
-        final uploadState = ref.read(learningMaterialProvider);
-        if (uploadState.error != null) {
-          anyUploadFailed = true;
-        }
+      final uploadState = ref.read(learningMaterialProvider);
+      if (uploadState.error != null) {
+        anyUploadFailed = true;
       }
     }
 

@@ -49,15 +49,15 @@ pub fn realistic_assessments_q4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         ],
     });
 
-    // English 9 - Quiz 2 (5 items, performance task)
+    // English 9 - Quiz 2 (5 items, written work)
     assessments.push(AssessmentSpec {
         id: aid("eng_q4_quiz2"), class_id: cid("english_9a"),
         title: "Quiz 2: Literary Criticism".into(),
         description: Some("5-item quiz on literary criticism approaches.".into()),
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(118), close_at: now - chrono::Duration::days(113),
-        show_results_immediately: false, total_points: 12, component: "performance_task".into(),
+        show_results_immediately: true, total_points: 12, component: "written_work".into(),
         tos_id: tid("english_9a_tos_q4"), created_at: created, deleted_at: None,
-        is_published: true, results_released: false, grading_period_number: 4,
+        is_published: true, results_released: true, grading_period_number: 4,
         questions: vec![
             QuestionSpec { id: qid("eng_q4_quiz2", 0), question_type: "multiple_choice".into(),
                 text: "What does biographical criticism focus on?".into(),
@@ -124,6 +124,46 @@ pub fn realistic_assessments_q4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         questions: eng_q4_exam_qs,
     });
 
+    // English 9 - Quiz 3 (5 items, written work)
+    assessments.push(AssessmentSpec {
+        id: aid("eng_q4_quiz3"), class_id: cid("english_9a"),
+        title: "Quiz 3: Literature Review".into(),
+        description: Some("5-item quiz on reviewing and critiquing literary works.".into()),
+        time_limit_minutes: 30, open_at: now - chrono::Duration::days(119), close_at: now - chrono::Duration::days(114),
+        show_results_immediately: true, total_points: 11, component: "written_work".into(),
+        tos_id: tid("english_9a_tos_q4"), created_at: created, deleted_at: None,
+        is_published: true, results_released: true, grading_period_number: 4,
+        questions: vec![
+            QuestionSpec { id: qid("eng_q4_quiz3", 0), question_type: "multiple_choice".into(),
+                text: "What is the purpose of a literature review?".into(),
+                points: 1, order: 0, is_multi_select: false, tos_competency_id: Some(compid("e9q4_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()),
+                choices: mc_choices("eng_q4_quiz3_q0", 1),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["B".into()] }, },
+            QuestionSpec { id: qid("eng_q4_quiz3", 1), question_type: "multiple_choice".into(),
+                text: "What is a theme in literature?".into(),
+                points: 1, order: 1, is_multi_select: false, tos_competency_id: Some(compid("e9q4_comp_1")),
+                difficulty: Some("easy".into()), cognitive_level: Some("understanding".into()),
+                choices: mc_choices("eng_q4_quiz3_q1", 2),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["C".into()] }, },
+            QuestionSpec { id: qid("eng_q4_quiz3", 2), question_type: "identification".into(),
+                text: "What is the term for the central message of a story?".into(),
+                points: 1, order: 2, is_multi_select: false, tos_competency_id: Some(compid("e9q4_comp_1")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Theme".into()] }, },
+            QuestionSpec { id: qid("eng_q4_quiz3", 3), question_type: "identification".into(),
+                text: "What is the term for the sequence of events in a story?".into(),
+                points: 1, order: 3, is_multi_select: false, tos_competency_id: Some(compid("e9q4_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Plot".into()] }, },
+            QuestionSpec { id: qid("eng_q4_quiz3", 4), question_type: "essay".into(),
+                text: "Analyze the theme of one Afro-Asian literary work we studied this year. Explain how the author develops this theme through characters and events.".into(),
+                points: 5, order: 4, is_multi_select: false, tos_competency_id: Some(compid("e9q4_comp_1")),
+                difficulty: Some("hard".into()), cognitive_level: Some("evaluating".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec![] }, },
+        ],
+    });
+
     // Science 9 - Quiz 1 (5 items, written work)
     assessments.push(AssessmentSpec {
         id: aid("sci_q4_quiz1"), class_id: cid("science_9a"),
@@ -164,15 +204,15 @@ pub fn realistic_assessments_q4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         ],
     });
 
-    // Science 9 - Quiz 2 (5 items, performance task)
+    // Science 9 - Quiz 2 (5 items, written work)
     assessments.push(AssessmentSpec {
         id: aid("sci_q4_quiz2"), class_id: cid("science_9a"),
         title: "Quiz 2: Climate Change".into(),
         description: Some("5-item quiz on greenhouse effect and climate change.".into()),
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(119), close_at: now - chrono::Duration::days(114),
-        show_results_immediately: false, total_points: 12, component: "performance_task".into(),
+        show_results_immediately: true, total_points: 12, component: "written_work".into(),
         tos_id: tid("science_9a_tos_q4"), created_at: created, deleted_at: None,
-        is_published: true, results_released: false, grading_period_number: 4,
+        is_published: true, results_released: true, grading_period_number: 4,
         questions: vec![
             QuestionSpec { id: qid("sci_q4_quiz2", 0), question_type: "multiple_choice".into(),
                 text: "What is the primary greenhouse gas emitted by human activities?".into(),
@@ -239,7 +279,47 @@ pub fn realistic_assessments_q4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         questions: sci_q4_exam_qs,
     });
 
-    // Advisory 9-A - Quiz (5 items, written work)
+    // Science 9 - Quiz 3 (5 items, written work)
+    assessments.push(AssessmentSpec {
+        id: aid("sci_q4_quiz3"), class_id: cid("science_9a"),
+        title: "Quiz 3: Electromagnetism".into(),
+        description: Some("5-item quiz on electromagnetic phenomena and applications.".into()),
+        time_limit_minutes: 30, open_at: now - chrono::Duration::days(120), close_at: now - chrono::Duration::days(115),
+        show_results_immediately: true, total_points: 11, component: "written_work".into(),
+        tos_id: tid("science_9a_tos_q4"), created_at: created, deleted_at: None,
+        is_published: true, results_released: true, grading_period_number: 4,
+        questions: vec![
+            QuestionSpec { id: qid("sci_q4_quiz3", 0), question_type: "multiple_choice".into(),
+                text: "What is the unit of electric current?".into(),
+                points: 1, order: 0, is_multi_select: false, tos_competency_id: Some(compid("s9q4_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()),
+                choices: mc_choices("sci_q4_quiz3_q0", 1),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["B".into()] }, },
+            QuestionSpec { id: qid("sci_q4_quiz3", 1), question_type: "multiple_choice".into(),
+                text: "What is Ohm's law?".into(),
+                points: 1, order: 1, is_multi_select: false, tos_competency_id: Some(compid("s9q4_comp_1")),
+                difficulty: Some("medium".into()), cognitive_level: Some("remembering".into()),
+                choices: mc_choices("sci_q4_quiz3_q1", 0),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["A".into()] }, },
+            QuestionSpec { id: qid("sci_q4_quiz3", 2), question_type: "identification".into(),
+                text: "What is the term for the flow of electric charge?".into(),
+                points: 1, order: 2, is_multi_select: false, tos_competency_id: Some(compid("s9q4_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Current".into()] }, },
+            QuestionSpec { id: qid("sci_q4_quiz3", 3), question_type: "identification".into(),
+                text: "What is the unit of resistance?".into(),
+                points: 1, order: 3, is_multi_select: false, tos_competency_id: Some(compid("s9q4_comp_1")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Ohm".into()] }, },
+            QuestionSpec { id: qid("sci_q4_quiz3", 4), question_type: "essay".into(),
+                text: "Explain how a simple electric circuit works. Include the role of the battery, wires, and load.".into(),
+                points: 5, order: 4, is_multi_select: false, tos_competency_id: Some(compid("s9q4_comp_0")),
+                difficulty: Some("hard".into()), cognitive_level: Some("applying".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec![] }, },
+        ],
+    });
+
+    // Advisory 9-A - Quiz 1 (5 items, written work)
     assessments.push(AssessmentSpec {
         id: aid("adv_q4_quiz1"), class_id: cid("advisory_9a"),
         title: "Quiz: Career Planning & Financial Literacy".into(),
@@ -277,6 +357,121 @@ pub fn realistic_assessments_q4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
                 difficulty: Some("hard".into()), cognitive_level: Some("applying".into()), choices: vec![],
                 answer_key: AnswerKeySpec { acceptable_answers: vec![] }, },
         ],
+    });
+
+    // Advisory 9-A - Quiz 2 (5 items, written work)
+    assessments.push(AssessmentSpec {
+        id: aid("adv_q4_quiz2"), class_id: cid("advisory_9a"),
+        title: "Quiz 2: Goal Setting".into(),
+        description: Some("5-item quiz on setting SMART goals.".into()),
+        time_limit_minutes: 20, open_at: now - chrono::Duration::days(117), close_at: now - chrono::Duration::days(112),
+        show_results_immediately: true, total_points: 10, component: "written_work".into(),
+        tos_id: tid("advisory_9a_tos_q4"), created_at: created, deleted_at: None,
+        is_published: true, results_released: true, grading_period_number: 4,
+        questions: vec![
+            QuestionSpec { id: qid("adv_q4_quiz2", 0), question_type: "multiple_choice".into(),
+                text: "What does SMART stand for in goal setting?".into(),
+                points: 1, order: 0, is_multi_select: false, tos_competency_id: Some(compid("a9q4_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()),
+                choices: mc_choices("adv_q4_quiz2_q0", 2),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["C".into()] }, },
+            QuestionSpec { id: qid("adv_q4_quiz2", 1), question_type: "multiple_choice".into(),
+                text: "What is the 'M' in SMART goals?".into(),
+                points: 1, order: 1, is_multi_select: false, tos_competency_id: Some(compid("a9q4_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()),
+                choices: mc_choices("adv_q4_quiz2_q1", 1),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["B".into()] }, },
+            QuestionSpec { id: qid("adv_q4_quiz2", 2), question_type: "identification".into(),
+                text: "What is a short-term goal?".into(),
+                points: 1, order: 2, is_multi_select: false, tos_competency_id: Some(compid("a9q4_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Goal achieved in less than a year".into()] }, },
+            QuestionSpec { id: qid("adv_q4_quiz2", 3), question_type: "identification".into(),
+                text: "What is a long-term goal?".into(),
+                points: 1, order: 3, is_multi_select: false, tos_competency_id: Some(compid("a9q4_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Goal achieved in more than a year".into()] }, },
+            QuestionSpec { id: qid("adv_q4_quiz2", 4), question_type: "essay".into(),
+                text: "Write one SMART goal for your academic performance this year. Explain how each letter of SMART applies to your goal.".into(),
+                points: 5, order: 4, is_multi_select: false, tos_competency_id: Some(compid("a9q4_comp_0")),
+                difficulty: Some("hard".into()), cognitive_level: Some("creating".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec![] }, },
+        ],
+    });
+
+    // Advisory 9-A - Quiz 3 (5 items, written work)
+    assessments.push(AssessmentSpec {
+        id: aid("adv_q4_quiz3"), class_id: cid("advisory_9a"),
+        title: "Quiz 3: Personal Development".into(),
+        description: Some("5-item quiz on personal growth and self-improvement.".into()),
+        time_limit_minutes: 20, open_at: now - chrono::Duration::days(116), close_at: now - chrono::Duration::days(111),
+        show_results_immediately: true, total_points: 10, component: "written_work".into(),
+        tos_id: tid("advisory_9a_tos_q4"), created_at: created, deleted_at: None,
+        is_published: true, results_released: true, grading_period_number: 4,
+        questions: vec![
+            QuestionSpec { id: qid("adv_q4_quiz3", 0), question_type: "multiple_choice".into(),
+                text: "What is self-reflection?".into(),
+                points: 1, order: 0, is_multi_select: false, tos_competency_id: Some(compid("a9q4_comp_1")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()),
+                choices: mc_choices("adv_q4_quiz3_q0", 1),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["B".into()] }, },
+            QuestionSpec { id: qid("adv_q4_quiz3", 1), question_type: "multiple_choice".into(),
+                text: "What is a growth mindset?".into(),
+                points: 1, order: 1, is_multi_select: false, tos_competency_id: Some(compid("a9q4_comp_1")),
+                difficulty: Some("easy".into()), cognitive_level: Some("understanding".into()),
+                choices: mc_choices("adv_q4_quiz3_q1", 0),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["A".into()] }, },
+            QuestionSpec { id: qid("adv_q4_quiz3", 2), question_type: "identification".into(),
+                text: "What is the term for believing you can improve through effort?".into(),
+                points: 1, order: 2, is_multi_select: false, tos_competency_id: Some(compid("a9q4_comp_1")),
+                difficulty: Some("medium".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Growth mindset".into()] }, },
+            QuestionSpec { id: qid("adv_q4_quiz3", 3), question_type: "identification".into(),
+                text: "What is continuous learning?".into(),
+                points: 1, order: 3, is_multi_select: false, tos_competency_id: Some(compid("a9q4_comp_1")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Lifelong learning".into()] }, },
+            QuestionSpec { id: qid("adv_q4_quiz3", 4), question_type: "essay".into(),
+                text: "Describe one area where you want to improve yourself. Outline three specific steps you will take to achieve this improvement.".into(),
+                points: 5, order: 4, is_multi_select: false, tos_competency_id: Some(compid("a9q4_comp_1")),
+                difficulty: Some("hard".into()), cognitive_level: Some("creating".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec![] }, },
+        ],
+    });
+
+    // Advisory 9-A - Q4 Quarter Exam
+    let adv_q4_exam_qs = build_questions_from_bank("adv_q4_exam",
+        &[
+            ("What is the first step in career planning?", &["Choosing a job", "Self-assessment", "Applying for work", "Getting hired"], 1, "easy", "remembering"),
+            ("What is a career path?", &["A road", "A series of jobs in a field", "A school subject", "A hobby"], 1, "medium", "understanding"),
+            ("What does 'Specific' mean in SMART goals?", &["General", "Clear and defined", "Impossible", "Random"], 1, "easy", "remembering"),
+            ("What is a milestone?", &["A road marker", "A significant point in progress", "A mistake", "A deadline"], 1, "medium", "understanding"),
+            ("What helps you achieve goals?", &["Giving up", "Planning and persistence", "Ignoring them", "Waiting for luck"], 1, "easy", "remembering"),
+            ("What is self-assessment?", &["Testing yourself", "Evaluating your skills and interests", "Grading others", "No meaning"], 1, "medium", "understanding"),
+            ("What is a fixed mindset?", &["Believing you can grow", "Believing abilities are fixed", "No opinion", "Confused"], 1, "easy", "remembering"),
+            ("How do you develop a growth mindset?", &["Give up easily", "Embrace challenges", "Avoid effort", "Ignore feedback"], 1, "medium", "understanding"),
+            ("What is the purpose of reflection?", &["To waste time", "To learn from experience", "To complain", "No purpose"], 1, "medium", "understanding"),
+            ("What is personal development?", &["Physical growth", "Improving yourself", "Buying things", "No meaning"], 1, "easy", "remembering"),
+        ],
+        &[
+            ("What is a career portfolio?", "Collection of work samples and achievements", "medium", "remembering"),
+            ("What is networking?", "Building professional relationships", "medium", "remembering"),
+            ("What is an action plan?", "Steps to achieve a goal", "easy", "remembering"),
+            ("What is feedback?", "Information about performance", "easy", "remembering"),
+        ],
+        &[("Create a personal development plan for the next year. Include career goals, academic goals, and personal growth goals with specific action steps.".into(), 5, "hard", "creating")],
+        &[compid("a9q4_comp_0"), compid("a9q4_comp_1")],
+    );
+    let adv_q4_exam_points: i32 = adv_q4_exam_qs.iter().map(|q| q.points).sum();
+    assessments.push(AssessmentSpec {
+        id: aid("adv_q4_exam"), class_id: cid("advisory_9a"),
+        title: "Quarter 4 Exam: Advisory 9-A".into(),
+        description: Some("15-item quarterly assessment on career planning and personal development.".into()),
+        time_limit_minutes: 45, open_at: now - chrono::Duration::days(123), close_at: now - chrono::Duration::days(117),
+        show_results_immediately: true, total_points: adv_q4_exam_points, component: "quarterly_assessment".into(),
+        tos_id: tid("advisory_9a_tos_q4"), created_at: created, deleted_at: None,
+        is_published: true, results_released: true, grading_period_number: 4,
+        questions: adv_q4_exam_qs,
     });
 
     assessments

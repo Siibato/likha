@@ -16,6 +16,11 @@ class GradeExcelGenerator {
     final headerBuilder = ExcelHeaderBuilder();
     final tableStartRow = headerBuilder.build(sheet, ctx);
 
+    // Set header row heights for better visual appearance
+    for (int r = 0; r < tableStartRow; r++) {
+      sheet.setRowHeight(r, 18);
+    }
+
     final tableBuilder = ExcelTableBuilder();
     tableBuilder.build(sheet, ctx, tableStartRow);
 

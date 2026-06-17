@@ -41,8 +41,7 @@ impl MigrationTrait for Migration {
                 created_at TIMESTAMP NOT NULL,
                 updated_at TIMESTAMP NOT NULL,
                 deleted_at TIMESTAMP,
-                FOREIGN KEY (class_id) REFERENCES classes(id),
-                UNIQUE(class_id, quarter)
+                FOREIGN KEY (class_id) REFERENCES classes(id)
             );
             "#,
         )

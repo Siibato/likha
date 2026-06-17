@@ -38,13 +38,27 @@ class MaterialDetailController extends ChangeNotifier {
         'pdf', 'doc', 'docx', 'ppt', 'pptx',
         'mp4', 'mp3', 'jpg', 'png', 'gif',
       ],
+      withData: true,
     );
 
-    if (result != null && result.files.single.path != null) {
+    if (result == null) return;
+
+    final pickedFile = result.files.single;
+
+    if (kIsWeb) {
+      if (pickedFile.bytes != null) {
+        await notifier.uploadFile(
+          materialId: materialId,
+          filePath: pickedFile.name,
+          fileName: pickedFile.name,
+          fileBytes: pickedFile.bytes,
+        );
+      }
+    } else if (pickedFile.path != null) {
       await notifier.uploadFile(
         materialId: materialId,
-        filePath: result.files.single.path!,
-        fileName: result.files.single.name,
+        filePath: pickedFile.path!,
+        fileName: pickedFile.name,
       );
     }
   }

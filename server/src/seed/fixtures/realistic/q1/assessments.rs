@@ -49,15 +49,15 @@ pub fn realistic_assessments_q1(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         ],
     });
 
-    // English 9 - Quiz 2 (5 items, performance task)
+    // English 9 - Quiz 2 (5 items, written work)
     assessments.push(AssessmentSpec {
         id: aid("eng_quiz2"), class_id: cid("english_9a"),
         title: "Quiz 2: Reading Comprehension & Writing".into(),
         description: Some("5-item quiz on reading strategies and writing skills.".into()),
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(1), close_at: now + chrono::Duration::days(7),
-        show_results_immediately: false, total_points: 12, component: "performance_task".into(),
+        show_results_immediately: true, total_points: 12, component: "written_work".into(),
         tos_id: tid("english_9a_tos_q1"), created_at: created, deleted_at: None,
-        is_published: true, results_released: false, grading_period_number: 1,
+        is_published: true, results_released: true, grading_period_number: 1,
         questions: vec![
             QuestionSpec { id: qid("eng_quiz2", 0), question_type: "multiple_choice".into(),
                 text: "In persuasive writing, what is the purpose of a counterargument?".into(),
@@ -85,6 +85,46 @@ pub fn realistic_assessments_q1(ctx: &SeedContext) -> Vec<AssessmentSpec> {
                 text: "Write a short persuasive paragraph (5-7 sentences) arguing why students should read literature from other cultures.".into(),
                 points: 5, order: 4, is_multi_select: false, tos_competency_id: Some(compid("e9q1_comp_3")),
                 difficulty: Some("hard".into()), cognitive_level: Some("creating".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec![] }, },
+        ],
+    });
+
+    // English 9 - Quiz 3 (5 items, written work)
+    assessments.push(AssessmentSpec {
+        id: aid("eng_quiz3"), class_id: cid("english_9a"),
+        title: "Quiz 3: Text Types & Literary Devices".into(),
+        description: Some("5-item quiz on identifying text types and literary devices.".into()),
+        time_limit_minutes: 30, open_at: now - chrono::Duration::days(2), close_at: now + chrono::Duration::days(5),
+        show_results_immediately: true, total_points: 11, component: "written_work".into(),
+        tos_id: tid("english_9a_tos_q1"), created_at: created, deleted_at: None,
+        is_published: true, results_released: true, grading_period_number: 1,
+        questions: vec![
+            QuestionSpec { id: qid("eng_quiz3", 0), question_type: "multiple_choice".into(),
+                text: "Which text type presents arguments to convince readers?".into(),
+                points: 1, order: 0, is_multi_select: false, tos_competency_id: Some(compid("e9q1_comp_1")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()),
+                choices: mc_choices("eng_quiz3_q0", 2),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["C".into()] }, },
+            QuestionSpec { id: qid("eng_quiz3", 1), question_type: "multiple_choice".into(),
+                text: "What is the primary purpose of a narrative text?".into(),
+                points: 1, order: 1, is_multi_select: false, tos_competency_id: Some(compid("e9q1_comp_1")),
+                difficulty: Some("easy".into()), cognitive_level: Some("understanding".into()),
+                choices: mc_choices("eng_quiz3_q1", 0),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["A".into()] }, },
+            QuestionSpec { id: qid("eng_quiz3", 2), question_type: "identification".into(),
+                text: "What figure of speech uses exaggeration for effect?".into(),
+                points: 1, order: 2, is_multi_select: false, tos_competency_id: Some(compid("e9q1_comp_2")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Hyperbole".into()] }, },
+            QuestionSpec { id: qid("eng_quiz3", 3), question_type: "identification".into(),
+                text: "Which literary device repeats the same sound at the beginning of words?".into(),
+                points: 1, order: 3, is_multi_select: false, tos_competency_id: Some(compid("e9q1_comp_2")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Alliteration".into()] }, },
+            QuestionSpec { id: qid("eng_quiz3", 4), question_type: "essay".into(),
+                text: "Identify and explain two literary devices used in the phrase: 'The wind whispered secrets through the ancient trees.'".into(),
+                points: 5, order: 4, is_multi_select: false, tos_competency_id: Some(compid("e9q1_comp_2")),
+                difficulty: Some("hard".into()), cognitive_level: Some("analyzing".into()), choices: vec![],
                 answer_key: AnswerKeySpec { acceptable_answers: vec![] }, },
         ],
     });
@@ -164,15 +204,15 @@ pub fn realistic_assessments_q1(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         ],
     });
 
-    // Science 9 - Quiz 2 (5 items, performance task)
+    // Science 9 - Quiz 2 (5 items, written work)
     assessments.push(AssessmentSpec {
         id: aid("sci_quiz2"), class_id: cid("science_9a"),
         title: "Quiz 2: Genetics & Chemical Reactions".into(),
         description: Some("5-item quiz on genetics and chemical reactions.".into()),
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(1), close_at: now + chrono::Duration::days(7),
-        show_results_immediately: false, total_points: 12, component: "performance_task".into(),
+        show_results_immediately: true, total_points: 12, component: "written_work".into(),
         tos_id: tid("science_9a_tos_q1"), created_at: created, deleted_at: None,
-        is_published: true, results_released: false, grading_period_number: 1,
+        is_published: true, results_released: true, grading_period_number: 1,
         questions: vec![
             QuestionSpec { id: qid("sci_quiz2", 0), question_type: "multiple_choice".into(),
                 text: "What is the basic unit of heredity passed from parents to offspring?".into(),
@@ -200,6 +240,46 @@ pub fn realistic_assessments_q1(ctx: &SeedContext) -> Vec<AssessmentSpec> {
                 text: "Describe how Mendel's experiments with pea plants led to the understanding of dominant and recessive traits.".into(),
                 points: 5, order: 4, is_multi_select: false, tos_competency_id: Some(compid("s9q1_comp_2")),
                 difficulty: Some("hard".into()), cognitive_level: Some("analyzing".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec![] }, },
+        ],
+    });
+
+    // Science 9 - Quiz 3 (5 items, written work)
+    assessments.push(AssessmentSpec {
+        id: aid("sci_quiz3"), class_id: cid("science_9a"),
+        title: "Quiz 3: Earth Science Fundamentals".into(),
+        description: Some("5-item quiz on Earth's layers and geological processes.".into()),
+        time_limit_minutes: 30, open_at: now - chrono::Duration::days(2), close_at: now + chrono::Duration::days(5),
+        show_results_immediately: true, total_points: 11, component: "written_work".into(),
+        tos_id: tid("science_9a_tos_q1"), created_at: created, deleted_at: None,
+        is_published: true, results_released: true, grading_period_number: 1,
+        questions: vec![
+            QuestionSpec { id: qid("sci_quiz3", 0), question_type: "multiple_choice".into(),
+                text: "Which layer of the Earth is the hottest?".into(),
+                points: 1, order: 0, is_multi_select: false, tos_competency_id: Some(compid("s9q1_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()),
+                choices: mc_choices("sci_quiz3_q0", 0),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["A".into()] }, },
+            QuestionSpec { id: qid("sci_quiz3", 1), question_type: "multiple_choice".into(),
+                text: "What type of boundary creates mountains?".into(),
+                points: 1, order: 1, is_multi_select: false, tos_competency_id: Some(compid("s9q1_comp_1")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()),
+                choices: mc_choices("sci_quiz3_q1", 1),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["B".into()] }, },
+            QuestionSpec { id: qid("sci_quiz3", 2), question_type: "identification".into(),
+                text: "What is the process called when one plate moves under another?".into(),
+                points: 1, order: 2, is_multi_select: false, tos_competency_id: Some(compid("s9q1_comp_1")),
+                difficulty: Some("medium".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Subduction".into()] }, },
+            QuestionSpec { id: qid("sci_quiz3", 3), question_type: "identification".into(),
+                text: "What is the term for the outermost solid layer of the Earth?".into(),
+                points: 1, order: 3, is_multi_select: false, tos_competency_id: Some(compid("s9q1_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Crust".into()] }, },
+            QuestionSpec { id: qid("sci_quiz3", 4), question_type: "essay".into(),
+                text: "Explain how the movement of tectonic plates affects the formation of volcanoes in the Philippines.".into(),
+                points: 5, order: 4, is_multi_select: false, tos_competency_id: Some(compid("s9q1_comp_1")),
+                difficulty: Some("hard".into()), cognitive_level: Some("evaluating".into()), choices: vec![],
                 answer_key: AnswerKeySpec { acceptable_answers: vec![] }, },
         ],
     });
@@ -239,10 +319,10 @@ pub fn realistic_assessments_q1(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         questions: sci_q1_exam_qs,
     });
 
-    // Advisory 9-A - Quiz (5 items, written work)
+    // Advisory 9-A - Quiz 1 (5 items, written work)
     assessments.push(AssessmentSpec {
         id: aid("adv_quiz1"), class_id: cid("advisory_9a"),
-        title: "Quiz: Health and Wellness".into(),
+        title: "Quiz 1: Health and Wellness".into(),
         description: Some("5-item quiz on holistic health.".into()),
         time_limit_minutes: 20, open_at: now - chrono::Duration::days(5), close_at: now + chrono::Duration::days(2),
         show_results_immediately: true, total_points: 10, component: "written_work".into(),
@@ -277,6 +357,121 @@ pub fn realistic_assessments_q1(ctx: &SeedContext) -> Vec<AssessmentSpec> {
                 difficulty: Some("hard".into()), cognitive_level: Some("applying".into()), choices: vec![],
                 answer_key: AnswerKeySpec { acceptable_answers: vec![] }, },
         ],
+    });
+
+    // Advisory 9-A - Quiz 2 (5 items, written work)
+    assessments.push(AssessmentSpec {
+        id: aid("adv_quiz2"), class_id: cid("advisory_9a"),
+        title: "Quiz 2: Dimensions of Health".into(),
+        description: Some("5-item quiz on the six dimensions of holistic health.".into()),
+        time_limit_minutes: 20, open_at: now - chrono::Duration::days(4), close_at: now + chrono::Duration::days(3),
+        show_results_immediately: true, total_points: 10, component: "written_work".into(),
+        tos_id: tid("advisory_9a_tos_q1"), created_at: created, deleted_at: None,
+        is_published: true, results_released: true, grading_period_number: 1,
+        questions: vec![
+            QuestionSpec { id: qid("adv_quiz2", 0), question_type: "multiple_choice".into(),
+                text: "Which dimension of health relates to your relationship with a higher power or life purpose?".into(),
+                points: 1, order: 0, is_multi_select: false, tos_competency_id: Some(compid("a9q1_comp_1")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()),
+                choices: mc_choices("adv_quiz2_q0", 3),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["D".into()] }, },
+            QuestionSpec { id: qid("adv_quiz2", 1), question_type: "multiple_choice".into(),
+                text: "What is physical health primarily concerned with?".into(),
+                points: 1, order: 1, is_multi_select: false, tos_competency_id: Some(compid("a9q1_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()),
+                choices: mc_choices("adv_quiz2_q1", 0),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["A".into()] }, },
+            QuestionSpec { id: qid("adv_quiz2", 2), question_type: "identification".into(),
+                text: "What dimension of health involves managing money and resources wisely?".into(),
+                points: 1, order: 2, is_multi_select: false, tos_competency_id: Some(compid("a9q1_comp_1")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Financial".into()] }, },
+            QuestionSpec { id: qid("adv_quiz2", 3), question_type: "identification".into(),
+                text: "Which dimension refers to the quality of your relationships with others?".into(),
+                points: 1, order: 3, is_multi_select: false, tos_competency_id: Some(compid("a9q1_comp_1")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Social".into()] }, },
+            QuestionSpec { id: qid("adv_quiz2", 4), question_type: "essay".into(),
+                text: "Explain how the six dimensions of health are interconnected. Provide an example of how improving one dimension can positively affect another.".into(),
+                points: 5, order: 4, is_multi_select: false, tos_competency_id: Some(compid("a9q1_comp_1")),
+                difficulty: Some("hard".into()), cognitive_level: Some("analyzing".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec![] }, },
+        ],
+    });
+
+    // Advisory 9-A - Quiz 3 (5 items, written work)
+    assessments.push(AssessmentSpec {
+        id: aid("adv_quiz3"), class_id: cid("advisory_9a"),
+        title: "Quiz 3: Personal Health Practices".into(),
+        description: Some("5-item quiz on personal health habits and practices.".into()),
+        time_limit_minutes: 20, open_at: now - chrono::Duration::days(3), close_at: now + chrono::Duration::days(4),
+        show_results_immediately: true, total_points: 10, component: "written_work".into(),
+        tos_id: tid("advisory_9a_tos_q1"), created_at: created, deleted_at: None,
+        is_published: true, results_released: true, grading_period_number: 1,
+        questions: vec![
+            QuestionSpec { id: qid("adv_quiz3", 0), question_type: "multiple_choice".into(),
+                text: "How many glasses of water should you drink daily?".into(),
+                points: 1, order: 0, is_multi_select: false, tos_competency_id: Some(compid("a9q1_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()),
+                choices: mc_choices("adv_quiz3_q0", 1),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["B".into()] }, },
+            QuestionSpec { id: qid("adv_quiz3", 1), question_type: "multiple_choice".into(),
+                text: "Which activity best promotes mental health?".into(),
+                points: 1, order: 1, is_multi_select: false, tos_competency_id: Some(compid("a9q1_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("understanding".into()),
+                choices: mc_choices("adv_quiz3_q1", 2),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["C".into()] }, },
+            QuestionSpec { id: qid("adv_quiz3", 2), question_type: "identification".into(),
+                text: "What is the term for regular physical activity to maintain fitness?".into(),
+                points: 1, order: 2, is_multi_select: false, tos_competency_id: Some(compid("a9q1_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Exercise".into()] }, },
+            QuestionSpec { id: qid("adv_quiz3", 3), question_type: "identification".into(),
+                text: "What practice involves taking time to reflect and calm your mind?".into(),
+                points: 1, order: 3, is_multi_select: false, tos_competency_id: Some(compid("a9q1_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Meditation".into()] }, },
+            QuestionSpec { id: qid("adv_quiz3", 4), question_type: "essay".into(),
+                text: "Create a personal health goal for the next month. Explain why you chose this goal and outline three specific steps to achieve it.".into(),
+                points: 5, order: 4, is_multi_select: false, tos_competency_id: Some(compid("a9q1_comp_0")),
+                difficulty: Some("hard".into()), cognitive_level: Some("creating".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec![] }, },
+        ],
+    });
+
+    // Advisory 9-A - Q1 Quarter Exam
+    let adv_q1_exam_qs = build_questions_from_bank("adv_q1_exam",
+        &[
+            ("Which dimension of health involves your thoughts and feelings?", &["Physical", "Emotional", "Social", "Environmental"], 1, "easy", "remembering"),
+            ("What is the recommended amount of sleep for teenagers?", &["5-6 hours", "7-8 hours", "8-10 hours", "10-12 hours"], 2, "easy", "remembering"),
+            ("Which food group provides the most energy?", &["Fruits", "Vegetables", "Grains", "Dairy"], 2, "easy", "remembering"),
+            ("What is resilience?", &["Giving up easily", "Bouncing back from difficulties", "Avoiding challenges", "Ignoring problems"], 1, "medium", "understanding"),
+            ("Which activity promotes social health?", &["Isolating yourself", "Joining clubs", "Skipping school", "Staying silent"], 1, "easy", "remembering"),
+            ("What is the purpose of setting health goals?", &["To waste time", "To improve wellness", "To impress others", "To follow trends"], 1, "medium", "understanding"),
+            ("Which dimension relates to your connection with nature?", &["Spiritual", "Environmental", "Financial", "Social"], 1, "easy", "remembering"),
+            ("What is a balanced diet?", &["Eating only one food", "Eating all food groups in moderation", "Skipping meals", "Eating only junk food"], 1, "medium", "understanding"),
+            ("How does exercise benefit mental health?", &["It doesn't", "Reduces stress", "Increases stress", "No effect"], 1, "medium", "understanding"),
+            ("What is the first step in goal-setting?", &["Giving up", "Identifying the goal", "Ignoring it", "Waiting for others"], 1, "easy", "remembering"),
+        ],
+        &[
+            ("What are the six dimensions of holistic health?", "Physical, emotional, social, mental, spiritual, environmental", "medium", "remembering"),
+            ("What is self-assessment in health?", "Evaluating your current health status", "easy", "remembering"),
+            ("What does 'Go, Grow, Glow' refer to?", "Food groups for energy, growth, and health", "medium", "remembering"),
+            ("What is stress management?", "Techniques to handle stress effectively", "easy", "remembering"),
+        ],
+        &[("Develop a personal wellness plan that addresses two dimensions of health. Explain your goals and specific actions for each.", 5, "hard", "creating")],
+        &[compid("a9q1_comp_0"), compid("a9q1_comp_1")],
+    );
+    let adv_q1_exam_points: i32 = adv_q1_exam_qs.iter().map(|q| q.points).sum();
+    assessments.push(AssessmentSpec {
+        id: aid("adv_q1_exam"), class_id: cid("advisory_9a"),
+        title: "Quarter 1 Exam: Advisory 9-A".into(),
+        description: Some("15-item quarterly assessment on holistic health and wellness.".into()),
+        time_limit_minutes: 45, open_at: now - chrono::Duration::days(10), close_at: now - chrono::Duration::days(2),
+        show_results_immediately: true, total_points: adv_q1_exam_points, component: "quarterly_assessment".into(),
+        tos_id: tid("advisory_9a_tos_q1"), created_at: created, deleted_at: None,
+        is_published: true, results_released: true, grading_period_number: 1,
+        questions: adv_q1_exam_qs,
     });
 
     assessments

@@ -41,6 +41,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(gradingConfigProvider.notifier).loadConfig(widget.classId);
         _loadGradeData();
+        ref.read(schoolSettingsProvider.notifier).loadSchoolSettings();
       });
     }
   }
@@ -56,6 +57,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(gradingConfigProvider.notifier).loadConfig(widget.classId);
         _loadGradeData();
+        ref.read(schoolSettingsProvider.notifier).loadSchoolSettings();
       });
     }
   }
@@ -167,7 +169,12 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
       final gradesState = ref.read(classGradesProvider);
       final configState = ref.read(gradingConfigProvider);
       final authState = ref.read(authProvider);
-      final schoolState = ref.read(schoolSettingsProvider);
+      final schoolNotifier = ref.read(schoolSettingsProvider.notifier);
+      var schoolState = ref.read(schoolSettingsProvider);
+      if (schoolState.settings == null) {
+        await schoolNotifier.loadSchoolSettings();
+        schoolState = ref.read(schoolSettingsProvider);
+      }
       final grades = gradesState.grades;
       if (grades == null) return;
 
@@ -211,7 +218,12 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
       final gradesState = ref.read(classGradesProvider);
       final configState = ref.read(gradingConfigProvider);
       final authState = ref.read(authProvider);
-      final schoolState = ref.read(schoolSettingsProvider);
+      final schoolNotifier = ref.read(schoolSettingsProvider.notifier);
+      var schoolState = ref.read(schoolSettingsProvider);
+      if (schoolState.settings == null) {
+        await schoolNotifier.loadSchoolSettings();
+        schoolState = ref.read(schoolSettingsProvider);
+      }
       final grades = gradesState.grades;
       if (grades == null) return;
 

@@ -49,15 +49,15 @@ pub fn realistic_assessments_q2(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         ],
     });
 
-    // English 9 - Quiz 2 (5 items, performance task)
+    // English 9 - Quiz 2 (5 items, written work)
     assessments.push(AssessmentSpec {
         id: aid("eng_q2_quiz2"), class_id: cid("english_9a"),
         title: "Quiz 2: Persuasive Speech Writing".into(),
         description: Some("5-item quiz on persuasive techniques and speech writing.".into()),
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(38), close_at: now - chrono::Duration::days(33),
-        show_results_immediately: false, total_points: 12, component: "performance_task".into(),
+        show_results_immediately: true, total_points: 12, component: "written_work".into(),
         tos_id: tid("english_9a_tos_q2"), created_at: created, deleted_at: None,
-        is_published: true, results_released: false, grading_period_number: 2,
+        is_published: true, results_released: true, grading_period_number: 2,
         questions: vec![
             QuestionSpec { id: qid("eng_q2_quiz2", 0), question_type: "multiple_choice".into(),
                 text: "Which rhetorical device repeats words at the beginning of successive clauses?".into(),
@@ -124,6 +124,46 @@ pub fn realistic_assessments_q2(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         questions: eng_q2_exam_qs,
     });
 
+    // English 9 - Quiz 3 (5 items, written work)
+    assessments.push(AssessmentSpec {
+        id: aid("eng_q2_quiz3"), class_id: cid("english_9a"),
+        title: "Quiz 3: Modals & Reported Speech".into(),
+        description: Some("5-item quiz on modal verbs and reported speech.".into()),
+        time_limit_minutes: 30, open_at: now - chrono::Duration::days(39), close_at: now - chrono::Duration::days(34),
+        show_results_immediately: true, total_points: 11, component: "written_work".into(),
+        tos_id: tid("english_9a_tos_q2"), created_at: created, deleted_at: None,
+        is_published: true, results_released: true, grading_period_number: 2,
+        questions: vec![
+            QuestionSpec { id: qid("eng_q2_quiz3", 0), question_type: "multiple_choice".into(),
+                text: "Which modal verb expresses ability?".into(),
+                points: 1, order: 0, is_multi_select: false, tos_competency_id: Some(compid("e9q2_comp_1")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()),
+                choices: mc_choices("eng_q2_quiz3_q0", 0),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["A".into()] }, },
+            QuestionSpec { id: qid("eng_q2_quiz3", 1), question_type: "multiple_choice".into(),
+                text: "What is the correct reported speech form of 'I am going home'?".into(),
+                points: 1, order: 1, is_multi_select: false, tos_competency_id: Some(compid("e9q2_comp_2")),
+                difficulty: Some("medium".into()), cognitive_level: Some("understanding".into()),
+                choices: mc_choices("eng_q2_quiz3_q1", 1),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["B".into()] }, },
+            QuestionSpec { id: qid("eng_q2_quiz3", 2), question_type: "identification".into(),
+                text: "What modal verb is used to give advice?".into(),
+                points: 1, order: 2, is_multi_select: false, tos_competency_id: Some(compid("e9q2_comp_1")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Should".into()] }, },
+            QuestionSpec { id: qid("eng_q2_quiz3", 3), question_type: "identification".into(),
+                text: "What is the term for the original speaker's exact words?".into(),
+                points: 1, order: 3, is_multi_select: false, tos_competency_id: Some(compid("e9q2_comp_2")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Direct speech".into()] }, },
+            QuestionSpec { id: qid("eng_q2_quiz3", 4), question_type: "essay".into(),
+                text: "Convert this direct speech to reported speech: 'I will finish my homework tomorrow,' said Maria. Explain the changes you made.".into(),
+                points: 5, order: 4, is_multi_select: false, tos_competency_id: Some(compid("e9q2_comp_2")),
+                difficulty: Some("hard".into()), cognitive_level: Some("applying".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec![] }, },
+        ],
+    });
+
     // Science 9 - Quiz 1 (5 items, written work)
     assessments.push(AssessmentSpec {
         id: aid("sci_q2_quiz1"), class_id: cid("science_9a"),
@@ -164,15 +204,15 @@ pub fn realistic_assessments_q2(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         ],
     });
 
-    // Science 9 - Quiz 2 (5 items, performance task)
+    // Science 9 - Quiz 2 (5 items, written work)
     assessments.push(AssessmentSpec {
         id: aid("sci_q2_quiz2"), class_id: cid("science_9a"),
         title: "Quiz 2: Evolution & Biodiversity".into(),
         description: Some("5-item quiz on natural selection and Philippine biodiversity.".into()),
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(39), close_at: now - chrono::Duration::days(34),
-        show_results_immediately: false, total_points: 12, component: "performance_task".into(),
+        show_results_immediately: true, total_points: 12, component: "written_work".into(),
         tos_id: tid("science_9a_tos_q2"), created_at: created, deleted_at: None,
-        is_published: true, results_released: false, grading_period_number: 2,
+        is_published: true, results_released: true, grading_period_number: 2,
         questions: vec![
             QuestionSpec { id: qid("sci_q2_quiz2", 0), question_type: "multiple_choice".into(),
                 text: "Who proposed the theory of natural selection?".into(),
@@ -239,7 +279,47 @@ pub fn realistic_assessments_q2(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         questions: sci_q2_exam_qs,
     });
 
-    // Advisory 9-A - Quiz (5 items, written work)
+    // Science 9 - Quiz 3 (5 items, written work)
+    assessments.push(AssessmentSpec {
+        id: aid("sci_q2_quiz3"), class_id: cid("science_9a"),
+        title: "Quiz 3: Ecosystem Components".into(),
+        description: Some("5-item quiz on ecosystem structure and function.".into()),
+        time_limit_minutes: 30, open_at: now - chrono::Duration::days(40), close_at: now - chrono::Duration::days(35),
+        show_results_immediately: true, total_points: 11, component: "written_work".into(),
+        tos_id: tid("science_9a_tos_q2"), created_at: created, deleted_at: None,
+        is_published: true, results_released: true, grading_period_number: 2,
+        questions: vec![
+            QuestionSpec { id: qid("sci_q2_quiz3", 0), question_type: "multiple_choice".into(),
+                text: "What is the role of decomposers in an ecosystem?".into(),
+                points: 1, order: 0, is_multi_select: false, tos_competency_id: Some(compid("s9q2_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()),
+                choices: mc_choices("sci_q2_quiz3_q0", 1),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["B".into()] }, },
+            QuestionSpec { id: qid("sci_q2_quiz3", 1), question_type: "multiple_choice".into(),
+                text: "Which organism is a primary consumer?".into(),
+                points: 1, order: 1, is_multi_select: false, tos_competency_id: Some(compid("s9q2_comp_1")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()),
+                choices: mc_choices("sci_q2_quiz3_q1", 2),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["C".into()] }, },
+            QuestionSpec { id: qid("sci_q2_quiz3", 2), question_type: "identification".into(),
+                text: "What is the term for an organism's specific role in an ecosystem?".into(),
+                points: 1, order: 2, is_multi_select: false, tos_competency_id: Some(compid("s9q2_comp_0")),
+                difficulty: Some("medium".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Niche".into()] }, },
+            QuestionSpec { id: qid("sci_q2_quiz3", 3), question_type: "identification".into(),
+                text: "What type of biome has four distinct seasons?".into(),
+                points: 1, order: 3, is_multi_select: false, tos_competency_id: Some(compid("s9q2_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Temperate forest".into()] }, },
+            QuestionSpec { id: qid("sci_q2_quiz3", 4), question_type: "essay".into(),
+                text: "Explain how the removal of one species from a food web can affect the entire ecosystem. Use a specific example.".into(),
+                points: 5, order: 4, is_multi_select: false, tos_competency_id: Some(compid("s9q2_comp_1")),
+                difficulty: Some("hard".into()), cognitive_level: Some("evaluating".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec![] }, },
+        ],
+    });
+
+    // Advisory 9-A - Quiz 1 (5 items, written work)
     assessments.push(AssessmentSpec {
         id: aid("adv_q2_quiz1"), class_id: cid("advisory_9a"),
         title: "Quiz: Nutrition & Substance Abuse".into(),
@@ -277,6 +357,121 @@ pub fn realistic_assessments_q2(ctx: &SeedContext) -> Vec<AssessmentSpec> {
                 difficulty: Some("hard".into()), cognitive_level: Some("analyzing".into()), choices: vec![],
                 answer_key: AnswerKeySpec { acceptable_answers: vec![] }, },
         ],
+    });
+
+    // Advisory 9-A - Quiz 2 (5 items, written work)
+    assessments.push(AssessmentSpec {
+        id: aid("adv_q2_quiz2"), class_id: cid("advisory_9a"),
+        title: "Quiz 2: Nutritional Values".into(),
+        description: Some("5-item quiz on evaluating food nutrition.".into()),
+        time_limit_minutes: 20, open_at: now - chrono::Duration::days(37), close_at: now - chrono::Duration::days(32),
+        show_results_immediately: true, total_points: 10, component: "written_work".into(),
+        tos_id: tid("advisory_9a_tos_q2"), created_at: created, deleted_at: None,
+        is_published: true, results_released: true, grading_period_number: 2,
+        questions: vec![
+            QuestionSpec { id: qid("adv_q2_quiz2", 0), question_type: "multiple_choice".into(),
+                text: "Which nutrient is essential for building muscles?".into(),
+                points: 1, order: 0, is_multi_select: false, tos_competency_id: Some(compid("a9q2_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()),
+                choices: mc_choices("adv_q2_quiz2_q0", 1),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["B".into()] }, },
+            QuestionSpec { id: qid("adv_q2_quiz2", 1), question_type: "multiple_choice".into(),
+                text: "What is the main function of carbohydrates?".into(),
+                points: 1, order: 1, is_multi_select: false, tos_competency_id: Some(compid("a9q2_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("understanding".into()),
+                choices: mc_choices("adv_q2_quiz2_q1", 0),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["A".into()] }, },
+            QuestionSpec { id: qid("adv_q2_quiz2", 2), question_type: "identification".into(),
+                text: "What mineral is important for bone health?".into(),
+                points: 1, order: 2, is_multi_select: false, tos_competency_id: Some(compid("a9q2_comp_0")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Calcium".into()] }, },
+            QuestionSpec { id: qid("adv_q2_quiz2", 3), question_type: "identification".into(),
+                text: "Which vitamin helps with iron absorption?".into(),
+                points: 1, order: 3, is_multi_select: false, tos_competency_id: Some(compid("a9q2_comp_0")),
+                difficulty: Some("medium".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Vitamin C".into()] }, },
+            QuestionSpec { id: qid("adv_q2_quiz2", 4), question_type: "essay".into(),
+                text: "Evaluate the nutritional value of your typical lunch. Identify which food groups are present and which are missing.".into(),
+                points: 5, order: 4, is_multi_select: false, tos_competency_id: Some(compid("a9q2_comp_0")),
+                difficulty: Some("hard".into()), cognitive_level: Some("evaluating".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec![] }, },
+        ],
+    });
+
+    // Advisory 9-A - Quiz 3 (5 items, written work)
+    assessments.push(AssessmentSpec {
+        id: aid("adv_q2_quiz3"), class_id: cid("advisory_9a"),
+        title: "Quiz 3: Substance Abuse Prevention".into(),
+        description: Some("5-item quiz on preventing substance abuse.".into()),
+        time_limit_minutes: 20, open_at: now - chrono::Duration::days(36), close_at: now - chrono::Duration::days(31),
+        show_results_immediately: true, total_points: 10, component: "written_work".into(),
+        tos_id: tid("advisory_9a_tos_q2"), created_at: created, deleted_at: None,
+        is_published: true, results_released: true, grading_period_number: 2,
+        questions: vec![
+            QuestionSpec { id: qid("adv_q2_quiz3", 0), question_type: "multiple_choice".into(),
+                text: "What is the best way to resist peer pressure?".into(),
+                points: 1, order: 0, is_multi_select: false, tos_competency_id: Some(compid("a9q2_comp_1")),
+                difficulty: Some("easy".into()), cognitive_level: Some("understanding".into()),
+                choices: mc_choices("adv_q2_quiz3_q0", 2),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["C".into()] }, },
+            QuestionSpec { id: qid("adv_q2_quiz3", 1), question_type: "multiple_choice".into(),
+                text: "Which substance is most commonly abused by teenagers?".into(),
+                points: 1, order: 1, is_multi_select: false, tos_competency_id: Some(compid("a9q2_comp_1")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()),
+                choices: mc_choices("adv_q2_quiz3_q1", 0),
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["A".into()] }, },
+            QuestionSpec { id: qid("adv_q2_quiz3", 2), question_type: "identification".into(),
+                text: "What is the term for the body's physical dependence on a substance?".into(),
+                points: 1, order: 2, is_multi_select: false, tos_competency_id: Some(compid("a9q2_comp_1")),
+                difficulty: Some("medium".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Addiction".into()] }, },
+            QuestionSpec { id: qid("adv_q2_quiz3", 3), question_type: "identification".into(),
+                text: "Who can you turn to for help with substance abuse problems?".into(),
+                points: 1, order: 3, is_multi_select: false, tos_competency_id: Some(compid("a9q2_comp_1")),
+                difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec!["Counselor".into(), "Trusted adult".into()] }, },
+            QuestionSpec { id: qid("adv_q2_quiz3", 4), question_type: "essay".into(),
+                text: "Describe three strategies you can use to say 'no' when offered drugs or alcohol by peers.".into(),
+                points: 5, order: 4, is_multi_select: false, tos_competency_id: Some(compid("a9q2_comp_1")),
+                difficulty: Some("hard".into()), cognitive_level: Some("applying".into()), choices: vec![],
+                answer_key: AnswerKeySpec { acceptable_answers: vec![] }, },
+        ],
+    });
+
+    // Advisory 9-A - Q2 Quarter Exam
+    let adv_q2_exam_qs = build_questions_from_bank("adv_q2_exam",
+        &[
+            ("Which nutrient provides the most energy per gram?", &["Protein", "Carbohydrates", "Fats", "Vitamins"], 2, "easy", "remembering"),
+            ("What is the primary effect of alcohol on the brain?", &["Improves memory", "Slows reaction time", "Increases focus", "No effect"], 1, "medium", "understanding"),
+            ("Which vitamin is primarily obtained from sunlight?", &["Vitamin A", "Vitamin B", "Vitamin C", "Vitamin D"], 3, "easy", "remembering"),
+            ("What is a withdrawal symptom?", &["Feeling better", "Physical discomfort when stopping", "Increased energy", "Better sleep"], 1, "medium", "understanding"),
+            ("Which food group includes eggs and beans?", &["Fruits", "Vegetables", "Protein", "Grains"], 2, "easy", "remembering"),
+            ("What is peer pressure?", &["Pressure from teachers", "Influence from friends", "Pressure from parents", "Self-pressure"], 1, "easy", "remembering"),
+            ("Which mineral is important for blood health?", &["Calcium", "Iron", "Sodium", "Potassium"], 1, "medium", "remembering"),
+            ("What is the best way to maintain a healthy weight?", &["Skipping meals", "Balanced diet and exercise", "Only diet pills", "Eating only one food"], 1, "medium", "understanding"),
+            ("What does 'gateway drug' mean?", &["A safe drug", "A drug that may lead to harder drugs", "A medicine", "A vitamin"], 1, "medium", "understanding"),
+            ("What is the purpose of nutrition labels?", &["To decorate packaging", "To inform about nutritional content", "To increase price", "No purpose"], 1, "easy", "remembering"),
+        ],
+        &[
+            ("What is a balanced diet?", "Eating all food groups in proper proportions", "easy", "remembering"),
+            ("What is tolerance in substance abuse?", "Needing more of a substance for the same effect", "medium", "remembering"),
+            ("What are empty calories?", "Foods with energy but little nutritional value", "medium", "remembering"),
+            ("What is intervention?", "A structured process to help someone with addiction", "medium", "remembering"),
+        ],
+        &[("Develop a personal substance abuse prevention plan. Include strategies for resisting peer pressure and maintaining healthy habits.", 5, "hard", "creating")],
+        &[compid("a9q2_comp_0"), compid("a9q2_comp_1")],
+    );
+    let adv_q2_exam_points: i32 = adv_q2_exam_qs.iter().map(|q| q.points).sum();
+    assessments.push(AssessmentSpec {
+        id: aid("adv_q2_exam"), class_id: cid("advisory_9a"),
+        title: "Quarter 2 Exam: Advisory 9-A".into(),
+        description: Some("15-item quarterly assessment on nutrition and substance abuse.".into()),
+        time_limit_minutes: 45, open_at: now - chrono::Duration::days(43), close_at: now - chrono::Duration::days(37),
+        show_results_immediately: true, total_points: adv_q2_exam_points, component: "quarterly_assessment".into(),
+        tos_id: tid("advisory_9a_tos_q2"), created_at: created, deleted_at: None,
+        is_published: true, results_released: true, grading_period_number: 2,
+        questions: adv_q2_exam_qs,
     });
 
     assessments

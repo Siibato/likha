@@ -46,10 +46,12 @@ abstract class SyncRemoteDataSource {
   });
 
   /// Upload a file for learning material
-  Future<void> uploadMaterialFile({
+  /// Returns server response with file metadata and ID for reconciliation
+  Future<Map<String, dynamic>?> uploadMaterialFile({
     required String materialId,
     required String localPath,
     required String fileName,
+    String? idempotencyKey,
   });
 }
 
@@ -91,16 +93,18 @@ class SyncRemoteDataSourceImpl implements SyncRemoteDataSource {
       );
 
   @override
-  Future<void> uploadMaterialFile({
+  Future<Map<String, dynamic>?> uploadMaterialFile({
     required String materialId,
     required String localPath,
     required String fileName,
+    String? idempotencyKey,
   }) =>
       ops.uploadMaterialFile(
         dioClient,
         materialId: materialId,
         localPath: localPath,
         fileName: fileName,
+        idempotencyKey: idempotencyKey,
       );
 
   @override

@@ -65,7 +65,12 @@ Future<void> _exportToExcel(
     final gradesState = ref.read(quarterlyGradesProvider);
     final classState = ref.read(classProvider);
     final authState = ref.read(authProvider);
-    final schoolState = ref.read(schoolSettingsProvider);
+    final schoolNotifier = ref.read(schoolSettingsProvider.notifier);
+    var schoolState = ref.read(schoolSettingsProvider);
+    if (schoolState.settings == null) {
+      await schoolNotifier.loadSchoolSettings();
+      schoolState = ref.read(schoolSettingsProvider);
+    }
     final detail = classState.currentClassDetail;
 
     await ref.read(gradeExportServiceProvider).exportToExcel(
@@ -111,7 +116,12 @@ Future<void> _exportToPdf(
     final gradesState = ref.read(quarterlyGradesProvider);
     final classState = ref.read(classProvider);
     final authState = ref.read(authProvider);
-    final schoolState = ref.read(schoolSettingsProvider);
+    final schoolNotifier = ref.read(schoolSettingsProvider.notifier);
+    var schoolState = ref.read(schoolSettingsProvider);
+    if (schoolState.settings == null) {
+      await schoolNotifier.loadSchoolSettings();
+      schoolState = ref.read(schoolSettingsProvider);
+    }
     final detail = classState.currentClassDetail;
 
     await ref.read(gradeExportServiceProvider).exportToPdf(

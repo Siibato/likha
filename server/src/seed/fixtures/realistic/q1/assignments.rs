@@ -40,13 +40,5 @@ pub fn realistic_assignments_q1(ctx: &SeedContext) -> Vec<AssignmentSpec> {
             due_at: now + chrono::Duration::days(5), component: "performance_task".into(),
             created_at: created, deleted_at: None, is_published: true, grading_period_number: 1,
         },
-        AssignmentSpec {
-            id: asid("adv_assign1"), class_id: cid("advisory_9a"),
-            title: "Reflection: My Holistic Health Plan".into(),
-            instructions: "Reflect on your current health habits across the six dimensions of holistic health. Identify one strength and one area for improvement. Write a 150-word action plan for improving your chosen area.".into(),
-            total_points: 30, allows_text_submission: true, allows_file_submission: false,
-            due_at: now + chrono::Duration::days(7), component: "written_work".into(),
-            created_at: created, deleted_at: None, is_published: true, grading_period_number: 1,
-        },
     ]
 }
