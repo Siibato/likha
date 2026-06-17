@@ -158,6 +158,7 @@ class SyncManager {
       setupHandler: SetupSyncHandler(
         _setupRemoteDataSource,
         _localDatabase,
+        _dataEventBus,
       ),
     );
     _inboundHandler = InboundSyncHandler(

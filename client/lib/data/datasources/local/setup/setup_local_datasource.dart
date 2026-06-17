@@ -6,7 +6,7 @@ import 'operations/setup.dart' as ops;
 abstract class SetupLocalDataSource {
   LocalDatabase get localDatabase;
 
-  Future<SchoolSettingsModel?> getCachedSchoolSettings();
+  Future<SchoolSettingsModel> getCachedSchoolSettings();
   Future<void> cacheSchoolSettings(SchoolSettingsModel settings);
   Future<void> updateSchoolSettingsLocally({
     required String schoolName,
@@ -27,7 +27,7 @@ class SetupLocalDataSourceImpl implements SetupLocalDataSource {
   SetupLocalDataSourceImpl(this.localDatabase, this.syncQueue);
 
   @override
-  Future<SchoolSettingsModel?> getCachedSchoolSettings() =>
+  Future<SchoolSettingsModel> getCachedSchoolSettings() =>
       ops.getCachedSchoolSettings(localDatabase);
 
   @override

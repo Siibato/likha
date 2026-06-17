@@ -1,6 +1,7 @@
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/sync_result.dart';
 import 'package:likha/data/datasources/remote/setup/setup_remote_datasource.dart';
@@ -9,10 +10,12 @@ import 'package:likha/data/datasources/remote/setup/setup_remote_datasource.dart
 class SetupSyncHandler {
   final SetupRemoteDataSource _remote;
   final LocalDatabase _localDatabase;
+  final DataEventBus _dataEventBus;
 
   SetupSyncHandler(
     this._remote,
     this._localDatabase,
+    this._dataEventBus,
   );
 
   Future<SyncResult> handle(SyncQueueEntry entry) async {
@@ -89,6 +92,8 @@ class SetupSyncHandler {
       where: '${CommonCols.id} = ?',
       whereArgs: ['1'],
     );
+
+    _dataEventBus.notifySchoolSettingsChanged();
 
     return const SyncResult.success();
   }

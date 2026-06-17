@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
@@ -17,14 +18,26 @@ ResultFuture<MutationResult<SchoolSettingsModel>> updateSchoolCode(
     final now = DateTime.now();
 
     // Read current settings to preserve other fields
-    final current = await localDataSource.getCachedSchoolSettings();
+    SchoolSettingsModel current;
+    try {
+      current = await localDataSource.getCachedSchoolSettings();
+    } on CacheException {
+      current = const SchoolSettingsModel(
+        id: '1',
+        schoolName: '',
+        schoolRegion: '',
+        schoolDivision: '',
+        schoolYear: '',
+        schoolCode: '',
+      );
+    }
 
     final optimisticModel = SchoolSettingsModel(
       id: '1',
-      schoolName: current?.schoolName ?? '',
-      schoolRegion: current?.schoolRegion ?? '',
-      schoolDivision: current?.schoolDivision ?? '',
-      schoolYear: current?.schoolYear ?? '',
+      schoolName: current.schoolName,
+      schoolRegion: current.schoolRegion,
+      schoolDivision: current.schoolDivision,
+      schoolYear: current.schoolYear,
       schoolCode: schoolCode,
       cachedAt: now,
       syncStatus: SyncStatus.pending,

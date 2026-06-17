@@ -3,7 +3,7 @@ import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/setup/entities/school_settings.dart';
 
 abstract class SetupRepository {
-  ResultFuture<SchoolSettings?> getSchoolSettings({
+  ResultFuture<SchoolSettings> getSchoolSettings({
     bool skipBackgroundRefresh = false,
   });
 

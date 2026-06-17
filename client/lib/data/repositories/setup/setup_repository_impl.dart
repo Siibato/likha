@@ -27,7 +27,7 @@ class SetupRepositoryImpl implements SetupRepository {
         _dataEventBus = dataEventBus;
 
   @override
-  ResultFuture<SchoolSettings?> getSchoolSettings({bool skipBackgroundRefresh = false}) =>
+  ResultFuture<SchoolSettings> getSchoolSettings({bool skipBackgroundRefresh = false}) =>
       ops_get.getSchoolSettings(
         _localDataSource,
         _remoteDataSource,

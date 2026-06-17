@@ -29,6 +29,7 @@ class _AdminSchoolSettingsPageState
   final _schoolYearController = TextEditingController();
   final _schoolCodeController = TextEditingController();
   late String _originalSchoolCode;
+  bool _hasSyncedControllers = false;
 
   @override
   void initState() {
@@ -58,6 +59,7 @@ class _AdminSchoolSettingsPageState
     _schoolYearController.text = settings.schoolYear;
     _schoolCodeController.text = settings.schoolCode;
     _originalSchoolCode = settings.schoolCode;
+    _hasSyncedControllers = true;
   }
 
   Future<void> _showQrCodeDialog() async {
@@ -177,10 +179,15 @@ class _AdminSchoolSettingsPageState
   Widget build(BuildContext context) {
     final providerState = ref.watch(schoolSettingsProvider);
 
+    // Ensure controllers are synced when the widget builds and the provider
+    // already holds cached data (e.g., revisiting the page).
+    if (!_hasSyncedControllers && providerState.settings != null) {
+      _syncControllersWithState(providerState);
+    }
+
     // Sync controllers whenever settings change from external events
     ref.listen(schoolSettingsProvider, (previous, next) {
-      if (previous?.settings?.schoolCode != next.settings?.schoolCode ||
-          previous?.settings?.schoolName != next.settings?.schoolName) {
+      if (previous?.settings != next.settings) {
         _syncControllersWithState(next);
       }
     });

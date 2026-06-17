@@ -35,6 +35,7 @@ class _AdminSchoolSettingsPageState
   final _schoolYearController = TextEditingController();
   final _schoolCodeController = TextEditingController();
   late String _originalSchoolCode;
+  bool _hasSyncedControllers = false;
   String? _qrBase64;
   String? _schoolCode;
 
@@ -66,6 +67,7 @@ class _AdminSchoolSettingsPageState
     _schoolYearController.text = settings.schoolYear;
     _schoolCodeController.text = settings.schoolCode;
     _originalSchoolCode = settings.schoolCode;
+    _hasSyncedControllers = true;
   }
 
   Future<void> _downloadQrCode() async {
@@ -234,9 +236,12 @@ class _AdminSchoolSettingsPageState
   Widget build(BuildContext context) {
     final providerState = ref.watch(schoolSettingsProvider);
 
+    if (!_hasSyncedControllers && providerState.settings != null) {
+      _syncControllersWithState(providerState);
+    }
+
     ref.listen(schoolSettingsProvider, (previous, next) {
-      if (previous?.settings?.schoolCode != next.settings?.schoolCode ||
-          previous?.settings?.schoolName != next.settings?.schoolName) {
+      if (previous?.settings != next.settings) {
         _syncControllersWithState(next);
       }
     });

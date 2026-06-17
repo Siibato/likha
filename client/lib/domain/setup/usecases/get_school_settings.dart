@@ -7,7 +7,7 @@ class GetSchoolSettings {
 
   GetSchoolSettings(this._repository);
 
-  ResultFuture<SchoolSettings?> call({bool skipBackgroundRefresh = false}) {
+  ResultFuture<SchoolSettings> call({bool skipBackgroundRefresh = false}) {
     return _repository.getSchoolSettings(
       skipBackgroundRefresh: skipBackgroundRefresh,
     );

@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/events/data_event_bus.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/setup/setup_local_datasource.dart';
@@ -9,7 +10,7 @@ import 'package:likha/data/datasources/remote/setup/setup_remote_datasource.dart
 import 'package:likha/data/models/setup/school_settings_model.dart';
 import 'package:likha/domain/setup/entities/school_settings.dart';
 
-ResultFuture<SchoolSettings?> getSchoolSettings(
+ResultFuture<SchoolSettings> getSchoolSettings(
   SetupLocalDataSource localDataSource,
   SetupRemoteDataSource remoteDataSource,
   DataEventBus dataEventBus, {
@@ -24,8 +25,16 @@ ResultFuture<SchoolSettings?> getSchoolSettings(
           dedupKey: 'setup/schoolSettings/bg',
           remote: remoteDataSource.getSchoolSettings,
           onSuccess: (fresh) async {
-            final current = await localDataSource.getCachedSchoolSettings();
-            if (_settingsHaveChanged(current, fresh)) {
+            try {
+              final current = await localDataSource.getCachedSchoolSettings();
+              // Skip overwriting pending local changes with stale server data.
+              // The sync engine will reconcile after the pending update completes.
+              if (current.syncStatus == SyncStatus.pending) return;
+              if (_settingsHaveChanged(current, fresh)) {
+                await localDataSource.cacheSchoolSettings(fresh);
+                dataEventBus.notifySchoolSettingsChanged();
+              }
+            } on CacheException {
               await localDataSource.cacheSchoolSettings(fresh);
               dataEventBus.notifySchoolSettingsChanged();
             }
@@ -53,10 +62,9 @@ ResultFuture<SchoolSettings?> getSchoolSettings(
 }
 
 bool _settingsHaveChanged(
-  SchoolSettingsModel? current,
+  SchoolSettingsModel current,
   SchoolSettingsModel fresh,
 ) {
-  if (current == null) return true;
   return current.schoolName != fresh.schoolName ||
       current.schoolRegion != fresh.schoolRegion ||
       current.schoolDivision != fresh.schoolDivision ||

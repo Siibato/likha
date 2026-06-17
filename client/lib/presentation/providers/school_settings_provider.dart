@@ -26,12 +26,13 @@ class SchoolSettingsState {
     String? error,
     SchoolSettings? settings,
     bool clearError = false,
+    bool clearSettings = false,
   }) {
     return SchoolSettingsState(
       isLoading: isLoading ?? this.isLoading,
       isSaving: isSaving ?? this.isSaving,
       error: clearError ? null : (error ?? this.error),
-      settings: settings ?? this.settings,
+      settings: clearSettings ? null : (settings ?? this.settings),
     );
   }
 }
