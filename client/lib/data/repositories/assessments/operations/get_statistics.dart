@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
@@ -7,6 +8,15 @@ import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
+import 'package:likha/data/models/assessments/statistics_model.dart';
+
+bool _statisticsHaveChanged(
+  AssessmentStatisticsModel? local,
+  AssessmentStatisticsModel remote,
+) {
+  if (local == null) return true;
+  return jsonEncode(local.toJson()) != jsonEncode(remote.toJson());
+}
 
 ResultFuture<AssessmentStatistics> getStatistics(
   AssessmentLocalDataSource localDataSource,
@@ -16,20 +26,20 @@ ResultFuture<AssessmentStatistics> getStatistics(
 }) async {
   try {
     try {
-      final cached = await localDataSource.getCachedStatistics(assessmentId);
-      if (cached != null) {
+      final local = await localDataSource.computeStatistics(assessmentId);
+      if (local != null) {
         fireRemoteFetch(
           dedupKey: 'assessments/statistics/$assessmentId/bg',
           remote: () => remoteDataSource.getStatistics(assessmentId: assessmentId),
           onSuccess: (fresh) async {
-            final current = await localDataSource.getCachedStatistics(assessmentId);
-            if (current == null || current != fresh) {
+            final current = await localDataSource.computeStatistics(assessmentId);
+            if (_statisticsHaveChanged(current, fresh)) {
               await localDataSource.cacheStatistics(fresh);
               dataEventBus.notifyStatisticsChanged(assessmentId);
             }
           },
         );
-        return Right(cached);
+        return Right(local);
       }
 
       final fresh = await remoteFetch(

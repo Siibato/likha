@@ -33,7 +33,20 @@ pub async fn insert_assessment_submissions(
                 .await?;
 
             if !answer.choice_ids.is_empty() {
-                repo.save_answer_choices(answer_record.id, answer.choice_ids.clone())
+                let question_choices = repo
+                    .find_choices_by_question_id(answer.question_id)
+                    .await?;
+                let correct_ids: std::collections::HashSet<uuid::Uuid> = question_choices
+                    .iter()
+                    .filter(|c| c.is_correct)
+                    .map(|c| c.id)
+                    .collect();
+                let choices_with_correctness: Vec<(uuid::Uuid, bool)> = answer
+                    .choice_ids
+                    .iter()
+                    .map(|&cid| (cid, correct_ids.contains(&cid)))
+                    .collect();
+                repo.save_answer_choices(answer_record.id, choices_with_correctness)
                     .await?;
             }
 

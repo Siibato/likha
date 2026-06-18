@@ -118,6 +118,7 @@ abstract class AssessmentLocalDataSource {
   Future<bool?> hasStudentSubmittedAssessment(String assessmentId, String studentId);
   Future<void> cacheSubmissions(String assessmentId, List<SubmissionSummaryModel> submissions);
   Future<AssessmentStatisticsModel?> getCachedStatistics(String assessmentId);
+  Future<AssessmentStatisticsModel?> computeStatistics(String assessmentId);
   Future<void> cacheStatistics(AssessmentStatisticsModel statistics);
   Future<StudentResultModel?> getCachedStudentResults(String submissionId);
   Future<void> cacheStudentResults(StudentResultModel result);
@@ -416,6 +417,10 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
   @override
   Future<AssessmentStatisticsModel?> getCachedStatistics(String assessmentId) =>
       ops.getCachedStatistics(localDatabase, assessmentId);
+
+  @override
+  Future<AssessmentStatisticsModel?> computeStatistics(String assessmentId) =>
+      ops.computeStatistics(localDatabase, assessmentId);
 
   @override
   Future<void> cacheStatistics(AssessmentStatisticsModel statistics) =>

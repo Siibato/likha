@@ -41,6 +41,14 @@ impl crate::modules::assessment::service::AssessmentService {
             .get_all_answer_details_for_assessment(assessment_id)
             .await?;
 
+        tracing::debug!(
+            assessment_id = %assessment_id,
+            submissions_count = submission_count,
+            all_details_len = all_details.len(),
+            sample_answer_points = ?all_details.first().map(|d| d.answer_points),
+            "get_statistics: fetched answer details"
+        );
+
         let questions = self.assessment_repo
             .find_questions_by_assessment_id(assessment_id).await?;
 

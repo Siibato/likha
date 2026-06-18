@@ -31,7 +31,7 @@ pub async fn get_all_answer_details_for_assessment(
             FROM assessment_submissions s
             JOIN submission_answers sa ON sa.submission_id = s.id
             LEFT JOIN submission_answer_items sai ON sai.submission_answer_id = sa.id
-            WHERE s.assessment_id = $1
+            WHERE s.assessment_id = ?
               AND s.submitted_at IS NOT NULL
               AND s.deleted_at IS NULL
             ORDER BY s.total_points DESC, sa.question_id

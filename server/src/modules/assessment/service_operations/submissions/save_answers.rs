@@ -30,8 +30,20 @@ impl crate::modules::assessment::service::AssessmentService {
                 .await?;
 
             if let Some(choice_ids) = &answer_input.selected_choice_ids {
+                let question_choices = self.assessment_repo
+                    .find_choices_by_question_id(answer_input.question_id)
+                    .await?;
+                let correct_ids: std::collections::HashSet<Uuid> = question_choices
+                    .iter()
+                    .filter(|c| c.is_correct)
+                    .map(|c| c.id)
+                    .collect();
+                let choices_with_correctness: Vec<(Uuid, bool)> = choice_ids
+                    .iter()
+                    .map(|&cid| (cid, correct_ids.contains(&cid)))
+                    .collect();
                 self.assessment_repo
-                    .save_answer_choices(answer.id, choice_ids.clone())
+                    .save_answer_choices(answer.id, choices_with_correctness)
                     .await?;
             }
 

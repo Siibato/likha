@@ -8,6 +8,7 @@ export 'cache_student_submission.dart';
 export 'cache_submission_detail.dart';
 export 'cache_submissions.dart';
 export 'clear_all_cache.dart';
+export 'compute_statistics.dart';
 export 'create_assessment.dart';
 export 'create_assessment_with_questions.dart';
 export 'delete_assessment.dart';

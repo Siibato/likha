@@ -143,6 +143,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
   }
 
   late StreamSubscription<String?> _refreshSub;
+  late StreamSubscription<String> _statisticsSub;
 
   TeacherAssessmentNotifier(
     this._createAssessment,
@@ -167,6 +168,11 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     _refreshSub = sl<DataEventBus>().onAssessmentsChanged.listen((classId) {
       if (_currentClassId != null && _currentClassId == classId) {
         loadAssessments(_currentClassId!, skipBackgroundRefresh: true);
+      }
+    });
+    _statisticsSub = sl<DataEventBus>().onStatisticsChanged.listen((assessmentId) {
+      if (_currentAssessmentId != null && _currentAssessmentId == assessmentId) {
+        loadStatistics(assessmentId);
       }
     });
   }
@@ -923,6 +929,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
   @override
   void dispose() {
     _refreshSub.cancel();
+    _statisticsSub.cancel();
     _currentAssessmentId = null;
     _currentSubmissionId = null;
     super.dispose();

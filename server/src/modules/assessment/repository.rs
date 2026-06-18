@@ -294,8 +294,8 @@ impl AssessmentRepository {
         ops::find_answer_items_by_submission_answer_id(&self.db, submission_answer_id).await
     }
 
-    pub async fn save_answer_choices(&self, submission_answer_id: Uuid, choice_ids: Vec<Uuid>) -> AppResult<()> {
-        ops::save_answer_choices(&self.db, submission_answer_id, choice_ids).await
+    pub async fn save_answer_choices(&self, submission_answer_id: Uuid, choices: Vec<(Uuid, bool)>) -> AppResult<()> {
+        ops::save_answer_choices(&self.db, submission_answer_id, choices).await
     }
 
     pub async fn save_answer_text(&self, submission_answer_id: Uuid, answer_text: String) -> AppResult<()> {
