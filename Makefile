@@ -11,7 +11,7 @@ TEST_DB_URL      := sqlite://./data/lms_e2e_test.db?mode=rwc
 
 .SHELLFLAGS := -euo pipefail -c
 
-.PHONY: help setup dev dev-server dev-client dev-web dev-desktop db-reset db-seed db-seed-manifest db-seed-e2e db-seed-realistic db-delete build-server run-server build-apk build-macos build-windows test-server test-client test-e2e-auth test-e2e-admin test-e2e-client test-e2e-desktop format lint docker-up docker-down clean clean-server clean-client
+.PHONY: help setup dev dev-server dev-client dev-web dev-desktop db-reset db-seed db-seed-manifest db-seed-e2e db-seed-realistic db-seed-demo db-delete build-server run-server build-apk build-macos build-windows test-server test-client test-e2e-auth test-e2e-admin test-e2e-client test-e2e-desktop format lint docker-up docker-down clean clean-server clean-client
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-22s\033[0m %s\n", $$1, $$2}'
@@ -50,6 +50,9 @@ db-seed-e2e:
 
 db-seed-realistic:
 	@cd $(SERVER_DIR) && cargo run -- reset-db && cargo run -- seed-realistic
+
+db-seed-demo:
+	@cd $(SERVER_DIR) && cargo run -- reset-db && cargo run -- seed-demo
 
 db-delete:
 	@cd $(SERVER_DIR) && cargo run -- delete-db
