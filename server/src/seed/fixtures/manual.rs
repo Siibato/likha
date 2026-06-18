@@ -541,16 +541,16 @@ pub fn manual_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         ("math_8a", class_id("math_8a"), tos_id("math_8a_tos"), 1, "written_work"),
         ("science_8a", class_id("science_8a"), tos_id("science_8a_tos"), 1, "written_work"),
         ("english_8a", class_id("english_8a"), tos_id("english_8a_tos"), 1, "performance_task"),
-        ("math_10a", class_id("math_10a"), tos_id("math_10a_tos"), 1, "quarterly_assessment"),
+        ("math_10a", class_id("math_10a"), tos_id("math_10a_tos"), 1, "period_assessment"),
         ("science_10a", class_id("science_10a"), tos_id("science_10a_tos"), 1, "written_work"),
         ("english_10a", class_id("english_10a"), tos_id("english_10a_tos"), 1, "performance_task"),
         ("math_12a", class_id("math_12a"), tos_id("math_12a_tos"), 1, "written_work"),
-        ("science_12a", class_id("science_12a"), tos_id("science_12a_tos"), 1, "quarterly_assessment"),
+        ("science_12a", class_id("science_12a"), tos_id("science_12a_tos"), 1, "period_assessment"),
         ("english_12a", class_id("english_12a"), tos_id("english_12a_tos"), 1, "performance_task"),
         // Q2
         ("math_8b", class_id("math_8b"), tos_id("math_8b_tos"), 2, "written_work"),
         ("science_8b", class_id("science_8b"), tos_id("science_8b_tos"), 2, "performance_task"),
-        ("english_8b", class_id("english_8b"), tos_id("english_8b_tos"), 2, "quarterly_assessment"),
+        ("english_8b", class_id("english_8b"), tos_id("english_8b_tos"), 2, "period_assessment"),
         ("advisory_8a", class_id("advisory_8a"), tos_id("advisory_8a_tos"), 2, "written_work"),
         ("advisory_10a", class_id("advisory_10a"), tos_id("advisory_10a_tos"), 2, "performance_task"),
         ("math_10b_archived", class_id("math_10b_archived"), tos_id("math_10b_archived_tos"), 2, "written_work"),
@@ -558,16 +558,16 @@ pub fn manual_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         ("math_8a", class_id("math_8a"), tos_id("math_8a_tos"), 3, "written_work"),
         ("science_8a", class_id("science_8a"), tos_id("science_8a_tos"), 3, "written_work"),
         ("english_8a", class_id("english_8a"), tos_id("english_8a_tos"), 3, "performance_task"),
-        ("math_10a", class_id("math_10a"), tos_id("math_10a_tos"), 3, "quarterly_assessment"),
+        ("math_10a", class_id("math_10a"), tos_id("math_10a_tos"), 3, "period_assessment"),
         ("science_10a", class_id("science_10a"), tos_id("science_10a_tos"), 3, "written_work"),
         ("english_10a", class_id("english_10a"), tos_id("english_10a_tos"), 3, "performance_task"),
         ("math_12a", class_id("math_12a"), tos_id("math_12a_tos"), 3, "written_work"),
-        ("science_12a", class_id("science_12a"), tos_id("science_12a_tos"), 3, "quarterly_assessment"),
+        ("science_12a", class_id("science_12a"), tos_id("science_12a_tos"), 3, "period_assessment"),
         ("english_12a", class_id("english_12a"), tos_id("english_12a_tos"), 3, "performance_task"),
         // Q4
         ("math_8b", class_id("math_8b"), tos_id("math_8b_tos"), 4, "written_work"),
         ("science_8b", class_id("science_8b"), tos_id("science_8b_tos"), 4, "performance_task"),
-        ("english_8b", class_id("english_8b"), tos_id("english_8b_tos"), 4, "quarterly_assessment"),
+        ("english_8b", class_id("english_8b"), tos_id("english_8b_tos"), 4, "period_assessment"),
         ("advisory_8a", class_id("advisory_8a"), tos_id("advisory_8a_tos"), 4, "written_work"),
         ("advisory_10a", class_id("advisory_10a"), tos_id("advisory_10a_tos"), 4, "performance_task"),
         ("math_10b_archived", class_id("math_10b_archived"), tos_id("math_10b_archived_tos"), 4, "written_work"),
@@ -614,7 +614,7 @@ pub fn manual_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
             let total_points: i32 = questions.iter().map(|q| q.points).sum();
 
             // Component rotates
-            let components = ["written_work", "performance_task", "quarterly_assessment"];
+            let components = ["written_work", "performance_task", "period_assessment"];
             let component = components[(class_idx + assess_idx) % 3].to_string();
 
             // Time limit: 30, 45, or 60 minutes

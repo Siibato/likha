@@ -280,7 +280,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
   void _handleQgChanged(String studentId, int? newQg) {
     if (newQg == null) return;
     ref
-        .read(quarterlyGradesProvider.notifier)
+        .read(periodGradesProvider.notifier)
         .updatePeriodGrade(
           classId: widget.classId,
           studentId: studentId,
@@ -515,11 +515,11 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
             onPressed: () async {
               final messenger = ScaffoldMessenger.of(context);
               await ref
-                  .read(quarterlyGradesProvider.notifier)
+                  .read(periodGradesProvider.notifier)
                   .computeGrades(widget.classId, _selectedQuarter);
               if (!mounted) return;
               ref
-                  .read(quarterlyGradesProvider.notifier)
+                  .read(periodGradesProvider.notifier)
                   .loadSummary(widget.classId, _selectedQuarter);
               messenger.showSnackBar(
                 const SnackBar(content: Text('Grades computed')),

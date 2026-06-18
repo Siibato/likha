@@ -1,16 +1,16 @@
 use uuid::Uuid;
-use crate::modules::grading::schema::QuarterlyGradeResponse;
+use crate::modules::grading::schema::PeriodGradeResponse;
 use crate::utils::{AppError, AppResult};
 use crate::modules::grading::helpers::deped_weights;
 use crate::modules::grading::helpers::compute_component::compute_component;
 
 impl crate::modules::grading::service::GradeComputationService {
-    pub async fn compute_student_quarterly(
+    pub async fn compute_student_period(
         &self,
         class_id: Uuid,
         student_id: Uuid,
         grading_period_number: i32,
-    ) -> AppResult<QuarterlyGradeResponse> {
+    ) -> AppResult<PeriodGradeResponse> {
         let config = self
             .repo
             .get_config(class_id, grading_period_number)
@@ -30,7 +30,7 @@ impl crate::modules::grading::service::GradeComputationService {
             match item.component.as_str() {
                 "written_work" => ww_items.push(item),
                 "performance_task" => pt_items.push(item),
-                "quarterly_assessment" => qa_items.push(item),
+                "period_assessment" => qa_items.push(item),
                 _ => {}
             }
         }
@@ -68,6 +68,6 @@ impl crate::modules::grading::service::GradeComputationService {
             )
             .await?;
 
-        Ok(QuarterlyGradeResponse::from(model))
+        Ok(PeriodGradeResponse::from(model))
     }
 }

@@ -226,7 +226,7 @@ class GradeExportService {
         .where((i) => i.component == 'pt' || i.component == 'performance_task')
         .toList();
     final qaItems = quarterItems
-        .where((i) => i.component == 'qa' || i.component == 'quarterly_assessment')
+        .where((i) => i.component == 'qa' || i.component == 'period_assessment')
         .toList();
 
     // Build score lookup: studentId -> gradeItemId -> GradeScore

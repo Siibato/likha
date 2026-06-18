@@ -6,7 +6,6 @@ const double _nameWidth = 130.0;
 const double _itemWidth = 26.0;
 const double _tpsWidth = 30.0;
 const double _gradeWidth = 36.0;
-const double _borderWidth = 0.5;
 
 /// Top border for the header strip; the table below provides the bottom border.
 /// Only the first container gets a left border; each container gets a right border
@@ -14,9 +13,9 @@ const double _borderWidth = 0.5;
 pw.BoxDecoration _headerStripTopBorder({required bool isFirst}) =>
     pw.BoxDecoration(
       border: pw.Border(
-        top: const pw.BorderSide(color: PdfColors.black, width: _borderWidth),
-        left: isFirst ? const pw.BorderSide(color: PdfColors.black, width: _borderWidth) : pw.BorderSide.none,
-        right: const pw.BorderSide(color: PdfColors.black, width: _borderWidth),
+        top: const pw.BorderSide(color: PdfColors.black, width: 0.5),
+        left: isFirst ? const pw.BorderSide(color: PdfColors.black, width: 0.5) : pw.BorderSide.none,
+        right: const pw.BorderSide(color: PdfColors.black, width: 0.5),
       ),
     );
 
@@ -52,11 +51,13 @@ pw.Widget buildGradeTable(GradeExportContext ctx, {int startIdx = 0, int? endIdx
       : ctx.studentRows.sublist(startIdx);
 
   return pw.Column(
+    crossAxisAlignment: pw.CrossAxisAlignment.start,
     children: [
       _buildSectionHeaderStrip(ctx),
       pw.Table(
         columnWidths: columnWidths,
-        border: pw.TableBorder.all(color: PdfColors.black, width: _borderWidth),
+        tableWidth: pw.TableWidth.min,
+        border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
         children: [
           _columnHeaderRow(ctx),
           _hpsRow(ctx),
@@ -72,7 +73,7 @@ pw.Widget _buildSectionHeaderStrip(GradeExportContext ctx) {
 
   children.add(
     pw.Container(
-      width: _nameWidth + 2 * _borderWidth,
+      width: _nameWidth,
       height: 22,
       padding: const pw.EdgeInsets.all(2),
       decoration: _headerStripTopBorder(isFirst: true),
@@ -97,9 +98,7 @@ pw.Widget _buildSectionHeaderStrip(GradeExportContext ctx) {
     final section = entry.$1;
     final label = entry.$2;
     if (section.items.isEmpty) continue;
-    final cols = section.items.length + 3;
-    final contentWidth = section.items.length * _itemWidth + 3 * _tpsWidth;
-    final totalWidth = contentWidth + cols * _borderWidth;
+    final totalWidth = section.items.length * _itemWidth + 3 * _tpsWidth;
     children.add(
       pw.Container(
         width: totalWidth,
@@ -122,7 +121,7 @@ pw.Widget _buildSectionHeaderStrip(GradeExportContext ctx) {
 
   children.add(
     pw.Container(
-      width: _gradeWidth + _borderWidth,
+      width: _gradeWidth,
       height: 22,
       padding: const pw.EdgeInsets.all(2),
       decoration: _headerStripTopBorder(isFirst: false),
@@ -140,7 +139,7 @@ pw.Widget _buildSectionHeaderStrip(GradeExportContext ctx) {
   );
   children.add(
     pw.Container(
-      width: _gradeWidth + _borderWidth,
+      width: _gradeWidth,
       height: 22,
       padding: const pw.EdgeInsets.all(2),
       decoration: _headerStripTopBorder(isFirst: false),

@@ -62,7 +62,7 @@ Future<void> _exportToExcel(
     final configState = ref.read(gradingConfigProvider);
     final itemsState = ref.read(gradeItemsProvider);
     final scoresState = ref.read(gradeScoresProvider);
-    final gradesState = ref.read(quarterlyGradesProvider);
+    final gradesState = ref.read(periodGradesProvider);
     final classState = ref.read(classProvider);
     final authState = ref.read(authProvider);
     final schoolNotifier = ref.read(schoolSettingsProvider.notifier);
@@ -113,7 +113,7 @@ Future<void> _exportToPdf(
     final configState = ref.read(gradingConfigProvider);
     final itemsState = ref.read(gradeItemsProvider);
     final scoresState = ref.read(gradeScoresProvider);
-    final gradesState = ref.read(quarterlyGradesProvider);
+    final gradesState = ref.read(periodGradesProvider);
     final classState = ref.read(classProvider);
     final authState = ref.read(authProvider);
     final schoolNotifier = ref.read(schoolSettingsProvider.notifier);

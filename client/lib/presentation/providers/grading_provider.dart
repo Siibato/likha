@@ -243,7 +243,7 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
     switch (c) {
       case 'written_work': return 'ww';
       case 'performance_task': return 'pt';
-      case 'quarterly_assessment': return 'qa';
+      case 'period_assessment': return 'qa';
       default: return c;
     }
   }
@@ -731,7 +731,7 @@ final gradeScoresProvider = StateNotifierProvider<GradeScoresNotifier, GradeScor
   );
 });
 
-final quarterlyGradesProvider = StateNotifierProvider<PeriodGradesNotifier, PeriodGradesState>((ref) {
+final periodGradesProvider = StateNotifierProvider<PeriodGradesNotifier, PeriodGradesState>((ref) {
   return PeriodGradesNotifier(
     sl<GetPeriodGrades>(),
     sl<ComputeGrades>(),

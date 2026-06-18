@@ -160,7 +160,7 @@ pub fn grade_score_to_json(r: grade_scores::Model) -> Value {
     })
 }
 
-pub fn quarterly_grade_to_json(r: period_grades::Model) -> Value {
+pub fn period_grade_to_json(r: period_grades::Model) -> Value {
     serde_json::json!({
         "id": r.id.to_string(),
         "class_id": r.class_id.to_string(),

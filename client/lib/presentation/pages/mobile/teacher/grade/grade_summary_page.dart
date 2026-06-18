@@ -6,7 +6,7 @@ import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/widgets/shared/primitives/class_section_header.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/final_grade_table.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/grade_stats_footer.dart';
-import 'package:likha/presentation/widgets/mobile/teacher/grade/quarterly_grade_table.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/grade/period_grade_table.dart';
 import 'package:likha/presentation/providers/general_average_provider.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
 
@@ -55,7 +55,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
 
   void _loadQuarterlySummary() {
     ref
-        .read(quarterlyGradesProvider.notifier)
+        .read(periodGradesProvider.notifier)
         .loadSummary(widget.classId, _selectedQuarter);
   }
 
@@ -94,7 +94,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
 
   @override
   Widget build(BuildContext context) {
-    final gradesState = ref.watch(quarterlyGradesProvider);
+    final gradesState = ref.watch(periodGradesProvider);
     final configState = ref.watch(gradingConfigProvider);
 
     return Scaffold(
@@ -251,13 +251,13 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
     return Column(
       children: [
         Expanded(
-          child: QuarterlyGradeTable(
+          child: PeriodGradeTable(
             summary: summary,
             wwWeight: wwWeight,
             ptWeight: ptWeight,
             qaWeight: qaWeight,
             onQgChanged: (studentId, grade) {
-              ref.read(quarterlyGradesProvider.notifier).updatePeriodGrade(
+              ref.read(periodGradesProvider.notifier).updatePeriodGrade(
                     classId: widget.classId,
                     studentId: studentId,
                     quarter: _selectedQuarter,

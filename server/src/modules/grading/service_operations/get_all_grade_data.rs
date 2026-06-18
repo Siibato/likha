@@ -8,12 +8,12 @@ impl crate::modules::grading::service::GradeComputationService {
     pub async fn get_all_grade_data(
         &self,
         class_id: Uuid,
-        quarter: i32,
+        period: i32,
     ) -> AppResult<AllGradeDataResponse> {
         let (items, summary, config) = tokio::try_join!(
-            self.get_grade_items(class_id, quarter),
-            self.get_grade_summary(class_id, quarter),
-            self.repo.get_config(class_id, quarter),
+            self.get_grade_items(class_id, period),
+            self.get_grade_summary(class_id, period),
+            self.repo.get_config(class_id, period),
         )?;
 
         let config = config.map(GradingConfigResponse::from);
@@ -33,7 +33,7 @@ impl crate::modules::grading::service::GradeComputationService {
         Ok(AllGradeDataResponse {
             grade_items: items,
             grade_summary: summary,
-            quarter,
+            period,
             scores_by_item,
             config,
         })

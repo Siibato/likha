@@ -382,7 +382,7 @@ abstract final class DbValues {
   // grade_items.component
   static const String componentWrittenWork = 'written_work';
   static const String componentPerformanceTask = 'performance_task';
-  static const String componentQuarterlyAssessment = 'quarterly_assessment';
+  static const String componentPeriodAssessment = 'period_assessment';
 
   // grade_items.source_type
   static const String sourceManual = 'manual';

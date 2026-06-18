@@ -204,7 +204,7 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
     final ptItems = widget.allItems.where((i) => i.component == 'pt' || i.component == 'performance_task').toList()
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
-    final qaItems = widget.allItems.where((i) => i.component == 'qa' || i.component == 'quarterly_assessment').toList()
+    final qaItems = widget.allItems.where((i) => i.component == 'qa' || i.component == 'period_assessment').toList()
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
 
     final wwW = widget.config?.wwWeight ?? 40.0;

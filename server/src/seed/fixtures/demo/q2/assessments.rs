@@ -100,7 +100,7 @@ pub fn demo_assessments_q2(ctx: &SeedContext) -> Vec<AssessmentSpec> {
             title: "Q2 Quarter Exam: Genetics and Heredity".into(),
             description: Some("25-item quarterly assessment on DNA, genetics, and evolution.".into()),
             time_limit_minutes: 60, open_at: now - chrono::Duration::days(10), close_at: now - chrono::Duration::days(2),
-            show_results_immediately: true, total_points: 25, component: "quarterly_assessment".into(),
+            show_results_immediately: true, total_points: 25, component: "period_assessment".into(),
             tos_id: tid("sci10_tos_q2"), created_at: created, deleted_at: None,
             is_published: true, results_released: true, grading_period_number: 2,
             questions: exam_qs,

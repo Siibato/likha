@@ -147,7 +147,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
             onComputeGrades: () async {
               final messenger = ScaffoldMessenger.of(context);
               await ref
-                  .read(quarterlyGradesProvider.notifier)
+                  .read(periodGradesProvider.notifier)
                   .computeGrades(widget.classId, _selectedQuarter);
               if (!mounted) return;
               _reloadGrades();
@@ -243,7 +243,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
                 },
                 onQgChanged: (studentId, grade) {
                   if (grade == null) return;
-                  ref.read(quarterlyGradesProvider.notifier).updatePeriodGrade(
+                  ref.read(periodGradesProvider.notifier).updatePeriodGrade(
                         classId: widget.classId,
                         studentId: studentId,
                         quarter: _selectedQuarter,

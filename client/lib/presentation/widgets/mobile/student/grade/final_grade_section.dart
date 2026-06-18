@@ -6,14 +6,14 @@ import 'package:likha/domain/grading/entities/period_grade.dart';
 /// Shows the computed final grade when at least 2 quarters have grades.
 /// Returns [SizedBox.shrink] when the condition is not met.
 class FinalGradeSection extends StatelessWidget {
-  final List<PeriodGrade> quarterlyGrades;
+  final List<PeriodGrade> periodGrades;
 
-  const FinalGradeSection({super.key, required this.quarterlyGrades});
+  const FinalGradeSection({super.key, required this.periodGrades});
 
   @override
   Widget build(BuildContext context) {
     final withGrades =
-        quarterlyGrades.where((g) => g.transmutedGrade != null).toList();
+        periodGrades.where((g) => g.transmutedGrade != null).toList();
 
     if (withGrades.length < 2) return const SizedBox.shrink();
 

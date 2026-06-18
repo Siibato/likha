@@ -9,7 +9,7 @@ import 'package:likha/presentation/widgets/mobile/teacher/grade/grade_table_cell
 /// Displays WW / PT / QA weighted scores, the editable Quarterly Grade column,
 /// and a descriptor badge. Manages its own editing state internally and
 /// surfaces committed changes via [onQgChanged].
-class QuarterlyGradeTable extends StatefulWidget {
+class PeriodGradeTable extends StatefulWidget {
   final List<Map<String, dynamic>> summary;
   final double wwWeight;
   final double ptWeight;
@@ -17,7 +17,7 @@ class QuarterlyGradeTable extends StatefulWidget {
 
   final void Function(String studentId, int grade) onQgChanged;
 
-  const QuarterlyGradeTable({
+  const PeriodGradeTable({
     super.key,
     required this.summary,
     required this.wwWeight,
@@ -27,10 +27,10 @@ class QuarterlyGradeTable extends StatefulWidget {
   });
 
   @override
-  State<QuarterlyGradeTable> createState() => _QuarterlyGradeTableState();
+  State<PeriodGradeTable> createState() => _PeriodGradeTableState();
 }
 
-class _QuarterlyGradeTableState extends State<QuarterlyGradeTable> {
+class _PeriodGradeTableState extends State<PeriodGradeTable> {
   String? _editingStudentId;
   final _qgCtrl = TextEditingController();
   final _qgFocus = FocusNode();

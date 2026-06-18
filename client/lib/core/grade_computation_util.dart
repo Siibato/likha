@@ -22,7 +22,7 @@ class GradeComputationUtil {
     final ptItems =
         items.where((i) => i.component == 'pt' || i.component == 'performance_task').toList();
     final qaItems =
-        items.where((i) => i.component == 'qa' || i.component == 'quarterly_assessment').toList();
+        items.where((i) => i.component == 'qa' || i.component == 'period_assessment').toList();
 
     // 2. For each component: sum effective scores / sum total_points * 100
     final wwResult = _computeComponent(wwItems, scoresByItem, studentId);

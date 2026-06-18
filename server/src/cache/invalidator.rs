@@ -64,18 +64,18 @@ impl CacheInvalidator {
 
     // ─── Grading ──────────────────────────────────────────────────────────────
 
-    pub async fn invalidate_class_grades(&self, class_id: Uuid, quarter: i32) {
+    pub async fn invalidate_class_grades(&self, class_id: Uuid, period: i32) {
         let keys = vec![
-            CacheKey::GradeItems(class_id, quarter).as_str(),
-            CacheKey::QuarterlyGrades(class_id, quarter).as_str(),
-            CacheKey::GradeSummary(class_id, quarter).as_str(),
+            CacheKey::GradeItems(class_id, period).as_str(),
+            CacheKey::PeriodGrades(class_id, period).as_str(),
+            CacheKey::GradeSummary(class_id, period).as_str(),
         ];
         self.cache.del_keys(keys).await;
     }
 
-    pub async fn invalidate_student_grades(&self, class_id: Uuid, student_id: Uuid, quarter: i32) {
+    pub async fn invalidate_student_grades(&self, class_id: Uuid, student_id: Uuid, period: i32) {
         let keys = vec![
-            CacheKey::StudentQuarterlyGrade(class_id, student_id, quarter).as_str(),
+            CacheKey::StudentPeriodGrade(class_id, student_id, period).as_str(),
             CacheKey::StudentAllGrades(class_id, student_id).as_str(),
             CacheKey::FinalGrade(class_id, student_id).as_str(),
             CacheKey::SF9(class_id, student_id).as_str(),

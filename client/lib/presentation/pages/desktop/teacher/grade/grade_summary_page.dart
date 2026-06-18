@@ -8,7 +8,7 @@ import 'package:likha/presentation/providers/general_average_provider.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/grade/desktop_final_grade_table.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/grade/desktop_grade_quarter_chips.dart';
-import 'package:likha/presentation/widgets/desktop/teacher/grade/desktop_quarterly_grade_table.dart';
+import 'package:likha/presentation/widgets/desktop/teacher/grade/desktop_period_grade_table.dart';
 
 class GradeSummaryPage extends ConsumerStatefulWidget {
   final String classId;
@@ -55,7 +55,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
   }
 
   void _loadQuarterlyData() {
-    ref.read(quarterlyGradesProvider.notifier).loadSummary(widget.classId, _selectedQuarter);
+    ref.read(periodGradesProvider.notifier).loadSummary(widget.classId, _selectedQuarter);
   }
 
   Future<void> _loadFinalGradesIfNeeded() async {
@@ -84,7 +84,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
 
   @override
   Widget build(BuildContext context) {
-    final quarterlyState = ref.watch(quarterlyGradesProvider);
+    final quarterlyState = ref.watch(periodGradesProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
@@ -153,10 +153,10 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
       );
     }
     final summary = (quarterlyState.summary as List?)?.cast<Map<String, dynamic>>() ?? [];
-    return DesktopQuarterlyGradeTable(
+    return DesktopPeriodGradeTable(
       summary: summary,
       onQgChanged: (studentId, grade) {
-        ref.read(quarterlyGradesProvider.notifier).updatePeriodGrade(
+        ref.read(periodGradesProvider.notifier).updatePeriodGrade(
           classId: widget.classId,
           studentId: studentId,
           quarter: _selectedQuarter,

@@ -100,7 +100,7 @@ pub fn demo_assessments_q1(ctx: &SeedContext) -> Vec<AssessmentSpec> {
             title: "Q1 Quarter Exam: Earth & Space Science".into(),
             description: Some("25-item quarterly assessment on plate tectonics, earthquakes, and volcanoes.".into()),
             time_limit_minutes: 60, open_at: now - chrono::Duration::days(10), close_at: now - chrono::Duration::days(2),
-            show_results_immediately: true, total_points: 25, component: "quarterly_assessment".into(),
+            show_results_immediately: true, total_points: 25, component: "period_assessment".into(),
             tos_id: tid("sci10_tos_q1"), created_at: created, deleted_at: None,
             is_published: true, results_released: true, grading_period_number: 1,
             questions: exam_qs,

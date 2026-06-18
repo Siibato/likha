@@ -175,13 +175,13 @@ class AssessmentDetailsSection extends StatelessWidget {
                       child: Text('Performance Task'),
                     ),
                     DropdownMenuItem(
-                      value: 'quarterly_assessment',
+                      value: 'period_assessment',
                       child: Text('Quarterly Assessment'),
                     ),
                   ],
                   onChanged: isLoading ? null : onComponentChanged,
                 ),
-                if (selectedComponent == 'quarterly_assessment') ...[
+                if (selectedComponent == 'period_assessment') ...[
                   const SizedBox(height: 8),
                   AssessmentSwitchTile(
                     title: 'Departmental Quarterly Exam',

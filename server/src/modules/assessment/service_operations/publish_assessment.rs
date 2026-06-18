@@ -33,10 +33,10 @@ impl crate::modules::assessment::service::AssessmentService {
         self.assessment_repo.update_total_points(assessment_id).await?;
         let published = self.assessment_repo.publish_assessment(assessment_id).await?;
 
-        if let (Some(quarter), Some(ref component)) = (published.grading_period_number, &published.component) {
+        if let (Some(period), Some(ref component)) = (published.grading_period_number, &published.component) {
             let _ = auto_populate::create_linked_grade_item(
                 &self.grade_computation_repo, "assessment", published.id, published.class_id,
-                &published.title, component, quarter,
+                &published.title, component, period,
                 published.total_points as f64,
             ).await;
         }

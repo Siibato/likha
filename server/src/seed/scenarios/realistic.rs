@@ -248,7 +248,7 @@ fn generate_period_grades(
                     match component.as_str() {
                         "written_work" => { ww_sum += effective; ww_total += *total_points; }
                         "performance_task" => { pt_sum += effective; pt_total += *total_points; }
-                        "quarterly_assessment" => { qa_sum += effective; qa_total += *total_points; }
+                        "period_assessment" => { qa_sum += effective; qa_total += *total_points; }
                         _ => {}
                     }
                 }

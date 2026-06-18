@@ -4,21 +4,21 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/descriptor_badge.dart';
 
 /// Desktop quarterly grade table with inline QG editing and stats footer.
-class DesktopQuarterlyGradeTable extends StatefulWidget {
+class DesktopPeriodGradeTable extends StatefulWidget {
   final List<Map<String, dynamic>> summary;
   final void Function(String studentId, int grade) onQgChanged;
 
-  const DesktopQuarterlyGradeTable({
+  const DesktopPeriodGradeTable({
     super.key,
     required this.summary,
     required this.onQgChanged,
   });
 
   @override
-  State<DesktopQuarterlyGradeTable> createState() => _DesktopQuarterlyGradeTableState();
+  State<DesktopPeriodGradeTable> createState() => _DesktopPeriodGradeTableState();
 }
 
-class _DesktopQuarterlyGradeTableState extends State<DesktopQuarterlyGradeTable> {
+class _DesktopPeriodGradeTableState extends State<DesktopPeriodGradeTable> {
   String? _editingStudentId;
   final _qgEditController = TextEditingController();
   final _qgFocusNode = FocusNode();

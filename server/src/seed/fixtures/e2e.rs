@@ -513,7 +513,7 @@ pub fn e2e_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
             close_at: now + chrono::Duration::days(-2),
             show_results_immediately: true,
             total_points: 6,
-            component: "quarterly_assessment".into(),
+            component: "period_assessment".into(),
             tos_id: TOS_SCI_8A_ID,
             created_at: created,
             deleted_at: None,

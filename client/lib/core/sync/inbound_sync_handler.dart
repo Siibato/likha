@@ -366,7 +366,7 @@ class InboundSyncHandler {
           await _upsertHelpers.upsertGradeConfigs(txn, gradeConfigs);
           await _upsertHelpers.upsertGradeItems(txn, gradeItems);
           await _upsertHelpers.upsertGradeScores(txn, gradeScores);
-          await _upsertHelpers.upsertQuarterlyGrades(txn, periodGrades);
+          await _upsertHelpers.upsertPeriodGrades(txn, periodGrades);
 
           await _upsertHelpers.upsertTableOfSpecifications(txn, tableOfSpecifications);
           await _upsertHelpers.upsertTosCompetencies(txn, tosCompetencies);

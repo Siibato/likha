@@ -4,14 +4,14 @@ use crate::modules::grading::schema::PeriodGradeResponse;
 use crate::utils::{AppError, AppResult};
 
 impl crate::modules::grading::service::GradeComputationService {
-    pub async fn get_student_quarterly_grade(
+    pub async fn get_student_period_grade(
         &self,
         class_id: Uuid,
         student_id: Uuid,
         grading_period_number: i32,
     ) -> AppResult<PeriodGradeResponse> {
         if let Some(ref cache) = self.cache {
-            let key = CacheKey::StudentQuarterlyGrade(class_id, student_id, grading_period_number).as_str();
+            let key = CacheKey::StudentPeriodGrade(class_id, student_id, grading_period_number).as_str();
             if let Some(cached) = cache.get::<PeriodGradeResponse>(&key).await {
                 return Ok(cached);
             }
@@ -23,7 +23,7 @@ impl crate::modules::grading::service::GradeComputationService {
             .ok_or_else(|| AppError::NotFound("Grade not found for this period".to_string()))?;
         let result = PeriodGradeResponse::from(grade);
         if let Some(ref cache) = self.cache {
-            let key = CacheKey::StudentQuarterlyGrade(class_id, student_id, grading_period_number).as_str();
+            let key = CacheKey::StudentPeriodGrade(class_id, student_id, grading_period_number).as_str();
             cache.set(&key, &result, cache.ttl.detail_seconds).await;
         }
         Ok(result)

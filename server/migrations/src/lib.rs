@@ -37,6 +37,7 @@ mod m20260606_000004_add_batch_query_indexes;
 mod m20260618_000001_drop_tos_unique;
 mod m20260618_000002_add_district_to_school_settings;
 mod m20260618_000003_create_learner_details;
+mod m20260618_000004_rename_quarterly_assessment_component;
 
 pub struct Migrator;
 
@@ -81,6 +82,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260618_000001_drop_tos_unique::Migration),
             Box::new(m20260618_000002_add_district_to_school_settings::Migration),
             Box::new(m20260618_000003_create_learner_details::Migration),
+            Box::new(m20260618_000004_rename_quarterly_assessment_component::Migration),
         ]
     }
 }

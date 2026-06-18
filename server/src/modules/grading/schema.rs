@@ -60,7 +60,7 @@ pub struct OverrideScoreRequest {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct QuarterQuery {
+pub struct PeriodQuery {
     pub grading_period_number: Option<i32>,
 }
 
@@ -111,9 +111,6 @@ pub struct PeriodGradeResponse {
     pub descriptor: Option<String>,
     pub is_locked: bool,
 }
-
-/// Backward-compat alias
-pub type QuarterlyGradeResponse = PeriodGradeResponse;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FinalGradeResponse {
@@ -204,27 +201,21 @@ pub struct Sf9Response {
     pub track_strand: Option<String>,
     pub curriculum: Option<String>,
     pub subjects: Vec<Sf9SubjectRow>,
-    pub general_average: Option<Sf9QuarterlyAverages>,
+    pub general_average: Option<Sf9PeriodAverages>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Sf9SubjectRow {
     pub class_title: String,
     pub subject_group: Option<String>,
-    pub q1: Option<i32>,
-    pub q2: Option<i32>,
-    pub q3: Option<i32>,
-    pub q4: Option<i32>,
+    pub period_grades: Vec<Option<i32>>,
     pub final_grade: Option<i32>,
     pub descriptor: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Sf9QuarterlyAverages {
-    pub q1: Option<i32>,
-    pub q2: Option<i32>,
-    pub q3: Option<i32>,
-    pub q4: Option<i32>,
+pub struct Sf9PeriodAverages {
+    pub period_grades: Vec<Option<i32>>,
     pub final_average: Option<i32>,
     pub descriptor: Option<String>,
 }
@@ -297,7 +288,7 @@ impl From<::entity::period_grades::Model> for PeriodGradeResponse {
 pub struct AllGradeDataResponse {
     pub grade_items: Vec<GradeItemResponse>,
     pub grade_summary: GradeSummaryResponse,
-    pub quarter: i32,
+    pub period: i32,
     pub scores_by_item: HashMap<String, Vec<GradeScoreResponse>>,
     pub config: Option<GradingConfigResponse>,
 }

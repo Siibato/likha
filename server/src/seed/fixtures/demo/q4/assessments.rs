@@ -100,7 +100,7 @@ pub fn demo_assessments_q4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
             title: "Q4 Quarter Exam: Physics".into(),
             description: Some("25-item quarterly assessment on force, motion, energy, and simple machines.".into()),
             time_limit_minutes: 60, open_at: now - chrono::Duration::days(10), close_at: now - chrono::Duration::days(2),
-            show_results_immediately: true, total_points: 25, component: "quarterly_assessment".into(),
+            show_results_immediately: true, total_points: 25, component: "period_assessment".into(),
             tos_id: tid("sci10_tos_q4"), created_at: created, deleted_at: None,
             is_published: true, results_released: true, grading_period_number: 4,
             questions: exam_qs,

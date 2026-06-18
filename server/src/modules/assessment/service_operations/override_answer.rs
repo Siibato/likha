@@ -48,9 +48,9 @@ impl crate::modules::assessment::service::AssessmentService {
             inv.invalidate_assessment_submission_detail(submission.id).await;
             inv.invalidate_student_results(submission.id).await;
             inv.invalidate_assessment_student_submission(submission.assessment_id, submission.user_id).await;
-            if let Some(quarter) = assessment.grading_period_number {
-                inv.invalidate_class_grades(assessment.class_id, quarter).await;
-                inv.invalidate_student_grades(assessment.class_id, submission.user_id, quarter).await;
+            if let Some(period) = assessment.grading_period_number {
+                inv.invalidate_class_grades(assessment.class_id, period).await;
+                inv.invalidate_student_grades(assessment.class_id, submission.user_id, period).await;
             }
             if let Some(item_id) = grade_item_id {
                 inv.invalidate_item_scores(item_id).await;

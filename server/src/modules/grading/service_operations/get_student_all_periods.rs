@@ -4,7 +4,7 @@ use crate::modules::grading::schema::PeriodGradeResponse;
 use crate::utils::AppResult;
 
 impl crate::modules::grading::service::GradeComputationService {
-    pub async fn get_student_all_quarters(
+    pub async fn get_student_all_periods(
         &self,
         class_id: Uuid,
         student_id: Uuid,

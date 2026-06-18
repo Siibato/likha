@@ -83,7 +83,7 @@ impl super::SyncDeltaService {
         let mut grade_configs_raw: Vec<serde_json::Value> = Vec::new();
         let mut grade_items_raw: Vec<serde_json::Value> = Vec::new();
         let mut grade_scores_raw: Vec<serde_json::Value> = Vec::new();
-        let mut quarterly_grades_raw: Vec<serde_json::Value> = Vec::new();
+        let mut period_grades_raw: Vec<serde_json::Value> = Vec::new();
         let mut tos_raw: Vec<serde_json::Value> = Vec::new();
         let mut tos_competencies_raw: Vec<serde_json::Value> = Vec::new();
         let mut activity_logs_raw: Vec<serde_json::Value> = Vec::new();
@@ -192,12 +192,12 @@ impl super::SyncDeltaService {
                 }
             };
 
-            quarterly_grades_raw = match user_role {
+            period_grades_raw = match user_role {
                 "student" => self.manifest_repo
-                    .get_student_quarterly_grades_since(user_id, class_ids, last_sync_at)
+                    .get_student_period_grades_since(user_id, class_ids, last_sync_at)
                     .await?,
                 _ => self.manifest_repo
-                    .get_all_quarterly_grades_since(class_ids, last_sync_at)
+                    .get_all_period_grades_since(class_ids, last_sync_at)
                     .await?,
             };
         }
@@ -244,7 +244,7 @@ impl super::SyncDeltaService {
         let grade_configs_deltas = separate_deltas(grade_configs_raw);
         let grade_items_deltas = separate_deltas(grade_items_raw);
         let grade_scores_deltas = separate_deltas(grade_scores_raw);
-        let quarterly_grades_deltas = separate_deltas(quarterly_grades_raw);
+        let period_grades_deltas = separate_deltas(period_grades_raw);
         let tos_deltas = separate_deltas(tos_raw);
         let tos_competencies_deltas = separate_deltas(tos_competencies_raw);
         let activity_logs_deltas = separate_deltas(activity_logs_raw);
@@ -278,7 +278,7 @@ impl super::SyncDeltaService {
                 grade_configs: grade_configs_deltas,
                 grade_items: grade_items_deltas,
                 grade_scores: grade_scores_deltas,
-                period_grades: quarterly_grades_deltas,
+                period_grades: period_grades_deltas,
                 table_of_specifications: tos_deltas,
                 tos_competencies: tos_competencies_deltas,
                 activity_logs: activity_logs_deltas,

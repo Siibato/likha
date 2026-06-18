@@ -943,8 +943,8 @@ class SyncUpsertHelpers {
     }
   }
 
-  /// Upsert quarterly grades
-  Future<void> upsertQuarterlyGrades(
+  /// Upsert period grades
+  Future<void> upsertPeriodGrades(
     DatabaseExecutor db,
     List<dynamic> records,
   ) async {
@@ -1537,7 +1537,7 @@ class SyncUpsertHelpers {
     if (periodGradesDeltas != null) {
       final updated = periodGradesDeltas.updated;
       updatedCounts['period_grades'] = updated.length;
-      await upsertQuarterlyGrades(db, updated);
+      await upsertPeriodGrades(db, updated);
 
       final deleted = periodGradesDeltas.deleted;
       deletedCounts['period_grades'] = deleted.length;

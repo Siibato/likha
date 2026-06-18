@@ -275,7 +275,7 @@ impl super::SyncFullService {
         let mut grade_configs: Vec<Value> = Vec::new();
         let mut grade_items_data: Vec<Value> = Vec::new();
         let mut grade_scores_data: Vec<Value> = Vec::new();
-        let mut quarterly_grades_data: Vec<Value> = Vec::new();
+        let mut period_grades_data: Vec<Value> = Vec::new();
         let mut table_of_specifications: Vec<Value> = Vec::new();
         let mut tos_competencies: Vec<Value> = Vec::new();
 
@@ -496,21 +496,21 @@ impl super::SyncFullService {
                 }
             };
 
-            quarterly_grades_data = match user_role {
+            period_grades_data = match user_role {
                 "student" => {
                     self.manifest_repo
-                        .get_student_quarterly_grades(user_id, batch_class_ids.clone())
+                        .get_student_period_grades(user_id, batch_class_ids.clone())
                         .await?
                 }
                 _ => {
                     self.manifest_repo
-                        .get_all_quarterly_grades(batch_class_ids.clone())
+                        .get_all_period_grades(batch_class_ids.clone())
                         .await?
                 }
             };
 
-            tracing::debug!("Fetched grading data: configs={}, items={}, scores={}, quarterly={}",
-                grade_configs.len(), grade_items_data.len(), grade_scores_data.len(), quarterly_grades_data.len());
+            tracing::debug!("Fetched grading data: configs={}, items={}, scores={}, period_grades={}",
+                grade_configs.len(), grade_items_data.len(), grade_scores_data.len(), period_grades_data.len());
         }
 
         if scope.include_tos {
@@ -581,7 +581,7 @@ impl super::SyncFullService {
             grade_configs,
             grade_items: grade_items_data,
             grade_scores: grade_scores_data,
-            period_grades: quarterly_grades_data,
+            period_grades: period_grades_data,
             table_of_specifications,
             tos_competencies,
             activity_logs: vec![],
