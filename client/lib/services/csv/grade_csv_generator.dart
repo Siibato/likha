@@ -108,7 +108,7 @@ class GradeCsvGenerator {
     cells.addAll(_sectionData(row.qa));
 
     cells.add(row.initialGrade != null ? row.initialGrade!.toStringAsFixed(2) : '');
-    cells.add(row.quarterlyGrade?.toString() ?? '');
+    cells.add(row.transmutedGrade?.toString() ?? '');
 
     return _csvRow(cells);
   }

@@ -383,7 +383,7 @@ class ExcelTableBuilder {
           fontSize: 8, hAlign: HorizontalAlign.Center,
           allBorders: true);
       ExcelStyleUtils.setCell(sheet, row, qgCol,
-          studentRow.quarterlyGrade?.toString() ?? '',
+          studentRow.transmutedGrade?.toString() ?? '',
           fontSize: 8, hAlign: HorizontalAlign.Center,
           allBorders: true);
 

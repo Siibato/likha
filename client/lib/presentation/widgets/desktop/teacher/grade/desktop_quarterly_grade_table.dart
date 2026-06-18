@@ -124,10 +124,10 @@ class _DesktopQuarterlyGradeTableState extends State<DesktopQuarterlyGradeTable>
               ],
               rows: List.generate(widget.summary.length, (index) {
                 final row = widget.summary[index];
-                final qg = (row['quarterly_grade'] as num?)?.toInt();
+                final tg = (row['transmuted_grade'] as num?)?.toInt();
                 final studentId = row['student_id']?.toString() ?? '';
                 final isEven = index % 2 == 0;
-                final isEditingQg = _editingStudentId == studentId;
+                final isEditingTg = _editingStudentId == studentId;
 
                 return DataRow(
                   color: WidgetStateProperty.all(
@@ -145,7 +145,7 @@ class _DesktopQuarterlyGradeTableState extends State<DesktopQuarterlyGradeTable>
                     DataCell(Text(_formatScore(row['pt_weighted_score']), textAlign: TextAlign.right)),
                     DataCell(Text(_formatScore(row['qa_weighted_score']), textAlign: TextAlign.right)),
                     DataCell(
-                      isEditingQg
+                      isEditingTg
                           ? SizedBox(
                               width: 56,
                               child: CallbackShortcuts(
@@ -181,20 +181,20 @@ class _DesktopQuarterlyGradeTableState extends State<DesktopQuarterlyGradeTable>
                               ),
                             )
                           : GestureDetector(
-                              onTap: () => _startQgEdit(studentId, qg),
+                              onTap: () => _startQgEdit(studentId, tg),
                               child: Text(
-                                qg?.toString() ?? '-',
+                                tg?.toString() ?? '-',
                                 textAlign: TextAlign.right,
                                 style: TextStyle(
                                   fontWeight: FontWeight.w700,
-                                  color: qg != null && qg >= 75
+                                  color: tg != null && tg >= 75
                                       ? AppColors.foregroundDark
                                       : AppColors.semanticError,
                                 ),
                               ),
                             ),
                     ),
-                    DataCell(DescriptorBadge(grade: qg)),
+                    DataCell(DescriptorBadge(grade: tg)),
                   ],
                 );
               }),
@@ -216,7 +216,7 @@ class _DesktopGradeStatsFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final grades = summary
-        .map((r) => (r['quarterly_grade'] as num?)?.toInt())
+        .map((r) => (r['transmuted_grade'] as num?)?.toInt())
         .whereType<int>()
         .toList();
 

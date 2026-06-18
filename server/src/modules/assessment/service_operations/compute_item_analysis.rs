@@ -154,6 +154,52 @@ impl crate::modules::assessment::service::AssessmentService {
 
         let total_items = item_analyses.len();
         let test_summary = if total_items > 0 {
+            // KR-20 reliability coefficient
+            let kr20 = {
+                let n_students = submission_count as f64;
+                let k = total_items as f64;
+
+                if k > 1.0 && n_students > 1.0 {
+                    // Per-item proportion correct across ALL students
+                    let mut all_correct: HashMap<Uuid, usize> = HashMap::new();
+                    for ((_, question_id), is_correct) in student_question_correct {
+                        if *is_correct {
+                            *all_correct.entry(*question_id).or_insert(0) += 1;
+                        }
+                    }
+
+                    let mut pq_sum = 0.0;
+                    for q in questions {
+                        let correct = all_correct.get(&q.id).copied().unwrap_or(0) as f64;
+                        let p_i = correct / n_students;
+                        pq_sum += p_i * (1.0 - p_i);
+                    }
+
+                    // Variance of correct-item counts per student
+                    let mut student_correct: HashMap<Uuid, usize> = HashMap::new();
+                    for ((student_id, _), is_correct) in student_question_correct {
+                        if *is_correct {
+                            *student_correct.entry(*student_id).or_insert(0) += 1;
+                        }
+                    }
+                    let correct_counts: Vec<f64> = submitted.iter()
+                        .map(|s| student_correct.get(&s.user_id).copied().unwrap_or(0) as f64)
+                        .collect();
+                    let mean_correct = correct_counts.iter().sum::<f64>() / n_students;
+                    let variance = correct_counts.iter()
+                        .map(|&c| { let d = c - mean_correct; d * d })
+                        .sum::<f64>() / n_students;
+
+                    if variance > 0.0 {
+                        Some((k / (k - 1.0)) * (1.0 - pq_sum / variance))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            };
+
             Some(TestSummary {
                 mean_difficulty: total_p / total_items as f64,
                 mean_discrimination: total_d / total_items as f64,
@@ -163,6 +209,7 @@ impl crate::modules::assessment::service::AssessmentService {
                 total_items_analyzed: total_items,
                 upper_group_size: upper_group.len(),
                 lower_group_size: lower_group.len(),
+                kr20,
             })
         } else { None };
 

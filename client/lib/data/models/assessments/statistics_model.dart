@@ -57,8 +57,11 @@ class ClassStatisticsModel extends ClassStatistics {
   const ClassStatisticsModel({
     required super.mean,
     required super.median,
+    required super.stdDev,
     required super.highest,
     required super.lowest,
+    required super.passRate,
+    required super.failRate,
     required super.scoreDistribution,
   });
 
@@ -66,8 +69,11 @@ class ClassStatisticsModel extends ClassStatistics {
     return ClassStatisticsModel(
       mean: (json['mean'] as num).toDouble(),
       median: (json['median'] as num).toDouble(),
+      stdDev: (json['std_dev'] as num?)?.toDouble() ?? 0.0,
       highest: (json['highest'] as num).toDouble(),
       lowest: (json['lowest'] as num).toDouble(),
+      passRate: (json['pass_rate'] as num?)?.toDouble() ?? 0.0,
+      failRate: (json['fail_rate'] as num?)?.toDouble() ?? 0.0,
       scoreDistribution: (json['score_distribution'] as List<dynamic>)
           .map((e) => ScoreBucketModel.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -77,8 +83,11 @@ class ClassStatisticsModel extends ClassStatistics {
   Map<String, dynamic> toJson() => {
     'mean': mean,
     'median': median,
+    'std_dev': stdDev,
     'highest': highest,
     'lowest': lowest,
+    'pass_rate': passRate,
+    'fail_rate': failRate,
     'score_distribution': (scoreDistribution as List<ScoreBucketModel>)
         .map((e) => e.toJson())
         .toList(),
@@ -228,6 +237,7 @@ class TestSummaryModel extends TestSummary {
     required super.totalItemsAnalyzed,
     required super.upperGroupSize,
     required super.lowerGroupSize,
+    super.kr20,
   });
 
   factory TestSummaryModel.fromJson(Map<String, dynamic> json) {
@@ -240,6 +250,7 @@ class TestSummaryModel extends TestSummary {
       totalItemsAnalyzed: json['total_items_analyzed'] as int,
       upperGroupSize: json['upper_group_size'] as int,
       lowerGroupSize: json['lower_group_size'] as int,
+      kr20: (json['kr20'] as num?)?.toDouble(),
     );
   }
 
@@ -252,5 +263,6 @@ class TestSummaryModel extends TestSummary {
     'total_items_analyzed': totalItemsAnalyzed,
     'upper_group_size': upperGroupSize,
     'lower_group_size': lowerGroupSize,
+    if (kr20 != null) 'kr20': kr20,
   };
 }

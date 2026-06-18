@@ -6,6 +6,7 @@ import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
 import 'package:likha/domain/setup/entities/school_settings.dart';
 import 'package:likha/services/excel/grade_excel_generator.dart';
+import 'package:likha/core/utils/transmutation_util.dart';
 import 'package:likha/services/pdf/grade_pdf_generator.dart';
 
 /// Section info with items, HPS totals, and weight
@@ -48,7 +49,7 @@ class StudentExportRow {
   final SectionResult pt;
   final SectionResult qa;
   final double? initialGrade;
-  final int? quarterlyGrade;
+  final int? transmutedGrade;
   final String remarks;
 
   StudentExportRow({
@@ -58,7 +59,7 @@ class StudentExportRow {
     required this.pt,
     required this.qa,
     this.initialGrade,
-    this.quarterlyGrade,
+    this.transmutedGrade,
     required this.remarks,
   });
 }
@@ -237,19 +238,26 @@ class GradeExportService {
       }
     }
 
-    // Build QG lookup
-    final qgLookup = <String, int?>{};
+    // Build transmuted grade lookup
+    ServiceLogger.instance.warn('exportToPdf _buildContext: summary.length=${(summary ?? []).length}');
+    if ((summary ?? []).isNotEmpty) {
+      ServiceLogger.instance.warn('exportToPdf _buildContext: summary[0] keys=${summary![0].keys.toList()}');
+      ServiceLogger.instance.warn('exportToPdf _buildContext: summary[0]=${summary[0]}');
+    }
+    final tgLookup = <String, int?>{};
     for (final row in (summary ?? [])) {
       final sid = row['student_id'] as String?;
-      final qg = row['quarterly_grade'];
+      final tg = row['transmuted_grade'];
+      ServiceLogger.instance.warn('exportToPdf _buildContext: raw row student_id=$sid, transmuted_grade=$tg');
       if (sid != null) {
-        qgLookup[sid] = qg == null
+        tgLookup[sid] = tg == null
             ? null
-            : (qg is double
-                ? qg.round()
-                : (qg is int ? qg : int.tryParse(qg.toString())));
+            : (tg is double
+                ? tg.round()
+                : (tg is int ? tg : int.tryParse(tg.toString())));
       }
     }
+    ServiceLogger.instance.warn('exportToPdf _buildContext: transmuted_grade_lookup keys=${tgLookup.keys.length}, transmuted_grade_lookup=$tgLookup');
 
     // Build sections
     final wwHps = wwItems.fold<double>(0.0, (s, i) => s + i.totalPoints);
@@ -289,8 +297,10 @@ class GradeExportService {
       final qaResult = _computeSection(studentScores, qaSection);
 
       final initialGrade = _computeInitialGrade(wwResult, ptResult, qaResult);
-      final qg = qgLookup[student.student.id];
-      final remarks = qg != null ? (qg >= 75 ? 'Passed' : 'Failed') : '';
+      final storedTg = tgLookup[student.student.id];
+      final tg = storedTg ?? (initialGrade != null ? TransmutationUtil.transmute(initialGrade) : null);
+      final remarks = tg != null ? (tg >= 75 ? 'Passed' : 'Failed') : '';
+      ServiceLogger.instance.warn('exportToPdf _buildContext: student=${student.student.id} (${student.student.fullName}) storedTg=$storedTg computedTg=${initialGrade != null ? TransmutationUtil.transmute(initialGrade) : null} finalTg=$tg');
 
       studentRows.add(StudentExportRow(
         index: i + 1,
@@ -299,7 +309,7 @@ class GradeExportService {
         pt: ptResult,
         qa: qaResult,
         initialGrade: initialGrade,
-        quarterlyGrade: qg,
+        transmutedGrade: tg,
         remarks: remarks,
       ));
     }

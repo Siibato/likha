@@ -102,58 +102,60 @@ class _AssessmentDetailPageState
                 style: TextStyle(color: AppColors.foregroundTertiary),
               ),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: Column(
+            child: assessment != null
+                ? Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      AssessmentStatusBadge(assessment: assessment!),
-                      const SizedBox(height: 24),
-                      AssessmentInfoSection(assessment: assessment),
-                      const SizedBox(height: 24),
-                      AssessmentQuestionsSection(questions: questions),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 24),
-                Expanded(
-                  flex: 1,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AssessmentQuickStats(
-                        assessment: assessment,
-                        questions: questions,
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AssessmentStatusBadge(assessment: assessment),
+                            const SizedBox(height: 24),
+                            AssessmentInfoSection(assessment: assessment),
+                            const SizedBox(height: 24),
+                            AssessmentQuestionsSection(questions: questions),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 24),
-                      AssessmentActionButtons(
-                        onViewSubmissions: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => AssessmentSubmissionsPage(
-                                assessmentId: widget.assessmentId,
-                              ),
+                      const SizedBox(width: 24),
+                      Expanded(
+                        flex: 1,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AssessmentQuickStats(
+                              assessment: assessment,
+                              questions: questions,
                             ),
-                          );
-                        },
-                        onViewStatistics: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => AssessmentStatisticsPage(
-                                assessmentId: widget.assessmentId,
-                              ),
+                            const SizedBox(height: 24),
+                            AssessmentActionButtons(
+                              onViewSubmissions: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => AssessmentSubmissionsPage(
+                                      assessmentId: widget.assessmentId,
+                                    ),
+                                  ),
+                                );
+                              },
+                              onViewStatistics: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => AssessmentStatisticsPage(
+                                      assessmentId: widget.assessmentId,
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        },
+                          ],
+                        ),
                       ),
                     ],
-                  ),
-                ),
-              ],
-            ),
+                  )
+                : const SizedBox.shrink(),
           ),
         ),
       ),

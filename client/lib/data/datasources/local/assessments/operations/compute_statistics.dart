@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/data/models/assessments/statistics_model.dart';
@@ -43,8 +44,11 @@ Future<AssessmentStatisticsModel?> computeStatistics(
         classStatistics: const ClassStatisticsModel(
           mean: 0,
           median: 0,
+          stdDev: 0,
           highest: 0,
           lowest: 0,
+          passRate: 0,
+          failRate: 0,
           scoreDistribution: [],
         ),
         questionStatistics: const [],
@@ -389,6 +393,40 @@ Future<AssessmentStatisticsModel?> computeStatistics(
 
       final totalItems = itemAnalysis.length;
       if (totalItems > 0) {
+        double? kr20;
+        final nStudents = submissionCount.toDouble();
+        final k = totalItems.toDouble();
+        if (k > 1.0 && nStudents > 1.0) {
+          final allCorrect = <String, int>{};
+          for (final entry in studentQuestionCorrect.entries) {
+            for (final qId in entry.value) {
+              allCorrect[qId] = (allCorrect[qId] ?? 0) + 1;
+            }
+          }
+          double pqSum = 0.0;
+          for (final q in questions) {
+            final correct = allCorrect[q.id] ?? 0;
+            final pI = correct / nStudents;
+            pqSum += pI * (1.0 - pI);
+          }
+          final studentCorrect = <String, int>{};
+          for (final entry in studentQuestionCorrect.entries) {
+            studentCorrect[entry.key] = entry.value.length;
+          }
+          final correctCounts = sortedStudents
+              .map((s) => studentCorrect[s.studentId]?.toDouble() ?? 0.0)
+              .toList();
+          final meanCorrect =
+              correctCounts.reduce((a, b) => a + b) / nStudents;
+          final variance = correctCounts
+                  .map((c) => pow(c - meanCorrect, 2).toDouble())
+                  .reduce((a, b) => a + b) /
+              nStudents;
+          if (variance > 0.0) {
+            kr20 = (k / (k - 1.0)) * (1.0 - pqSum / variance);
+          }
+        }
+
         testSummary = TestSummaryModel(
           meanDifficulty: totalP / totalItems,
           meanDiscrimination: totalD / totalItems,
@@ -398,6 +436,7 @@ Future<AssessmentStatisticsModel?> computeStatistics(
           totalItemsAnalyzed: totalItems,
           upperGroupSize: upperGroup.length,
           lowerGroupSize: lowerGroup.length,
+          kr20: kr20,
         );
       }
     }
@@ -430,6 +469,19 @@ ClassStatisticsModel _computeClassStatistics(List<double> scores, int totalPoint
   final highest = sorted.last;
   final lowest = sorted.first;
 
+  final variance =
+      scores.map((s) { final d = s - mean; return d * d; }).reduce((a, b) => a + b) / n;
+  final stdDev = sqrt(variance);
+
+  double passRate = 0.0;
+  double failRate = 0.0;
+  if (totalPoints > 0) {
+    final passThreshold = totalPoints * 0.75;
+    final passCount = scores.where((s) => s >= passThreshold).length;
+    passRate = (passCount / n) * 100.0;
+    failRate = 100.0 - passRate;
+  }
+
   List<ScoreBucketModel> distribution = [];
   if (totalPoints > 0) {
     final scoreMap = <int, int>{};
@@ -446,38 +498,56 @@ ClassStatisticsModel _computeClassStatistics(List<double> scores, int totalPoint
   return ClassStatisticsModel(
     mean: mean,
     median: median,
+    stdDev: stdDev,
     highest: highest,
     lowest: lowest,
+    passRate: passRate,
+    failRate: failRate,
     scoreDistribution: distribution,
   );
 }
 
 String _getDifficultyLabel(double p) {
-  if (p >= 0.80) return 'Very Easy';
-  if (p >= 0.60) return 'Easy';
-  if (p >= 0.40) return 'Average';
-  if (p >= 0.20) return 'Difficult';
+  if (p >= 0.86) return 'Very Easy';
+  if (p >= 0.71) return 'Easy';
+  if (p >= 0.30) return 'Moderate';
+  if (p >= 0.15) return 'Difficult';
   return 'Very Difficult';
 }
 
 String _getDiscriminationLabel(double d) {
   if (d >= 0.40) return 'Very Good';
-  if (d >= 0.30) return 'Good';
-  if (d >= 0.20) return 'Needs Revision';
-  return 'Discard';
+  if (d >= 0.30) return 'Reasonably Good';
+  if (d >= 0.20) return 'Marginal';
+  return 'Poor';
 }
 
 String _getVerdict(double p, double d) {
-  final pInRange = p >= 0.20 && p <= 0.80;
-  final dGood = d >= 0.30;
+  final dTier = d >= 0.40 ? 3 : d >= 0.30 ? 2 : d >= 0.20 ? 1 : 0;
+  final pTier = p >= 0.86 ? 4 : p >= 0.71 ? 3 : p >= 0.30 ? 0 : p >= 0.15 ? 2 : 4;
 
-  if (pInRange && dGood) return 'retain';
-
-  final pNear = p >= 0.17 && p <= 0.83;
-  final dNear = d >= 0.27;
-
-  if (pNear && dNear) return 'revise';
-  return 'discard';
+  switch ((pTier, dTier)) {
+    case (0, 3):
+    case (0, 2):
+      return 'retain';
+    case (0, 1):
+    case (0, 0):
+      return 'revise';
+    case (3, 3):
+      return 'retain';
+    case (3, 2):
+    case (3, 1):
+    case (3, 0):
+      return 'revise';
+    case (2, 3):
+      return 'retain';
+    case (2, 2):
+    case (2, 1):
+    case (2, 0):
+      return 'revise';
+    default:
+      return 'discard';
+  }
 }
 
 // ─── Internal data classes ────────────────────────────────────────────────────

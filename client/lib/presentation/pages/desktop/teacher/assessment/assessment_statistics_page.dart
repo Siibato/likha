@@ -68,29 +68,62 @@ class _AssessmentStatisticsPageState
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(child: _buildLeftColumn(stats)),
+                            Expanded(
+                                child: _buildClassPerformanceCard(stats)),
                             const SizedBox(width: 24),
-                            Expanded(child: _buildRightColumn(stats)),
+                            Expanded(child: _buildQuestionStatsCard(stats)),
                           ],
                         ),
                         const SizedBox(height: 24),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: ScoreDistributionChart(
-                                scoreDistribution:
-                                    stats.classStatistics.scoreDistribution,
+                        if (stats.itemAnalysis.isNotEmpty) ...[
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: ScoreDistributionChart(
+                                  scoreDistribution:
+                                      stats.classStatistics.scoreDistribution,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 24),
-                            Expanded(
-                              child: ItemDifficultyChart(
-                                items: stats.itemAnalysis,
+                              const SizedBox(width: 24),
+                              Expanded(
+                                child: ItemDifficultyChart(
+                                  items: stats.itemAnalysis,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: ItemDiscriminationChart(
+                                  items: stats.itemAnalysis,
+                                ),
+                              ),
+                              const SizedBox(width: 24),
+                              Expanded(
+                                  child: _buildTestSummaryCard(stats)),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          _buildItemAnalysisCard(stats),
+                        ] else ...[
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ScoreDistributionChart(
+                                  scoreDistribution:
+                                      stats.classStatistics.scoreDistribution,
+                                ),
+                              ),
+                              const SizedBox(width: 24),
+                              const Expanded(child: SizedBox()),
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 32),
                       ],
                     ),
                   ),
@@ -98,7 +131,7 @@ class _AssessmentStatisticsPageState
     );
   }
 
-  Widget _buildLeftColumn(AssessmentStatistics stats) {
+  Widget _buildClassPerformanceCard(AssessmentStatistics stats) {
     final cs = stats.classStatistics;
 
     return Container(
@@ -121,79 +154,43 @@ class _AssessmentStatisticsPageState
               letterSpacing: -0.3,
             ),
           ),
+          const SizedBox(height: 4),
+          Text(
+            '${stats.submissionCount} submissions',
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.foregroundTertiary,
+            ),
+          ),
           const SizedBox(height: 20),
           _buildInfoRow('Mean', cs.mean.toStringAsFixed(1)),
           _buildInfoRow('Median', cs.median.toStringAsFixed(1)),
+          _buildInfoRow('Std Dev', cs.stdDev.toStringAsFixed(1)),
           _buildInfoRow('Highest', cs.highest.toStringAsFixed(1)),
           _buildInfoRow('Lowest', cs.lowest.toStringAsFixed(1)),
-          if (stats.testSummary != null) ...[
-            const SizedBox(height: 24),
-            const Divider(color: AppColors.borderLight),
-            const SizedBox(height: 16),
-            const Text(
-              'Test Summary',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.foregroundDark,
-                letterSpacing: -0.3,
-              ),
-            ),
-            const SizedBox(height: 20),
-            _buildInfoRow(
-              'Mean Difficulty',
-              stats.testSummary!.meanDifficulty.toStringAsFixed(1),
-            ),
-            _buildInfoRow(
-              'Mean Discrimination',
-              stats.testSummary!.meanDiscrimination.toStringAsFixed(1),
-            ),
-            _buildInfoRow(
-              'Retain',
-              stats.testSummary!.retainCount.toString(),
-            ),
-            _buildInfoRow(
-              'Revise',
-              stats.testSummary!.reviseCount.toString(),
-            ),
-            _buildInfoRow(
-              'Discard',
-              stats.testSummary!.discardCount.toString(),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: AppColors.foregroundSecondary,
-            ),
+          const SizedBox(height: 16),
+          const Divider(color: AppColors.borderLight),
+          const SizedBox(height: 16),
+          _buildInfoRow(
+            'Pass Rate (≥75%)',
+            '${cs.passRate.toStringAsFixed(1)}%',
+            valueColor: cs.passRate >= 75
+                ? AppColors.semanticSuccess
+                : AppColors.semanticError,
           ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.foregroundPrimary,
-            ),
+          _buildInfoRow(
+            'Fail Rate (<75%)',
+            '${cs.failRate.toStringAsFixed(1)}%',
+            valueColor: cs.failRate > 50
+                ? AppColors.semanticError
+                : AppColors.foregroundPrimary,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildRightColumn(AssessmentStatistics stats) {
+  Widget _buildQuestionStatsCard(AssessmentStatistics stats) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -206,7 +203,7 @@ class _AssessmentStatisticsPageState
         mainAxisSize: MainAxisSize.min,
         children: [
           const Text(
-            'Item Analysis',
+            'Question Performance',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -214,13 +211,21 @@ class _AssessmentStatisticsPageState
               letterSpacing: -0.3,
             ),
           ),
+          const SizedBox(height: 4),
+          const Text(
+            'Correct vs incorrect per question',
+            style: TextStyle(
+              fontSize: 13,
+              color: AppColors.foregroundTertiary,
+            ),
+          ),
           const SizedBox(height: 20),
-          stats.itemAnalysis.isEmpty
+          stats.questionStatistics.isEmpty
               ? const Padding(
                   padding: EdgeInsets.symmetric(vertical: 24),
                   child: Center(
                     child: Text(
-                      'No item analysis data',
+                      'No question data',
                       style: TextStyle(
                         fontSize: 14,
                         color: AppColors.foregroundTertiary,
@@ -244,40 +249,319 @@ class _AssessmentStatisticsPageState
                       fontWeight: FontWeight.w400,
                       color: AppColors.foregroundPrimary,
                     ),
-                    columnSpacing: 24,
+                    columnSpacing: 20,
                     columns: const [
                       DataColumn(label: Text('Question')),
-                      DataColumn(label: Text('Difficulty')),
-                      DataColumn(label: Text('Discrimination')),
-                      DataColumn(label: Text('Verdict')),
+                      DataColumn(label: Text('Correct'), numeric: true),
+                      DataColumn(label: Text('Incorrect'), numeric: true),
+                      DataColumn(label: Text('% Correct'), numeric: true),
                     ],
-                    rows: stats.itemAnalysis.map((item) {
+                    rows: stats.questionStatistics.map((q) {
                       return DataRow(cells: [
                         DataCell(
                           ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 180),
+                            constraints: const BoxConstraints(maxWidth: 200),
                             child: Text(
-                              item.questionText,
+                              q.questionText,
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
                             ),
                           ),
                         ),
+                        DataCell(Text('${q.correctCount}')),
+                        DataCell(Text('${q.incorrectCount}')),
                         DataCell(
                           Text(
-                            '${item.difficultyIndex.toStringAsFixed(2)} (${item.difficultyLabel})',
+                            '${q.correctPercentage.toStringAsFixed(1)}%',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: q.correctPercentage >= 75
+                                  ? AppColors.semanticSuccess
+                                  : q.correctPercentage >= 50
+                                      ? AppColors.accentAmber
+                                      : AppColors.semanticError,
+                            ),
                           ),
                         ),
-                        DataCell(
-                          Text(
-                            '${item.discriminationIndex.toStringAsFixed(2)} (${item.discriminationLabel})',
-                          ),
-                        ),
-                        DataCell(_buildVerdictBadge(item.verdict)),
                       ]);
                     }).toList(),
                   ),
                 ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTestSummaryCard(AssessmentStatistics stats) {
+    final ts = stats.testSummary;
+    if (ts == null) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'Test Summary',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.foregroundDark,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Item analysis overview (≥10 submissions)',
+            style: TextStyle(
+              fontSize: 13,
+              color: AppColors.foregroundTertiary,
+            ),
+          ),
+          const SizedBox(height: 20),
+          _buildInfoRow(
+            'Items Analyzed',
+            ts.totalItemsAnalyzed.toString(),
+          ),
+          _buildInfoRow(
+            'Upper Group (27%)',
+            '${ts.upperGroupSize} students',
+          ),
+          _buildInfoRow(
+            'Lower Group (27%)',
+            '${ts.lowerGroupSize} students',
+          ),
+          const SizedBox(height: 16),
+          const Divider(color: AppColors.borderLight),
+          const SizedBox(height: 16),
+          _buildInfoRow(
+            'Mean Difficulty',
+            ts.meanDifficulty.toStringAsFixed(2),
+          ),
+          _buildInfoRow(
+            'Mean Discrimination',
+            ts.meanDiscrimination.toStringAsFixed(2),
+          ),
+          if (ts.kr20 != null)
+            _buildInfoRow(
+              'KR-20 Reliability',
+              ts.kr20!.toStringAsFixed(3),
+              valueColor: ts.kr20! >= 0.80
+                  ? AppColors.semanticSuccess
+                  : ts.kr20! >= 0.60
+                      ? AppColors.accentAmber
+                      : AppColors.semanticError,
+            ),
+          const SizedBox(height: 16),
+          const Divider(color: AppColors.borderLight),
+          const SizedBox(height: 16),
+          _buildInfoRow(
+            'Retain',
+            ts.retainCount.toString(),
+            valueColor: AppColors.semanticSuccess,
+          ),
+          _buildInfoRow(
+            'Revise',
+            ts.reviseCount.toString(),
+            valueColor: AppColors.accentAmber,
+          ),
+          _buildInfoRow(
+            'Discard',
+            ts.discardCount.toString(),
+            valueColor: AppColors.semanticError,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItemAnalysisCard(AssessmentStatistics stats) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'Item Analysis',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.foregroundDark,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Difficulty = % correct (higher = easier) · Discrimination = upper vs lower group gap · Verdict per DepEd standard',
+            style: TextStyle(
+              fontSize: 12,
+              color: AppColors.foregroundTertiary,
+            ),
+          ),
+          const SizedBox(height: 20),
+          stats.itemAnalysis.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Center(
+                    child: Text(
+                      'No item analysis data (requires ≥10 submissions)',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.foregroundTertiary,
+                      ),
+                    ),
+                  ),
+                )
+              : _buildItemAnalysisTable(stats.itemAnalysis),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItemAnalysisTable(List<ItemAnalysis> items) {
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: AppColors.borderLight),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          headingRowColor: WidgetStateProperty.all(
+            AppColors.backgroundSecondary,
+          ),
+          headingTextStyle: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.foregroundPrimary,
+          ),
+          dataTextStyle: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w400,
+            color: AppColors.foregroundPrimary,
+          ),
+          columnSpacing: 24,
+          columns: const [
+            DataColumn(label: Text('Question')),
+            DataColumn(label: Text('Difficulty'), numeric: true),
+            DataColumn(label: Text('Discrimination'), numeric: true),
+            DataColumn(label: Text('Verdict')),
+            DataColumn(label: Text('Distractors')),
+          ],
+          rows: items.map((item) {
+            return DataRow(
+              cells: [
+                DataCell(
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 180),
+                    child: Text(
+                      item.questionText,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                ),
+                DataCell(
+                  Text(
+                    '${item.difficultyIndex.toStringAsFixed(2)}\n${item.difficultyLabel}',
+                    style: const TextStyle(fontSize: 12, height: 1.3),
+                  ),
+                ),
+                DataCell(
+                  Text(
+                    '${item.discriminationIndex.toStringAsFixed(2)}\n${item.discriminationLabel}',
+                    style: const TextStyle(fontSize: 12, height: 1.3),
+                  ),
+                ),
+                DataCell(_buildVerdictBadge(item.verdict)),
+                DataCell(_buildDistractorCell(item.distractors)),
+              ],
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDistractorCell(List<DistractorAnalysis>? distractors) {
+    if (distractors == null || distractors.isEmpty) {
+      return const Text(
+        '—',
+        style: TextStyle(color: AppColors.foregroundTertiary),
+      );
+    }
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 280),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 4,
+        children: distractors.map((d) {
+          final color = d.isCorrect
+              ? AppColors.semanticSuccess
+              : d.isEffective
+                  ? AppColors.foregroundTertiary
+                  : AppColors.semanticError;
+
+          return Tooltip(
+            message: d.isCorrect
+                ? 'Correct answer — ${d.totalPercentage.toStringAsFixed(0)}% chose this'
+                : d.isEffective
+                    ? 'Effective distractor — ${d.totalPercentage.toStringAsFixed(0)}% chose this (lower > upper)'
+                    : 'Ineffective distractor — ${d.totalPercentage.toStringAsFixed(0)}% chose this',
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: color.withValues(alpha: 0.2)),
+              ),
+              child: Text(
+                '${d.totalPercentage.toStringAsFixed(0)}%',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value, {Color? valueColor}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.foregroundSecondary,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: valueColor ?? AppColors.foregroundPrimary,
+            ),
+          ),
         ],
       ),
     );

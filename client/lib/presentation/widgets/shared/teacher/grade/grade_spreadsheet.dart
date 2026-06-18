@@ -28,7 +28,7 @@ class GradeSpreadsheet extends StatefulWidget {
   final GradeConfig? config;
 
   /// Per-student quarterly grade summary rows from the server.
-  /// Each map contains at minimum: 'student_id' and 'quarterly_grade'.
+  /// Each map contains at minimum: 'student_id' and 'transmuted_grade'.
   final List<Map<String, dynamic>>? summary;
 
   /// When true, score cells render as pulsing skeletons and are non-tappable.
@@ -78,8 +78,8 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
   final _scoreFocus = FocusNode();
 
   String? _editingQgStudentId;
-  final _qgCtrl = TextEditingController();
-  final _qgFocus = FocusNode();
+  final _tgCtrl = TextEditingController();
+  final _tgFocus = FocusNode();
 
   final _horizontalScrollCtrl = ScrollController();
 
@@ -95,8 +95,8 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
     _scoreFocus.addListener(() {
       if (!_scoreFocus.hasFocus && _editingKey != null) _commitScore();
     });
-    _qgFocus.addListener(() {
-      if (!_qgFocus.hasFocus && _editingQgStudentId != null) _commitQg();
+    _tgFocus.addListener(() {
+      if (!_tgFocus.hasFocus && _editingQgStudentId != null) _commitQg();
     });
   }
 
@@ -104,8 +104,8 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
   void dispose() {
     _scoreCtrl.dispose();
     _scoreFocus.dispose();
-    _qgCtrl.dispose();
-    _qgFocus.dispose();
+    _tgCtrl.dispose();
+    _tgFocus.dispose();
     _horizontalScrollCtrl.dispose();
     _verticalScrollCtrl.dispose();
     super.dispose();
@@ -155,15 +155,15 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
     if (_editingQgStudentId != null) _commitQg();
     setState(() {
       _editingQgStudentId = studentId;
-      _qgCtrl.text = current?.toString() ?? '';
-      _qgCtrl.selection =
-          TextSelection.fromPosition(TextPosition(offset: _qgCtrl.text.length));
+      _tgCtrl.text = current?.toString() ?? '';
+      _tgCtrl.selection =
+          TextSelection.fromPosition(TextPosition(offset: _tgCtrl.text.length));
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) => _qgFocus.requestFocus());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _tgFocus.requestFocus());
   }
 
   void _commitQg() {
-    final grade = int.tryParse(_qgCtrl.text.trim());
+    final grade = int.tryParse(_tgCtrl.text.trim());
     if (grade != null && _editingQgStudentId != null) {
       widget.onQgChanged(_editingQgStudentId!, grade);
     }
@@ -189,17 +189,17 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
     return lookup;
   }
 
-  Map<String, int?> _buildQgLookup() {
+  Map<String, int?> _buildTransmutedGradeLookup() {
     final lookup = <String, int?>{};
     for (final row in (widget.summary ?? [])) {
       final sid = row['student_id'] as String?;
-      final qg = row['quarterly_grade'];
+      final tg = row['transmuted_grade'];
       if (sid != null) {
-        lookup[sid] = qg == null
+        lookup[sid] = tg == null
             ? null
-            : (qg is double
-                ? qg.round()
-                : (qg is int ? qg : int.tryParse(qg.toString())));
+            : (tg is double
+                ? tg.round()
+                : (tg is int ? tg : int.tryParse(tg.toString())));
       }
     }
     return lookup;
@@ -213,7 +213,7 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
   @override
   Widget build(BuildContext context) {
     final scoreLookup = _buildScoreLookup();
-    final qgLookup = _buildQgLookup();
+    final tgLookup = _buildTransmutedGradeLookup();
 
     final wwItems = widget.allItems.where((i) => i.component == 'ww' || i.component == 'written_work').toList()
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
@@ -406,7 +406,7 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
                         ptItems: ptItems,
                         qaItems: qaItems,
                         scoreLookup: scoreLookup,
-                        qgLookup: qgLookup,
+                        tgLookup: tgLookup,
                         wwWeight: wwW,
                         ptWeight: ptW,
                         qaWeight: qaW,
@@ -416,8 +416,8 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
                         editingQgStudentId: _editingQgStudentId,
                         scoreCtrl: _scoreCtrl,
                         scoreFocus: _scoreFocus,
-                        qgCtrl: _qgCtrl,
-                        qgFocus: _qgFocus,
+                        tgCtrl: _tgCtrl,
+                        tgFocus: _tgFocus,
                         onStartScore: _startScore,
                         onCommitScore: _commitScore,
                         onClearScore: _clearScore,

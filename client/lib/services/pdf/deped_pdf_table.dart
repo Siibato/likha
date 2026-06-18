@@ -6,11 +6,21 @@ const double _nameWidth = 130.0;
 const double _itemWidth = 26.0;
 const double _tpsWidth = 30.0;
 const double _gradeWidth = 36.0;
+const double _borderWidth = 0.5;
 
-/// Yellow color for WS weight highlighting
-const PdfColor _yellow = PdfColor(1.0, 1.0, 0.6);
+/// Top border for the header strip; the table below provides the bottom border.
+/// Only the first container gets a left border; each container gets a right border
+/// so borders between sections are shared, matching the table.
+pw.BoxDecoration _headerStripTopBorder({required bool isFirst}) =>
+    pw.BoxDecoration(
+      border: pw.Border(
+        top: const pw.BorderSide(color: PdfColors.black, width: _borderWidth),
+        left: isFirst ? const pw.BorderSide(color: PdfColors.black, width: _borderWidth) : pw.BorderSide.none,
+        right: const pw.BorderSide(color: PdfColors.black, width: _borderWidth),
+      ),
+    );
 
-pw.Table buildGradeTable(GradeExportContext ctx, {int startIdx = 0, int? endIdx}) {
+pw.Widget buildGradeTable(GradeExportContext ctx, {int startIdx = 0, int? endIdx}) {
   final ww = ctx.ww;
   final pt = ctx.pt;
   final qa = ctx.qa;
@@ -41,48 +51,34 @@ pw.Table buildGradeTable(GradeExportContext ctx, {int startIdx = 0, int? endIdx}
       ? ctx.studentRows.sublist(startIdx, endIdx)
       : ctx.studentRows.sublist(startIdx);
 
-  return pw.Table(
-    columnWidths: columnWidths,
-    border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+  return pw.Column(
     children: [
-      _sectionHeaderRow(ctx),
-      _columnHeaderRow(ctx),
-      _hpsRow(ctx),
-      ...studentSubset.map((row) => _studentRow(ctx, row)),
+      _buildSectionHeaderStrip(ctx),
+      pw.Table(
+        columnWidths: columnWidths,
+        border: pw.TableBorder.all(color: PdfColors.black, width: _borderWidth),
+        children: [
+          _columnHeaderRow(ctx),
+          _hpsRow(ctx),
+          ...studentSubset.map((row) => _studentRow(ctx, row)),
+        ],
+      ),
     ],
   );
 }
 
-pw.TableRow _sectionHeaderRow(GradeExportContext ctx) {
-  final children = <pw.Widget>[
-    _headerCell("LEARNERS' NAMES", _nameWidth),
-  ];
+pw.Widget _buildSectionHeaderStrip(GradeExportContext ctx) {
+  final children = <pw.Widget>[];
 
-  children.addAll(_sectionHeaderCells(ctx.ww, 'WRITTEN WORKS'));
-  children.addAll(_sectionHeaderCells(ctx.pt, 'PERFORMANCE TASKS'));
-  children.addAll(_sectionHeaderCells(ctx.qa, 'QUARTERLY ASSESSMENT'));
-
-  children.add(_headerCell('Initial\nGrade', _gradeWidth));
-  children.add(_headerCell('Quarterly\nGrade', _gradeWidth));
-
-  return pw.TableRow(
-    children: children,
-  );
-}
-
-List<pw.Widget> _sectionHeaderCells(SectionInfo section, String label) {
-  final cells = <pw.Widget>[];
-  if (section.items.isEmpty) return cells;
-
-  final totalWidth = (section.items.length * _itemWidth) + (_tpsWidth * 3);
-  cells.add(
+  children.add(
     pw.Container(
-      width: totalWidth,
+      width: _nameWidth + 2 * _borderWidth,
       height: 22,
       padding: const pw.EdgeInsets.all(2),
+      decoration: _headerStripTopBorder(isFirst: true),
       child: pw.Center(
         child: pw.Text(
-          '$label(${section.weight.toStringAsFixed(0)}%)',
+          "LEARNER'S NAMES",
           style: pw.TextStyle(
             fontSize: 7,
             fontWeight: pw.FontWeight.bold,
@@ -92,11 +88,79 @@ List<pw.Widget> _sectionHeaderCells(SectionInfo section, String label) {
       ),
     ),
   );
-  // Add empty placeholders for remaining columns in this section
-  for (int i = 1; i < section.items.length + 3; i++) {
-    cells.add(pw.Container(width: i < section.items.length ? _itemWidth : _tpsWidth, height: 22));
+
+  for (final entry in [
+    (ctx.ww, 'WRITTEN WORKS'),
+    (ctx.pt, 'PERFORMANCE TASKS'),
+    (ctx.qa, 'QUARTERLY ASSESSMENT'),
+  ]) {
+    final section = entry.$1;
+    final label = entry.$2;
+    if (section.items.isEmpty) continue;
+    final cols = section.items.length + 3;
+    final contentWidth = section.items.length * _itemWidth + 3 * _tpsWidth;
+    final totalWidth = contentWidth + cols * _borderWidth;
+    children.add(
+      pw.Container(
+        width: totalWidth,
+        height: 22,
+        padding: const pw.EdgeInsets.all(2),
+        decoration: _headerStripTopBorder(isFirst: false),
+        child: pw.Center(
+          child: pw.Text(
+            '$label (${section.weight.toStringAsFixed(0)}%)',
+            style: pw.TextStyle(
+              fontSize: 7,
+              fontWeight: pw.FontWeight.bold,
+            ),
+            textAlign: pw.TextAlign.center,
+          ),
+        ),
+      ),
+    );
   }
-  return cells;
+
+  children.add(
+    pw.Container(
+      width: _gradeWidth + _borderWidth,
+      height: 22,
+      padding: const pw.EdgeInsets.all(2),
+      decoration: _headerStripTopBorder(isFirst: false),
+      child: pw.Center(
+        child: pw.Text(
+          'Initial\nGrade',
+          style: pw.TextStyle(
+            fontSize: 7,
+            fontWeight: pw.FontWeight.bold,
+          ),
+          textAlign: pw.TextAlign.center,
+        ),
+      ),
+    ),
+  );
+  children.add(
+    pw.Container(
+      width: _gradeWidth + _borderWidth,
+      height: 22,
+      padding: const pw.EdgeInsets.all(2),
+      decoration: _headerStripTopBorder(isFirst: false),
+      child: pw.Center(
+        child: pw.Text(
+          'Transmuted\nGrade',
+          style: pw.TextStyle(
+            fontSize: 7,
+            fontWeight: pw.FontWeight.bold,
+          ),
+          textAlign: pw.TextAlign.center,
+        ),
+      ),
+    ),
+  );
+
+  return pw.Row(
+    crossAxisAlignment: pw.CrossAxisAlignment.start,
+    children: children,
+  );
 }
 
 pw.TableRow _columnHeaderRow(GradeExportContext ctx) {
@@ -108,8 +172,8 @@ pw.TableRow _columnHeaderRow(GradeExportContext ctx) {
   children.addAll(_sectionColumnHeaders(ctx.pt));
   children.addAll(_sectionColumnHeaders(ctx.qa));
 
-  children.add(_headerCell('Grade', _gradeWidth));
-  children.add(_headerCell('Grade', _gradeWidth));
+  children.add(_headerCell('', _gradeWidth));
+  children.add(_headerCell('', _gradeWidth));
 
   return pw.TableRow(
     children: children,
@@ -135,7 +199,8 @@ pw.TableRow _hpsRow(GradeExportContext ctx) {
 
 pw.TableRow _studentRow(GradeExportContext ctx, StudentExportRow row) {
   final children = <pw.Widget>[
-    _dataCell('${row.index}. ${row.student.student.fullName}', _nameWidth),
+    _dataCell('${row.index}. ${row.student.student.fullName}', _nameWidth,
+        alignment: pw.Alignment.centerLeft),
   ];
 
   children.addAll(_sectionDataCells(row.ww));
@@ -147,7 +212,7 @@ pw.TableRow _studentRow(GradeExportContext ctx, StudentExportRow row) {
     _gradeWidth,
   ));
   children.add(_dataCell(
-    row.quarterlyGrade?.toString() ?? '',
+    row.transmutedGrade?.toString() ?? '',
     _gradeWidth,
   ));
 
@@ -180,7 +245,6 @@ List<pw.Widget> _sectionHpsCells(SectionInfo section) {
       '${section.weight.toStringAsFixed(0)}%',
       _tpsWidth,
       bold: true,
-      bgColor: _yellow,
     ));
   }
   return cells;
@@ -230,7 +294,7 @@ pw.Widget _headerCell(String text, double width) {
 }
 
 pw.Widget _dataCell(String text, double width,
-    {bool bold = false, PdfColor? bgColor}) {
+    {bool bold = false, PdfColor? bgColor, pw.Alignment alignment = pw.Alignment.center}) {
   return pw.Container(
     width: width,
     height: 18,
@@ -238,7 +302,8 @@ pw.Widget _dataCell(String text, double width,
     decoration: bgColor != null
         ? pw.BoxDecoration(color: bgColor)
         : null,
-    child: pw.Center(
+    child: pw.Align(
+      alignment: alignment,
       child: pw.Text(
         text,
         style: pw.TextStyle(

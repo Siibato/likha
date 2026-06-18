@@ -148,7 +148,7 @@ class _QuarterlyGradeTableState extends State<QuarterlyGradeTable> {
                 final wwScore = _numOrNull(row['ww_weighted_score']);
                 final ptScore = _numOrNull(row['pt_weighted_score']);
                 final qaScore = _numOrNull(row['qa_weighted_score']);
-                final qg = _numOrNull(row['quarterly_grade'])?.round();
+                final tg = _numOrNull(row['transmuted_grade'])?.round();
                 final isEditing = _editingStudentId == studentId;
 
                 return Container(
@@ -231,15 +231,15 @@ class _QuarterlyGradeTableState extends State<QuarterlyGradeTable> {
                         )
                       else
                         GestureDetector(
-                          onTap: () => _startQg(studentId, qg),
+                          onTap: () => _startQg(studentId, tg),
                           child: GradeTableCells.dataCell(
-                            qg?.toString() ?? '--',
+                            tg?.toString() ?? '--',
                             cellWidth,
                             cellHeight,
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
-                              color: qg != null
+                              color: tg != null
                                   ? AppColors.foregroundPrimary
                                   : AppColors.foregroundLight,
                             ),
@@ -249,7 +249,7 @@ class _QuarterlyGradeTableState extends State<QuarterlyGradeTable> {
                       // Descriptor badge
                       SizedBox(
                         width: descriptorWidth,
-                        child: DescriptorBadge(grade: qg, height: cellHeight),
+                        child: DescriptorBadge(grade: tg, height: cellHeight),
                       ),
                     ],
                   ),

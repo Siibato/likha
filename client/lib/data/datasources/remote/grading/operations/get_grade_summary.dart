@@ -14,7 +14,7 @@ Future<List<Map<String, dynamic>>> getGradeSummary(
       queryParameters: {'grading_period_number': gradingPeriodNumber},
     );
     final data = response.data['data'] ?? response.data;
-    final summary = data['summary'] as List<dynamic>? ?? [];
+    final summary = data['students'] as List<dynamic>? ?? [];
     return summary.cast<Map<String, dynamic>>();
   } on DioException catch (e) {
     throw dioClient.handleError(e);

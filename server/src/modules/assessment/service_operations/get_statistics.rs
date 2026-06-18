@@ -29,8 +29,11 @@ impl crate::modules::assessment::service::AssessmentService {
             ClassStatistics {
                 mean: 0.0,
                 median: 0.0,
+                std_dev: 0.0,
                 highest: 0.0,
                 lowest: 0.0,
+                pass_rate: 0.0,
+                fail_rate: 0.0,
                 score_distribution: Vec::new(),
             }
         } else {

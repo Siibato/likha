@@ -12,7 +12,7 @@ class GradeStatsFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final grades = summary
-        .map((r) => _numOrNull(r['quarterly_grade']))
+        .map((r) => _numOrNull(r['transmuted_grade']))
         .whereType<double>()
         .toList();
 
