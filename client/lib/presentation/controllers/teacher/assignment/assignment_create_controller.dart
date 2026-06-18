@@ -26,7 +26,7 @@ class AssignmentCreateController extends ChangeNotifier {
   DateTime dueAt = DateTime.now().add(const Duration(days: 7));
   bool isPublished = true;
   int? quarter;
-  String? component = 'performance_task';
+  String? component = 'pt';
   bool noSubmissionRequired = false;
   bool isSaving = false;
   String? formError;

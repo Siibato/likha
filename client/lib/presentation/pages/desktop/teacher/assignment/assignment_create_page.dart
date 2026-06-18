@@ -159,10 +159,7 @@ class _CreateAssignmentPageState
                     isSaving: _controller.isSaving,
                     onSave: () async {
                       if (!_formKey.currentState!.validate()) return;
-                      final success = await _controller.performSave();
-                      if (success && context.mounted) {
-                        Navigator.pop(context, true);
-                      }
+                      await _controller.performSave();
                     },
                     onSubmissionTypeChanged: _onSubmissionTypeChanged,
                     onPickDueDate: _pickDueDate,
