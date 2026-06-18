@@ -15,6 +15,7 @@ pub async fn seed_realistic_world(db: &DatabaseConnection) -> Result<(), AppErro
     let users = fixtures::realistic_users(&ctx);
     let classes = fixtures::realistic_classes(&ctx);
     let enrollments = fixtures::realistic_enrollments();
+    let learner_details = fixtures::realistic_learner_details();
     let tos_list = fixtures::realistic_tos();
     let competencies = fixtures::realistic_competencies();
     let assessments = fixtures::realistic_assessments(&ctx);
@@ -37,6 +38,7 @@ pub async fn seed_realistic_world(db: &DatabaseConnection) -> Result<(), AppErro
 
     inserters::school::insert_school_settings(db, &school).await?;
     inserters::users::insert_users(db, &users).await?;
+    inserters::learner_details::insert_learner_details(db, &learner_details).await?;
     inserters::classes::insert_classes(db, &classes).await?;
     inserters::classes::insert_enrollments(db, &enrollments).await?;
     inserters::tos::insert_tos(db, &tos_list).await?;
@@ -69,8 +71,8 @@ pub async fn seed_realistic_world(db: &DatabaseConnection) -> Result<(), AppErro
     enable_foreign_keys(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
     println!(
-        "Realistic seed complete: {} users, {} classes, {} enrollments, {} TOS, {} competencies, {} assessments, {} assignments, {} materials, {} assessment submissions, {} assignment submissions, {} grade records, {} grade items, {} grade scores, {} period grades",
-        users.len(), classes.len(), enrollments.len(), tos_list.len(), competencies.len(),
+        "Realistic seed complete: {} users, {} classes, {} enrollments, {} learner details, {} TOS, {} competencies, {} assessments, {} assignments, {} materials, {} assessment submissions, {} assignment submissions, {} grade records, {} grade items, {} grade scores, {} period grades",
+        users.len(), classes.len(), enrollments.len(), learner_details.len(), tos_list.len(), competencies.len(),
         assessments.len(), assignments.len(), materials.len(), assessment_submissions.len(),
         assignment_submissions.len(), grade_records.len(), grade_items.len(), grade_scores.len(),
         period_grades.len()

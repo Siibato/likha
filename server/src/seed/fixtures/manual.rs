@@ -13,6 +13,7 @@ use uuid::Uuid;
 
 use crate::seed::specs::*;
 use crate::seed::tools::SeedContext;
+use crate::seed::tools::seed_id;
 
 use super::shared::*;
 
@@ -928,4 +929,30 @@ pub fn manual_school_settings(_ctx: &SeedContext) -> SchoolSettingsSpec {
         school_district: None,
         updated_at: _ctx.now(),
     }
+}
+
+pub fn manual_learner_details() -> Vec<LearnerDetailsSpec> {
+    let mut details = Vec::with_capacity(70);
+
+    for i in 1..=70 {
+        let username = student_username(i);
+        let lrn = format!("136-1234-{:03}", i);
+        let age = (15 + (i % 3)) as i32; // Ages 15-17
+        let sex = if i % 2 == 0 { "Female" } else { "Male" };
+        let tracks = ["STEM", "ABM", "HUMSS"];
+        let track = tracks[(i as usize) % 3];
+        let curriculum = "K to 12";
+
+        details.push(LearnerDetailsSpec {
+            id: seed_id("learner_details", &username),
+            user_id: user_id(&username),
+            lrn: Some(lrn),
+            age: Some(age),
+            sex: Some(sex.into()),
+            track_strand: Some(track.into()),
+            curriculum: Some(curriculum.into()),
+        });
+    }
+
+    details
 }

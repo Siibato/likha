@@ -1,7 +1,7 @@
 use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
-use ::entity::{grade_items, grade_record, grade_scores, period_grades};
+use ::entity::{grade_items, grade_record, grade_scores, learner_details, period_grades};
 use crate::utils::AppResult;
 use crate::modules::grading::repository_operations as ops;
 pub use ops::StudentEnrolledClass;
@@ -112,6 +112,10 @@ impl GradeComputationRepository {
 
     pub async fn get_enrolled_student_ids(&self, class_id: Uuid) -> AppResult<Vec<(Uuid, String)>> {
         ops::get_enrolled_student_ids(&self.db, class_id).await
+    }
+
+    pub async fn get_learner_details(&self, user_id: Uuid) -> AppResult<Option<learner_details::Model>> {
+        ops::get_learner_details(&self.db, user_id).await
     }
 
     // ─── Cross-Class Queries ──────────────────────────────────────────────────

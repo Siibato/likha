@@ -7,6 +7,11 @@ class Sf9ResponseModel extends Sf9Response {
     super.gradeLevel,
     super.schoolYear,
     super.section,
+    super.lrn,
+    super.age,
+    super.sex,
+    super.trackStrand,
+    super.curriculum,
     required super.subjects,
     super.generalAverage,
   });
@@ -18,6 +23,11 @@ class Sf9ResponseModel extends Sf9Response {
       gradeLevel: json['grade_level'] as String?,
       schoolYear: json['school_year'] as String?,
       section: json['section'] as String?,
+      lrn: json['lrn'] as String?,
+      age: json['age'] as int?,
+      sex: json['sex'] as String?,
+      trackStrand: json['track_strand'] as String?,
+      curriculum: json['curriculum'] as String?,
       subjects: (json['subjects'] as List<dynamic>? ?? [])
           .map((e) => Sf9SubjectRowModel.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList(),
@@ -34,6 +44,11 @@ class Sf9ResponseModel extends Sf9Response {
       'grade_level': gradeLevel,
       'school_year': schoolYear,
       'section': section,
+      'lrn': lrn,
+      'age': age,
+      'sex': sex,
+      'track_strand': trackStrand,
+      'curriculum': curriculum,
       'subjects': subjects.map((s) => (s as Sf9SubjectRowModel).toJson()).toList(),
       'general_average': generalAverage != null
           ? (generalAverage as Sf9QuarterlyAveragesModel).toJson()

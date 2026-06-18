@@ -241,3 +241,14 @@ pub struct ActivityLogSpec {
     pub details: Option<String>,
     pub created_at: NaiveDateTime,
 }
+
+#[derive(Debug, Clone)]
+pub struct LearnerDetailsSpec {
+    pub id: Uuid,
+    pub user_id: Uuid,
+    pub lrn: Option<String>,
+    pub age: Option<i32>,
+    pub sex: Option<String>,
+    pub track_strand: Option<String>,
+    pub curriculum: Option<String>,
+}

@@ -6,6 +6,11 @@ class Sf9Response extends Equatable {
   final String? gradeLevel;
   final String? schoolYear;
   final String? section;
+  final String? lrn;
+  final int? age;
+  final String? sex;
+  final String? trackStrand;
+  final String? curriculum;
   final List<Sf9SubjectRow> subjects;
   final Sf9QuarterlyAverages? generalAverage;
 
@@ -15,6 +20,11 @@ class Sf9Response extends Equatable {
     this.gradeLevel,
     this.schoolYear,
     this.section,
+    this.lrn,
+    this.age,
+    this.sex,
+    this.trackStrand,
+    this.curriculum,
     required this.subjects,
     this.generalAverage,
   });

@@ -7,6 +7,9 @@ import 'package:likha/presentation/widgets/shared/primitives/info_row.dart';
 import 'package:likha/domain/grading/entities/sf9.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/sf9_grade_table.dart';
 import 'package:likha/presentation/providers/sf9_provider.dart';
+import 'package:likha/presentation/providers/school_settings_provider.dart';
+import 'package:likha/presentation/widgets/desktop/teacher/grade/sf9_core_values_table.dart';
+import 'package:likha/services/pdf/sf9/sf9_pdf_generator.dart';
 
 class Sf9DetailPage extends ConsumerStatefulWidget {
   final String classId;
@@ -25,6 +28,8 @@ class Sf9DetailPage extends ConsumerStatefulWidget {
 }
 
 class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
+  bool _isDownloading = false;
+
   @override
   void initState() {
     super.initState();
@@ -46,6 +51,11 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
             gradeLevel: sf9.gradeLevel,
             schoolYear: sf9.schoolYear,
             section: sf9.section,
+            lrn: sf9.lrn,
+            age: sf9.age,
+            sex: sf9.sex,
+            trackStrand: sf9.trackStrand,
+            curriculum: sf9.curriculum,
             subjects: sf9.subjects,
             generalAverage: sf9.generalAverage,
           )
@@ -60,7 +70,28 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
           color: AppColors.foregroundPrimary,
           onPressed: () => Navigator.pop(context),
         ),
-        actions: const [],
+        actions: [
+          if (displaySf9 != null)
+            TextButton.icon(
+              onPressed: _isDownloading ? null : () => _downloadSf9(displaySf9),
+              icon: _isDownloading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.download_rounded, size: 18),
+              label: Text(_isDownloading ? 'Generating...' : 'Download SF9'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: AppColors.accentCharcoal,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+        ],
         body: _buildBody(state, displaySf9),
       ),
     );
@@ -100,58 +131,117 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
       );
     }
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Left column — Student info
-        Expanded(
-          flex: 2,
-          child: InfoPanel(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Student info card
+          InfoPanel(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 InfoRow(label: 'Name', value: displaySf9.studentName),
-                if (displaySf9.gradeLevel != null) ...[
+                if (displaySf9.lrn != null) ...[
                   const SizedBox(height: 12),
-                  InfoRow(label: 'Grade Level', value: displaySf9.gradeLevel!),
+                  InfoRow(label: 'LRN', value: displaySf9.lrn!),
                 ],
-                if (displaySf9.schoolYear != null) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: InfoRow(label: 'Age', value: displaySf9.age?.toString() ?? '—'),
+                    ),
+                    const SizedBox(width: 24),
+                    Expanded(
+                      child: InfoRow(label: 'Sex', value: displaySf9.sex ?? '—'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: InfoRow(label: 'Grade Level', value: displaySf9.gradeLevel ?? '—'),
+                    ),
+                    const SizedBox(width: 24),
+                    Expanded(
+                      child: InfoRow(label: 'Section', value: displaySf9.section ?? '—'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: InfoRow(label: 'School Year', value: displaySf9.schoolYear ?? '—'),
+                    ),
+                    const SizedBox(width: 24),
+                    Expanded(
+                      child: InfoRow(label: 'Curriculum', value: displaySf9.curriculum ?? '—'),
+                    ),
+                  ],
+                ),
+                if (displaySf9.trackStrand != null) ...[
                   const SizedBox(height: 12),
-                  InfoRow(label: 'School Year', value: displaySf9.schoolYear!),
-                ],
-                if (displaySf9.section != null) ...[
-                  const SizedBox(height: 12),
-                  InfoRow(label: 'Section', value: displaySf9.section!),
+                  InfoRow(label: 'Track/Strand', value: displaySf9.trackStrand!),
                 ],
               ],
             ),
           ),
-        ),
-        const SizedBox(width: 24),
-        // Right column — Grade table
-        Expanded(
-          flex: 3,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Learner's Progress Report Card",
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.foregroundPrimary,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Sf9GradeTable(
-                subjects: displaySf9.subjects,
-                generalAverage: displaySf9.generalAverage,
-              ),
-            ],
+          const SizedBox(height: 24),
+          // Grade table
+          const Text(
+            'Report on Learning Progress and Achievement',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: AppColors.foregroundPrimary,
+            ),
           ),
-        ),
-      ],
+          const SizedBox(height: 16),
+          Sf9GradeTable(
+            subjects: displaySf9.subjects,
+            generalAverage: displaySf9.generalAverage,
+          ),
+          const SizedBox(height: 24),
+          // Core values table
+          const Sf9CoreValuesTable(),
+        ],
+      ),
     );
+  }
+
+  Future<void> _downloadSf9(Sf9Response displaySf9) async {
+    setState(() => _isDownloading = true);
+    try {
+      final schoolSettingsState = ref.read(schoolSettingsProvider);
+      final schoolSettings = schoolSettingsState.settings;
+      await ref.read(sf9PdfGeneratorProvider).generatePdf(
+            sf9: displaySf9,
+            schoolSettings: schoolSettings,
+            studentName: widget.studentName,
+          );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('SF9 PDF downloaded successfully'),
+            backgroundColor: AppColors.semanticSuccess,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to download SF9: $e'),
+            backgroundColor: AppColors.semanticError,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isDownloading = false);
+    }
   }
 }

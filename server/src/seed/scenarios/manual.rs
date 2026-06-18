@@ -24,6 +24,7 @@ pub async fn seed_manual_world(db: &DatabaseConnection) -> Result<(), AppError> 
     let users = fixtures::manual_users(&ctx);
     let classes = fixtures::manual_classes(&ctx);
     let enrollments = fixtures::manual_enrollments();
+    let learner_details = fixtures::manual_learner_details();
     let tos_list = fixtures::manual_tos();
     let competencies = fixtures::manual_competencies();
     let assessments = fixtures::manual_assessments(&ctx);
@@ -50,6 +51,7 @@ pub async fn seed_manual_world(db: &DatabaseConnection) -> Result<(), AppError> 
 
     inserters::school::insert_school_settings(db, &school).await?;
     inserters::users::insert_users(db, &users).await?;
+    inserters::learner_details::insert_learner_details(db, &learner_details).await?;
     inserters::classes::insert_classes(db, &classes).await?;
     inserters::classes::insert_enrollments(db, &enrollments).await?;
     inserters::tos::insert_tos(db, &tos_list).await?;
@@ -91,10 +93,11 @@ pub async fn seed_manual_world(db: &DatabaseConnection) -> Result<(), AppError> 
 
     // Summary
     let summary = format!(
-        "Manual seed complete: {} users, {} classes, {} enrollments, {} TOS, {} competencies, {} assessments, {} assignments, {} materials, {} assessment submissions, {} assignment submissions, {} grade records, {} grade items, {} grade scores, {} period grades",
+        "Manual seed complete: {} users, {} classes, {} enrollments, {} learner details, {} TOS, {} competencies, {} assessments, {} assignments, {} materials, {} assessment submissions, {} assignment submissions, {} grade records, {} grade items, {} grade scores, {} period grades",
         users.len(),
         classes.len(),
         enrollments.len(),
+        learner_details.len(),
         tos_list.len(),
         competencies.len(),
         assessments.len(),

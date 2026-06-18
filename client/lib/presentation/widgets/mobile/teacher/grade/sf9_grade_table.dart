@@ -48,7 +48,7 @@ class Sf9GradeTable extends StatelessWidget {
                   _cell('Q3', cellWidth, cellHeight, bold: true),
                   _cell('Q4', cellWidth, cellHeight, bold: true),
                   _cell('Final', fgWidth, cellHeight, bold: true),
-                  _cell('Desc', descWidth, cellHeight, bold: true),
+                  _cell('Remarks', descWidth, cellHeight, bold: true),
                 ],
               ),
             ),
@@ -67,7 +67,7 @@ class Sf9GradeTable extends StatelessWidget {
                     _gradeCell(s.q3, cellWidth, cellHeight),
                     _gradeCell(s.q4, cellWidth, cellHeight),
                     _gradeCell(s.finalGrade, fgWidth, cellHeight, bold: true),
-                    _cell(s.descriptor ?? '--', descWidth, cellHeight,
+                    _cell(_passFail(s.finalGrade), descWidth, cellHeight,
                         color: AppColors.foregroundSecondary, size: 10),
                   ],
                 ),
@@ -93,7 +93,7 @@ class Sf9GradeTable extends StatelessWidget {
                     _gradeCell(generalAverage!.q3, cellWidth, cellHeight, bold: true),
                     _gradeCell(generalAverage!.q4, cellWidth, cellHeight, bold: true),
                     _gradeCell(generalAverage!.finalAverage, fgWidth, cellHeight, bold: true),
-                    _cell(generalAverage!.descriptor ?? '--', descWidth, cellHeight,
+                    _cell(_passFail(generalAverage!.finalAverage), descWidth, cellHeight,
                         bold: true, size: 10),
                   ],
                 ),
@@ -103,6 +103,11 @@ class Sf9GradeTable extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _passFail(int? grade) {
+    if (grade == null) return '--';
+    return grade >= 75 ? 'Passed' : 'Failed';
   }
 
   Widget _cell(

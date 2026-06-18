@@ -131,6 +131,10 @@ pub fn demo_enrollments() -> Vec<EnrollmentSpec> {
     base::enrollments::demo_enrollments()
 }
 
+pub fn demo_learner_details() -> Vec<LearnerDetailsSpec> {
+    base::learner_details::demo_learner_details()
+}
+
 pub fn demo_tos() -> Vec<TosSpec> {
     base::tos::demo_tos()
 }

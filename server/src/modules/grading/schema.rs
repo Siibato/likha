@@ -198,6 +198,11 @@ pub struct Sf9Response {
     pub grade_level: Option<String>,
     pub school_year: Option<String>,
     pub section: Option<String>,
+    pub lrn: Option<String>,
+    pub age: Option<i32>,
+    pub sex: Option<String>,
+    pub track_strand: Option<String>,
+    pub curriculum: Option<String>,
     pub subjects: Vec<Sf9SubjectRow>,
     pub general_average: Option<Sf9QuarterlyAverages>,
 }

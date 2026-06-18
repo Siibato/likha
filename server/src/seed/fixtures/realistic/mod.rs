@@ -122,6 +122,10 @@ pub fn realistic_enrollments() -> Vec<EnrollmentSpec> {
     common::realistic_enrollments()
 }
 
+pub fn realistic_learner_details() -> Vec<LearnerDetailsSpec> {
+    common::realistic_learner_details()
+}
+
 pub fn realistic_tos() -> Vec<TosSpec> {
     common::realistic_tos()
 }

@@ -24,6 +24,7 @@ pub mod upsert_period_grade;
 pub mod get_enrolled_student_ids;
 pub mod get_student_enrolled_classes;
 pub mod get_period_grades_for_student_class;
+pub mod get_learner_details;
 
 #[derive(Debug)]
 pub struct StudentEnrolledClass {
@@ -56,3 +57,4 @@ pub use upsert_period_grade::upsert_period_grade;
 pub use get_enrolled_student_ids::get_enrolled_student_ids;
 pub use get_student_enrolled_classes::get_student_enrolled_classes;
 pub use get_period_grades_for_student_class::get_period_grades_for_student_class;
+pub use get_learner_details::get_learner_details;

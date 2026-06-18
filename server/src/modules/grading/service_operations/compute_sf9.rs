@@ -40,6 +40,8 @@ impl crate::modules::grading::service::GradeComputationService {
             class.school_year.as_deref(),
         ).await?;
 
+        let learner_details = self.repo.get_learner_details(student_id).await?;
+
         let mut subjects = Vec::new();
         let mut q_sums: [Vec<i32>; 4] = [Vec::new(), Vec::new(), Vec::new(), Vec::new()];
         let mut final_grades: Vec<i32> = Vec::new();
@@ -113,6 +115,11 @@ impl crate::modules::grading::service::GradeComputationService {
             grade_level: class.grade_level.clone(),
             school_year: class.school_year.clone(),
             section: Some(class.title.clone()),
+            lrn: learner_details.as_ref().and_then(|d| d.lrn.clone()),
+            age: learner_details.as_ref().and_then(|d| d.age),
+            sex: learner_details.as_ref().and_then(|d| d.sex.clone()),
+            track_strand: learner_details.as_ref().and_then(|d| d.track_strand.clone()),
+            curriculum: learner_details.as_ref().and_then(|d| d.curriculum.clone()),
             subjects,
             general_average,
         };
