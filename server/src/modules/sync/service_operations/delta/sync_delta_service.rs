@@ -37,6 +37,7 @@ pub struct DeltaPayload {
     pub table_of_specifications: EntityDeltas,
     pub tos_competencies: EntityDeltas,
     pub activity_logs: EntityDeltas,
+    pub school_settings: EntityDeltas,
 }
 
 /// Response variants

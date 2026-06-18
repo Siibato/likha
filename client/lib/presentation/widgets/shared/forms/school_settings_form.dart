@@ -25,6 +25,7 @@ class SchoolSettingsForm extends StatelessWidget {
   final TextEditingController regionController;
   final TextEditingController divisionController;
   final TextEditingController schoolYearController;
+  final TextEditingController? districtController;
   final TextEditingController? schoolCodeController;
   final bool enabled;
   final ValueChanged<String>? onSchoolNameChanged;
@@ -35,6 +36,7 @@ class SchoolSettingsForm extends StatelessWidget {
     required this.regionController,
     required this.divisionController,
     required this.schoolYearController,
+    this.districtController,
     this.schoolCodeController,
     this.enabled = true,
     this.onSchoolNameChanged,
@@ -71,6 +73,15 @@ class SchoolSettingsForm extends StatelessWidget {
           hintText: 'e.g., Division of Batangas',
         ),
         const SizedBox(height: 16),
+        if (districtController != null)
+          StyledTextField(
+            controller: districtController!,
+            label: 'District',
+            icon: Icons.place_outlined,
+            enabled: enabled,
+            hintText: 'e.g., District 1',
+          ),
+        if (districtController != null) const SizedBox(height: 16),
         StyledTextField(
           controller: schoolYearController,
           label: 'School Year',

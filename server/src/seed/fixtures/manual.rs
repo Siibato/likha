@@ -925,6 +925,7 @@ pub fn manual_school_settings(_ctx: &SeedContext) -> SchoolSettingsSpec {
         school_region: Some("NCR".into()),
         school_division: Some("Division of City Schools".into()),
         school_year: Some("2025-2026".into()),
+        school_district: None,
         updated_at: _ctx.now(),
     }
 }

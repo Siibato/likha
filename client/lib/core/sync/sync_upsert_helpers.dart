@@ -1139,6 +1139,59 @@ class SyncUpsertHelpers {
     }
   }
 
+  Future<void> upsertSchoolSettings(
+    DatabaseExecutor db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+
+        final id = record['id']?.toString() ?? '1';
+        final data = {
+          CommonCols.id: id,
+          SchoolSettingsCols.schoolName: record['school_name'],
+          SchoolSettingsCols.schoolRegion: record['school_region'],
+          SchoolSettingsCols.schoolDivision: record['school_division'],
+          SchoolSettingsCols.schoolYear: record['school_year'],
+          SchoolSettingsCols.schoolCode: record['school_code'],
+          CommonCols.updatedAt: record['updated_at'],
+          CommonCols.cachedAt: DateTime.now().toIso8601String(),
+          CommonCols.syncStatus: SyncStatus.synced.dbValue,
+        };
+
+        final existing = await db.query(
+          DbTables.schoolSettings,
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id],
+          limit: 1,
+        );
+        if (existing.isEmpty) {
+          await db.insert(DbTables.schoolSettings, data);
+        } else {
+          await db.update(
+            DbTables.schoolSettings,
+            data,
+            where: '${CommonCols.id} = ?',
+            whereArgs: [id],
+          );
+        }
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert school_settings', e);
+      }
+    }
+
+    _log.upsertSummary('school_settings', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert school_settings', failedCount);
+    }
+  }
+
   /// Save sync token (last_sync_at) to sync_metadata
   Future<void> saveSyncToken(DatabaseExecutor db, String syncToken) async {
     await db.insert(
@@ -1562,6 +1615,16 @@ class SyncUpsertHelpers {
 
       // Note: We don't soft-delete users - they are reusable across contexts
       // (current user, enrolled students, search results)
+    }
+
+    // Handle school_settings delta
+    final schoolSettingsDeltas = deltas['school_settings'];
+    if (schoolSettingsDeltas != null) {
+      final updated = schoolSettingsDeltas.updated;
+      updatedCounts['school_settings'] = updated.length;
+      await upsertSchoolSettings(db, updated);
+
+      // Note: We don't soft-delete school_settings - it's a singleton
     }
 
     _log.deltaSync(updatedCounts: updatedCounts, deletedCounts: deletedCounts);

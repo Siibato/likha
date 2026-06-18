@@ -32,6 +32,7 @@ class _AdminSchoolSettingsPageState
   final _schoolNameController = TextEditingController();
   final _regionController = TextEditingController();
   final _divisionController = TextEditingController();
+  final _districtController = TextEditingController();
   final _schoolYearController = TextEditingController();
   final _schoolCodeController = TextEditingController();
   late String _originalSchoolCode;
@@ -53,6 +54,7 @@ class _AdminSchoolSettingsPageState
     _schoolNameController.dispose();
     _regionController.dispose();
     _divisionController.dispose();
+    _districtController.dispose();
     _schoolYearController.dispose();
     _schoolCodeController.dispose();
     super.dispose();
@@ -64,6 +66,7 @@ class _AdminSchoolSettingsPageState
     _schoolNameController.text = settings.schoolName;
     _regionController.text = settings.schoolRegion;
     _divisionController.text = settings.schoolDivision;
+    _districtController.text = settings.schoolDistrict ?? '';
     _schoolYearController.text = settings.schoolYear;
     _schoolCodeController.text = settings.schoolCode;
     _originalSchoolCode = settings.schoolCode;
@@ -204,6 +207,7 @@ class _AdminSchoolSettingsPageState
       schoolDivision: _divisionController.text.trim(),
       schoolYear: _schoolYearController.text.trim(),
       schoolCode: _schoolCodeController.text.trim(),
+      schoolDistrict: _districtController.text.trim().isEmpty ? null : _districtController.text.trim(),
     );
 
     if (ok) {
@@ -288,6 +292,7 @@ class _AdminSchoolSettingsPageState
                         schoolNameController: _schoolNameController,
                         regionController: _regionController,
                         divisionController: _divisionController,
+                        districtController: _districtController,
                         schoolYearController: _schoolYearController,
                         schoolCodeController: _schoolCodeController,
                         enabled: !isSaving,

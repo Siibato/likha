@@ -1,10 +1,22 @@
 import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:likha/core/logging/service_logger.dart';
 import 'package:likha/services/grade_export_service.dart';
 
 pw.Widget buildDepEdHeader(GradeExportContext ctx,
     {Uint8List? sealBytes, Uint8List? logoBytes}) {
+  ServiceLogger.instance.log('buildDepEdHeader: Rendering header with values:');
+  ServiceLogger.instance.log('  - REGION: "${ctx.region ?? ""}"');
+  ServiceLogger.instance.log('  - DIVISION: "${ctx.division ?? ""}"');
+  ServiceLogger.instance.log('  - DISTRICT: "${ctx.district ?? ""}"');
+  ServiceLogger.instance.log('  - SCHOOL NAME: "${ctx.schoolName ?? ""}"');
+  ServiceLogger.instance.log('  - SCHOOL ID: "${ctx.schoolId ?? ""}"');
+  ServiceLogger.instance.log('  - SCHOOL YEAR: "${ctx.schoolYear ?? ""}"');
+  ServiceLogger.instance.log('  - GRADE & SECTION: "${ctx.gradeLevel ?? ""} ${ctx.section ?? ctx.className}".trim()');
+  ServiceLogger.instance.log('  - TEACHER: "${ctx.teacherName ?? ""}"');
+  ServiceLogger.instance.log('  - SUBJECT: "${ctx.subject ?? ""}"');
+  
   return pw.Column(
     crossAxisAlignment: pw.CrossAxisAlignment.center,
     children: [
@@ -59,7 +71,7 @@ pw.Widget buildDepEdHeader(GradeExportContext ctx,
           pw.SizedBox(width: 8),
           _metaField('DIVISION', ctx.division ?? '', flex: 1),
           pw.SizedBox(width: 8),
-          _metaField('DISTRICT', '', flex: 1),
+          _metaField('DISTRICT', ctx.district ?? '', flex: 1),
         ],
       ),
       pw.SizedBox(height: 4),

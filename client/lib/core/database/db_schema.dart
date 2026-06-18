@@ -358,6 +358,7 @@ abstract final class SchoolSettingsCols {
   static const String schoolDivision = 'school_division';
   static const String schoolYear = 'school_year';
   static const String schoolCode = 'school_code';
+  static const String schoolDistrict = 'school_district';
 }
 
 // ─── Domain value strings ─────────────────────────────────────────────────────

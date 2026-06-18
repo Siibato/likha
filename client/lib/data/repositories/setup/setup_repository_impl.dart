@@ -42,6 +42,7 @@ class SetupRepositoryImpl implements SetupRepository {
     required String schoolDivision,
     required String schoolYear,
     required String schoolCode,
+    String? schoolDistrict,
   }) =>
       ops_update.updateSchoolSettings(
         _localDataSource,
@@ -51,6 +52,7 @@ class SetupRepositoryImpl implements SetupRepository {
         schoolDivision: schoolDivision,
         schoolYear: schoolYear,
         schoolCode: schoolCode,
+        schoolDistrict: schoolDistrict,
       );
 
   @override

@@ -185,6 +185,7 @@ pub struct SchoolSettingsSpec {
     pub school_region: Option<String>,
     pub school_division: Option<String>,
     pub school_year: Option<String>,
+    pub school_district: Option<String>,
     pub updated_at: NaiveDateTime,
 }
 

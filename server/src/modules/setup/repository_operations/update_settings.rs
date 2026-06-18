@@ -11,6 +11,7 @@ pub async fn update_settings(
     school_region: Option<Option<String>>,
     school_division: Option<Option<String>>,
     school_year: Option<Option<String>>,
+    school_district: Option<Option<String>>,
 ) -> AppResult<school_settings::Model> {
     let row = super::get_settings(db).await?;
     let mut active: school_settings::ActiveModel = row.into();
@@ -29,6 +30,9 @@ pub async fn update_settings(
     }
     if let Some(year) = school_year {
         active.school_year = Set(year);
+    }
+    if let Some(district) = school_district {
+        active.school_district = Set(district);
     }
     active.updated_at = Set(Utc::now().naive_utc());
 

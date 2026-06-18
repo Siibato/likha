@@ -13,6 +13,7 @@ pub async fn update_school_settings(
             request.school_region.map(Some),
             request.school_division.map(Some),
             request.school_year.map(Some),
+            request.school_district.map(Some),
         )
         .await?;
 
@@ -22,5 +23,6 @@ pub async fn update_school_settings(
         school_region: updated.school_region,
         school_division: updated.school_division,
         school_year: updated.school_year,
+        school_district: updated.school_district,
     })
 }

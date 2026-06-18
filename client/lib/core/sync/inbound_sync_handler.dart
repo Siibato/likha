@@ -125,6 +125,11 @@ class InboundSyncHandler {
       await _upsertHelpers.upsertParticipants(txn, baseResponse.enrollments, participantUsers);
       await _upsertHelpers.recalculateClassStudentCounts(txn);
       await _upsertHelpers.upsertActivityLogs(txn, baseResponse.activityLogs);
+
+      // Upsert school settings from sync response (if present)
+      if (baseResponse.schoolSettings != null) {
+        await _upsertHelpers.upsertSchoolSettings(txn, [baseResponse.schoolSettings!]);
+      }
     });
 
     _log.baseResponse(

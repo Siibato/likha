@@ -6,6 +6,8 @@ use uuid::Uuid;
 use crate::utils::AppResult;
 use crate::modules::sync::helpers::enrich_questions;
 use crate::modules::sync::sync_scope::SyncScope;
+use crate::modules::setup::repository::SetupRepository;
+use crate::modules::setup::schema::SchoolSettingsResponse;
 
 use super::sync_full_service::{FullSyncRequest, FullSyncResponse};
 use super::enrich_submissions::enrich_assessment_submissions;
@@ -156,6 +158,25 @@ impl super::SyncFullService {
                 Vec::new()
             };
 
+            // Fetch school settings for all authenticated users
+            let school_settings = {
+                let setup_repo = SetupRepository::new(self.db.clone());
+                match setup_repo.get_settings().await {
+                    Ok(row) => Some(SchoolSettingsResponse {
+                        school_code: row.school_code,
+                        school_name: row.school_name,
+                        school_region: row.school_region,
+                        school_division: row.school_division,
+                        school_year: row.school_year,
+                        school_district: row.school_district,
+                    }),
+                    Err(e) => {
+                        tracing::warn!("Failed to fetch school settings for sync: {}", e);
+                        None
+                    }
+                }
+            };
+
             return Ok(FullSyncResponse {
                 sync_token,
                 server_time,
@@ -184,6 +205,7 @@ impl super::SyncFullService {
                     needs_entity_batches,
                     total_classes,
                 }),
+                school_settings,
             });
         }
 
@@ -227,6 +249,7 @@ impl super::SyncFullService {
                 tos_competencies: vec![],
                 activity_logs: vec![],
                 sync_plan: None,
+                school_settings: None,
             });
         }
 
@@ -563,6 +586,7 @@ impl super::SyncFullService {
             tos_competencies,
             activity_logs: vec![],
             sync_plan: None,
+            school_settings: None,
         })
     }
 

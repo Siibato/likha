@@ -19,6 +19,7 @@ pub async fn insert_school_settings(
         model.school_region = Set(spec.school_region.clone());
         model.school_division = Set(spec.school_division.clone());
         model.school_year = Set(spec.school_year.clone());
+        model.school_district = Set(spec.school_district.clone());
         model.updated_at = Set(spec.updated_at);
         model.update(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
     } else {
@@ -29,6 +30,7 @@ pub async fn insert_school_settings(
             school_region: Set(spec.school_region.clone()),
             school_division: Set(spec.school_division.clone()),
             school_year: Set(spec.school_year.clone()),
+            school_district: Set(spec.school_district.clone()),
             updated_at: Set(spec.updated_at),
         };
         model.insert(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;

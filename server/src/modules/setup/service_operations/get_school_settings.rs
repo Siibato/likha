@@ -10,5 +10,6 @@ pub async fn get_school_settings(repo: &SetupRepository) -> AppResult<SchoolSett
         school_region: row.school_region,
         school_division: row.school_division,
         school_year: row.school_year,
+        school_district: row.school_district,
     })
 }

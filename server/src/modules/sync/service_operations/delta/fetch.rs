@@ -224,6 +224,14 @@ impl super::SyncDeltaService {
             tracing::debug!("Got {} activity log deltas", activity_logs_raw.len());
         }
 
+        // Fetch school settings delta (global, not role-scoped)
+        tracing::debug!("Fetching school settings deltas since {}", last_sync_at);
+        let school_settings_raw = self
+            .manifest_repo
+            .get_school_settings_since(last_sync_at)
+            .await?;
+        tracing::debug!("Got {} school settings deltas", school_settings_raw.len());
+
         // Step 6: Separate updated vs deleted for each entity type
         let classes_deltas = separate_deltas(classes);
         let enrollments_deltas = separate_deltas(enrollments);
@@ -240,6 +248,7 @@ impl super::SyncDeltaService {
         let tos_deltas = separate_deltas(tos_raw);
         let tos_competencies_deltas = separate_deltas(tos_competencies_raw);
         let activity_logs_deltas = separate_deltas(activity_logs_raw);
+        let school_settings_deltas = separate_deltas(school_settings_raw);
 
         let now = Utc::now();
         let sync_token = now.to_rfc3339();
@@ -273,6 +282,7 @@ impl super::SyncDeltaService {
                 table_of_specifications: tos_deltas,
                 tos_competencies: tos_competencies_deltas,
                 activity_logs: activity_logs_deltas,
+                school_settings: school_settings_deltas,
             },
         })
     }

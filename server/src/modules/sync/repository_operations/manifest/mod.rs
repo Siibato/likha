@@ -66,6 +66,7 @@ pub mod get_all_quarterly_grades_since;
 pub mod get_student_quarterly_grades_since;
 pub mod get_table_of_specifications_since;
 pub mod get_tos_competencies_since;
+pub mod get_school_settings_since;
 
 /// Record entry in the manifest (id + updated_at + deleted flag)
 #[derive(Debug, Clone)]
@@ -141,3 +142,4 @@ pub use get_all_quarterly_grades_since::get_all_quarterly_grades_since;
 pub use get_student_quarterly_grades_since::get_student_quarterly_grades_since;
 pub use get_table_of_specifications_since::get_table_of_specifications_since;
 pub use get_tos_competencies_since::get_tos_competencies_since;
+pub use get_school_settings_since::get_school_settings_since;

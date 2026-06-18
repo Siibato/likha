@@ -13,6 +13,7 @@ abstract class SetupRepository {
     required String schoolDivision,
     required String schoolYear,
     required String schoolCode,
+    String? schoolDistrict,
   });
 
   ResultFuture<MutationResult<SchoolSettings>> updateSchoolCode({

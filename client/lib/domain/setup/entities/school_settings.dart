@@ -7,6 +7,7 @@ class SchoolSettings extends Equatable {
   final String schoolDivision;
   final String schoolYear;
   final String schoolCode;
+  final String? schoolDistrict;
 
   const SchoolSettings({
     required this.id,
@@ -15,15 +16,17 @@ class SchoolSettings extends Equatable {
     required this.schoolDivision,
     required this.schoolYear,
     required this.schoolCode,
+    this.schoolDistrict,
   });
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         id,
         schoolName,
         schoolRegion,
         schoolDivision,
         schoolYear,
         schoolCode,
+        schoolDistrict,
       ];
 }

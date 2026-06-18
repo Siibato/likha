@@ -86,6 +86,9 @@ class FullSyncResponseModel {
   @JsonKey(name: 'sync_plan')
   final SyncPlanModel? syncPlan;
 
+  @JsonKey(name: 'school_settings')
+  final Map<String, dynamic>? schoolSettings;
+
   FullSyncResponseModel({
     required this.syncToken,
     required this.serverTime,
@@ -111,6 +114,7 @@ class FullSyncResponseModel {
     this.user,
     this.enrolledStudents,
     this.syncPlan,
+    this.schoolSettings,
   });
 
   factory FullSyncResponseModel.fromJson(Map<String, dynamic> json) =>

@@ -27,7 +27,7 @@ class ExcelHeaderBuilder {
     col += meta1Spans[0];
     _metaField(sheet, row, col, meta1Spans[1], 'DIVISION', ctx.division ?? '');
     col += meta1Spans[1];
-    _metaField(sheet, row, col, meta1Spans[2], 'DISTRICT', '');
+    _metaField(sheet, row, col, meta1Spans[2], 'DISTRICT', ctx.district ?? '');
     row++;
     row++; // blank separator
 

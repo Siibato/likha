@@ -28,7 +28,8 @@ impl SetupRepository {
         school_region: Option<Option<String>>,
         school_division: Option<Option<String>>,
         school_year: Option<Option<String>>,
+        school_district: Option<Option<String>>,
     ) -> AppResult<school_settings::Model> {
-        ops::update_settings(&self.db, school_code, school_name, school_region, school_division, school_year).await
+        ops::update_settings(&self.db, school_code, school_name, school_region, school_division, school_year, school_district).await
     }
 }

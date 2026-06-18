@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/logging/service_logger.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/teacher/grade/class_grading_setup_page.dart';
 import 'package:likha/presentation/widgets/shared/teacher/grade/grade_spreadsheet.dart';
@@ -213,6 +214,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
   }
 
   void _exportToPdf() async {
+    ServiceLogger.instance.log('_exportToPdf: Starting PDF export for classId=${widget.classId}, quarter=$_selectedQuarter');
     try {
       final classState = ref.read(classProvider);
       final gradesState = ref.read(classGradesProvider);
@@ -220,10 +222,21 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
       final authState = ref.read(authProvider);
       final schoolNotifier = ref.read(schoolSettingsProvider.notifier);
       var schoolState = ref.read(schoolSettingsProvider);
+      
+      ServiceLogger.instance.log('_exportToPdf: schoolState.settings=${schoolState.settings != null ? "LOADED" : "NULL"}');
       if (schoolState.settings == null) {
+        ServiceLogger.instance.log('_exportToPdf: School settings null, reloading...');
         await schoolNotifier.loadSchoolSettings();
         schoolState = ref.read(schoolSettingsProvider);
+        ServiceLogger.instance.log('_exportToPdf: After reload - schoolState.settings=${schoolState.settings != null ? "LOADED" : "NULL"}');
       }
+      
+      if (schoolState.settings != null) {
+        ServiceLogger.instance.log('_exportToPdf: School settings - name="${schoolState.settings!.schoolName}", region="${schoolState.settings!.schoolRegion}", division="${schoolState.settings!.schoolDivision}", code="${schoolState.settings!.schoolCode}", year="${schoolState.settings!.schoolYear}"');
+      } else {
+        ServiceLogger.instance.warn('_exportToPdf: School settings still null after reload attempt');
+      }
+      
       final grades = gradesState.grades;
       if (grades == null) return;
 
@@ -231,6 +244,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
       final config = configState.configs.isNotEmpty ? configState.configs.first : null;
       final detail = classState.currentClassDetail;
 
+      ServiceLogger.instance.log('_exportToPdf: Calling gradeExportServiceProvider.exportToPdf with ${students.length} students, schoolSettings=${schoolState.settings != null}');
       await ref.read(gradeExportServiceProvider).exportToPdf(
         classId: widget.classId,
         quarter: _selectedQuarter,
@@ -247,12 +261,14 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
         subject: detail?.title,
       );
 
+      ServiceLogger.instance.log('_exportToPdf: PDF export completed successfully');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('PDF exported successfully!')),
         );
       }
     } catch (e) {
+      ServiceLogger.instance.error('_exportToPdf: PDF export failed', e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to export PDF: $e')),

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/logging/service_logger.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
@@ -103,6 +104,7 @@ class GradeExportContext {
   String? get schoolName => schoolSettings?.schoolName;
   String? get region => schoolSettings?.schoolRegion;
   String? get division => schoolSettings?.schoolDivision;
+  String? get district => schoolSettings?.schoolDistrict;
   String? get schoolId => schoolSettings?.schoolCode;
   String? get schoolYear => schoolSettings?.schoolYear;
 }
@@ -167,6 +169,13 @@ class GradeExportService {
     String? section,
     String? subject,
   }) async {
+    ServiceLogger.instance.log('exportToPdf: Building context with schoolSettings=${schoolSettings != null}');
+    if (schoolSettings != null) {
+      ServiceLogger.instance.log('exportToPdf: schoolSettings in context - name="${schoolSettings.schoolName}", region="${schoolSettings.schoolRegion}", division="${schoolSettings.schoolDivision}", code="${schoolSettings.schoolCode}", year="${schoolSettings.schoolYear}"');
+    } else {
+      ServiceLogger.instance.warn('exportToPdf: schoolSettings is NULL in exportToPdf');
+    }
+    
     final ctx = _buildContext(
       className: className,
       quarter: quarter,
@@ -181,6 +190,9 @@ class GradeExportService {
       section: section,
       subject: subject,
     );
+    
+    ServiceLogger.instance.log('exportToPdf: Context built - ctx.schoolName="${ctx.schoolName}", ctx.region="${ctx.region}", ctx.division="${ctx.division}", ctx.schoolId="${ctx.schoolId}", ctx.schoolYear="${ctx.schoolYear}"');
+    ServiceLogger.instance.log('exportToPdf: Calling generatePdf');
     await _pdfGenerator.generatePdf(ctx);
   }
 

@@ -9,7 +9,7 @@ import 'package:likha/core/logging/core_logger.dart';
 
 /// Local SQLite Database for offline-first functionality
 ///
-/// SCHEMA VERSION: 6 (v5 → v6: removed UNIQUE(class_id, grading_period_number) from TOS)
+/// SCHEMA VERSION: 7 (v6 → v7: added school_district column to school_settings)
 /// TOTAL TABLES: 32
 ///
 /// This database was consolidated from 12 historical versions into a single
@@ -85,7 +85,7 @@ class LocalDatabase {
         return databaseFactory.openDatabase(
           dbFilePath,
           options: OpenDatabaseOptions(
-            version: 6,
+            version: 7,
             onCreate: _createTables,
             onUpgrade: _upgradeDatabase,
             onDowngrade: _downgradeDatabase,
@@ -106,7 +106,7 @@ class LocalDatabase {
       return openDatabase(
         dbFilePath,
         password: _dbPassword,
-        version: 5,
+        version: 6,
         onCreate: _createTables,
         onUpgrade: _upgradeDatabase,
         onDowngrade: _downgradeDatabase,
@@ -707,6 +707,7 @@ class LocalDatabase {
           school_division TEXT NOT NULL DEFAULT '',
           school_year TEXT NOT NULL DEFAULT '',
           school_code TEXT NOT NULL DEFAULT '',
+          school_district TEXT,
           cached_at TEXT,
           sync_status TEXT NOT NULL DEFAULT 'synced'
         )
