@@ -7,6 +7,8 @@ import 'package:likha/presentation/widgets/shared/primitives/info_row.dart';
 import 'package:likha/domain/grading/entities/sf9.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/sf9_grade_table.dart';
 import 'package:likha/presentation/providers/sf9_provider.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/providers/document_export_provider.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/grade/sf9_core_values_table.dart';
 
@@ -213,32 +215,45 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
   }
 
   Future<void> _downloadSf9(Sf9Response displaySf9) async {
-    setState(() => _isDownloading = true);
-    try {
-      await ref.read(documentExportProvider.notifier).exportSf9(
-        classId: widget.classId,
-        studentId: widget.studentId,
-        studentName: widget.studentName,
+    final reachability = sl<ServerReachabilityService>();
+    if (!reachability.isServerReachable) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Only available when connected to Likha server'),
+          backgroundColor: AppColors.semanticError,
+        ),
       );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('SF9 PDF downloaded successfully'),
-            backgroundColor: AppColors.semanticSuccess,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to download SF9: $e'),
-            backgroundColor: AppColors.semanticError,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isDownloading = false);
+      return;
     }
+
+    setState(() => _isDownloading = true);
+
+    await ref.read(documentExportProvider.notifier).exportSf9(
+      classId: widget.classId,
+      studentId: widget.studentId,
+      studentName: widget.studentName,
+    );
+
+    if (!mounted) return;
+
+    final exportState = ref.read(documentExportProvider);
+
+    if (exportState.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(exportState.error!),
+          backgroundColor: AppColors.semanticError,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('SF9 PDF downloaded successfully'),
+          backgroundColor: AppColors.semanticSuccess,
+        ),
+      );
+    }
+
+    setState(() => _isDownloading = false);
   }
 }

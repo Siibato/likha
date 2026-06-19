@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/logging/service_logger.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/teacher/grade/class_grading_setup_page.dart';
 import 'package:likha/presentation/widgets/shared/teacher/grade/grade_spreadsheet.dart';
@@ -120,88 +119,14 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
   void _showExportDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Export Grades'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Choose export format:'),
-              const SizedBox(height: 16),
-              ListTile(
-                title: const Text('Excel'),
-                subtitle: const Text('Editable spreadsheet (.xlsx)'),
-                leading: const Icon(Icons.table_chart),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _exportToExcel();
-                },
-              ),
-              ListTile(
-                title: const Text('PDF'),
-                subtitle: const Text('Printable document (.pdf)'),
-                leading: const Icon(Icons.picture_as_pdf),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _exportToPdf();
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-          ],
+      builder: (dialogContext) {
+        return _DesktopExportDialog(
+          classId: widget.classId,
+          quarter: _selectedQuarter,
+          parentContext: context,
         );
       },
     );
-  }
-
-  void _exportToExcel() async {
-    try {
-      await ref.read(documentExportProvider.notifier).exportClassGrades(
-        classId: widget.classId,
-        period: _selectedQuarter,
-        isPdf: false,
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Excel exported successfully!')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to export Excel: $e')),
-        );
-      }
-    }
-  }
-
-  void _exportToPdf() async {
-    try {
-      await ref.read(documentExportProvider.notifier).exportClassGrades(
-        classId: widget.classId,
-        period: _selectedQuarter,
-        isPdf: true,
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('PDF exported successfully!')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to export PDF: $e')),
-        );
-      }
-    }
   }
 
   void _handleQgChanged(String studentId, int? newQg) {
@@ -493,6 +418,106 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _DesktopExportDialog extends ConsumerWidget {
+  final String classId;
+  final int quarter;
+  final BuildContext parentContext;
+
+  const _DesktopExportDialog({
+    required this.classId,
+    required this.quarter,
+    required this.parentContext,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final exportState = ref.watch(documentExportProvider);
+
+    ref.listen<DocumentExportState>(documentExportProvider, (previous, next) {
+      if (previous?.isExporting == true && !next.isExporting && next.error == null) {
+        Navigator.of(context).pop();
+        if (parentContext.mounted) {
+          ScaffoldMessenger.of(parentContext).showSnackBar(
+            const SnackBar(content: Text('Document exported successfully!')),
+          );
+        }
+      }
+    });
+
+    return AlertDialog(
+      title: const Text('Export Grades'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Choose export format:'),
+          const SizedBox(height: 16),
+          if (exportState.isExporting) ...[
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Column(
+                  children: [
+                    CircularProgressIndicator(
+                      color: AppColors.foregroundPrimary,
+                      strokeWidth: 2.5,
+                    ),
+                    SizedBox(height: 12),
+                    Text('Preparing document…'),
+                  ],
+                ),
+              ),
+            ),
+          ] else ...[
+            ListTile(
+              title: const Text('Excel'),
+              subtitle: const Text('Editable spreadsheet (.xlsx)'),
+              leading: const Icon(Icons.table_chart),
+              onTap: () {
+                ref.read(documentExportProvider.notifier).exportClassGrades(
+                  classId: classId,
+                  period: quarter,
+                  isPdf: false,
+                );
+              },
+            ),
+            ListTile(
+              title: const Text('PDF'),
+              subtitle: const Text('Printable document (.pdf)'),
+              leading: const Icon(Icons.picture_as_pdf),
+              onTap: () {
+                ref.read(documentExportProvider.notifier).exportClassGrades(
+                  classId: classId,
+                  period: quarter,
+                  isPdf: true,
+                );
+              },
+            ),
+            if (exportState.error != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                exportState.error!,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.semanticError,
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: exportState.isExporting
+              ? null
+              : () => Navigator.of(context).pop(),
+          child: Text(exportState.isExporting ? 'Exporting…' : 'Cancel'),
+        ),
+      ],
     );
   }
 }
